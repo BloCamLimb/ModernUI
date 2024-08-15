@@ -24,11 +24,10 @@ import icyllis.arc3d.engine.Device;
 import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
@@ -52,14 +51,14 @@ public final class GLDevice extends Device {
     private final ArrayDeque<FlushInfo.FinishedCallback> mFinishedCallbacks = new ArrayDeque<>();
     private final LongArrayFIFOQueue mFinishedFences = new LongArrayFIFOQueue();
 
-    /**
+    /*
      * Represents a certain resource ID is bound, but no {@link Resource} object is associated with.
      */
     // OpenGL 3 only.
-    static final UniqueID INVALID_UNIQUE_ID = new UniqueID();
+    //static final UniqueID INVALID_UNIQUE_ID = new UniqueID();
 
     //@formatter:off
-    static final int BUFFER_TYPE_VERTEX         = 0;
+    /*static final int BUFFER_TYPE_VERTEX         = 0;
     static final int BUFFER_TYPE_INDEX          = 1;
     static final int BUFFER_TYPE_XFER_SRC       = 2;
     static final int BUFFER_TYPE_XFER_DST       = 3;
@@ -69,7 +68,7 @@ public final class GLDevice extends Device {
     static int bufferUsageToType(int usage) {
         // __builtin_ctz
         return Integer.numberOfTrailingZeros(usage);
-    }
+    }*/
 
     /*static {
         assert BUFFER_TYPE_VERTEX           ==
@@ -87,20 +86,20 @@ public final class GLDevice extends Device {
     }*/
     //@formatter:on
 
-    static final class HWBufferState {
+    /*static final class HWBufferState {
         final int mTarget;
         UniqueID mBoundBufferUniqueID;
 
         HWBufferState(int target) {
             mTarget = target;
         }
-    }
+    }*/
 
     // context's buffer binding state
-    private final HWBufferState[] mHWBufferStates = new HWBufferState[6];
+    //private final HWBufferState[] mHWBufferStates = new HWBufferState[6];
 
     //@formatter:off
-    {
+    /*{
         mHWBufferStates[BUFFER_TYPE_VERTEX]         =
                 new HWBufferState(GL_ARRAY_BUFFER);
         mHWBufferStates[BUFFER_TYPE_INDEX]          =
@@ -113,10 +112,10 @@ public final class GLDevice extends Device {
                 new HWBufferState(GL_UNIFORM_BUFFER);
         mHWBufferStates[BUFFER_TYPE_DRAW_INDIRECT]  =
                 new HWBufferState(GL_DRAW_INDIRECT_BUFFER);
-    }
+    }*/
     //@formatter:on
 
-    /**
+    /*
      * We have four methods to allocate UBOs.
      * <ol>
      * <li>sub allocate persistently mapped ring buffer (OpenGL 4.4+).</li>
@@ -130,22 +129,22 @@ public final class GLDevice extends Device {
      * For case 2, any block <= 128 bytes using binding 0, others using binding 1.
      * Each program has only one block (update per draw call).
      */
-    private final UniqueID[] mBoundUniformBuffers = new UniqueID[4];
+    //private final UniqueID[] mBoundUniformBuffers = new UniqueID[4];
 
     // Below OpenGL 4.5.
-    private int mHWActiveTextureUnit;
+    //private int mHWActiveTextureUnit;
 
     // target is Texture2D
-    private final UniqueID[] mHWTextureStates;
+    //private final UniqueID[] mHWTextureStates;
 
-    static final class HWSamplerState {
+    /*static final class HWSamplerState {
         // default to invalid, we use 0 because it's not a valid sampler state
         int mSamplerState = 0;
         @SharedPtr
         GLSampler mBoundSampler = null;
-    }
+    }*/
 
-    private final HWSamplerState[] mHWSamplerStates;
+    //private final HWSamplerState[] mHWSamplerStates;
 
     /**
      * Framebuffer used for pixel transfer operations, compatibility only.
@@ -163,20 +162,17 @@ public final class GLDevice extends Device {
     private final FramebufferCache mFramebufferCache =
             new FramebufferCache();
 
-    private final Thread mExecutingThread;
-
     private GLDevice(ContextOptions options, GLCaps caps, GLInterface glInterface) {
         super(BackendApi.kOpenGL, options, caps);
         mCaps = caps;
         mGLInterface = glInterface;
-        mExecutingThread = Thread.currentThread();
 
-        int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
+        /*int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
         mHWTextureStates = new UniqueID[maxTextureUnits];
         mHWSamplerStates = new HWSamplerState[maxTextureUnits];
         for (int i = 0; i < maxTextureUnits; i++) {
             mHWSamplerStates[i] = new HWSamplerState();
-        }
+        }*/
     }
 
     /**
@@ -211,10 +207,6 @@ public final class GLDevice extends Device {
             options.mLogger.error("Failed to create GLDevice", e);
             return null;
         }
-    }
-
-    public boolean isOnExecutingThread() {
-        return mExecutingThread == Thread.currentThread();
     }
 
     /**
@@ -276,28 +268,8 @@ public final class GLDevice extends Device {
     }
 
     @Override
-    protected void handleDirtyContext(int state) {
-        super.handleDirtyContext(state);
-    }
-
-    @Override
     public GLResourceProvider makeResourceProvider(Context context) {
         return new GLResourceProvider(this, context);
-    }
-
-    @Override
-    public GpuBufferPool getVertexPool() {
-        return null;
-    }
-
-    @Override
-    public GpuBufferPool getInstancePool() {
-        return null;
-    }
-
-    @Override
-    public GpuBufferPool getIndexPool() {
-        return null;
     }
 
     @Override
@@ -306,27 +278,25 @@ public final class GLDevice extends Device {
 
         // we assume these values
         if ((resetBits & GLBackendState.kPixelStore) != 0) {
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
             glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         }
 
-        if ((resetBits & GLBackendState.kPipeline) != 0) {
+        /*if ((resetBits & GLBackendState.kPipeline) != 0) {
             mHWBufferStates[BUFFER_TYPE_VERTEX].mBoundBufferUniqueID = INVALID_UNIQUE_ID;
             mHWBufferStates[BUFFER_TYPE_INDEX].mBoundBufferUniqueID = INVALID_UNIQUE_ID;
-        }
+        }*/
 
-        if ((resetBits & GLBackendState.kTexture) != 0) {
+        /*if ((resetBits & GLBackendState.kTexture) != 0) {
             Arrays.fill(mHWTextureStates, INVALID_UNIQUE_ID);
-            //TODO
             for (var ss : mHWSamplerStates) {
                 ss.mSamplerState = 0;
                 ss.mBoundSampler = RefCnt.move(ss.mBoundSampler);
             }
-        }
+        }*/
 
-        mHWActiveTextureUnit = -1; // invalid
+        //mHWActiveTextureUnit = -1; // invalid
 
-        if ((resetBits & GLBackendState.kRaster) != 0) {
+        /*if ((resetBits & GLBackendState.kRaster) != 0) {
             getGL().glDisable(GL_LINE_SMOOTH);
             getGL().glDisable(GL_POLYGON_SMOOTH);
 
@@ -354,13 +324,7 @@ public final class GLDevice extends Device {
             glLineWidth(1);
             glPointSize(1);
             getGL().glDisable(GL_PROGRAM_POINT_SIZE);
-        }
-    }
-
-    //FIXME this is temp, wait for beginRenderPass()
-    public void forceResetContext(int state) {
-        markContextDirty(state);
-        handleDirtyContext(state);
+        }*/
     }
 
     /**
@@ -383,35 +347,6 @@ public final class GLDevice extends Device {
             mDeviceIsLost = true;
         }
         return error;
-    }
-
-    public int createTexture(GLImageDesc desc) {
-        assert desc.mTarget != GL_RENDERBUFFER;
-        int width = desc.getWidth(), height = desc.getHeight();
-        int handle;
-        handleDirtyContext(Engine.GLBackendState.kTexture);
-        handle = createTexture(width, height, desc.mFormat, desc.getMipLevelCount());
-        if (handle != 0) {
-            mStats.incImageCreates();
-            if (desc.isSampledImage()) {
-                mStats.incTextureCreates();
-            }
-        }
-        return handle;
-    }
-
-    public int createRenderbuffer(GLImageDesc desc) {
-        assert desc.mTarget == GL_RENDERBUFFER;
-        int width = desc.getWidth(), height = desc.getHeight();
-         /*int internalFormat = glFormat;
-            if (GLUtil.glFormatStencilBits(glFormat) == 0) {
-                internalFormat = getCaps().getRenderbufferInternalFormat(glFormat);
-            }*/
-        int handle = createRenderbuffer(width, height, desc.getSampleCount(), desc.mFormat);
-        if (handle != 0) {
-            mStats.incImageCreates();
-        }
-        return handle;
     }
 
     /*@Nullable
@@ -686,7 +621,7 @@ public final class GLDevice extends Device {
         if (srcType == 0) {
             return false;
         }
-        handleDirtyContext(GLBackendState.kTexture | GLBackendState.kPixelStore);
+        //handleDirtyContext(GLBackendState.kTexture | GLBackendState.kPixelStore);
 
         boolean dsa = mCaps.hasDSASupport();
         int texName = glTexture.getHandle();
@@ -700,23 +635,23 @@ public final class GLDevice extends Device {
         }
 
         GLTextureMutableState mutableState = glTexture.getGLMutableState();
-        if (mutableState.baseMipmapLevel != 0) {
+        if (mutableState.mBaseMipmapLevel != 0) {
             if (dsa) {
                 glTextureParameteri(texName, GL_TEXTURE_BASE_LEVEL, 0);
             } else {
                 glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
             }
-            mutableState.baseMipmapLevel = 0;
+            mutableState.mBaseMipmapLevel = 0;
         }
         int maxLevel = glTexture.getMipLevelCount() - 1; // minus base level
-        if (mutableState.maxMipmapLevel != maxLevel) {
+        if (mutableState.mMaxMipmapLevel != maxLevel) {
             if (dsa) {
                 glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
                 glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
             // Bug fixed by Arc3D
-            mutableState.maxMipmapLevel = maxLevel;
+            mutableState.mMaxMipmapLevel = maxLevel;
         }
 
         assert (x >= 0 && y >= 0 && width > 0 && height > 0);
@@ -1143,7 +1078,7 @@ public final class GLDevice extends Device {
     // returns the GL target the buffer was bound to.
     // When 'type' is 'index', this function will also implicitly bind the default VAO.
     // If the caller wishes to bind an index buffer to a specific VAO, it can call glBind directly.
-    public int bindBuffer(@Nonnull @RawPtr GLBuffer buffer) {
+    /*public int bindBuffer(@Nonnull @RawPtr GLBuffer buffer) {
         assert !getCaps().hasDSASupport();
 
         handleDirtyContext(GLBackendState.kPipeline);
@@ -1161,9 +1096,9 @@ public final class GLDevice extends Device {
         }
 
         return bufferState.mTarget;
-    }
+    }*/
 
-    public void bindIndexBufferInPipe(@Nonnull @RawPtr GLBuffer buffer) {
+    /*public void bindIndexBufferInPipe(@Nonnull @RawPtr GLBuffer buffer) {
         // pipeline is already handled
         //handleDirtyContext(GLBackendState.kPipeline);
 
@@ -1175,15 +1110,15 @@ public final class GLDevice extends Device {
 
         getGL().glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.getHandle());
         bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
-    }
+    }*/
 
-    /**
+    /*
      * Bind raw buffer ID to context (below OpenGL 4.5).
      *
      * @param usage  {@link BufferUsageFlags}
      * @param buffer the nonzero texture ID
      */
-    public int bindBufferForSetup(int usage, int buffer) {
+    /*public int bindBufferForSetup(int usage, int buffer) {
         assert !getCaps().hasDSASupport();
 
         handleDirtyContext(GLBackendState.kPipeline);
@@ -1199,9 +1134,9 @@ public final class GLDevice extends Device {
         bufferState.mBoundBufferUniqueID = INVALID_UNIQUE_ID;
 
         return bufferState.mTarget;
-    }
+    }*/
 
-    public void bindTextureSampler(int bindingUnit, GLTexture texture,
+    /*public void bindTextureSampler(int bindingUnit, GLTexture texture,
                                    int samplerState, short readSwizzle) {
         boolean dsa = mCaps.hasDSASupport();
         if (mHWTextureStates[bindingUnit] != texture.getUniqueID()) {
@@ -1215,9 +1150,9 @@ public final class GLDevice extends Device {
         }
         var hwSamplerState = mHWSamplerStates[bindingUnit];
         if (hwSamplerState.mSamplerState != samplerState) {
-            GLSampler sampler = null;/*= samplerState != 0
+            GLSampler sampler = null;*//*= samplerState != 0
                     ? mResourceProvider.findOrCreateCompatibleSampler(samplerState)
-                    : null;*/
+                    : null;*//*
             //TODO
             getGL().glBindSampler(bindingUnit, sampler != null
                     ? sampler.getHandle()
@@ -1242,10 +1177,6 @@ public final class GLDevice extends Device {
             }
             mutableState.maxMipmapLevel = maxLevel;
         }
-        //TODO texture view
-        // texture view is available since 4.3, but less used in OpenGL
-        // in case of some driver bugs, we don't use GL_TEXTURE_SWIZZLE_RGBA
-        // and OpenGL ES does not support GL_TEXTURE_SWIZZLE_RGBA at all
         for (int i = 0; i < 4; ++i) {
             int swiz = switch (readSwizzle & 0xF) {
                 case 0 -> GL_RED;
@@ -1268,140 +1199,18 @@ public final class GLDevice extends Device {
             }
             readSwizzle >>= 4;
         }
-    }
+    }*/
 
-    /**
+    /*
      * Binds texture unit in context. OpenGL 3 only.
      *
      * @param unit 0-based texture unit index
      */
-    public void setTextureUnit(int unit) {
+    /*public void setTextureUnit(int unit) {
         assert (unit >= 0 && unit < mHWTextureStates.length);
         if (unit != mHWActiveTextureUnit) {
             glActiveTexture(GL_TEXTURE0 + unit);
             mHWActiveTextureUnit = unit;
         }
-    }
-
-    private int createTexture(int width, int height, int format, int levels) {
-        assert (GLUtil.glFormatIsSupported(format));
-        assert (!GLUtil.glFormatIsCompressed(format));
-
-        int internalFormat = mCaps.getTextureInternalFormat(format);
-        if (internalFormat == 0) {
-            return 0;
-        }
-
-        assert (mCaps.isFormatTexturable(format));
-        final int texture;
-        if (mCaps.hasDSASupport()) {
-            assert (mCaps.isTextureStorageCompatible(format));
-            texture = glCreateTextures(GL_TEXTURE_2D);
-            if (texture == 0) {
-                return 0;
-            }
-            if (mCaps.skipErrorChecks()) {
-                glTextureStorage2D(texture, levels, internalFormat, width, height);
-            } else {
-                clearErrors();
-                glTextureStorage2D(texture, levels, internalFormat, width, height);
-                if (getError() != GL_NO_ERROR) {
-                    glDeleteTextures(texture);
-                    return 0;
-                }
-            }
-        } else {
-            texture = mGLInterface.glGenTextures();
-            if (texture == 0) {
-                return 0;
-            }
-            int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            try {
-                if (mCaps.isTextureStorageCompatible(format)) {
-                    if (mCaps.skipErrorChecks()) {
-                        glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
-                    } else {
-                        clearErrors();
-                        glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
-                        if (getError() != GL_NO_ERROR) {
-                            glDeleteTextures(texture);
-                            return 0;
-                        }
-                    }
-                } else {
-                    final int externalFormat = mCaps.getFormatDefaultExternalFormat(format);
-                    final int externalType = mCaps.getFormatDefaultExternalType(format);
-                    final boolean checks = !mCaps.skipErrorChecks();
-                    int error = 0;
-                    if (checks) {
-                        clearErrors();
-                    }
-                    for (int level = 0; level < levels; level++) {
-                        int currentWidth = Math.max(1, width >> level);
-                        int currentHeight = Math.max(1, height >> level);
-                        nglTexImage2D(GL_TEXTURE_2D, level, internalFormat,
-                                currentWidth, currentHeight,
-                                0, externalFormat, externalType, MemoryUtil.NULL);
-                        if (checks) {
-                            error |= getError();
-                        }
-                    }
-                    if (error != 0) {
-                        glDeleteTextures(texture);
-                        return 0;
-                    }
-                }
-            } finally {
-                glBindTexture(GL_TEXTURE_2D, boundTexture);
-            }
-        }
-
-        return texture;
-    }
-
-    private int createRenderbuffer(int width, int height, int sampleCount, int internalFormat) {
-        var gl = getGL();
-        int renderbuffer = gl.glGenRenderbuffers();
-        if (renderbuffer == 0) {
-            return 0;
-        }
-        gl.glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-        boolean skipError = getCaps().skipErrorChecks();
-        if (!skipError) {
-            clearErrors();
-        }
-        // GL has a concept of MSAA rasterization with a single sample, but we do not.
-        if (sampleCount > 1) {
-            gl.glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width, height);
-        } else {
-            // glRenderbufferStorage is equivalent to calling glRenderbufferStorageMultisample
-            // with the samples set to zero. But we don't think sampleCount=1 is multisampled.
-            gl.glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
-        }
-        if (!skipError && getError() != GL_NO_ERROR) {
-            gl.glDeleteRenderbuffers(renderbuffer);
-            return 0;
-        }
-
-        return renderbuffer;
-    }
-
-    private void attachColorAttachment(int index, GLTexture texture, int mipLevel) {
-        switch (texture.getTarget()) {
-            case GL_TEXTURE_2D, GL_TEXTURE_2D_MULTISAMPLE -> {
-                glFramebufferTexture(GL_FRAMEBUFFER,
-                        GL_COLOR_ATTACHMENT0 + index,
-                        texture.getHandle(),
-                        mipLevel);
-            }
-            case GL_RENDERBUFFER -> {
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                        GL_COLOR_ATTACHMENT0 + index,
-                        GL_RENDERBUFFER,
-                        texture.getHandle());
-            }
-            default -> throw new UnsupportedOperationException();
-        }
-    }
+    }*/
 }

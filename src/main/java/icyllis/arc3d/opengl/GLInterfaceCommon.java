@@ -40,6 +40,18 @@ public interface GLInterfaceCommon {
     void glTexParameteri(@NativeType("GLenum") int target, @NativeType("GLenum") int pname,
                          @NativeType("GLint") int param);
 
+    void glTexImage2D(@NativeType("GLenum") int target, @NativeType("GLint") int level,
+                      @NativeType("GLint") int internalformat, @NativeType("GLsizei") int width,
+                      @NativeType("GLsizei") int height, @NativeType("GLint") int border,
+                      @NativeType("GLenum") int format, @NativeType("GLenum") int type,
+                      @NativeType("void const *") long pixels);
+
+    void glTexSubImage2D(@NativeType("GLenum") int target, @NativeType("GLint") int level,
+                         @NativeType("GLint") int xoffset, @NativeType("GLint") int yoffset,
+                         @NativeType("GLsizei") int width, @NativeType("GLsizei") int height,
+                         @NativeType("GLenum") int format, @NativeType("GLenum") int type,
+                         @NativeType("void const *") long pixels);
+
     void glDeleteTextures(@NativeType("GLuint const *") int texture);
 
     void glBindTexture(@NativeType("GLenum") int target, @NativeType("GLuint") int texture);

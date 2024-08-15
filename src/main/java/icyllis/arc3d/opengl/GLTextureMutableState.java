@@ -20,8 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.ImageMutableState;
-
-import static org.lwjgl.opengl.GL11C.*;
+import icyllis.arc3d.engine.Swizzle;
 
 /**
  * Only used when OpenGL 4.3 texture view is unavailable.
@@ -29,61 +28,32 @@ import static org.lwjgl.opengl.GL11C.*;
 public final class GLTextureMutableState extends ImageMutableState {
 
     // Texture parameter state that is not overridden by a bound sampler object.
-    public int baseMipmapLevel;
-    public int maxMipmapLevel;
+    public int mBaseMipmapLevel;
+    public int mMaxMipmapLevel;
     // The read swizzle, identity by default.
-    public int swizzleR = GL_RED;
-    public int swizzleG = GL_GREEN;
-    public int swizzleB = GL_BLUE;
-    public int swizzleA = GL_ALPHA;
+    public short mSwizzle = Swizzle.RGBA;
 
     public GLTextureMutableState() {
         // These are the OpenGL defaults.
-        baseMipmapLevel = 0;
-        maxMipmapLevel = 1000;
+        mBaseMipmapLevel = 0;
+        mMaxMipmapLevel = 1000;
     }
 
     /**
      * Makes parameters invalid, forces GLContext to refresh.
      */
     public void invalidate() {
-        baseMipmapLevel = ~0;
-        maxMipmapLevel = ~0;
-        swizzleR = 0;
-        swizzleG = 0;
-        swizzleB = 0;
-        swizzleA = 0;
-    }
-
-    public int getSwizzle(int i) {
-        return switch (i) {
-            case 0 -> swizzleR;
-            case 1 -> swizzleG;
-            case 2 -> swizzleB;
-            case 3 -> swizzleA;
-            default -> throw new IndexOutOfBoundsException(i);
-        };
-    }
-
-    public void setSwizzle(int i, int swiz) {
-        switch (i) {
-            case 0 -> swizzleR = swiz;
-            case 1 -> swizzleG = swiz;
-            case 2 -> swizzleB = swiz;
-            case 3 -> swizzleA = swiz;
-            default -> throw new IndexOutOfBoundsException(i);
-        }
+        mBaseMipmapLevel = ~0;
+        mMaxMipmapLevel = ~0;
+        mSwizzle = ~0;
     }
 
     @Override
     public String toString() {
         return '{' +
-                "baseMipmapLevel=" + baseMipmapLevel +
-                ", maxMipmapLevel=" + maxMipmapLevel +
-                ", swizzleR=" + swizzleR +
-                ", swizzleG=" + swizzleG +
-                ", swizzleB=" + swizzleB +
-                ", swizzleA=" + swizzleA +
+                "mBaseMipmapLevel=" + mBaseMipmapLevel +
+                ", mMaxMipmapLevel=" + mMaxMipmapLevel +
+                ", mSwizzle=" + Swizzle.toString(mSwizzle) +
                 '}';
     }
 }

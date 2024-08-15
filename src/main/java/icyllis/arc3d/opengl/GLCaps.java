@@ -68,6 +68,7 @@ public class GLCaps extends Caps {
     boolean mDSASupport;
     boolean mSPIRVSupport = false;
     boolean mViewCompatibilityClassSupport = false;
+    boolean mTexStorageSupport;
     final boolean mVolatileContext;
 
     int[] mProgramBinaryFormats;
