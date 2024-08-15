@@ -27,8 +27,7 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
+import java.nio.*;
 
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL20C.*;
@@ -123,8 +122,10 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
 
         if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_INVALIDATE;
+            mInvalidateFramebufferSupport = true;
         } else {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
+            mInvalidateFramebufferSupport = false;
         }
 
         // DSA-like extensions must be supported as well
@@ -283,6 +284,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         shaderCaps.mUseUniformBinding = caps.OpenGL42;
         shaderCaps.mUseVaryingLocation = caps.OpenGL44;
         shaderCaps.mUseBlockMemberOffset = caps.OpenGL44;
+        shaderCaps.mUsePrecisionModifiers = false;
     }
 
     void initFormatTable(GLCapabilities caps) {
@@ -385,6 +387,16 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glFrontFace(int mode) {
+        GL11C.glFrontFace(mode);
+    }
+
+    @Override
+    public void glLineWidth(float width) {
+        GL11C.glLineWidth(width);
+    }
+
+    @Override
     public int glGenTextures() {
         return GL11C.glGenTextures();
     }
@@ -392,6 +404,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     @Override
     public void glTexParameteri(int target, int pname, int param) {
         GL11C.glTexParameteri(target, pname, param);
+    }
+
+    @Override
+    public void glTexParameteriv(int target, int pname, IntBuffer params) {
+        GL11C.glTexParameteriv(target, pname, params);
     }
 
     @Override
@@ -407,6 +424,12 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glCopyTexSubImage2D(int target, int level, int xoffset, int yoffset, int x, int y, int width,
+                                    int height) {
+        GL11C.glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
+    }
+
+    @Override
     public void glDeleteTextures(int texture) {
         GL11C.glDeleteTextures(texture);
     }
@@ -414,6 +437,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     @Override
     public void glBindTexture(int target, int texture) {
         GL11C.glBindTexture(target, texture);
+    }
+
+    @Override
+    public void glPixelStorei(int pname, int param) {
+        GL11C.glPixelStorei(pname, param);
     }
 
     @Override
@@ -427,6 +455,31 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glDepthFunc(int func) {
+        GL11C.glDepthFunc(func);
+    }
+
+    @Override
+    public void glDepthMask(boolean flag) {
+        GL11C.glDepthMask(flag);
+    }
+
+    @Override
+    public void glStencilOp(int sfail, int dpfail, int dppass) {
+        GL11C.glStencilOp(sfail, dpfail, dppass);
+    }
+
+    @Override
+    public void glStencilFunc(int func, int ref, int mask) {
+        GL11C.glStencilFunc(func, ref, mask);
+    }
+
+    @Override
+    public void glStencilMask(int mask) {
+        GL11C.glStencilMask(mask);
+    }
+
+    @Override
     public void glDrawArrays(int mode, int first, int count) {
         GL11C.glDrawArrays(mode, first, count);
     }
@@ -434,6 +487,16 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     @Override
     public void glDrawElements(int mode, int count, int type, long indices) {
         GL11C.nglDrawElements(mode, count, type, indices);
+    }
+
+    @Override
+    public void glFlush() {
+        GL11C.glFlush();
+    }
+
+    @Override
+    public void glFinish() {
+        GL11C.glFinish();
     }
 
     @Override
@@ -500,6 +563,26 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     @Override
     public boolean glUnmapBuffer(int target) {
         return GL15C.glUnmapBuffer(target);
+    }
+
+    @Override
+    public void glDrawBuffers(int[] bufs) {
+        GL20C.glDrawBuffers(bufs);
+    }
+
+    @Override
+    public void glStencilOpSeparate(int face, int sfail, int dpfail, int dppass) {
+        GL20C.glStencilOpSeparate(face, sfail, dpfail, dppass);
+    }
+
+    @Override
+    public void glStencilFuncSeparate(int face, int func, int ref, int mask) {
+        GL20C.glStencilFuncSeparate(face, func, ref, mask);
+    }
+
+    @Override
+    public void glStencilMaskSeparate(int face, int mask) {
+        GL20C.glStencilMaskSeparate(face, mask);
     }
 
     @Override
@@ -573,6 +656,16 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public int glGetUniformLocation(int program, CharSequence name) {
+        return GL20C.glGetUniformLocation(program, name);
+    }
+
+    @Override
+    public void glUniform1i(int location, int v0) {
+        GL20C.glUniform1i(location, v0);
+    }
+
+    @Override
     public void glEnableVertexAttribArray(int index) {
         GL20C.glEnableVertexAttribArray(index);
     }
@@ -615,6 +708,42 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     @Override
     public void glBindFramebuffer(int target, int framebuffer) {
         GL30C.glBindFramebuffer(target, framebuffer);
+    }
+
+    @Override
+    public int glCheckFramebufferStatus(int target) {
+        return GL30C.glCheckFramebufferStatus(target);
+    }
+
+    @Override
+    public void glFramebufferTexture2D(int target, int attachment, int textarget, int texture, int level) {
+        GL30C.glFramebufferTexture2D(target, attachment, textarget, texture, level);
+    }
+
+    @Override
+    public void glFramebufferRenderbuffer(int target, int attachment, int renderbuffertarget, int renderbuffer) {
+        GL30C.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
+    }
+
+    @Override
+    public void glBlitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1,
+                                  int dstY1, int mask, int filter) {
+        GL30C.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+    }
+
+    @Override
+    public void glClearBufferiv(int buffer, int drawbuffer, IntBuffer value) {
+        GL30C.glClearBufferiv(buffer, drawbuffer, value);
+    }
+
+    @Override
+    public void glClearBufferfv(int buffer, int drawbuffer, FloatBuffer value) {
+        GL30C.glClearBufferfv(buffer, drawbuffer, value);
+    }
+
+    @Override
+    public void glClearBufferfi(int buffer, int drawbuffer, float depth, int stencil) {
+        GL30C.glClearBufferfi(buffer, drawbuffer, depth, stencil);
     }
 
     @Override
@@ -670,6 +799,16 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     @Override
     public void glCopyBufferSubData(int readTarget, int writeTarget, long readOffset, long writeOffset, long size) {
         GL31C.glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
+    }
+
+    @Override
+    public int glGetUniformBlockIndex(int program, CharSequence uniformBlockName) {
+        return GL31C.glGetUniformBlockIndex(program, uniformBlockName);
+    }
+
+    @Override
+    public void glUniformBlockBinding(int program, int uniformBlockIndex, int uniformBlockBinding) {
+        GL31C.glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBinding);
     }
 
     @Override
@@ -758,6 +897,21 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     public void glInvalidateBufferSubData(int buffer, long offset, long length) {
         assert mInvalidateBufferType == INVALIDATE_BUFFER_TYPE_INVALIDATE;
         GL43C.glInvalidateBufferSubData(buffer, offset, length);
+    }
+
+    @Override
+    public void glInvalidateFramebuffer(int target, IntBuffer attachments) {
+        assert mInvalidateFramebufferSupport;
+        GL43C.glInvalidateFramebuffer(target, attachments);
+    }
+
+    @Override
+    public void glCopyImageSubData(int srcName, int srcTarget, int srcLevel, int srcX, int srcY, int srcZ,
+                                   int dstName, int dstTarget, int dstLevel, int dstX, int dstY, int dstZ,
+                                   int srcWidth, int srcHeight, int srcDepth) {
+        assert mCopyImageSupport;
+        GL43C.glCopyImageSubData(srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel, dstX,
+                dstY, dstZ, srcWidth, srcHeight, srcDepth);
     }
 
     @Override
@@ -871,6 +1025,19 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     public void glTextureParameteri(int texture, int pname, int param) {
         assert mDSASupport;
         GL45C.glTextureParameteri(texture, pname, param);
+    }
+
+    @Override
+    public void glTextureParameteriv(int texture, int pname, IntBuffer params) {
+        assert mDSASupport;
+        GL45C.glTextureParameteriv(texture, pname, params);
+    }
+
+    @Override
+    public void glTextureSubImage2D(int texture, int level, int xoffset, int yoffset, int width, int height,
+                                    int format, int type, long pixels) {
+        assert mDSASupport;
+        GL45C.glTextureSubImage2D(texture, level, xoffset, yoffset, width, height, format, type, pixels);
     }
 
     @Override

@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 
 import java.util.Arrays;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL30C.*;
 
 /**
  * Represents OpenGL framebuffers.

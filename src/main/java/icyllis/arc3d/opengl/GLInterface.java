@@ -64,6 +64,17 @@ public interface GLInterface extends GLInterfaceCommon {
     void glInvalidateBufferSubData(@NativeType("GLuint") int buffer, @NativeType("GLintptr") long offset,
                                    @NativeType("GLsizeiptr") long length);
 
+    void glInvalidateFramebuffer(@NativeType("GLenum") int target, @NativeType("GLenum const *") IntBuffer attachments);
+
+    void glCopyImageSubData(@NativeType("GLuint") int srcName, @NativeType("GLenum") int srcTarget,
+                            @NativeType("GLint") int srcLevel, @NativeType("GLint") int srcX,
+                            @NativeType("GLint") int srcY, @NativeType("GLint") int srcZ,
+                            @NativeType("GLuint") int dstName, @NativeType("GLenum") int dstTarget,
+                            @NativeType("GLint") int dstLevel, @NativeType("GLint") int dstX,
+                            @NativeType("GLint") int dstY, @NativeType("GLint") int dstZ,
+                            @NativeType("GLsizei") int srcWidth, @NativeType("GLsizei") int srcHeight,
+                            @NativeType("GLsizei") int srcDepth);
+
     void glObjectLabel(@NativeType("GLenum") int identifier, @NativeType("GLuint") int name,
                        @NativeType("GLsizei") int length, @NativeType("GLchar const *") long label);
 
@@ -117,6 +128,15 @@ public interface GLInterface extends GLInterfaceCommon {
 
     void glTextureParameteri(@NativeType("GLuint") int texture, @NativeType("GLenum") int pname,
                              @NativeType("GLint") int param);
+
+    void glTextureParameteriv(@NativeType("GLuint") int texture, @NativeType("GLenum") int pname,
+                              @NativeType("GLint const *") IntBuffer params);
+
+    void glTextureSubImage2D(@NativeType("GLuint") int texture, @NativeType("GLint") int level,
+                             @NativeType("GLint") int xoffset, @NativeType("GLint") int yoffset,
+                             @NativeType("GLsizei") int width, @NativeType("GLsizei") int height,
+                             @NativeType("GLenum") int format, @NativeType("GLenum") int type,
+                             @NativeType("void const *") long pixels);
 
     void glTextureStorage2D(@NativeType("GLuint") int texture, @NativeType("GLsizei") int levels,
                             @NativeType("GLenum") int internalformat, @NativeType("GLsizei") int width,

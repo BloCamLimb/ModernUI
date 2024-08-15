@@ -263,7 +263,7 @@ public class AnalyticArcStep extends GeometryStep {
                     """);
         }
         fs.format("""
-                dis = mix(dis, abs(dis - radii.z) - radii.y, radii.y >= 0);
+                dis = mix(dis, abs(dis - radii.z) - radii.y, radii.y >= 0.0);
                 """);
 
         fs.format("""

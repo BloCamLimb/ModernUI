@@ -22,6 +22,8 @@ package icyllis.arc3d.opengl;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nullable;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 /**
  * OpenGL 3.1 Core and OpenGL ES 3.0 have a common subset.
@@ -34,11 +36,18 @@ public interface GLInterfaceCommon {
 
     void glDisable(@NativeType("GLenum") int cap);
 
+    void glFrontFace(@NativeType("GLenum") int mode);
+
+    void glLineWidth(@NativeType("GLfloat") float width);
+
     @NativeType("void")
     int glGenTextures();
 
     void glTexParameteri(@NativeType("GLenum") int target, @NativeType("GLenum") int pname,
                          @NativeType("GLint") int param);
+
+    void glTexParameteriv(@NativeType("GLenum") int target, @NativeType("GLenum") int pname,
+                          @NativeType("GLint const *") IntBuffer params);
 
     void glTexImage2D(@NativeType("GLenum") int target, @NativeType("GLint") int level,
                       @NativeType("GLint") int internalformat, @NativeType("GLsizei") int width,
@@ -52,19 +61,41 @@ public interface GLInterfaceCommon {
                          @NativeType("GLenum") int format, @NativeType("GLenum") int type,
                          @NativeType("void const *") long pixels);
 
+    void glCopyTexSubImage2D(@NativeType("GLenum") int target, @NativeType("GLint") int level,
+                             @NativeType("GLint") int xoffset, @NativeType("GLint") int yoffset,
+                             @NativeType("GLint") int x, @NativeType("GLint") int y,
+                             @NativeType("GLsizei") int width, @NativeType("GLsizei") int height);
+
     void glDeleteTextures(@NativeType("GLuint const *") int texture);
 
     void glBindTexture(@NativeType("GLenum") int target, @NativeType("GLuint") int texture);
+
+    void glPixelStorei(@NativeType("GLenum") int pname, @NativeType("GLint") int param);
 
     void glBlendFunc(@NativeType("GLenum") int sfactor, @NativeType("GLenum") int dfactor);
 
     void glColorMask(@NativeType("GLboolean") boolean red, @NativeType("GLboolean") boolean green,
                      @NativeType("GLboolean") boolean blue, @NativeType("GLboolean") boolean alpha);
 
+    void glDepthFunc(@NativeType("GLenum") int func);
+
+    void glDepthMask(@NativeType("GLboolean") boolean flag);
+
+    void glStencilOp(@NativeType("GLenum") int sfail, @NativeType("GLenum") int dpfail,
+                     @NativeType("GLenum") int dppass);
+
+    void glStencilFunc(@NativeType("GLenum") int func, @NativeType("GLint") int ref, @NativeType("GLuint") int mask);
+
+    void glStencilMask(@NativeType("GLuint") int mask);
+
     void glDrawArrays(@NativeType("GLenum") int mode, @NativeType("GLint") int first, @NativeType("GLsizei") int count);
 
     void glDrawElements(@NativeType("GLenum") int mode, @NativeType("GLsizei") int count,
                         @NativeType("GLenum") int type, @NativeType("void const *") long indices);
+
+    void glFlush();
+
+    void glFinish();
 
     @NativeType("GLenum")
     int glGetError();
@@ -102,6 +133,16 @@ public interface GLInterfaceCommon {
     @NativeType("GLboolean")
     boolean glUnmapBuffer(@NativeType("GLenum") int target);
 
+    void glDrawBuffers(@NativeType("GLenum const *") int[] bufs);
+
+    void glStencilOpSeparate(@NativeType("GLenum") int face, @NativeType("GLenum") int sfail,
+                             @NativeType("GLenum") int dpfail, @NativeType("GLenum") int dppass);
+
+    void glStencilFuncSeparate(@NativeType("GLenum") int face, @NativeType("GLenum") int func,
+                               @NativeType("GLint") int ref, @NativeType("GLuint") int mask);
+
+    void glStencilMaskSeparate(@NativeType("GLenum") int face, @NativeType("GLuint") int mask);
+
     @NativeType("GLuint")
     int glCreateProgram();
 
@@ -138,6 +179,11 @@ public interface GLInterfaceCommon {
     @NativeType("void")
     String glGetProgramInfoLog(@NativeType("GLuint") int program);
 
+    @NativeType("GLint")
+    int glGetUniformLocation(@NativeType("GLuint") int program, @NativeType("GLchar const *") CharSequence name);
+
+    void glUniform1i(@NativeType("GLint") int location, @NativeType("GLint") int v0);
+
     void glEnableVertexAttribArray(@NativeType("GLuint") int index);
 
     void glVertexAttribPointer(@NativeType("GLuint") int index, @NativeType("GLint") int size,
@@ -161,6 +207,32 @@ public interface GLInterfaceCommon {
     void glDeleteFramebuffers(@NativeType("GLuint const *") int framebuffer);
 
     void glBindFramebuffer(@NativeType("GLenum") int target, @NativeType("GLuint") int framebuffer);
+
+    @NativeType("GLenum")
+    int glCheckFramebufferStatus(@NativeType("GLenum") int target);
+
+    void glFramebufferTexture2D(@NativeType("GLenum") int target, @NativeType("GLenum") int attachment,
+                                @NativeType("GLenum") int textarget, @NativeType("GLuint") int texture,
+                                @NativeType("GLint") int level);
+
+    void glFramebufferRenderbuffer(@NativeType("GLenum") int target, @NativeType("GLenum") int attachment,
+                                   @NativeType("GLenum") int renderbuffertarget,
+                                   @NativeType("GLuint") int renderbuffer);
+
+    void glBlitFramebuffer(@NativeType("GLint") int srcX0, @NativeType("GLint") int srcY0,
+                           @NativeType("GLint") int srcX1, @NativeType("GLint") int srcY1,
+                           @NativeType("GLint") int dstX0, @NativeType("GLint") int dstY0,
+                           @NativeType("GLint") int dstX1, @NativeType("GLint") int dstY1,
+                           @NativeType("GLbitfield") int mask, @NativeType("GLenum") int filter);
+
+    void glClearBufferiv(@NativeType("GLenum") int buffer, @NativeType("GLint") int drawbuffer,
+                         @NativeType("GLint const *") IntBuffer value);
+
+    void glClearBufferfv(@NativeType("GLenum") int buffer, @NativeType("GLint") int drawbuffer,
+                         @NativeType("GLfloat const *") FloatBuffer value);
+
+    void glClearBufferfi(@NativeType("GLenum") int buffer, @NativeType("GLint") int drawbuffer,
+                         @NativeType("GLfloat") float depth, @NativeType("GLint") int stencil);
 
     void glBindBufferBase(@NativeType("GLenum") int target, @NativeType("GLuint") int index,
                           @NativeType("GLuint") int buffer);
@@ -197,6 +269,13 @@ public interface GLInterfaceCommon {
     void glCopyBufferSubData(@NativeType("GLenum") int readTarget, @NativeType("GLenum") int writeTarget,
                              @NativeType("GLintptr") long readOffset, @NativeType("GLintptr") long writeOffset,
                              @NativeType("GLsizeiptr") long size);
+
+    @NativeType("GLuint")
+    int glGetUniformBlockIndex(@NativeType("GLuint") int program,
+                               @NativeType("GLchar const *") CharSequence uniformBlockName);
+
+    void glUniformBlockBinding(@NativeType("GLuint") int program, @NativeType("GLuint") int uniformBlockIndex,
+                               @NativeType("GLuint") int uniformBlockBinding);
 
     @NativeType("GLsync")
     long glFenceSync(@NativeType("GLenum") int condition, @NativeType("GLbitfield") int flags);

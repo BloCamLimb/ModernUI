@@ -105,9 +105,9 @@ public final class GLVertexArray extends ManagedResource {
             return null;
         }
 
-        int oldVertexArray = 0;
+        int boundVertexArray = 0;
         if (!dsa) {
-            oldVertexArray = gl.glGetInteger(GL_VERTEX_ARRAY_BINDING);
+            boundVertexArray = gl.glGetInteger(GL_VERTEX_ARRAY_BINDING);
             gl.glBindVertexArray(vertexArray);
         }
 
@@ -163,7 +163,7 @@ public final class GLVertexArray extends ManagedResource {
         }
 
         if (!dsa) {
-            gl.glBindVertexArray(oldVertexArray);
+            gl.glBindVertexArray(boundVertexArray);
         }
 
         if (index > device.getCaps().maxVertexAttributes()) {
@@ -442,10 +442,12 @@ public final class GLVertexArray extends ManagedResource {
 
     @Override
     protected void deallocate() {
-        if (mVertexArray != 0) {
-            getDevice().getGL().glDeleteVertexArrays(mVertexArray);
-        }
-        discard();
+        getDevice().executeRenderCall(dev -> {
+            if (mVertexArray != 0) {
+                getDevice().getGL().glDeleteVertexArrays(mVertexArray);
+            }
+            discard();
+        });
     }
 
     public void discard() {

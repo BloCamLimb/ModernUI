@@ -24,7 +24,7 @@ import icyllis.arc3d.core.SharedPtr;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 //TODO
 // We will introduce 4 ways for streaming UBO (which is updated-per-draw or updated-per-frame).
@@ -72,7 +72,7 @@ public class GLUniformBuffer extends ManagedResource {
             if (device.getCaps().skipErrorChecks()) {
                 glBufferData(GL_UNIFORM_BUFFER, size, GL_DYNAMIC_DRAW);
             } else {
-                glClearErrors();
+                //glClearErrors();
                 glBufferData(GL_UNIFORM_BUFFER, size, GL_DYNAMIC_DRAW);
                 if (glGetError() != GL_NO_ERROR) {
                     glDeleteBuffers(mBuffer);
@@ -100,7 +100,7 @@ public class GLUniformBuffer extends ManagedResource {
             if (device.getCaps().skipErrorChecks()) {
                 glNamedBufferStorage(buffer, size, GL_DYNAMIC_STORAGE_BIT);
             } else {
-                glClearErrors();
+                //glClearErrors();
                 glNamedBufferStorage(buffer, size, GL_DYNAMIC_STORAGE_BIT);
                 if (glGetError() != GL_NO_ERROR) {
                     glDeleteBuffers(buffer);

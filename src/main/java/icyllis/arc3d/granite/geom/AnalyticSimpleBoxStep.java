@@ -211,7 +211,7 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
 
         fs.format("""
                 float dis = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radii.x;
-                dis = mix(dis, abs(dis - radii.z) - radii.y, radii.y >= 0);
+                dis = mix(dis, abs(dis - radii.z) - radii.y, radii.y >= 0.0);
                 """);
 
         if (mAA) {

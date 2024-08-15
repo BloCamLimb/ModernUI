@@ -77,6 +77,8 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
      */
     public boolean mUseBlockMemberOffset = true;
 
+    public boolean mUsePrecisionModifiers = false;
+
     // Used for specific driver bug workarounds
     public boolean mRequiresLocalOutputColorForFBFetch = false;
     // Workaround for Mali GPU opacity bug with uniform colors.

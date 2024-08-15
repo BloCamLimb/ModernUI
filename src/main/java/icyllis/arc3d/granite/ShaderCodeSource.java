@@ -219,7 +219,7 @@ public class ShaderCodeSource {
     private static final String PRIV_COLORIZE_GRAD_4 = """
             vec4 ColorizeGrad4(vec4 colors[4], vec4 offsets, vec2 t) {
                 vec4 result;
-                if (t.y < 0) {
+                if (t.y < 0.0) {
                     result = vec4(0);
                 } else if (t.x <= offsets[0]) {
                     result = colors[0];
@@ -243,7 +243,7 @@ public class ShaderCodeSource {
     private static final String PRIV_COLORIZE_GRAD_8 = """
             vec4 ColorizeGrad8(vec4 colors[8], vec4 offsets[2], vec2 t) {
                 vec4 result;
-                if (t.y < 0) {
+                if (t.y < 0.0) {
                     result = vec4(0);
                 } else if (t.x < offsets[1][0]) {
                     if (t.x < offsets[0][2]) {

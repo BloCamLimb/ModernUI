@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 
-//TODO cache trim
+@Deprecated
 public class GLPipelineCache extends SharedResourceCache {
 
     private final GLDevice mDevice;
