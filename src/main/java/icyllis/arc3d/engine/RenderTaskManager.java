@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 
+@Deprecated
 public class RenderTaskManager {
 
     private final RecordingContext mContext;

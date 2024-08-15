@@ -134,6 +134,7 @@ public abstract class ResourceProvider {
      * @see ISurface#FLAG_MEMORYLESS
      * @see ISurface#FLAG_PROTECTED
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public final Image createImage(int width, int height,
@@ -365,6 +366,7 @@ public abstract class ResourceProvider {
      * @see ISurface#FLAG_MEMORYLESS
      * @see ISurface#FLAG_PROTECTED
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public final Image createTexture(int width, int height,
@@ -391,7 +393,7 @@ public abstract class ResourceProvider {
                 label);
     }
 
-    /**
+    /*
      * Same as {@link #createTexture(int, int, BackendFormat, int, int, String)} but with initial
      * data to upload. The color type must be valid for the format and also describe the texel data.
      * This will ensure any conversions that need to get applied to the data before upload are applied.
@@ -415,7 +417,7 @@ public abstract class ResourceProvider {
      * @see ISurface#FLAG_RENDERABLE
      * @see ISurface#FLAG_PROTECTED
      */
-    @Nullable
+    /*@Nullable
     @SharedPtr
     public final Image createTexture(int width, int height,
                                      BackendFormat format,
@@ -441,10 +443,10 @@ public abstract class ResourceProvider {
         if (actualRowBytes < minRowBytes) {
             return null;
         }
-        int actualColorType = /*(int) mDevice.getCaps().getSupportedWriteColorType(
+        int actualColorType = *//*(int) mDevice.getCaps().getSupportedWriteColorType(
                 dstColorType,
                 format,
-                srcColorType)*/srcColorType;
+                srcColorType)*//*srcColorType;
         if (actualColorType != srcColorType) {
             return null;
         }
@@ -462,7 +464,7 @@ public abstract class ResourceProvider {
         assert result;
 
         return texture;
-    }
+    }*/
 
     /**
      * Finds or creates a compatible {@link Sampler} based on the SamplerState.
@@ -518,6 +520,7 @@ public abstract class ResourceProvider {
      * @param label
      * @return
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget createRenderTarget(int width, int height,
@@ -664,6 +667,7 @@ public abstract class ResourceProvider {
      * @param surfaceFlags       framebuffer flags
      * @return a new RenderTarget
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget createRenderTarget(int numColorTargets,
@@ -676,6 +680,7 @@ public abstract class ResourceProvider {
                 colorTargets, resolveTargets, mipLevels, depthStencilTarget, surfaceFlags);
     }
 
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget createRenderTarget(int width, int height,
@@ -684,6 +689,7 @@ public abstract class ResourceProvider {
         return null;
     }
 
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget findAndRefScratchRenderTarget(IResourceKey key, String label) {
@@ -702,6 +708,7 @@ public abstract class ResourceProvider {
         return null;
     }
 
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget findAndRefScratchRenderTarget(int width, int height,
@@ -742,6 +749,7 @@ public abstract class ResourceProvider {
      * @param sampleCount the desired sample count
      * @return a managed, non-recycled render target, or null if failed
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget wrapRenderableBackendTexture(BackendImage texture,
@@ -760,6 +768,7 @@ public abstract class ResourceProvider {
      *
      * @return RenderSurface object or null on failure.
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget wrapGLDefaultFramebuffer(int width, int height,
@@ -780,6 +789,7 @@ public abstract class ResourceProvider {
      *
      * @return RenderSurface object or null on failure.
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {

@@ -282,10 +282,13 @@ public abstract class Device implements Engine {
     protected void onResetContext(int resetBits) {
     }
 
+    @Deprecated
     public abstract GpuBufferPool getVertexPool();
 
+    @Deprecated
     public abstract GpuBufferPool getInstancePool();
 
+    @Deprecated
     public abstract GpuBufferPool getIndexPool();
 
     /* *//**
@@ -364,6 +367,7 @@ public abstract class Device implements Engine {
                                               int mipLevelCount,
                                               int sampleCount,
                                               int surfaceFlags);*/
+    @Deprecated
     @Nullable
     public final @SharedPtr GpuRenderTarget createRenderTarget(int numColorTargets,
                                                                @Nullable Image[] colorTargets,
@@ -453,6 +457,7 @@ public abstract class Device implements Engine {
                 surfaceFlags);
     }
 
+    @Deprecated
     @ApiStatus.OverrideOnly
     @Nullable
     @SharedPtr
@@ -477,6 +482,7 @@ public abstract class Device implements Engine {
      * @param texture the backend texture must be single sample
      * @return a non-cacheable render target, or null if failed
      */
+    @Deprecated
     @Nullable
     @SharedPtr
     public GpuRenderTarget wrapRenderableBackendTexture(BackendImage texture,
@@ -500,12 +506,14 @@ public abstract class Device implements Engine {
         return onWrapRenderableBackendTexture(texture, sampleCount, ownership);
     }
 
+    @Deprecated
     @Nullable
     @SharedPtr
     protected abstract GpuRenderTarget onWrapRenderableBackendTexture(BackendImage texture,
                                                                       int sampleCount,
                                                                       boolean ownership);
 
+    @Deprecated
     @Nullable
     @SharedPtr
     public final GpuRenderTarget wrapGLDefaultFramebuffer(int width, int height,
@@ -520,6 +528,7 @@ public abstract class Device implements Engine {
         return onWrapGLDefaultFramebuffer(width, height, sampleCount, depthBits, stencilBits, format);
     }
 
+    @Deprecated
     @ApiStatus.OverrideOnly
     @Nullable
     @SharedPtr
@@ -531,6 +540,7 @@ public abstract class Device implements Engine {
         return null;
     }
 
+    @Deprecated
     @Nullable
     @SharedPtr
     public GpuRenderTarget wrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
@@ -541,150 +551,10 @@ public abstract class Device implements Engine {
         return onWrapBackendRenderTarget(backendRenderTarget);
     }
 
+    @Deprecated
     @Nullable
     @SharedPtr
     public abstract GpuRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget);
-
-    /**
-     * Updates the pixels in a rectangle of an image. No sRGB/linear conversions are performed.
-     * The write operation can fail because of the surface doesn't support writing (e.g. read only),
-     * the color type is not allowed for the format of the texture or if the rectangle written
-     * is not contained in the texture.
-     *
-     * @param texture      the image to write to
-     * @param dstColorType the color type for this use of the surface
-     * @param srcColorType the color type of the source data
-     * @param rowBytes     the row bytes, must be a multiple of srcColorType's bytes-per-pixel.
-     * @param pixels       the pointer to the texel data for base level image
-     * @return true if succeeded, false if not
-     */
-    public boolean writePixels(Image texture,
-                               int x, int y,
-                               int width, int height,
-                               int dstColorType,
-                               int srcColorType,
-                               int rowBytes, long pixels) {
-        assert (texture != null);
-        if (x < 0 || y < 0 || width <= 0 || height <= 0) {
-            return false;
-        }
-        if (texture.isReadOnly() || texture.getSampleCount() > 1) {
-            return false;
-        }
-        if ((texture.getSurfaceFlags() & ISurface.FLAG_SAMPLED_IMAGE) == 0) {
-            return false;
-        }
-        assert (texture.getWidth() > 0 && texture.getHeight() > 0);
-        if (x + width > texture.getWidth() || y + height > texture.getHeight()) {
-            return false;
-        }
-        int bpp = ColorInfo.bytesPerPixel(srcColorType);
-        int minRowBytes = width * bpp;
-        if (rowBytes < minRowBytes) {
-            return false;
-        }
-        if (rowBytes % bpp != 0) {
-            return false;
-        }
-        if (pixels == 0) {
-            return true;
-        }
-        if (!onWritePixels(texture,
-                x, y, width, height,
-                dstColorType,
-                srcColorType,
-                rowBytes, pixels)) {
-            return false;
-        }
-        if (texture.isMipmapped()) {
-            texture.setMipmapsDirty(true);
-        }
-        mStats.incTextureUploads();
-        return true;
-    }
-
-    // overridden by backend-specific derived class to perform the surface write
-    protected abstract boolean onWritePixels(Image texture,
-                                             int x, int y,
-                                             int width, int height,
-                                             int dstColorType,
-                                             int srcColorType,
-                                             int rowBytes,
-                                             long pixels);
-
-    /**
-     * Uses the base level of the image to compute the contents of the other mipmap levels.
-     *
-     * @return success or not
-     */
-    public final boolean generateMipmaps(Image image) {
-        assert image != null;
-        assert image.isMipmapped();
-        if (!image.isMipmapsDirty()) {
-            return true;
-        }
-        if (image.isReadOnly()) {
-            return false;
-        }
-        if (onGenerateMipmaps(image)) {
-            image.setMipmapsDirty(false);
-            return true;
-        }
-        return false;
-    }
-
-    protected abstract boolean onGenerateMipmaps(Image image);
-
-    /**
-     * Special case of {@link #copySurface} that has same dimensions.
-     */
-    public final boolean copySurface(GpuSurface src, int srcX, int srcY,
-                                     GpuSurface dst, int dstX, int dstY,
-                                     int width, int height) {
-        return copySurface(
-                src,
-                srcX, srcY, srcX + width, srcY + height,
-                dst,
-                dstX, dstY, dstX + width, dstY + height,
-                SamplerDesc.FILTER_NEAREST
-        );
-    }
-
-    /**
-     * Perform a surface-to-surface copy, with the specified regions.
-     * <p>
-     * If their dimensions are same and formats are compatible, then this method will
-     * attempt to perform copy. Otherwise, this method will attempt to perform blit,
-     * which may include resampling and format conversion. <var>filter</var> can be one
-     * of {@link SamplerDesc#FILTER_NEAREST} and {@link SamplerDesc#FILTER_LINEAR}.
-     * <p>
-     * Only mipmap level 0 of 2D images will be copied, without any multisampled buffer
-     * and depth/stencil buffer.
-     *
-     * @return success or not
-     */
-    public final boolean copySurface(GpuSurface src,
-                                     int srcL, int srcT, int srcR, int srcB,
-                                     GpuSurface dst,
-                                     int dstL, int dstT, int dstR, int dstB,
-                                     int filter) {
-        if ((dst.getSurfaceFlags() & ISurface.FLAG_READ_ONLY) != 0) {
-            return false;
-        }
-        return onCopySurface(
-                src,
-                srcL, srcT, srcR, srcB,
-                dst,
-                dstL, dstT, dstR, dstB,
-                filter
-        );
-    }
-
-    protected abstract boolean onCopySurface(GpuSurface src,
-                                             int srcL, int srcT, int srcR, int srcB,
-                                             GpuSurface dst,
-                                             int dstL, int dstT, int dstR, int dstB,
-                                             int filter);
 
     /**
      * Returns a {@link OpsRenderPass} which {@link OpsTask OpsTasks} record draw commands to.
@@ -698,6 +568,7 @@ public abstract class Device implements Engine {
      * @param pipelineFlags   combination of flags of all pipelines to be used in the render pass
      * @return a render pass used to record draw commands, or null if failed
      */
+    @Deprecated
     @Nullable
     public final OpsRenderPass getOpsRenderPass(ImageProxyView writeView,
                                                 Rect2i contentBounds,
@@ -712,6 +583,7 @@ public abstract class Device implements Engine {
                 sampledTextures, pipelineFlags);
     }
 
+    @Deprecated
     protected abstract OpsRenderPass onGetOpsRenderPass(ImageProxyView writeView,
                                                         Rect2i contentBounds,
                                                         byte colorOps,
@@ -723,6 +595,7 @@ public abstract class Device implements Engine {
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.
      */
+    @Deprecated
     public void resolveRenderTarget(GpuRenderTarget renderTarget,
                                     int resolveLeft, int resolveTop,
                                     int resolveRight, int resolveBottom) {
@@ -731,6 +604,7 @@ public abstract class Device implements Engine {
     }
 
     // overridden by backend-specific derived class to perform the resolve
+    @Deprecated
     protected abstract void onResolveRenderTarget(GpuRenderTarget renderTarget,
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
