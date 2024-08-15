@@ -201,21 +201,21 @@ public class GLGraphicsPipelineBuilder {
             if (mUniformBlockInfos != null) {
                 for (var info : mUniformBlockInfos) {
                     if (info.mVisibility != 0) {
-                        int index = glGetUniformBlockIndex(program, info.mBlockName);
+                        int index = gl.glGetUniformBlockIndex(program, info.mBlockName);
                         assert index != GL_INVALID_INDEX;
-                        glUniformBlockBinding(program, index, info.mBinding);
+                        gl.glUniformBlockBinding(program, index, info.mBinding);
                     }
                 }
             }
             // Assign texture units to sampler uniforms one time up front
             if (mSamplerInfos != null && mSamplerInfos.length > 0) {
                 // We can bind program here, since we will bind this pipeline immediately
-                glUseProgram(program);
+                gl.glUseProgram(program);
                 for (var info : mSamplerInfos) {
                     if (info.mVisibility != 0) {
-                        int location = glGetUniformLocation(program, info.mName);
+                        int location = gl.glGetUniformLocation(program, info.mName);
                         assert location != -1;
-                        glUniform1i(location, info.mBinding); // <- binding is just the texture unit (index)
+                        gl.glUniform1i(location, info.mBinding); // <- binding is just the texture unit (index)
                     }
                 }
             }

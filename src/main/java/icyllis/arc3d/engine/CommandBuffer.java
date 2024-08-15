@@ -103,10 +103,10 @@ public abstract class CommandBuffer {
      * @param binding     the binding index
      * @param texture     the texture image
      * @param sampler     the sampler state
-     * @param readSwizzle the swizzle of the texture view for shader read, see {@link Swizzle}
+     * @param swizzle the swizzle of the texture view for shader read, see {@link Swizzle}
      */
     public abstract void bindTextureSampler(int binding, @RawPtr Image texture,
-                                            @RawPtr Sampler sampler, short readSwizzle);
+                                            @RawPtr Sampler sampler, short swizzle);
 
     /**
      * Records a non-indexed draw to current command buffer.
@@ -299,7 +299,10 @@ public abstract class CommandBuffer {
     // called by Queue
     protected abstract boolean checkFinishedAndReset();
 
-    // called by Queue
+    /**
+     * Blocks the current thread and waits for GPU to finish outstanding works.
+     */
+    // called by Queue, waitForQueue()
     protected abstract void waitUntilFinished();
 
     // called by subclass

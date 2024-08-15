@@ -35,9 +35,6 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintWriter;
 import java.util.Objects;
 
-import static icyllis.arc3d.opengl.GLCore.GL_DEBUG_CALLBACK_FUNCTION;
-import static icyllis.arc3d.opengl.GLCore.GL_DEBUG_OUTPUT;
-import static icyllis.arc3d.opengl.GLCore.glDebugMessageCallback;
 import static icyllis.arc3d.opengl.GLUtil.*;
 import static org.lwjgl.opengl.AMDDebugOutput.glDebugMessageCallbackAMD;
 import static org.lwjgl.opengl.ARBDebugOutput.glDebugMessageCallbackARB;
@@ -164,7 +161,7 @@ public class TestDrawPass {
         LOGGER.info("UBO: {}", ubo);
 
         GL33C.glEnable(GL33C.GL_BLEND);
-        GL33C.glBlendFunc(GLCore.GL_ONE, GLCore.GL_ONE_MINUS_SRC_ALPHA);
+        GL33C.glBlendFunc(GL33C.GL_ONE, GL33C.GL_ONE_MINUS_SRC_ALPHA);
 
         var pipeline = recordingContext.getResourceProvider().findOrCreateGraphicsPipeline(
                 graphicsPipelineDesc, new RenderPassDesc());

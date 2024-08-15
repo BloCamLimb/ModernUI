@@ -31,12 +31,24 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 /**
  * The OpenGL device.
  */
 public final class GLDevice extends Device {
+
+    /**
+     * The reserved framebuffer that used for swapping buffers with window.
+     */
+    public static final int DEFAULT_FRAMEBUFFER = 0;
+
+    /**
+     * The default vertex array compared to custom vertex array objects.
+     */
+    public static final int DEFAULT_VERTEX_ARRAY = 0;
+
+    public static final int DEFAULT_TEXTURE = 0;
 
     private final GLCaps mCaps;
     private final GLInterface mGLInterface;
@@ -278,7 +290,7 @@ public final class GLDevice extends Device {
 
         // we assume these values
         if ((resetBits & GLBackendState.kPixelStore) != 0) {
-            glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+            mGLInterface.glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         }
 
         /*if ((resetBits & GLBackendState.kPipeline) != 0) {
@@ -623,32 +635,33 @@ public final class GLDevice extends Device {
         }
         //handleDirtyContext(GLBackendState.kTexture | GLBackendState.kPixelStore);
 
+        GLInterface gl = getGL();
         boolean dsa = mCaps.hasDSASupport();
-        int texName = glTexture.getHandle();
+        int handle = glTexture.getHandle();
         int boundTexture = 0;
         //TODO not only 2D
         if (!dsa) {
-            boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            if (texName != boundTexture) {
-                glBindTexture(target, texName);
+            boundTexture = gl.glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (handle != boundTexture) {
+                gl.glBindTexture(target, handle);
             }
         }
 
         GLTextureMutableState mutableState = glTexture.getGLMutableState();
         if (mutableState.mBaseMipmapLevel != 0) {
             if (dsa) {
-                glTextureParameteri(texName, GL_TEXTURE_BASE_LEVEL, 0);
+                gl.glTextureParameteri(handle, GL_TEXTURE_BASE_LEVEL, 0);
             } else {
-                glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+                gl.glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
             }
             mutableState.mBaseMipmapLevel = 0;
         }
         int maxLevel = glTexture.getMipLevelCount() - 1; // minus base level
         if (mutableState.mMaxMipmapLevel != maxLevel) {
             if (dsa) {
-                glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
+                gl.glTextureParameteri(handle, GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
-                glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
+                gl.glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
             // Bug fixed by Arc3D
             mutableState.mMaxMipmapLevel = maxLevel;
@@ -661,26 +674,26 @@ public final class GLDevice extends Device {
         int trimRowBytes = width * bpp;
         if (rowBytes != trimRowBytes) {
             int rowLength = rowBytes / bpp;
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
+            gl.glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
         } else {
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+            gl.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         }
 
-        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        gl.glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+        gl.glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        gl.glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
         if (dsa) {
-            glTextureSubImage2D(texName, 0,
+            gl.glTextureSubImage2D(handle, 0,
                     x, y, width, height, srcFormat, srcType, pixels);
         } else {
-            glTexSubImage2D(target, 0,
+            gl.glTexSubImage2D(target, 0,
                     x, y, width, height, srcFormat, srcType, pixels);
         }
 
         if (!dsa) {
-            if (texName != boundTexture) {
-                glBindTexture(target, boundTexture);
+            if (handle != boundTexture) {
+                gl.glBindTexture(target, boundTexture);
             }
         }
 
@@ -713,13 +726,13 @@ public final class GLDevice extends Device {
         if (mCaps.hasDSASupport()) {
             glGenerateTextureMipmap(glImage.getHandle());
         } else {
-            var texName = glImage.getHandle();
+            var handle = glImage.getHandle();
             var boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            if (texName != boundTexture) {
-                glBindTexture(GL_TEXTURE_2D, texName);
+            if (handle != boundTexture) {
+                glBindTexture(GL_TEXTURE_2D, handle);
             }
             glGenerateMipmap(GL_TEXTURE_2D);
-            if (texName != boundTexture) {
+            if (handle != boundTexture) {
                 glBindTexture(GL_TEXTURE_2D, boundTexture);
             }
         }
@@ -754,7 +767,7 @@ public final class GLDevice extends Device {
                         dst.getFormat(), 1
                 )) {
             //TODO checks
-            glCopyImageSubData(
+            getGL().glCopyImageSubData(
                     src.getHandle(),
                     src.getTarget(),
                     level,
@@ -783,22 +796,23 @@ public final class GLDevice extends Device {
                 return false;
             }
 
-            int dstTexName = dst.getHandle();
-            int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            if (dstTexName != boundTexture) {
-                getGL().glBindTexture(GL_TEXTURE_2D, dstTexName);
+            int dstHandle = dst.getHandle();
+            int boundTexture = getGL().glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (dstHandle != boundTexture) {
+                getGL().glBindTexture(GL_TEXTURE_2D, dstHandle);
             }
 
-            int boundFramebuffer = glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
+            int boundFramebuffer = getGL().glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
             getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
-            glFramebufferTexture(
+            getGL().glFramebufferTexture2D(
                     GL_READ_FRAMEBUFFER,
                     GL_COLOR_ATTACHMENT0,
+                    GL_TEXTURE_2D,
                     src.getHandle(),
                     level
             );
 
-            glCopyTexSubImage2D(
+            getGL().glCopyTexSubImage2D(
                     GL_TEXTURE_2D,
                     level,
                     dstX, dstY,
@@ -806,14 +820,15 @@ public final class GLDevice extends Device {
                     srcWidth, srcHeight
             );
 
-            glFramebufferTexture(
+            getGL().glFramebufferTexture2D(
                     GL_READ_FRAMEBUFFER,
                     GL_COLOR_ATTACHMENT0,
+                    GL_TEXTURE_2D,
                     0,
                     0);
             getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, boundFramebuffer);
 
-            if (dstTexName != boundTexture) {
+            if (dstHandle != boundTexture) {
                 getGL().glBindTexture(GL_TEXTURE_2D, boundTexture);
             }
 
@@ -884,76 +899,9 @@ public final class GLDevice extends Device {
         // handleDirtyContext();
 
         if (srcWidth == dstWidth && srcHeight == dstHeight) {
-            // no scaling
-            if (mCaps.hasCopyImageSupport() &&
-                    src instanceof GLTexture srcImage &&
-                    dst instanceof GLTexture dstImage &&
-                    mCaps.canCopyImage(
-                            srcImage.getFormat(), 1,
-                            dstImage.getFormat(), 1
-                    )) {
-                //TODO checks
-                glCopyImageSubData(
-                        srcImage.getHandle(),
-                        srcImage.getTarget(),
-                        0,
-                        srcL, srcT, 0,
-                        dstImage.getHandle(),
-                        dstImage.getTarget(),
-                        0,
-                        dstL, dstT, 0,
-                        srcWidth, srcHeight, 1
-                );
-                return true;
-            }
-
-            if (src instanceof GLTexture srcTex &&
-                    dst instanceof GLTexture dstTex &&
-                    mCaps.canCopyTexSubImage(
-                            srcTex.getFormat(),
-                            dstTex.getFormat()
-                    )) {
-
-                int dstTexName = dstTex.getHandle();
-                int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-                if (dstTexName != boundTexture) {
-                    getGL().glBindTexture(GL_TEXTURE_2D, dstTexName);
-                }
-
-                int framebuffer = mCopySrcFramebuffer;
-                if (framebuffer == 0) {
-                    mCopySrcFramebuffer = framebuffer = getGL().glGenFramebuffers();
-                }
-                int boundFramebuffer = glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
-                getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
-                glFramebufferTexture(
-                        GL_READ_FRAMEBUFFER,
-                        GL_COLOR_ATTACHMENT0,
-                        srcTex.getHandle(),
-                        0
-                );
-
-                glCopyTexSubImage2D(
-                        GL_TEXTURE_2D,
-                        0,
-                        dstL, dstT,
-                        srcL, srcT,
-                        srcWidth, srcHeight
-                );
-
-                glFramebufferTexture(
-                        GL_READ_FRAMEBUFFER,
-                        GL_COLOR_ATTACHMENT0,
-                        0,
-                        0);
-                getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, boundFramebuffer);
-
-                if (dstTexName != boundTexture) {
-                    getGL().glBindTexture(GL_TEXTURE_2D, boundTexture);
-                }
-
-                return true;
-            }
+            return copyImage((GLImage) src, srcL, srcT, srcR, srcB,
+                    (GLImage) dst, dstL, dstT,
+                    0);
         }
 
         //TODO
@@ -1007,27 +955,29 @@ public final class GLDevice extends Device {
 
     private void flush(boolean forceFlush) {
         if (mNeedsFlush || forceFlush) {
-            glFlush();
+            //glFlush();
             mNeedsFlush = false;
         }
     }
 
     @Override
     public long insertFence() {
-        long fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        /*long fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         mNeedsFlush = true;
-        return fence;
+        return fence;*/
+        return 0;
     }
 
     @Override
     public boolean checkFence(long fence) {
-        int result = glClientWaitSync(fence, 0, 0L);
-        return (result == GL_CONDITION_SATISFIED || result == GL_ALREADY_SIGNALED);
+        /*int result = glClientWaitSync(fence, 0, 0L);
+        return (result == GL_CONDITION_SATISFIED || result == GL_ALREADY_SIGNALED);*/
+        return true;
     }
 
     @Override
     public void deleteFence(long fence) {
-        glDeleteSync(fence);
+        //glDeleteSync(fence);
     }
 
     @Override
@@ -1071,7 +1021,7 @@ public final class GLDevice extends Device {
 
     @Override
     public void waitForQueue() {
-        glFinish();
+        //glFinish();
     }
 
     // Binds a buffer to the GL target corresponding to 'type', updates internal state tracking, and

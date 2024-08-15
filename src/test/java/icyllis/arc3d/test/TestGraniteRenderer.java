@@ -31,6 +31,7 @@ import icyllis.arc3d.opengl.GLUtil;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
+import org.lwjgl.opengles.*;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryUtil;
@@ -61,6 +62,8 @@ public class TestGraniteRenderer {
     public static final int WINDOW_WIDTH = 1760;
     public static final int WINDOW_HEIGHT = 990;
 
+    public static final boolean TEST_OPENGL_ES = false;
+
     public static final int TEST_SCENE = 1;
     public static final boolean POST_PROCESS = false;
 
@@ -85,6 +88,7 @@ public class TestGraniteRenderer {
     //-XX:+UseZGC
     //-XX:+ZGenerational
     public static void main(String[] args) {
+        System.setProperty("java.awt.headless", "true");
         GLFW.glfwInit();
         LOGGER.info(Long.toString(ProcessHandle.current().pid()));
         TinyFileDialogs.tinyfd_messageBox(
@@ -96,6 +100,17 @@ public class TestGraniteRenderer {
         );
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
+        if (TEST_OPENGL_ES) {
+            GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_ES_API);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 0);
+        } else {
+            GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_API);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 5);
+            GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+            GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
+        }
         //GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Test Window", 0, 0);
         if (window == 0) {
@@ -108,13 +123,15 @@ public class TestGraniteRenderer {
         contextOptions.mLogger = LOGGER;
         contextOptions.mSkipGLErrorChecks = Boolean.TRUE;
         ImmediateContext immediateContext = GLUtil.makeOpenGL(
-                GL.createCapabilities(),
+                TEST_OPENGL_ES ? GLES.createCapabilities() : GL.createCapabilities(),
                 contextOptions
         );
         if (immediateContext == null) {
             throw new RuntimeException();
         }
-        TestDrawPass.glSetupDebugCallback();
+        if (!TEST_OPENGL_ES) {
+            TestDrawPass.glSetupDebugCallback();
+        }
         Painter painter = CompletableFuture.supplyAsync(
                 () -> new Painter(immediateContext),
                 RECORDING_THREAD
@@ -163,11 +180,19 @@ public class TestGraniteRenderer {
 
                 double time5 = GLFW.glfwGetTime();
 
-                GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
-                boolean filter = CANVAS_WIDTH == WINDOW_WIDTH && CANVAS_HEIGHT == WINDOW_HEIGHT;
-                GL33C.glBlitFramebuffer(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
-                        0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL33C.GL_COLOR_BUFFER_BIT,
-                        filter ? GL33C.GL_LINEAR : GL33C.GL_NEAREST);
+                int filter = CANVAS_WIDTH == WINDOW_WIDTH && CANVAS_HEIGHT == WINDOW_HEIGHT
+                        ? GL33C.GL_LINEAR : GL33C.GL_NEAREST;
+                if (TEST_OPENGL_ES) {
+                    GLES30.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
+                    GLES30.glBlitFramebuffer(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
+                            0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL33C.GL_COLOR_BUFFER_BIT,
+                            filter);
+                } else {
+                    GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
+                    GL33C.glBlitFramebuffer(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
+                            0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL33C.GL_COLOR_BUFFER_BIT,
+                            filter);
+                }
                 if (!immediateContext.submit()) {
                     LOGGER.error("Failed to submit queue");
                 }
@@ -198,7 +223,13 @@ public class TestGraniteRenderer {
             long rowStride = (long) CANVAS_WIDTH * 4;
             long srcPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
             long dstPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
-            GL33C.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT, GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, srcPixels);
+            if (TEST_OPENGL_ES) {
+                GLES20.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
+                        GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, srcPixels);
+            } else {
+                GL33C.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
+                        GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, srcPixels);
+            }
             // premul to unpremul, and flip Y
             ImageInfo srcInfo = ImageInfo.make(CANVAS_WIDTH, CANVAS_HEIGHT,
                     ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL, null);
@@ -589,7 +620,7 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mGradShader));
                 paint.setDither(true);
                 rrect.setRectXY(100, 650, 1500, 950, 30, 30);
-                //canvas.drawRoundRect(rrect, paint);
+                canvas.drawRoundRect(rrect, paint);
 
                 Matrix4 perspectiveMatrix = new Matrix4();
                 perspectiveMatrix.setIdentity();
@@ -644,8 +675,10 @@ public class TestGraniteRenderer {
 
                 paint.setShader(null);
                 canvas.translate(-1000, 0);
-                canvas.drawVertices(mVertices1, BlendMode.MULTIPLY, paint);
-                canvas.drawVertices(mVertices2, BlendMode.MULTIPLY, paint);
+                if (!TEST_OPENGL_ES) {
+                    canvas.drawVertices(mVertices1, BlendMode.MULTIPLY, paint);
+                    canvas.drawVertices(mVertices2, BlendMode.MULTIPLY, paint);
+                }
 
                 paint.setARGB(255, 233, 30, 99);
                 rect.set(0, 0, 16, 16);

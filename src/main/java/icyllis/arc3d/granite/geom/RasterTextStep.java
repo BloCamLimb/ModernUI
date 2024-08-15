@@ -119,11 +119,11 @@ public class RasterTextStep extends GeometryStep {
                                    @Nullable String localPosVar) {
         // {(0,0), (0,1), (1,0), (1,1)}
         // corner selector, CCW
-        vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * %s;\n",
+        vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * vec2(%s);\n",
                 SIZE.name());
 
         vs.format("""
-                %s = (position + %s) * %s;
+                %s = (position + vec2(%s)) * %s;
                 """, "f_TexCoords", UV.name(), "u_InvAtlasSize");
 
         // setup sub run position

@@ -27,8 +27,7 @@ import org.lwjgl.opengles.*;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
+import java.nio.*;
 
 import static org.lwjgl.opengles.GLES20.*;
 import static org.lwjgl.opengles.GLES30.*;
@@ -38,6 +37,7 @@ import static org.lwjgl.opengles.GLES32.GL_MAX_LABEL_LENGTH;
 public final class GLCaps_GLES extends GLCaps implements GLInterface {
 
     private boolean mDrawElementsBaseVertexEXT;
+    private boolean mCopyImageSubDataEXT;
 
     @VisibleForTesting
     public GLCaps_GLES(ContextOptions options, Object capabilities) {
@@ -67,7 +67,15 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
             mDrawElementsBaseVertexSupport = false;
         }
         mBaseInstanceSupport = caps.GL_EXT_base_instance;
-        mCopyImageSupport = caps.GL_EXT_copy_image;
+        if (caps.GLES32) {
+            mCopyImageSupport = true;
+            mCopyImageSubDataEXT = false;
+        } else if (caps.GL_EXT_copy_image) {
+            mCopyImageSupport = true;
+            mCopyImageSubDataEXT = true;
+        } else {
+            mCopyImageSupport = false;
+        }
         // textureStorageSupported - OpenGL ES 3.0
         mTexStorageSupport = true;
         mViewCompatibilityClassSupport = false;
@@ -95,6 +103,7 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         mMaxVertexAttributes = Math.min(32, GLES20.glGetInteger(GL_MAX_VERTEX_ATTRIBS));
 
         mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
+        mInvalidateFramebufferSupport = true;
 
         mTransferPixelsToRowBytesSupport = true;
 
@@ -206,6 +215,7 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         shaderCaps.mUseUniformBinding = caps.GLES31;
         shaderCaps.mUseVaryingLocation = caps.GLES32;
         shaderCaps.mUseBlockMemberOffset = false; // Vulkan only
+        shaderCaps.mUsePrecisionModifiers = true;
     }
 
     void initFormatTable(GLESCapabilities caps) {
@@ -278,6 +288,16 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glFrontFace(int mode) {
+        GLES20.glFrontFace(mode);
+    }
+
+    @Override
+    public void glLineWidth(float width) {
+        GLES20.glLineWidth(width);
+    }
+
+    @Override
     public int glGenTextures() {
         return GLES20.glGenTextures();
     }
@@ -288,13 +308,26 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
-    public void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, long pixels) {
+    public void glTexParameteriv(int target, int pname, IntBuffer params) {
+        GLES20.glTexParameteriv(target, pname, params);
+    }
+
+    @Override
+    public void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format,
+                             int type, long pixels) {
         GLES20.nglTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
     }
 
     @Override
-    public void glTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, int type, long pixels) {
+    public void glTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format,
+                                int type, long pixels) {
         GLES20.glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+    }
+
+    @Override
+    public void glCopyTexSubImage2D(int target, int level, int xoffset, int yoffset, int x, int y, int width,
+                                    int height) {
+        GLES20.glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
     }
 
     @Override
@@ -308,6 +341,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glPixelStorei(int pname, int param) {
+        GLES20.glPixelStorei(pname, param);
+    }
+
+    @Override
     public void glBlendFunc(int sfactor, int dfactor) {
         GLES20.glBlendFunc(sfactor, dfactor);
     }
@@ -318,6 +356,31 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glDepthFunc(int func) {
+        GLES20.glDepthFunc(func);
+    }
+
+    @Override
+    public void glDepthMask(boolean flag) {
+        GLES20.glDepthMask(flag);
+    }
+
+    @Override
+    public void glStencilOp(int sfail, int dpfail, int dppass) {
+        GLES20.glStencilOp(sfail, dpfail, dppass);
+    }
+
+    @Override
+    public void glStencilFunc(int func, int ref, int mask) {
+        GLES20.glStencilFunc(func, ref, mask);
+    }
+
+    @Override
+    public void glStencilMask(int mask) {
+        GLES20.glStencilMask(mask);
+    }
+
+    @Override
     public void glDrawArrays(int mode, int first, int count) {
         GLES20.glDrawArrays(mode, first, count);
     }
@@ -325,6 +388,16 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     @Override
     public void glDrawElements(int mode, int count, int type, long indices) {
         GLES20.glDrawElements(mode, count, type, indices);
+    }
+
+    @Override
+    public void glFlush() {
+        GLES20.glFlush();
+    }
+
+    @Override
+    public void glFinish() {
+        GLES20.glFinish();
     }
 
     @Override
@@ -391,6 +464,26 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     @Override
     public boolean glUnmapBuffer(int target) {
         return GLES30.glUnmapBuffer(target);
+    }
+
+    @Override
+    public void glDrawBuffers(int[] bufs) {
+        GLES30.glDrawBuffers(bufs);
+    }
+
+    @Override
+    public void glStencilOpSeparate(int face, int sfail, int dpfail, int dppass) {
+        GLES20.glStencilOpSeparate(face, sfail, dpfail, dppass);
+    }
+
+    @Override
+    public void glStencilFuncSeparate(int face, int func, int ref, int mask) {
+        GLES20.glStencilFuncSeparate(face, func, ref, mask);
+    }
+
+    @Override
+    public void glStencilMaskSeparate(int face, int mask) {
+        GLES20.glStencilMaskSeparate(face, mask);
     }
 
     @Override
@@ -464,6 +557,16 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public int glGetUniformLocation(int program, CharSequence name) {
+        return GLES20.glGetUniformLocation(program, name);
+    }
+
+    @Override
+    public void glUniform1i(int location, int v0) {
+        GLES20.glUniform1i(location, v0);
+    }
+
+    @Override
     public void glEnableVertexAttribArray(int index) {
         GLES20.glEnableVertexAttribArray(index);
     }
@@ -506,6 +609,42 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     @Override
     public void glBindFramebuffer(int target, int framebuffer) {
         GLES20.glBindFramebuffer(target, framebuffer);
+    }
+
+    @Override
+    public int glCheckFramebufferStatus(int target) {
+        return GLES20.glCheckFramebufferStatus(target);
+    }
+
+    @Override
+    public void glFramebufferTexture2D(int target, int attachment, int textarget, int texture, int level) {
+        GLES20.glFramebufferTexture2D(target, attachment, textarget, texture, level);
+    }
+
+    @Override
+    public void glFramebufferRenderbuffer(int target, int attachment, int renderbuffertarget, int renderbuffer) {
+        GLES20.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
+    }
+
+    @Override
+    public void glBlitFramebuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1,
+                                  int dstY1, int mask, int filter) {
+        GLES30.glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+    }
+
+    @Override
+    public void glClearBufferiv(int buffer, int drawbuffer, IntBuffer value) {
+        GLES30.glClearBufferiv(buffer, drawbuffer, value);
+    }
+
+    @Override
+    public void glClearBufferfv(int buffer, int drawbuffer, FloatBuffer value) {
+        GLES30.glClearBufferfv(buffer, drawbuffer, value);
+    }
+
+    @Override
+    public void glClearBufferfi(int buffer, int drawbuffer, float depth, int stencil) {
+        GLES30.glClearBufferfi(buffer, drawbuffer, depth, stencil);
     }
 
     @Override
@@ -561,6 +700,16 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     @Override
     public void glCopyBufferSubData(int readTarget, int writeTarget, long readOffset, long writeOffset, long size) {
         GLES30.glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
+    }
+
+    @Override
+    public int glGetUniformBlockIndex(int program, CharSequence uniformBlockName) {
+        return GLES30.glGetUniformBlockIndex(program, uniformBlockName);
+    }
+
+    @Override
+    public void glUniformBlockBinding(int program, int uniformBlockIndex, int uniformBlockBinding) {
+        GLES30.glUniformBlockBinding(program, uniformBlockIndex, uniformBlockBinding);
     }
 
     @Override
@@ -661,6 +810,25 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glInvalidateFramebuffer(int target, IntBuffer attachments) {
+        GLES30.glInvalidateFramebuffer(target, attachments);
+    }
+
+    @Override
+    public void glCopyImageSubData(int srcName, int srcTarget, int srcLevel, int srcX, int srcY, int srcZ,
+                                   int dstName, int dstTarget, int dstLevel, int dstX, int dstY, int dstZ,
+                                   int srcWidth, int srcHeight, int srcDepth) {
+        assert mCopyImageSupport;
+        if (mCopyImageSubDataEXT) {
+            EXTCopyImage.glCopyImageSubDataEXT(srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget,
+                    dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
+        } else {
+            GLES32.glCopyImageSubData(srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel,
+                    dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
+        }
+    }
+
+    @Override
     public void glObjectLabel(int identifier, int name, int length, long label) {
         assert mDebugSupport;
         GLES32.nglObjectLabel(identifier, name, length, label);
@@ -744,7 +912,8 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
-    public void glCopyNamedBufferSubData(int readBuffer, int writeBuffer, long readOffset, long writeOffset, long size) {
+    public void glCopyNamedBufferSubData(int readBuffer, int writeBuffer, long readOffset, long writeOffset,
+                                         long size) {
         assert false;
     }
 
@@ -756,6 +925,17 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
 
     @Override
     public void glTextureParameteri(int texture, int pname, int param) {
+        assert false;
+    }
+
+    @Override
+    public void glTextureParameteriv(int texture, int pname, IntBuffer params) {
+        assert false;
+    }
+
+    @Override
+    public void glTextureSubImage2D(int texture, int level, int xoffset, int yoffset, int width, int height,
+                                    int format, int type, long pixels) {
         assert false;
     }
 

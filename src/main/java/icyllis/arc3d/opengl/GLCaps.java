@@ -69,6 +69,7 @@ public class GLCaps extends Caps {
     boolean mSPIRVSupport = false;
     boolean mViewCompatibilityClassSupport = false;
     boolean mTexStorageSupport;
+    boolean mInvalidateFramebufferSupport;
     final boolean mVolatileContext;
 
     int[] mProgramBinaryFormats;
@@ -1055,6 +1056,10 @@ public class GLCaps extends Caps {
 
     public boolean hasVolatileContext() {
         return mVolatileContext;
+    }
+
+    public boolean hasInvalidateFramebufferSupport() {
+        return mInvalidateFramebufferSupport;
     }
 
     @Nullable

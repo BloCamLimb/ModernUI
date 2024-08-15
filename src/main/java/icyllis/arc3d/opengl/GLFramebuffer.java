@@ -25,9 +25,8 @@ import icyllis.arc3d.engine.*;
 import javax.annotation.Nullable;
 
 import static org.lwjgl.opengl.GL11C.GL_NONE;
-import static org.lwjgl.opengl.GL20C.glDrawBuffers;
 import static org.lwjgl.opengl.GL30C.*;
-import static org.lwjgl.opengl.GL32C.*;
+import static org.lwjgl.opengl.GL32C.GL_TEXTURE_2D_MULTISAMPLE;
 
 public final class GLFramebuffer extends Framebuffer {
 
@@ -42,9 +41,9 @@ public final class GLFramebuffer extends Framebuffer {
         mResolveFramebuffer = resolveFramebuffer;
     }
 
-    private static void attachColorAttachment(int index, GLImage image, int mipLevel) {
+    private static void attachColorAttachment(GLInterface gl, int index, GLImage image, int mipLevel) {
         if (image instanceof GLRenderbuffer renderbuffer) {
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+            gl.glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                     GL_COLOR_ATTACHMENT0 + index,
                     GL_RENDERBUFFER,
                     renderbuffer.getHandle());
@@ -52,8 +51,9 @@ public final class GLFramebuffer extends Framebuffer {
             GLTexture texture = (GLTexture) image;
             switch (texture.getTarget()) {
                 case GL_TEXTURE_2D, GL_TEXTURE_2D_MULTISAMPLE -> {
-                    glFramebufferTexture(GL_FRAMEBUFFER,
+                    gl.glFramebufferTexture2D(GL_FRAMEBUFFER,
                             GL_COLOR_ATTACHMENT0 + index,
+                            texture.getTarget(),
                             texture.getHandle(),
                             mipLevel);
                 }
@@ -115,12 +115,13 @@ public final class GLFramebuffer extends Framebuffer {
                 }
                 GLImage attachment = (GLImage) attachmentDesc.mAttachment.get();
                 assert attachment != null;
-                attachColorAttachment(index,
+                attachColorAttachment(gl,
+                        index,
                         attachment,
                         attachmentDesc.mMipLevel);
                 drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index;
             }
-            glDrawBuffers(drawBuffers);
+            gl.glDrawBuffers(drawBuffers);
         }
         if (desc.mDepthStencilAttachment.mAttachment != null) {
             GLRenderbuffer attachment = (GLRenderbuffer) desc.mDepthStencilAttachment.mAttachment.get();
@@ -135,13 +136,13 @@ public final class GLFramebuffer extends Framebuffer {
                 assert GLUtil.glFormatStencilBits(attachment.getFormat()) > 0;
                 attachmentPoint = GL_STENCIL_ATTACHMENT;
             }
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+            gl.glFramebufferRenderbuffer(GL_FRAMEBUFFER,
                     attachmentPoint,
                     GL_RENDERBUFFER,
                     attachment.getHandle());
         }
         if (!device.getCaps().skipErrorChecks()) {
-            int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            int status = gl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
             if (status != GL_FRAMEBUFFER_COMPLETE) {
                 gl.glDeleteFramebuffers(renderFramebuffer);
                 gl.glDeleteFramebuffers(resolveFramebuffer);
@@ -161,14 +162,15 @@ public final class GLFramebuffer extends Framebuffer {
                 }
                 GLImage resolveAttachment = (GLImage) attachmentDesc.mResolveAttachment.get();
                 assert resolveAttachment != null;
-                attachColorAttachment(index,
+                attachColorAttachment(gl,
+                        index,
                         resolveAttachment,
                         attachmentDesc.mMipLevel);
                 drawBuffers[index] = GL_COLOR_ATTACHMENT0 + index;
             }
-            glDrawBuffers(drawBuffers);
+            gl.glDrawBuffers(drawBuffers);
             if (!device.getCaps().skipErrorChecks()) {
-                int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+                int status = gl.glCheckFramebufferStatus(GL_FRAMEBUFFER);
                 if (status != GL_FRAMEBUFFER_COMPLETE) {
                     gl.glDeleteFramebuffers(renderFramebuffer);
                     gl.glDeleteFramebuffers(resolveFramebuffer);

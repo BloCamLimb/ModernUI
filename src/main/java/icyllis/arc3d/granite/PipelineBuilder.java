@@ -165,6 +165,10 @@ public class PipelineBuilder {
     public void buildVertexShader() {
         StringBuilder out = new StringBuilder();
         out.append(mCaps.shaderCaps().mGLSLVersion.mVersionDecl);
+        if (mCaps.shaderCaps().mUsePrecisionModifiers) {
+            out.append("precision highp float;\n");
+            out.append("precision highp sampler2D;\n");
+        }
         Formatter vs = new Formatter(out, Locale.ROOT);
 
         //// Uniforms
@@ -259,6 +263,10 @@ public class PipelineBuilder {
         }
 
         out.append(mCaps.shaderCaps().mGLSLVersion.mVersionDecl);
+        if (mCaps.shaderCaps().mUsePrecisionModifiers) {
+            out.append("precision highp float;\n");
+            out.append("precision highp sampler2D;\n");
+        }
         Formatter fs = new Formatter(out, Locale.ROOT);
         // If we're doing analytic coverage, we must also be doing shading.
         assert !mDesc.geomStep().emitsCoverage() || mDesc.geomStep().performsShading();

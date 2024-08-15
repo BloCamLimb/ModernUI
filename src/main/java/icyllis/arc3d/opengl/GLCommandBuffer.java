@@ -28,9 +28,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static org.lwjgl.opengl.GL32C.*;
-import static org.lwjgl.opengl.GL33C.GL_TEXTURE_SWIZZLE_R;
-import static org.lwjgl.opengl.GL45C.*;
+import static org.lwjgl.opengl.GL33C.*;
 
 /**
  * The OpenGL command buffer. The commands executed on {@link GLCommandBuffer} are
@@ -157,6 +155,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         mHWFrontStencil = null;
         mHWBackStencil = null;
 
+        mHWActiveTextureUnit = -1;
         for (UniqueID[] textures : mHWTextureStates) {
             Arrays.fill(textures, null);
         }
@@ -195,25 +194,47 @@ public final class GLCommandBuffer extends CommandBuffer {
         flushScissorTest(false);
 
         try (MemoryStack stack = mStack.push()) {
-            var color = stack.mallocFloat(4);
+            var floatValues = stack.mallocFloat(4);
             for (int i = 0; i < renderPassDesc.mNumColorAttachments; i++) {
                 var attachmentDesc = renderPassDesc.mColorAttachments[i];
                 boolean colorLoadClear = attachmentDesc.mLoadOp == Engine.LoadOp.kClear;
                 if (colorLoadClear) {
                     flushColorWrite(true);
-                    color.put(0, clearColors, i << 2, 4);
-                    glClearBufferfv(GL_COLOR,
-                            i,
-                            color);
+                    floatValues.put(0, clearColors, i << 2, 4);
+                    mDevice.getGL().glClearBufferfv(GL_COLOR,
+                            i,  // draw buffer
+                            floatValues);
                 }
             }
             boolean depthStencilLoadClear = renderPassDesc.mDepthStencilAttachment.mDesc != null &&
                     renderPassDesc.mDepthStencilAttachment.mLoadOp == Engine.LoadOp.kClear;
             if (depthStencilLoadClear) {
-                glStencilMask(0xFFFFFFFF); // stencil will be flushed later
-                glClearBufferfi(GL_DEPTH_STENCIL,
-                        0,
-                        clearDepth, clearStencil);
+                boolean hasDepth = renderPassDesc.mDepthStencilAttachment.mDesc.getDepthBits() > 0;
+                boolean hasStencil = renderPassDesc.mDepthStencilAttachment.mDesc.getStencilBits() > 0;
+                if (hasDepth) {
+                    flushDepthWrite(true);
+                }
+                if (hasStencil) {
+                    mDevice.getGL().glStencilMask(0xFFFFFFFF); // stencil will be flushed later
+                    mHWFrontStencil = null;
+                    mHWBackStencil = null;
+                }
+                if (hasDepth && hasStencil) {
+                    mDevice.getGL().glClearBufferfi(GL_DEPTH_STENCIL,
+                            0,
+                            clearDepth, clearStencil);
+                } else if (hasDepth) {
+                    floatValues.put(0, clearDepth)
+                            .limit(1);
+                    mDevice.getGL().glClearBufferfv(GL_DEPTH,
+                            0,
+                            floatValues);
+                } else if (hasStencil) {
+                    var intValues = stack.ints(clearStencil);
+                    mDevice.getGL().glClearBufferiv(GL_STENCIL,
+                            0,
+                            intValues);
+                }
             }
         }
         mRenderPassDesc = renderPassDesc;
@@ -233,37 +254,52 @@ public final class GLCommandBuffer extends CommandBuffer {
         if (framebuffer != null) {
             if (framebuffer.getRenderFramebuffer() != framebuffer.getResolveFramebuffer()) {
                 // MSAA to single
-                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer.getResolveFramebuffer());
+                mDevice.getGL().glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer.getResolveFramebuffer());
                 var b = mContentBounds;
-                glBlitFramebuffer(
+                mDevice.getGL().glBlitFramebuffer(
                         b.mLeft, b.mTop, b.mRight, b.mBottom, // src rect
                         b.mLeft, b.mTop, b.mRight, b.mBottom, // dst rect
                         GL_COLOR_BUFFER_BIT, GL_NEAREST);
             }
         }
 
-        RenderPassDesc renderPassDesc = mRenderPassDesc;
-        try (MemoryStack stack = mStack.push()) {
-            var attachmentsToDiscard = stack.mallocInt(renderPassDesc.mNumColorAttachments + 1);
-            for (int i = 0; i < renderPassDesc.mNumColorAttachments; i++) {
-                var attachmentDesc = renderPassDesc.mColorAttachments[i];
-                boolean colorLoadClear = attachmentDesc.mStoreOp == Engine.StoreOp.kDiscard;
-                if (colorLoadClear) {
-                    attachmentsToDiscard.put(framebuffer == null
-                            ? GL_COLOR
-                            : GL_COLOR_ATTACHMENT0 + i);
+        if (mDevice.getCaps().hasInvalidateFramebufferSupport()) {
+            RenderPassDesc renderPassDesc = mRenderPassDesc;
+            try (MemoryStack stack = mStack.push()) {
+                var attachmentsToDiscard = stack.mallocInt(renderPassDesc.mNumColorAttachments + 1);
+                for (int i = 0; i < renderPassDesc.mNumColorAttachments; i++) {
+                    var attachmentDesc = renderPassDesc.mColorAttachments[i];
+                    boolean colorLoadClear = attachmentDesc.mStoreOp == Engine.StoreOp.kDiscard;
+                    if (colorLoadClear) {
+                        attachmentsToDiscard.put(framebuffer == null
+                                ? GL_COLOR
+                                : GL_COLOR_ATTACHMENT0 + i);
+                    }
                 }
-            }
-            boolean stencilStoreDiscard = renderPassDesc.mDepthStencilAttachment.mDesc != null &&
-                    renderPassDesc.mDepthStencilAttachment.mStoreOp == Engine.StoreOp.kDiscard;
-            if (stencilStoreDiscard) {
-                attachmentsToDiscard.put(framebuffer == null
-                        ? GL_STENCIL
-                        : GL_DEPTH_STENCIL_ATTACHMENT);
-            }
-            attachmentsToDiscard.flip();
-            if (attachmentsToDiscard.hasRemaining()) {
-                glInvalidateFramebuffer(GL_FRAMEBUFFER, attachmentsToDiscard);
+                boolean depthStencilStoreDiscard = renderPassDesc.mDepthStencilAttachment.mDesc != null &&
+                        renderPassDesc.mDepthStencilAttachment.mStoreOp == Engine.StoreOp.kDiscard;
+                if (depthStencilStoreDiscard) {
+                    boolean hasDepth = renderPassDesc.mDepthStencilAttachment.mDesc.getDepthBits() > 0;
+                    boolean hasStencil = renderPassDesc.mDepthStencilAttachment.mDesc.getStencilBits() > 0;
+                    if (hasDepth && hasStencil) {
+                        attachmentsToDiscard.put(framebuffer == null
+                                ? GL_DEPTH_STENCIL
+                                : GL_DEPTH_STENCIL_ATTACHMENT);
+                    } else if (hasDepth) {
+                        attachmentsToDiscard.put(framebuffer == null
+                                ? GL_DEPTH
+                                : GL_DEPTH_ATTACHMENT);
+                    } else if (hasStencil) {
+                        attachmentsToDiscard.put(framebuffer == null
+                                ? GL_STENCIL
+                                : GL_STENCIL_ATTACHMENT);
+                    }
+                }
+                attachmentsToDiscard.flip();
+                if (attachmentsToDiscard.hasRemaining()) {
+                    //TODO try to use invalidateSubFramebuffer
+                    mDevice.getGL().glInvalidateFramebuffer(GL_READ_FRAMEBUFFER, attachmentsToDiscard);
+                }
             }
         }
 
@@ -365,74 +401,75 @@ public final class GLCommandBuffer extends CommandBuffer {
             return false;
         }
 
-        int target = glTexture.getTarget();
+        GLInterface gl = mDevice.getGL();
         boolean dsa = mDevice.getCaps().hasDSASupport();
-        int texName = glTexture.getHandle();
+        int target = glTexture.getTarget();
+        int handle = glTexture.getHandle();
         int boundTexture = 0;
         //TODO not only 2D
         if (!dsa) {
-            boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            if (texName != boundTexture) {
-                glBindTexture(target, texName);
+            boundTexture = gl.glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (handle != boundTexture) {
+                gl.glBindTexture(target, handle);
             }
         }
 
         GLTextureMutableState mutableState = glTexture.getGLMutableState();
         if (mutableState.mBaseMipmapLevel != 0) {
             if (dsa) {
-                glTextureParameteri(texName, GL_TEXTURE_BASE_LEVEL, 0);
+                gl.glTextureParameteri(handle, GL_TEXTURE_BASE_LEVEL, 0);
             } else {
-                glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
+                gl.glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
             }
             mutableState.mBaseMipmapLevel = 0;
         }
         int maxLevel = glTexture.getMipLevelCount() - 1; // minus base level
         if (mutableState.mMaxMipmapLevel != maxLevel) {
             if (dsa) {
-                glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
+                gl.glTextureParameteri(handle, GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
-                glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
+                gl.glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
             // Bug fixed by Arc3D
             mutableState.mMaxMipmapLevel = maxLevel;
         }
 
-        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        gl.glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+        gl.glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        gl.glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
         int bpp = ColorInfo.bytesPerPixel(srcColorType);
         assert (glBuffer.getUsage() & Engine.BufferUsageFlags.kUpload) != 0;
-        mDevice.getGL().glBindBuffer(GL_PIXEL_UNPACK_BUFFER, glBuffer.getHandle());
+        gl.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, glBuffer.getHandle());
 
         for (var data : copyData) {
 
             long trimRowBytes = (long) data.mWidth * bpp;
             if (data.mBufferRowBytes != trimRowBytes) {
                 int rowLength = (int) (data.mBufferRowBytes / bpp);
-                glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
+                gl.glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
             } else {
-                glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+                gl.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
             }
 
             if (dsa) {
-                glTextureSubImage2D(texName, data.mMipLevel,
+                gl.glTextureSubImage2D(handle, data.mMipLevel,
                         data.mX, data.mY, data.mWidth, data.mHeight,
                         srcFormat, srcType,
                         clientBufferPtr + data.mBufferOffset);
             } else {
-                glTexSubImage2D(target, data.mMipLevel,
+                gl.glTexSubImage2D(target, data.mMipLevel,
                         data.mX, data.mY, data.mWidth, data.mHeight,
                         srcFormat, srcType,
                         clientBufferPtr + data.mBufferOffset);
             }
         }
 
-        mDevice.getGL().glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        gl.glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
         if (!dsa) {
-            if (texName != boundTexture) {
-                glBindTexture(target, boundTexture);
+            if (handle != boundTexture) {
+                gl.glBindTexture(target, boundTexture);
             }
         }
 
@@ -493,12 +530,27 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
     }
 
+    public void flushDepthWrite(boolean enable) {
+        if (enable) {
+            if (mHWDepthWrite != kEnabled_TriState) {
+                mDevice.getGL().glDepthMask(true);
+                mHWDepthWrite = kEnabled_TriState;
+            }
+        } else {
+            if (mHWDepthWrite != kDisabled_TriState) {
+                mDevice.getGL().glDepthMask(false);
+                mHWDepthWrite = kDisabled_TriState;
+            }
+        }
+    }
+
     @Override
     public boolean bindGraphicsPipeline(@RawPtr GraphicsPipeline graphicsPipeline) {
         Arrays.fill(mActiveVertexBuffers, null);
 
         mGraphicsPipeline = (GLGraphicsPipeline) graphicsPipeline;
 
+        @RawPtr
         GLProgram program = mGraphicsPipeline.getProgram();
         if (program == null) {
             return false;
@@ -508,6 +560,7 @@ public final class GLCommandBuffer extends CommandBuffer {
             mDevice.getGL().glUseProgram(program.getProgram());
             mHWProgram = program;
         }
+        @RawPtr
         GLVertexArray vertexArray = mGraphicsPipeline.getVertexArray();
         assert vertexArray != null;
         if (mHWVertexArray != vertexArray) {
@@ -559,19 +612,11 @@ public final class GLCommandBuffer extends CommandBuffer {
                 mHWDepthTest = kDisabled_TriState;
             }
         }
-        if (ds.mDepthWrite) {
-            if (mHWDepthWrite != kEnabled_TriState) {
-                glDepthMask(true);
-                mHWDepthWrite = kEnabled_TriState;
-            }
-        } else {
-            if (mHWDepthWrite != kDisabled_TriState) {
-                glDepthMask(false);
-                mHWDepthWrite = kDisabled_TriState;
-            }
-        }
+        flushDepthWrite(ds.mDepthWrite);
         if (ds.mDepthCompareOp != mHWDepthCompareOp) {
-            glDepthFunc(GLUtil.toGLCompareFunc(ds.mDepthCompareOp));
+            mDevice.getGL().glDepthFunc(
+                    GLUtil.toGLCompareFunc(ds.mDepthCompareOp)
+            );
             mHWDepthCompareOp = ds.mDepthCompareOp;
         }
         if (ds.mStencilTest) {
@@ -614,9 +659,15 @@ public final class GLCommandBuffer extends CommandBuffer {
         int glDepthFailOp = GLUtil.toGLStencilOp(face.mDepthFailOp);
         int glFunc = GLUtil.toGLCompareFunc(face.mCompareOp);
 
-        glStencilOpSeparate(glFace, glFailOp, glDepthFailOp, glPassOp);
-        glStencilFuncSeparate(glFace, glFunc, face.mReference, face.mCompareMask);
-        glStencilMaskSeparate(glFace, face.mWriteMask);
+        if (glFace == GL_FRONT_AND_BACK) {
+            gl.glStencilOp(glFailOp, glDepthFailOp, glPassOp);
+            gl.glStencilFunc(glFunc, face.mReference, face.mCompareMask);
+            gl.glStencilMask(face.mWriteMask);
+        } else {
+            gl.glStencilOpSeparate(glFace, glFailOp, glDepthFailOp, glPassOp);
+            gl.glStencilFuncSeparate(glFace, glFunc, face.mReference, face.mCompareMask);
+            gl.glStencilMaskSeparate(glFace, face.mWriteMask);
+        }
     }
 
     @Override
@@ -687,19 +738,20 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     public void bindTextureSampler(int binding, @RawPtr Image texture,
-                                   @RawPtr Sampler sampler, short readSwizzle) {
+                                   @RawPtr Sampler sampler, short swizzle) {
         assert (texture != null && texture.isSampledImage());
         GLTexture glTexture = (GLTexture) texture;
         GLSampler glSampler = (GLSampler) sampler;
         boolean dsa = mDevice.getCaps().hasDSASupport();
         int target = glTexture.getTarget();
+        int handle = glTexture.getHandle();
         int imageType = glTexture.getImageType();
         if (mHWTextureStates[binding][imageType] != glTexture.getUniqueID()) {
             if (dsa) {
-                mDevice.getGL().glBindTextureUnit(binding, glTexture.getHandle());
+                mDevice.getGL().glBindTextureUnit(binding, handle);
             } else {
                 setTextureUnit(binding);
-                mDevice.getGL().glBindTexture(target, glTexture.getHandle());
+                mDevice.getGL().glBindTexture(target, handle);
             }
             mHWTextureStates[binding][imageType] = glTexture.getUniqueID();
         }
@@ -710,42 +762,42 @@ public final class GLCommandBuffer extends CommandBuffer {
         GLTextureMutableState mutableState = glTexture.getGLMutableState();
         if (mutableState.mBaseMipmapLevel != 0) {
             if (dsa) {
-                glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
+                mDevice.getGL().glTextureParameteri(handle, GL_TEXTURE_BASE_LEVEL, 0);
             } else {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+                mDevice.getGL().glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
             }
             mutableState.mBaseMipmapLevel = 0;
         }
-        int maxLevel = texture.getMipLevelCount() - 1; // minus base level
+        int maxLevel = glTexture.getMipLevelCount() - 1; // minus base level
         if (mutableState.mMaxMipmapLevel != maxLevel) {
             if (dsa) {
-                glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+                mDevice.getGL().glTextureParameteri(handle, GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
+                mDevice.getGL().glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
             mutableState.mMaxMipmapLevel = maxLevel;
         }
-        if (mutableState.mSwizzle != readSwizzle) {
-            try (MemoryStack stack = mStack.push()) {
-                var glSwizzle = stack.mallocInt(4);
-                for (int i = 0; i < 4; ++i) {
-                    glSwizzle.put(i, switch ((readSwizzle >> (i << 2)) & 0xF) {
-                        case 0 -> GL_RED;
-                        case 1 -> GL_GREEN;
-                        case 2 -> GL_BLUE;
-                        case 3 -> GL_ALPHA;
-                        case 4 -> GL_ZERO;
-                        case 5 -> GL_ONE;
-                        default -> throw new AssertionError(readSwizzle);
-                    });
-                }
+        if (mutableState.mSwizzle != swizzle) {
+            // OpenGL ES does not support GL_TEXTURE_SWIZZLE_RGBA
+            for (int i = 0; i < 4; ++i) {
+                int swiz = switch ((swizzle >> (i << 2)) & 0xF) {
+                    case 0 -> GL_RED;
+                    case 1 -> GL_GREEN;
+                    case 2 -> GL_BLUE;
+                    case 3 -> GL_ALPHA;
+                    case 4 -> GL_ZERO;
+                    case 5 -> GL_ONE;
+                    default -> throw new AssertionError(swizzle);
+                };
+                // swizzle enums are sequential
+                int channel = GL_TEXTURE_SWIZZLE_R + i;
                 if (dsa) {
-                    glTextureParameteriv(glTexture.getHandle(), GL_TEXTURE_SWIZZLE_RGBA, glSwizzle);
+                    mDevice.getGL().glTextureParameteri(handle, channel, swiz);
                 } else {
-                    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, glSwizzle);
+                    mDevice.getGL().glTexParameteri(target, channel, swiz);
                 }
             }
-            mutableState.mSwizzle = readSwizzle;
+            mutableState.mSwizzle = swizzle;
         }
     }
 
@@ -869,11 +921,10 @@ public final class GLCommandBuffer extends CommandBuffer {
         gl.glDisable(GL_CULL_FACE);
         // We do use separate stencil. Our algorithms don't care which face is front vs. back so
         // just set this to the default for self-consistency.
-        glFrontFace(GL_CCW);
+        gl.glFrontFace(GL_CCW);
 
         // we only ever use lines in hairline mode
-        glLineWidth(1);
-        glPointSize(1);
+        gl.glLineWidth(1);
         gl.glDisable(GL_PROGRAM_POINT_SIZE);
     }
 
@@ -883,7 +934,7 @@ public final class GLCommandBuffer extends CommandBuffer {
         resetStates();
         mSubmitFence = mDevice.getGL().glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         // glFlush is required after fence creation
-        glFlush();
+        mDevice.getGL().glFlush();
         if (!mDevice.getCaps().skipErrorChecks()) {
             mDevice.clearErrors();
         }
@@ -896,7 +947,7 @@ public final class GLCommandBuffer extends CommandBuffer {
             return true;
         }
         // faster than glGetSynciv
-        int status = mDevice.getGL().glClientWaitSync(mSubmitFence, 0, 0);
+        int status = mDevice.getGL().glClientWaitSync(mSubmitFence, 0, 0L);
         if (status == GL_CONDITION_SATISFIED ||
                 status == GL_ALREADY_SIGNALED) {
             mDevice.getGL().glDeleteSync(mSubmitFence);
@@ -912,6 +963,6 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     protected void waitUntilFinished() {
-        glFinish();
+        mDevice.getGL().glFinish();
     }
 }
