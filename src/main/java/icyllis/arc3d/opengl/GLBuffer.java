@@ -434,7 +434,7 @@ public final class GLBuffer extends Buffer {
 
     public static void doUploadData(GLDevice device, int buffer, int target,
                                     long data, long offset, long totalSize) {
-        var gl = device.getGL();
+        GLInterface gl = device.getGL();
         if (target == 0) {
             while (totalSize > 0) {
                 long size = Math.min(MAX_BYTES_PER_UPDATE, totalSize);

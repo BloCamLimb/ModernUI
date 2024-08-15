@@ -481,7 +481,8 @@ public final class GLVertexArray extends ManagedResource {
             // Sometimes glVertexArrayElementBuffer will cause segfault on glDrawElementsBaseVertex.
             // So we just use normal glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer)
             // NOTE: this binding state is associated with current VAO
-            getDevice().bindIndexBufferInPipe(buffer);
+            getDevice().getGL().glBindBuffer(
+                    GL_ELEMENT_ARRAY_BUFFER, buffer.getHandle());
             mBoundIndexBuffer = buffer.getUniqueID();
         }
     }
@@ -511,8 +512,8 @@ public final class GLVertexArray extends ManagedResource {
                         stride);
             } else {
                 // 'offset' may translate into 'baseVertex'
-                int target = getDevice().bindBuffer(buffer);
-                assert target == GL_ARRAY_BUFFER;
+                getDevice().getGL().glBindBuffer(
+                        GL_ARRAY_BUFFER, buffer.getHandle());
                 int index = 0;
                 for (int i = 0; i < binding; i++) {
                     index += mAttributes[i].length;

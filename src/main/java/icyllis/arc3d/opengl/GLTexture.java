@@ -26,7 +26,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
 
-import static org.lwjgl.opengl.GL30C.GL_TEXTURE;
+import static org.lwjgl.opengl.GL30C.*;
 
 /**
  * Represents OpenGL textures.
@@ -52,12 +52,14 @@ public final class GLTexture extends GLImage {
             mFlags |= ISurface.FLAG_READ_ONLY;
         }
 
+        getGLMutableState().mMaxMipmapLevel = getMipLevelCount() - 1;
+
         if (mHandle == 0) {
-            getDevice().recordRenderCall(device -> {
+            getDevice().recordRenderCall(dev -> {
                 if (isDestroyed()) {
                     return;
                 }
-                mHandle = device.createTexture(getGLDesc());
+                mHandle = internalCreateTexture(dev, getGLDesc());
                 if (mHandle == 0) {
                     setNonCacheable();
                 }
@@ -97,7 +99,7 @@ public final class GLTexture extends GLImage {
         final GLDevice device = (GLDevice) context.getDevice();
         final int handle;
         if (device.isOnExecutingThread()) {
-            handle = device.createTexture(desc);
+            handle = internalCreateTexture(device, desc);
             if (handle == 0) {
                 return null;
             }
@@ -108,6 +110,107 @@ public final class GLTexture extends GLImage {
                 new GLTextureMutableState(),
                 handle,
                 budgeted);
+    }
+
+    static int internalCreateTexture(GLDevice device, GLImageDesc desc) {
+        assert desc.mTarget != GL_RENDERBUFFER;
+        int width = desc.getWidth(), height = desc.getHeight();
+        //TODO create textures other than 2D
+        int handle;
+        handle = internalCreateTexture2D(device,
+                width, height, desc.mFormat, desc.getMipLevelCount());
+        if (handle != 0) {
+            device.getStats().incImageCreates();
+            if (desc.isSampledImage()) {
+                device.getStats().incTextureCreates();
+            }
+        }
+        return handle;
+    }
+
+    static int internalCreateTexture2D(GLDevice device,
+                                       int width, int height,
+                                       int format, int levels) {
+        assert (GLUtil.glFormatIsSupported(format));
+        assert (!GLUtil.glFormatIsCompressed(format));
+        GLCaps caps = device.getCaps();
+
+        int internalFormat = caps.getTextureInternalFormat(format);
+        if (internalFormat == 0) {
+            return 0;
+        }
+
+        GLInterface gl = device.getGL();
+
+        assert (caps.isFormatTexturable(format));
+        int texture;
+        // It is known that using DSA on some older drivers can cause texture completeness
+        // validation issues, but it's not easy to determine which drivers have problems.
+        // So we only use DSA for texture creation on NVIDIA cards, considering that it uses
+        // a threaded driver, and querying the currently bound texture can be slow.
+        if (caps.hasDSASupport() && caps.getVendor() == GLUtil.GLVendor.NVIDIA) {
+            assert (caps.isTextureStorageCompatible(format));
+            texture = gl.glCreateTextures(GL_TEXTURE_2D);
+            if (texture == 0) {
+                return 0;
+            }
+            gl.glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, levels - 1);
+            if (caps.skipErrorChecks()) {
+                gl.glTextureStorage2D(texture, levels, internalFormat, width, height);
+            } else {
+                device.clearErrors();
+                gl.glTextureStorage2D(texture, levels, internalFormat, width, height);
+                if (device.getError() != GL_NO_ERROR) {
+                    gl.glDeleteTextures(texture);
+                    return 0;
+                }
+            }
+        } else {
+            texture = device.getGL().glGenTextures();
+            if (texture == 0) {
+                return 0;
+            }
+            int boundTexture = gl.glGetInteger(GL_TEXTURE_BINDING_2D);
+            gl.glBindTexture(GL_TEXTURE_2D, texture);
+            gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, levels - 1);
+            if (caps.isTextureStorageCompatible(format)) {
+                if (caps.skipErrorChecks()) {
+                    gl.glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
+                } else {
+                    device.clearErrors();
+                    gl.glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
+                    if (device.getError() != GL_NO_ERROR) {
+                        gl.glDeleteTextures(texture);
+                        texture = 0;
+                    }
+                }
+            } else {
+                int error = GL_NO_ERROR;
+                final boolean checkError = !caps.skipErrorChecks();
+                if (checkError) {
+                    device.clearErrors();
+                }
+                final int externalFormat = caps.getFormatDefaultExternalFormat(format);
+                final int externalType = caps.getFormatDefaultExternalType(format);
+                for (int level = 0; level < levels; level++) {
+                    int currentWidth = Math.max(1, width >> level);
+                    int currentHeight = Math.max(1, height >> level);
+                    gl.glTexImage2D(GL_TEXTURE_2D, level, internalFormat,
+                            currentWidth, currentHeight,
+                            0, externalFormat, externalType, MemoryUtil.NULL);
+                    if (checkError) {
+                        error |= device.getError();
+                    }
+                }
+                if (error != GL_NO_ERROR) {
+                    gl.glDeleteTextures(texture);
+                    texture = 0;
+                }
+            }
+            gl.glBindTexture(GL_TEXTURE_2D, boundTexture);
+        }
+
+        return texture;
     }
 
     public GLTextureMutableState getGLMutableState() {

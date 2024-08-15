@@ -57,6 +57,10 @@ public interface GLInterface extends GLInterfaceCommon {
                                                        @NativeType("GLint") int basevertex,
                                                        @NativeType("GLuint") int baseinstance);
 
+    void glTexStorage2D(@NativeType("GLenum") int target, @NativeType("GLsizei") int levels,
+                        @NativeType("GLenum") int internalformat, @NativeType("GLsizei") int width,
+                        @NativeType("GLsizei") int height);
+
     void glInvalidateBufferSubData(@NativeType("GLuint") int buffer, @NativeType("GLintptr") long offset,
                                    @NativeType("GLsizeiptr") long length);
 
@@ -107,6 +111,16 @@ public interface GLInterface extends GLInterfaceCommon {
     void glCopyNamedBufferSubData(@NativeType("GLuint") int readBuffer, @NativeType("GLuint") int writeBuffer,
                                   @NativeType("GLintptr") long readOffset, @NativeType("GLintptr") long writeOffset,
                                   @NativeType("GLsizeiptr") long size);
+
+    @NativeType("void")
+    int glCreateTextures(@NativeType("GLenum") int target);
+
+    void glTextureParameteri(@NativeType("GLuint") int texture, @NativeType("GLenum") int pname,
+                             @NativeType("GLint") int param);
+
+    void glTextureStorage2D(@NativeType("GLuint") int texture, @NativeType("GLsizei") int levels,
+                            @NativeType("GLenum") int internalformat, @NativeType("GLsizei") int width,
+                            @NativeType("GLsizei") int height);
 
     @NativeType("void")
     int glCreateVertexArrays();

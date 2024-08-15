@@ -68,6 +68,8 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         }
         mBaseInstanceSupport = caps.GL_EXT_base_instance;
         mCopyImageSupport = caps.GL_EXT_copy_image;
+        // textureStorageSupported - OpenGL ES 3.0
+        mTexStorageSupport = true;
         mViewCompatibilityClassSupport = false;
         // OpenGL ES 3.0
         mProgramBinarySupport = true;
@@ -283,6 +285,16 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     @Override
     public void glTexParameteri(int target, int pname, int param) {
         GLES20.glTexParameteri(target, pname, param);
+    }
+
+    @Override
+    public void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, long pixels) {
+        GLES20.nglTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+    }
+
+    @Override
+    public void glTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, int type, long pixels) {
+        GLES20.glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
     }
 
     @Override
@@ -639,6 +651,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glTexStorage2D(int target, int levels, int internalformat, int width, int height) {
+        GLES30.glTexStorage2D(target, levels, internalformat, width, height);
+    }
+
+    @Override
     public void glInvalidateBufferSubData(int buffer, long offset, long length) {
         assert false;
     }
@@ -728,6 +745,22 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
 
     @Override
     public void glCopyNamedBufferSubData(int readBuffer, int writeBuffer, long readOffset, long writeOffset, long size) {
+        assert false;
+    }
+
+    @Override
+    public int glCreateTextures(int target) {
+        assert false;
+        return 0;
+    }
+
+    @Override
+    public void glTextureParameteri(int texture, int pname, int param) {
+        assert false;
+    }
+
+    @Override
+    public void glTextureStorage2D(int texture, int levels, int internalformat, int width, int height) {
         assert false;
     }
 

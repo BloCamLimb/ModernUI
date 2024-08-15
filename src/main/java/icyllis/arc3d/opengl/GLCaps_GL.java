@@ -87,6 +87,8 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         mDrawElementsBaseVertexSupport = true;
         mBaseInstanceSupport = caps.OpenGL42 || caps.GL_ARB_base_instance;
         mCopyImageSupport = caps.OpenGL43 || caps.GL_ARB_copy_image;
+        // macOS supports this
+        mTexStorageSupport = caps.OpenGL42 || caps.GL_ARB_texture_storage;
         mViewCompatibilityClassSupport = caps.OpenGL43 || caps.GL_ARB_internalformat_query2;
         mShaderBinarySupport = caps.OpenGL41 || caps.GL_ARB_ES2_compatibility;
         mProgramBinarySupport = caps.OpenGL41 || caps.GL_ARB_get_program_binary;
@@ -284,10 +286,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     void initFormatTable(GLCapabilities caps) {
-        // macOS supports this
-        boolean textureStorageSupported =
-                caps.OpenGL42 || caps.GL_ARB_texture_storage;
-        super.initFormatTable(textureStorageSupported, caps.GL_EXT_texture_compression_s3tc);
+        super.initFormatTable(mTexStorageSupport, caps.GL_EXT_texture_compression_s3tc);
 
         final int nonMSAARenderFlags = FormatInfo.COLOR_ATTACHMENT_FLAG;
         final int msaaRenderFlags = nonMSAARenderFlags | FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG;
@@ -393,6 +392,18 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     @Override
     public void glTexParameteri(int target, int pname, int param) {
         GL11C.glTexParameteri(target, pname, param);
+    }
+
+    @Override
+    public void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format,
+                             int type, long pixels) {
+        GL11C.nglTexImage2D(target, level, internalformat, width, height, border, format, type, pixels);
+    }
+
+    @Override
+    public void glTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format,
+                                int type, long pixels) {
+        GL11C.glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
     }
 
     @Override
@@ -738,6 +749,12 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public void glTexStorage2D(int target, int levels, int internalformat, int width, int height) {
+        assert mTexStorageSupport;
+        GL42C.glTexStorage2D(target, levels, internalformat, width, height);
+    }
+
+    @Override
     public void glInvalidateBufferSubData(int buffer, long offset, long length) {
         assert mInvalidateBufferType == INVALIDATE_BUFFER_TYPE_INVALIDATE;
         GL43C.glInvalidateBufferSubData(buffer, offset, length);
@@ -838,9 +855,28 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
-    public void glCopyNamedBufferSubData(int readBuffer, int writeBuffer, long readOffset, long writeOffset, long size) {
+    public void glCopyNamedBufferSubData(int readBuffer, int writeBuffer, long readOffset, long writeOffset,
+                                         long size) {
         assert mDSASupport;
         GL45C.glCopyNamedBufferSubData(readBuffer, writeBuffer, readOffset, writeOffset, size);
+    }
+
+    @Override
+    public int glCreateTextures(int target) {
+        assert mDSASupport;
+        return GL45C.glCreateTextures(target);
+    }
+
+    @Override
+    public void glTextureParameteri(int texture, int pname, int param) {
+        assert mDSASupport;
+        GL45C.glTextureParameteri(texture, pname, param);
+    }
+
+    @Override
+    public void glTextureStorage2D(int texture, int levels, int internalformat, int width, int height) {
+        assert mDSASupport;
+        GL45C.glTextureStorage2D(texture, levels, internalformat, width, height);
     }
 
     @Override

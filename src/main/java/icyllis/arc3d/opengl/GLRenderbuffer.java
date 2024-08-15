@@ -47,6 +47,18 @@ public final class GLRenderbuffer extends GLImage {
     private GLRenderbuffer(Context context, GLImageDesc desc, int renderbuffer, boolean budgeted) {
         super(context, budgeted, false, desc, null);
         mRenderbuffer = renderbuffer;
+
+        if (mRenderbuffer == 0) {
+            getDevice().recordRenderCall(dev -> {
+                if (isDestroyed()) {
+                    return;
+                }
+                mRenderbuffer = internalCreateRenderbuffer(dev, getGLDesc());
+                if (mRenderbuffer == 0) {
+                    setNonCacheable();
+                }
+            });
+        }
     }
 
     @Nullable
@@ -152,7 +164,7 @@ public final class GLRenderbuffer extends GLImage {
         final GLDevice device = (GLDevice) context.getDevice();
         final int handle;
         if (device.isOnExecutingThread()) {
-            handle = device.createRenderbuffer(desc);
+            handle = internalCreateRenderbuffer(device, desc);
             if (handle == 0) {
                 return null;
             }
@@ -162,6 +174,49 @@ public final class GLRenderbuffer extends GLImage {
         return new GLRenderbuffer(context, desc,
                 handle,
                 budgeted);
+    }
+
+    static int internalCreateRenderbuffer(GLDevice device, GLImageDesc desc) {
+        assert desc.mTarget == GL_RENDERBUFFER;
+        int width = desc.getWidth(), height = desc.getHeight();
+         /*int internalFormat = glFormat;
+            if (GLUtil.glFormatStencilBits(glFormat) == 0) {
+                internalFormat = getCaps().getRenderbufferInternalFormat(glFormat);
+            }*/
+        int handle = internalCreateRenderbuffer(device, width, height, desc.getSampleCount(), desc.mFormat);
+        if (handle != 0) {
+            device.getStats().incImageCreates();
+        }
+        return handle;
+    }
+
+    static int internalCreateRenderbuffer(GLDevice device,
+                                          int width, int height,
+                                          int sampleCount, int internalFormat) {
+        GLInterface gl = device.getGL();
+        int renderbuffer = gl.glGenRenderbuffers();
+        if (renderbuffer == 0) {
+            return 0;
+        }
+        gl.glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+        boolean checkError = !device.getCaps().skipErrorChecks();
+        if (checkError) {
+            device.clearErrors();
+        }
+        // GL has a concept of MSAA rasterization with a single sample, but we do not.
+        if (sampleCount > 1) {
+            gl.glRenderbufferStorageMultisample(GL_RENDERBUFFER, sampleCount, internalFormat, width, height);
+        } else {
+            // glRenderbufferStorage is equivalent to calling glRenderbufferStorageMultisample
+            // with the samples set to zero. But we don't think sampleCount=1 is multisampled.
+            gl.glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
+        }
+        if (checkError && device.getError() != GL_NO_ERROR) {
+            gl.glDeleteRenderbuffers(renderbuffer);
+            return 0;
+        }
+
+        return renderbuffer;
     }
 
     @Nonnull

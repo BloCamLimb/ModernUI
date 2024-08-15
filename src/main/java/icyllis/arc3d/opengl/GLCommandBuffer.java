@@ -378,23 +378,23 @@ public final class GLCommandBuffer extends CommandBuffer {
         }
 
         GLTextureMutableState mutableState = glTexture.getGLMutableState();
-        if (mutableState.baseMipmapLevel != 0) {
+        if (mutableState.mBaseMipmapLevel != 0) {
             if (dsa) {
                 glTextureParameteri(texName, GL_TEXTURE_BASE_LEVEL, 0);
             } else {
                 glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
             }
-            mutableState.baseMipmapLevel = 0;
+            mutableState.mBaseMipmapLevel = 0;
         }
         int maxLevel = glTexture.getMipLevelCount() - 1; // minus base level
-        if (mutableState.maxMipmapLevel != maxLevel) {
+        if (mutableState.mMaxMipmapLevel != maxLevel) {
             if (dsa) {
                 glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
                 glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
             // Bug fixed by Arc3D
-            mutableState.maxMipmapLevel = maxLevel;
+            mutableState.mMaxMipmapLevel = maxLevel;
         }
 
         glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
@@ -407,8 +407,13 @@ public final class GLCommandBuffer extends CommandBuffer {
 
         for (var data : copyData) {
 
-            int rowLength = (int) (data.mBufferRowBytes / bpp);
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
+            long trimRowBytes = (long) data.mWidth * bpp;
+            if (data.mBufferRowBytes != trimRowBytes) {
+                int rowLength = (int) (data.mBufferRowBytes / bpp);
+                glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
+            } else {
+                glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+            }
 
             if (dsa) {
                 glTextureSubImage2D(texName, data.mMipLevel,
@@ -493,7 +498,6 @@ public final class GLCommandBuffer extends CommandBuffer {
         Arrays.fill(mActiveVertexBuffers, null);
 
         mGraphicsPipeline = (GLGraphicsPipeline) graphicsPipeline;
-        mPrimitiveType = GLUtil.toGLPrimitiveType(mGraphicsPipeline.getPrimitiveType());
 
         GLProgram program = mGraphicsPipeline.getProgram();
         if (program == null) {
@@ -511,6 +515,7 @@ public final class GLCommandBuffer extends CommandBuffer {
             mDevice.getGL().glBindVertexArray(vertexArray.getHandle());
             mHWVertexArray = vertexArray;
         }
+        mPrimitiveType = GLUtil.toGLPrimitiveType(mGraphicsPipeline.getPrimitiveType());
 
         BlendInfo blendInfo = mGraphicsPipeline.getBlendInfo();
         boolean blendOff = blendInfo.blendShouldDisable() || !blendInfo.mColorWrite;
@@ -703,48 +708,44 @@ public final class GLCommandBuffer extends CommandBuffer {
             mHWSamplerStates[binding] = glSampler.getUniqueID();
         }
         GLTextureMutableState mutableState = glTexture.getGLMutableState();
-        if (mutableState.baseMipmapLevel != 0) {
+        if (mutableState.mBaseMipmapLevel != 0) {
             if (dsa) {
                 glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
             }
-            mutableState.baseMipmapLevel = 0;
+            mutableState.mBaseMipmapLevel = 0;
         }
         int maxLevel = texture.getMipLevelCount() - 1; // minus base level
-        if (mutableState.maxMipmapLevel != maxLevel) {
+        if (mutableState.mMaxMipmapLevel != maxLevel) {
             if (dsa) {
                 glTextureParameteri(glTexture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
-            mutableState.maxMipmapLevel = maxLevel;
+            mutableState.mMaxMipmapLevel = maxLevel;
         }
-        //TODO texture view
-        // texture view is available since 4.3, but less used in OpenGL
-        // in case of some driver bugs, we don't use GL_TEXTURE_SWIZZLE_RGBA
-        // and OpenGL ES does not support GL_TEXTURE_SWIZZLE_RGBA at all
-        for (int i = 0; i < 4; ++i) {
-            int swiz = switch (readSwizzle & 0xF) {
-                case 0 -> GL_RED;
-                case 1 -> GL_GREEN;
-                case 2 -> GL_BLUE;
-                case 3 -> GL_ALPHA;
-                case 4 -> GL_ZERO;
-                case 5 -> GL_ONE;
-                default -> throw new AssertionError(readSwizzle);
-            };
-            if (mutableState.getSwizzle(i) != swiz) {
-                mutableState.setSwizzle(i, swiz);
-                // swizzle enums are sequential
-                int channel = GL_TEXTURE_SWIZZLE_R + i;
+        if (mutableState.mSwizzle != readSwizzle) {
+            try (MemoryStack stack = mStack.push()) {
+                var glSwizzle = stack.mallocInt(4);
+                for (int i = 0; i < 4; ++i) {
+                    glSwizzle.put(i, switch ((readSwizzle >> (i << 2)) & 0xF) {
+                        case 0 -> GL_RED;
+                        case 1 -> GL_GREEN;
+                        case 2 -> GL_BLUE;
+                        case 3 -> GL_ALPHA;
+                        case 4 -> GL_ZERO;
+                        case 5 -> GL_ONE;
+                        default -> throw new AssertionError(readSwizzle);
+                    });
+                }
                 if (dsa) {
-                    glTextureParameteri(glTexture.getHandle(), channel, swiz);
+                    glTextureParameteriv(glTexture.getHandle(), GL_TEXTURE_SWIZZLE_RGBA, glSwizzle);
                 } else {
-                    glTexParameteri(GL_TEXTURE_2D, channel, swiz);
+                    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, glSwizzle);
                 }
             }
-            readSwizzle >>= 4;
+            mutableState.mSwizzle = readSwizzle;
         }
     }
 

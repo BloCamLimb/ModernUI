@@ -70,7 +70,7 @@ public final class GLFramebuffer extends Framebuffer {
 
         assert device.isOnExecutingThread();
 
-        var gl = device.getGL();
+        GLInterface gl = device.getGL();
         // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
         // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
         // The workaround is to use traditional glGen* and glBind* (validate).

@@ -92,8 +92,11 @@ public abstract class Device implements Engine {
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
 
+    private final Thread mExecutingThread;
+
     protected Device(int backend, ContextOptions options, Caps caps) {
         assert caps != null;
+        mExecutingThread = Thread.currentThread();
         mBackend = backend;
         mOptions = options;
         mContextID = createUniqueID();
@@ -106,6 +109,20 @@ public abstract class Device implements Engine {
 
     public final Logger getLogger() {
         return Objects.requireNonNullElse(getOptions().mLogger, NOPLogger.NOP_LOGGER);
+    }
+
+    /**
+     * @return the command-executing thread
+     */
+    public final Thread getExecutingThread() {
+        return mExecutingThread;
+    }
+
+    /**
+     * @return true if calling from the command-executing thread
+     */
+    public final boolean isOnExecutingThread() {
+        return mExecutingThread == Thread.currentThread();
     }
 
     /**
@@ -283,13 +300,19 @@ public abstract class Device implements Engine {
     }
 
     @Deprecated
-    public abstract GpuBufferPool getVertexPool();
+    public GpuBufferPool getVertexPool() {
+        return null;
+    }
 
     @Deprecated
-    public abstract GpuBufferPool getInstancePool();
+    public GpuBufferPool getInstancePool()  {
+        return null;
+    }
 
     @Deprecated
-    public abstract GpuBufferPool getIndexPool();
+    public GpuBufferPool getIndexPool()  {
+        return null;
+    }
 
     /* *//**
      * Creates a new GPU image object and allocates its GPU memory. In other words, the
