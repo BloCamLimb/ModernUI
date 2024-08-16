@@ -21,9 +21,10 @@ package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ImageShader extends Shader {
+public final class ImageShader extends Shader {
 
     @SharedPtr
     public final Image mImage;
@@ -130,6 +131,7 @@ public class ImageShader extends Shader {
     }
     //@formatter:on
 
+    @Nonnull
     public static Rect2f preparePaintForDrawImageRect(@RawPtr Image image,
                                                       SamplingOptions sampling,
                                                       Rect2fc src, Rect2fc dst,
@@ -155,7 +157,7 @@ public class ImageShader extends Shader {
             localMatrix.mapRect(modifiedSrc, modifiedDst);
         }
 
-        boolean imageIsAlphaOnly = ColorInfo.colorTypeIsAlphaOnly(image.getColorType());
+        boolean imageIsAlphaOnly = image.isAlphaOnly();
 
         @SharedPtr
         Shader imageShader;
@@ -172,9 +174,12 @@ public class ImageShader extends Shader {
             modifiedDst.setEmpty();
             return modifiedDst;
         }
-        //TODO
         if (imageIsAlphaOnly && paint.getShader() != null) {
-
+            // Compose the image shader with the paint's shader. Alpha images+shaders should output the
+            // texture's alpha multiplied by the shader's color. DstIn (d*sa) will achieve this with
+            // the source image and dst shader (MakeBlend takes dst first, src second).
+            imageShader = BlendModeShader.make(BlendMode.DST_IN,
+                    /*src*/ imageShader, /*dst*/ paint.refShader());
         }
 
         paint.setShader(imageShader); // move

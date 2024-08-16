@@ -83,6 +83,10 @@ public abstract class Image extends RefCnt {
         return mInfo.colorSpace();
     }
 
+    public boolean isAlphaOnly() {
+        return ColorInfo.colorTypeIsAlphaOnly(getColorType());
+    }
+
     @ApiStatus.Internal
     @Nullable
     public Context getContext() {

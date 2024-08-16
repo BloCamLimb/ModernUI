@@ -21,6 +21,8 @@ package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
 
+import javax.annotation.Nullable;
+
 public final class BlendModeShader extends Shader {
 
     private final BlendMode mMode;
@@ -29,10 +31,36 @@ public final class BlendModeShader extends Shader {
     @SharedPtr
     private final Shader mDst;
 
-    public BlendModeShader(BlendMode mode, Shader src, Shader dst) {
+    BlendModeShader(BlendMode mode, @SharedPtr Shader src, @SharedPtr Shader dst) {
         mMode = mode;
         mSrc = src;
         mDst = dst;
+    }
+
+    @Nullable
+    @SharedPtr
+    public static Shader make(BlendMode mode, @SharedPtr Shader src, @SharedPtr Shader dst) {
+        if (src == null || dst == null || mode == null) {
+            RefCnt.move(src);
+            RefCnt.move(dst);
+            return null;
+        }
+        switch (mode) {
+            case CLEAR: {
+                RefCnt.move(src);
+                RefCnt.move(dst);
+                return new ColorShader(0x00000000);
+            }
+            case SRC: {
+                RefCnt.move(dst);
+                return src;
+            }
+            case DST: {
+                RefCnt.move(src);
+                return dst;
+            }
+        }
+        return new BlendModeShader(mode, src, dst); // move
     }
 
     @Override

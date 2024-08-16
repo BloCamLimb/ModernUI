@@ -21,7 +21,7 @@ package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
 
-public class LocalMatrixShader extends Shader {
+public final class LocalMatrixShader extends Shader {
 
     @SharedPtr
     private final Shader mBase;

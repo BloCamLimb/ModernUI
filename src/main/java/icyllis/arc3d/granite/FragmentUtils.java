@@ -20,12 +20,12 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.effects.BlendModeColorFilter;
-import icyllis.arc3d.core.effects.ColorFilter;
+import icyllis.arc3d.core.effects.*;
 import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 
 /**
  * Build {@link icyllis.arc3d.engine.Key PaintParamsKey} and collect
@@ -524,6 +524,12 @@ public class FragmentUtils {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (ColorShader) shader);
+        } else if (shader instanceof Color4fShader) {
+            append_to_key(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    (Color4fShader) shader);
         } else if (shader instanceof Gradient1DShader) {
             append_to_key(keyContext,
                     keyBuilder,
@@ -536,6 +542,12 @@ public class FragmentUtils {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (BlendModeShader) shader);
+        } else if (shader instanceof EmptyShader) {
+            append_to_key(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    (EmptyShader) shader);
         }
     }
 
@@ -553,6 +565,12 @@ public class FragmentUtils {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (BlendModeColorFilter) colorFilter);
+        } else if (colorFilter instanceof ComposeColorFilter) {
+            append_to_key(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    (ComposeColorFilter) colorFilter);
         }
     }
 
@@ -578,6 +596,7 @@ public class FragmentUtils {
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
                                       @RawPtr ColorShader shader) {
+        //TODO should we apply color space here?
         int color = shader.getColor();
         float r = ((color >> 16) & 0xff) / 255.0f;
         float g = ((color >> 8) & 0xff) / 255.0f;
@@ -589,6 +608,36 @@ public class FragmentUtils {
                 uniformDataGatherer,
                 textureDataGatherer,
                 r * a, g * a, b * a, a
+        );
+    }
+
+    private static void append_to_key(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer,
+                                      @RawPtr Color4fShader shader) {
+        float[] color = {shader.r(), shader.g(), shader.b(), shader.a()};
+        ColorSpace srcCS = shader.getColorSpace();
+        ColorSpace dstCS = keyContext.targetInfo().colorSpace();
+        if ((srcCS != null && !srcCS.isSrgb()) || (dstCS != null && !dstCS.isSrgb())) {
+            if (srcCS == null) {
+                srcCS = ColorSpace.get(ColorSpace.Named.SRGB);
+            }
+            if (dstCS == null) {
+                dstCS = ColorSpace.get(ColorSpace.Named.SRGB);
+            }
+            ColorSpace.connect(srcCS, dstCS)
+                    .transform(color);
+        }
+        for (int i = 0; i < 3; i++) {
+            color[i] *= color[3];
+        }
+        appendSolidColorShaderBlock(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                color[0], color[1], color[2], color[3]
         );
     }
 
@@ -609,31 +658,59 @@ public class FragmentUtils {
             return;
         }
 
-        int srcAlphaType = imageToDraw.getAlphaType();
-        int dstAlphaType = ColorInfo.AT_PREMUL;
+        final int srcAlphaType = imageToDraw.getAlphaType();
+        final int dstAlphaType = ColorInfo.AT_PREMUL;
+        if (imageToDraw.isAlphaOnly()) {
+            keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
 
-        keyBuilder.addInt(FragmentStage.kCompose_BuiltinStageID);
+            // src
+            appendRGBOpaquePaintColorBlock(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
 
-        appendImageShaderBlock(keyContext,
-                keyBuilder,
-                uniformDataGatherer,
-                textureDataGatherer,
-                shader.getSubset(),
-                shader.getTileModeX(),
-                shader.getTileModeY(),
-                shader.getSampling(),
-                view.getWidth(),
-                view.getHeight(),
-                srcAlphaType,
-                view);
+            // dst, ignore color space transform
+            appendImageShaderBlock(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    shader.getSubset(),
+                    shader.getTileModeX(),
+                    shader.getTileModeY(),
+                    shader.getSampling(),
+                    view.getWidth(),
+                    view.getHeight(),
+                    srcAlphaType,
+                    view);
 
-        appendColorSpaceUniforms(
-                imageToDraw.getColorSpace(),
-                srcAlphaType,
-                keyContext.targetInfo().colorSpace(),
-                dstAlphaType,
-                uniformDataGatherer);
-        keyBuilder.addInt(FragmentStage.kColorSpaceXformColorFilter_BuiltinStageID);
+            // blend, this should be dst-in, but src-in is equivalent
+            keyBuilder.addInt(FragmentStage.kInlineSrcInBlend_BuiltinStageID);
+        } else {
+            keyBuilder.addInt(FragmentStage.kCompose_BuiltinStageID);
+
+            appendImageShaderBlock(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    shader.getSubset(),
+                    shader.getTileModeX(),
+                    shader.getTileModeY(),
+                    shader.getSampling(),
+                    view.getWidth(),
+                    view.getHeight(),
+                    srcAlphaType,
+                    view);
+
+            appendColorSpaceUniforms(
+                    imageToDraw.getColorSpace(),
+                    srcAlphaType,
+                    keyContext.targetInfo().colorSpace(),
+                    dstAlphaType,
+                    uniformDataGatherer);
+            keyBuilder.addInt(FragmentStage.kColorSpaceXformColorFilter_BuiltinStageID);
+        }
     }
 
     private static void append_to_key(KeyContext keyContext,
@@ -742,6 +819,14 @@ public class FragmentUtils {
                                       KeyBuilder keyBuilder,
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
+                                      @RawPtr EmptyShader shader) {
+        keyBuilder.addInt(FragmentStage.kPassthrough_BuiltinStageID);
+    }
+
+    private static void append_to_key(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer,
                                       @RawPtr BlendModeColorFilter colorFilter) {
         float[] blendColor = colorFilter.getColor().clone();
         PaintParams.prepareColorForDst(blendColor, keyContext.targetInfo(), false);
@@ -751,14 +836,16 @@ public class FragmentUtils {
 
         keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
 
+        // src
         appendSolidColorShaderBlock(
-            keyContext,
+                keyContext,
                 keyBuilder,
                 uniformDataGatherer,
                 textureDataGatherer,
                 blendColor[0], blendColor[1], blendColor[2], blendColor[3]
         );
 
+        // dst
         keyBuilder.addInt(FragmentStage.kPassthrough_BuiltinStageID);
 
         appendBlendModeBlenderBlock(
@@ -767,6 +854,30 @@ public class FragmentUtils {
                 uniformDataGatherer,
                 textureDataGatherer,
                 colorFilter.getMode()
+        );
+    }
+
+    private static void append_to_key(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer,
+                                      @RawPtr ComposeColorFilter colorFilter) {
+        keyBuilder.addInt(FragmentStage.kCompose_BuiltinStageID);
+
+        appendToKey(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                colorFilter.getBefore()
+        );
+
+        appendToKey(
+                keyContext,
+                keyBuilder,
+                uniformDataGatherer,
+                textureDataGatherer,
+                colorFilter.getAfter()
         );
     }
 
