@@ -314,6 +314,16 @@ public abstract class Device implements Engine {
         return null;
     }
 
+    // Overridden by backend to free additional resources used by command buffers,
+    // like framebuffers, this is called by ImmediateContext on the executing thread
+    protected void freeGpuResources() {
+    }
+
+    // Overridden by backend to free additional resources used by command buffers,
+    // like framebuffers, this is called by ImmediateContext on the executing thread
+    protected void purgeResourcesNotUsedSince(long timeMillis) {
+    }
+
     /* *//**
      * Creates a new GPU image object and allocates its GPU memory. In other words, the
      * image data is dirty and needs to be uploaded later. If mipmapped, also allocates

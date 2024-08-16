@@ -26,6 +26,7 @@ import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.StaticBufferManager;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
 
@@ -120,15 +121,18 @@ public final class ImmediateContext extends Context {
     }
 
     public boolean submit() {
+        checkOwnerThread();
         boolean success = mQueueManager.submit();
         mQueueManager.checkForFinishedWork();
         return success;
     }
 
     public void checkForFinishedWork() {
+        checkOwnerThread();
         mQueueManager.checkForFinishedWork();
     }
 
+    @VisibleForTesting
     @ApiStatus.Internal
     public CommandBuffer currentCommandBuffer() {
         if (mQueueManager.prepareCommandBuffer(mResourceProvider)) {
@@ -137,12 +141,28 @@ public final class ImmediateContext extends Context {
         return null;
     }
 
+    @Override
     public boolean isDeviceLost() {
         if (mDevice != null && mDevice.isDeviceLost()) {
             //discard();
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void freeGpuResources() {
+        checkForFinishedWork();
+        mResourceProvider.freeGpuResources();
+        mDevice.freeGpuResources();
+    }
+
+    @Override
+    public void performDeferredCleanup(long msNotUsed) {
+        checkForFinishedWork();
+        long timeMillis = System.currentTimeMillis() - msNotUsed;
+        mResourceProvider.purgeResourcesNotUsedSince(timeMillis);
+        mDevice.purgeResourcesNotUsedSince(timeMillis);
     }
 
     @Override

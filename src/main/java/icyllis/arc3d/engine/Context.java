@@ -155,6 +155,46 @@ public abstract sealed class Context extends RefCnt
         return getCaps().mMaxRenderTargetSize;
     }
 
+    /**
+     * Frees GPU resources created and held by the Context. Can be called to reduce GPU memory
+     * pressure. Any resources that are still in use (e.g. being used by work submitted to the GPU)
+     * will not be deleted by this call. If the caller wants to make sure all resources are freed,
+     * then they should first make sure to submit and wait on any outstanding work.
+     */
+    public abstract void freeGpuResources();
+
+    /**
+     * Purge GPU resources on the Context that haven't been used in the past 'msNotUsed'
+     * milliseconds or are otherwise marked for deletion, regardless of whether the context is under
+     * budget.
+     */
+    public abstract void performDeferredCleanup(long msNotUsed);
+
+    /**
+     * Returns the number of bytes of the Context's gpu memory cache budget that are currently in
+     * use.
+     */
+    public long getCurrentBudgetedBytes() {
+        checkOwnerThread();
+        return mResourceProvider.getResourceCacheBudgetedBytes();
+    }
+
+    /**
+     * Returns the number of bytes of the Context's resource cache that are currently purgeable.
+     */
+    public long getCurrentPurgeableBytes() {
+        checkOwnerThread();
+        return mResourceProvider.getResourceCachePurgeableBytes();
+    }
+
+    /**
+     * Returns the size of Context's gpu memory cache budget in bytes.
+     */
+    public long getMaxBudgetedBytes() {
+        checkOwnerThread();
+        return mResourceProvider.getResourceCacheLimit();
+    }
+
     @ApiStatus.Internal
     public final SharedResourceCache getSharedResourceCache() {
         return mDevice.getSharedResourceCache();
