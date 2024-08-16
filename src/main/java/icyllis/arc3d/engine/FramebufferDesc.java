@@ -106,8 +106,9 @@ public final class FramebufferDesc {
 
         @SuppressWarnings("DataFlowIssue")
         public boolean isStale() {
-            return (mAttachmentID != null && mAttachment.get() == null) ||
-                    (mResolveAttachmentID != null && mResolveAttachment.get() == null);
+            Image e;
+            return (mAttachmentID != null && ((e = mAttachment.get()) == null || e.isDestroyed())) ||
+                    (mResolveAttachmentID != null && ((e = mResolveAttachment.get()) == null || e.isDestroyed()));
         }
 
         @Override
@@ -161,7 +162,8 @@ public final class FramebufferDesc {
 
         @SuppressWarnings("DataFlowIssue")
         public boolean isStale() {
-            return (mAttachmentID != null && mAttachment.get() == null);
+            Image e;
+            return (mAttachmentID != null && ((e = mAttachment.get()) == null || e.isDestroyed()));
         }
 
         @Override
