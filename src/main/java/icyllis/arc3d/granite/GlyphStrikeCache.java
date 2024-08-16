@@ -39,4 +39,8 @@ public class GlyphStrikeCache {
     public GlyphStrike findOrCreateStrike(StrikeDesc desc) {
         return mCache.computeIfAbsent(desc, GlyphStrike::new);
     }
+
+    public void clear() {
+        mCache.clear();
+    }
 }

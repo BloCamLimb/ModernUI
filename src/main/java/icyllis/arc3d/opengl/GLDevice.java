@@ -361,6 +361,18 @@ public final class GLDevice extends Device {
         return error;
     }
 
+    @Override
+    protected void freeGpuResources() {
+        super.freeGpuResources();
+        mFramebufferCache.purgeAllFramebuffers();
+    }
+
+    @Override
+    protected void purgeResourcesNotUsedSince(long timeMillis) {
+        super.purgeResourcesNotUsedSince(timeMillis);
+        mFramebufferCache.purgeFramebuffersNotUsedSince(timeMillis);
+    }
+
     /*@Nullable
     @Override
     protected GLImage onCreateImage(int width, int height,

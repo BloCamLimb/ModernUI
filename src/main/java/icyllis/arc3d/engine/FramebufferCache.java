@@ -55,6 +55,21 @@ public class FramebufferCache implements AutoCloseable {
         mFramebufferMap.clear();
     }
 
+    public void purgeFramebuffersNotUsedSince(long timeMillis) {
+        if (mFramebufferMap.isEmpty()) {
+            return;
+        }
+        var framebuffersToDelete = new ObjectArrayList<FramebufferDesc>();
+        for (var e : mFramebufferMap.entrySet()) {
+            if (e.getKey().isStale() || (e.getValue().getLastUsedTime() < timeMillis)) {
+                framebuffersToDelete.add(e.getKey());
+            }
+        }
+        for (var desc : framebuffersToDelete) {
+            mFramebufferMap.remove(desc).unref();
+        }
+    }
+
     public void purgeStaleFramebuffers() {
         if (mFramebufferMap.isEmpty()) {
             return;

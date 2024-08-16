@@ -62,6 +62,27 @@ public final class RecordingContext extends Context {
         mTextBlobCache = new TextBlobCache();
     }
 
+    @Override
+    public void freeGpuResources() {
+        checkOwnerThread();
+        mAtlasProvider.compact();
+        mResourceProvider.freeGpuResources();
+        // This is technically not GPU memory, but there's no other place for the client to tell us to
+        // clean this up, and without any cleanup it can grow unbounded.
+        mGlyphStrikeCache.clear();
+    }
+
+    @Override
+    public void performDeferredCleanup(long msNotUsed) {
+        checkOwnerThread();
+        long timeMillis = System.currentTimeMillis() - msNotUsed;
+        mResourceProvider.purgeResourcesNotUsedSince(timeMillis);
+    }
+
+    public void clearStrikeCache() {
+        mGlyphStrikeCache.clear();
+    }
+
     /**
      * Reports whether the {@link ImmediateContext} associated with this {@link RecordingContext}
      * is discarded. When called on a {@link ImmediateContext} it may actively check whether the
