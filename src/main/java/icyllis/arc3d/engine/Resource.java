@@ -46,10 +46,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * Resources that are zero-sized:
  * <ul>
  *     <li>GLSampler</li>
- *     <li>GLFramebuffer</li>
  *     <li>VulkanSampler</li>
  *     <li>VulkanRenderPass</li>
- *     <li>VulkanFramebuffer</li>
  * </ul>
  * <p>
  * Register resources into the cache to track their GPU memory usage. Since all
@@ -370,7 +368,7 @@ public abstract class Resource implements RefCounted {
         label = label != null ? label.trim() : "";
         if (!mLabel.equals(label)) {
             mLabel = label;
-            onSetLabel(!label.isEmpty() ? "Arc3D_" + label : null);
+            onSetLabel(!label.isEmpty() ? label : null);
         }
     }
 
@@ -418,8 +416,8 @@ public abstract class Resource implements RefCounted {
     }
 
     @ApiStatus.Internal
-    public final boolean isFree() {
-        // For being free we don't care if there are CacheRefs on the object since the CacheRef
+    public final boolean isPurgeable() {
+        // For being purgeable we don't care if there are cacheRefs on the object since the cacheRef
         // will always be greater than 1 since we add one on insert and don't remove that ref until
         // the Resource is removed from the cache.
         return !hasUsageRef() && !hasCommandBufferRef();
@@ -487,7 +485,7 @@ public abstract class Resource implements RefCounted {
      * of time it has been available for cleaning.
      */
     final long getLastUsedTime() {
-        assert isFree();
+        assert isPurgeable();
         return mLastUsedTime;
     }
 }

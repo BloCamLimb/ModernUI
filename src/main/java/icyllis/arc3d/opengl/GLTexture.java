@@ -229,7 +229,8 @@ public final class GLTexture extends GLImage {
                 if (label == null) {
                     dev.getGL().glObjectLabel(GL_TEXTURE, mHandle, 0, MemoryUtil.NULL);
                 } else {
-                    String subLabel = label.substring(0, Math.min(label.length(),
+                    String subLabel = "Arc3D_TEX_" + label;
+                    subLabel = subLabel.substring(0, Math.min(subLabel.length(),
                             dev.getCaps().maxLabelLength()));
                     dev.getGL().glObjectLabel(GL_TEXTURE, mHandle, subLabel);
                 }

@@ -21,6 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,15 +47,14 @@ public abstract class ResourceProvider {
 
     // lookup key
     private IResourceKey mImageScratchKey;
-    private final GpuRenderTarget.ResourceKey mRenderTargetScratchKey = new GpuRenderTarget.ResourceKey();
 
     private final Buffer.ResourceKey mBufferKey = new Buffer.ResourceKey();
 
     protected ResourceProvider(Device device, Context context) {
         mDevice = device;
         mContext = context;
-        //TODO not contextID, but...
-        mResourceCache = new ResourceCache(context.getContextID());
+        //TODO configurable
+        mResourceCache = new ResourceCache(context, 1 << 28);
     }
 
     protected void destroy() {
@@ -722,14 +722,15 @@ public abstract class ResourceProvider {
                                                                int surfaceFlags,
                                                                String label) {
 
-        return findAndRefScratchRenderTarget(mRenderTargetScratchKey.compute(
+        /*return findAndRefScratchRenderTarget(mRenderTargetScratchKey.compute(
                 width, height,
                 colorFormat, colorFlags,
                 resolveFormat, resolveFlags,
                 depthStencilFormat, depthStencilFlags,
                 sampleCount,
                 surfaceFlags
-        ), label);
+        ), label);*/
+        return null;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -859,5 +860,50 @@ public abstract class ResourceProvider {
             return;
         }
         //resource.setUniqueKey(key);
+    }
+
+    /**
+     * Returns the number of bytes that cached resources should count against.
+     */
+    public long getResourceCacheLimit() {
+        return mResourceCache.getMaxBudget();
+    }
+
+    /**
+     * Returns the number of bytes consumed by budgeted resources.
+     */
+    public long getResourceCacheBudgetedBytes() {
+        return mResourceCache.getBudgetedBytes();
+    }
+
+    /**
+     * Returns the number of bytes held by unlocked resources which are available for cleanup.
+     */
+    public long getResourceCachePurgeableBytes() {
+        return mResourceCache.getPurgeableBytes();
+    }
+
+    /**
+     * Deallocates unlocked resources as much as possible. All purgeable
+     * resources will be deleted.
+     */
+    public void freeGpuResources() {
+        mResourceCache.purgeResources();
+    }
+
+    /**
+     * Deallocates unlocked resources not used since the passed point in time. The time-base is
+     * {@link System#currentTimeMillis()}. Otherwise, all purgeable resources older than
+     * <code>timeMillis</code> will be deleted.
+     *
+     * @param timeMillis the resources older than this time will be deleted
+     */
+    public void purgeResourcesNotUsedSince(long timeMillis) {
+        mResourceCache.purgeResourcesNotUsedSince(timeMillis);
+    }
+
+    @VisibleForTesting
+    public ResourceCache getResourceCache() {
+        return mResourceCache;
     }
 }

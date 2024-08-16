@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.engine;
 
+//TODO this class should be removed, and merge into ImageProxyCache
 public final class ThreadSafeCache {
 
     public void dropUniqueRefs(ResourceCache resourceCache) {
