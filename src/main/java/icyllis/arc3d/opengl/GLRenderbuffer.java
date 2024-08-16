@@ -232,7 +232,8 @@ public final class GLRenderbuffer extends GLImage {
                 if (label == null) {
                     dev.getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, 0, MemoryUtil.NULL);
                 } else {
-                    String subLabel = label.substring(0, Math.min(label.length(),
+                    String subLabel = "Arc3D_RBO_" + label;
+                    subLabel = subLabel.substring(0, Math.min(subLabel.length(),
                             dev.getCaps().maxLabelLength()));
                     dev.getGL().glObjectLabel(GL_RENDERBUFFER, mRenderbuffer, subLabel);
                 }

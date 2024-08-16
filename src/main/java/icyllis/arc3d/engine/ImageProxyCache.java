@@ -30,6 +30,7 @@ import java.util.Objects;
  * A factory for creating {@link SurfaceProxy}-derived objects. This class may be used on
  * the creating thread of {@link RecordingContext}.
  */
+//TODO still WIP
 public final class ImageProxyCache {
 
     private final Context mContext;

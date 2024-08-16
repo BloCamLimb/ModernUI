@@ -302,7 +302,8 @@ public final class GLBuffer extends Buffer {
                 if (label == null) {
                     dev.getGL().glObjectLabel(GL_BUFFER, mBuffer, 0, NULL);
                 } else {
-                    String subLabel = label.substring(0, Math.min(label.length(),
+                    String subLabel = "Arc3D_BUF_" + label;
+                    subLabel = subLabel.substring(0, Math.min(subLabel.length(),
                             dev.getCaps().maxLabelLength()));
                     dev.getGL().glObjectLabel(GL_BUFFER, mBuffer, subLabel);
                 }
