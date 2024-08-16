@@ -96,7 +96,7 @@ public abstract class ColorFilter extends RefCnt {
         if (before == null) {
             return this;
         }
-        return new ComposedColorFilter(before, this);
+        return new ComposeColorFilter(before, this);
     }
 
     /**
@@ -113,6 +113,6 @@ public abstract class ColorFilter extends RefCnt {
         if (after == null) {
             return this;
         }
-        return new ComposedColorFilter(this, after);
+        return new ComposeColorFilter(this, after);
     }
 }

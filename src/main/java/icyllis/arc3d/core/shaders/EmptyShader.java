@@ -19,5 +19,5 @@
 
 package icyllis.arc3d.core.shaders;
 
-public class EmptyShader extends Shader {
+public final class EmptyShader extends Shader {
 }

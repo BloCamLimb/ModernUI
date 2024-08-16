@@ -26,15 +26,15 @@ import java.util.Objects;
 /**
  * @see ColorFilter#compose(ColorFilter)
  */
-public class ComposedColorFilter extends ColorFilter {
+public final class ComposeColorFilter extends ColorFilter {
 
     @SharedPtr
     private final ColorFilter mAfter;
     @SharedPtr
     private final ColorFilter mBefore;
 
-    public ComposedColorFilter(@SharedPtr ColorFilter before,
-                               @SharedPtr ColorFilter after) {
+    ComposeColorFilter(@SharedPtr ColorFilter before,
+                       @SharedPtr ColorFilter after) {
         mBefore = Objects.requireNonNull(before);
         mAfter = Objects.requireNonNull(after);
     }
