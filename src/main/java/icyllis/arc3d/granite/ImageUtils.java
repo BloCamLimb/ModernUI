@@ -28,35 +28,42 @@ import javax.annotation.Nullable;
 
 public class ImageUtils {
 
-    public static ObjectIntPair<@SharedPtr ImageViewProxy> makePixmapView(
+    @Nullable
+    public static ObjectIntPair<@SharedPtr ImageViewProxy> makePixmapViewProxy(
             RecordingContext context,
             Pixmap pixmap,
             boolean mipmapped,
             boolean budgeted,
             String label
     ) {
+        if (!pixmap.getInfo().isValid()) {
+            return null;
+        }
         Caps caps = context.getCaps();
-        int ct = pixmap.getColorType();
+        @ColorInfo.ColorType
+        int srcCT = pixmap.getColorType();
+        @ColorInfo.ColorType
+        int dstCT = srcCT;
 
-        if (pixmap.getWidth() == 1 && pixmap.getHeight() == 1) {
+        if (pixmap.getWidth() <= 1 && pixmap.getHeight() <= 1) {
             mipmapped = false;
         }
 
         var desc = caps.getDefaultColorImageDesc(
                 Engine.ImageType.k2D,
-                ct,
+                dstCT,
                 pixmap.getWidth(),
                 pixmap.getHeight(),
                 1,
                 ISurface.FLAG_SAMPLED_IMAGE | (mipmapped ? ISurface.FLAG_MIPMAPPED : 0)
         );
         if (desc == null) {
+            //TODO see ImageUploadTask and Caps
             return null;
-            //TODO pixel conversion
-            /*ct = ColorInfo.CT_RGBA_8888;
+            /*dstCT = ColorInfo.CT_RGBA_8888;
             desc = caps.getDefaultColorImageDesc(
                     Engine.ImageType.k2D,
-                    ct,
+                    dstCT,
                     pixmap.getWidth(),
                     pixmap.getHeight(),
                     1,
@@ -65,12 +72,9 @@ public class ImageUtils {
         }
         assert desc != null;
 
-        if (!pixmap.getInfo().isValid()) {
-            return null;
-        }
-
-        short readSwizzle = caps.getReadSwizzle(desc, ct);
-        if (ColorInfo.colorTypeIsAlphaOnly(ct)) {
+        short readSwizzle = caps.getReadSwizzle(desc, dstCT);
+        // If the color type is alpha-only, propagate the alpha value to the other channels.
+        if (ColorInfo.colorTypeIsAlphaOnly(dstCT)) {
             readSwizzle = Swizzle.concat(readSwizzle, Swizzle.AAAA);
         }
 
@@ -93,10 +97,10 @@ public class ImageUtils {
         var task = ImageUploadTask.make(
                 context,
                 view,   // move
-                ct,
+                srcCT,
                 imageInfo.alphaType(),
                 imageInfo.colorSpace(),
-                ct,
+                dstCT,
                 imageInfo.alphaType(),
                 imageInfo.colorSpace(), // src == dst: no conversion
                 new ImageUploadTask.MipLevel[]{
@@ -106,14 +110,14 @@ public class ImageUtils {
                 ImageUploadTask.uploadOnce()
         );
         if (task == null) {
-            context.getLogger().error("ImageUtils.makePixmapView: Could not create ImageUploadTask");
+            context.getLogger().error("ImageUtils.makePixmapViewProxy: Could not create ImageUploadTask");
             return null;
         }
 
         context.addTask(task); // move
 
         view.ref();
-        return ObjectIntPair.of(view, ct);
+        return ObjectIntPair.of(view, dstCT);
     }
 
     @Nullable
@@ -125,7 +129,7 @@ public class ImageUtils {
             boolean budgeted,
             String label
     ) {
-        var result = makePixmapView(context, pixmap, mipmapped, budgeted, label);
+        var result = makePixmapViewProxy(context, pixmap, mipmapped, budgeted, label);
         if (result == null) {
             return null;
         }

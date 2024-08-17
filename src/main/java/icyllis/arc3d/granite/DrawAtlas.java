@@ -895,8 +895,8 @@ public class DrawAtlas implements AutoCloseable {
 
                     // Src and dst colorInfo are the same
                     if (!sdc.recordUpload(context, RefCnt.create(texture),
-                            mColorType, ColorInfo.AT_UNKNOWN, null,
-                            mColorType, ColorInfo.AT_UNKNOWN, null,
+                            mColorType, ColorInfo.AT_PREMUL, null,
+                            mColorType, ColorInfo.AT_PREMUL, null,
                             levels, dstRect, /*uploadCondition*/ null)) {
                         return false;
                     }
