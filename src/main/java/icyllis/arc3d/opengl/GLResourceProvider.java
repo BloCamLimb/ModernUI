@@ -73,22 +73,4 @@ public final class GLResourceProvider extends ResourceProvider {
     protected Sampler createSampler(SamplerDesc desc) {
         return GLSampler.create(mContext, desc);
     }
-
-    @Nullable
-    @SharedPtr
-    public GLFramebuffer findOrCreateFramebuffer(FramebufferDesc framebufferDesc) {
-        var framebufferCache = mDevice.getFramebufferCache();
-        @SharedPtr
-        GLFramebuffer framebuffer = (GLFramebuffer) framebufferCache.findFramebuffer(
-                framebufferDesc);
-        if (framebuffer != null) {
-            return framebuffer;
-        }
-        framebuffer = GLFramebuffer.make(mContext, framebufferDesc);
-        if (framebuffer == null) {
-            return null;
-        }
-        framebufferCache.insertFramebuffer(framebufferDesc, framebuffer);
-        return framebuffer;
-    }
 }

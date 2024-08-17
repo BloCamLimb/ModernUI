@@ -33,10 +33,10 @@ public final class GLFramebuffer extends Framebuffer {
     private int mRenderFramebuffer;
     private int mResolveFramebuffer;
 
-    private GLFramebuffer(Context context,
+    private GLFramebuffer(GLDevice device,
                           int renderFramebuffer,
                           int resolveFramebuffer) {
-        super(context.getDevice());
+        super(device);
         mRenderFramebuffer = renderFramebuffer;
         mResolveFramebuffer = resolveFramebuffer;
     }
@@ -64,9 +64,8 @@ public final class GLFramebuffer extends Framebuffer {
 
     @Nullable
     @SharedPtr
-    public static GLFramebuffer make(Context context,
+    public static GLFramebuffer make(GLDevice device,
                                      FramebufferDesc desc) {
-        GLDevice device = (GLDevice) context.getDevice();
 
         assert device.isOnExecutingThread();
 
@@ -179,7 +178,7 @@ public final class GLFramebuffer extends Framebuffer {
             }
         }
 
-        return new GLFramebuffer(context, renderFramebuffer, resolveFramebuffer);
+        return new GLFramebuffer(device, renderFramebuffer, resolveFramebuffer);
     }
 
     public int getRenderFramebuffer() {

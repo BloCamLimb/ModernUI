@@ -25,9 +25,9 @@ import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayDeque;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
@@ -173,6 +173,10 @@ public final class GLDevice extends Device {
     // executing thread only
     private final FramebufferCache mFramebufferCache =
             new FramebufferCache();
+    // executing thread only
+    // VertexInputLayout is not hashable currently, then use an IdentityHashMap
+    private final IdentityHashMap<VertexInputLayout, @SharedPtr GLVertexArray> mVertexArrayCache =
+            new IdentityHashMap<>();
 
     private GLDevice(ContextOptions options, GLCaps caps, GLInterface glInterface) {
         super(BackendApi.kOpenGL, options, caps);
@@ -243,10 +247,6 @@ public final class GLDevice extends Device {
         while ((r = queue.poll()) != null) r.accept(this);
     }
 
-    public FramebufferCache getFramebufferCache() {
-        return mFramebufferCache;
-    }
-
     @Override
     public GLCaps getCaps() {
         return mCaps;
@@ -273,6 +273,9 @@ public final class GLDevice extends Device {
         }
 
         callAllFinishedCallbacks(cleanup);
+
+        mVertexArrayCache.values().forEach(RefCnt::unref);
+        mVertexArrayCache.clear();
 
         flushRenderCalls();
 
@@ -365,12 +368,66 @@ public final class GLDevice extends Device {
     protected void freeGpuResources() {
         super.freeGpuResources();
         mFramebufferCache.purgeAllFramebuffers();
+        purgeStaleVertexArrays();
     }
 
     @Override
     protected void purgeResourcesNotUsedSince(long timeMillis) {
         super.purgeResourcesNotUsedSince(timeMillis);
         mFramebufferCache.purgeFramebuffersNotUsedSince(timeMillis);
+        purgeStaleVertexArrays();
+    }
+
+    public void purgeStaleResources() {
+        mFramebufferCache.purgeStaleFramebuffers();
+    }
+
+    private void purgeStaleVertexArrays() {
+        for (var it = mVertexArrayCache.entrySet().iterator(); it.hasNext(); ) {
+            var e = it.next();
+            if (e.getValue().unique()) {
+                e.getValue().unref();
+                it.remove();
+            }
+        }
+    }
+
+    @Nullable
+    @SharedPtr
+    public GLFramebuffer findOrCreateFramebuffer(@Nonnull FramebufferDesc framebufferDesc) {
+        var framebufferCache = mFramebufferCache;
+        @SharedPtr
+        GLFramebuffer existing = (GLFramebuffer) framebufferCache.findFramebuffer(
+                framebufferDesc);
+        if (existing != null) {
+            return existing;
+        }
+        @SharedPtr
+        GLFramebuffer framebuffer = GLFramebuffer.make(this, framebufferDesc);
+        if (framebuffer == null) {
+            return null;
+        }
+        framebufferCache.insertFramebuffer(framebufferDesc, framebuffer);
+        return framebuffer;
+    }
+
+    @Nullable
+    @SharedPtr
+    public GLVertexArray findOrCreateVertexArray(@Nonnull VertexInputLayout inputLayout,
+                                                 String label) {
+        GLVertexArray existing = mVertexArrayCache.get(inputLayout);
+        if (existing != null) {
+            return RefCnt.create(existing);
+        }
+        @SharedPtr
+        GLVertexArray vertexArray = GLVertexArray.make(this,
+                inputLayout,
+                label);
+        if (vertexArray != null) {
+            mVertexArrayCache.put(inputLayout, vertexArray);
+            return RefCnt.create(vertexArray);
+        }
+        return null;
     }
 
     /*@Nullable
