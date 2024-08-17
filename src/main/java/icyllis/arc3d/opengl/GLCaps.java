@@ -488,25 +488,25 @@ public class GLCaps extends Caps {
             info.mInternalFormatForTexture = GL_RGB8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            // Format: RGB8, Surface: kRGB_888x
+            // Format: RGB8, Surface: kRGB_888
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = ColorInfo.CT_RGB_888x;
+                ctInfo.mColorType = ColorInfo.CT_RGB_888;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(ColorInfo.CT_RGB_888x, GL_RGB8);
+                setColorTypeFormat(ColorInfo.CT_RGB_888, GL_RGB8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                // Format: RGB8, Surface: kRGB_888x, Data: kRGB_888
+                // Format: RGB8, Surface: kRGB_888, Data: kRGB_888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGB_888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RGB;
-                    ioFormat.mExternalReadFormat = 0;
+                    ioFormat.mExternalReadFormat = GL_RGB;
                 }
 
-                // Format: RGB8, Surface: kRGB_888x, Data: kRGBA_8888
+                // Format: RGB8, Surface: kRGB_888, Data: kRGBA_8888
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;

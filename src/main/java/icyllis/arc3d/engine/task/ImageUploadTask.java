@@ -128,6 +128,9 @@ public class ImageUploadTask extends Task {
         //TODO take account of Vulkan's optimalBufferCopyOffsetAlignment and
         // optimalBufferCopyRowPitchAlignment
 
+        //TODO note that the dstInfo means for surface, not an actual target to convert,
+        // in Vulkan backend we need update the logic
+
         int mipLevelCount = levels.length;
         // The assumption is either that we have no mipmaps, or that our rect is the entire texture
         assert mipLevelCount == 1 ||
@@ -152,14 +155,13 @@ public class ImageUploadTask extends Task {
             return null;
         }
 
+        @ColorInfo.ColorType
         int actualColorType = (int) context.getCaps().getSupportedWriteColorType(
                 dstColorType,
                 imageViewProxy.getDesc(),
                 srcColorType
         );
-        if (actualColorType != srcColorType) {
-            //TODO pixel conversion
-            imageViewProxy.unref();
+        if (actualColorType == ColorInfo.CT_UNKNOWN) {
             return null;
         }
 
@@ -193,7 +195,6 @@ public class ImageUploadTask extends Task {
         for (int mipLevel = 0; mipLevel < mipLevelCount; mipLevel++) {
             var level = levels[mipLevel];
 
-            int trimRowBytes = width * bpp;
             int srcRowBytes = level.mRowBytes;
 
             long mipOffset = mipOffsetsAndRowBytes[mipLevel * 2];
@@ -202,16 +203,19 @@ public class ImageUploadTask extends Task {
             Object srcBase = level.mBase;
             long srcAddr = level.mAddress;
 
-            PixelUtils.copyImage(
+            ImageInfo srcImageInfo = ImageInfo.make(width, height, srcColorType, srcAlphaType, srcColorSpace);
+            ImageInfo dstImageInfo = ImageInfo.make(width, height, actualColorType, dstAlphaType, dstColorSpace);
+            boolean res = PixelUtils.convertPixels(
+                    srcImageInfo,
                     srcBase,
                     srcAddr,
                     srcRowBytes,
+                    dstImageInfo,
                     null,
                     writer + mipOffset,
-                    dstRowBytes,
-                    trimRowBytes,
-                    height
+                    dstRowBytes
             );
+            assert res;
 
             copyData[mipLevel] = new BufferImageCopyData(
                     bufferInfo.mOffset + mipOffset,
