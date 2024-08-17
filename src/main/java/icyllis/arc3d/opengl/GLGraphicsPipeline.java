@@ -39,8 +39,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * Supports OpenGL 3.3 and OpenGL 4.5.
  */
-//TODO set and bind textures
-public class GLGraphicsPipeline extends GraphicsPipeline {
+public final class GLGraphicsPipeline extends GraphicsPipeline {
 
     @SharedPtr
     private GLProgram mProgram;

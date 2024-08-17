@@ -177,7 +177,7 @@ public final class GLCommandBuffer extends CommandBuffer {
             mHWFramebuffer = RefCnt.move(mHWFramebuffer);
         } else {
             @SharedPtr
-            GLFramebuffer framebuffer = mResourceProvider.findOrCreateFramebuffer(framebufferDesc);
+            GLFramebuffer framebuffer = mDevice.findOrCreateFramebuffer(framebufferDesc);
             if (framebuffer == null) {
                 return false;
             }
@@ -901,7 +901,7 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     protected void begin() {
-        mDevice.getFramebufferCache().purgeStaleFramebuffers();
+        mDevice.purgeStaleResources();
         mDevice.flushRenderCalls();
 
         var gl = mDevice.getGL();
@@ -930,7 +930,7 @@ public final class GLCommandBuffer extends CommandBuffer {
 
     @Override
     protected boolean submit(QueueManager queueManager) {
-        mDevice.getFramebufferCache().purgeStaleFramebuffers();
+        mDevice.purgeStaleResources();
         resetStates();
         mSubmitFence = mDevice.getGL().glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         // glFlush is required after fence creation

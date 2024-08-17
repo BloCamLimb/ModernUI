@@ -444,7 +444,7 @@ public final class GLVertexArray extends ManagedResource {
     protected void deallocate() {
         getDevice().executeRenderCall(dev -> {
             if (mVertexArray != 0) {
-                getDevice().getGL().glDeleteVertexArrays(mVertexArray);
+                dev.getGL().glDeleteVertexArrays(mVertexArray);
             }
             discard();
         });

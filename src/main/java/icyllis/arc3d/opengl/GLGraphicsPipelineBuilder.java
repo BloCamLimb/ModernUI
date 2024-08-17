@@ -176,9 +176,8 @@ public class GLGraphicsPipelineBuilder {
             }
         }*/
 
-        //TODO share vertex arrays
         @SharedPtr
-        GLVertexArray vertexArray = GLVertexArray.make(mDevice,
+        GLVertexArray vertexArray = mDevice.findOrCreateVertexArray(
                 mInputLayout,
                 mInputLayoutLabel);
         if (vertexArray == null) {
