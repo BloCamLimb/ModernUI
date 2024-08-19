@@ -100,10 +100,10 @@ public class Vertices {
             newColors = new byte[vertexCount * 4];
             for (int i = 0, j = colorOffset, k = 0; i < vertexCount; i++, j++, k += 4) {
                 int color = colors[j];
-                newColors[j] =   (byte) ((color >> 16) & 0xFF);
-                newColors[j|1] = (byte) ((color >> 8) & 0xFF);
-                newColors[j|2] = (byte) (color & 0xFF);
-                newColors[j|3] = (byte) (color >>> 24);
+                newColors[k] =   (byte) ((color >> 16) & 0xFF);
+                newColors[k|1] = (byte) ((color >> 8) & 0xFF);
+                newColors[k|2] = (byte) (color & 0xFF);
+                newColors[k|3] = (byte) (color >>> 24);
             }
         }
         short[] newIndices = null;
@@ -133,10 +133,10 @@ public class Vertices {
             newColors = new byte[vertexCount * 4];
             for (int i = 0, j = colors.position(), k = 0; i < vertexCount; i++, j++, k += 4) {
                 int color = colors.get(j);
-                newColors[j] =   (byte) ((color >> 16) & 0xFF);
-                newColors[j|1] = (byte) ((color >> 8) & 0xFF);
-                newColors[j|2] = (byte) (color & 0xFF);
-                newColors[j|3] = (byte) (color >>> 24);
+                newColors[k] =   (byte) ((color >> 16) & 0xFF);
+                newColors[k|1] = (byte) ((color >> 8) & 0xFF);
+                newColors[k|2] = (byte) (color & 0xFF);
+                newColors[k|3] = (byte) (color >>> 24);
             }
         }
         int indexCount = 0;
