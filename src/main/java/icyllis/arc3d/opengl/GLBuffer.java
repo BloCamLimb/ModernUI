@@ -399,7 +399,7 @@ public final class GLBuffer extends Buffer {
             }
         } else {
             assert (mode == kWriteDiscard_MapMode);
-            if (mPersistentlyMappedBuffer != NULL || mClientUploadBuffer) {
+            if ((mPersistentlyMappedBuffer != NULL && mCachedBuffer == NULL) || mClientUploadBuffer) {
                 // always coherent, noop
                 return;
             }
