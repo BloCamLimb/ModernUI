@@ -756,6 +756,7 @@ public class Paint {
      *
      * @param align set the paint's Align
      */
+    @ApiStatus.Experimental
     public void setStrokeAlign(@NonNull Align align) {
         mPaint.setStrokeAlign(align.nativeInt);
     }
@@ -767,6 +768,7 @@ public class Paint {
      *
      * @param align set the paint's Align
      */
+    @ApiStatus.Experimental
     public void setStrokeAlign(@MagicConstant(intValues = {ALIGN_CENTER, ALIGN_INSIDE, ALIGN_OUTSIDE}) int align) {
         mPaint.setStrokeAlign((align & ALIGN_MASK) >>> ALIGN_SHIFT);
     }
@@ -833,6 +835,9 @@ public class Paint {
     public void setShader(@Nullable Shader shader) {
         if (mShader != shader) {
             mShader = shader;
+            mPaint.setShader(shader != null
+                    ? RefCnt.create(shader.getNativeShader())
+                    : null);
         }
     }
 
@@ -1029,6 +1034,32 @@ public class Paint {
      */
     public final void setFilterMode(@ImageShader.FilterMode int filter) {
         mFlags = (mFlags & ~FILTER_MODE_MASK) | ((filter << FILTER_MODE_SHIFT) & FILTER_MODE_MASK);
+    }
+
+    /**
+     * Returns the current filter. True will use {@link ImageShader#FILTER_MODE_LINEAR},
+     * false will use {@link ImageShader#FILTER_MODE_NEAREST}.
+     * The value is ignored when anisotropic filtering is used.
+     *
+     * @return the current filter, true means bilinear sampling, false means nearest neighbor sampling
+     */
+    public boolean isFilter() {
+        return (mFlags & FILTER_MODE_MASK) != (ImageShader.FILTER_MODE_NEAREST << FILTER_MODE_SHIFT);
+    }
+
+    /**
+     * Set the interpolation method for sampling textures images.
+     * True to use {@link ImageShader#FILTER_MODE_LINEAR}, false to
+     * use {@link ImageShader#FILTER_MODE_NEAREST}.
+     *
+     * @param filter true to use bilinear sampling, false to use nearest neighbor sampling
+     */
+    public void setFilter(boolean filter) {
+        mFlags = (mFlags & ~FILTER_MODE_MASK) |
+                (filter
+                        ? (ImageShader.FILTER_MODE_LINEAR << FILTER_MODE_SHIFT)
+                        : (ImageShader.FILTER_MODE_NEAREST << FILTER_MODE_SHIFT)
+                );
     }
 
     /**

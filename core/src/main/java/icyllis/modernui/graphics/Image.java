@@ -43,8 +43,9 @@ import java.util.Objects;
 //TODO add more usages, now image can only create from Bitmap, only used for drawImage()
 public class Image implements AutoCloseable {
 
-    private icyllis.arc3d.core.Image mImage; // managed by cleaner
-    private Cleaner.Cleanable mCleanup;
+    // managed by cleaner
+    private volatile icyllis.arc3d.core.Image mImage;
+    private final Cleaner.Cleanable mCleanup;
 
     private Image(@SharedPtr icyllis.arc3d.core.Image image) {
         mImage = Objects.requireNonNull(image);
@@ -56,14 +57,14 @@ public class Image implements AutoCloseable {
      * Whether the bitmap is immutable or not, the bitmap can be safely closed
      * after the call.
      * <p>
-     * must be called after render system and UI system are initialized successfully,
+     * Must be called after render system and UI system are initialized successfully,
      * <p>
-     * must be called from UI thread
+     * Must be called from UI thread
      *
      * @param bitmap the source bitmap
      * @return image, or null if failed
      * @throws NullPointerException bitmap is null or released
-     * @throws IllegalStateException wrong thread, or no context
+     * @throws IllegalStateException not call from UI thread, or no context
      */
     @Nullable
     public static Image createTextureFromBitmap(Bitmap bitmap) {
@@ -85,7 +86,7 @@ public class Image implements AutoCloseable {
      * @param bitmap the source bitmap
      * @return image, or null if failed
      * @throws NullPointerException bitmap is null or released
-     * @throws IllegalStateException wrong thread, or no context
+     * @throws IllegalStateException not call from context thread, or no context
      */
     @Nullable
     public static Image createTextureFromBitmap(@NonNull RecordingContext rc,
@@ -133,6 +134,7 @@ public class Image implements AutoCloseable {
      *
      * @return image info
      */
+    @ApiStatus.Experimental
     @NonNull
     public ImageInfo getInfo() {
         return mImage.getInfo();
@@ -165,11 +167,9 @@ public class Image implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (mImage != null) {
-            mImage = null;
-            mCleanup.clean();
-            mCleanup = null;
-        }
+        mImage = null;
+        // cleaner is thread safe
+        mCleanup.clean();
     }
 
     /**

@@ -43,7 +43,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.nio.*;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
@@ -347,6 +349,8 @@ public class TestFragment extends Fragment {
 
         ObjectAnimator mGoodAnim;
 
+        ImageShader mTestImageShader;
+
         public TestLinearLayout(Context context) {
             super(context);
             setOrientation(VERTICAL);
@@ -462,6 +466,19 @@ public class TestFragment extends Fragment {
                 //anim.setRepeatCount(ValueAnimator.INFINITE);
                 //anim.start();
                 mGoodAnim = anim;
+            }
+
+            try (Bitmap bitmap = BitmapFactory.decodePath(Path.of("E:/flux_core.png"))) {
+                 Image image = Image.createTextureFromBitmap(bitmap);
+                 if (image != null) {
+                     Matrix scalingMatrix = new Matrix();
+                     scalingMatrix.setScale(3, 3);
+                     mTestImageShader = new ImageShader(image, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT,
+                             ImageShader.FILTER_POINT, scalingMatrix);
+                 } else {
+                     LOGGER.warn("Failed to create image");
+                 }
+            } catch (IOException ignored) {
             }
 
             for (int i = 0; i < 12; i++) {
@@ -781,6 +798,15 @@ public class TestFragment extends Fragment {
             canvas.drawRect(200, 300, 500, 400, paint);
             paint.setStrokeCap(Paint.CAP_SQUARE);
             canvas.drawRect(200, 450, 500, 550, paint);
+
+            canvas.save();
+            canvas.translate(400, 200);
+            paint.setShader(mTestImageShader);
+            paint.setStyle(Paint.FILL);
+            canvas.drawRoundRect(0, 0, 192, 192, 16, paint);
+            paint.setStyle(Paint.STROKE);
+            paint.setShader(null);
+            canvas.restore();
 
             paint.setStrokeWidth(40.0f);
             //paint.setSmoothWidth(40.0f);
