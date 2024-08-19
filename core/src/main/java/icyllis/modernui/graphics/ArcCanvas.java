@@ -25,6 +25,7 @@ import icyllis.modernui.graphics.text.Font;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.*;
+import java.util.Objects;
 
 /**
  * Canvas powered by Arc3D Canvas.
@@ -148,13 +149,54 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawColor(int color, BlendMode mode) {
+    public boolean getLocalClipBounds(@NonNull RectF bounds) {
+        var devClipBounds = new Rect2i();
+        if (!mCanvas.getDeviceClipBounds(devClipBounds)) {
+            bounds.setEmpty();
+            return false;
+        }
+        var inverse = new Matrix();
+        mCanvas.getLocalToDevice(inverse);
+        if (!inverse.invert()) {
+            bounds.setEmpty();
+            return false;
+        }
+        bounds.set(devClipBounds.left(), devClipBounds.top(),
+                devClipBounds.right(), devClipBounds.bottom());
+        inverse.mapRect(bounds);
+        return !bounds.isEmpty();
+    }
+
+    @Override
+    public void drawColor(int color, @NonNull BlendMode mode) {
         mCanvas.drawColor(color, mode.getNativeBlendMode());
     }
 
     @Override
-    public void drawPaint(Paint paint) {
+    public void drawColor(float r, float g, float b, float a, @NonNull BlendMode mode) {
+        mCanvas.drawColor(r, g, b, a, mode.getNativeBlendMode());
+    }
+
+    @Override
+    public void drawPaint(@NonNull Paint paint) {
         mCanvas.drawPaint(paint.getNativePaint());
+    }
+
+    @Override
+    public void drawPoint(float x, float y, @NonNull Paint paint) {
+        mCanvas.drawPoint(x, y, paint.getNativePaint());
+    }
+
+    @Override
+    public void drawPoints(@NonNull float[] pts, int offset, int count, @NonNull Paint paint) {
+        Objects.checkFromIndexSize(offset, count, pts.length);
+        mCanvas.drawPoints(icyllis.arc3d.core.Canvas.POINT_MODE_POINTS,
+                pts, offset, count >> 1, paint.getNativePaint());
+    }
+
+    @Override
+    public void drawLine(float x0, float y0, float x1, float y1, @NonNull Paint paint) {
+        mCanvas.drawLine(x0, y0, x1, y1, paint.getNativePaint());
     }
 
     @Override
@@ -164,24 +206,36 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawLine(float x0, float y0, float x1, float y1, Paint paint) {
-        mCanvas.drawLine(x0, y0, x1, y1, paint.getNativePaint());
+    public void drawLines(@NonNull float[] pts, int offset, int count, boolean connected,
+                          @NonNull Paint paint) {
+        Objects.checkFromIndexSize(offset, count, pts.length);
+        mCanvas.drawPoints(connected ?
+                        icyllis.arc3d.core.Canvas.POINT_MODE_POLYGON
+                        : icyllis.arc3d.core.Canvas.POINT_MODE_LINES,
+                pts, offset, count >> 1, paint.getNativePaint());
     }
 
     @Override
-    public void drawRect(float left, float top, float right, float bottom, Paint paint) {
+    public void drawRect(float left, float top, float right, float bottom, @NonNull Paint paint) {
         mCanvas.drawRect(left, top, right, bottom, paint.getNativePaint());
     }
 
     @Override
-    public void drawRectGradient(float left, float top, float right, float bottom, int colorUL, int colorUR,
-                                 int colorLR, int colorLL, Paint paint) {
+    public void drawRectGradient(float left, float top, float right, float bottom,
+                                 int colorUL, int colorUR, int colorLR, int colorLL, Paint paint) {
         //TODO bilinear gradient not supported yet
         mCanvas.drawRect(left, top, right, bottom, paint.getNativePaint());
     }
 
     @Override
-    public void drawRoundRect(float left, float top, float right, float bottom, float radius, int sides, Paint paint) {
+    public void drawRoundRect(float left, float top, float right, float bottom, float radius,
+                              @NonNull Paint paint) {
+        mCanvas.drawRoundRect(left, top, right, bottom, radius, paint.getNativePaint());
+    }
+
+    @Override
+    public void drawRoundRect(float left, float top, float right, float bottom, float radius,
+                              int sides, @NonNull Paint paint) {
         //TODO per-corner radius not supported yet
         mCanvas.drawRoundRect(left, top, right, bottom, radius, paint.getNativePaint());
     }
@@ -194,18 +248,32 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+    public void drawCircle(float cx, float cy, float radius, @NonNull Paint paint) {
         mCanvas.drawCircle(cx, cy, radius, paint.getNativePaint());
     }
 
     @Override
-    public void drawArc(float cx, float cy, float radius, float startAngle, float sweepAngle, Paint paint) {
+    public void drawArc(float cx, float cy, float radius, float startAngle, float sweepAngle,
+                        @NonNull Paint paint) {
         mCanvas.drawArc(cx, cy, radius, startAngle, sweepAngle, paint.getNativePaint());
     }
 
     @Override
-    public void drawPie(float cx, float cy, float radius, float startAngle, float sweepAngle, Paint paint) {
+    public void drawArc(float cx, float cy, float radius, float startAngle, float sweepAngle,
+                        @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint) {
+        mCanvas.drawArc(cx, cy, radius, startAngle, sweepAngle, cap.nativeInt, thickness, paint.getNativePaint());
+    }
+
+    @Override
+    public void drawPie(float cx, float cy, float radius, float startAngle, float sweepAngle,
+                        @NonNull Paint paint) {
         mCanvas.drawPie(cx, cy, radius, startAngle, sweepAngle, paint.getNativePaint());
+    }
+
+    @Override
+    public void drawChord(float cx, float cy, float radius, float startAngle, float sweepAngle,
+                          @NonNull Paint paint) {
+        mCanvas.drawChord(cx, cy, radius, startAngle, sweepAngle, paint.getNativePaint());
     }
 
     @Override
@@ -242,8 +310,9 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawRoundImage(Image image, float left, float top, float radius, Paint paint) {
-
+    public void drawRoundImage(Image image, float left, float top, float radius,
+                               @Nullable Paint paint) {
+        drawImage(image, left, top, paint);
     }
 
     @Override
@@ -267,17 +336,64 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawMesh(@NonNull VertexMode mode, @NonNull FloatBuffer pos,
-                         @Nullable IntBuffer color, @Nullable FloatBuffer tex,
-                         @Nullable ShortBuffer indices, @Nullable Blender blender,
-                         @NonNull Paint paint) {
-        Vertices vertices = Vertices.makeCopy(mode.nativeInt, pos, tex, color, indices);
-        icyllis.arc3d.core.Paint nativePaint = paint.getNativePaint();
-        if (blender == null) {
-            blender = nativePaint.getShader() != null
-                    ? icyllis.arc3d.core.BlendMode.MODULATE
-                    : icyllis.arc3d.core.BlendMode.DST;
+    public void drawVertices(@NonNull VertexMode mode, int vertexCount,
+                             @NonNull float[] positions, int positionOffset,
+                             @Nullable float[] texCoords, int texCoordOffset,
+                             @Nullable int[] colors, int colorOffset,
+                             @Nullable short[] indices, int indexOffset, int indexCount,
+                             @Nullable BlendMode blendMode, @NonNull Paint paint) {
+        Objects.checkFromIndexSize(positionOffset, vertexCount, positions.length);
+        if (texCoords != null) {
+            Objects.checkFromIndexSize(texCoordOffset, vertexCount, texCoords.length);
         }
-        mCanvas.drawVertices(vertices, blender, nativePaint);
+        if (colors != null) {
+            Objects.checkFromIndexSize(colorOffset, vertexCount >> 1, colors.length);
+        }
+        if (indices != null) {
+            Objects.checkFromIndexSize(indexOffset, indexCount, indices.length);
+        }
+        if (vertexCount < 2) {
+            return;
+        }
+        Vertices vertices = Vertices.makeCopy(
+                mode.nativeInt, vertexCount >> 1, positions, positionOffset,
+                texCoords, texCoordOffset, colors, colorOffset,
+                indices, indexOffset, indexCount
+        );
+        var nativePaint = paint.getNativePaint();
+        if (blendMode == null) {
+            blendMode = nativePaint.getShader() != null
+                    ? BlendMode.MODULATE
+                    : BlendMode.DST;
+        }
+        mCanvas.drawVertices(vertices, blendMode.getNativeBlendMode(), nativePaint);
+    }
+
+    @Override
+    public void drawMesh(@NonNull VertexMode mode, @NonNull FloatBuffer positions,
+                         @Nullable FloatBuffer texCoords, @Nullable IntBuffer colors,
+                         @Nullable ShortBuffer indices, @Nullable BlendMode blendMode,
+                         @NonNull Paint paint) {
+        if (positions.remaining() < 2) {
+            return;
+        }
+        Vertices vertices = Vertices.makeCopy(mode.nativeInt, positions, texCoords, colors, indices);
+        var nativePaint = paint.getNativePaint();
+        if (blendMode == null) {
+            blendMode = nativePaint.getShader() != null
+                    ? BlendMode.MODULATE
+                    : BlendMode.DST;
+        }
+        mCanvas.drawVertices(vertices, blendMode.getNativeBlendMode(), nativePaint);
+    }
+
+    @Override
+    public boolean isClipEmpty() {
+        return mCanvas.isClipEmpty();
+    }
+
+    @Override
+    public boolean isClipRect() {
+        return mCanvas.isClipRect();
     }
 }

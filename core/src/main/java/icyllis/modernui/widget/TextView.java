@@ -2436,7 +2436,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     paint.setStyle(Paint.FILL);
 
                     if (cursorOffsetVertical != 0) canvas.translate(0, cursorOffsetVertical);
-                    canvas.drawRoundLines(mHighlightPath.elements(), 0, mHighlightPath.size(), false, paint);
+                    canvas.drawLines(mHighlightPath.elements(), 0, mHighlightPath.size(), false, paint);
                     if (cursorOffsetVertical != 0) canvas.translate(0, -cursorOffsetVertical);
                 }
             } else {
