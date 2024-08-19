@@ -18,6 +18,9 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.RawPtr;
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * Shaders specify the source color(s) for what is being drawn. If a paint
  * has no shader, then the paint's color is used. If the paint has a
@@ -26,6 +29,49 @@ package icyllis.modernui.graphics;
  * once (e.g. bitmap tiling or gradient) and then change its transparency
  * w/o having to modify the original shader... only the paint's alpha needs
  * to be modified.
+ *
+ * @since 3.11
  */
 public abstract class Shader {
+
+    /**
+     * Tile modes, also known as address modes and wrap modes. The tile mode specifies
+     * behavior of sampling with texture coordinates outside the image bounds.
+     */
+    public enum TileMode {
+        /**
+         * Repeat the shader's image horizontally and vertically.
+         */
+        REPEAT(icyllis.arc3d.core.shaders.Shader.TILE_MODE_REPEAT),
+        /**
+         * Repeat the shader's image horizontally and vertically, alternating
+         * mirror images so that adjacent images always seam.
+         */
+        MIRROR(icyllis.arc3d.core.shaders.Shader.TILE_MODE_MIRROR),
+        /**
+         * Replicate the edge color if the shader draws outside of its
+         * original bounds.
+         */
+        CLAMP(icyllis.arc3d.core.shaders.Shader.TILE_MODE_CLAMP),
+        /**
+         * Render the shader's image pixels only within its original bounds. If the shader
+         * draws outside of its original bounds, transparent black is drawn instead.
+         */
+        DECAL(icyllis.arc3d.core.shaders.Shader.TILE_MODE_DECAL);
+
+        final int nativeInt;
+
+        TileMode(int nativeInt) {
+            this.nativeInt = nativeInt;
+        }
+    }
+
+    /**
+     * Returns null if this shader is no-op.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @RawPtr
+    public abstract icyllis.arc3d.core.shaders.Shader getNativeShader();
 }

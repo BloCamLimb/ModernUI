@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.MathUtil;
+import icyllis.arc3d.core.RawPtr;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
@@ -93,6 +94,7 @@ public final class BlendModeColorFilter extends ColorFilter {
      * @hidden
      */
     @ApiStatus.Internal
+    @RawPtr
     @Override
     public icyllis.arc3d.core.effects.ColorFilter getNativeColorFilter() {
         return mColorFilter;
