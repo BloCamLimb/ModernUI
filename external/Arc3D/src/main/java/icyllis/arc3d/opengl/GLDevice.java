@@ -1,57 +1,61 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.Device;
+import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Function;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
-import static icyllis.arc3d.opengl.GLCore.*;
-import static org.lwjgl.system.MemoryUtil.memPutInt;
+import static org.lwjgl.opengl.GL45C.*;
 
 /**
  * The OpenGL device.
  */
-public final class GLDevice extends GpuDevice {
+public final class GLDevice extends Device {
+
+    /**
+     * The reserved framebuffer that used for swapping buffers with window.
+     */
+    public static final int DEFAULT_FRAMEBUFFER = 0;
+
+    /**
+     * The default vertex array compared to custom vertex array objects.
+     */
+    public static final int DEFAULT_VERTEX_ARRAY = 0;
+
+    public static final int DEFAULT_TEXTURE = 0;
 
     private final GLCaps mCaps;
+    private final GLInterface mGLInterface;
 
-    private final GLCommandBuffer mMainCmdBuffer;
-
-    private final GLResourceProvider mResourceProvider;
-    private final GLPipelineStateCache mPipelineStateCache;
-
-    private final CpuBufferPool mCpuBufferPool;
-
-    private final GpuBufferPool mVertexPool;
+    /*private final GpuBufferPool mVertexPool;
     private final GpuBufferPool mInstancePool;
-    private final GpuBufferPool mIndexPool;
+    private final GpuBufferPool mIndexPool;*/
 
     // unique ptr
     private GLOpsRenderPass mCachedOpsRenderPass;
@@ -59,14 +63,14 @@ public final class GLDevice extends GpuDevice {
     private final ArrayDeque<FlushInfo.FinishedCallback> mFinishedCallbacks = new ArrayDeque<>();
     private final LongArrayFIFOQueue mFinishedFences = new LongArrayFIFOQueue();
 
-    /**
-     * Represents a certain resource ID is bound, but no {@link GpuResource} object is associated with.
+    /*
+     * Represents a certain resource ID is bound, but no {@link Resource} object is associated with.
      */
     // OpenGL 3 only.
-    static final GpuResource.UniqueID INVALID_UNIQUE_ID = new GpuResource.UniqueID();
+    //static final UniqueID INVALID_UNIQUE_ID = new UniqueID();
 
     //@formatter:off
-    static final int BUFFER_TYPE_VERTEX         = 0;
+    /*static final int BUFFER_TYPE_VERTEX         = 0;
     static final int BUFFER_TYPE_INDEX          = 1;
     static final int BUFFER_TYPE_XFER_SRC       = 2;
     static final int BUFFER_TYPE_XFER_DST       = 3;
@@ -76,38 +80,38 @@ public final class GLDevice extends GpuDevice {
     static int bufferUsageToType(int usage) {
         // __builtin_ctz
         return Integer.numberOfTrailingZeros(usage);
-    }
+    }*/
 
-    static {
+    /*static {
         assert BUFFER_TYPE_VERTEX           ==
                 bufferUsageToType(BufferUsageFlags.kVertex);
         assert BUFFER_TYPE_INDEX            ==
                 bufferUsageToType(BufferUsageFlags.kIndex);
         assert BUFFER_TYPE_XFER_SRC         ==
-                bufferUsageToType(BufferUsageFlags.kTransferSrc);
+                bufferUsageToType(BufferUsageFlags.kUpload);
         assert BUFFER_TYPE_XFER_DST         ==
-                bufferUsageToType(BufferUsageFlags.kTransferDst);
+                bufferUsageToType(BufferUsageFlags.kReadback);
         assert BUFFER_TYPE_UNIFORM          ==
                 bufferUsageToType(BufferUsageFlags.kUniform);
         assert BUFFER_TYPE_DRAW_INDIRECT    ==
                 bufferUsageToType(BufferUsageFlags.kDrawIndirect);
-    }
+    }*/
     //@formatter:on
 
-    static final class HWBufferState {
+    /*static final class HWBufferState {
         final int mTarget;
-        GLBuffer.UniqueID mBoundBufferUniqueID;
+        UniqueID mBoundBufferUniqueID;
 
         HWBufferState(int target) {
             mTarget = target;
         }
-    }
+    }*/
 
     // context's buffer binding state
-    private final HWBufferState[] mHWBufferStates = new HWBufferState[6];
+    //private final HWBufferState[] mHWBufferStates = new HWBufferState[6];
 
     //@formatter:off
-    {
+    /*{
         mHWBufferStates[BUFFER_TYPE_VERTEX]         =
                 new HWBufferState(GL_ARRAY_BUFFER);
         mHWBufferStates[BUFFER_TYPE_INDEX]          =
@@ -120,10 +124,10 @@ public final class GLDevice extends GpuDevice {
                 new HWBufferState(GL_UNIFORM_BUFFER);
         mHWBufferStates[BUFFER_TYPE_DRAW_INDIRECT]  =
                 new HWBufferState(GL_DRAW_INDIRECT_BUFFER);
-    }
+    }*/
     //@formatter:on
 
-    /**
+    /*
      * We have four methods to allocate UBOs.
      * <ol>
      * <li>sub allocate persistently mapped ring buffer (OpenGL 4.4+).</li>
@@ -137,81 +141,110 @@ public final class GLDevice extends GpuDevice {
      * For case 2, any block <= 128 bytes using binding 0, others using binding 1.
      * Each program has only one block (update per draw call).
      */
-    private final GLBuffer.UniqueID[] mBoundUniformBuffers = new GLBuffer.UniqueID[4];
+    //private final UniqueID[] mBoundUniformBuffers = new UniqueID[4];
 
     // Below OpenGL 4.5.
-    private int mHWActiveTextureUnit;
+    //private int mHWActiveTextureUnit;
 
     // target is Texture2D
-    private final GLTexture.UniqueID[] mHWTextureStates;
+    //private final UniqueID[] mHWTextureStates;
 
-    static final class HWSamplerState {
+    /*static final class HWSamplerState {
         // default to invalid, we use 0 because it's not a valid sampler state
         int mSamplerState = 0;
         @SharedPtr
         GLSampler mBoundSampler = null;
-    }
+    }*/
 
-    private final HWSamplerState[] mHWSamplerStates;
+    //private final HWSamplerState[] mHWSamplerStates;
 
     /**
      * Framebuffer used for pixel transfer operations, compatibility only.
-     * We use array as pointers, lazily init.
+     * Lazily init.
      */
-    private final int[] mCopySrcFramebuffer = new int[1];
-    private final int[] mCopyDstFramebuffer = new int[1];
+    private int mCopySrcFramebuffer = 0;
+    private int mCopyDstFramebuffer = 0;
 
     private boolean mNeedsFlush;
 
-    private GLDevice(DirectContext context, GLCaps caps) {
-        super(context, caps);
-        mCaps = caps;
-        mMainCmdBuffer = new GLCommandBuffer(this);
-        mResourceProvider = new GLResourceProvider(this, context);
-        mPipelineStateCache = new GLPipelineStateCache(this, 256);
-        mCpuBufferPool = new CpuBufferPool(6);
-        mVertexPool = GpuBufferPool.makeVertexPool(mResourceProvider);
-        mInstancePool = GpuBufferPool.makeInstancePool(mResourceProvider);
-        mIndexPool = GpuBufferPool.makeIndexPool(mResourceProvider);
+    private final ConcurrentLinkedQueue<Consumer<GLDevice>> mRenderCalls =
+            new ConcurrentLinkedQueue<>();
 
-        int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
-        mHWTextureStates = new GLTexture.UniqueID[maxTextureUnits];
+    // executing thread only
+    private final FramebufferCache mFramebufferCache =
+            new FramebufferCache();
+    // executing thread only
+    // VertexInputLayout is not hashable currently, then use an IdentityHashMap
+    private final IdentityHashMap<VertexInputLayout, @SharedPtr GLVertexArray> mVertexArrayCache =
+            new IdentityHashMap<>();
+
+    private GLDevice(ContextOptions options, GLCaps caps, GLInterface glInterface) {
+        super(BackendApi.kOpenGL, options, caps);
+        mCaps = caps;
+        mGLInterface = glInterface;
+
+        /*int maxTextureUnits = caps.shaderCaps().mMaxFragmentSamplers;
+        mHWTextureStates = new UniqueID[maxTextureUnits];
         mHWSamplerStates = new HWSamplerState[maxTextureUnits];
         for (int i = 0; i < maxTextureUnits; i++) {
             mHWSamplerStates[i] = new HWSamplerState();
-        }
+        }*/
     }
 
     /**
      * Create a {@link GLDevice} with OpenGL context current in the current thread.
      *
-     * @param context the owner context
      * @param options the context options
      * @return the engine or null if failed to create
      */
     @Nullable
-    public static GLDevice make(DirectContext context, ContextOptions options) {
-        GLCapabilities capabilities;
+    public static GLDevice make(ContextOptions options, Object capabilities) {
         try {
-            capabilities = Objects.requireNonNullElseGet(
-                    GL.getCapabilities(),
-                    GL::createCapabilities
-            );
-        } catch (Exception x) {
-            try {
-                capabilities = GL.createCapabilities();
-            } catch (Exception e) {
-                e.printStackTrace(context.getErrorWriter());
-                return null;
+            final GLCaps caps;
+            final GLInterface glInterface;
+            switch (capabilities.getClass().getName()) {
+                case "org.lwjgl.opengl.GLCapabilities" -> {
+                    var impl = new GLCaps_GL(options, capabilities);
+                    caps = impl;
+                    glInterface = impl;
+                }
+                case "org.lwjgl.opengles.GLESCapabilities" -> {
+                    var impl = new GLCaps_GLES(options, capabilities);
+                    caps = impl;
+                    glInterface = impl;
+                }
+                default -> {
+                    options.mLogger.error("Failed to create GLDevice: invalid capabilities");
+                    return null;
+                }
             }
-        }
-        try {
-            GLCaps caps = new GLCaps(options, capabilities);
-            return new GLDevice(context, caps);
+            return new GLDevice(options, caps, glInterface);
         } catch (Exception e) {
-            e.printStackTrace(context.getErrorWriter());
+            options.mLogger.error("Failed to create GLDevice", e);
             return null;
         }
+    }
+
+    /**
+     * OpenGL only method. Execute the GL command as soon as possible.
+     */
+    public void executeRenderCall(Consumer<GLDevice> renderCall) {
+        if (isOnExecutingThread()) {
+            renderCall.accept(this);
+        } else {
+            recordRenderCall(renderCall);
+        }
+    }
+
+    public void recordRenderCall(Consumer<GLDevice> renderCall) {
+        mRenderCalls.add(renderCall);
+    }
+
+    public void flushRenderCalls() {
+        //noinspection UnnecessaryLocalVariable
+        final var queue = mRenderCalls;
+        Consumer<GLDevice> r;
+        while ((r = queue.poll()) != null) r.accept(this);
     }
 
     @Override
@@ -219,114 +252,85 @@ public final class GLDevice extends GpuDevice {
         return mCaps;
     }
 
+    public GLInterface getGL() {
+        return mGLInterface;
+    }
+
     @Override
     public void disconnect(boolean cleanup) {
         super.disconnect(cleanup);
-        mVertexPool.reset();
+        /*mVertexPool.reset();
         mInstancePool.reset();
-        mIndexPool.reset();
-        mCpuBufferPool.releaseAll();
+        mIndexPool.reset();*/
 
-        mMainCmdBuffer.resetStates(~0);
 
         if (cleanup) {
-            mPipelineStateCache.release();
-            mResourceProvider.release();
+            //mPipelineCache.release();
+            //mResourceProvider.release();
         } else {
-            mPipelineStateCache.discard();
-            mResourceProvider.discard();
+            //mPipelineCache.discard();
+            //mResourceProvider.discard();
         }
 
         callAllFinishedCallbacks(cleanup);
+
+        mVertexArrayCache.values().forEach(RefCnt::unref);
+        mVertexArrayCache.clear();
+
+        flushRenderCalls();
+
+        mFramebufferCache.close();
     }
 
     @Override
-    protected void handleDirtyContext(int state) {
-        super.handleDirtyContext(state);
-    }
-
-    public GLCommandBuffer currentCommandBuffer() {
-        return mMainCmdBuffer;
-    }
-
-    @Override
-    public GLResourceProvider getResourceProvider() {
-        return mResourceProvider;
-    }
-
-    @Override
-    public GLPipelineStateCache getPipelineStateCache() {
-        return mPipelineStateCache;
-    }
-
-    /**
-     * As staging buffers.
-     */
-    public CpuBufferPool getCpuBufferPool() {
-        return mCpuBufferPool;
-    }
-
-    @Override
-    public GpuBufferPool getVertexPool() {
-        return mVertexPool;
-    }
-
-    @Override
-    public GpuBufferPool getInstancePool() {
-        return mInstancePool;
-    }
-
-    @Override
-    public GpuBufferPool getIndexPool() {
-        return mIndexPool;
+    public GLResourceProvider makeResourceProvider(Context context) {
+        return new GLResourceProvider(this, context);
     }
 
     @Override
     protected void onResetContext(int resetBits) {
-        currentCommandBuffer().resetStates(resetBits);
+        //currentCommandBuffer().resetStates(resetBits);
 
         // we assume these values
         if ((resetBits & GLBackendState.kPixelStore) != 0) {
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-            glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+            mGLInterface.glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         }
 
-        if ((resetBits & GLBackendState.kPipeline) != 0) {
+        /*if ((resetBits & GLBackendState.kPipeline) != 0) {
             mHWBufferStates[BUFFER_TYPE_VERTEX].mBoundBufferUniqueID = INVALID_UNIQUE_ID;
             mHWBufferStates[BUFFER_TYPE_INDEX].mBoundBufferUniqueID = INVALID_UNIQUE_ID;
-        }
+        }*/
 
-        if ((resetBits & GLBackendState.kTexture) != 0) {
+        /*if ((resetBits & GLBackendState.kTexture) != 0) {
             Arrays.fill(mHWTextureStates, INVALID_UNIQUE_ID);
-            //TODO
             for (var ss : mHWSamplerStates) {
                 ss.mSamplerState = 0;
                 ss.mBoundSampler = RefCnt.move(ss.mBoundSampler);
             }
-        }
+        }*/
 
-        mHWActiveTextureUnit = -1; // invalid
+        //mHWActiveTextureUnit = -1; // invalid
 
-        if ((resetBits & GLBackendState.kRaster) != 0) {
-            glDisable(GL_LINE_SMOOTH);
-            glDisable(GL_POLYGON_SMOOTH);
+        /*if ((resetBits & GLBackendState.kRaster) != 0) {
+            getGL().glDisable(GL_LINE_SMOOTH);
+            getGL().glDisable(GL_POLYGON_SMOOTH);
 
-            glDisable(GL_DITHER);
-            glEnable(GL_MULTISAMPLE);
+            getGL().glDisable(GL_DITHER);
+            getGL().glEnable(GL_MULTISAMPLE);
         }
 
         if ((resetBits & GLBackendState.kBlend) != 0) {
-            glDisable(GL_COLOR_LOGIC_OP);
+            getGL().glDisable(GL_COLOR_LOGIC_OP);
         }
 
         if ((resetBits & GLBackendState.kMisc) != 0) {
             // we don't use the z-buffer at all
-            glDisable(GL_DEPTH_TEST);
+            getGL().glDisable(GL_DEPTH_TEST);
             glDepthMask(false);
-            glDisable(GL_POLYGON_OFFSET_FILL);
+            getGL().glDisable(GL_POLYGON_OFFSET_FILL);
 
             // We don't use face culling.
-            glDisable(GL_CULL_FACE);
+            getGL().glDisable(GL_CULL_FACE);
             // We do use separate stencil. Our algorithms don't care which face is front vs. back so
             // just set this to the default for self-consistency.
             glFrontFace(GL_CCW);
@@ -334,38 +338,136 @@ public final class GLDevice extends GpuDevice {
             // we only ever use lines in hairline mode
             glLineWidth(1);
             glPointSize(1);
-            glDisable(GL_PROGRAM_POINT_SIZE);
+            getGL().glDisable(GL_PROGRAM_POINT_SIZE);
+        }*/
+    }
+
+    /**
+     * Call {@link #getError()} until there are no errors.
+     */
+    public void clearErrors() {
+        //noinspection StatementWithEmptyBody
+        while (getError() != GL_NO_ERROR)
+            ;
+    }
+
+    /**
+     * Polls an error code and sets the OOM and context lost state.
+     */
+    public int getError() {
+        int error = getGL().glGetError();
+        if (error == GL_OUT_OF_MEMORY) {
+            mOutOfMemoryEncountered = true;
+        } else if (error == GL_CONTEXT_LOST) {
+            mDeviceIsLost = true;
+        }
+        return error;
+    }
+
+    @Override
+    protected void freeGpuResources() {
+        super.freeGpuResources();
+        mFramebufferCache.purgeAllFramebuffers();
+        purgeStaleVertexArrays();
+    }
+
+    @Override
+    protected void purgeResourcesNotUsedSince(long timeMillis) {
+        super.purgeResourcesNotUsedSince(timeMillis);
+        mFramebufferCache.purgeFramebuffersNotUsedSince(timeMillis);
+        purgeStaleVertexArrays();
+    }
+
+    public void purgeStaleResources() {
+        mFramebufferCache.purgeStaleFramebuffers();
+    }
+
+    private void purgeStaleVertexArrays() {
+        for (var it = mVertexArrayCache.entrySet().iterator(); it.hasNext(); ) {
+            var e = it.next();
+            if (e.getValue().unique()) {
+                e.getValue().unref();
+                it.remove();
+            }
         }
     }
 
-    //FIXME this is temp, wait for beginRenderPass()
-    public void forceResetContext(int state) {
-        markContextDirty(state);
-        handleDirtyContext(state);
+    @Nullable
+    @SharedPtr
+    public GLFramebuffer findOrCreateFramebuffer(@Nonnull FramebufferDesc framebufferDesc) {
+        var framebufferCache = mFramebufferCache;
+        @SharedPtr
+        GLFramebuffer existing = (GLFramebuffer) framebufferCache.findFramebuffer(
+                framebufferDesc);
+        if (existing != null) {
+            return existing;
+        }
+        @SharedPtr
+        GLFramebuffer framebuffer = GLFramebuffer.make(this, framebufferDesc);
+        if (framebuffer == null) {
+            return null;
+        }
+        framebufferCache.insertFramebuffer(framebufferDesc, framebuffer);
+        return framebuffer;
     }
 
     @Nullable
+    @SharedPtr
+    public GLVertexArray findOrCreateVertexArray(@Nonnull VertexInputLayout inputLayout,
+                                                 String label) {
+        GLVertexArray existing = mVertexArrayCache.get(inputLayout);
+        if (existing != null) {
+            return RefCnt.create(existing);
+        }
+        @SharedPtr
+        GLVertexArray vertexArray = GLVertexArray.make(this,
+                inputLayout,
+                label);
+        if (vertexArray != null) {
+            mVertexArrayCache.put(inputLayout, vertexArray);
+            return RefCnt.create(vertexArray);
+        }
+        return null;
+    }
+
+    /*@Nullable
     @Override
-    protected GpuTexture onCreateTexture(int width, int height,
-                                         BackendFormat format,
-                                         int mipLevelCount,
-                                         int sampleCount,
-                                         int surfaceFlags) {
+    protected GLImage onCreateImage(int width, int height,
+                                    BackendFormat format,
+                                    int mipLevelCount,
+                                    int sampleCount,
+                                    int surfaceFlags) {
         assert (mipLevelCount > 0 && sampleCount > 0);
         // We don't support protected textures in OpenGL.
         if ((surfaceFlags & ISurface.FLAG_PROTECTED) != 0) {
             return null;
         }
+        // There's no memoryless attachments in OpenGL.
+        if ((surfaceFlags & ISurface.FLAG_MEMORYLESS) != 0) {
+            return null;
+        }
         if (format.isExternal()) {
             return null;
         }
-        handleDirtyContext(GLBackendState.kTexture);
         int glFormat = format.getGLFormat();
-        int texture = createTexture(width, height, glFormat, mipLevelCount);
-        if (texture == 0) {
+        final int handle;
+        final int target;
+        if (sampleCount > 1 && (surfaceFlags & ISurface.FLAG_SAMPLED_IMAGE) == 0) {
+            int internalFormat = glFormat;
+            if (GLUtil.glFormatStencilBits(glFormat) == 0) {
+                internalFormat = getCaps().getRenderbufferInternalFormat(glFormat);
+            }
+            handle = createRenderbuffer(width, height, sampleCount, internalFormat);
+            target = GL_RENDERBUFFER;
+        } else {
+            handleDirtyContext(GLBackendState.kTexture);
+            handle = createTexture(width, height, glFormat, mipLevelCount);
+            target = GL_TEXTURE_2D;
+        }
+        if (handle == 0) {
             return null;
         }
-        Function<GLTexture, GLRenderTarget> target = null;
+        *//*Function<GLTexture, GLRenderTarget> target = null;
         if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
             target = createRTObjects(
                     texture,
@@ -376,46 +478,64 @@ public final class GLDevice extends GpuDevice {
                 glDeleteTextures(texture);
                 return null;
             }
-        }
-        final GLTextureInfo info = new GLTextureInfo();
-        info.handle = texture;
-        info.format = format.getGLFormat();
+        }*//*
+        final GLImageInfo info = new GLImageInfo();
+        info.mTarget = target;
+        info.handle = handle;
+        info.mFormat = glFormat;
         info.levels = mipLevelCount;
-        if (target == null) {
-            return new GLTexture(this,
-                    width, height,
-                    info,
-                    format,
-                    (surfaceFlags & ISurface.FLAG_BUDGETED) != 0,
-                    true);
-        } else {
+        info.samples = sampleCount;
+        //if (target == null) {
+        return new GLImage(this,
+                width, height,
+                info,
+                format,
+                surfaceFlags);
+        *//*} else {
             return new GLRenderTexture(this,
                     width, height,
                     info,
                     format,
                     (surfaceFlags & ISurface.FLAG_BUDGETED) != 0,
                     target);
-        }
+        }*//*
+    }*/
+
+    @Nullable
+    @Override
+    protected GpuRenderTarget onCreateRenderTarget(int width, int height,
+                                                   int sampleCount,
+                                                   int numColorTargets,
+                                                   @Nullable Image[] colorTargets,
+                                                   @Nullable Image[] resolveTargets,
+                                                   @Nullable int[] mipLevels,
+                                                   @Nullable Image depthStencilTarget,
+                                                   int surfaceFlags) {
+        return null;
     }
 
     @Nullable
     @Override
-    protected GpuTexture onWrapRenderableBackendTexture(BackendTexture texture,
-                                                        int sampleCount,
-                                                        boolean ownership) {
+    protected GLRenderTarget onWrapRenderableBackendTexture(BackendImage texture,
+                                                            int sampleCount,
+                                                            boolean ownership) {
         if (texture.isProtected()) {
             // Not supported in GL backend at this time.
             return null;
         }
-        final GLTextureInfo info = new GLTextureInfo();
-        if (!texture.getGLTextureInfo(info) || info.handle == 0 || info.format == 0) {
+        /*if (!(texture instanceof GLBackendImage)) {
             return null;
         }
-        /*if (info.mTarget != GL_TEXTURE_2D) {
+        final GLImageInfo info = new GLImageInfo();
+        ((GLBackendImage) texture).getGLImageInfo(info);
+        if (info.handle == 0 || info.mFormat == 0) {
             return null;
-        }*/
-        int format = info.format;
-        if (!glFormatIsSupported(format)) {
+        }
+        if (info.mTarget != GL_TEXTURE_2D) {
+            return null;
+        }
+        int format = info.mFormat;
+        if (!GLUtil.glFormatIsSupported(format)) {
             return null;
         }
         handleDirtyContext(GLBackendState.kTexture);
@@ -425,24 +545,52 @@ public final class GLDevice extends GpuDevice {
         sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         assert sampleCount > 0;
 
-        var objects = createRTObjects(info.handle,
+        *//*var objects = createRTObjects(info.handle,
                 texture.getWidth(), texture.getHeight(),
-                format,
-                sampleCount);
-        if (objects != null) {
+                texture.getBackendFormat(),
+                sampleCount);*//*
 
-            //TODO create wrapped texture
-            /*return new GLRenderTarget(this, texture.getWidth(), texture.getHeight(),
+        var colorTarget = createImage(
+                texture.getWidth(), texture.getHeight(),
+                texture.getBackendFormat(),
+                sampleCount,
+                ISurface.FLAG_BUDGETED | ISurface.FLAG_RENDERABLE,
+                ""
+        );*/
+
+        //TODO create wrapped texture
+        /*if (objects != null) {
+
+
+            return new GLRenderTarget(this, texture.getWidth(), texture.getHeight(),
                 format, sampleCount, framebuffer, msaaFramebuffer,
-                texture, msaaColorBuffer, ownership);*/
-        }
+                texture, msaaColorBuffer, ownership);
+        }*/
 
         return null;
     }
 
+    @Override
+    protected GpuRenderTarget onWrapGLDefaultFramebuffer(int width, int height,
+                                                         int sampleCount,
+                                                         int depthBits,
+                                                         int stencilBits,
+                                                         BackendFormat format) {
+        int actualSamplerCount = mCaps.getRenderTargetSampleCount(sampleCount, format.getGLFormat());
+        return GLRenderTarget.makeWrapped(null,
+                width,
+                height,
+                format,
+                actualSamplerCount,
+                0,
+                depthBits,
+                stencilBits,
+                false);
+    }
+
     @Nullable
     @Override
-    public GpuRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+    public GLRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
         GLFramebufferInfo info = new GLFramebufferInfo();
         if (!backendRenderTarget.getGLFramebufferInfo(info)) {
             return null;
@@ -454,28 +602,93 @@ public final class GLDevice extends GpuDevice {
             return null;
         }
         int actualSamplerCount = mCaps.getRenderTargetSampleCount(backendRenderTarget.getSampleCount(), info.mFormat);
-        return GLRenderTarget.makeWrapped(this,
+        return GLRenderTarget.makeWrapped(null,
                 backendRenderTarget.getWidth(),
                 backendRenderTarget.getHeight(),
-                info.mFormat,
+                backendRenderTarget.getBackendFormat(),
                 actualSamplerCount,
                 info.mFramebuffer,
+                0,
                 backendRenderTarget.getStencilBits(),
                 false);
     }
 
-    @Override
-    protected boolean onWritePixels(GpuTexture texture,
-                                    int x, int y,
-                                    int width, int height,
-                                    int dstColorType,
-                                    int srcColorType,
-                                    int rowBytes, long pixels) {
-        assert (!texture.isExternal());
-        assert (!texture.getBackendFormat().isCompressed());
-        GLTexture glTexture = (GLTexture) texture;
-        int glFormat = glTexture.getGLFormat();
+    /**
+     * Updates the pixels in a rectangle of an image. No sRGB/linear conversions are performed.
+     * The write operation can fail because of the surface doesn't support writing (e.g. read only),
+     * the color type is not allowed for the format of the texture or if the rectangle written
+     * is not contained in the texture.
+     *
+     * @param texture      the image to write to
+     * @param dstColorType the color type for this use of the surface
+     * @param srcColorType the color type of the source data
+     * @param rowBytes     the row bytes, must be a multiple of srcColorType's bytes-per-pixel.
+     * @param pixels       the pointer to the texel data for base level image
+     * @return true if succeeded, false if not
+     */
+    public boolean writePixels(@RawPtr Image texture,
+                               int x, int y,
+                               int width, int height,
+                               int dstColorType,
+                               int srcColorType,
+                               int rowBytes, long pixels) {
+        assert (texture != null);
+        if (x < 0 || y < 0 || width <= 0 || height <= 0) {
+            return false;
+        }
+        if (texture.isReadOnly() || texture.getSampleCount() > 1) {
+            return false;
+        }
+        if ((texture.getSurfaceFlags() & ISurface.FLAG_SAMPLED_IMAGE) == 0) {
+            return false;
+        }
+        assert (texture.getWidth() > 0 && texture.getHeight() > 0);
+        if (x + width > texture.getWidth() || y + height > texture.getHeight()) {
+            return false;
+        }
+        int bpp = ColorInfo.bytesPerPixel(srcColorType);
+        int minRowBytes = width * bpp;
+        if (rowBytes < minRowBytes) {
+            return false;
+        }
+        if (rowBytes % bpp != 0) {
+            return false;
+        }
+        if (pixels == 0) {
+            return true;
+        }
+        if (!onWritePixels(texture,
+                x, y, width, height,
+                dstColorType,
+                srcColorType,
+                rowBytes, pixels)) {
+            return false;
+        }
+        if (texture.isMipmapped()) {
+            texture.setMipmapsDirty(true);
+        }
+        mStats.incTextureUploads();
+        return true;
+    }
+
+    private boolean onWritePixels(@RawPtr Image image,
+                                  int x, int y,
+                                  int width, int height,
+                                  int dstColorType,
+                                  int srcColorType,
+                                  int rowBytes, long pixels) {
+        //assert (!image.getBackendFormat().isCompressed());
+        if (!image.isSampledImage() && !image.isStorageImage()) {
+            return false;
+        }
+        GLTexture glTexture = (GLTexture) image;
+        int glFormat = glTexture.getFormat();
         assert (mCaps.isFormatTexturable(glFormat));
+
+        int target = glTexture.getTarget();
+        if (target == GL_RENDERBUFFER) {
+            return false;
+        }
 
         int srcFormat = mCaps.getPixelsExternalFormat(
                 glFormat, dstColorType, srcColorType, /*write*/true
@@ -489,96 +702,263 @@ public final class GLDevice extends GpuDevice {
         if (srcType == 0) {
             return false;
         }
-        handleDirtyContext(GLBackendState.kTexture | GLBackendState.kPixelStore);
+        //handleDirtyContext(GLBackendState.kTexture | GLBackendState.kPixelStore);
 
+        GLInterface gl = getGL();
         boolean dsa = mCaps.hasDSASupport();
-        int texName = glTexture.getHandle();
+        int handle = glTexture.getHandle();
         int boundTexture = 0;
+        //TODO not only 2D
         if (!dsa) {
-            boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            if (texName != boundTexture) {
-                glBindTexture(GL_TEXTURE_2D, texName);
+            boundTexture = gl.glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (handle != boundTexture) {
+                gl.glBindTexture(target, handle);
             }
         }
 
-        GLTextureParameters parameters = glTexture.getParameters();
-        if (parameters.baseMipmapLevel != 0) {
+        GLTextureMutableState mutableState = glTexture.getGLMutableState();
+        if (mutableState.mBaseMipmapLevel != 0) {
             if (dsa) {
-                glTextureParameteri(texName, GL_TEXTURE_BASE_LEVEL, 0);
+                gl.glTextureParameteri(handle, GL_TEXTURE_BASE_LEVEL, 0);
             } else {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+                gl.glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, 0);
             }
-            parameters.baseMipmapLevel = 0;
+            mutableState.mBaseMipmapLevel = 0;
         }
-        int maxLevel = glTexture.getMaxMipmapLevel();
-        if (parameters.maxMipmapLevel != maxLevel) {
+        int maxLevel = glTexture.getMipLevelCount() - 1; // minus base level
+        if (mutableState.mMaxMipmapLevel != maxLevel) {
             if (dsa) {
-                glTextureParameteri(texName, GL_TEXTURE_MAX_LEVEL, maxLevel);
+                gl.glTextureParameteri(handle, GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
+                gl.glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
-            // Bug fixed by Arc 3D
-            parameters.maxMipmapLevel = maxLevel;
+            // Bug fixed by Arc3D
+            mutableState.mMaxMipmapLevel = maxLevel;
         }
 
         assert (x >= 0 && y >= 0 && width > 0 && height > 0);
         assert (pixels != 0);
-        int bpp = ImageInfo.bytesPerPixel(srcColorType);
+        int bpp = ColorInfo.bytesPerPixel(srcColorType);
 
         int trimRowBytes = width * bpp;
         if (rowBytes != trimRowBytes) {
             int rowLength = rowBytes / bpp;
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
+            gl.glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
         } else {
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+            gl.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         }
 
-        glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
-        glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        gl.glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+        gl.glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+        gl.glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
         if (dsa) {
-            glTextureSubImage2D(texName, 0,
+            gl.glTextureSubImage2D(handle, 0,
                     x, y, width, height, srcFormat, srcType, pixels);
         } else {
-            glTexSubImage2D(GL_TEXTURE_2D, 0,
+            gl.glTexSubImage2D(target, 0,
                     x, y, width, height, srcFormat, srcType, pixels);
         }
 
         if (!dsa) {
-            if (texName != boundTexture) {
-                glBindTexture(GL_TEXTURE_2D, boundTexture);
+            if (handle != boundTexture) {
+                gl.glBindTexture(target, boundTexture);
             }
         }
 
         return true;
     }
 
-    @Override
-    protected boolean onGenerateMipmaps(GpuTexture texture) {
-        var glTexture = (GLTexture) texture;
+    /**
+     * Uses the base level of the image to compute the contents of the other mipmap levels.
+     *
+     * @return success or not
+     */
+    public boolean generateMipmaps(@RawPtr Image image) {
+        assert image != null;
+        assert image.isMipmapped();
+        if (!image.isMipmapsDirty()) {
+            return true;
+        }
+        if (image.isReadOnly()) {
+            return false;
+        }
+        if (onGenerateMipmaps(image)) {
+            image.setMipmapsDirty(false);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onGenerateMipmaps(@RawPtr Image image) {
+        var glImage = (GLTexture) image;
         if (mCaps.hasDSASupport()) {
-            glGenerateTextureMipmap(glTexture.getHandle());
+            glGenerateTextureMipmap(glImage.getHandle());
         } else {
-            var texName = glTexture.getHandle();
+            var handle = glImage.getHandle();
             var boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            if (texName != boundTexture) {
-                glBindTexture(GL_TEXTURE_2D, texName);
+            if (handle != boundTexture) {
+                glBindTexture(GL_TEXTURE_2D, handle);
             }
             glGenerateMipmap(GL_TEXTURE_2D);
-            if (texName != boundTexture) {
+            if (handle != boundTexture) {
                 glBindTexture(GL_TEXTURE_2D, boundTexture);
             }
         }
         return true;
     }
 
-    @Override
-    protected boolean onCopySurface(IGpuSurface src,
-                                    int srcL, int srcT, int srcR, int srcB,
-                                    IGpuSurface dst,
-                                    int dstL, int dstT, int dstR, int dstB,
-                                    int filter) {
+    /**
+     * Perform an image-to-image copy, with the specified regions. Scaling is
+     * not allowed.
+     * <p>
+     * If their dimensions are same and formats are compatible, then this method will
+     * attempt to perform copy. Otherwise, this method will attempt to perform blit,
+     * which may include format conversion.
+     * <p>
+     * Only mipmap level <var>level</var> of 2D images will be copied, without any
+     * multisampled buffer and depth/stencil buffer.
+     *
+     * @return success or not
+     */
+    public boolean copyImage(@RawPtr GLImage src,
+                             int srcL, int srcT, int srcR, int srcB,
+                             @RawPtr GLImage dst,
+                             int dstX, int dstY,
+                             int level) {
+        int srcWidth = srcR - srcL;
+        int srcHeight = srcB - srcT;
+
+        // no scaling
+        if (mCaps.hasCopyImageSupport() &&
+                mCaps.canCopyImage(
+                        src.getFormat(), 1,
+                        dst.getFormat(), 1
+                )) {
+            //TODO checks
+            getGL().glCopyImageSubData(
+                    src.getHandle(),
+                    src.getTarget(),
+                    level,
+                    srcL, srcT, 0,
+                    dst.getHandle(),
+                    dst.getTarget(),
+                    level,
+                    dstX, dstY, 0,
+                    srcWidth, srcHeight, 1
+            );
+            return true;
+        }
+
+        if (src.getTarget() == GL_TEXTURE_2D &&
+                dst.getTarget() == GL_TEXTURE_2D &&
+                mCaps.canCopyTexSubImage(
+                        src.getFormat(),
+                        dst.getFormat()
+                )) {
+
+            int framebuffer = mCopySrcFramebuffer;
+            if (framebuffer == 0) {
+                mCopySrcFramebuffer = framebuffer = getGL().glGenFramebuffers();
+            }
+            if (framebuffer == 0) {
+                return false;
+            }
+
+            int dstHandle = dst.getHandle();
+            int boundTexture = getGL().glGetInteger(GL_TEXTURE_BINDING_2D);
+            if (dstHandle != boundTexture) {
+                getGL().glBindTexture(GL_TEXTURE_2D, dstHandle);
+            }
+
+            int boundFramebuffer = getGL().glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
+            getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+            getGL().glFramebufferTexture2D(
+                    GL_READ_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0,
+                    GL_TEXTURE_2D,
+                    src.getHandle(),
+                    level
+            );
+
+            getGL().glCopyTexSubImage2D(
+                    GL_TEXTURE_2D,
+                    level,
+                    dstX, dstY,
+                    srcL, srcT,
+                    srcWidth, srcHeight
+            );
+
+            getGL().glFramebufferTexture2D(
+                    GL_READ_FRAMEBUFFER,
+                    GL_COLOR_ATTACHMENT0,
+                    GL_TEXTURE_2D,
+                    0,
+                    0);
+            getGL().glBindFramebuffer(GL_READ_FRAMEBUFFER, boundFramebuffer);
+
+            if (dstHandle != boundTexture) {
+                getGL().glBindTexture(GL_TEXTURE_2D, boundTexture);
+            }
+
+            return true;
+        }
+
+        //TODO
+
+        return false;
+    }
+
+    /**
+     * Special case of {@link #copyImage} that has same dimensions.
+     */
+    public boolean copyImage(Image src, int srcX, int srcY,
+                             Image dst, int dstX, int dstY,
+                             int width, int height) {
+        return copyImage(
+                src,
+                srcX, srcY, srcX + width, srcY + height,
+                dst,
+                dstX, dstY, dstX + width, dstY + height,
+                SamplerDesc.FILTER_NEAREST
+        );
+    }
+
+    /**
+     * Perform a surface-to-surface copy, with the specified regions.
+     * <p>
+     * If their dimensions are same and formats are compatible, then this method will
+     * attempt to perform copy. Otherwise, this method will attempt to perform blit,
+     * which may include resampling and format conversion. <var>filter</var> can be one
+     * of {@link SamplerDesc#FILTER_NEAREST} and {@link SamplerDesc#FILTER_LINEAR}.
+     * <p>
+     * Only mipmap level 0 of 2D images will be copied, without any multisampled buffer
+     * and depth/stencil buffer.
+     *
+     * @return success or not
+     */
+    public boolean copyImage(Image src,
+                             int srcL, int srcT, int srcR, int srcB,
+                             Image dst,
+                             int dstL, int dstT, int dstR, int dstB,
+                             int filter) {
+        if ((dst.getSurfaceFlags() & ISurface.FLAG_READ_ONLY) != 0) {
+            return false;
+        }
+        return onCopyImage(
+                src,
+                srcL, srcT, srcR, srcB,
+                dst,
+                dstL, dstT, dstR, dstB,
+                filter
+        );
+    }
+
+    private boolean onCopyImage(Image src,
+                                int srcL, int srcT, int srcR, int srcB,
+                                Image dst,
+                                int dstL, int dstT, int dstR, int dstB,
+                                int filter) {
         int srcWidth = srcR - srcL;
         int srcHeight = srcB - srcT;
         int dstWidth = dstR - dstL;
@@ -588,75 +968,9 @@ public final class GLDevice extends GpuDevice {
         // handleDirtyContext();
 
         if (srcWidth == dstWidth && srcHeight == dstHeight) {
-            // no scaling
-            if (mCaps.hasCopyImageSupport() &&
-                    src.asTexture() instanceof GLTexture srcTex &&
-                    dst.asTexture() instanceof GLTexture dstTex &&
-                    mCaps.canCopyImage(
-                            srcTex.getGLFormat(), 1,
-                            dstTex.getGLFormat(), 1
-                    )) {
-                glCopyImageSubData(
-                        srcTex.getHandle(),
-                        GL_TEXTURE_2D,
-                        0,
-                        srcL, srcT, 0,
-                        dstTex.getHandle(),
-                        GL_TEXTURE_2D,
-                        0,
-                        dstL, dstT, 0,
-                        srcWidth, srcHeight, 1
-                );
-                return true;
-            }
-
-            if (src.asTexture() instanceof GLTexture srcTex &&
-                    dst.asTexture() instanceof GLTexture dstTex &&
-                    mCaps.canCopyTexSubImage(
-                            srcTex.getGLFormat(),
-                            dstTex.getGLFormat()
-                    )) {
-
-                int dstTexName = dstTex.getHandle();
-                int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-                if (dstTexName != boundTexture) {
-                    glBindTexture(GL_TEXTURE_2D, dstTexName);
-                }
-
-                int[] framebuffer = mCopySrcFramebuffer;
-                if (framebuffer[0] == 0) {
-                    glGenFramebuffers(framebuffer);
-                }
-                int boundFramebuffer = glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer[0]);
-                glFramebufferTexture(
-                        GL_READ_FRAMEBUFFER,
-                        GL_COLOR_ATTACHMENT0,
-                        srcTex.getHandle(),
-                        0
-                );
-
-                glCopyTexSubImage2D(
-                        GL_TEXTURE_2D,
-                        0,
-                        dstL, dstT,
-                        srcL, srcT,
-                        srcWidth, srcHeight
-                );
-
-                glFramebufferTexture(
-                        GL_READ_FRAMEBUFFER,
-                        GL_COLOR_ATTACHMENT0,
-                        DEFAULT_TEXTURE,
-                        0);
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, boundFramebuffer);
-
-                if (dstTexName != boundTexture) {
-                    glBindTexture(GL_TEXTURE_2D, boundTexture);
-                }
-
-                return true;
-            }
+            return copyImage((GLImage) src, srcL, srcT, srcR, srcB,
+                    (GLImage) dst, dstL, dstT,
+                    0);
         }
 
         //TODO
@@ -665,141 +979,74 @@ public final class GLDevice extends GpuDevice {
     }
 
     @Override
-    protected OpsRenderPass onGetOpsRenderPass(SurfaceView writeView,
+    protected OpsRenderPass onGetOpsRenderPass(ImageProxyView writeView,
                                                Rect2i contentBounds,
                                                byte colorOps,
                                                byte stencilOps,
                                                float[] clearColor,
-                                               Set<TextureProxy> sampledTextures,
+                                               Set<SurfaceProxy> sampledTextures,
                                                int pipelineFlags) {
         mStats.incRenderPasses();
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }
-        return mCachedOpsRenderPass.set(writeView.getSurface().getGpuRenderTarget(),
+        //TODO
+        /*return mCachedOpsRenderPass.set(writeView.getProxy().getGpuRenderTarget(),
                 contentBounds,
                 writeView.getOrigin(),
                 colorOps,
                 stencilOps,
-                clearColor);
-    }
-
-    public GLCommandBuffer beginRenderPass(GLRenderTarget fs,
-                                           byte colorOps,
-                                           byte stencilOps,
-                                           float[] clearColor) {
-        handleDirtyContext(GLBackendState.kRenderTarget);
-
-        GLCommandBuffer cmdBuffer = currentCommandBuffer();
-
-        boolean colorLoadClear = LoadStoreOps.loadOp(colorOps) == LoadOp.Clear;
-        boolean stencilLoadClear = LoadStoreOps.loadOp(stencilOps) == LoadOp.Clear;
-        if (colorLoadClear || stencilLoadClear) {
-            int framebuffer = fs.getSampleFramebuffer();
-            cmdBuffer.flushScissorTest(false);
-            if (colorLoadClear) {
-                cmdBuffer.flushColorWrite(true);
-                glClearNamedFramebufferfv(framebuffer,
-                        GL_COLOR,
-                        0,
-                        clearColor);
-            }
-            if (stencilLoadClear) {
-                glStencilMask(0xFFFFFFFF); // stencil will be flushed later
-                glClearNamedFramebufferfi(framebuffer,
-                        GL_DEPTH_STENCIL,
-                        0,
-                        1.0f, 0);
-            }
-        }
-        cmdBuffer.flushRenderTarget(fs);
-
-        return cmdBuffer;
-    }
-
-    public void endRenderPass(GLRenderTarget fs,
-                              byte colorOps,
-                              byte stencilOps) {
-        handleDirtyContext(GLBackendState.kRenderTarget);
-
-        boolean colorStoreDiscard = LoadStoreOps.storeOp(colorOps) == StoreOp.DontCare;
-        boolean stencilStoreDiscard = LoadStoreOps.storeOp(stencilOps) == StoreOp.DontCare;
-        if (colorStoreDiscard || stencilStoreDiscard) {
-            int framebuffer = fs.getSampleFramebuffer();
-            try (MemoryStack stack = MemoryStack.stackPush()) {
-                final long pAttachments = stack.nmalloc(4, 8);
-                int numAttachments = 0;
-                if (colorStoreDiscard) {
-                    int attachment = fs.getSampleFramebuffer() == DEFAULT_FRAMEBUFFER
-                            ? GL_COLOR
-                            : GL_COLOR_ATTACHMENT0;
-                    memPutInt(pAttachments, attachment);
-                    numAttachments++;
-                }
-                if (stencilStoreDiscard) {
-                    int attachment = fs.getSampleFramebuffer() == DEFAULT_FRAMEBUFFER
-                            ? GL_STENCIL
-                            : GL_STENCIL_ATTACHMENT;
-                    memPutInt(pAttachments + (numAttachments << 2), attachment);
-                    numAttachments++;
-                }
-                nglInvalidateNamedFramebufferData(framebuffer, numAttachments, pAttachments);
-            }
-        }
-    }
-
-    @Nullable
-    @Override
-    protected GpuBuffer onCreateBuffer(int size, int flags) {
-        handleDirtyContext(GLBackendState.kPipeline);
-        return GLBuffer.make(this, size, flags);
+                clearColor);*/
+        return null;
     }
 
     @Override
     protected void onResolveRenderTarget(GpuRenderTarget renderTarget,
                                          int resolveLeft, int resolveTop,
                                          int resolveRight, int resolveBottom) {
-        GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
+        /*GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
         //TODO handle non-DSA case
         //handleDirtyContext();
 
-        int framebuffer = glRenderTarget.getSampleFramebuffer();
+        int renderFramebuffer = glRenderTarget.getRenderFramebuffer();
         int resolveFramebuffer = glRenderTarget.getResolveFramebuffer();
 
         // We should always have something to resolve
-        assert (framebuffer != 0 && framebuffer != resolveFramebuffer);
+        assert (renderFramebuffer != 0 && renderFramebuffer != resolveFramebuffer);
 
         // BlitFramebuffer respects the scissor, so disable it.
         currentCommandBuffer().flushScissorTest(false);
-        glBlitNamedFramebuffer(framebuffer, resolveFramebuffer, // MSAA to single
+        glBlitNamedFramebuffer(renderFramebuffer, resolveFramebuffer, // MSAA to single
                 resolveLeft, resolveTop, resolveRight, resolveBottom, // src rect
                 resolveLeft, resolveTop, resolveRight, resolveBottom, // dst rect
-                GL_COLOR_BUFFER_BIT, GL_NEAREST);
+                GL_COLOR_BUFFER_BIT, GL_NEAREST);*/
     }
 
     private void flush(boolean forceFlush) {
         if (mNeedsFlush || forceFlush) {
-            glFlush();
+            //glFlush();
             mNeedsFlush = false;
         }
     }
 
     @Override
     public long insertFence() {
-        long fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        /*long fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         mNeedsFlush = true;
-        return fence;
+        return fence;*/
+        return 0;
     }
 
     @Override
     public boolean checkFence(long fence) {
-        int result = glClientWaitSync(fence, 0, 0L);
-        return (result == GL_CONDITION_SATISFIED || result == GL_ALREADY_SIGNALED);
+        /*int result = glClientWaitSync(fence, 0, 0L);
+        return (result == GL_CONDITION_SATISFIED || result == GL_ALREADY_SIGNALED);*/
+        return true;
     }
 
     @Override
     public void deleteFence(long fence) {
-        glDeleteSync(fence);
+        //glDeleteSync(fence);
     }
 
     @Override
@@ -818,7 +1065,7 @@ public final class GLDevice extends GpuDevice {
             // flushAndSubmit(/*sync=*/true)) that has us process the finished callbacks. We also must
             // process deleting the fence before a client may abandon the context.
             deleteFence(mFinishedFences.dequeueLong());
-            mFinishedCallbacks.removeFirst().onFinished();
+            mFinishedCallbacks.removeFirst().onFinished(true);
         }
         assert (mFinishedCallbacks.size() == mFinishedFences.size());
     }
@@ -832,7 +1079,7 @@ public final class GLDevice extends GpuDevice {
             if (cleanup) {
                 deleteFence(mFinishedFences.dequeueLong());
             }
-            mFinishedCallbacks.removeFirst().onFinished();
+            mFinishedCallbacks.removeFirst().onFinished(true);
         }
         if (!cleanup) {
             mFinishedFences.clear();
@@ -843,14 +1090,14 @@ public final class GLDevice extends GpuDevice {
 
     @Override
     public void waitForQueue() {
-        glFinish();
+        //glFinish();
     }
 
     // Binds a buffer to the GL target corresponding to 'type', updates internal state tracking, and
     // returns the GL target the buffer was bound to.
     // When 'type' is 'index', this function will also implicitly bind the default VAO.
     // If the caller wishes to bind an index buffer to a specific VAO, it can call glBind directly.
-    public int bindBuffer(@Nonnull GLBuffer buffer) {
+    /*public int bindBuffer(@Nonnull @RawPtr GLBuffer buffer) {
         assert !getCaps().hasDSASupport();
 
         handleDirtyContext(GLBackendState.kPipeline);
@@ -858,21 +1105,19 @@ public final class GLDevice extends GpuDevice {
         int type = bufferUsageToType(buffer.getUsage());
         if (type == BUFFER_TYPE_INDEX) {
             // Index buffer state is tied to the vertex array.
-            currentCommandBuffer().bindVertexArray(null);
+            //currentCommandBuffer().bindVertexArray(null);
         }
 
         var bufferState = mHWBufferStates[type];
         if (bufferState.mBoundBufferUniqueID != buffer.getUniqueID()) {
-            glBindBuffer(bufferState.mTarget, buffer.getHandle());
+            getGL().glBindBuffer(bufferState.mTarget, buffer.getHandle());
             bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
         }
 
         return bufferState.mTarget;
-    }
+    }*/
 
-    public void bindIndexBufferInPipe(@Nonnull GLBuffer buffer) {
-        assert !getCaps().hasDSASupport() || getCaps().dsaElementBufferBroken();
-
+    /*public void bindIndexBufferInPipe(@Nonnull @RawPtr GLBuffer buffer) {
         // pipeline is already handled
         //handleDirtyContext(GLBackendState.kPipeline);
 
@@ -882,17 +1127,17 @@ public final class GLDevice extends GpuDevice {
         var bufferState = mHWBufferStates[BUFFER_TYPE_INDEX];
         assert bufferState.mTarget == GL_ELEMENT_ARRAY_BUFFER;
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.getHandle());
+        getGL().glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.getHandle());
         bufferState.mBoundBufferUniqueID = buffer.getUniqueID();
-    }
+    }*/
 
-    /**
+    /*
      * Bind raw buffer ID to context (below OpenGL 4.5).
      *
      * @param usage  {@link BufferUsageFlags}
      * @param buffer the nonzero texture ID
      */
-    public int bindBufferForSetup(int usage, int buffer) {
+    /*public int bindBufferForSetup(int usage, int buffer) {
         assert !getCaps().hasDSASupport();
 
         handleDirtyContext(GLBackendState.kPipeline);
@@ -900,59 +1145,57 @@ public final class GLDevice extends GpuDevice {
         int type = bufferUsageToType(usage);
         if (type == BUFFER_TYPE_INDEX) {
             // Index buffer state is tied to the vertex array.
-            currentCommandBuffer().bindVertexArray(null);
+            //currentCommandBuffer().bindVertexArray(null);
         }
 
         var bufferState = mHWBufferStates[type];
-        glBindBuffer(bufferState.mTarget, buffer);
+        getGL().glBindBuffer(bufferState.mTarget, buffer);
         bufferState.mBoundBufferUniqueID = INVALID_UNIQUE_ID;
 
         return bufferState.mTarget;
-    }
+    }*/
 
-    public void bindTexture(int bindingUnit, GLTexture texture,
-                            int samplerState, short readSwizzle) {
+    /*public void bindTextureSampler(int bindingUnit, GLTexture texture,
+                                   int samplerState, short readSwizzle) {
         boolean dsa = mCaps.hasDSASupport();
         if (mHWTextureStates[bindingUnit] != texture.getUniqueID()) {
             if (dsa) {
                 glBindTextureUnit(bindingUnit, texture.getHandle());
             } else {
                 setTextureUnit(bindingUnit);
-                glBindTexture(GL_TEXTURE_2D, texture.getHandle());
+                getGL().glBindTexture(GL_TEXTURE_2D, texture.getHandle());
             }
             mHWTextureStates[bindingUnit] = texture.getUniqueID();
         }
-        var state = mHWSamplerStates[bindingUnit];
-        if (state.mSamplerState != samplerState) {
-            GLSampler sampler = samplerState != 0
+        var hwSamplerState = mHWSamplerStates[bindingUnit];
+        if (hwSamplerState.mSamplerState != samplerState) {
+            GLSampler sampler = null;*//*= samplerState != 0
                     ? mResourceProvider.findOrCreateCompatibleSampler(samplerState)
-                    : null;
-            glBindSampler(bindingUnit, sampler != null
+                    : null;*//*
+            //TODO
+            getGL().glBindSampler(bindingUnit, sampler != null
                     ? sampler.getHandle()
                     : 0);
-            state.mBoundSampler = RefCnt.move(state.mBoundSampler, sampler);
+            hwSamplerState.mBoundSampler = RefCnt.move(hwSamplerState.mBoundSampler, sampler);
         }
-        GLTextureParameters parameters = texture.getParameters();
-        if (parameters.baseMipmapLevel != 0) {
+        GLTextureMutableState mutableState = texture.getGLMutableState();
+        if (mutableState.baseMipmapLevel != 0) {
             if (dsa) {
                 glTextureParameteri(texture.getHandle(), GL_TEXTURE_BASE_LEVEL, 0);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
             }
-            parameters.baseMipmapLevel = 0;
+            mutableState.baseMipmapLevel = 0;
         }
-        int maxLevel = texture.getMaxMipmapLevel();
-        if (parameters.maxMipmapLevel != maxLevel) {
+        int maxLevel = texture.getMipLevelCount() - 1; // minus base level
+        if (mutableState.maxMipmapLevel != maxLevel) {
             if (dsa) {
                 glTextureParameteri(texture.getHandle(), GL_TEXTURE_MAX_LEVEL, maxLevel);
             } else {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
             }
-            parameters.maxMipmapLevel = maxLevel;
+            mutableState.maxMipmapLevel = maxLevel;
         }
-        // texture view is available since 4.3, but less used in OpenGL
-        // in case of some driver bugs, we don't use GL_TEXTURE_SWIZZLE_RGBA
-        // and OpenGL ES does not support GL_TEXTURE_SWIZZLE_RGBA at all
         for (int i = 0; i < 4; ++i) {
             int swiz = switch (readSwizzle & 0xF) {
                 case 0 -> GL_RED;
@@ -963,8 +1206,8 @@ public final class GLDevice extends GpuDevice {
                 case 5 -> GL_ONE;
                 default -> throw new AssertionError(readSwizzle);
             };
-            if (parameters.getSwizzle(i) != swiz) {
-                parameters.setSwizzle(i, swiz);
+            if (mutableState.getSwizzle(i) != swiz) {
+                mutableState.setSwizzle(i, swiz);
                 // swizzle enums are sequential
                 int channel = GL_TEXTURE_SWIZZLE_R + i;
                 if (dsa) {
@@ -975,181 +1218,18 @@ public final class GLDevice extends GpuDevice {
             }
             readSwizzle >>= 4;
         }
-    }
+    }*/
 
-    /**
+    /*
      * Binds texture unit in context. OpenGL 3 only.
      *
      * @param unit 0-based texture unit index
      */
-    public void setTextureUnit(int unit) {
+    /*public void setTextureUnit(int unit) {
         assert (unit >= 0 && unit < mHWTextureStates.length);
         if (unit != mHWActiveTextureUnit) {
             glActiveTexture(GL_TEXTURE0 + unit);
             mHWActiveTextureUnit = unit;
         }
-    }
-
-    private int createTexture(int width, int height, int format, int levels) {
-        assert (glFormatIsSupported(format));
-        assert (!glFormatIsCompressed(format));
-
-        int internalFormat = mCaps.getTextureInternalFormat(format);
-        if (internalFormat == 0) {
-            return 0;
-        }
-
-        assert (mCaps.isFormatTexturable(format));
-        final int texture;
-        if (mCaps.hasDSASupport()) {
-            assert (mCaps.isTextureStorageCompatible(format));
-            texture = glCreateTextures(GL_TEXTURE_2D);
-            if (texture == 0) {
-                return 0;
-            }
-            if (mCaps.skipErrorChecks()) {
-                glTextureStorage2D(texture, levels, internalFormat, width, height);
-            } else {
-                glClearErrors();
-                glTextureStorage2D(texture, levels, internalFormat, width, height);
-                if (glGetError() != GL_NO_ERROR) {
-                    glDeleteTextures(texture);
-                    return 0;
-                }
-            }
-        } else {
-            texture = glGenTextures();
-            if (texture == 0) {
-                return 0;
-            }
-            int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
-            glBindTexture(GL_TEXTURE_2D, texture);
-            try {
-                if (mCaps.isTextureStorageCompatible(format)) {
-                    if (mCaps.skipErrorChecks()) {
-                        glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
-                    } else {
-                        glClearErrors();
-                        glTexStorage2D(GL_TEXTURE_2D, levels, internalFormat, width, height);
-                        if (glGetError() != GL_NO_ERROR) {
-                            glDeleteTextures(texture);
-                            return 0;
-                        }
-                    }
-                } else {
-                    final int externalFormat = mCaps.getFormatDefaultExternalFormat(format);
-                    final int externalType = mCaps.getFormatDefaultExternalType(format);
-                    final boolean checks = !mCaps.skipErrorChecks();
-                    int error = 0;
-                    if (checks) {
-                        glClearErrors();
-                    }
-                    for (int level = 0; level < levels; level++) {
-                        int currentWidth = Math.max(1, width >> level);
-                        int currentHeight = Math.max(1, height >> level);
-                        nglTexImage2D(GL_TEXTURE_2D, level, internalFormat,
-                                currentWidth, currentHeight,
-                                0, externalFormat, externalType, MemoryUtil.NULL);
-                        if (checks) {
-                            error |= glGetError();
-                        }
-                    }
-                    if (error != 0) {
-                        glDeleteTextures(texture);
-                        return 0;
-                    }
-                }
-            } finally {
-                glBindTexture(GL_TEXTURE_2D, boundTexture);
-            }
-        }
-
-        return texture;
-    }
-
-    @Nullable
-    private Function<GLTexture, GLRenderTarget> createRTObjects(int texture,
-                                                                int width, int height,
-                                                                int format,
-                                                                int samples) {
-        assert texture != 0;
-        assert glFormatIsSupported(format);
-        assert !glFormatIsCompressed(format);
-
-        // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
-        // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
-        // The workaround is to use traditional glGen* and glBind* (validate).
-        // see https://forums.developer.nvidia.com/t/framebuffer-incomplete-when-attaching-color-buffers-of-different-sizes-with-dsa/211550
-        final int framebuffer = glGenFramebuffers();
-        if (framebuffer == 0) {
-            return null;
-        }
-
-        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
-        // the texture bound to the other.
-        final int msaaFramebuffer;
-        final GLAttachment msaaColorBuffer;
-        if (samples <= 1) {
-            msaaFramebuffer = 0;
-            msaaColorBuffer = null;
-        } else {
-            msaaFramebuffer = glGenFramebuffers();
-            if (msaaFramebuffer == 0) {
-                glDeleteFramebuffers(framebuffer);
-                return null;
-            }
-
-            msaaColorBuffer = GLAttachment.makeColor(this,
-                    width, height,
-                    samples,
-                    format);
-            if (msaaColorBuffer == null) {
-                glDeleteFramebuffers(framebuffer);
-                glDeleteFramebuffers(msaaFramebuffer);
-                return null;
-            }
-
-            currentCommandBuffer().bindFramebuffer(msaaFramebuffer);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER,
-                    GL_COLOR_ATTACHMENT0,
-                    GL_RENDERBUFFER,
-                    msaaColorBuffer.getRenderbufferID());
-            if (!mCaps.skipErrorChecks()) {
-                int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-                if (status != GL_FRAMEBUFFER_COMPLETE) {
-                    glDeleteFramebuffers(framebuffer);
-                    glDeleteFramebuffers(msaaFramebuffer);
-                    msaaColorBuffer.unref();
-                    return null;
-                }
-            }
-        }
-
-        currentCommandBuffer().bindFramebuffer(framebuffer);
-        glFramebufferTexture(GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0,
-                texture,
-                0);
-        if (!mCaps.skipErrorChecks()) {
-            int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-            if (status != GL_FRAMEBUFFER_COMPLETE) {
-                glDeleteFramebuffers(framebuffer);
-                glDeleteFramebuffers(msaaFramebuffer);
-                if (msaaColorBuffer != null) {
-                    msaaColorBuffer.unref();
-                }
-                return null;
-            }
-        }
-
-        return colorBuffer -> new GLRenderTarget(this,
-                colorBuffer.getWidth(),
-                colorBuffer.getHeight(),
-                colorBuffer.getGLFormat(),
-                samples,
-                framebuffer,
-                msaaFramebuffer,
-                colorBuffer,
-                msaaColorBuffer);
-    }
+    }*/
 }

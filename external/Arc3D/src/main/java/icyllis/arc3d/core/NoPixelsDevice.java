@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
@@ -35,8 +35,8 @@ public class NoPixelsDevice extends Device {
 
     private final Rect2i mTmpBounds = new Rect2i();
 
-    public NoPixelsDevice(@Nonnull Rect2i bounds) {
-        this(bounds.mLeft, bounds.mTop, bounds.mRight, bounds.mBottom);
+    public NoPixelsDevice(@Nonnull Rect2ic bounds) {
+        this(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
     }
 
     public NoPixelsDevice(int left, int top, int right, int bottom) {
@@ -100,12 +100,12 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    protected void onSave() {
+    public void pushClipStack() {
         mClipStack[mClipIndex].mDeferredSaveCount++;
     }
 
     @Override
-    protected void onRestore() {
+    public void popClipStack() {
         ClipState state = mClipStack[mClipIndex];
         if (state.mDeferredSaveCount > 0) {
             state.mDeferredSaveCount--;
@@ -115,12 +115,11 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
+    public void clipRect(Rect2fc rect, int clipOp, boolean doAA) {
         writableClip().opRect(rect, getLocalToDevice(), clipOp, doAA);
     }
 
-    @Override
-    protected void onReplaceClip(Rect2i globalRect) {
+    public void replaceClip(Rect2i globalRect) {
         final Rect2i deviceRect = mTmpBounds;
         getGlobalToDevice().mapRect(globalRect, deviceRect);
         final ClipState clip = writableClip();
@@ -132,25 +131,28 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public boolean clipIsAA() {
+    public boolean isClipAA() {
         return clip().mIsAA;
     }
 
     @Override
-    public boolean clipIsWideOpen() {
+    public boolean isClipEmpty() {
+        return clip().mClipBounds.isEmpty();
+    }
+
+    @Override
+    public boolean isClipRect() {
+        return clip().mIsRect;
+    }
+
+    @Override
+    public boolean isClipWideOpen() {
         return clip().mIsRect && getClipBounds().equals(mBounds);
     }
 
     @Override
-    protected int getClipType() {
-        final ClipState clip = clip();
-        if (clip.mClipBounds.isEmpty()) {
-            return CLIP_TYPE_EMPTY;
-        } else if (clip.mIsRect) {
-            return CLIP_TYPE_RECT;
-        } else {
-            return CLIP_TYPE_COMPLEX;
-        }
+    public void getClipBounds(@Nonnull Rect2i bounds) {
+        bounds.set(getClipBounds());
     }
 
     @Override
@@ -163,7 +165,52 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void drawRect(Rect2f r, Paint paint) {
+    public void drawPoints(int mode, float[] pts, int offset, int count, Paint paint) {
+    }
+
+    @Override
+    public void drawLine(float x0, float y0, float x1, float y1, @Paint.Cap int cap, float width, Paint paint) {
+    }
+
+    @Override
+    public void drawRect(Rect2fc r, Paint paint) {
+    }
+
+    @Override
+    public void drawRoundRect(RoundRect rr, Paint paint) {
+    }
+
+    @Override
+    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+    }
+
+    @Override
+    public void drawArc(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, int cap, float width, Paint paint) {
+    }
+
+    @Override
+    public void drawPie(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, Paint paint) {
+    }
+
+    @Override
+    public void drawChord(float cx, float cy, float radius, float startAngle,
+                          float sweepAngle, Paint paint) {
+    }
+
+    @Override
+    public void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+                              SamplingOptions sampling, Paint paint, int constraint) {
+    }
+
+    @Override
+    protected void onDrawGlyphRunList(Canvas canvas, GlyphRunList glyphRunList, Paint paint) {
+    }
+
+    @Override
+    public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
+        RefCnt.move(blender);
     }
 
     /**
@@ -212,7 +259,7 @@ public class NoPixelsDevice extends Device {
             setRect(r.mLeft, r.mTop, r.mRight, r.mBottom);
         }
 
-        public void opRect(final Rect2f localRect, final Matrix4 localToDevice, int clipOp, boolean doAA) {
+        public void opRect(final Rect2fc localRect, final Matrix4c localToDevice, int clipOp, boolean doAA) {
             applyOpParams(clipOp, doAA, localToDevice.isScaleTranslate());
             switch (clipOp) {
                 case ClipOp.CLIP_OP_INTERSECT:

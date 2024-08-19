@@ -97,8 +97,8 @@ public class TestJ2D {
         g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-        Arc2D arc = new Arc2D.Float(100, 100, 200, 200, 0, -120, Arc2D.PIE);
-        g2d.setStroke(new BasicStroke(6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        Arc2D arc = new Arc2D.Float(100, 100, 200, 200, 0, 120, Arc2D.OPEN);
+        g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g2d.draw(arc);
 
         Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
@@ -153,6 +153,8 @@ public class TestJ2D {
         g2d.setBackground(Color.gray);
         g2d.clearRect(0, 225, 800, 225);
 
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
         g2d.setColor(Color.black);
         g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         drawText(g2d, font, s.toCharArray(), 250);
@@ -205,7 +207,7 @@ public class TestJ2D {
     public static void drawText(Graphics2D g2d, Font font, char[] text, int y) {
         var gv = font.layoutGlyphVector(g2d.getFontRenderContext(),
                 text, 0, text.length, Font.LAYOUT_LEFT_TO_RIGHT);
-        g2d.drawGlyphVector(gv, 2, y);
+        g2d.drawGlyphVector(gv, 2.5F, y);
     }
 
     public static void printGlyphVector(GlyphVector gv) {

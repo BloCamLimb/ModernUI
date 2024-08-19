@@ -1,26 +1,27 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.ops.Op;
+import icyllis.arc3d.engine.trash.ops.Op;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 
@@ -28,7 +29,7 @@ import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
  * The {@code OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
  * same render target. {@link Op Ops} execute into a {@code OpsRenderPass}.
  */
-//TODO
+@Deprecated
 public abstract class OpsRenderPass {
 
     /**
@@ -44,7 +45,7 @@ public abstract class OpsRenderPass {
     protected GpuRenderTarget mRenderTarget;
     protected int mSurfaceOrigin;
 
-    private TextureProxy[] mGeomTextures = new TextureProxy[1];
+    private ImageViewProxy[] mGeomTextures = new ImageViewProxy[1];
 
     public OpsRenderPass() {
         this(null, SurfaceOrigin.kUpperLeft);
@@ -84,13 +85,13 @@ public abstract class OpsRenderPass {
      * Updates the internal pipeline state for drawing. Enters an internal "bad" state if
      * the pipeline could not be set.
      *
-     * @param pipelineInfo  the pipeline info used to update uniforms
-     * @param pipelineState the pipeline state object
+     * @param graphicsPipelineDesc  the pipeline info used to update uniforms
+     * @param pipeline the pipeline state object
      * @param drawBounds    the sub-area of render target for subsequent draw calls
      */
-    public void bindPipeline(PipelineInfo pipelineInfo, GraphicsPipelineState pipelineState, Rect2fc drawBounds) {
-        assert (pipelineInfo.origin() == mSurfaceOrigin);
-        if (!onBindPipeline(pipelineInfo, pipelineState, drawBounds)) {
+    public void bindPipeline(GraphicsPipelineDesc_Old graphicsPipelineDesc, GraphicsPipeline pipeline, Rect2fc drawBounds) {
+        assert (graphicsPipelineDesc.origin() == mSurfaceOrigin);
+        if (!onBindPipeline(graphicsPipelineDesc, pipeline, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
         }
@@ -99,11 +100,11 @@ public abstract class OpsRenderPass {
     }
 
     /**
-     * Single texture version of {@link #bindTextures(TextureProxy[])}.
+     * Single texture version of {@link #bindTextures(ImageViewProxy[])}.
      *
      * @param geomTexture the raw ptr to textures at binding 0
      */
-    public final void bindTexture(TextureProxy geomTexture) {
+    public final void bindTexture(@RawPtr ImageViewProxy geomTexture) {
         mGeomTextures[0] = geomTexture;
         bindTextures(mGeomTextures);
         mGeomTextures[0] = null;
@@ -121,26 +122,30 @@ public abstract class OpsRenderPass {
      *
      * @param geomTextures the raw ptr to textures starting from binding 0
      */
-    public final void bindTextures(TextureProxy[] geomTextures) {
+    public final void bindTextures(@RawPtr ImageViewProxy[] geomTextures) {
         //TODO
     }
 
     /**
      * Binds geometric (input) buffers to current command buffer.
      *
-     * @param indexBuffer    raw ptr to the index buffer if using indexed rendering, or nullptr
-     * @param vertexBuffer   raw ptr to the vertex buffer, can be nullptr
-     * @param instanceBuffer raw ptr to the instance buffer if using instanced rendering, or nullptr
+     * @param indexBuffer          raw ptr to the index buffer if using indexed rendering, or nullptr
+     * @param indexType            index type, see {@link Engine.IndexType}
+     * @param vertexBuffer         raw ptr to the vertex buffer, can be nullptr
+     * @param vertexStreamOffset   byte offset to first vertex of vertex stream
+     * @param instanceBuffer       raw ptr to the instance buffer if using instanced rendering, or nullptr
+     * @param instanceStreamOffset byte offset to first instance of instance stream
      */
-    public final void bindBuffers(GpuBuffer indexBuffer,
-                                  GpuBuffer vertexBuffer,
-                                  GpuBuffer instanceBuffer) {
+    public final void bindBuffers(@RawPtr Buffer indexBuffer, int indexType,
+                                  @RawPtr Buffer vertexBuffer, int vertexStreamOffset,
+                                  @RawPtr Buffer instanceBuffer, int instanceStreamOffset) {
         if (vertexBuffer == null && instanceBuffer == null) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
         }
         if (mDrawPipelineStatus == kConfigured_DrawPipelineStatus) {
-            onBindBuffers(indexBuffer, vertexBuffer, instanceBuffer);
+            onBindBuffers(indexBuffer, indexType, vertexBuffer, vertexStreamOffset, instanceBuffer,
+                    instanceStreamOffset);
         } else {
             assert (mDrawPipelineStatus == kFailedToBind_DrawPipelineStatus);
         }
@@ -220,21 +225,21 @@ public abstract class OpsRenderPass {
         }
     }
 
-    protected void set(GpuRenderTarget rt, int origin) {
+    protected void set(GpuRenderTarget renderTarget, int origin) {
         assert (mRenderTarget == null);
-        mRenderTarget = rt;
+        mRenderTarget = renderTarget;
         mSurfaceOrigin = origin;
     }
 
-    protected abstract GpuDevice getDevice();
+    protected abstract Device getDevice();
 
-    protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo,
-                                              GraphicsPipelineState pipelineState,
+    protected abstract boolean onBindPipeline(GraphicsPipelineDesc_Old graphicsPipelineDesc,
+                                              GraphicsPipeline pipeline,
                                               Rect2fc drawBounds);
 
-    protected abstract void onBindBuffers(@SharedPtr GpuBuffer indexBuffer,
-                                          @SharedPtr GpuBuffer vertexBuffer,
-                                          @SharedPtr GpuBuffer instanceBuffer);
+    protected abstract void onBindBuffers(@SharedPtr Buffer indexBuffer, int indexType,
+                                          @SharedPtr Buffer vertexBuffer, int vertexStreamOffset,
+                                          @SharedPtr Buffer instanceBuffer, int instanceStreamOffset);
 
     protected abstract void onDraw(int vertexCount, int baseVertex);
 

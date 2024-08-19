@@ -1,47 +1,62 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.*;
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nullable;
+
 /**
- * Represents an immutable block of native CPU memory.
+ * A client-side buffer represents an immutable block of native CPU memory.
  * <p>
- * The instances are atomic reference counted, and may be used as shared pointers.
+ * This is only used as "staging buffers" in OpenGL and may not be used for other purposes.
  */
 public final class CpuBuffer extends RefCnt {
 
-    private final int mSize;
+    private final long mSize;
     private final long mData;
 
-    public CpuBuffer(int size) {
-        assert (size > 0);
+    private CpuBuffer(long size, long data) {
         mSize = size;
-        mData = MemoryUtil.nmemAllocChecked(size);
+        mData = data;
+    }
+
+    @Nullable
+    @SharedPtr
+    public static CpuBuffer make(long size) {
+        assert (size > 0);
+        long data = MemoryUtil.nmemAlloc(size);
+        if (data == MemoryUtil.NULL) {
+            return null;
+        }
+        // je_malloc is 16-byte aligned on 64-bit system,
+        // it's safe to use Unsafe to transfer primitive data
+        assert MathUtil.isAlign8(data);
+        return new CpuBuffer(size, data);
     }
 
     /**
      * Size of the buffer in bytes.
      */
-    public int size() {
+    public long size() {
         return mSize;
     }
 

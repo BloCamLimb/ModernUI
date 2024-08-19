@@ -41,16 +41,9 @@ import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
-import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.*;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
@@ -790,15 +783,16 @@ public class TestFragment extends Fragment {
             canvas.drawRect(200, 450, 500, 550, paint);
 
             paint.setStrokeWidth(40.0f);
-            paint.setSmoothWidth(40.0f);
+            //paint.setSmoothWidth(40.0f);
             //canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
+            paint.setStrokeCap(Paint.CAP_BUTT);
             canvas.drawArc(80, 400, 50, 60, 240, paint);
             canvas.drawBezier(80, 400, 180, 420, 80, 600, paint);
 
             paint.setStyle(Paint.FILL);
             canvas.drawCircle(80, 700, 60, paint);
 
-            paint.setSmoothWidth(0.0f);
+            //paint.setSmoothWidth(0.0f);
 
             paint.setStyle(Paint.FILL);
             paint.setAlpha((int) (roundRectAlpha * 192));
@@ -1088,7 +1082,7 @@ public class TestFragment extends Fragment {
                 float b = 1.5f + MathUtil.sin(time / 600f) / 2;
                 paint.setRGBA(160, 155, 230, (int) (64 * b));
                 paint.setStrokeWidth(200);
-                paint.setSmoothWidth(200);
+                //paint.setSmoothWidth(200);
                 paint.setStyle(Paint.STROKE);
                 canvas.drawCircle(cx, cy, 130, paint);
                 paint.reset();

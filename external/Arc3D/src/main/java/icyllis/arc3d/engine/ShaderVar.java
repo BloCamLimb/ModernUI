@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
@@ -43,7 +43,7 @@ public class ShaderVar {
 
     private byte mType;
     private byte mTypeModifier;
-    private final int mCount;
+    private final int mArraySize;
 
     private String mName;
     private String mLayoutQualifier;
@@ -60,28 +60,28 @@ public class ShaderVar {
         this(name, type, kNone_TypeModifier, kNonArray, "", "");
     }
 
-    public ShaderVar(String name, byte type, int arrayCount) {
-        this(name, type, kNone_TypeModifier, arrayCount, "", "");
+    public ShaderVar(String name, byte type, int arraySize) {
+        this(name, type, kNone_TypeModifier, arraySize, "", "");
     }
 
     public ShaderVar(String name, byte type, byte typeModifier) {
         this(name, type, typeModifier, kNonArray, "", "");
     }
 
-    public ShaderVar(String name, byte type, byte typeModifier, int arrayCount) {
-        this(name, type, typeModifier, arrayCount, "", "");
+    public ShaderVar(String name, byte type, byte typeModifier, int arraySize) {
+        this(name, type, typeModifier, arraySize, "", "");
     }
 
-    public ShaderVar(String name, byte type, byte typeModifier, int arrayCount,
+    public ShaderVar(String name, byte type, byte typeModifier, int arraySize,
                      String layoutQualifier, String extraModifier) {
         assert (name != null);
         assert (SLDataType.checkSLType(type));
         assert (typeModifier >= kNone_TypeModifier && typeModifier <= kUniform_TypeModifier);
-        assert (arrayCount == kNonArray || arrayCount > 0);
+        assert (arraySize == kNonArray || arraySize > 0);
         assert (layoutQualifier != null && extraModifier != null);
         mType = type;
         mTypeModifier = typeModifier;
-        mCount = arrayCount;
+        mArraySize = arraySize;
         mName = name;
         mLayoutQualifier = layoutQualifier;
         mExtraModifiers = extraModifier;
@@ -100,14 +100,14 @@ public class ShaderVar {
      * Is the var an array.
      */
     public boolean isArray() {
-        return mCount != kNonArray;
+        return mArraySize != kNonArray;
     }
 
     /**
      * Get the array length. May be {@link #kNonArray}.
      */
-    public int getArrayCount() {
-        return mCount;
+    public int getArraySize() {
+        return mArraySize;
     }
 
     /**
@@ -143,8 +143,15 @@ public class ShaderVar {
         if (mLayoutQualifier.isEmpty()) {
             mLayoutQualifier = layoutQualifier;
         } else {
-            mLayoutQualifier += ", " + layoutQualifier;
+            mLayoutQualifier += ',' + layoutQualifier;
         }
+    }
+
+    /**
+     * Appends to the layout qualifier.
+     */
+    public void addLayoutQualifier(String qualifier, int value) {
+        addLayoutQualifier(qualifier + '=' + value);
     }
 
     /**
@@ -155,7 +162,7 @@ public class ShaderVar {
         if (mExtraModifiers.isEmpty()) {
             mExtraModifiers = modifier;
         } else {
-            mExtraModifiers += " " + modifier;
+            mExtraModifiers += ' ' + modifier;
         }
     }
 
@@ -183,12 +190,12 @@ public class ShaderVar {
         }
         byte type = getType();
         if (isArray()) {
-            assert (getArrayCount() > 0);
+            assert (getArraySize() > 0);
             out.append(SLDataType.typeString(type));
             out.append(" ");
             out.append(getName());
             out.append("[");
-            out.append(getArrayCount());
+            out.append(getArraySize());
             out.append("]");
         } else {
             out.append(SLDataType.typeString(type));

@@ -310,37 +310,35 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
         boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw();
 
-        synchronized (mRenderLock) {
-            if (!cancelDraw) {
-                if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
-                    for (LayoutTransition pendingTransition : mPendingTransitions) {
-                        pendingTransition.startChangingAnimations();
-                    }
-                    mPendingTransitions.clear();
+        if (!cancelDraw) {
+            if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
+                for (LayoutTransition pendingTransition : mPendingTransitions) {
+                    pendingTransition.startChangingAnimations();
                 }
-
-                if (mAttachInfo.mViewScrollChanged) {
-                    mAttachInfo.mViewScrollChanged = false;
-                    mAttachInfo.mTreeObserver.dispatchOnScrollChanged();
-                }
-
-                if (mInvalidated) {
-                    mIsDrawing = true;
-                    Canvas canvas = beginDrawLocked(width, height);
-                    if (canvas != null) {
-                        host.draw(canvas);
-                        endDrawLocked(canvas);
-                    }
-                    mIsDrawing = false;
-                    if (mKeepInvalidated) {
-                        mKeepInvalidated = false;
-                    } else {
-                        mInvalidated = false;
-                    }
-                }
-            } else {
-                scheduleTraversals();
+                mPendingTransitions.clear();
             }
+
+            if (mAttachInfo.mViewScrollChanged) {
+                mAttachInfo.mViewScrollChanged = false;
+                mAttachInfo.mTreeObserver.dispatchOnScrollChanged();
+            }
+
+            if (mInvalidated) {
+                mIsDrawing = true;
+                Canvas canvas = beginDrawLocked(width, height);
+                if (canvas != null) {
+                    host.draw(canvas);
+                    endDrawLocked(canvas);
+                }
+                mIsDrawing = false;
+                if (mKeepInvalidated) {
+                    mKeepInvalidated = false;
+                } else {
+                    mInvalidated = false;
+                }
+            }
+        } else {
+            scheduleTraversals();
         }
     }
 

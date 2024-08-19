@@ -1,49 +1,54 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SurfaceCharacterization;
+import icyllis.arc3d.granite.RendererProvider;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.PrintWriter;
-import java.util.Objects;
 
 /**
  * This class is a public API, except where noted.
  */
-public abstract class Context extends RefCnt {
+public abstract sealed class Context extends RefCnt
+        permits ImmediateContext, RecordingContext {
 
-    protected final SharedContextInfo mContextInfo;
+    protected final Device mDevice;
+    protected final Thread mOwnerThread;
+    protected ResourceProvider mResourceProvider;
 
-    protected Context(SharedContextInfo contextInfo) {
-        mContextInfo = contextInfo;
+    protected Context(Device device) {
+        mDevice = device;
+        mOwnerThread = Thread.currentThread();
     }
 
     /**
      * The 3D API backing this context.
      *
-     * @return see {@link GpuDevice.BackendApi}
+     * @return see {@link Device.BackendApi}
      */
     public final int getBackend() {
-        return mContextInfo.getBackend();
+        return mDevice.getBackend();
     }
 
     /**
@@ -53,12 +58,12 @@ public abstract class Context extends RefCnt {
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param colorType  see {@link ImageInfo}
+     * @param colorType  see {@link ImageDesc}
      * @param renderable true if the format will be used as color attachments
      */
     @Nullable
     public final BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
-        return mContextInfo.getDefaultBackendFormat(colorType, renderable);
+        return mDevice.getDefaultBackendFormat(colorType, renderable);
     }
 
     /**
@@ -68,11 +73,11 @@ public abstract class Context extends RefCnt {
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
-     * @param compressionType see {@link ImageInfo}
+     * @param compressionType see {@link ImageDesc}
      */
     @Nullable
     public final BackendFormat getCompressedBackendFormat(int compressionType) {
-        return mContextInfo.getCompressedBackendFormat(compressionType);
+        return mDevice.getCompressedBackendFormat(compressionType);
     }
 
     /**
@@ -80,24 +85,29 @@ public abstract class Context extends RefCnt {
      * rendering is supported for the color type. 0 is returned if rendering to this color type
      * is not supported at all.
      *
-     * @param colorType see {@link ImageInfo}
+     * @param colorType see {@link ImageDesc}
      */
     public final int getMaxSurfaceSampleCount(int colorType) {
-        return mContextInfo.getMaxSurfaceSampleCount(colorType);
+        return mDevice.getMaxSurfaceSampleCount(colorType);
     }
 
-    public final SharedContextInfo getContextInfo() {
-        return mContextInfo;
+    public final boolean isImmediate() {
+        return this instanceof ImmediateContext;
+    }
+
+    @ApiStatus.Internal
+    public final Device getDevice() {
+        return mDevice;
     }
 
     @ApiStatus.Internal
     public final boolean matches(Context c) {
-        return mContextInfo.matches(c);
+        return c != null && mDevice == c.mDevice;
     }
 
     @ApiStatus.Internal
     public final ContextOptions getOptions() {
-        return mContextInfo.getOptions();
+        return mDevice.getOptions();
     }
 
     /**
@@ -109,30 +119,129 @@ public abstract class Context extends RefCnt {
      */
     @ApiStatus.Internal
     public final int getContextID() {
-        return mContextInfo.getContextID();
+        return mDevice.getContextID();
+    }
+
+    //TODO
+    public boolean isDeviceLost() {
+        if (mDevice != null && mDevice.isDeviceLost()) {
+            //discard();
+            return true;
+        }
+        return false;
     }
 
     @ApiStatus.Internal
     public final Caps getCaps() {
-        return mContextInfo.getCaps();
+        return mDevice.getCaps();
     }
 
     @ApiStatus.Internal
-    public final PrintWriter getErrorWriter() {
-        return Objects.requireNonNullElseGet(getOptions().mErrorWriter, Context::getDefaultErrorWriter);
+    public final ResourceProvider getResourceProvider() {
+        return mResourceProvider;
     }
 
-    protected boolean init() {
-        return mContextInfo.isValid();
+    /**
+     * Gets the maximum supported texture size.
+     */
+    public final int getMaxTextureSize() {
+        return getCaps().mMaxTextureSize;
     }
 
-    private static PrintWriter sDefaultErrorWriter;
+    /**
+     * Gets the maximum supported render target size.
+     */
+    public final int getMaxRenderTargetSize() {
+        return getCaps().mMaxRenderTargetSize;
+    }
 
-    private static PrintWriter getDefaultErrorWriter() {
-        PrintWriter err = sDefaultErrorWriter;
-        if (err == null) {
-            sDefaultErrorWriter = err = new PrintWriter(System.err, true);
+    /**
+     * Frees GPU resources created and held by the Context. Can be called to reduce GPU memory
+     * pressure. Any resources that are still in use (e.g. being used by work submitted to the GPU)
+     * will not be deleted by this call. If the caller wants to make sure all resources are freed,
+     * then they should first make sure to submit and wait on any outstanding work.
+     */
+    public abstract void freeGpuResources();
+
+    /**
+     * Purge GPU resources on the Context that haven't been used in the past 'msNotUsed'
+     * milliseconds or are otherwise marked for deletion, regardless of whether the context is under
+     * budget.
+     */
+    public abstract void performDeferredCleanup(long msNotUsed);
+
+    /**
+     * Returns the number of bytes of the Context's gpu memory cache budget that are currently in
+     * use.
+     */
+    public long getCurrentBudgetedBytes() {
+        checkOwnerThread();
+        return mResourceProvider.getResourceCacheBudgetedBytes();
+    }
+
+    /**
+     * Returns the number of bytes of the Context's resource cache that are currently purgeable.
+     */
+    public long getCurrentPurgeableBytes() {
+        checkOwnerThread();
+        return mResourceProvider.getResourceCachePurgeableBytes();
+    }
+
+    /**
+     * Returns the size of Context's gpu memory cache budget in bytes.
+     */
+    public long getMaxBudgetedBytes() {
+        checkOwnerThread();
+        return mResourceProvider.getResourceCacheLimit();
+    }
+
+    @ApiStatus.Internal
+    public final SharedResourceCache getSharedResourceCache() {
+        return mDevice.getSharedResourceCache();
+    }
+
+    @ApiStatus.Internal
+    public final RendererProvider getRendererProvider() {
+        return mDevice.getRendererProvider();
+    }
+
+    public final Logger getLogger() {
+        return mDevice.getLogger();
+    }
+
+    public boolean init() {
+        mResourceProvider = mDevice.makeResourceProvider(this);
+        return mDevice.isValid();
+    }
+
+    @Override
+    protected void deallocate() {
+        if (mResourceProvider != null) {
+            mResourceProvider.destroy();
+            mResourceProvider = null;
         }
-        return err;
+    }
+
+    /**
+     * @return the context-creating thread
+     */
+    public final Thread getOwnerThread() {
+        return mOwnerThread;
+    }
+
+    /**
+     * @return true if calling from the context-creating thread
+     */
+    public final boolean isOwnerThread() {
+        return Thread.currentThread() == mOwnerThread;
+    }
+
+    /**
+     * Checks if calling from the context-creating thread, or throws a runtime exception.
+     */
+    public final void checkOwnerThread() {
+        if (Thread.currentThread() != mOwnerThread)
+            throw new IllegalStateException("Method expected to call from " + mOwnerThread +
+                    ", current " + Thread.currentThread() + ", deferred " + !(this instanceof ImmediateContext));
     }
 }

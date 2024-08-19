@@ -40,7 +40,7 @@ public class ImageDrawable extends Drawable {
     private final Rect mDstRect = new Rect();
 
     private ImageState mImageState;
-    private int mBlendColor;
+    private BlendModeColorFilter mBlendModeFilter;
 
     private boolean mFullImage = true;
     private boolean mDstRectAndInsetsDirty = true;
@@ -230,13 +230,12 @@ public class ImageDrawable extends Drawable {
         final ImageState state = mImageState;
         final Paint paint = state.mPaint;
 
-        final int restoreAlpha;
-        if ((mBlendColor >>> 24) != 0) {
-            restoreAlpha = paint.getAlpha();
-            paint.setColor(mBlendColor);
-            paint.setAlpha(restoreAlpha * (mBlendColor >>> 24) >>> 8);
+        final boolean clearColorFilter;
+        if (mBlendModeFilter != null && paint.getColorFilter() == null) {
+            paint.setColorFilter(mBlendModeFilter);
+            clearColorFilter = true;
         } else {
-            restoreAlpha = -1;
+            clearColorFilter = false;
         }
 
         updateDstRectAndInsetsIfDirty();
@@ -255,8 +254,8 @@ public class ImageDrawable extends Drawable {
             canvas.restore();
         }
 
-        if (restoreAlpha >= 0) {
-            paint.setAlpha(restoreAlpha);
+        if (clearColorFilter) {
+            paint.setColorFilter(null);
         }
     }
 
@@ -279,11 +278,19 @@ public class ImageDrawable extends Drawable {
         final ImageState state = mImageState;
         if (state.mTint != tint) {
             state.mTint = tint;
-            if (tint == null) {
-                mBlendColor = ~0;
-            } else {
-                mBlendColor = tint.getColorForState(getState(), ~0);
-            }
+            mBlendModeFilter = updateBlendModeFilter(mBlendModeFilter, tint,
+                    mImageState.mBlendMode);
+            invalidateSelf();
+        }
+    }
+
+    @Override
+    public void setTintBlendMode(@NonNull BlendMode blendMode) {
+        final ImageState state = mImageState;
+        if (state.mBlendMode != blendMode) {
+            state.mBlendMode = blendMode;
+            mBlendModeFilter = updateBlendModeFilter(mBlendModeFilter, mImageState.mTint,
+                    blendMode);
             invalidateSelf();
         }
     }
@@ -313,8 +320,9 @@ public class ImageDrawable extends Drawable {
     @Override
     protected boolean onStateChange(@NonNull int[] stateSet) {
         final ImageState state = mImageState;
-        if (state.mTint != null) {
-            mBlendColor = state.mTint.getColorForState(stateSet, ~0);
+        if (state.mTint != null && state.mBlendMode != null) {
+            mBlendModeFilter = updateBlendModeFilter(mBlendModeFilter, state.mTint,
+                    state.mBlendMode);
             return true;
         }
         return false;
@@ -364,6 +372,7 @@ public class ImageDrawable extends Drawable {
 
         Image mImage;
         ColorStateList mTint = null;
+        BlendMode mBlendMode = DEFAULT_BLEND_MODE;
 
         int mGravity = Gravity.FILL;
 
@@ -408,10 +417,7 @@ public class ImageDrawable extends Drawable {
      * after inflating or applying a theme.
      */
     private void updateLocalState() {
-        if (mImageState.mTint == null) {
-            mBlendColor = ~0;
-        } else {
-            mBlendColor = mImageState.mTint.getColorForState(getState(), ~0);
-        }
+        mBlendModeFilter = updateBlendModeFilter(mBlendModeFilter, mImageState.mTint,
+                mImageState.mBlendMode);
     }
 }

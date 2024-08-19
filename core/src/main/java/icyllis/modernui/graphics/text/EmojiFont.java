@@ -20,6 +20,7 @@ package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.BreakIterator;
 import icyllis.arc3d.core.Strike;
+import icyllis.arc3d.core.Typeface;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
@@ -34,6 +35,7 @@ import java.util.Locale;
 /**
  * Special font for Color Emoji.
  */
+//TODO the layout code is not correct
 public final class EmojiFont implements Font {
 
     private final String mName;
@@ -230,6 +232,12 @@ public final class EmojiFont implements Font {
 
     @Override
     public Strike findOrCreateStrike(FontPaint paint) {
+        return null;
+    }
+
+    @Override
+    public Typeface getNativeTypeface() {
+        //TODO wait for Arc3D SVG font rendering
         return null;
     }
 }

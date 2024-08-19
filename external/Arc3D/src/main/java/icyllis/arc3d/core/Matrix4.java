@@ -1,28 +1,27 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
 
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import javax.annotation.*;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -47,10 +46,10 @@ import java.nio.FloatBuffer;
  */
 //TODO replace with Vector API and Primitive Classes
 @SuppressWarnings("unused")
-public class Matrix4 implements Cloneable {
+public non-sealed class Matrix4 implements Matrix4c, Cloneable {
 
     // sequential matrix elements, m(ij) (row, column)
-    // directly using primitives will be faster than array in Java
+    // directly using primitives will be faster than array in Java (before Vector API)
     // [m11 m12 m13 m14]
     // [m21 m22 m23 m24]
     // [m31 m32 m33 m34]
@@ -85,23 +84,8 @@ public class Matrix4 implements Cloneable {
      *
      * @param m the matrix to create from
      */
-    public Matrix4(@Nonnull Matrix4 m) {
-        m11 = m.m11;
-        m12 = m.m12;
-        m13 = m.m13;
-        m14 = m.m14;
-        m21 = m.m21;
-        m22 = m.m22;
-        m23 = m.m23;
-        m24 = m.m24;
-        m31 = m.m31;
-        m32 = m.m32;
-        m33 = m.m33;
-        m34 = m.m34;
-        m41 = m.m41;
-        m42 = m.m42;
-        m43 = m.m43;
-        m44 = m.m44;
+    public Matrix4(@Nonnull Matrix4c m) {
+        m.store(this);
     }
 
     /**
@@ -279,6 +263,70 @@ public class Matrix4 implements Cloneable {
         return mat;
     }
 
+    public float m11() {
+        return m11;
+    }
+
+    public float m12() {
+        return m12;
+    }
+
+    public float m13() {
+        return m13;
+    }
+
+    public float m14() {
+        return m14;
+    }
+
+    public float m21() {
+        return m21;
+    }
+
+    public float m22() {
+        return m22;
+    }
+
+    public float m23() {
+        return m23;
+    }
+
+    public float m24() {
+        return m24;
+    }
+
+    public float m31() {
+        return m31;
+    }
+
+    public float m32() {
+        return m32;
+    }
+
+    public float m33() {
+        return m33;
+    }
+
+    public float m34() {
+        return m34;
+    }
+
+    public float m41() {
+        return m41;
+    }
+
+    public float m42() {
+        return m42;
+    }
+
+    public float m43() {
+        return m43;
+    }
+
+    public float m44() {
+        return m44;
+    }
+
     /**
      * Add each element of the given matrix to the corresponding element of this matrix.
      *
@@ -337,24 +385,24 @@ public class Matrix4 implements Cloneable {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat(@Nonnull Matrix4 lhs) {
+    public void preConcat(@Nonnull Matrix4c lhs) {
         // 64 multiplications
-        final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m31 + lhs.m14 * m41;
-        final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m32 + lhs.m14 * m42;
-        final float f13 = lhs.m11 * m13 + lhs.m12 * m23 + lhs.m13 * m33 + lhs.m14 * m43;
-        final float f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m13 * m34 + lhs.m14 * m44;
-        final float f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m23 * m31 + lhs.m24 * m41;
-        final float f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m23 * m32 + lhs.m24 * m42;
-        final float f23 = lhs.m21 * m13 + lhs.m22 * m23 + lhs.m23 * m33 + lhs.m24 * m43;
-        final float f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m23 * m34 + lhs.m24 * m44;
-        final float f31 = lhs.m31 * m11 + lhs.m32 * m21 + lhs.m33 * m31 + lhs.m34 * m41;
-        final float f32 = lhs.m31 * m12 + lhs.m32 * m22 + lhs.m33 * m32 + lhs.m34 * m42;
-        final float f33 = lhs.m31 * m13 + lhs.m32 * m23 + lhs.m33 * m33 + lhs.m34 * m43;
-        final float f34 = lhs.m31 * m14 + lhs.m32 * m24 + lhs.m33 * m34 + lhs.m34 * m44;
-        final float f41 = lhs.m41 * m11 + lhs.m42 * m21 + lhs.m43 * m31 + lhs.m44 * m41;
-        final float f42 = lhs.m41 * m12 + lhs.m42 * m22 + lhs.m43 * m32 + lhs.m44 * m42;
-        final float f43 = lhs.m41 * m13 + lhs.m42 * m23 + lhs.m43 * m33 + lhs.m44 * m43;
-        final float f44 = lhs.m41 * m14 + lhs.m42 * m24 + lhs.m43 * m34 + lhs.m44 * m44;
+        final float f11 = lhs.m11() * m11 + lhs.m12() * m21 + lhs.m13() * m31 + lhs.m14() * m41;
+        final float f12 = lhs.m11() * m12 + lhs.m12() * m22 + lhs.m13() * m32 + lhs.m14() * m42;
+        final float f13 = lhs.m11() * m13 + lhs.m12() * m23 + lhs.m13() * m33 + lhs.m14() * m43;
+        final float f14 = lhs.m11() * m14 + lhs.m12() * m24 + lhs.m13() * m34 + lhs.m14() * m44;
+        final float f21 = lhs.m21() * m11 + lhs.m22() * m21 + lhs.m23() * m31 + lhs.m24() * m41;
+        final float f22 = lhs.m21() * m12 + lhs.m22() * m22 + lhs.m23() * m32 + lhs.m24() * m42;
+        final float f23 = lhs.m21() * m13 + lhs.m22() * m23 + lhs.m23() * m33 + lhs.m24() * m43;
+        final float f24 = lhs.m21() * m14 + lhs.m22() * m24 + lhs.m23() * m34 + lhs.m24() * m44;
+        final float f31 = lhs.m31() * m11 + lhs.m32() * m21 + lhs.m33() * m31 + lhs.m34() * m41;
+        final float f32 = lhs.m31() * m12 + lhs.m32() * m22 + lhs.m33() * m32 + lhs.m34() * m42;
+        final float f33 = lhs.m31() * m13 + lhs.m32() * m23 + lhs.m33() * m33 + lhs.m34() * m43;
+        final float f34 = lhs.m31() * m14 + lhs.m32() * m24 + lhs.m33() * m34 + lhs.m34() * m44;
+        final float f41 = lhs.m41() * m11 + lhs.m42() * m21 + lhs.m43() * m31 + lhs.m44() * m41;
+        final float f42 = lhs.m41() * m12 + lhs.m42() * m22 + lhs.m43() * m32 + lhs.m44() * m42;
+        final float f43 = lhs.m41() * m13 + lhs.m42() * m23 + lhs.m43() * m33 + lhs.m44() * m43;
+        final float f44 = lhs.m41() * m14 + lhs.m42() * m24 + lhs.m43() * m34 + lhs.m44() * m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -447,24 +495,24 @@ public class Matrix4 implements Cloneable {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat(@Nonnull Matrix4 rhs) {
+    public void postConcat(@Nonnull Matrix4c rhs) {
         // 64 multiplications
-        final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m13 * rhs.m31 + m14 * rhs.m41;
-        final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m13 * rhs.m32 + m14 * rhs.m42;
-        final float f13 = m11 * rhs.m13 + m12 * rhs.m23 + m13 * rhs.m33 + m14 * rhs.m43;
-        final float f14 = m11 * rhs.m14 + m12 * rhs.m24 + m13 * rhs.m34 + m14 * rhs.m44;
-        final float f21 = m21 * rhs.m11 + m22 * rhs.m21 + m23 * rhs.m31 + m24 * rhs.m41;
-        final float f22 = m21 * rhs.m12 + m22 * rhs.m22 + m23 * rhs.m32 + m24 * rhs.m42;
-        final float f23 = m21 * rhs.m13 + m22 * rhs.m23 + m23 * rhs.m33 + m24 * rhs.m43;
-        final float f24 = m21 * rhs.m14 + m22 * rhs.m24 + m23 * rhs.m34 + m24 * rhs.m44;
-        final float f31 = m31 * rhs.m11 + m32 * rhs.m21 + m33 * rhs.m31 + m34 * rhs.m41;
-        final float f32 = m31 * rhs.m12 + m32 * rhs.m22 + m33 * rhs.m32 + m34 * rhs.m42;
-        final float f33 = m31 * rhs.m13 + m32 * rhs.m23 + m33 * rhs.m33 + m34 * rhs.m43;
-        final float f34 = m31 * rhs.m14 + m32 * rhs.m24 + m33 * rhs.m34 + m34 * rhs.m44;
-        final float f41 = m41 * rhs.m11 + m42 * rhs.m21 + m43 * rhs.m31 + m44 * rhs.m41;
-        final float f42 = m41 * rhs.m12 + m42 * rhs.m22 + m43 * rhs.m32 + m44 * rhs.m42;
-        final float f43 = m41 * rhs.m13 + m42 * rhs.m23 + m43 * rhs.m33 + m44 * rhs.m43;
-        final float f44 = m41 * rhs.m14 + m42 * rhs.m24 + m43 * rhs.m34 + m44 * rhs.m44;
+        final float f11 = m11 * rhs.m11() + m12 * rhs.m21() + m13 * rhs.m31() + m14 * rhs.m41();
+        final float f12 = m11 * rhs.m12() + m12 * rhs.m22() + m13 * rhs.m32() + m14 * rhs.m42();
+        final float f13 = m11 * rhs.m13() + m12 * rhs.m23() + m13 * rhs.m33() + m14 * rhs.m43();
+        final float f14 = m11 * rhs.m14() + m12 * rhs.m24() + m13 * rhs.m34() + m14 * rhs.m44();
+        final float f21 = m21 * rhs.m11() + m22 * rhs.m21() + m23 * rhs.m31() + m24 * rhs.m41();
+        final float f22 = m21 * rhs.m12() + m22 * rhs.m22() + m23 * rhs.m32() + m24 * rhs.m42();
+        final float f23 = m21 * rhs.m13() + m22 * rhs.m23() + m23 * rhs.m33() + m24 * rhs.m43();
+        final float f24 = m21 * rhs.m14() + m22 * rhs.m24() + m23 * rhs.m34() + m24 * rhs.m44();
+        final float f31 = m31 * rhs.m11() + m32 * rhs.m21() + m33 * rhs.m31() + m34 * rhs.m41();
+        final float f32 = m31 * rhs.m12() + m32 * rhs.m22() + m33 * rhs.m32() + m34 * rhs.m42();
+        final float f33 = m31 * rhs.m13() + m32 * rhs.m23() + m33 * rhs.m33() + m34 * rhs.m43();
+        final float f34 = m31 * rhs.m14() + m32 * rhs.m24() + m33 * rhs.m34() + m34 * rhs.m44();
+        final float f41 = m41 * rhs.m11() + m42 * rhs.m21() + m43 * rhs.m31() + m44 * rhs.m41();
+        final float f42 = m41 * rhs.m12() + m42 * rhs.m22() + m43 * rhs.m32() + m44 * rhs.m42();
+        final float f43 = m41 * rhs.m13() + m42 * rhs.m23() + m43 * rhs.m33() + m44 * rhs.m43();
+        final float f44 = m41 * rhs.m14() + m42 * rhs.m24() + m43 * rhs.m34() + m44 * rhs.m44();
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -772,23 +820,8 @@ public class Matrix4 implements Cloneable {
      *
      * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrix4 m) {
-        m11 = m.m11;
-        m12 = m.m12;
-        m13 = m.m13;
-        m14 = m.m14;
-        m21 = m.m21;
-        m22 = m.m22;
-        m23 = m.m23;
-        m24 = m.m24;
-        m31 = m.m31;
-        m32 = m.m32;
-        m33 = m.m33;
-        m34 = m.m34;
-        m41 = m.m41;
-        m42 = m.m42;
-        m43 = m.m43;
-        m44 = m.m44;
+    public void set(@Nonnull Matrix4c m) {
+        m.store(this);
     }
 
     /**
@@ -1092,21 +1125,61 @@ public class Matrix4 implements Cloneable {
      */
     public void store(long p) {
         MemoryUtil.memPutFloat(p, m11);
-        MemoryUtil.memPutFloat(p + 1, m12);
-        MemoryUtil.memPutFloat(p + 2, m13);
-        MemoryUtil.memPutFloat(p + 3, m14);
-        MemoryUtil.memPutFloat(p + 4, m21);
-        MemoryUtil.memPutFloat(p + 5, m22);
-        MemoryUtil.memPutFloat(p + 6, m23);
-        MemoryUtil.memPutFloat(p + 7, m24);
-        MemoryUtil.memPutFloat(p + 8, m31);
-        MemoryUtil.memPutFloat(p + 9, m32);
-        MemoryUtil.memPutFloat(p + 10, m33);
-        MemoryUtil.memPutFloat(p + 11, m34);
-        MemoryUtil.memPutFloat(p + 12, m41);
-        MemoryUtil.memPutFloat(p + 13, m42);
-        MemoryUtil.memPutFloat(p + 14, m43);
-        MemoryUtil.memPutFloat(p + 15, m44);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 12, m14);
+        MemoryUtil.memPutFloat(p + 16, m21);
+        MemoryUtil.memPutFloat(p + 20, m22);
+        MemoryUtil.memPutFloat(p + 24, m23);
+        MemoryUtil.memPutFloat(p + 28, m24);
+        MemoryUtil.memPutFloat(p + 32, m31);
+        MemoryUtil.memPutFloat(p + 36, m32);
+        MemoryUtil.memPutFloat(p + 40, m33);
+        MemoryUtil.memPutFloat(p + 44, m34);
+        MemoryUtil.memPutFloat(p + 48, m41);
+        MemoryUtil.memPutFloat(p + 52, m42);
+        MemoryUtil.memPutFloat(p + 56, m43);
+        MemoryUtil.memPutFloat(p + 60, m44);
+    }
+
+    /**
+     * Store this matrix as 2D matrix into the given address in GLSL column-major or
+     * HLSL row-major order, NOT vec4 aligned.
+     * <p>
+     * Equivalent to call {@link #toMatrix()} and {@link Matrix#store(long)}.
+     *
+     * @param p the pointer of the array to store
+     */
+    public void storeAs2D(long p) {
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m14);
+        MemoryUtil.memPutFloat(p + 12, m21);
+        MemoryUtil.memPutFloat(p + 16, m22);
+        MemoryUtil.memPutFloat(p + 20, m24);
+        MemoryUtil.memPutFloat(p + 24, m41);
+        MemoryUtil.memPutFloat(p + 28, m42);
+        MemoryUtil.memPutFloat(p + 32, m44);
+    }
+
+    /**
+     * Store this matrix as 2D matrix into the given address in GLSL column-major or
+     * HLSL row-major order, NOT vec4 aligned.
+     * <p>
+     * Equivalent to call {@link #toMatrix()} and {@link Matrix#storeAligned(long)}.
+     *
+     * @param p the pointer of the array to store
+     */
+    public void storeAs2DAligned(long p) {
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m14);
+        MemoryUtil.memPutFloat(p + 16, m21);
+        MemoryUtil.memPutFloat(p + 20, m22);
+        MemoryUtil.memPutFloat(p + 24, m24);
+        MemoryUtil.memPutFloat(p + 32, m41);
+        MemoryUtil.memPutFloat(p + 36, m42);
+        MemoryUtil.memPutFloat(p + 40, m44);
     }
 
     /**
@@ -1168,6 +1241,7 @@ public class Matrix4 implements Cloneable {
      *
      * @return {@code true} if this matrix is invertible.
      */
+    @CheckReturnValue
     public boolean invert() {
         return invert(this);
     }
@@ -1179,7 +1253,7 @@ public class Matrix4 implements Cloneable {
      * @param dest the destination matrix
      * @return {@code true} if this matrix is invertible.
      */
-    public boolean invert(@Nonnull Matrix4 dest) {
+    public boolean invert(@Nullable Matrix4 dest) {
         float b00 = m11 * m22 - m12 * m21;
         float b01 = m11 * m23 - m13 * m21;
         float b02 = m11 * m24 - m14 * m21;
@@ -1194,43 +1268,45 @@ public class Matrix4 implements Cloneable {
         float b11 = m33 * m44 - m34 * m43;
         // calc the determinant
         float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-        if (MathUtil.isApproxZero(det)) {
+        if (det == 0) {
             return false;
         }
-        // calc algebraic cofactor and transpose
-        det = 1.0f / det;
-        final float f11 = (m22 * b11 - m23 * b10 + m24 * b09) * det;
-        final float f12 = (m23 * b08 - m21 * b11 - m24 * b07) * det;
-        final float f13 = (m21 * b10 - m22 * b08 + m24 * b06) * det;
-        final float f14 = (m22 * b07 - m21 * b09 - m23 * b06) * det;
-        final float f21 = (m13 * b10 - m12 * b11 - m14 * b09) * det;
-        final float f22 = (m11 * b11 - m13 * b08 + m14 * b07) * det;
-        final float f23 = (m12 * b08 - m11 * b10 - m14 * b06) * det;
-        final float f24 = (m11 * b09 - m12 * b07 + m13 * b06) * det;
-        final float f31 = (m42 * b05 - m43 * b04 + m44 * b03) * det;
-        final float f32 = (m43 * b02 - m41 * b05 - m44 * b01) * det;
-        final float f33 = (m41 * b04 - m42 * b02 + m44 * b00) * det;
-        final float f34 = (m42 * b01 - m41 * b03 - m43 * b00) * det;
-        final float f41 = (m33 * b04 - m32 * b05 - m34 * b03) * det;
-        final float f42 = (m31 * b05 - m33 * b02 + m34 * b01) * det;
-        final float f43 = (m32 * b02 - m31 * b04 - m34 * b00) * det;
-        final float f44 = (m31 * b03 - m32 * b01 + m33 * b00) * det;
-        dest.m11 = f11;
-        dest.m21 = f12;
-        dest.m31 = f13;
-        dest.m41 = f14;
-        dest.m12 = f21;
-        dest.m22 = f22;
-        dest.m32 = f23;
-        dest.m42 = f24;
-        dest.m13 = f31;
-        dest.m23 = f32;
-        dest.m33 = f33;
-        dest.m43 = f34;
-        dest.m14 = f41;
-        dest.m24 = f42;
-        dest.m34 = f43;
-        dest.m44 = f44;
+        if (dest != null) {
+            // calc algebraic cofactor and transpose
+            det = 1.0f / det;
+            final float f11 = (m22 * b11 - m23 * b10 + m24 * b09) * det;
+            final float f12 = (m23 * b08 - m21 * b11 - m24 * b07) * det;
+            final float f13 = (m21 * b10 - m22 * b08 + m24 * b06) * det;
+            final float f14 = (m22 * b07 - m21 * b09 - m23 * b06) * det;
+            final float f21 = (m13 * b10 - m12 * b11 - m14 * b09) * det;
+            final float f22 = (m11 * b11 - m13 * b08 + m14 * b07) * det;
+            final float f23 = (m12 * b08 - m11 * b10 - m14 * b06) * det;
+            final float f24 = (m11 * b09 - m12 * b07 + m13 * b06) * det;
+            final float f31 = (m42 * b05 - m43 * b04 + m44 * b03) * det;
+            final float f32 = (m43 * b02 - m41 * b05 - m44 * b01) * det;
+            final float f33 = (m41 * b04 - m42 * b02 + m44 * b00) * det;
+            final float f34 = (m42 * b01 - m41 * b03 - m43 * b00) * det;
+            final float f41 = (m33 * b04 - m32 * b05 - m34 * b03) * det;
+            final float f42 = (m31 * b05 - m33 * b02 + m34 * b01) * det;
+            final float f43 = (m32 * b02 - m31 * b04 - m34 * b00) * det;
+            final float f44 = (m31 * b03 - m32 * b01 + m33 * b00) * det;
+            dest.m11 = f11;
+            dest.m21 = f12;
+            dest.m31 = f13;
+            dest.m41 = f14;
+            dest.m12 = f21;
+            dest.m22 = f22;
+            dest.m32 = f23;
+            dest.m42 = f24;
+            dest.m13 = f31;
+            dest.m23 = f32;
+            dest.m33 = f33;
+            dest.m43 = f34;
+            dest.m14 = f41;
+            dest.m24 = f42;
+            dest.m34 = f43;
+            dest.m44 = f44;
+        }
         return true;
     }
 
@@ -1305,18 +1381,18 @@ public class Matrix4 implements Cloneable {
      * Set this matrix to be an orthographic projection transformation for a
      * right-handed coordinate system using the given NDC z range.
      *
-     * @param left   the distance from the center to the left frustum edge
-     * @param right  the distance from the center to the right frustum edge
-     * @param bottom the distance from the center to the bottom frustum edge
-     * @param top    the distance from the center to the top frustum edge
-     * @param near   near clipping plane distance
-     * @param far    far clipping plane distance
-     * @param signed whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
-     *               <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
-     *               <code>true</code>
+     * @param left             the distance from the center to the left frustum edge
+     * @param right            the distance from the center to the right frustum edge
+     * @param bottom           the distance from the center to the bottom frustum edge
+     * @param top              the distance from the center to the top frustum edge
+     * @param near             near clipping plane distance
+     * @param far              far clipping plane distance
+     * @param negativeOneToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                         <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                         <code>true</code>
      */
     public void setOrthographic(float left, float right, float bottom, float top,
-                                float near, float far, boolean signed) {
+                                float near, float far, boolean negativeOneToOne) {
         m11 = 2.0f / (right - left);
         m12 = 0.0f;
         m13 = 0.0f;
@@ -1327,11 +1403,11 @@ public class Matrix4 implements Cloneable {
         m24 = 0.0f;
         m31 = 0.0f;
         m32 = 0.0f;
-        m33 = (signed ? 2.0f : 1.0f) / (near - far);
+        m33 = (negativeOneToOne ? 2.0f : 1.0f) / (near - far);
         m34 = 0.0f;
         m41 = (right + left) / (left - right);
         m42 = (top + bottom) / (bottom - top);
-        m43 = (signed ? (far + near) : near) / (near - far);
+        m43 = (negativeOneToOne ? (far + near) : near) / (near - far);
         m44 = 1.0f;
     }
 
@@ -1339,18 +1415,18 @@ public class Matrix4 implements Cloneable {
      * Set this matrix to be an orthographic projection transformation for a
      * left-handed coordinate system using the given NDC z range.
      *
-     * @param left   the distance from the center to the left frustum edge
-     * @param right  the distance from the center to the right frustum edge
-     * @param bottom the distance from the center to the bottom frustum edge
-     * @param top    the distance from the center to the top frustum edge
-     * @param near   near clipping plane distance
-     * @param far    far clipping plane distance
-     * @param signed whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
-     *               <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
-     *               <code>true</code>
+     * @param left             the distance from the center to the left frustum edge
+     * @param right            the distance from the center to the right frustum edge
+     * @param bottom           the distance from the center to the bottom frustum edge
+     * @param top              the distance from the center to the top frustum edge
+     * @param near             near clipping plane distance
+     * @param far              far clipping plane distance
+     * @param negativeOneToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                         <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                         <code>true</code>
      */
     public void setOrthographicLH(float left, float right, float bottom, float top,
-                                  float near, float far, boolean signed) {
+                                  float near, float far, boolean negativeOneToOne) {
         m11 = 2.0f / (right - left);
         m12 = 0.0f;
         m13 = 0.0f;
@@ -1361,11 +1437,11 @@ public class Matrix4 implements Cloneable {
         m24 = 0.0f;
         m31 = 0.0f;
         m32 = 0.0f;
-        m33 = (signed ? 2.0f : 1.0f) / (far - near);
+        m33 = (negativeOneToOne ? 2.0f : 1.0f) / (far - near);
         m34 = 0.0f;
         m41 = (right + left) / (left - right);
         m42 = (top + bottom) / (bottom - top);
-        m43 = (signed ? (far + near) : near) / (near - far);
+        m43 = (negativeOneToOne ? (far + near) : near) / (near - far);
         m44 = 1.0f;
     }
 
@@ -1441,15 +1517,15 @@ public class Matrix4 implements Cloneable {
      * Set this matrix to be a symmetric perspective projection frustum transformation
      * for a right-handed coordinate system using the given NDC z range.
      *
-     * @param fov    the field of view in radians (must be greater than zero and less than PI)
-     * @param aspect the aspect ratio of the view (i.e. width / height)
-     * @param near   the near clipping plane, must be positive
-     * @param far    the far clipping plane, must be positive
-     * @param signed whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
-     *               <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
-     *               <code>true</code>
+     * @param fov              the field of view in radians (must be greater than zero and less than PI)
+     * @param aspect           the aspect ratio of the view (i.e. width / height)
+     * @param near             the near clipping plane, must be positive
+     * @param far              the far clipping plane, must be positive
+     * @param negativeOneToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                         <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                         <code>true</code>
      */
-    public void setPerspective(double fov, double aspect, float near, float far, boolean signed) {
+    public void setPerspective(double fov, double aspect, float near, float far, boolean negativeOneToOne) {
         double h = Math.tan(fov * 0.5);
         m11 = (float) (1.0 / (h * aspect));
         m12 = 0.0f;
@@ -1463,13 +1539,13 @@ public class Matrix4 implements Cloneable {
         m32 = 0.0f;
         if (far == Float.POSITIVE_INFINITY) {
             m33 = MathUtil.EPS - 1.0f;
-            m43 = (MathUtil.EPS - (signed ? 2.0f : 1.0f)) * near;
+            m43 = (MathUtil.EPS - (negativeOneToOne ? 2.0f : 1.0f)) * near;
         } else if (near == Float.POSITIVE_INFINITY) {
-            m33 = (signed ? 1.0f : 0.0f) - MathUtil.EPS;
-            m43 = ((signed ? 2.0f : 1.0f) - MathUtil.EPS) * far;
+            m33 = (negativeOneToOne ? 1.0f : 0.0f) - MathUtil.EPS;
+            m43 = ((negativeOneToOne ? 2.0f : 1.0f) - MathUtil.EPS) * far;
         } else {
-            m33 = (signed ? (far + near) : far) / (near - far);
-            m43 = (signed ? (far + far) : far) * near / (near - far);
+            m33 = (negativeOneToOne ? (far + near) : far) / (near - far);
+            m43 = (negativeOneToOne ? (far + far) : far) * near / (near - far);
         }
         m34 = -1.0f;
         m41 = 0.0f;
@@ -1481,15 +1557,15 @@ public class Matrix4 implements Cloneable {
      * Set this matrix to be a symmetric perspective projection frustum transformation
      * for a left-handed coordinate system using the given NDC z range.
      *
-     * @param fov    the field of view in radians (must be greater than zero and less than PI)
-     * @param aspect the aspect ratio of the view (i.e. width / height)
-     * @param near   the near clipping plane, must be positive
-     * @param far    the far clipping plane, must be positive
-     * @param signed whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
-     *               <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
-     *               <code>true</code>
+     * @param fov              the field of view in radians (must be greater than zero and less than PI)
+     * @param aspect           the aspect ratio of the view (i.e. width / height)
+     * @param near             the near clipping plane, must be positive
+     * @param far              the far clipping plane, must be positive
+     * @param negativeOneToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                         <code>false</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                         <code>true</code>
      */
-    public void setPerspectiveLH(double fov, double aspect, float near, float far, boolean signed) {
+    public void setPerspectiveLH(double fov, double aspect, float near, float far, boolean negativeOneToOne) {
         double h = Math.tan(fov * 0.5);
         m11 = (float) (1.0 / (h * aspect));
         m12 = 0.0f;
@@ -1503,13 +1579,13 @@ public class Matrix4 implements Cloneable {
         m32 = 0.0f;
         if (far == Float.POSITIVE_INFINITY) {
             m33 = MathUtil.EPS - 1.0f;
-            m43 = (MathUtil.EPS - (signed ? 2.0f : 1.0f)) * near;
+            m43 = (MathUtil.EPS - (negativeOneToOne ? 2.0f : 1.0f)) * near;
         } else if (near == Float.POSITIVE_INFINITY) {
-            m33 = (signed ? 1.0f : 0.0f) - MathUtil.EPS;
-            m43 = ((signed ? 2.0f : 1.0f) - MathUtil.EPS) * far;
+            m33 = (negativeOneToOne ? 1.0f : 0.0f) - MathUtil.EPS;
+            m43 = ((negativeOneToOne ? 2.0f : 1.0f) - MathUtil.EPS) * far;
         } else {
-            m33 = (signed ? (far + near) : far) / (far - near);
-            m43 = (signed ? (far + far) : far) * near / (near - far);
+            m33 = (negativeOneToOne ? (far + near) : far) / (far - near);
+            m43 = (negativeOneToOne ? (far + far) : far) * near / (near - far);
         }
         m34 = 1.0f;
         m41 = 0.0f;
@@ -3068,7 +3144,7 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is affine.
      */
     public boolean isAffine() {
-        return MathUtil.isApproxZero(m14, m24, m34) && MathUtil.isApproxEqual(m44, 1.0f);
+        return m14 == 0 && m24 == 0 && m34 == 0 && m44 == 1;
     }
 
     /**
@@ -3078,8 +3154,8 @@ public class Matrix4 implements Cloneable {
      */
     public boolean isScaleTranslate() {
         return isAffine() &&
-                MathUtil.isApproxZero(m12, m13, m21) &&
-                MathUtil.isApproxZero(m23, m31, m32);
+                m12 == 0 && m13 == 0 && m21 == 0 &&
+                m23 == 0 && m31 == 0 && m32 == 0;
     }
 
     /**
@@ -3136,7 +3212,7 @@ public class Matrix4 implements Cloneable {
     }
 
     public boolean hasTranslation() {
-        return !(MathUtil.isApproxZero(m41, m42, m43) && MathUtil.isApproxEqual(m44, 1.0f));
+        return !(m41 == 0 && m42 == 0 && m43 == 0 && m44 == 1);
     }
 
     /**
@@ -3145,11 +3221,91 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.isApproxZero(m12, m13, m14) &&
-                MathUtil.isApproxZero(m21, m23, m24) &&
-                MathUtil.isApproxZero(m31, m32, m34) &&
-                MathUtil.isApproxZero(m41, m42, m43) &&
-                MathUtil.isApproxEqual(m11, m22, m33, m44, 1.0f);
+        return m11 == 1 && m12 == 0 && m13 == 0 && m14 == 0 &&
+                m21 == 0 && m22 == 1 && m23 == 0 && m24 == 0 &&
+                m31 == 0 && m32 == 0 && m33 == 1 && m34 == 0 &&
+                m41 == 0 && m42 == 0 && m43 == 0 && m44 == 1;
+    }
+
+    // compute SVD of 2x2 matrix
+    private static float computeMinScale(double m11, double m21, double m12, double m22) {
+        double s1 = m11 * m11 + m21 * m21 + m12 * m12 + m22 * m22;
+
+        double e = m11 * m11 + m21 * m21 - m12 * m12 - m22 * m22;
+        double f = m11 * m12 + m21 * m22;
+        double s2 = Math.sqrt(e * e + 4 * f * f);
+
+        // s2 >= 0, so (s1 - s2) <= (s1 + s2) so this always returns min.
+        return (float) Math.sqrt(0.5 * (s1 - s2));
+    }
+
+    private float computeMinScale(double px, double py) {
+        final double x = m11 * px + m21 * py + m41;
+        final double y = m12 * px + m22 * py + m42;
+        final double w = m14 * px + m24 * py + m44;
+
+        final float dxdu = m11;
+        final float dxdv = m21;
+        final float dydu = m12;
+        final float dydv = m22;
+        final float dwdu = m14;
+        final float dwdv = m24;
+
+        double invW2 = 1.0 / (w * w);
+        // non-persp has invW2 = 1, w = 1, dwdu = 0, dwdv = 0
+        double dfdu = (w * dxdu - x * dwdu) * invW2; // non-persp -> dxdu -> m11
+        double dfdv = (w * dxdv - x * dwdv) * invW2; // non-persp -> dxdv -> m21
+        double dgdu = (w * dydu - y * dwdu) * invW2; // non-persp -> dydu -> m12
+        double dgdv = (w * dydv - y * dwdv) * invW2; // non-persp -> dydv -> m22
+
+        return computeMinScale(dfdu, dfdv, dgdu, dgdv);
+    }
+
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
+    public float localAARadius(Rect2fc bounds) {
+        return localAARadius(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
+    }
+
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
+    public float localAARadius(float left, float top, float right, float bottom) {
+        float min;
+        if (isAffine()) {
+            min = computeMinScale(m11, m21, m12, m22);
+        } else {
+            // Calculate the minimum scale factor over the 4 corners of the bounding box
+            float tl = computeMinScale(left, top);
+            float tr = computeMinScale(right, top);
+            float br = computeMinScale(right, bottom);
+            float bl = computeMinScale(left, bottom);
+            min = MathUtil.min(tl, tr, br, bl);
+        }
+
+        // Moving 1 from 'p' before transforming will move at least 'min' and at most 'max' from
+        // the transformed point. Thus moving between [1/max, 1/min] pre-transformation means post
+        // transformation moves between [1,max/min] so using 1/min as the local AA radius ensures that
+        // the post-transformed point is at least 1px away from the original.
+        float aaRadius = 1.0f / min;
+        if (Float.isFinite(aaRadius)) { // check Inf and NaN
+            return aaRadius;
+        } else {
+            return Float.POSITIVE_INFINITY;
+        }
     }
 
     /**
@@ -3251,22 +3407,22 @@ public class Matrix4 implements Cloneable {
 
     @Override
     public int hashCode() {
-        int result = Float.hashCode(m11);
-        result = 31 * result + Float.hashCode(m12);
-        result = 31 * result + Float.hashCode(m13);
-        result = 31 * result + Float.hashCode(m14);
-        result = 31 * result + Float.hashCode(m21);
-        result = 31 * result + Float.hashCode(m22);
-        result = 31 * result + Float.hashCode(m23);
-        result = 31 * result + Float.hashCode(m24);
-        result = 31 * result + Float.hashCode(m31);
-        result = 31 * result + Float.hashCode(m32);
-        result = 31 * result + Float.hashCode(m33);
-        result = 31 * result + Float.hashCode(m34);
-        result = 31 * result + Float.hashCode(m41);
-        result = 31 * result + Float.hashCode(m42);
-        result = 31 * result + Float.hashCode(m43);
-        result = 31 * result + Float.hashCode(m44);
+        int result = (m11 != 0.0f ? Float.floatToIntBits(m11) : 0);
+        result = 31 * result + (m12 != 0.0f ? Float.floatToIntBits(m12) : 0);
+        result = 31 * result + (m13 != 0.0f ? Float.floatToIntBits(m13) : 0);
+        result = 31 * result + (m14 != 0.0f ? Float.floatToIntBits(m14) : 0);
+        result = 31 * result + (m21 != 0.0f ? Float.floatToIntBits(m21) : 0);
+        result = 31 * result + (m22 != 0.0f ? Float.floatToIntBits(m22) : 0);
+        result = 31 * result + (m23 != 0.0f ? Float.floatToIntBits(m23) : 0);
+        result = 31 * result + (m24 != 0.0f ? Float.floatToIntBits(m24) : 0);
+        result = 31 * result + (m31 != 0.0f ? Float.floatToIntBits(m31) : 0);
+        result = 31 * result + (m32 != 0.0f ? Float.floatToIntBits(m32) : 0);
+        result = 31 * result + (m33 != 0.0f ? Float.floatToIntBits(m33) : 0);
+        result = 31 * result + (m34 != 0.0f ? Float.floatToIntBits(m34) : 0);
+        result = 31 * result + (m41 != 0.0f ? Float.floatToIntBits(m41) : 0);
+        result = 31 * result + (m42 != 0.0f ? Float.floatToIntBits(m42) : 0);
+        result = 31 * result + (m43 != 0.0f ? Float.floatToIntBits(m43) : 0);
+        result = 31 * result + (m44 != 0.0f ? Float.floatToIntBits(m44) : 0);
         return result;
     }
 

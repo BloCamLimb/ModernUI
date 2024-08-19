@@ -195,7 +195,7 @@ public class RenderProperties {
      */
     private boolean setLayerPaint(@Nullable Paint paint) {
         boolean changed = false;
-        int alpha = Paint.getAlphaDirect(paint);
+        int alpha = paint != null ? paint.getAlpha() : 0xFF;
         if (mLayerAlpha != alpha) {
             mLayerAlpha = alpha;
             changed = true;

@@ -31,6 +31,7 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -1029,7 +1030,19 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @param size The scaled pixel size.
      */
     public void setTextSize(float size) {
-        int s = sp(size);
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, size);
+    }
+
+    /**
+     * Set the default text size to a given unit and value. See {@link TypedValue}
+     * for the possible dimension units.
+     *
+     * @param unit The desired dimension unit.
+     * @param size The desired size in the given units.
+     */
+    public void setTextSize(@TypedValue.ComplexDimensionUnit int unit, float size) {
+        float s = TypedValue.applyDimension(unit, size,
+                getContext().getResources().getDisplayMetrics());
         if (s != mTextPaint.getTextSize()) {
             mTextPaint.setTextSize(s);
 

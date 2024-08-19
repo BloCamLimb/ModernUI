@@ -1,33 +1,39 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.helpers.NOPLogger;
 
 /**
+ * Holds the options for creating a {@link ImmediateContext}, all fields should remain unchanged
+ * after creating the context.
+ * <p>
  * Boolean value represents a tristate:
- * {@link Boolean#FALSE}: Forces an option to be disabled.
- * {@link Boolean#TRUE}: Forces an option to be enabled.
- * {@code null}: Uses default behavior, which may use runtime properties (e.g. driver version).
+ * <ul>
+ * <li>{@link Boolean#FALSE}: Forces an option to be disabled.</li>
+ * <li>{@link Boolean#TRUE}: Forces an option to be enabled.</li>
+ * <li>{@code null}: Uses default behavior, which may use runtime properties (e.g. driver version).</li>
+ * </ul>
+ * <p>
+ * This class is part of public API.
  */
 public final class ContextOptions {
 
@@ -87,10 +93,10 @@ public final class ContextOptions {
     public float mGlyphsAsPathsFontSize = 384;
 
     /**
-     * If present, use this object to print errors. If not, print errors
-     * via {@link System#err}.
+     * If present, use this logger to send info/warning/error message that generated
+     * by Arc3D engine.
      */
-    public PrintWriter mErrorWriter = null;
+    public Logger mLogger = NOPLogger.NOP_LOGGER;
 
     /**
      * Specifies the number of samples Engine should use when performing internal draws with MSAA
@@ -115,6 +121,17 @@ public final class ContextOptions {
      * A value of -1 means we will pick a limit value internally.
      */
     public int mMaxVkSecondaryCommandBufferCacheSize = -1;
+
+    /**
+     * OpenGL backend only. If context is volatile, then Arc3D is considered embedded in
+     * another program and shared with its OpenGL context. When making GL function calls that may
+     * alter the context's state (especially binding states) outside the command buffer execution,
+     * Arc3D will query the binding state and restore the state of the context after that.
+     * This is only used for non-DSA methods and may reduce performance. But this can prevent
+     * other programs from out-of-order due to assumptions about context's state, especially
+     * for mixed API usage between Arc3D and other programs.
+     */
+    public boolean mVolatileContext = false;
 
     public DriverBugWorkarounds mDriverBugWorkarounds;
 

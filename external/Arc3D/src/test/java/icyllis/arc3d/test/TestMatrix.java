@@ -1,26 +1,25 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.Matrix;
+import icyllis.arc3d.core.*;
 
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -67,6 +66,15 @@ public class TestMatrix {
         log(pw, m -> m.set(m1));
 
         print5x4Mul(pw, "lhs", "rhs");
+
+        Matrix4 m4 = new Matrix4();
+        m4.setPerspective(MathUtil.PI_O_2, 1, 0.01f, 2000f);
+        Vector3 v4 = new Vector3();
+        v4.x = 2;
+        v4.y = 2;
+        v4.z = 10000;
+        m4.preTransform(v4);
+        pw.println(v4);
     }
 
     public static void log(PrintWriter pw, Consumer<Matrix> c) {

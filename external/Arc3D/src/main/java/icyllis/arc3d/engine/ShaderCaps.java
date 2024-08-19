@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
@@ -37,15 +37,16 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
             GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
 
     public boolean mDualSourceBlendingSupport = false;
-    public boolean mPreferFlatInterpolation = false;
-    public boolean mVertexIDSupport = false;
+    public boolean mPreferFlatInterpolation = true;
+    public boolean mVertexIDSupport = true;
     // isinf() is defined, and floating point infinities are handled according to IEEE standards.
-    public boolean mInfinitySupport = false;
+    public boolean mInfinitySupport = true;
     // Returns true if `expr` in `myArray[expr]` can be any integer expression. If false, `expr`
     // must be a constant-index-expression as defined in the OpenGL ES2 specification, Appendix A.5.
-    public boolean mNonConstantArrayIndexSupport = false;
+    public boolean mNonConstantArrayIndexSupport = true;
     // frexp(), ldexp(), findMSB(), findLSB().
     public boolean mBitManipulationSupport = false;
+    public boolean mNoPerspectiveInterpolationSupport = false;
     // Use a reduced set of rendering algorithms or less optimal effects in order to reduce the
     // number of unique shaders generated.
     public boolean mReducedShaderMode = false;
@@ -54,28 +55,29 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
      * True if either 'textureQueryLod' (GLSL 4.00) or 'textureQueryLOD' (ARB/EXT) is supported.
      */
     public boolean mTextureQueryLod = true;
-    /**
-     * Non-null if {@link #mTextureQueryLod} is supported from an extension (ARB/EXT).
-     */
-    public String mTextureQueryLodExtension = null;
 
     /**
-     * True if either OpenGL 4.2 or 'ARB_shading_language_420pack' is supported.
+     * True if either OpenGL 4.2 or OpenGL ES 3.1 is supported.
+     * <p>
+     * Add binding on uniform block and samplers.
      */
-    public boolean mShadingLanguage420Pack = true;
-    /**
-     * Non-null if {@link #mShadingLanguage420Pack} is supported from an extension.
-     */
-    public String mShadingLanguage420PackExtensionName = null;
+    public boolean mUseUniformBinding = true;
 
     /**
-     * True if either OpenGL 4.4 or 'ARB_enhanced_layouts' is supported.
+     * True if either OpenGL 4.4 or OpenGL ES 3.2 is supported.
+     * <p>
+     * Add location for interface matching between shader stages.
      */
-    public boolean mEnhancedLayouts = true;
+    public boolean mUseVaryingLocation = true;
+
     /**
-     * Non-null if {@link #mEnhancedLayouts} is supported from an extension.
+     * True if OpenGL 4.4 is supported.
+     * <p>
+     * Add offset on block members for std140/std430 layout validation.
      */
-    public String mEnhancedLayoutsExtensionName = null;
+    public boolean mUseBlockMemberOffset = true;
+
+    public boolean mUsePrecisionModifiers = false;
 
     // Used for specific driver bug workarounds
     public boolean mRequiresLocalOutputColorForFBFetch = false;
@@ -121,11 +123,12 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
                 ", mInfinitySupport=" + mInfinitySupport +
                 ", mNonConstantArrayIndexSupport=" + mNonConstantArrayIndexSupport +
                 ", mBitManipulationSupport=" + mBitManipulationSupport +
+                ", mNoPerspectiveInterpolationSupport=" + mNoPerspectiveInterpolationSupport +
                 ", mReducedShaderMode=" + mReducedShaderMode +
                 ", mTextureQueryLod=" + mTextureQueryLod +
-                ", mTextureQueryLodExtension='" + mTextureQueryLodExtension + '\'' +
-                ", mEnhancedLayouts=" + mEnhancedLayouts +
-                ", mEnhancedLayoutsExtensionName='" + mEnhancedLayoutsExtensionName + '\'' +
+                ", mUseUniformBinding=" + mUseUniformBinding +
+                ", mUseVaryingLocation=" + mUseVaryingLocation +
+                ", mUseBlockMemberOffset=" + mUseBlockMemberOffset +
                 ", mRequiresLocalOutputColorForFBFetch=" + mRequiresLocalOutputColorForFBFetch +
                 ", mMustObfuscateUniformColor=" + mMustObfuscateUniformColor +
                 ", mMustWriteToFragColor=" + mMustWriteToFragColor +
@@ -137,6 +140,7 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
                 ", mTargetApi=" + mTargetApi +
                 ", mGLSLVersion=" + mGLSLVersion +
                 ", mSPIRVVersion=" + mSPIRVVersion +
+                ", mFMASupport=" + mFMASupport +
                 '}';
     }
 }

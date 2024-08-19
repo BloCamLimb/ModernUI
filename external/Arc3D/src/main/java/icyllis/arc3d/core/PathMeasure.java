@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
@@ -697,7 +697,7 @@ public class PathMeasure {
                 }
             }
             case SEGMENT_QUAD -> {
-                Geometry.evalQuadAt(
+                GeometryUtils.evalQuadAt(
                         pts, ci,
                         t,
                         pos, posOff,
@@ -705,7 +705,7 @@ public class PathMeasure {
                 );
             }
             case SEGMENT_CUBIC -> {
-                Geometry.evalCubicAt(
+                GeometryUtils.evalCubicAt(
                         pts, ci,
                         t,
                         pos, posOff,
@@ -792,15 +792,15 @@ public class PathMeasure {
                     if (endT == 1) {
                         dst.quadTo(pts, ci + 2);
                     } else {
-                        Geometry.chopQuadAt(pts, ci, mTmp, 0, endT);
+                        GeometryUtils.chopQuadAt(pts, ci, mTmp, 0, endT);
                         dst.quadTo(mTmp, 2);
                     }
                 } else {
-                    Geometry.chopQuadAt(pts, ci, mTmp, 0, startT);
+                    GeometryUtils.chopQuadAt(pts, ci, mTmp, 0, startT);
                     if (endT == 1) {
                         dst.quadTo(mTmp, 6);
                     } else {
-                        Geometry.chopQuadAt(mTmp, 4, mTmp, 10, (endT - startT) / (1 - startT));
+                        GeometryUtils.chopQuadAt(mTmp, 4, mTmp, 10, (endT - startT) / (1 - startT));
                         dst.quadTo(mTmp, 12);
                     }
                 }
@@ -810,15 +810,15 @@ public class PathMeasure {
                     if (endT == 1) {
                         dst.cubicTo(pts, ci + 2);
                     } else {
-                        Geometry.chopCubicAt(pts, ci, mTmp, 0, endT);
+                        GeometryUtils.chopCubicAt(pts, ci, mTmp, 0, endT);
                         dst.cubicTo(mTmp, 2);
                     }
                 } else {
-                    Geometry.chopCubicAt(pts, ci, mTmp, 0, startT);
+                    GeometryUtils.chopCubicAt(pts, ci, mTmp, 0, startT);
                     if (endT == 1) {
                         dst.cubicTo(mTmp, 8);
                     } else {
-                        Geometry.chopCubicAt(mTmp, 6, mTmp, 14, (endT - startT) / (1 - startT));
+                        GeometryUtils.chopCubicAt(mTmp, 6, mTmp, 14, (endT - startT) / (1 - startT));
                         dst.cubicTo(mTmp, 16);
                     }
                 }

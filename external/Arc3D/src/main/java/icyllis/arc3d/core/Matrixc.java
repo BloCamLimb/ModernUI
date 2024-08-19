@@ -1,27 +1,28 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
 
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.*;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -305,6 +306,29 @@ public sealed interface Matrixc permits Matrix {
     void storeAligned(@NativeType("void *") long p);
 
     /**
+     * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     */
+    void toMatrix4(@Nonnull Matrix4 dest);
+
+    /**
+     * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     */
+    @Nonnull
+    Matrix4 toMatrix4();
+
+    /**
      * Compute the inverse of this matrix. The <var>dest</var> matrix will be
      * the inverse of this matrix if this matrix is invertible, otherwise its
      * values will be preserved.
@@ -312,7 +336,6 @@ public sealed interface Matrixc permits Matrix {
      * @param dest the destination matrix, may be null
      * @return {@code true} if this matrix is invertible.
      */
-    @CheckReturnValue
     boolean invert(@Nullable Matrix dest);
 
     /**
@@ -475,6 +498,47 @@ public sealed interface Matrixc permits Matrix {
      * @return maximum scale factor
      */
     float getMaxScale();
+
+    /**
+     * Returns the minimum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements. When this matrix has perspective, the scaling factor is specific
+     * to the given point <var>p</var>.<br>
+     * Returns -1 if scale factor overflows.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     * @return minimum scale factor
+     */
+    float getMinScale(float px, float py);
+
+    /**
+     * Returns the maximum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements. When this matrix has perspective, the scaling factor is specific
+     * to the given point <var>p</var>.<br>
+     * Returns -1 if scale factor overflows.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     * @return maximum scale factor
+     */
+    float getMaxScale(float px, float py);
+
+    /**
+     * Returns the differential area scale factor for a local point 'p' that will be transformed
+     * by 'm' (which may have perspective). If 'm' does not have perspective, this scale factor is
+     * constant regardless of 'p'; when it does have perspective, it is specific to that point.
+     * <p>
+     * This can be crudely thought of as "device pixel area" / "local pixel area" at 'p'.
+     * <p>
+     * Returns positive infinity if the transformed homogeneous point has w <= 0.
+     * <p>
+     * The return value is equivalent to {@link #getMinScale(float, float)} times
+     * {@link #getMaxScale(float, float)}.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     */
+    float differentialAreaScale(float px, float py);
 
     /**
      * Returns true if all elements of the matrix are finite. Returns false if any

@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core.effects;
@@ -29,9 +29,11 @@ public class ColorMatrixColorFilter extends ColorFilter {
     private final boolean mAlphaUnchanged;
 
     public ColorMatrixColorFilter(@Size(20) float[] matrix) {
-        mAlphaUnchanged = MathUtil.isApproxZero(
-                matrix[3], matrix[7], matrix[11], matrix[19]
-        ) && MathUtil.isApproxEqual(matrix[15], 1);
+        mAlphaUnchanged = MathUtil.isApproxZero(matrix[3]) &&
+                MathUtil.isApproxZero(matrix[7]) &&
+                MathUtil.isApproxZero(matrix[11]) &&
+                MathUtil.isApproxZero(matrix[19]) &&
+                MathUtil.isApproxEqual(matrix[15], 1);
         System.arraycopy(matrix, 0, mMatrix, 0, 20);
     }
 
@@ -58,11 +60,9 @@ public class ColorMatrixColorFilter extends ColorFilter {
     }
 
     @Override
-    public void filterColor4f(float[] col, float[] out) {
-        float a;
-        if (col[3] != 0) {
-            a = 1 / col[3];
-        } else {
+    public void filterColor4f(float[] col, float[] out, ColorSpace dstCS) {
+        float a = 1.0f / col[3];
+        if (!Float.isFinite(a)) { // NaN or Inf
             a = 0;
         }
         // unpremul, multiply and clamp 01
@@ -75,11 +75,9 @@ public class ColorMatrixColorFilter extends ColorFilter {
                 m[2] * col[0] * a + m[6] * col[1] * a + m[10] * col[2] * a + m[14] * col[3] + m[18], 0, 1);
         final float w = MathUtil.clamp(
                 m[3] * col[0] * a + m[7] * col[1] * a + m[11] * col[2] * a + m[15] * col[3] + m[19], 0, 1);
-        // premul and store
-        a = col[3];
-        out[0] = x * a;
-        out[1] = y * a;
-        out[2] = z * a;
+        out[0] = x * w;
+        out[1] = y * w;
+        out[2] = z * w;
         out[3] = w;
     }
 }

@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
  * Abstract interface that supports creating vertices, indices, and meshes, as well as
  * invoking GPU draw operations.
  */
-//TODO
+@Deprecated
 public interface MeshDrawTarget {
 
     /**
@@ -35,7 +35,7 @@ public interface MeshDrawTarget {
      * the buffer (in 'vertexSize' units) where the data will be placed.
      * <p>
      * This method requires {@link Mesh#getVertexSize()} and {@link Mesh#getVertexCount()} as
-     * arguments and {@link Mesh#setVertexBuffer(GpuBuffer, int, int)} as results.
+     * arguments and {@link Mesh#setVertexBuffer(Buffer, int, int)} as results.
      *
      * @return may NULL if failed
      */
@@ -47,7 +47,7 @@ public interface MeshDrawTarget {
      * the buffer (in 'instanceSize' units) where the data will be placed.
      * <p>
      * This method requires {@link Mesh#getInstanceSize()} and {@link Mesh#getInstanceCount()} as
-     * arguments and {@link Mesh#setInstanceBuffer(GpuBuffer, int, int)} as results.
+     * arguments and {@link Mesh#setInstanceBuffer(Buffer, int, int)} as results.
      *
      * @return may NULL if failed
      */
@@ -59,7 +59,7 @@ public interface MeshDrawTarget {
      * the buffer (in 'ushort' units) where the data will be placed.
      * <p>
      * This method requires {@link Mesh#getIndexCount()} as
-     * arguments and {@link Mesh#setIndexBuffer(GpuBuffer, int, int)} as results.
+     * arguments and {@link Mesh#setIndexBuffer(Buffer, int, int)} as results.
      *
      * @return may NULL if failed
      */

@@ -1,29 +1,31 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.test;
 
+import org.lwjgl.system.MemoryUtil;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+import sun.misc.Unsafe;
 
 import java.util.Random;
 
@@ -33,6 +35,18 @@ import java.util.Random;
 @Measurement(iterations = 5, time = 1)
 @State(Scope.Thread)
 public class TestArrayCopy {
+
+    private static final Unsafe UNSAFE = getUnsafe();
+
+    private static sun.misc.Unsafe getUnsafe() {
+        try {
+            var field = MemoryUtil.class.getDeclaredField("UNSAFE");
+            field.setAccessible(true);
+            return (sun.misc.Unsafe) field.get(null);
+        } catch (Exception e) {
+            throw new AssertionError("No MemoryUtil.UNSAFE", e);
+        }
+    }
 
     public static void main(String[] args) throws RunnerException {
         new Runner(new OptionsBuilder()
@@ -70,6 +84,14 @@ public class TestArrayCopy {
         dst[1] = src[1];
         dst[2] = src[2];
         dst[3] = src[3];
+        blackhole.consume(dst);
+    }
+
+    @Benchmark
+    public static void unsafeCopy(Blackhole blackhole) {
+        float[] src = {RANDOM.nextFloat(), RANDOM.nextFloat(), RANDOM.nextFloat(), RANDOM.nextFloat()};
+        float[] dst = new float[4];
+        UNSAFE.copyMemory(src, Unsafe.ARRAY_FLOAT_BASE_OFFSET, dst, Unsafe.ARRAY_FLOAT_BASE_OFFSET, 16);
         blackhole.consume(dst);
     }
 }

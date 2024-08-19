@@ -18,11 +18,18 @@
 
 package icyllis.modernui;
 
-import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ImmediateContext;
+import icyllis.arc3d.granite.GraniteSurface;
+import icyllis.arc3d.granite.RootTask;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
@@ -37,20 +44,20 @@ import icyllis.modernui.view.menu.MenuHelper;
 import icyllis.modernui.widget.TextView;
 import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
-import org.lwjgl.glfw.GLFWMonitorCallback;
-import org.lwjgl.glfw.GLFWWindowCloseCallback;
+import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.system.Configuration;
+import org.lwjgl.opengl.GL33C;
+import org.lwjgl.system.*;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.*;
+import java.nio.IntBuffer;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 
-import static icyllis.arc3d.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**
@@ -80,7 +87,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     //private final VulkanManager mVulkanManager = VulkanManager.getInstance();
 
     private volatile ActivityWindow mWindow;
-    private volatile GLSurface mSurface;
 
     private ViewRootImpl mRoot;
     private WindowGroup mDecor;
@@ -142,6 +148,14 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         LOGGER.debug(MARKER, "Initializing window system");
         Monitor monitor = Monitor.getPrimary();
 
+        TinyFileDialogs.tinyfd_messageBox(
+                "Arc3D Test",
+                "Arc3D starting with pid: " + ProcessHandle.current().pid(),
+                "ok",
+                "info",
+                true
+        );
+
         String name = Configuration.OPENGL_LIBRARY_NAME.get();
         if (name != null) {
             // non-system library should load before window creation
@@ -153,8 +167,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
         glfwWindowHint(GLFW_DEPTH_BITS, 0);
         glfwWindowHint(GLFW_STENCIL_BITS, 0);
         glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
@@ -250,6 +264,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 Image image = Image.createTextureFromBitmap(bitmap);
                 if (image != null) {
                     Drawable drawable = new ImageDrawable(image);
+                    drawable.setTintBlendMode(BlendMode.MODULATE);
                     drawable.setTint(0xFF808080);
                     mDecor.setBackground(drawable);
                     synchronized (Core.class) {
@@ -298,12 +313,21 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 .addToBackStack("main")
                 .commit();
 
+        /*long hWnd = GLFWNativeWin32.glfwGetWin32Window(mWindow.getHandle());
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer margin = stack.ints(-1, -1, -1, -1);
+            int hr = Dwmapi.DwmExtendFrameIntoClientArea(hWnd, MemoryUtil.memAddress(margin));
+            LOGGER.info("DwmExtendFrameIntoClientArea {}", hr);
+        }*/
+
         mWindow.show();
 
         loadTypeface.join();
 
         LOGGER.info(MARKER, "Looping main thread");
         Looper.loop();
+
+        mRoot.mSurface = RefCnt.move(mRoot.mSurface);
 
         Core.requireUiRecordingContext().unref();
         LOGGER.info(MARKER, "Quited main thread");
@@ -322,27 +346,14 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             mRenderHandler = new Handler(mRenderLooper);
 
             Core.glSetupDebugCallback();
-
-            GLSurfaceCanvas.initialize();
         } finally {
             latch.countDown();
         }
-
-        glDisable(GL_CULL_FACE);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_STENCIL_TEST);
-        glDisable(GL_MULTISAMPLE);
-
-        mSurface = new GLSurface();
 
         window.swapInterval(1);
         LOGGER.info(MARKER, "Looping render thread");
 
         Looper.loop();
-
-        mSurface.close();
 
         synchronized (Core.class) {
             if (mBackgroundImage != null) {
@@ -351,8 +362,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             }
         }
 
-        GLSurfaceCanvas.getInstance().destroy();
-        Core.requireDirectContext().unref();
+        Core.requireImmediateContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
     }
 
@@ -375,6 +385,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     }
 
     private void stop() {
+        mDecor.setBackground(null);
+
         mFragmentController.dispatchStop();
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
 
@@ -502,6 +514,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         private final Rect mGlobalRect = new Rect();
 
+        Surface mSurface;
+        RootTask mLastFrameTask;
+
         @Override
         protected boolean dispatchTouchEvent(MotionEvent event) {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -530,46 +545,72 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             }
         }
 
-        @NonNull
+        @Override
+        public void setFrame(int width, int height) {
+            super.setFrame(width, height);
+            if (mSurface == null ||
+                    mSurface.getWidth() != width ||
+                    mSurface.getHeight() != height) {
+                if (width > 0 && height > 0) {
+                    mSurface = RefCnt.move(mSurface, GraniteSurface.makeRenderTarget(
+                            Core.requireUiRecordingContext(),
+                            ImageInfo.make(width, height,
+                                    ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL,
+                                    null),
+                            false,
+                            Engine.SurfaceOrigin.kLowerLeft,
+                            null
+                    ));
+                }
+            }
+        }
+
         @Override
         protected Canvas beginDrawLocked(int width, int height) {
-            GLSurfaceCanvas canvas = GLSurfaceCanvas.getInstance();
-            canvas.reset(width, height);
-            return canvas;
+            if (mSurface != null && width > 0 && height > 0) {
+                mSurface.getCanvas().clear(0);
+                return new ArcCanvas(mSurface.getCanvas());
+            }
+            return null;
         }
 
         @Override
         protected void endDrawLocked(@NonNull Canvas canvas) {
+            mLastFrameTask = Core.requireUiRecordingContext().snap();
             mRenderHandler.post(this::render);
-            try {
-                mRenderLock.wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            synchronized (mRenderLock) {
+                try {
+                    mRenderLock.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
 
         @RenderThread
         private void render() {
-            GLSurfaceCanvas canvas = GLSurfaceCanvas.getInstance();
-            Window window = mWindow;
-            GLSurface framebuffer = mSurface;
-            int width = window.getWidth(), height = window.getHeight();
-            glViewport(0, 0, width, height);
+            ImmediateContext context = Core.requireImmediateContext();
+            boolean added;
+            int width, height;
+            RootTask task;
             synchronized (mRenderLock) {
-                final Matrix4 projection = new Matrix4();
-                canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1,
-                        true));
-                canvas.executeRenderPass(framebuffer);
-                //TODO, we should swap the command list, and signal the lock early
+                width = mSurface.getWidth();
+                height = mSurface.getHeight();
+                task = mLastFrameTask;
+                mLastFrameTask = null;
                 mRenderLock.notifyAll();
             }
-            if (framebuffer.getBackingWidth() > 0) {
-                framebuffer.bindRead();
-                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
-                glBlitFramebuffer(0, 0, width, height,
-                        0, 0, width, height,
-                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
-                window.swapBuffers();
+            added = context.addTask(task);
+            RefCnt.move(task);
+            if (added) {
+                GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
+                GL33C.glBlitFramebuffer(0, 0, width, height,
+                        0, 0, width, height, GL33C.GL_COLOR_BUFFER_BIT,
+                        GL33C.GL_NEAREST);
+                context.submit();
+                mWindow.swapBuffers();
+            } else {
+                LOGGER.error("Failed to add draw commands");
             }
         }
 

@@ -1,109 +1,116 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
-
 /**
- * This class is used to generate a generic pipeline cache key.
- * Also used to lookup pipeline state objects in cache.
+ * Abstract class that provides key and full information about a graphics pipeline
+ * or a compute pipeline, except for render pass information.
+ * <p>
+ * Subclass must implement {@link #hashCode()} and {@link #equals(Object)}.
  */
-public final class PipelineDesc extends KeyBuilder {
+//TODO to be reviewed
+public abstract class PipelineDesc {
 
-    private int mShaderKeyLength;
+    public static final int NO_DYNAMIC_STATE = 0;
+    public static final int DYNAMIC_COLOR_BLEND_STATE = 1;
 
-    public PipelineDesc() {
+    //TODO temporary, to be reviewed
+    public static final class UniformBlockInfo {
+        // ShaderFlags
+        public final int mVisibility;
+        public final int mBinding;
+        public final String mBlockName;
+
+        public UniformBlockInfo(int visibility, int binding, String blockName) {
+            mVisibility = visibility;
+            mBinding = binding;
+            mBlockName = blockName;
+        }
     }
 
-    public PipelineDesc(PipelineDesc other) {
-        super(other);
-        mShaderKeyLength = other.mShaderKeyLength;
+    public static final class SamplerInfo {
+        // ShaderFlags
+        public final int mVisibility;
+        public final int mBinding;
+        public final String mName;
+
+        public SamplerInfo(int visibility, int binding, String name) {
+            mVisibility = visibility;
+            mBinding = binding;
+            mName = name;
+        }
+    }
+
+    public static final class GraphicsPipelineInfo {
+        public byte mPrimitiveType;
+        public VertexInputLayout mInputLayout;
+        public String mInputLayoutLabel;
+        //TODO replace full 'source' with IR + main() source
+        public StringBuilder mVertSource;
+        public String mVertLabel;
+        public StringBuilder mFragSource;
+        public String mFragLabel;
+        public BlendInfo mBlendInfo;
+        public DepthStencilSettings mDepthStencilSettings;
+        public UniformBlockInfo[] mUniformBlockInfos;
+        public SamplerInfo[] mSamplerInfos;
+        public String mPipelineLabel;
     }
 
     /**
-     * Returns the number of ints of the base key, without additional information.
-     * The key in this range describes the shader module info. OpenGL has no additional
-     * information, but Vulkan has.
+     * Generates all info used to create graphics pipeline.
+     */
+    public GraphicsPipelineInfo createGraphicsPipelineInfo(Device device) {
+        throw new IllegalStateException();
+    }
+
+    public byte getPrimitiveType() {
+        return 0;
+    }
+
+    public BlendInfo getBlendInfo() {
+        return null;
+    }
+
+    public DepthStencilSettings getDepthStencilSettings() {
+        return null;
+    }
+
+    /**
+     * Returns a bitfield that represents dynamic states of this pipeline.
+     * These dynamic states must be supported by the backend.
      * <p>
-     * Because Vulkan encapsulates some states into an immutable structure, we have to
-     * collect additional information to form the cache key.
+     * Viewport and scissor are always dynamic states.
      */
-    public int getShaderKeyLength() {
-        return mShaderKeyLength;
+    //TODO not implemented yet, meaningful in Vulkan
+    public int getDynamicStates() {
+        return NO_DYNAMIC_STATE;
     }
 
     /**
-     * Builds a base pipeline descriptor, without additional information.
-     *
-     * @param desc the pipeline descriptor
-     * @param info the pipeline information
-     * @param caps the context capabilities
+     * Makes a deep copy of this desc, it must be immutable before return.
+     * No need to make its fields visible to all threads.
+     * If this desc is already immutable then subclass may return this.
+     * <p>
+     * The {@link #hashCode()} and {@link #equals(Object)} of this and return
+     * value must be consistent.
      */
-    @Nonnull
-    public static PipelineDesc build(PipelineDesc desc, PipelineInfo info, Caps caps) {
-        desc.clear();
-        genKey(desc, info, caps);
-        desc.mShaderKeyLength = desc.size();
-        return desc;
-    }
-
-    public static String describe(PipelineInfo info, Caps caps) {
-        StringKeyBuilder b = new StringKeyBuilder();
-        genKey(b, info, caps);
-        return b.toString();
-    }
-
-    static void genKey(KeyBuilder b,
-                       PipelineInfo info,
-                       Caps caps) {
-        genGPKey(info.geomProc(), b);
-
-        //TODO more keys
-
-        b.addBits(16, info.writeSwizzle(), "writeSwizzle");
-
-        // Put a clean break between the "common" data written by this function, and any backend data
-        // appended later. The initial key length will just be this portion (rounded to 4 bytes).
-        b.flush();
-    }
-
-    /**
-     * Functions which emit processor key info into the key builder.
-     * For every effect, we include the effect's class ID (different for every GrProcessor subclass),
-     * any information generated by the effect itself (addToKey), and some meta-information.
-     * Shader code may be dependent on properties of the effect not placed in the key by the effect
-     * (e.g. pixel format of textures used).
-     */
-    static void genGPKey(GeometryProcessor geomProc, KeyBuilder b) {
-        b.appendComment(geomProc.name());
-        // We allow 32 bits for the class id
-        b.addInt32(geomProc.classID(), "gpClassID");
-
-        geomProc.appendToKey(b);
-        geomProc.appendAttributesToKey(b);
-
-        // read swizzles are implemented as texture views, will not affect the shader code
-        /*int numSamplers = geomProc.numTextureSamplers();
-        b.addBits(4, numSamplers, "gpNumSamplers");
-        for (int i = 0; i < numSamplers; i++) {
-            b.addBits(16, geomProc.textureSamplerSwizzle(i), "swizzle");
-        }*/
-    }
+    public abstract PipelineDesc copy();
 }

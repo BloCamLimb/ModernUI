@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.vulkan;
@@ -141,13 +141,13 @@ public final class VKCore extends VK11 {
         };
     }
 
-    @ImageInfo.CompressionType
+    @ColorInfo.CompressionType
     public static int vkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
-            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> ImageInfo.COMPRESSION_ETC2_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> ImageInfo.COMPRESSION_BC1_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> ImageInfo.COMPRESSION_BC1_RGBA8_UNORM;
-            default -> ImageInfo.COMPRESSION_NONE;
+            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> ColorInfo.COMPRESSION_ETC2_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> ColorInfo.COMPRESSION_BC1_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> ColorInfo.COMPRESSION_BC1_RGBA8_UNORM;
+            default -> ColorInfo.COMPRESSION_NONE;
         };
     }
 
@@ -190,6 +190,18 @@ public final class VKCore extends VK11 {
             case VK_FORMAT_R8G8B8_UNORM,
                     VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
                     VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM -> 3;
+            default -> 0;
+        };
+    }
+
+    public static int vkFormatDepthBits(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_D16_UNORM,
+                    VK_FORMAT_D16_UNORM_S8_UINT -> 16;
+            case VK_FORMAT_D24_UNORM_S8_UINT,
+                    VK_FORMAT_X8_D24_UNORM_PACK32 -> 24;
+            case VK_FORMAT_D32_SFLOAT,
+                    VK_FORMAT_D32_SFLOAT_S8_UINT -> 32;
             default -> 0;
         };
     }

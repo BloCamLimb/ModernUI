@@ -1,32 +1,33 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.opengl.GLFramebufferInfo;
-import icyllis.arc3d.vulkan.VulkanImageInfo;
+import icyllis.arc3d.vulkan.VulkanImageDesc;
 
 import javax.annotation.Nonnull;
 
 /**
  * A BackendRenderTarget instance is initialized once, and may be shared.
  */
+@Deprecated()
 public abstract class BackendRenderTarget {
 
     private final int mWidth;
@@ -58,6 +59,8 @@ public abstract class BackendRenderTarget {
 
     public abstract int getSampleCount();
 
+    public abstract int getDepthBits();
+
     public abstract int getStencilBits();
 
     /**
@@ -73,7 +76,7 @@ public abstract class BackendRenderTarget {
      * in pointer and returns true. This snapshot will set the mImageLayout to the current layout
      * state. Otherwise, returns false if the backend API is not Vulkan.
      */
-    public boolean getVkImageInfo(VulkanImageInfo info) {
+    public boolean getVkImageInfo(VulkanImageDesc info) {
         return false;
     }
 

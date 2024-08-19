@@ -1,26 +1,26 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.engine.SurfaceDrawContext;
+import icyllis.arc3d.granite.SurfaceDrawContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
 /**
  * Base class for drawing devices.
  */
-public abstract class Device extends RefCnt implements MatrixProvider {
+public abstract class Device extends RefCnt {
 
     protected static final int
             CLIP_TYPE_EMPTY = 0,
@@ -102,19 +102,19 @@ public abstract class Device extends RefCnt implements MatrixProvider {
     }
 
     /**
-     * Returns the bounding box of the current clip, in this device's
-     * coordinate space. No pixels outside these bounds will be touched by
-     * draws unless the clip is further modified (at which point this will
-     * return the updated bounds).
+     * Returns the transformation that maps from the local space to the device's coordinate space.
      */
-    public final void getClipBounds(@Nonnull Rect2i bounds) {
-        bounds.set(getClipBounds());
+    @Nonnull
+    public final Matrix4c getLocalToDevice() {
+        return mLocalToDevice;
     }
 
+    /**
+     * Returns the transformation that maps from the local space to the device's coordinate space.
+     */
     @Nonnull
-    @Override
-    public final Matrix4 getLocalToDevice() {
-        return mLocalToDevice;
+    public final Matrixc getLocalToDevice33() {
+        return mLocalToDevice33;
     }
 
     /**
@@ -122,7 +122,8 @@ public abstract class Device extends RefCnt implements MatrixProvider {
      * into the global canvas' space (or root device space). This includes the translation
      * necessary to account for the device's origin.
      */
-    public final Matrix4 getDeviceToGlobal() {
+    @Nonnull
+    public final Matrix4c getDeviceToGlobal() {
         return mDeviceToGlobal;
     }
 
@@ -130,7 +131,8 @@ public abstract class Device extends RefCnt implements MatrixProvider {
      * Return the inverse of getDeviceToGlobal(), mapping from the global canvas' space (or root
      * device space) into this device's coordinate space.
      */
-    public final Matrix4 getGlobalToDevice() {
+    @Nonnull
+    public final Matrix4c getGlobalToDevice() {
         return mGlobalToDevice;
     }
 
@@ -159,51 +161,17 @@ public abstract class Device extends RefCnt implements MatrixProvider {
         dest.postConcat(device.mGlobalToDevice);
     }
 
-    public final void save() {
-        onSave();
-    }
-
-    public final void restore(Matrix4 globalTransform) {
-        onRestore();
-        setGlobalTransform(globalTransform);
-    }
-
-    public final void restoreLocal(Matrix4 localToDevice) {
-        onRestore();
-        setLocalToDevice(localToDevice);
-    }
-
-    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
-    }
-
-    public final void replaceClip(Rect2i rect) {
-        onReplaceClip(rect);
-    }
-
-    protected void onReplaceClip(Rect2i rect) {
-    }
-
-    public abstract boolean clipIsAA();
-
-    public abstract boolean clipIsWideOpen();
-
-    public final void setGlobalTransform(@Nullable Matrix4 globalTransform) {
-        if (globalTransform == null) {
-            mLocalToDevice.setIdentity();
-        } else {
-            mLocalToDevice.set(globalTransform);
-            mLocalToDevice.normalizePerspective();
-        }
-        // Map from the global transform state to this device's coordinate system.
+    public final void setGlobalCTM(@Nonnull Matrix4c ctm) {
+        mLocalToDevice.set(ctm);
+        mLocalToDevice.normalizePerspective();
+        // Map from the global CTM state to this device's coordinate system.
         mLocalToDevice.postConcat(mGlobalToDevice);
+        mLocalToDevice.toMatrix(mLocalToDevice33);
     }
 
-    public final void setLocalToDevice(@Nullable Matrix4 localToDevice) {
-        if (localToDevice == null) {
-            mLocalToDevice.setIdentity();
-        } else {
-            mLocalToDevice.set(localToDevice);
-        }
+    public final void setLocalToDevice(@Nonnull Matrix4c localToDevice) {
+        mLocalToDevice.set(localToDevice);
+        mLocalToDevice.toMatrix(mLocalToDevice33);
     }
 
     @Nullable
@@ -226,11 +194,11 @@ public abstract class Device extends RefCnt implements MatrixProvider {
      * will include a pre-translation by T(deviceOriginX, deviceOriginY), and the final
      * local-to-device matrix will have a post-translation of T(-deviceOriginX, -deviceOriginY).
      */
-    final void setCoordinateSystem(@Nullable Matrix4 deviceToGlobal,
-                                   @Nullable Matrix4 globalToDevice,
-                                   @Nullable Matrix4 localToDevice,
-                                   int bufferOriginX,
-                                   int bufferOriginY) {
+    protected final void setDeviceCoordinateSystem(@Nullable Matrix4c deviceToGlobal,
+                                                   @Nullable Matrix4c globalToDevice,
+                                                   @Nullable Matrix4c localToDevice,
+                                                   int bufferOriginX,
+                                                   int bufferOriginY) {
         if (deviceToGlobal == null) {
             mDeviceToGlobal.setIdentity();
             mGlobalToDevice.setIdentity();
@@ -252,6 +220,7 @@ public abstract class Device extends RefCnt implements MatrixProvider {
             mGlobalToDevice.postTranslate(-bufferOriginX, -bufferOriginY);
             mLocalToDevice.postTranslate(-bufferOriginX, -bufferOriginY);
         }
+        mLocalToDevice.toMatrix(mLocalToDevice33);
     }
 
     /**
@@ -259,23 +228,77 @@ public abstract class Device extends RefCnt implements MatrixProvider {
      * unique origin.
      */
     final void setOrigin(@Nullable Matrix4 globalTransform, int x, int y) {
-        setCoordinateSystem(null, null, globalTransform, x, y);
+        setDeviceCoordinateSystem(null, null, globalTransform, x, y);
     }
 
-    protected void onSave() {
-    }
+    public abstract void pushClipStack();
 
-    protected void onRestore() {
-    }
+    public abstract void popClipStack();
 
-    protected abstract int getClipType();
+    /**
+     * Returns the bounding box of the current clip, in this device's
+     * coordinate space. No pixels outside these bounds will be touched by
+     * draws unless the clip is further modified (at which point this will
+     * return the updated bounds).
+     */
+    public abstract void getClipBounds(@Nonnull Rect2i bounds);
 
     protected abstract Rect2ic getClipBounds();
 
+    public abstract void clipRect(Rect2fc rect, int clipOp, boolean doAA);
+
+    public abstract boolean isClipAA();
+
+    public abstract boolean isClipEmpty();
+
+    public abstract boolean isClipRect();
+
+    public abstract boolean isClipWideOpen();
+
     public abstract void drawPaint(Paint paint);
 
-    public abstract void drawRect(Rect2f r,
+    public abstract void drawPoints(int mode, float[] pts, int offset,
+                                    int count, Paint paint);
+
+    public abstract void drawLine(float x0, float y0, float x1, float y1,
+                                  @Paint.Cap int cap, float width, Paint paint);
+
+    public abstract void drawRect(Rect2fc r,
                                   Paint paint);
+
+    public abstract void drawRoundRect(RoundRect rr, Paint paint);
+
+    public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
+
+    public abstract void drawArc(float cx, float cy, float radius, float startAngle,
+                                 float sweepAngle, @Paint.Cap int cap, float width, Paint paint);
+
+    public abstract void drawPie(float cx, float cy, float radius, float startAngle,
+                                 float sweepAngle, Paint paint);
+
+    public abstract void drawChord(float cx, float cy, float radius, float startAngle,
+                                   float sweepAngle, Paint paint);
+
+    public abstract void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+                                       SamplingOptions sampling, Paint paint,
+                                       int constraint);
+
+    public final void drawGlyphRunList(Canvas canvas,
+                                       GlyphRunList glyphRunList,
+                                       Paint paint) {
+        if (!getLocalToDevice33().isFinite()) {
+            return;
+        }
+
+        onDrawGlyphRunList(canvas, glyphRunList, paint);
+    }
+
+    protected abstract void onDrawGlyphRunList(Canvas canvas,
+                                               GlyphRunList glyphRunList,
+                                               Paint paint);
+
+    public abstract void drawVertices(Vertices vertices, @SharedPtr Blender blender,
+                                      Paint paint);
 
     @Nullable
     protected Surface makeSurface(ImageInfo info) {

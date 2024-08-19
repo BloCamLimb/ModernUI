@@ -1,36 +1,33 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.Engine;
-import it.unimi.dsi.fastutil.HashCommon;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
-import java.util.Objects;
 
-import static icyllis.arc3d.engine.Engine.BackendApi;
 import static icyllis.arc3d.vulkan.VKCore.*;
 
 @Immutable
@@ -40,26 +37,23 @@ public final class VkBackendFormat extends BackendFormat {
             new Int2ObjectOpenHashMap<>(25);
 
     private final int mFormat;
-    private final boolean mIsExternal;
 
     /**
-     * @see #make(int, boolean)
+     * @see #make(int)
      */
-    VkBackendFormat(@NativeType("VkFormat") int format, boolean isExternal) {
+    VkBackendFormat(@NativeType("VkFormat") int format) {
         mFormat = format;
-        mIsExternal = isExternal;
     }
 
     //TODO cache only known formats
     @Nonnull
-    public static VkBackendFormat make(@NativeType("VkFormat") int format, boolean isExternal) {
-        Objects.checkIndex(format, Integer.MAX_VALUE);
-        int key = (format) | (isExternal ? Integer.MIN_VALUE : 0);
+    public static VkBackendFormat make(@NativeType("VkFormat") int format) {
+        int key = (format);
         VkBackendFormat backendFormat = FORMATS.get(key);
         if (backendFormat != null) {
             return backendFormat;
         }
-        backendFormat = new VkBackendFormat(format, isExternal);
+        backendFormat = new VkBackendFormat(format);
         if (backendFormat.getBytesPerBlock() != 0) {
             FORMATS.put(key, backendFormat);
         }
@@ -72,11 +66,6 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     @Override
-    public boolean isExternal() {
-        return mIsExternal;
-    }
-
-    @Override
     public int getChannelFlags() {
         return vkFormatChannels(mFormat);
     }
@@ -84,15 +73,6 @@ public final class VkBackendFormat extends BackendFormat {
     @Override
     public int getVkFormat() {
         return mFormat;
-    }
-
-    @Nonnull
-    @Override
-    public BackendFormat makeInternal() {
-        if (mIsExternal) {
-            return make(mFormat, false);
-        }
-        return this;
     }
 
     @Override
@@ -108,6 +88,11 @@ public final class VkBackendFormat extends BackendFormat {
     @Override
     public int getBytesPerBlock() {
         return vkFormatBytesPerBlock(mFormat);
+    }
+
+    @Override
+    public int getDepthBits() {
+        return vkFormatDepthBits(mFormat);
     }
 
     @Override
@@ -136,7 +121,6 @@ public final class VkBackendFormat extends BackendFormat {
     public String toString() {
         return "{backend=Vulkan" +
                 ", format=" + vkFormatName(mFormat) +
-                ", isExternal=" + mIsExternal +
                 '}';
     }
 }

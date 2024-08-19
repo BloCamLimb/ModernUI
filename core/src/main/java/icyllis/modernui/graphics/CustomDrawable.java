@@ -53,9 +53,6 @@ public interface CustomDrawable {
      * those resources before reusing or deleting them. In this case, the drawable can
      * use the close call of the DrawHandler to add a fence to the GPU to track when the
      * GPU work has completed.
-     * <p>
-     * For OpenGL, if any context state is changed, {@link DirectContext#resetContext(int)}
-     * should be called at the end of {@link #draw}.
      */
     @FunctionalInterface
     interface DrawHandler extends AutoCloseable {
@@ -63,11 +60,10 @@ public interface CustomDrawable {
         /**
          * The direct context may be used to invalidate backend context states.
          *
-         * @param dContext the direct context
-         * @param info     the backend specified info used to draw the drawable
-         * @see DirectContext#resetContext(int)
+         * @param dc   the direct context
+         * @param info the backend specified info used to draw the drawable
          */
-        void draw(DirectContext dContext, DrawableInfo info);
+        void draw(ImmediateContext dc, DrawableInfo info);
 
         /**
          * This is called when the draw call is submitted, used to clean up backend resources

@@ -18,19 +18,21 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.granite.ImageUtils;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
+import java.util.Objects;
 
 /**
- * {@code Image} describes a two-dimensional array of pixels to draw. The pixels are
- * located in GPU memory as a GPU texture.
+ * {@code Image} describes a two-dimensional array of pixels to sample from. The pixels
+ * may be located in CPU memory, in GPU memory as a GPU texture, or be lazily-generated.
  * <ul>
  * <li>{@code Image} cannot be modified by CPU after it is created.</li>
  * <li>{@code Image} width and height are greater than zero.</li>
@@ -38,75 +40,77 @@ import java.lang.ref.Cleaner;
  * and GPU texture.</li>
  * </ul>
  */
-//TODO wip, now image can only create from Bitmap, only used for drawImage()
+//TODO add more usages, now image can only create from Bitmap, only used for drawImage()
 public class Image implements AutoCloseable {
 
-    private final ImageInfo mInfo;
+    private icyllis.arc3d.core.Image mImage; // managed by cleaner
+    private Cleaner.Cleanable mCleanup;
 
-    private final RecordingContext mContext;
-    private ViewReference mView;
-
-    private Image(ImageInfo info,
-                  RecordingContext context,
-                  @SharedPtr TextureProxy proxy,
-                  short swizzle) {
-        mInfo = info;
-        mContext = context;
-        mView = new ViewReference(this, proxy, swizzle);
+    private Image(@SharedPtr icyllis.arc3d.core.Image image) {
+        mImage = Objects.requireNonNull(image);
+        mCleanup = Core.registerNativeResource(this, image);
     }
 
-    // must be called after render system and UI system are initialized successfully,
-    // must be called from either render thread or UI thread
+    /**
+     * Create an image that backed by a GPU texture with the given bitmap.
+     * Whether the bitmap is immutable or not, the bitmap can be safely closed
+     * after the call.
+     * <p>
+     * must be called after render system and UI system are initialized successfully,
+     * <p>
+     * must be called from UI thread
+     *
+     * @param bitmap the source bitmap
+     * @return image, or null if failed
+     * @throws NullPointerException bitmap is null or released
+     * @throws IllegalStateException wrong thread, or no context
+     */
     @Nullable
     public static Image createTextureFromBitmap(Bitmap bitmap) {
         if (bitmap == null || bitmap.isClosed()) {
             return null;
         }
         return createTextureFromBitmap(
-                Core.isOnUiThread()
-                        ? Core.requireUiRecordingContext()
-                        : Core.requireDirectContext(),
+                Core.requireUiRecordingContext(),
                 bitmap
         );
     }
 
     /**
      * Create an image that backed by a GPU texture with the given bitmap.
-     * The bitmap should be immutable and can be safely closed after the call.
+     * Whether the bitmap is immutable or not, the bitmap can be safely closed
+     * after the call.
      *
-     * @param rContext the recording graphics context on the current thread
-     * @param bitmap   the source bitmap
+     * @param rc     the recording graphics context on the current thread
+     * @param bitmap the source bitmap
      * @return image, or null if failed
      * @throws NullPointerException bitmap is null or released
+     * @throws IllegalStateException wrong thread, or no context
      */
     @Nullable
-    public static Image createTextureFromBitmap(@NonNull RecordingContext rContext,
+    public static Image createTextureFromBitmap(@NonNull RecordingContext rc,
                                                 @NonNull Bitmap bitmap) {
-        var caps = rContext.getCaps();
-        var ct = (bitmap.getFormat() == Bitmap.Format.RGB_888)
-                ? ImageInfo.CT_RGB_888x // GPU surface is padded
-                : bitmap.getColorType();
-        if (caps.getDefaultBackendFormat(ct, /*renderable*/false) == null) {
-            return null;
-        }
-        int flags = ISurface.FLAG_BUDGETED;
-        if (bitmap.getWidth() > 1 || bitmap.getHeight() > 1) {
-            flags |= ISurface.FLAG_MIPMAPPED;
-        }
+        rc.checkOwnerThread();
         @SharedPtr
-        TextureProxy proxy = rContext
-                .getSurfaceProvider()
-                .createTextureFromPixels(
-                        bitmap.getPixelMap(), bitmap.getPixelRef(), ct, flags
-                );
-        if (proxy == null) {
+        icyllis.arc3d.core.Image image;
+        try {
+            //TODO we previously make all images Mipmapped, but Arc3D currently does not support
+            // Mipmapping correctly
+            image = ImageUtils.makeFromPixmap(
+                    rc,
+                    bitmap.getPixmap(),
+                    /*mipmapped*/ false,
+                    /*budgeted*/ true,
+                    "ImageFromBitmap"
+            );
+        } finally {
+            // Pixels container must be alive!
+            Reference.reachabilityFence(bitmap);
+        }
+        if (image == null) {
             return null;
         }
-        var swizzle = caps.getReadSwizzle(proxy.getBackendFormat(), ct);
-        return new Image(bitmap.getInfo(),
-                rContext,
-                proxy,
-                swizzle);
+        return new Image(image); // move
     }
 
     /**
@@ -129,8 +133,9 @@ public class Image implements AutoCloseable {
      *
      * @return image info
      */
+    @NonNull
     public ImageInfo getInfo() {
-        return mInfo;
+        return mImage.getInfo();
     }
 
     /**
@@ -139,7 +144,7 @@ public class Image implements AutoCloseable {
      * @return image width in pixels
      */
     public int getWidth() {
-        return mInfo.width();
+        return mImage.getWidth();
     }
 
     /**
@@ -148,13 +153,7 @@ public class Image implements AutoCloseable {
      * @return image height in pixels
      */
     public int getHeight() {
-        return mInfo.height();
-    }
-
-    // do not close this!
-    @ApiStatus.Internal
-    public SurfaceView asTextureView() {
-        return mView;
+        return mImage.getHeight();
     }
 
     /**
@@ -164,42 +163,31 @@ public class Image implements AutoCloseable {
      * When this object becomes phantom-reachable, the system will automatically
      * do this cleanup operation.
      */
-    //FIXME explicit close may cause leakage in drawImage
-    @ApiStatus.Experimental
     @Override
     public void close() {
-        if (mView != null) {
-            mView.mCleanup.clean();
-            mView = null;
+        if (mImage != null) {
+            mImage = null;
+            mCleanup.clean();
+            mCleanup = null;
         }
     }
 
+    /**
+     * Returns true if this image has been closed. If so, then it is an error
+     * to try to access it.
+     *
+     * @return true if the image has been closed
+     */
     public boolean isClosed() {
-        return mView == null;
+        return mImage == null;
     }
 
-    private static class ViewReference extends SurfaceView implements Runnable {
-
-        final Cleaner.Cleanable mCleanup;
-
-        ViewReference(Image owner,
-                      @SharedPtr TextureProxy proxy,
-                      short swizzle) {
-            super(proxy,
-                    Engine.SurfaceOrigin.kUpperLeft,
-                    swizzle);
-            mCleanup = Core.registerCleanup(owner, this);
-        }
-
-        @Override
-        public void run() {
-            // texture can be created from any thread, but must be closed on render thread
-            Core.executeOnRenderThread(super::close);
-        }
-
-        @Override
-        public void close() {
-            throw new UnsupportedOperationException();
-        }
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @RawPtr
+    public icyllis.arc3d.core.Image getNativeImage() {
+        return mImage;
     }
 }

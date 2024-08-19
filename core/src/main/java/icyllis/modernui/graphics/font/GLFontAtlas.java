@@ -28,6 +28,7 @@ import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.text.TextUtils;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import org.lwjgl.opengl.GL45C;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,7 +36,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL33C.*;
 
 /**
  * Maintains a font texture atlas, which is specified with a font strike (style and
@@ -85,7 +86,7 @@ public class GLFontAtlas implements AutoCloseable {
     private record Chunk(int x, int y, RectanglePacker packer) {
     }
 
-    private final DirectContext mContext;
+    private final ImmediateContext mContext;
     private final int mMaskFormat;
     private final int mBorderWidth;
     private final int mMaxTextureSize;
@@ -94,7 +95,7 @@ public class GLFontAtlas implements AutoCloseable {
     private int mLastCompactChunkIndex;
 
     @RenderThread
-    public GLFontAtlas(DirectContext context, int maskFormat, int borderWidth) {
+    public GLFontAtlas(ImmediateContext context, int maskFormat, int borderWidth) {
         mContext = context;
         mMaskFormat = maskFormat;
         mBorderWidth = borderWidth;
@@ -162,10 +163,10 @@ public class GLFontAtlas implements AutoCloseable {
 
         // include border
         int colorType = mMaskFormat == Engine.MASK_FORMAT_ARGB
-                ? ImageInfo.CT_RGBA_8888
-                : ImageInfo.CT_ALPHA_8;
-        int rowBytes = rect.width() * ImageInfo.bytesPerPixel(colorType);
-        boolean res = mContext.getDevice().writePixels(
+                ? ColorInfo.CT_RGBA_8888
+                : ColorInfo.CT_ALPHA_8;
+        int rowBytes = rect.width() * ColorInfo.bytesPerPixel(colorType);
+        boolean res = ((GLDevice) mContext.getDevice()).writePixels(
                 mTexture,
                 rect.x(), rect.y(),
                 rect.width(), rect.height(),
@@ -230,7 +231,7 @@ public class GLFontAtlas implements AutoCloseable {
 
             // copy to new texture
             GLTexture newTexture = createTexture();
-            boolean res = mContext.getDevice().copySurface(
+            boolean res = ((GLDevice) mContext.getDevice()).copyImage(
                     mTexture,
                     0, 0,
                     newTexture,
@@ -241,7 +242,7 @@ public class GLFontAtlas implements AutoCloseable {
                 ModernUI.LOGGER.warn(GlyphManager.MARKER, "Failed to copy to new texture");
             }
 
-            mTexture = GpuResource.move(mTexture, newTexture);
+            mTexture = RefCnt.move(mTexture, newTexture);
 
             if (vertical) {
                 //mTexture.clear(0, 0, mHeight >> 1, mWidth, mHeight >> 1);
@@ -289,7 +290,7 @@ public class GLFontAtlas implements AutoCloseable {
         // Otherwise, texture upload will fail and texture remain mipmap incomplete.
         // This should be done in Arc3D and will be removed once Arc3D is updated
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mTexture.getMaxMipmapLevel());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mTexture.getMipLevelCount() - 1);
 
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
             //XXX: un-premultiplied, so 111r rather than rrrr
@@ -305,17 +306,19 @@ public class GLFontAtlas implements AutoCloseable {
     }
 
     private GLTexture createTexture() {
+        var desc = mContext.getCaps().getDefaultColorImageDesc(
+                Engine.ImageType.k2D,
+                Engine.maskFormatToColorType(mMaskFormat),
+                mWidth, mHeight,
+                1,
+                ISurface.FLAG_SAMPLED_IMAGE | ISurface.FLAG_MIPMAPPED
+        );
+        Objects.requireNonNull(desc, "No suitable image descriptor");
         return (GLTexture) Objects.requireNonNull(mContext
                 .getResourceProvider()
-                .createTexture(
-                        mWidth, mHeight,
-                        GLBackendFormat.make(
-                                mMaskFormat == Engine.MASK_FORMAT_ARGB
-                                        ? GL_RGBA8
-                                        : GL_R8
-                        ),
-                        1,
-                        ISurface.FLAG_BUDGETED | ISurface.FLAG_MIPMAPPED,
+                .findOrCreateImage(
+                        desc,
+                        /*budgeted*/ true,
                         "FontAtlas" + mMaskFormat
                 ), "Failed to create font atlas");
     }
@@ -416,7 +419,7 @@ public class GLFontAtlas implements AutoCloseable {
                 case RGBA_8888 -> GL_RGBA;
                 default -> throw new IllegalArgumentException();
             };
-            glGetTextureImage(texture.getHandle(), 0, externalGlFormat, GL_UNSIGNED_BYTE,
+            GL45C.glGetTextureImage(texture.getHandle(), 0, externalGlFormat, GL_UNSIGNED_BYTE,
                     (int) bitmap.getSize(), bitmap.getAddress());
             CompletableFuture.runAsync(() -> {
                 try (bitmap) {
@@ -430,7 +433,7 @@ public class GLFontAtlas implements AutoCloseable {
 
     @Override
     public void close() {
-        mTexture = GpuResource.move(mTexture);
+        mTexture = RefCnt.move(mTexture);
     }
 
     public int getWidth() {
