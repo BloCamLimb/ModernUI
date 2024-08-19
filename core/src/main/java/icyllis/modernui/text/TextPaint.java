@@ -161,7 +161,7 @@ public class TextPaint extends Paint {
      * @see #setUnderline(boolean)
      */
     public final boolean isUnderline() {
-        return (mFontFlags & UNDERLINE_FLAG) != 0;
+        return (mFlags & UNDERLINE_FLAG) != 0;
     }
 
     /**
@@ -173,9 +173,9 @@ public class TextPaint extends Paint {
      */
     public void setUnderline(boolean underline) {
         if (underline) {
-            mFontFlags |= UNDERLINE_FLAG;
+            mFlags |= UNDERLINE_FLAG;
         } else {
-            mFontFlags &= ~UNDERLINE_FLAG;
+            mFlags &= ~UNDERLINE_FLAG;
         }
     }
 
@@ -214,7 +214,7 @@ public class TextPaint extends Paint {
      * @see #setStrikethrough(boolean)
      */
     public final boolean isStrikethrough() {
-        return (mFontFlags & STRIKETHROUGH_FLAG) != 0;
+        return (mFlags & STRIKETHROUGH_FLAG) != 0;
     }
 
     /**
@@ -226,9 +226,9 @@ public class TextPaint extends Paint {
      */
     public void setStrikethrough(boolean strikethrough) {
         if (strikethrough) {
-            mFontFlags |= STRIKETHROUGH_FLAG;
+            mFlags |= STRIKETHROUGH_FLAG;
         } else {
-            mFontFlags &= ~STRIKETHROUGH_FLAG;
+            mFlags &= ~STRIKETHROUGH_FLAG;
         }
     }
 
@@ -332,11 +332,11 @@ public class TextPaint extends Paint {
     }
 
     int getFontFlags() {
-        return mFontFlags;
+        return mFlags;
     }
 
     void setFontFlags(int flags) {
-        mFontFlags = flags;
+        mFlags = flags;
     }
 
     /**

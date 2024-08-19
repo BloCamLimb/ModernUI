@@ -1,24 +1,25 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 
 import javax.annotation.Nonnull;
@@ -1450,7 +1451,7 @@ public abstract class ColorSpace {
             float[] xyz = whitePoint.length == 3 ?
                     Arrays.copyOf(whitePoint, 3) : xyYToXyz(whitePoint);
             float[] adaptationTransform = chromaticAdaptation(adaptation.mTransform,
-                    xyYToXyz(rgb.getWhitePoint()), xyz);
+                    xyYToXyz(rgb.mWhitePoint), xyz);
             float[] transform = mul3x3(adaptationTransform, rgb.mTransform);
 
             return new ColorSpace.Rgb(rgb, transform, whitePoint);
@@ -1529,7 +1530,7 @@ public abstract class ColorSpace {
     }
 
     /**
-     * Helper method for creating native SkColorSpace.
+     * Helper method for internal color space transformation.
      * <p>
      * This essentially calls adapt on a ColorSpace that has not been fully
      * created. It also does not fully create the adapted ColorSpace, but
@@ -1537,7 +1538,7 @@ public abstract class ColorSpace {
      */
     @Nonnull
     @Size(9)
-    private static float[] adaptToIlluminantD50(
+    public static float[] adaptToIlluminantD50(
             @Nonnull @Size(2) float[] origWhitePoint,
             @Nonnull @Size(9) float[] origTransform) {
         float[] desired = ILLUMINANT_D50;
@@ -3545,7 +3546,8 @@ public abstract class ColorSpace {
         Connector(@Nonnull ColorSpace source, @Nonnull ColorSpace destination,
                   @Nonnull RenderIntent intent) {
             this(source, destination,
-                    source.getModel() == Model.RGB ? adapt(source, ILLUMINANT_D50_XYZ) : source,
+                    source.getModel() == Model.RGB ?
+                            adapt(source, ILLUMINANT_D50_XYZ) : source,
                     destination.getModel() == Model.RGB ?
                             adapt(destination, ILLUMINANT_D50_XYZ) : destination,
                     intent, computeTransform(source, destination, intent));
@@ -3575,7 +3577,8 @@ public abstract class ColorSpace {
          */
         @Nullable
         private static float[] computeTransform(@Nonnull ColorSpace source,
-                                                @Nonnull ColorSpace destination, @Nonnull RenderIntent intent) {
+                                                @Nonnull ColorSpace destination,
+                                                @Nonnull RenderIntent intent) {
             if (intent != RenderIntent.ABSOLUTE) return null;
 
             boolean srcRGB = source.getModel() == Model.RGB;
@@ -3676,7 +3679,8 @@ public abstract class ColorSpace {
         /**
          * Optimized connector for RGB->RGB conversions.
          */
-        private static class Rgb extends Connector {
+        @ApiStatus.Internal
+        public static class Rgb extends Connector {
             @Nonnull
             private final ColorSpace.Rgb mSource;
             @Nonnull
@@ -3764,6 +3768,46 @@ public abstract class ColorSpace {
                     return mul3x3(inverseTransform, transform);
                 }
             }
+
+            /**
+             * Extends {@link #computeTransform(ColorSpace.Rgb, ColorSpace.Rgb, RenderIntent)},
+             * allowing XYZ->RGB and RGB->XYZ conversions.
+             */
+            @ApiStatus.Internal
+            @Nonnull
+            @Size(9)
+            public static float[] computeTransform(
+                    boolean srcIsXYZ,
+                    @Nullable ColorSpace.Rgb srcRGB,
+                    boolean dstIsXYZ,
+                    @Nullable ColorSpace.Rgb dstRGB) {
+                if (srcRGB != null && dstRGB != null) {
+                    assert !srcIsXYZ && !dstIsXYZ;
+                    return computeTransform(
+                            srcRGB, dstRGB, ColorSpace.RenderIntent.RELATIVE
+                    );
+                } else if (srcRGB == null) {
+                    assert srcIsXYZ && !dstIsXYZ && dstRGB != null;
+                    if (compare(dstRGB.mWhitePoint, ILLUMINANT_D50)) {
+                        return dstRGB.getInverseTransform();
+                    }
+                    float[] dstXYZ = xyYToXyz(dstRGB.mWhitePoint);
+                    float[] dstAdaptation = chromaticAdaptation(
+                            Adaptation.BRADFORD.mTransform, dstXYZ,
+                            Arrays.copyOf(ILLUMINANT_D50_XYZ, 3));
+                    return inverse3x3(mul3x3(dstAdaptation, dstRGB.mTransform));
+                } else {
+                    assert dstIsXYZ && !srcIsXYZ;
+                    if (compare(srcRGB.mWhitePoint, ILLUMINANT_D50)) {
+                        return srcRGB.getTransform();
+                    }
+                    float[] srcXYZ = xyYToXyz(srcRGB.mWhitePoint);
+                    float[] srcAdaptation = chromaticAdaptation(
+                            Adaptation.BRADFORD.mTransform, srcXYZ,
+                            Arrays.copyOf(ILLUMINANT_D50_XYZ, 3));
+                    return mul3x3(srcAdaptation, srcRGB.mTransform);
+                }
+            }
         }
 
         /**
@@ -3775,7 +3819,7 @@ public abstract class ColorSpace {
          */
         @Nonnull
         static Connector identity(@Nonnull ColorSpace source) {
-            return new Connector(source, source, RenderIntent.RELATIVE) {
+            return new Connector(source, source, source, source, RenderIntent.RELATIVE, null) {
                 @Nonnull
                 @Override
                 public float[] transform(@Nonnull @Size(min = 3) float[] v) {

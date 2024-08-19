@@ -1,27 +1,27 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.ops.OpsTask;
+import icyllis.arc3d.engine.trash.ops.OpsTask;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * modify its target proxy's contents. (e.g., an {@link OpsTask} that executes a command buffer,
  * a {@link TextureResolveTask} that regenerates mipmaps, etc.)
  */
+@Deprecated
 public abstract class RenderTask extends RefCnt {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
@@ -265,7 +266,7 @@ public abstract class RenderTask extends RefCnt {
         return (mFlags & SKIPPABLE_FLAG) != 0;
     }
 
-    public final void addDependency(TextureProxy dependency, int samplerState) {
+    public final void addDependency(SurfaceProxy dependency, int samplerState) {
         assert (mTaskManager.getContext().isOwnerThread());
         assert (!isClosed());
 
@@ -292,20 +293,27 @@ public abstract class RenderTask extends RefCnt {
 
         int resolveFlags = 0;
 
-        if (dependency.isManualMSAAResolve() && dependency.needsResolve()) {
-            resolveFlags |= RESOLVE_FLAG_MSAA;
+        RenderTargetProxy renderTargetProxy = dependency.asRenderTargetProxy();
+        if (dependency.isManualMSAAResolve()) {
+            assert renderTargetProxy != null;
+            if (renderTargetProxy.needsResolve()) {
+                resolveFlags |= RESOLVE_FLAG_MSAA;
+            }
         }
 
-        if (SamplerState.isMipmapped(samplerState) &&
-                dependency.isMipmapped() && dependency.isMipmapsDirty()) {
-            resolveFlags |= RESOLVE_FLAG_MIPMAPS;
-        }
+        ImageViewProxy imageViewProxy = dependency.asImageProxy();
+        /*if (SamplerDesc.isMipmapped(samplerState)) {
+            assert imageViewProxy != null;
+            if (imageProxy.isMipmapped() && imageProxy.isMipmapsDirty()) {
+                resolveFlags |= RESOLVE_FLAG_MIPMAPS;
+            }
+        }*/
 
         if (resolveFlags != 0) {
             if (mTextureResolveTask == null) {
                 mTextureResolveTask = new TextureResolveTask(mTaskManager);
             }
-            mTextureResolveTask.addTexture(RefCnt.create(dependency), resolveFlags);
+            mTextureResolveTask.addResolveTarget(RefCnt.create(dependency), resolveFlags);
 
             // addProxy() should have closed the texture proxy's previous task.
             assert (dependencyTask == null ||
@@ -315,10 +323,10 @@ public abstract class RenderTask extends RefCnt {
             assert (dependencyTask == null ||
                     mTextureResolveTask.dependsOn(dependencyTask));
 
-            assert (!dependency.isManualMSAAResolve() ||
-                    !dependency.needsResolve());
-            assert (!dependency.isMipmapped() ||
-                    !dependency.isMipmapsDirty());
+            assert (renderTargetProxy == null || !renderTargetProxy.isManualMSAAResolve() ||
+                    !renderTargetProxy.needsResolve());
+            /*assert (imageProxy == null || !imageProxy.isMipmapped() ||
+                    !imageProxy.isMipmapsDirty());*/
             return;
         }
 
@@ -341,8 +349,8 @@ public abstract class RenderTask extends RefCnt {
             if (!target.isInstantiated()) {
                 return false;
             }
-            GpuTexture texture = target.getGpuTexture();
-            if (texture != null && texture.isDestroyed()) {
+            GpuSurface surface = target.getGpuSurface();
+            if (surface != null && surface.isDestroyed()) {
                 return false;
             }
         }

@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.*;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.text.FontPaint;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,19 +40,53 @@ import java.lang.annotation.RetentionPolicy;
  * dashing or blur, but contains the objects that do so.
  */
 @SuppressWarnings({"MagicConstant", "unused"})
-public class Paint extends icyllis.arc3d.core.Paint {
+public class Paint {
+
+    /**
+     * Set {@code Style} to fill, stroke, or both fill and stroke geometry.
+     * <p>
+     * The stroke and fill share all paint attributes; for instance, they are drawn with the same color.
+     * Use {@link #STROKE_AND_FILL} to avoid hitting the same pixels twice with a stroke draw and
+     * a fill draw. The default is {@link #FILL}.
+     */
+    public enum Style {
+        /**
+         * Geometry and text drawn with this style will be filled, ignoring all
+         * stroke-related settings in the paint.
+         */
+        FILL            (icyllis.arc3d.core.Paint.FILL),
+        /**
+         * Geometry and text drawn with this style will be stroked, respecting
+         * the stroke-related fields on the paint.
+         */
+        STROKE          (icyllis.arc3d.core.Paint.STROKE),
+        /**
+         * Geometry and text drawn with this style will be both filled and
+         * stroked at the same time, respecting the stroke-related fields on
+         * the paint. This mode can give unexpected results if the geometry
+         * is oriented counter-clockwise. This restriction does not apply to
+         * either FILL or STROKE.
+         */
+        FILL_AND_STROKE (icyllis.arc3d.core.Paint.FILL_AND_STROKE);
+
+        final int nativeInt;
+
+        Style(int nativeInt) {
+            this.nativeInt = nativeInt;
+        }
+    }
 
     /**
      * Geometry drawn with this style will be filled, ignoring all
      * stroke-related settings in the paint.
      */
-    public static final int FILL = icyllis.arc3d.core.Paint.FILL;
+    public static final int FILL = 0x00;
 
     /**
      * Geometry drawn with this style will be stroked, respecting
      * the stroke-related fields on the paint.
      */
-    public static final int STROKE = icyllis.arc3d.core.Paint.STROKE;
+    public static final int STROKE = 0x01;
 
     /**
      * Geometry (path) drawn with this style will be both filled and
@@ -61,39 +95,160 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * are drawn with the same color. Use this to avoid hitting the same
      * pixels twice with a stroke draw and a fill draw.
      */
-    public static final int FILL_AND_STROKE = icyllis.arc3d.core.Paint.FILL_AND_STROKE;
+    public static final int STROKE_AND_FILL = 0x02;
+    public static final int FILL_AND_STROKE = 0x02;
+
+    private static final int STYLE_SHIFT = 0;
+    private static final int STYLE_MASK = 0x03;
+
+    /**
+     * The {@code Cap} specifies the treatment for the beginning and ending of
+     * stroked lines and paths. The default is {@link #ROUND}.
+     */
+    public enum Cap {
+        /**
+         * The stroke ends with the path, and does not project beyond it.
+         */
+        BUTT    (icyllis.arc3d.core.Paint.CAP_BUTT),
+        /**
+         * The stroke projects out as a semicircle, with the center at the
+         * end of the path.
+         */
+        ROUND   (icyllis.arc3d.core.Paint.CAP_ROUND),
+        /**
+         * The stroke projects out as a square, with the center at the end
+         * of the path.
+         */
+        SQUARE  (icyllis.arc3d.core.Paint.CAP_SQUARE);
+
+        final int nativeInt;
+
+        Cap(int nativeInt) {
+            this.nativeInt = nativeInt;
+        }
+    }
 
     /**
      * The stroke ends with the path, and does not project beyond it.
      */
-    public static final int CAP_BUTT = icyllis.arc3d.core.Paint.CAP_BUTT;
+    public static final int CAP_BUTT = 0x00;
 
     /**
      * The stroke projects out as a semicircle, with the center at the
      * end of the path.
      */
-    public static final int CAP_ROUND = icyllis.arc3d.core.Paint.CAP_ROUND;
+    public static final int CAP_ROUND = 0x04;
 
     /**
      * The stroke projects out as a square, with the center at the end
      * of the path.
      */
-    public static final int CAP_SQUARE = icyllis.arc3d.core.Paint.CAP_SQUARE;
+    public static final int CAP_SQUARE = 0x08;
+
+    private static final int CAP_SHIFT = 2;
+    private static final int CAP_MASK = 0x0C;
+
+    /**
+     * The {@code Join} specifies the treatment where lines and curve segments
+     * join on a stroked path. The default is {@link #ROUND}.
+     * <p>
+     * {@code Join} affects the four corners of a stroked rectangle, and the connected segments
+     * in a stroked path.
+     * <p>
+     * Choose miter join to draw sharp corners. Choose round join to draw a circle with a
+     * radius equal to the stroke width on top of the corner. Choose bevel join to minimally
+     * connect the thick strokes.
+     * <p>
+     * The fill path constructed to describe the stroked path respects the join setting but may
+     * not contain the actual join. For instance, a fill path constructed with round joins does
+     * not necessarily include circles at each connected segment.
+     */
+    public enum Join {
+        /**
+         * The outer edges of a join meet at a sharp angle
+         */
+        MITER   (icyllis.arc3d.core.Paint.JOIN_MITER),
+        /**
+         * The outer edges of a join meet in a circular arc.
+         */
+        ROUND   (icyllis.arc3d.core.Paint.JOIN_ROUND),
+        /**
+         * The outer edges of a join meet with a straight line
+         */
+        BEVEL   (icyllis.arc3d.core.Paint.JOIN_BEVEL);
+
+        final int nativeInt;
+
+        Join(int nativeInt) {
+            this.nativeInt = nativeInt;
+        }
+    }
 
     /**
      * The outer edges of a join meet at a sharp angle
      */
-    public static final int JOIN_MITER = icyllis.arc3d.core.Paint.JOIN_MITER;
+    public static final int JOIN_MITER = 0x00;
 
     /**
      * The outer edges of a join meet in a circular arc.
      */
-    public static final int JOIN_ROUND = icyllis.arc3d.core.Paint.JOIN_ROUND;
+    public static final int JOIN_ROUND = 0x10;
 
     /**
      * The outer edges of a join meet with a straight line
      */
-    public static final int JOIN_BEVEL = icyllis.arc3d.core.Paint.JOIN_BEVEL;
+    public static final int JOIN_BEVEL = 0x20;
+
+    private static final int JOIN_SHIFT = 4;
+    private static final int JOIN_MASK = 0x30;
+
+    /**
+     * The {@code Align} specifies the treatment where the stroke is placed in relation
+     * to the object edge, this only applies to closed contours. The default is
+     * {@link #CENTER}.
+     */
+    @ApiStatus.Experimental
+    public enum Align {
+        /**
+         * The stroke is aligned to center.
+         */
+        CENTER   (icyllis.arc3d.core.Paint.ALIGN_CENTER),
+        /**
+         * The stroke is aligned to inside.
+         */
+        INSIDE   (icyllis.arc3d.core.Paint.ALIGN_INSIDE),
+        /**
+         * The stroke is aligned to outside.
+         */
+        OUTSIDE  (icyllis.arc3d.core.Paint.ALIGN_OUTSIDE);
+
+        final int nativeInt;
+
+        Align(int nativeInt) {
+            this.nativeInt = nativeInt;
+        }
+    }
+
+    /**
+     * The stroke is aligned to center.
+     */
+    @ApiStatus.Experimental
+    public static final int ALIGN_CENTER = 0x00;
+
+    /**
+     * The stroke is aligned to inside.
+     */
+    @ApiStatus.Experimental
+    public static final int ALIGN_INSIDE = 0x40;
+
+    /**
+     * The stroke is aligned to outside.
+     */
+    @ApiStatus.Experimental
+    public static final int ALIGN_OUTSIDE = 0x80;
+
+    private static final int ALIGN_SHIFT = 6;
+    private static final int ALIGN_MASK = 0xC0;
 
     @ApiStatus.Internal
     @MagicConstant(intValues = {
@@ -126,19 +281,33 @@ public class Paint extends icyllis.arc3d.core.Paint {
     public static final int FONT_STYLE_MASK = NORMAL | BOLD | ITALIC;
 
     static final int TEXT_ANTI_ALIAS_DEFAULT = 0x0;
-    static final int TEXT_ANTI_ALIAS_OFF = 0x8;
-    static final int TEXT_ANTI_ALIAS_ON = 0xC;
+    static final int TEXT_ANTI_ALIAS_OFF = 0x4;
+    static final int TEXT_ANTI_ALIAS_ON = 0x8;
     static final int TEXT_ANTI_ALIAS_MASK = 0xC;
 
     public static final int LINEAR_TEXT_FLAG = 0x10;
+
+    static final int FILTER_MODE_SHIFT = 5;
+    static final int FILTER_MODE_MASK = 0x20;
+
+    static final int MIPMAP_MODE_SHIFT = 6;
+    static final int MIPMAP_MODE_MASK = 0xC0;
+
+    static final int DEFAULT_FLAGS = NORMAL | (ImageShader.FILTER_MODE_LINEAR << FILTER_MODE_SHIFT);
 
     // the recycle bin, see obtain()
     private static final Paint[] sPool = new Paint[8];
     @GuardedBy("sPool")
     private static int sPoolSize;
 
+    // closed by cleaner
+    private final icyllis.arc3d.core.Paint mPaint;
+
+    private Shader          mShader;
+    private ColorFilter     mColorFilter;
+
     // style + rendering hints (+ text decoration)
-    protected int mFontFlags;
+    protected int mFlags;
     protected float mFontSize;
 
     /**
@@ -147,7 +316,9 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @see #obtain()
      */
     public Paint() {
-        super();
+        mPaint = new icyllis.arc3d.core.Paint();
+        internalReset();
+        Core.registerNativeResource(this, mPaint);
     }
 
     /**
@@ -157,8 +328,16 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @param paint Existing paint used to initialize the attributes of the
      *              new paint.
      */
+    @SuppressWarnings("IncompleteCopyConstructor")
     public Paint(@Nullable Paint paint) {
-        set(paint);
+        if (paint == null) {
+            mPaint = new icyllis.arc3d.core.Paint();
+            internalReset();
+        } else {
+            mPaint = new icyllis.arc3d.core.Paint(paint.mPaint);
+            internalSetFrom(paint);
+        }
+        Core.registerNativeResource(this, mPaint);
     }
 
     /**
@@ -218,11 +397,9 @@ public class Paint extends icyllis.arc3d.core.Paint {
     /**
      * Set all contents of this paint to their initial values.
      */
-    @Override
     public void reset() {
-        super.reset();
-        mFontFlags = NORMAL;
-        mFontSize = 16;
+        mPaint.reset();
+        internalReset();
     }
 
     /**
@@ -230,13 +407,30 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param paint the paint to set this paint from
      */
-    public void set(Paint paint) {
-        super.set(paint);
-        if (paint != null) {
-            mFontFlags = paint.mFontFlags;
-            mFontSize = paint.mFontSize;
+    public void set(@Nullable Paint paint) {
+        if (paint == null) {
+            reset();
+        } else if (this != paint) {
+            mPaint.set(paint.mPaint);
+            internalSetFrom(paint);
         }
     }
+
+    private void internalReset() {
+        mShader = null;
+        mColorFilter = null;
+        mFlags = DEFAULT_FLAGS;
+        mFontSize = 16;
+    }
+
+    private void internalSetFrom(@NonNull Paint paint) {
+        mShader = paint.mShader;
+        mColorFilter = paint.mColorFilter;
+        mFlags = paint.mFlags;
+        mFontSize = paint.mFontSize;
+    }
+
+    ///// Solid Color
 
     /**
      * Return the paint's solid color in sRGB. Note that the color is a 32-bit value
@@ -245,9 +439,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @return the paint's color (and alpha).
      */
-    @Override
     public int getColor() {
-        return super.getColor();
+        return mPaint.getColor();
     }
 
     /**
@@ -257,9 +450,53 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param color the new color (including alpha) to set in the paint.
      */
-    @Override
-    public void setColor(int color) {
-        super.setColor(color);
+    public void setColor(@ColorInt int color) {
+        mPaint.setColor(color);
+    }
+
+    /**
+     * Returns alpha and RGB used when stroking and filling. The color is four floating
+     * point values, un-premultiplied. The color values are interpreted as being in
+     * the sRGB color space.
+     *
+     * @return a new float array that contains r,g,b,a values
+     */
+    @NonNull
+    @Size(4)
+    public float[] getColor4f() {
+        return new float[]{mPaint.r(), mPaint.g(), mPaint.b(), mPaint.a()};
+    }
+
+    /**
+     * Returns alpha and RGB used when stroking and filling. The color is four floating
+     * point values, un-premultiplied. The color values are interpreted as being in
+     * the sRGB color space.
+     *
+     * @param dst a non-null array of 4 floats that will hold the result of the method
+     * @return the passed float array that contains r,g,b,a values
+     */
+    @NonNull
+    @Size(4)
+    public float[] getColor4f(@NonNull @Size(4) float[] dst) {
+        dst[0] = mPaint.r();
+        dst[1] = mPaint.g();
+        dst[2] = mPaint.b();
+        dst[3] = mPaint.a();
+        return dst;
+    }
+
+    /**
+     * Sets alpha and RGB used when stroking and filling. The color is four floating
+     * point values, un-premultiplied. The color values are interpreted as being in
+     * the sRGB color space.
+     *
+     * @param r the new red component (0..1) of the paint's color.
+     * @param g the new green component (0..1) of the paint's color.
+     * @param b the new blue component (0..1) of the paint's color.
+     * @param a the new alpha component (0..1) of the paint's color.
+     */
+    public void setColor4f(float r, float g, float b, float a) {
+        mPaint.setColor4f(r, g, b, a);
     }
 
     /**
@@ -269,9 +506,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @return the alpha component of the paint's color.
      */
-    @Override
     public int getAlpha() {
-        return super.getAlpha();
+        return mPaint.getAlpha();
     }
 
     /**
@@ -280,9 +516,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param a the alpha component [0..255] of the paint's color
      */
-    @Override
     public void setAlpha(int a) {
-        super.setAlpha(a);
+        mPaint.setAlpha(a);
     }
 
     /**
@@ -290,9 +525,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
-    @Override
     public float getAlphaF() {
-        return super.getAlphaF();
+        return mPaint.getAlphaF();
     }
 
     /**
@@ -303,35 +537,96 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param a the alpha component [0..1] of the paint's color
      */
-    @Override
     public void setAlphaF(float a) {
-        super.setAlphaF(a);
+        mPaint.setAlphaF(a);
     }
 
     /**
-     * Helper to setColor(), that takes <code>a,r,g,b</code> and constructs the color int.
-     *
-     * @param a the new alpha component (0..255) of the paint's color.
-     * @param r the new red component (0..255) of the paint's color.
-     * @param g the new green component (0..255) of the paint's color.
-     * @param b the new blue component (0..255) of the paint's color.
-     */
-    @Override
-    public void setARGB(int a, int r, int g, int b) {
-        super.setARGB(a, r, g, b);
-    }
-
-    /**
-     * Helper to setColor(), that takes floating point <code>a,r,g,b</code> values.
+     * Sets alpha and RGB used when stroking and filling. The color is four floating
+     * point values, un-premultiplied. The color values are interpreted as being in
+     * the sRGB color space.
      *
      * @param r the new red component (0..1) of the paint's color.
      * @param g the new green component (0..1) of the paint's color.
      * @param b the new blue component (0..1) of the paint's color.
      * @param a the new alpha component (0..1) of the paint's color.
      */
-    @Override
-    public void setARGB(float a, float r, float g, float b) {
-        super.setARGB(a, r, g, b);
+    public final void setRGBA(float r, float g, float b, float a) {
+        setColor4f(r, g, b, a);
+    }
+
+    /**
+     * Sets color used when drawing solid fills. The color components range from 0 to 255.
+     * The color is un-premultiplied; alpha sets the transparency independent of RGB.
+     *
+     * @param r amount of red, from no red (0) to full red (255)
+     * @param g amount of green, from no green (0) to full green (255)
+     * @param b amount of blue, from no blue (0) to full blue (255)
+     * @param a amount of alpha, from fully transparent (0) to fully opaque (255)
+     */
+    public void setRGBA(int r, int g, int b, int a) {
+        mPaint.setRGBA(r, g, b, a);
+    }
+
+    /**
+     * Sets color used when drawing solid fills. The color components range from 0 to 255.
+     * The color is un-premultiplied; alpha sets the transparency independent of RGB.
+     *
+     * @param a amount of alpha, from fully transparent (0) to fully opaque (255)
+     * @param r amount of red, from no red (0) to full red (255)
+     * @param g amount of green, from no green (0) to full green (255)
+     * @param b amount of blue, from no blue (0) to full blue (255)
+     */
+    public void setARGB(int a, int r, int g, int b) {
+        mPaint.setARGB(a, r, g, b);
+    }
+
+    ///// Basic Flags
+
+    /**
+     * Returns true if antialiasing should be used.
+     * The default value is true.
+     *
+     * @return anti-aliasing state
+     * @see #setAntiAlias(boolean)
+     */
+    public boolean isAntiAlias() {
+        return mPaint.isAntiAlias();
+    }
+
+    /**
+     * Sets a hint that indicates if antialiasing should be used. An implementation
+     * may use analytic method by computing geometry's coverage, distance-to-edge
+     * method by computing signed distance field, or multisampling to do antialiasing.
+     * If true, the AA step is calculated in screen space. The default value is true.
+     *
+     * @param aa setting for anti-aliasing
+     */
+    public void setAntiAlias(boolean aa) {
+        mPaint.setAntiAlias(aa);
+    }
+
+    /**
+     * Returns true if color error may be distributed to smooth color transition.
+     * An implementation may use a bayer matrix or blue noise texture to do dithering.
+     * The default value is false.
+     *
+     * @return dithering state
+     * @see #setDither(boolean)
+     */
+    public boolean isDither() {
+        return mPaint.isDither();
+    }
+
+    /**
+     * Sets a hint that indicates if color error may be distributed to smooth color transition.
+     * An implementation may use a bayer matrix or blue noise texture to do dithering.
+     * The default value is false.
+     *
+     * @param dither setting for dithering
+     */
+    public void setDither(boolean dither) {
+        mPaint.setDither(dither);
     }
 
     /**
@@ -341,10 +636,19 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @return the paint's style setting (fill, stroke or both)
      * @see #setStyle(int)
      */
-    @Style
-    @Override
+    @MagicConstant(intValues = {FILL, STROKE, STROKE_AND_FILL, FILL_AND_STROKE})
     public int getStyle() {
-        return super.getStyle();
+        return mPaint.getStyle() << STYLE_SHIFT;
+    }
+
+    /**
+     * Sets the paint's style, used for controlling how primitives' geometries
+     * are interpreted, except where noted. The default is {@link Style#FILL}.
+     *
+     * @param style the new style to set in the paint
+     */
+    public void setStyle(@NonNull Style style) {
+        mPaint.setStyle(style.nativeInt);
     }
 
     /**
@@ -353,9 +657,19 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param style the new style to set in the paint
      */
-    @Override
-    public void setStyle(@Style int style) {
-        super.setStyle(style);
+    public void setStyle(@MagicConstant(intValues = {FILL, STROKE, STROKE_AND_FILL, FILL_AND_STROKE}) int style) {
+        mPaint.setStyle((style & STYLE_MASK) >>> STYLE_SHIFT);
+    }
+
+    ///// Stroke Parameters
+
+    /**
+     * Sets paint's style to STROKE if true, or FILL if false.
+     *
+     * @param stroke true to stroke shapes, false to fill shapes
+     */
+    public void setStroke(boolean stroke) {
+        setStyle(stroke ? icyllis.arc3d.core.Paint.STROKE : icyllis.arc3d.core.Paint.FILL);
     }
 
     /**
@@ -366,10 +680,20 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @return the line cap style for the paint
      * @see #setStrokeCap(int)
      */
-    @Cap
-    @Override
+    @MagicConstant(intValues = {CAP_BUTT, CAP_ROUND, CAP_SQUARE})
     public int getStrokeCap() {
-        return super.getStrokeCap();
+        return mPaint.getStrokeCap() << CAP_SHIFT;
+    }
+
+    /**
+     * Sets the paint's cap type, controlling how the start and end of stroked
+     * lines and paths are treated, except where noted.
+     * The default is {@link Cap#ROUND}.
+     *
+     * @param cap set the paint's line cap style
+     */
+    public void setStrokeCap(@NonNull Cap cap) {
+        mPaint.setStrokeCap(cap.nativeInt);
     }
 
     /**
@@ -379,9 +703,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param cap set the paint's line cap style
      */
-    @Override
-    public void setStrokeCap(@Cap int cap) {
-        super.setStrokeCap(cap);
+    public void setStrokeCap(@MagicConstant(intValues = {CAP_BUTT, CAP_ROUND, CAP_SQUARE}) int cap) {
+        mPaint.setStrokeCap((cap & CAP_MASK) >>> CAP_SHIFT);
     }
 
     /**
@@ -390,10 +713,18 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @return the paint's Join
      * @see #setStrokeJoin(int)
      */
-    @Join
-    @Override
+    @MagicConstant(intValues = {JOIN_MITER, JOIN_ROUND, JOIN_BEVEL})
     public int getStrokeJoin() {
-        return super.getStrokeJoin();
+        return mPaint.getStrokeJoin() << JOIN_SHIFT;
+    }
+
+    /**
+     * Sets the paint's stroke join type. The default is {@link Join#ROUND}.
+     *
+     * @param join set the paint's Join
+     */
+    public void setStrokeJoin(@NonNull Join join) {
+        mPaint.setStrokeJoin(join.nativeInt);
     }
 
     /**
@@ -401,32 +732,64 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param join set the paint's Join
      */
-    @Override
-    public void setStrokeJoin(@Join int join) {
-        super.setStrokeJoin(join);
+    public void setStrokeJoin(@MagicConstant(intValues = {JOIN_MITER, JOIN_ROUND, JOIN_BEVEL}) int join) {
+        mPaint.setStrokeJoin((join & JOIN_MASK) >>> JOIN_SHIFT);
     }
 
     /**
-     * Returns the thickness of the pen for stroking shapes. The default value is 2.0 px.
+     * Returns the paint's stroke align type. The default is {@link #ALIGN_CENTER}.
+     * Note that this only applies to closed contours, otherwise stroking behaves
+     * as {@link #ALIGN_CENTER}.
+     *
+     * @return the paint's Align
+     * @see #setStrokeAlign(int)
+     */
+    @MagicConstant(intValues = {ALIGN_CENTER, ALIGN_INSIDE, ALIGN_OUTSIDE})
+    public int getStrokeAlign() {
+        return mPaint.getStrokeAlign() << ALIGN_SHIFT;
+    }
+
+    /**
+     * Sets the paint's stroke align type. The default is {@link Align#CENTER}.
+     * Note that this only applies to closed contours, otherwise stroking behaves
+     * as {@link Align#CENTER}.
+     *
+     * @param align set the paint's Align
+     */
+    public void setStrokeAlign(@NonNull Align align) {
+        mPaint.setStrokeAlign(align.nativeInt);
+    }
+
+    /**
+     * Sets the paint's stroke align type. The default is {@link #ALIGN_CENTER}.
+     * Note that this only applies to closed contours, otherwise stroking behaves
+     * as {@link #ALIGN_CENTER}.
+     *
+     * @param align set the paint's Align
+     */
+    public void setStrokeAlign(@MagicConstant(intValues = {ALIGN_CENTER, ALIGN_INSIDE, ALIGN_OUTSIDE}) int align) {
+        mPaint.setStrokeAlign((align & ALIGN_MASK) >>> ALIGN_SHIFT);
+    }
+
+    /**
+     * Returns the thickness of the pen for stroking shapes. The default value is 1.0 px.
      *
      * @return the paint's stroke width; zero for hairline, greater than zero for pen thickness
      * @see #setStrokeWidth(float)
      */
-    @Override
     public float getStrokeWidth() {
-        return super.getStrokeWidth();
+        return mPaint.getStrokeWidth();
     }
 
     /**
-     * Sets the thickness of the pen for stroking shapes. The default value is 2.0 px.
+     * Sets the thickness of the pen for stroking shapes. The default value is 1.0 px.
      * A stroke width of zero is treated as "hairline" width. Hairlines are always exactly one
      * pixel wide in screen space (their thickness does not change as the canvas is scaled).
      *
      * @param width set the paint's stroke width; zero for hairline, greater than zero for pen thickness
      */
-    @Override
     public void setStrokeWidth(float width) {
-        super.setStrokeWidth(width);
+        mPaint.setStrokeWidth(width);
     }
 
     /**
@@ -436,9 +799,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @return zero and greater miter limit
      * @see #setStrokeMiter(float)
      */
-    @Override
     public float getStrokeMiter() {
-        return super.getStrokeMiter();
+        return mPaint.getStrokeMiter();
     }
 
     /**
@@ -447,10 +809,11 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param miter zero and greater miter limit
      */
-    @Override
     public void setStrokeMiter(float miter) {
-        super.setStrokeMiter(miter);
+        mPaint.setStrokeMiter(miter);
     }
+
+    ///// Effects
 
     /**
      * Returns optional colors used when filling a path, such as a gradient.
@@ -458,9 +821,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @return Shader if previously set, null otherwise
      */
     @Nullable
-    @Override
     public Shader getShader() {
-        return super.getShader();
+        return mShader;
     }
 
     /**
@@ -468,9 +830,10 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param shader how geometry is filled with color; if null, solid color is used instead
      */
-    @Override
     public void setShader(@Nullable Shader shader) {
-        super.setShader(shader);
+        if (mShader != shader) {
+            mShader = shader;
+        }
     }
 
     /**
@@ -479,9 +842,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @return ColorFilter if previously set, null otherwise
      */
     @Nullable
-    @Override
     public ColorFilter getColorFilter() {
-        return super.getColorFilter();
+        return mColorFilter;
     }
 
     /**
@@ -489,9 +851,13 @@ public class Paint extends icyllis.arc3d.core.Paint {
      *
      * @param colorFilter ColorFilter to apply to subsequent draw
      */
-    @Override
     public void setColorFilter(@Nullable ColorFilter colorFilter) {
-        super.setColorFilter(colorFilter);
+        if (mColorFilter != colorFilter) {
+            mColorFilter = colorFilter;
+            mPaint.setColorFilter(colorFilter != null
+                    ? RefCnt.create(colorFilter.getNativeColorFilter())
+                    : null);
+        }
     }
 
     /**
@@ -501,8 +867,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @return the paint's blend mode used to combine source color with destination color
      */
     @Nullable
-    public final BlendMode getBlendMode() {
-        var mode = getBlendModeDirect(this);
+    public BlendMode getBlendMode() {
+        var mode = mPaint.getBlendMode();
         return mode != null ? BlendMode.VALUES[mode.ordinal()] : null;
     }
 
@@ -516,52 +882,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @param mode the blend mode to be installed in the paint, may be null
      * @see BlendMode
      */
-    public final void setBlendMode(@Nullable BlendMode mode) {
-        setBlender(mode != null ? mode.mBlendMode : null);
-    }
-
-    /**
-     * Returns MaskFilter if set, or null.
-     *
-     * @return MaskFilter if previously set, null otherwise
-     */
-    @Nullable
-    @Override
-    public MaskFilter getMaskFilter() {
-        return super.getMaskFilter();
-    }
-
-    /**
-     * Sets MaskFilter, pass null to clear MaskFilter and leave MaskFilter effect on
-     * mask alpha unaltered.
-     *
-     * @param maskFilter modifies clipping mask generated from drawn geometry
-     */
-    @Override
-    public void setMaskFilter(@Nullable MaskFilter maskFilter) {
-        super.setMaskFilter(maskFilter);
-    }
-
-    /**
-     * Returns ImageFilter if set, or null.
-     *
-     * @return ImageFilter if previously set, null otherwise
-     */
-    @Nullable
-    @Override
-    public ImageFilter getImageFilter() {
-        return super.getImageFilter();
-    }
-
-    /**
-     * Sets ImageFilter, pass null to clear ImageFilter, and remove ImageFilter effect
-     * on drawing.
-     *
-     * @param imageFilter how Image is sampled when transformed
-     */
-    @Override
-    public void setImageFilter(@Nullable ImageFilter imageFilter) {
-        super.setImageFilter(imageFilter);
+    public void setBlendMode(@Nullable BlendMode mode) {
+        mPaint.setBlendMode(mode != null ? mode.getNativeBlendMode() : null);
     }
 
     /**
@@ -575,7 +897,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
     }
 
     public int getFontStyle() {
-        return mFontFlags & FONT_STYLE_MASK;
+        return mFlags & FONT_STYLE_MASK;
     }
 
     /**
@@ -592,9 +914,9 @@ public class Paint extends icyllis.arc3d.core.Paint {
 
     public void setFontStyle(int fontStyle) {
         if ((fontStyle & ~FONT_STYLE_MASK) == 0) {
-            mFontFlags |= fontStyle;
+            mFlags |= fontStyle;
         } else {
-            mFontFlags &= ~FONT_STYLE_MASK;
+            mFlags &= ~FONT_STYLE_MASK;
         }
     }
 
@@ -643,7 +965,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
     }
 
     public boolean isTextAntiAlias() {
-        return switch (mFontFlags & TEXT_ANTI_ALIAS_MASK) {
+        return switch (mFlags & TEXT_ANTI_ALIAS_MASK) {
             case TEXT_ANTI_ALIAS_ON -> true;
             case TEXT_ANTI_ALIAS_OFF -> false;
             default -> isAntiAlias();
@@ -651,7 +973,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
     }
 
     public void setTextAntiAlias(boolean textAntiAlias) {
-        mFontFlags = (mFontFlags & ~TEXT_ANTI_ALIAS_MASK) |
+        mFlags = (mFlags & ~TEXT_ANTI_ALIAS_MASK) |
                 (textAntiAlias ? TEXT_ANTI_ALIAS_ON : TEXT_ANTI_ALIAS_OFF);
     }
 
@@ -659,7 +981,7 @@ public class Paint extends icyllis.arc3d.core.Paint {
      * @return whether to enable linear text
      */
     public boolean isLinearText() {
-        return (mFontFlags & LINEAR_TEXT_FLAG) != 0;
+        return (mFlags & LINEAR_TEXT_FLAG) != 0;
     }
 
     /**
@@ -677,16 +999,71 @@ public class Paint extends icyllis.arc3d.core.Paint {
      */
     public void setLinearText(boolean linearText) {
         if (linearText) {
-            mFontFlags &= ~LINEAR_TEXT_FLAG;
+            mFlags &= ~LINEAR_TEXT_FLAG;
         } else {
-            mFontFlags |= LINEAR_TEXT_FLAG;
+            mFlags |= LINEAR_TEXT_FLAG;
         }
+    }
+
+    ///// Sampler Parameters
+
+    /**
+     * Returns the current filter. The default is {@link ImageShader#FILTER_MODE_LINEAR}.
+     * The value is ignored when anisotropic filtering is used.
+     *
+     * @return the current filter
+     * @see #setFilterMode(int)
+     */
+    @ImageShader.FilterMode
+    public final int getFilterMode() {
+        return (mFlags & FILTER_MODE_MASK) >>> FILTER_MODE_SHIFT;
+    }
+
+    /**
+     * Set the interpolation method for sampling texture images.
+     * The default is {@link ImageShader#FILTER_MODE_LINEAR}.
+     * Calling this method does NOT affect anisotropic filtering.
+     *
+     * @param filter the paint's filter
+     * @see #getFilterMode()
+     */
+    public final void setFilterMode(@ImageShader.FilterMode int filter) {
+        mFlags = (mFlags & ~FILTER_MODE_MASK) | ((filter << FILTER_MODE_SHIFT) & FILTER_MODE_MASK);
+    }
+
+    /**
+     * Returns the mipmap mode. The value is ignored when anisotropic filtering is used.
+     * The default is {@link ImageShader#MIPMAP_MODE_NONE}.
+     *
+     * @return the mipmap mode
+     */
+    @ImageShader.MipmapMode
+    public final int getMipmapMode() {
+        return (mFlags & MIPMAP_MODE_MASK) >>> MIPMAP_MODE_SHIFT;
+    }
+
+    /**
+     * Set the mipmap mode for sampling texture images. The value is ignored when
+     * anisotropic filtering is used. The default is {@link ImageShader#MIPMAP_MODE_NONE}.
+     *
+     * @param mipmap the mipmap mode
+     */
+    public final void setMipmapMode(@ImageShader.MipmapMode int mipmap) {
+        mFlags = (mFlags & ~MIPMAP_MODE_MASK) | ((mipmap << MIPMAP_MODE_SHIFT) & MIPMAP_MODE_MASK);
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public icyllis.arc3d.core.Paint getNativePaint() {
+        return mPaint;
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + mFontFlags;
+        int result = mPaint.hashCode();
+        result = 31 * result + mFlags;
         result = 31 * result + Float.hashCode(mFontSize);
         return result;
     }
@@ -695,8 +1072,8 @@ public class Paint extends icyllis.arc3d.core.Paint {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Paint paint)) return false;
-        return super.equals(paint) &&
-                mFontFlags == paint.mFontFlags &&
+        return mPaint.equals(paint.mPaint) &&
+                mFlags == paint.mFlags &&
                 mFontSize == paint.mFontSize;
     }
 }

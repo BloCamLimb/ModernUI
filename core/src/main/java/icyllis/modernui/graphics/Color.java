@@ -414,7 +414,7 @@ public class Color {
     @ApiStatus.Internal
     @ColorInt
     public static int blend(@NonNull BlendMode mode, @ColorInt int src, @ColorInt int dst) {
-        return icyllis.arc3d.core.Color.blend(mode.nativeBlendMode(), src, dst);
+        return icyllis.arc3d.core.Color.blend(mode.getNativeBlendMode(), src, dst);
     }
 
     @ApiStatus.Internal

@@ -20,7 +20,7 @@ package icyllis.modernui.core;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ContextOptions;
-import icyllis.arc3d.engine.DirectContext;
+import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.vulkan.VkBackendContext;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -308,7 +308,7 @@ public final class VulkanManager implements AutoCloseable {
 
     @Nullable
     @SharedPtr
-    public DirectContext createContext(@NonNull ContextOptions options) {
+    public ImmediateContext createContext(@NonNull ContextOptions options) {
         VkBackendContext backendContext = new VkBackendContext();
         backendContext.mInstance = mInstance;
         backendContext.mPhysicalDevice = mPhysicalDevice;
@@ -316,7 +316,7 @@ public final class VulkanManager implements AutoCloseable {
         //TODO
         backendContext.mGraphicsQueueIndex = mGraphicsQueueIndex;
         backendContext.mDeviceFeatures2 = mPhysicalDeviceFeatures2;
-        return DirectContext.makeVulkan(backendContext, options);
+        return ImmediateContext.makeVulkan(backendContext, options);
     }
 
     @Override

@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.arc3d.engine.DirectContext;
 import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.opengl.GLDevice;
 import icyllis.arc3d.opengl.GLTexture;
 import icyllis.modernui.ModernUI;
@@ -246,7 +246,7 @@ public class GlyphManager {
             long key = computeGlyphKey(awtFont, glyphId);
             if (mFontAtlas == null) {
                 // we use mipmapping and SDF, so 2px width border around it
-                DirectContext context = Core.requireDirectContext();
+                ImmediateContext context = Core.requireImmediateContext();
                 mFontAtlas = new GLFontAtlas(context, Engine.MASK_FORMAT_A8, GLYPH_BORDER);
                 mDevice = (GLDevice) context.getDevice();
             }
@@ -265,7 +265,7 @@ public class GlyphManager {
             long key = computeEmojiKey(emojiFont, glyphId);
             if (mEmojiAtlas == null) {
                 // we assume emoji images have a border, and no additional border
-                DirectContext context = Core.requireDirectContext();
+                ImmediateContext context = Core.requireImmediateContext();
                 mEmojiAtlas = new GLFontAtlas(context, Engine.MASK_FORMAT_ARGB, 0);
                 mDevice = (GLDevice) context.getDevice();
             }

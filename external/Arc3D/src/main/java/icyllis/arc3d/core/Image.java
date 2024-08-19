@@ -1,25 +1,25 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
 
-import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.engine.Context;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -60,10 +60,20 @@ public abstract class Image extends RefCnt {
         return mInfo.height();
     }
 
+    public void getBounds(Rect2i bounds) {
+        bounds.set(0, 0, mInfo.width(), mInfo.height());
+    }
+
+    public void getBounds(Rect2f bounds) {
+        bounds.set(0, 0, mInfo.width(), mInfo.height());
+    }
+
+    @ColorInfo.ColorType
     public int getColorType() {
         return mInfo.colorType();
     }
 
+    @ColorInfo.AlphaType
     public int getAlphaType() {
         return mInfo.alphaType();
     }
@@ -73,13 +83,17 @@ public abstract class Image extends RefCnt {
         return mInfo.colorSpace();
     }
 
+    public boolean isAlphaOnly() {
+        return ColorInfo.colorTypeIsAlphaOnly(getColorType());
+    }
+
     @ApiStatus.Internal
     @Nullable
-    public RecordingContext getContext() {
+    public Context getContext() {
         return null;
     }
 
-    public abstract boolean isValid(@Nullable RecordingContext context);
+    public abstract boolean isValid(@Nullable Context context);
 
     @ApiStatus.Internal
     public boolean isRasterBacked() {
@@ -87,11 +101,11 @@ public abstract class Image extends RefCnt {
     }
 
     @ApiStatus.Internal
-    public boolean isTextureBacked() {
+    public boolean isGpuBacked() {
         return false;
     }
 
-    public long getTextureMemorySize() {
+    public long getGpuMemorySize() {
         return 0;
     }
 }

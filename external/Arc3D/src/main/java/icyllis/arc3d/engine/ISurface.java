@@ -1,71 +1,97 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.RefCounted;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
 
 /**
  * Defines Surface-hierarchy constants. Do NOT directly this class as type.
  */
-public interface ISurface extends RefCounted {
+public interface ISurface {
 
     /**
      * Surface flags shared between the Surface & SurfaceProxy class hierarchies.
+     * These flags can be used to create a surface or represent the state of the created surface.
      * An arbitrary combination of flags may result in unexpected behaviors.
      */
     int FLAG_NONE = 0;
     /**
      * Indicates whether an allocation should count against a cache budget. Budgeted when
-     * set, otherwise not budgeted.
+     * set, otherwise not budgeted. This can be used for {@link SurfaceProxy} and
+     * {@link GpuSurface} at creation-time. Since a single budgeted GPU surface can be used by
+     * multiple {@link SurfaceProxy} at different times, its budgeted state may alter
+     * (SurfaceProxy can make a budgeted GPU surface become un-budgeted).
      */
     int FLAG_BUDGETED = 1;
     /**
      * Indicates whether a backing store needs to be an exact match or can be larger than
-     * is strictly necessary. Approx fit when set, otherwise exact fit.
+     * is strictly necessary. Approx fit when set, otherwise exact fit. This is a
+     * {@link SurfaceProxy} flag and a {@link GpuSurface} at creation-time flag.
      */
     int FLAG_APPROX_FIT = 1 << 1;
     /**
-     * Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     * when set, otherwise mipmaps are not allocated.
+     * Used to say whether an image has or should have mip levels allocated or not.
+     * Mipmaps are allocated when set, otherwise mipmaps are not allocated.
      */
     int FLAG_MIPMAPPED = 1 << 2;
     /**
-     * Used to say whether a surface can be rendered to, whether a texture can be used as
-     * color attachments. Renderable when set, otherwise not renderable.
+     * Used to say whether an image can be a sampled image (i.e. a texture). This is not
+     * compatible with {@link #FLAG_MEMORYLESS}.
+     * <p>
+     * A valid SurfaceFlags should have at least one of {@link #FLAG_SAMPLED_IMAGE},
+     * {@link #FLAG_STORAGE_IMAGE} and {@link #FLAG_RENDERABLE} set.
      */
-    int FLAG_RENDERABLE = 1 << 3;
+    int FLAG_SAMPLED_IMAGE = 1 << 3;
     /**
-     * Used to say whether texture is backed by protected memory. Protected when set, otherwise
-     * not protected.
+     * Used to say whether an image can be a storage image. This is not compatible with
+     * {@link #FLAG_MEMORYLESS}.
+     */
+    int FLAG_STORAGE_IMAGE = 1 << 4;
+    /**
+     * Used to say whether a surface can be rendered to, whether an image can be used as
+     * color or depth/stencil attachments. Renderable when set, otherwise not renderable.
+     */
+    int FLAG_RENDERABLE = 1 << 5;
+    /**
+     * Used to create memoryless images, especially for MSAA attachments. If so,
+     * load op must NOT be {@link Engine.LoadOp#kLoad} and store op must NOT be
+     * {@link Engine.StoreOp#kStore}, and rendering may be efficient on TBDR GPU.
+     * This is also known as discardable and transient attachments.
+     * <p>
+     * Note: Memoryless must be {@link #FLAG_RENDERABLE} and must NOT be either
+     * {@link #FLAG_SAMPLED_IMAGE} or {@link #FLAG_STORAGE_IMAGE}.
+     */
+    int FLAG_MEMORYLESS = 1 << 6;
+    /**
+     * Used to say whether image is backed by protected memory. Protected when set, otherwise
+     * not protected. Vulkan only.
      *
      * @see <a href="https://github.com/KhronosGroup/Vulkan-Guide/blob/master/chapters/protected.adoc">
      * Protected Memory</a>
      */
-    int FLAG_PROTECTED = 1 << 4;
+    int FLAG_PROTECTED = 1 << 7;
+    // the following flags are internal only
     /**
-     * Means the pixels in the texture are read-only. {@link GpuTexture} and {@link TextureProxy}
-     * only.
+     * Means the pixels in the image are read-only. {@link Image} and {@link ImageViewProxy}
+     * only, typically for wrapped images. Read-only images cannot be renderable.
      */
     @ApiStatus.Internal
     int FLAG_READ_ONLY = FLAG_PROTECTED << 1;
@@ -77,33 +103,13 @@ public interface ISurface extends RefCounted {
     @ApiStatus.Internal
     int FLAG_SKIP_ALLOCATOR = FLAG_PROTECTED << 2;
     /**
-     * For TextureProxies created in a deferred list recording thread it is possible for the
-     * unique key to be cleared on the backing {@link GpuTexture} while the unique key remains on
+     * For {@link ImageViewProxy} created in a deferred list recording thread it is possible for the
+     * unique key to be cleared on the backing {@link Image} while the unique key remains on
      * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
-     * texture proxy is also always set on the backing {@link GpuTexture}. {@link TextureProxy} only.
+     * texture proxy is also always set on the backing {@link Image}. {@link ImageViewProxy} only.
      */
     @ApiStatus.Internal
     int FLAG_DEFERRED_PROVIDER = FLAG_PROTECTED << 3;
-    /**
-     * This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
-     * default framebuffer (id=0) that preserved by window. RT only.
-     */
-    @ApiStatus.Internal
-    int FLAG_GL_WRAP_DEFAULT_FB = FLAG_PROTECTED << 4;
-    /**
-     * This means the render target is multi-sampled, and internally holds a non-msaa texture
-     * for resolving into. The render target resolves itself by blit-ting into this internal
-     * texture. (It might or might not have the internal texture access, but if it does, we
-     * always resolve the render target before accessing this texture's data.) RT only.
-     */
-    @ApiStatus.Internal
-    int FLAG_MANUAL_MSAA_RESOLVE = FLAG_PROTECTED << 5;
-    /**
-     * This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
-     * Vulkan secondary command buffer. RT only.
-     */
-    @ApiStatus.Internal
-    int FLAG_VK_WRAP_SECONDARY_CB = FLAG_PROTECTED << 6;
 
     /**
      * Map <code>size</code> to a larger multiple of 2. Values <= 1024 will pop up to
@@ -115,8 +121,8 @@ public interface ISurface extends RefCounted {
      * @see #FLAG_APPROX_FIT
      */
     static int getApproxSize(int size) {
-        final int MIN_SCRATCH_TEXTURE_SIZE = 16;
-        size = Math.max(MIN_SCRATCH_TEXTURE_SIZE, size);
+        final int MIN_SCRATCH_IMAGE_SIZE = 16;
+        size = Math.max(MIN_SCRATCH_IMAGE_SIZE, size);
 
         if (MathUtil.isPow2(size)) {
             return size;
@@ -138,43 +144,5 @@ public interface ISurface extends RefCounted {
         }
 
         return MathUtil.alignTo(size, 4096);
-    }
-
-    /**
-     * Increases the reference count by 1 on the client pipeline.
-     */
-    void ref();
-
-    /**
-     * Decreases the reference count by 1 on the client pipeline.
-     */
-    void unref();
-
-    /**
-     * @return the width of the surface in pixels, greater than zero
-     */
-    int getWidth();
-
-    /**
-     * @return the height of the surface in pixels, greater than zero
-     */
-    int getHeight();
-
-    /**
-     * @return the backend format of the surface
-     */
-    @Nonnull
-    BackendFormat getBackendFormat();
-
-    ///// Common interface between RenderTexture and RenderSurface
-    ///// The following methods are only valid when FLAG_RENDERABLE is set
-
-    /**
-     * Returns the number of samples per pixel in color buffers (one if non-MSAA).
-     *
-     * @return the number of samples, greater than (multi-sampled) or equal to one
-     */
-    default int getSampleCount() {
-        return 1;
     }
 }

@@ -19,6 +19,8 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.arc3d.core.Strike;
+import icyllis.arc3d.core.Typeface;
+import icyllis.arc3d.core.j2d.Typeface_JDK;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
@@ -59,6 +61,7 @@ public final class OutlineFont implements Font {
     };
 
     private final java.awt.Font mFont;
+    private final Typeface_JDK mTypeface;
 
     private final SparseArray<java.awt.Font> mFonts = new SparseArray<>();
 
@@ -66,6 +69,7 @@ public final class OutlineFont implements Font {
 
     public OutlineFont(java.awt.Font font) {
         mFont = Objects.requireNonNull(font);
+        mTypeface = new Typeface_JDK(mFont);
         mIsLogicalFont = Arrays.stream(LOGICAL_FONT_NAMES)
                 .anyMatch(s -> s.equalsIgnoreCase(font.getName()));
     }
@@ -249,5 +253,10 @@ public final class OutlineFont implements Font {
     @Override
     public Strike findOrCreateStrike(FontPaint paint) {
         return null;
+    }
+
+    @Override
+    public Typeface getNativeTypeface() {
+        return mTypeface;
     }
 }

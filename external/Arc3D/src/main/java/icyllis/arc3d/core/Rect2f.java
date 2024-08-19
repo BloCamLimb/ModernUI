@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
@@ -125,16 +125,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if no member is infinite or NaN
      */
     public final boolean isFinite() {
-        return (0 * mLeft * mTop * mRight * mBottom) == 0;
-    }
-
-    /**
-     * Returns true if all values in the rectangle are finite.
-     *
-     * @return true if no member is infinite or NaN
-     */
-    public static boolean isFinite(float left, float top, float right, float bottom) {
-        return (0 * left * top * right * bottom) == 0;
+        return MathUtil.isFinite(mLeft, mTop, mRight, mBottom);
     }
 
     /**
@@ -212,6 +203,20 @@ public non-sealed class Rect2f implements Rect2fc {
     }
 
     /**
+     * @return width()/2 without intermediate overflow or underflow.
+     */
+    public final float halfWidth() {
+        return (float) (((double) -mLeft + mRight) * 0.5);
+    }
+
+    /**
+     * @return height()/2 without intermediate overflow or underflow.
+     */
+    public final float halfHeight() {
+        return (float) (((double) -mTop + mBottom) * 0.5);
+    }
+
+    /**
      * Set the rectangle to (0,0,0,0)
      */
     public final void setEmpty() {
@@ -229,6 +234,14 @@ public non-sealed class Rect2f implements Rect2fc {
         dst.mTop = mTop;
         dst.mRight = mRight;
         dst.mBottom = mBottom;
+    }
+
+    @Override
+    public void store(@Nonnull Rect2i dst) {
+        dst.mLeft = (int) mLeft;
+        dst.mTop = (int) mTop;
+        dst.mRight = (int) mRight;
+        dst.mBottom = (int) mBottom;
     }
 
     /**
@@ -273,12 +286,12 @@ public non-sealed class Rect2f implements Rect2fc {
      * false if <var>pts</var> array contains an infinity or NaN; in this case
      * sets rect to (0, 0, 0, 0).
      *
-     * @param pts   pts array
-     * @param pos   starting offset
-     * @param count number of points
+     * @param pts    pts array
+     * @param offset starting offset
+     * @param count  number of points
      * @return true if all values are finite
      */
-    public final boolean setBounds(float[] pts, int pos, int count) {
+    public final boolean setBounds(float[] pts, int offset, int count) {
         if (count <= 0) {
             setEmpty();
             return true;
@@ -287,8 +300,8 @@ public non-sealed class Rect2f implements Rect2fc {
         float minX, minY;
         float maxX, maxY;
 
-        minX = maxX = pts[pos++];
-        minY = maxY = pts[pos++];
+        minX = maxX = pts[offset++];
+        minY = maxY = pts[offset++];
         count--;
 
         float prodX, prodY;
@@ -297,8 +310,8 @@ public non-sealed class Rect2f implements Rect2fc {
 
         // auto vectorization
         while (count != 0) {
-            float x = pts[pos++];
-            float y = pts[pos++];
+            float x = pts[offset++];
+            float y = pts[offset++];
             prodX *= x;
             prodY *= y;
             minX = Math.min(minX, x);
@@ -321,12 +334,12 @@ public non-sealed class Rect2f implements Rect2fc {
      * Sets to bounds of <var>pts</var> array with <var>count</var> points. If
      * <var>pts</var> array contains an infinity or NaN, all rect values are set to NaN.
      *
-     * @param pts   pts array
-     * @param pos   starting offset
-     * @param count number of points
+     * @param pts    pts array
+     * @param offset starting offset
+     * @param count  number of points
      */
-    public final void setBoundsNoCheck(float[] pts, int pos, int count) {
-        if (!setBounds(pts, pos, count)) {
+    public final void setBoundsNoCheck(float[] pts, int offset, int count) {
+        if (!setBounds(pts, offset, count)) {
             set(Float.NaN, Float.NaN, Float.NaN, Float.NaN);
         }
     }
@@ -382,7 +395,10 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param dy the amount to subtract(add) from the rectangle's top(bottom)
      */
     public final void outset(float dx, float dy) {
-        inset(-dx, -dy);
+        mLeft -= dx;
+        mTop -= dy;
+        mRight += dx;
+        mBottom += dy;
     }
 
     /**
@@ -803,7 +819,7 @@ public non-sealed class Rect2f implements Rect2fc {
      */
     public static boolean rectsOverlap(Rect2fc a, Rect2fc b) {
         assert (!a.isFinite() || (a.left() <= a.right() && a.top() <= a.bottom()));
-        assert (!isFinite(b.left(), b.top(), b.right(), b.bottom()) || (b.left() <= b.right() && b.top() <= b.bottom()));
+        assert (!b.isFinite() || (b.left() <= b.right() && b.top() <= b.bottom()));
         return a.right() > b.left() && a.bottom() > b.top() && b.right() > a.left() && b.bottom() > a.top();
     }
 
@@ -813,7 +829,7 @@ public non-sealed class Rect2f implements Rect2fc {
      */
     public static boolean rectsTouchOrOverlap(Rect2fc a, Rect2fc b) {
         assert (!a.isFinite() || (a.left() <= a.right() && a.top() <= a.bottom()));
-        assert (!isFinite(b.left(), b.top(), b.right(), b.bottom()) || (b.left() <= b.right() && b.top() <= b.bottom()));
+        assert (!b.isFinite() || (b.left() <= b.right() && b.top() <= b.bottom()));
         return a.right() >= b.left() && a.bottom() >= b.top() && b.right() >= a.left() && b.bottom() >= a.top();
     }
 
@@ -1010,20 +1026,32 @@ public non-sealed class Rect2f implements Rect2fc {
     }
 
     @Override
+    public int hashCode() {
+        int result = (mLeft != 0.0f ? Float.floatToIntBits(mLeft) : 0);
+        result = 31 * result + (mTop != 0.0f ? Float.floatToIntBits(mTop) : 0);
+        result = 31 * result + (mRight != 0.0f ? Float.floatToIntBits(mRight) : 0);
+        result = 31 * result + (mBottom != 0.0f ? Float.floatToIntBits(mBottom) : 0);
+        return result;
+    }
+
+    /**
+     * Returns true if all members in a: Left, Top, Right, and Bottom; are
+     * equal to the corresponding members in b.
+     * <p>
+     * a and b are not equal if either contain NaN. a and b are equal if members
+     * contain zeroes with different signs.
+     *
+     * @param o rect to compare
+     * @return true if members are equal
+     */
+    @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (!(o instanceof Rect2fc r)) {
             return false;
         }
-        return mLeft == r.left() && mTop == r.top() && mRight == r.right() && mBottom == r.bottom();
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Float.floatToIntBits(mLeft);
-        result = 31 * result + Float.floatToIntBits(mTop);
-        result = 31 * result + Float.floatToIntBits(mRight);
-        result = 31 * result + Float.floatToIntBits(mBottom);
-        return result;
+        return mLeft == r.left() && mTop == r.top() &&
+                mRight == r.right() && mBottom == r.bottom();
     }
 
     @Override

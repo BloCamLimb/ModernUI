@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.test;
@@ -44,29 +44,24 @@ public class TestShaderc {
         long result = shaderc_compile_into_spv_assembly(
                 compiler,
                 """
-                        #version 450 core
+                       #version 450    core
+                            # pragma deep dark # line 2
+                                  
+                                  \s
+                            # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
+                                  \s
+                        const int blockSize = -4 + 6;
                         layout(binding = 0, set = 0) uniform UniformBlock {
                             mat4 u_Projection;
                             mat4 u_ModelView;
                             vec4 u_Color;
                         } u_Buffer0;
-                        layout(binding = 0) uniform sampler2D u_Sampler0;
                         layout(location = 0) smooth in vec2 f_Position;
                         layout(location = 1) smooth in vec4 f_Color;
                         layout(location = 0, index = 0) out vec4 FragColor0;
                         layout(location = 0, index = 1) out vec4 FragColor1;
-                        float rr(vec2 a, vec2 b) {
-                            return float(vec2(a.x,1).y.x);
-                        }
-                        float sa(float a) {
-                            return a;
-                        }
-                        float rand(vec2 n) {
-                            const float[] a = float[](12.9898, n.x), b = float[](12.9898, n.x, n.y);
-                            return sa(sa(rr(n, vec2(a[0],12.1414))) * 83758.5453);
-                        }
                         void main(void) {
-                            float lod = textureQueryLod(u_Sampler0, f_Position).y;
+                            // M4 m = "what?";
                             FragColor0 = u_Buffer0.u_Color;
                         }""",
                 shaderc_fragment_shader,

@@ -18,10 +18,11 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.Blender;
-import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -89,7 +90,7 @@ public abstract class Canvas {
     /**
      * Saves the current matrix and clip onto a private stack.
      * <p>
-     * Subsequent calls to translate, scale, rotate, skew, concat or clipRect,
+     * Subsequent calls to translate, scale, rotate, shear, concat or clipRect,
      * clipPath will all operate as usual, but when the balancing call to
      * restore() is made, those calls will be forgotten, and the settings that
      * existed before the save() will be reinstated.
@@ -98,7 +99,7 @@ public abstract class Canvas {
      * by an equal number of calls to restore(). Call restoreToCount() with the return
      * value of this method to restore this and subsequent saves.
      *
-     * @return depth of saved stack
+     * @return depth of saved stack to pass to restoreToCount() to balance this call
      */
     public abstract int save();
 
@@ -174,50 +175,104 @@ public abstract class Canvas {
      * // was before the initial call to save().
      * </pre>
      *
-     * @param saveCount The save level to restore to.
+     * @param saveCount the depth of state stack to restore
+     * @throws IllegalStateException stack underflow (i.e. saveCount is less than 1)
      */
     public abstract void restoreToCount(int saveCount);
 
     /**
-     * Pre-multiply the current matrix by the specified translation.
+     * Translates the current matrix by dx along the x-axis and dy along the y-axis.
+     * Mathematically, pre-multiply the current matrix with a translation matrix.
+     * <p>
+     * This has the effect of moving the drawing by (dx, dy) before transforming
+     * the result with the current matrix.
      *
-     * @param dx The distance to translate in X
-     * @param dy The distance to translate in Y
+     * @param dx the distance to translate on x-axis
+     * @param dy the distance to translate on y-axis
      */
-    public final void translate(float dx, float dy) {
-        if (dx != 0.0f || dy != 0.0f) {
-            getMatrix().preTranslate(dx, dy);
-        }
-    }
+    public abstract void translate(float dx, float dy);
 
     /**
-     * Pre-multiply the current matrix by the specified scaling.
+     * Translates the current matrix by dx along the x-axis, dy along the y-axis,
+     * and dz along the z-axis. Mathematically, pre-multiply the current matrix with
+     * a translation matrix.
+     * <p>
+     * This has the effect of moving the drawing by (dx, dy, dz) before transforming
+     * the result with the current matrix.
      *
-     * @param sx The amount to scale in X
-     * @param sy The amount to scale in Y
+     * @param dx the distance to translate on x-axis
+     * @param dy the distance to translate on y-axis
+     * @param dz the distance to translate on z-axis
      */
-    public final void scale(float sx, float sy) {
-        if (sx != 1.0f || sy != 1.0f) {
-            getMatrix().preScale(sx, sy);
-        }
-    }
+    public abstract void translate(float dx, float dy, float dz);
 
     /**
-     * Pre-multiply the current matrix by the specified scale.
+     * Scales the current matrix by sx on the x-axis and sy on the y-axis.
+     * Mathematically, pre-multiply the current matrix with a scaling matrix.
+     * <p>
+     * This has the effect of scaling the drawing by (sx, sy) before transforming
+     * the result with the current matrix.
      *
-     * @param sx The amount to scale in X
-     * @param sy The amount to scale in Y
-     * @param px The x-coord for the pivot point (unchanged by the scale)
-     * @param py The y-coord for the pivot point (unchanged by the scale)
+     * @param sx the amount to scale on x-axis
+     * @param sy the amount to scale on y-axis
      */
-    public final void scale(float sx, float sy, float px, float py) {
-        if (sx != 1.0f || sy != 1.0f) {
-            Matrix4 matrix = getMatrix();
-            matrix.preTranslate(px, py);
-            matrix.preScale(sx, sy);
-            matrix.preTranslate(-px, -py);
-        }
-    }
+    public abstract void scale(float sx, float sy);
+
+    /**
+     * Scales the current matrix by sx on the x-axis, sy on the y-axis, and
+     * sz on the z-axis. Mathematically, pre-multiply the current matrix with a
+     * scaling matrix.
+     * <p>
+     * This has the effect of scaling the drawing by (sx, sy, sz) before transforming
+     * the result with the current matrix.
+     *
+     * @param sx the amount to scale on x-axis
+     * @param sy the amount to scale on y-axis
+     * @param sz the amount to scale on z-axis
+     */
+    public abstract void scale(float sx, float sy, float sz);
+
+    /**
+     * Scales the current matrix by sx on the x-axis and sy on the y-axis at (px, py).
+     * Mathematically, pre-multiply the current matrix with a translation matrix;
+     * pre-multiply the current matrix with a scaling matrix; then pre-multiply the
+     * current matrix with a negative translation matrix;
+     * <p>
+     * This has the effect of scaling the drawing by (sx, sy) before transforming
+     * the result with the current matrix.
+     *
+     * @param sx the amount to scale on x-axis
+     * @param sy the amount to scale on y-axis
+     * @param px the x-coord for the pivot point (unchanged by the scale)
+     * @param py the y-coord for the pivot point (unchanged by the scale)
+     */
+    public abstract void scale(float sx, float sy, float px, float py);
+
+    /**
+     * Rotates the current matrix by degrees clockwise about the Z axis.
+     * Mathematically, pre-multiply the current matrix with a rotation matrix;
+     * <p>
+     * This has the effect of rotating the drawing by degrees before transforming
+     * the result with the current matrix.
+     *
+     * @param degrees the amount to rotate, in degrees
+     */
+    public abstract void rotate(float degrees);
+
+    /**
+     * Rotates the current matrix by degrees clockwise about the Z axis at (px, py).
+     * Mathematically, pre-multiply the current matrix with a translation matrix;
+     * pre-multiply the current matrix with a rotation matrix; then pre-multiply the
+     * current matrix with a negative translation matrix;
+     * <p>
+     * This has the effect of rotating the drawing by degrees before transforming
+     * the result with the current matrix.
+     *
+     * @param degrees the amount to rotate, in degrees
+     * @param px      the x-coord for the pivot point (unchanged by the rotation)
+     * @param py      the y-coord for the pivot point (unchanged by the rotation)
+     */
+    public abstract void rotate(float degrees, float px, float py);
 
     /**
      * Pre-multiply the current matrix by the specified skew.
@@ -244,83 +299,50 @@ public abstract class Canvas {
     }
 
     /**
-     * Pre-multiply the current matrix by the specified shearing (skew).
+     * Shears the current matrix by sx on the x-axis and sy on the y-axis. A positive value
+     * of sx shears the drawing right as y-axis values increase; a positive value of sy shears
+     * the drawing down as x-axis values increase.
+     * <p>
+     * Mathematically, pre-multiply the current matrix with a shearing matrix.
+     * <p>
+     * This has the effect of shearing the drawing by (sx, sy) before transforming
+     * the result with the current matrix.
      *
-     * @param sx the x-component of the shearing, y is unchanged
-     * @param sy the y-component of the shearing, x is unchanged
+     * @param sx the amount to shear on x-axis
+     * @param sy the amount to shear on y-axis
      */
-    public final void shear(float sx, float sy) {
-        if (sx != 0.0f || sy != 0.0f) {
-            getMatrix().preShear2D(sx, sy);
-        }
-    }
+    public abstract void shear(float sx, float sy);
 
     /**
-     * Pre-multiply the current matrix by the specified shearing (skew).
+     * Pre-multiply the current matrix by the specified shearing.
      *
      * @param sx the x-component of the shearing, y is unchanged
      * @param sy the y-component of the shearing, x is unchanged
      * @param px the x-component of the pivot (unchanged by the shear)
      * @param py the y-component of the pivot (unchanged by the shear)
      */
-    public final void shear(float sx, float sy, float px, float py) {
-        if (sx != 0.0f || sy != 0.0f) {
-            Matrix4 matrix = getMatrix();
-            matrix.preTranslate(px, py);
-            matrix.preShear2D(sx, sy);
-            matrix.preTranslate(-px, -py);
-        }
-    }
-
-    /**
-     * Pre-multiply the current matrix by the specified rotation.
-     *
-     * @param degrees The angle to rotate, in degrees
-     */
-    public final void rotate(float degrees) {
-        if (degrees != 0.0f) {
-            getMatrix().preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-        }
-    }
-
-    /**
-     * Rotate canvas clockwise around the pivot point with specified angle, this is
-     * equivalent to pre-multiplying the current matrix by the specified rotation.
-     *
-     * @param degrees The amount to rotate, in degrees
-     * @param px      The x-coord for the pivot point (unchanged by the rotation)
-     * @param py      The y-coord for the pivot point (unchanged by the rotation)
-     */
-    public final void rotate(float degrees, float px, float py) {
-        if (degrees != 0.0f) {
-            Matrix4 matrix = getMatrix();
-            matrix.preTranslate(px, py, 0);
-            matrix.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-            matrix.preTranslate(-px, -py, 0);
-        }
-    }
+    public abstract void shear(float sx, float sy, float px, float py);
 
     /**
      * Pre-multiply the current matrix by the specified matrix.
+     * <p>
+     * This has the effect of transforming the drawn geometry by matrix, before
+     * transforming the result with the current matrix.
      *
-     * @param matrix the matrix to multiply
+     * @param matrix the matrix to premultiply with the current matrix
      */
-    public final void concat(Matrix4 matrix) {
-        if (!matrix.isIdentity()) {
-            getMatrix().preConcat(matrix);
-        }
-    }
+    public abstract void concat(@NonNull Matrix matrix);
 
     /**
      * Pre-multiply the current matrix by the specified matrix.
+     * <p>
+     * This has the effect of transforming the drawn geometry by matrix, before
+     * transforming the result with the current matrix.
      *
-     * @param matrix the matrix to multiply
+     * @param matrix the matrix to premultiply with the current matrix
      */
-    public final void concat(Matrix matrix) {
-        if (!matrix.isIdentity()) {
-            getMatrix().preConcat2D(matrix);
-        }
-    }
+    @ApiStatus.Experimental
+    public abstract void concat(@NonNull Matrix4 matrix);
 
     /**
      * @return current model view matrix
@@ -330,7 +352,9 @@ public abstract class Canvas {
     @Deprecated
     @ApiStatus.Internal
     @NonNull
-    public abstract Matrix4 getMatrix();
+    public Matrix4 getMatrix() {
+        return new Matrix4();
+    }
 
     /**
      * Intersect the current clip with the specified rectangle and updates
@@ -341,7 +365,7 @@ public abstract class Canvas {
      * @return true if the resulting clip is non-empty, otherwise further
      * drawing will be always quick rejected until restore() is called
      */
-    public final boolean clipRect(Rect rect) {
+    public final boolean clipRect(@NonNull Rect rect) {
         return clipRect(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -354,7 +378,7 @@ public abstract class Canvas {
      * @return true if the resulting clip is non-empty, otherwise further
      * drawing will be always quick rejected until restore() is called
      */
-    public final boolean clipRect(RectF rect) {
+    public final boolean clipRect(@NonNull RectF rect) {
         return clipRect(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -376,6 +400,40 @@ public abstract class Canvas {
     public abstract boolean clipRect(float left, float top, float right, float bottom);
 
     /**
+     * Set the clip to the difference of the current clip and the specified rectangle, which is
+     * expressed in local coordinates.
+     *
+     * @param rect The rectangle to perform a difference op with the current clip.
+     * @return true if the resulting clip is non-empty
+     */
+    public final boolean clipOutRect(@NonNull Rect rect) {
+        return clipOutRect(rect.left, rect.top, rect.right, rect.bottom);
+    }
+
+    /**
+     * Set the clip to the difference of the current clip and the specified rectangle, which is
+     * expressed in local coordinates.
+     *
+     * @param rect The rectangle to perform a difference op with the current clip.
+     * @return true if the resulting clip is non-empty
+     */
+    public final boolean clipOutRect(@NonNull RectF rect) {
+        return clipOutRect(rect.left, rect.top, rect.right, rect.bottom);
+    }
+
+    /**
+     * Set the clip to the difference of the current clip and the specified rectangle, which is
+     * expressed in local coordinates.
+     *
+     * @param left   The left side of the rectangle used in the difference operation
+     * @param top    The top of the rectangle used in the difference operation
+     * @param right  The right side of the rectangle used in the difference operation
+     * @param bottom The bottom of the rectangle used in the difference operation
+     * @return       true if the resulting clip is non-empty
+     */
+    public abstract boolean clipOutRect(float left, float top, float right, float bottom);
+
+    /**
      * Return true if the specified rectangle, after being transformed by the
      * current matrix, would lie completely outside the current clip. Call
      * this to check if an area you intend to draw into is clipped out (and
@@ -389,7 +447,7 @@ public abstract class Canvas {
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
-    public final boolean quickReject(RectF rect) {
+    public final boolean quickReject(@NonNull RectF rect) {
         return quickReject(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -556,8 +614,35 @@ public abstract class Canvas {
      * @param thickness the thickness of the line segment
      * @param paint     the paint used to draw the line segment
      */
-    public abstract void drawLine(float x0, float y0, float x1, float y1,
-                                  float thickness, @NonNull Paint paint);
+    public void drawLine(float x0, float y0, float x1, float y1,
+                         float thickness, @NonNull Paint paint) {
+        drawLine(x0, y0, x1, y1, Paint.Cap.ROUND, thickness, paint);
+    }
+
+    /**
+     * Draw a line segment from (x0, y0) to (x1, y1) using the specified paint.
+     * <p>
+     * Line covers an area, and is not a stroke path in the concept of Modern UI.
+     * Therefore, a line may be either "filled" (path) or "stroked" (annular, hollow),
+     * depending on paint's style. Additionally, paint's cap draws the end rounded
+     * or square, if filled; the other properties of paint work as intended.
+     * <p>
+     * See {@link #drawLinePath(float, float, float, float, Paint)} for the path version.
+     * <p>
+     * If thickness = 0 (also known as hairline), then this uses the mesh version.
+     * See {@link #drawLineListMesh(FloatBuffer, IntBuffer, Paint)} for the mesh version.
+     *
+     * @param x0        the start of the line segment on x-axis
+     * @param y0        the start of the line segment on y-axis
+     * @param x1        the end of the line segment on x-axis
+     * @param y1        the end of the line segment on y-axis
+     * @param thickness the thickness of the line segment
+     * @param paint     the paint used to draw the line segment
+     */
+    public void drawLine(float x0, float y0, float x1, float y1,
+                         @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint) {
+
+    }
 
     /**
      * Variant version of {@link #drawLine(float, float, float, float, float, Paint)}.
@@ -582,7 +667,7 @@ public abstract class Canvas {
      * @param y1    the end of the line segment on y-axis
      * @param paint the paint used to draw the line
      */
-    public final void drawLine(float x0, float y0, float x1, float y1, @NonNull Paint paint) {
+    public void drawLine(float x0, float y0, float x1, float y1, @NonNull Paint paint) {
         var pStyle = paint.getStyle();
         paint.setStyle(Paint.FILL);
         drawLine(x0, y0, x1, y1, paint.getStrokeWidth(), paint);
@@ -598,20 +683,7 @@ public abstract class Canvas {
      * @param paint the paint used to draw the line
      */
     public final void drawLine(@NonNull PointF p0, @NonNull PointF p1, @NonNull Paint paint) {
-        var pStyle = paint.getStyle();
-        paint.setStyle(Paint.FILL);
-        drawLine(p0.x, p0.y, p1.x, p1.y, paint.getStrokeWidth(), paint);
-        paint.setStyle(pStyle);
-    }
-
-    /**
-     * In paint: Paint's stroke width describes the line thickness;
-     * Paint's cap draws the end rounded or square;
-     * Paint's style is ignored, as if were set to {@link Paint#STROKE}.
-     * //WIP
-     */
-    //TODO
-    public void drawLinePath(float x0, float y0, float x1, float y1, Paint paint) {
+        drawLine(p0.x, p0.y, p1.x, p1.y, paint);
     }
 
     /**
@@ -1007,15 +1079,15 @@ public abstract class Canvas {
         float thick = paint.getStrokeWidth();
         if (strip) {
             float x, y;
-            drawLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], thick, paint);
+            drawLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], Paint.Cap.ROUND, thick, paint);
             count = (count - 4) >> 1;
             for (int i = 0; i < count; i++) {
-                drawLine(x, y, x = pts[offset++], y = pts[offset++], thick, paint);
+                drawLine(x, y, x = pts[offset++], y = pts[offset++], Paint.Cap.ROUND, thick, paint);
             }
         } else {
             count >>= 2;
             for (int i = 0; i < count; i++) {
-                drawLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], thick, paint);
+                drawLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], Paint.Cap.ROUND, thick, paint);
             }
         }
     }
@@ -1159,13 +1231,17 @@ public abstract class Canvas {
      * Supported primitive topologies, corresponding to OpenGL and Vulkan defined values.
      */
     public enum VertexMode {
-        POINTS,
-        LINES,
-        LINE_STRIP,
-        TRIANGLES,
-        TRIANGLE_STRIP
+        POINTS(Vertices.kPoints_VertexMode),
+        LINES(Vertices.kLines_VertexMode),
+        LINE_STRIP(Vertices.kLineStrip_VertexMode),
+        TRIANGLES(Vertices.kTriangles_VertexMode),
+        TRIANGLE_STRIP(Vertices.kTriangleStrip_VertexMode);
 
-        // enum order is consistent with Arc 3D and Vulkan definition
+        final int nativeInt;
+
+        VertexMode(int nativeInt) {
+            this.nativeInt = nativeInt;
+        }
     }
 
     /**

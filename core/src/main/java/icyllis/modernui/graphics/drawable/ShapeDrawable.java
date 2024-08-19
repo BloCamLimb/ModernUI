@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.arc3d.core.ColorFilter;
-import icyllis.arc3d.core.effects.BlendModeColorFilter;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;

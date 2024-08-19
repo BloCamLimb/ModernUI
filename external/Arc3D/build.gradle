@@ -1,6 +1,7 @@
 import org.gradle.internal.os.OperatingSystem
 
 apply plugin: 'java'
+apply plugin: 'java-library'
 
 version = 'b' + new Date().format('yyyyMMdd')
 group = 'icyllis.arc3d'
@@ -16,6 +17,7 @@ dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     compileOnly 'org.jetbrains:annotations:23.1.0'
 
+    api "org.slf4j:slf4j-api:2.0.9"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
 
     def lwjglNatives
@@ -42,11 +44,13 @@ dependencies {
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-jemalloc"
     implementation "org.lwjgl:lwjgl-opengl"
+    implementation "org.lwjgl:lwjgl-opengles"
     implementation "org.lwjgl:lwjgl-vma"
     implementation "org.lwjgl:lwjgl-vulkan"
     runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-jemalloc::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengles::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-vma::$lwjglNatives"
     if (lwjglNatives == "natives-macos" || lwjglNatives == "natives-macos-arm64") {
         runtimeOnly "org.lwjgl:lwjgl-vulkan::$lwjglNatives"
@@ -57,12 +61,20 @@ dependencies {
     testImplementation "org.lwjgl:lwjgl-glfw"
     testImplementation "org.lwjgl:lwjgl-stb"
     testImplementation "org.lwjgl:lwjgl-shaderc"
+    testImplementation "org.lwjgl:lwjgl-ktx"
+    testImplementation "org.lwjgl:lwjgl-tinyfd"
     testRuntimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-shaderc::$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-ktx::$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-tinyfd::$lwjglNatives"
+
+    testImplementation "org.slf4j:slf4j-simple:2.0.9"
 
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
+
+    testImplementation 'org.openjdk.jol:jol-core:0.10'
 }
 
 tasks.withType(JavaCompile).configureEach {

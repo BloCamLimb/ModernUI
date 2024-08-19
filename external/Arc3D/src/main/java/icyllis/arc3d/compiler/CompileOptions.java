@@ -1,29 +1,51 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.compiler;
+
+import java.util.Map;
 
 /**
  * Holds the options for compiling a shader executable.
  * This is ignored when pre-parsing a module unit (include file).
  */
 public class CompileOptions {
+
+    /**
+     * Whether to do preprocessing? If you have done preprocessing, you may set
+     * this to false.
+     * <p>
+     * Note: Our preprocessor is not available for module units.
+     *
+     * @see Parser#preprocess()
+     */
+    public boolean mPreprocess = true;
+
+    /**
+     * A pre-defined extensions, before preprocessing. This is a list of
+     * (extensionName, behavior) pairs, no error checking will be performed.
+     * <p>
+     * The extension has no semantics impact when generating SPIR-V,
+     * but it's retained when generating GLSL for some GLSL only extensions.
+     * A new behavior will override the earlier one for the same extension name.
+     */
+    public Map<String, String> mExtensions = null;
 
     /**
      * Function with this name will be considered as the entry point of

@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
@@ -60,19 +60,19 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     private static final Matrixc IDENTITY = new Matrix();
 
     // sequential matrix elements, m(ij) (row, column)
-    // directly using primitives will be faster than array in Java
+    // directly using primitives will be faster than array in Java (before Vector API)
     // [m11 m12 m14]
     // [m21 m22 m24]
     // [m41 m42 m44] <- [m41 m42] represents the origin
-    protected float m11;
-    protected float m12;
-    protected float m14;
-    protected float m21;
-    protected float m22;
-    protected float m24;
-    protected float m41;
-    protected float m42;
-    protected float m44;
+    protected float m11; // scaleX
+    protected float m12; // shearY
+    protected float m14; // persp0
+    protected float m21; // shearX
+    protected float m22; // scaleY
+    protected float m24; // persp1
+    protected float m41; // transX
+    protected float m42; // transY
+    protected float m44; // persp2
 
     private int mTypeMask;
 
@@ -119,6 +119,30 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     @Nonnull
     public static Matrixc identity() {
         return IDENTITY;
+    }
+
+    /**
+     * Creates a new translate-only matrix.
+     *
+     * @return a translation matrix
+     */
+    @Nonnull
+    public static Matrix makeTranslate(float dx, float dy) {
+        var matrix = new Matrix();
+        matrix.setTranslate(dx, dy);
+        return matrix;
+    }
+
+    /**
+     * Creates a new scale-only matrix.
+     *
+     * @return a scaling matrix
+     */
+    @Nonnull
+    public static Matrix makeScale(float sx, float sy) {
+        var matrix = new Matrix();
+        matrix.setScale(sx, sy);
+        return matrix;
     }
 
     /**
@@ -614,6 +638,142 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     }
 
     /**
+     * Set the scaleX value.
+     */
+    public void m11(float scaleX) {
+        m11 = scaleX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the shearY value.
+     */
+    public void m12(float shearY) {
+        m12 = shearY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the persp0 value.
+     */
+    public void m14(float persp0) {
+        m14 = persp0;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the shearX value.
+     */
+    public void m21(float shearX) {
+        m21 = shearX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the scaleY value.
+     */
+    public void m22(float scaleY) {
+        m22 = scaleY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the persp1 value.
+     */
+    public void m24(float persp1) {
+        m24 = persp1;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the transX value.
+     */
+    public void m41(float transX) {
+        m41 = transX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the transY value.
+     */
+    public void m42(float transY) {
+        m42 = transY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the persp2 value.
+     */
+    public void m44(float persp2) {
+        m44 = persp2;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the scaleX value.
+     */
+    public void setScaleX(float scaleX) {
+        m11 = scaleX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the scaleY value.
+     */
+    public void setScaleY(float scaleY) {
+        m22 = scaleY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the shearY value.
+     */
+    public void setShearY(float shearY) {
+        m12 = shearY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the shearX value.
+     */
+    public void setShearX(float shearX) {
+        m21 = shearX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the transX value.
+     */
+    public void setTranslateX(float transX) {
+        m41 = transX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the transY value.
+     */
+    public void setTranslateY(float transY) {
+        m42 = transY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the perspY value.
+     */
+    public void setPerspY(float perspY) {
+        m24 = perspY;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Set the perspX value.
+     */
+    public void setPerspX(float perspX) {
+        m14 = perspX;
+        mTypeMask = kUnknown_Mask;
+    }
+
+    /**
      * Store the values of the given matrix into this matrix.
      *
      * @param m the matrix to copy from
@@ -913,18 +1073,65 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     }
 
     /**
+     * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     */
+    public void toMatrix4(@Nonnull Matrix4 dest) {
+        dest.m11 = m11;
+        dest.m12 = m12;
+        dest.m13 = 0;
+        dest.m14 = m14;
+        dest.m21 = m21;
+        dest.m22 = m22;
+        dest.m23 = 0;
+        dest.m24 = m24;
+        dest.m31 = 0;
+        dest.m32 = 0;
+        dest.m33 = 1;
+        dest.m34 = 0;
+        dest.m41 = m41;
+        dest.m42 = m42;
+        dest.m43 = 0;
+        dest.m44 = m44;
+    }
+
+    /**
+     * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     */
+    @Nonnull
+    public Matrix4 toMatrix4() {
+        Matrix4 m = new Matrix4();
+        toMatrix4(m);
+        return m;
+    }
+
+    /**
      * Return the determinant of this matrix.
      *
      * @return the determinant
      */
     public float determinant() {
+        double det;
         if (hasPerspective()) {
-            return (m11 * m22 - m12 * m21) * m44 +
-                    (m14 * m21 - m11 * m24) * m42 +
-                    (m12 * m24 - m14 * m22) * m41;
+            double a = (double) m11 * m22 - (double) m12 * m21;
+            double b = (double) m14 * m21 - (double) m11 * m24;
+            double c = (double) m12 * m24 - (double) m14 * m22;
+            det = a * m44 + b * m42 + c * m41;
         } else {
-            return m11 * m22 - m12 * m21;
+            det = (double) m11 * m22 - (double) m12 * m21;
         }
+        return (float) det;
     }
 
     /**
@@ -955,7 +1162,6 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @param dest the destination matrix, may be null
      * @return {@code true} if this matrix is invertible.
      */
-    @CheckReturnValue
     public boolean invert(@Nullable Matrix dest) {
         int mask = getType();
         if (mask == kIdentity_Mask) {
@@ -1012,12 +1218,12 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     }
 
     private boolean invertPerspective(Matrix dest) {
-        double a = m11 * m22 - m12 * m21;
-        double b = m14 * m21 - m11 * m24;
-        double c = m12 * m24 - m14 * m22;
+        double a = (double) m11 * m22 - (double) m12 * m21;
+        double b = (double) m14 * m21 - (double) m11 * m24;
+        double c = (double) m12 * m24 - (double) m14 * m22;
         // calc the determinant
         double det = a * m44 + b * m42 + c * m41;
-        if (det == 0) {
+        if (MathUtil.isApproxZero((float) det, 1.0e-15f)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -1031,9 +1237,11 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         float f14 = (float) (c * det);
         float f24 = (float) (b * det);
         float f44 = (float) (a * det);
-        if (0f * f11 * f12 * f14 *
-                f21 * f22 * f24 *
-                f41 * f42 * f44 != 0) {
+        if (!MathUtil.isFinite(
+                f11, f12, f14,
+                f21, f22, f24,
+                f41, f42, f44
+        )) {
             // not finite, NaN or infinity
             return false;
         }
@@ -1054,8 +1262,8 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
 
     private boolean invertAffine(Matrix dest) {
         // not perspective
-        double det = m11 * m22 - m12 * m21;
-        if (det == 0) {
+        double det = (double) m11 * m22 - (double) m12 * m21;
+        if (MathUtil.isApproxZero((float) det, 1.0e-15f)) {
             return false;
         }
         det = 1.0f / det;
@@ -1065,9 +1273,11 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         float f22 = (float) (m11 * det);
         float f41 = (float) ((m21 * m42 - m41 * m22) * det); // 13
         float f42 = (float) ((m41 * m12 - m11 * m42) * det); // -23
-        if (0f * f11 * f12 *
-                f21 * f22 *
-                f41 * f42 != 0) {
+        if (!MathUtil.isFinite(
+                f11, f12,
+                f21, f22,
+                f41, f42
+        )) {
             // not finite, NaN or infinity
             return false;
         }
@@ -1988,6 +2198,194 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         );
     }
 
+    private static float computeMinScale(double m11, double m21, double m12, double m22) {
+        double s1 = m11 * m11 + m21 * m21 + m12 * m12 + m22 * m22;
+
+        double e = m11 * m11 + m21 * m21 - m12 * m12 - m22 * m22;
+        double f = m11 * m12 + m21 * m22;
+        double s2 = Math.sqrt(e * e + 4 * f * f);
+
+        return (float) Math.sqrt(0.5 * (s1 - s2));
+    }
+
+    private static float computeMaxScale(double m11, double m21, double m12, double m22) {
+        double s1 = m11 * m11 + m21 * m21 + m12 * m12 + m22 * m22;
+
+        double e = m11 * m11 + m21 * m21 - m12 * m12 - m22 * m22;
+        double f = m11 * m12 + m21 * m22;
+        double s2 = Math.sqrt(e * e + 4 * f * f);
+
+        return (float) Math.sqrt(0.5 * (s1 + s2));
+    }
+
+    /**
+     * Returns the minimum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements. When this matrix has perspective, the scaling factor is specific
+     * to the given point <var>p</var>.<br>
+     * Returns -1 if scale factor overflows.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     * @return minimum scale factor
+     */
+    public float getMinScale(float px, float py) {
+        if (!hasPerspective()) {
+            return getMinScale();
+        }
+
+        double x = m11 * px + m21 * py + m41;
+        double y = m12 * px + m22 * py + m42;
+        double w = m14 * px + m24 * py + m44;
+
+        double dxdu = m11;
+        double dxdv = m21;
+        double dydu = m12;
+        double dydv = m22;
+        double dwdu = m14;
+        double dwdv = m24;
+
+        double invW2 = 1.0 / (w * w);
+        // non-persp has invW2 = 1, w = 1, dwdu = 0, dwdv = 0
+        double dfdu = (w * dxdu - x * dwdu) * invW2; // non-persp -> dxdu -> m11
+        double dfdv = (w * dxdv - x * dwdv) * invW2; // non-persp -> dxdv -> m21
+        double dgdu = (w * dydu - y * dwdu) * invW2; // non-persp -> dydu -> m12
+        double dgdv = (w * dydv - y * dwdv) * invW2; // non-persp -> dydv -> m22
+
+        return computeMinScale(dfdu, dfdv, dgdu, dgdv);
+    }
+
+    /**
+     * Returns the maximum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements. When this matrix has perspective, the scaling factor is specific
+     * to the given point <var>p</var>.<br>
+     * Returns -1 if scale factor overflows.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     * @return maximum scale factor
+     */
+    public float getMaxScale(float px, float py) {
+        if (!hasPerspective()) {
+            return getMaxScale();
+        }
+
+        double x = m11 * px + m21 * py + m41;
+        double y = m12 * px + m22 * py + m42;
+        double w = m14 * px + m24 * py + m44;
+
+        double dxdu = m11;
+        double dxdv = m21;
+        double dydu = m12;
+        double dydv = m22;
+        double dwdu = m14;
+        double dwdv = m24;
+
+        double invW2 = 1.0 / (w * w);
+        // non-persp has invW2 = 1, w = 1, dwdu = 0, dwdv = 0
+        double dfdu = (w * dxdu - x * dwdu) * invW2; // non-persp -> dxdu -> m11
+        double dfdv = (w * dxdv - x * dwdv) * invW2; // non-persp -> dxdv -> m21
+        double dgdu = (w * dydu - y * dwdu) * invW2; // non-persp -> dydu -> m12
+        double dgdv = (w * dydv - y * dwdv) * invW2; // non-persp -> dydv -> m22
+
+        return computeMaxScale(dfdu, dfdv, dgdu, dgdv);
+    }
+
+    /**
+     * Returns the differential area scale factor for a local point 'p' that will be transformed
+     * by 'm' (which may have perspective). If 'm' does not have perspective, this scale factor is
+     * constant regardless of 'p'; when it does have perspective, it is specific to that point.
+     * <p>
+     * This can be crudely thought of as "device pixel area" / "local pixel area" at 'p'.
+     * <p>
+     * Returns positive infinity if the transformed homogeneous point has w <= 0.
+     * <p>
+     * The return value is equivalent to {@link #getMinScale(float, float)} times
+     * {@link #getMaxScale(float, float)}.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     */
+    public float differentialAreaScale(float px, float py) {
+        //              [m11 m21 m41]                                 [f(u,v)]
+        // Assuming M = [m12 m22 m42], define the projected p'(u,v) = [g(u,v)] where
+        //              [m14 m24 m44]
+        //                                                        [x]     [u]
+        // f(u,v) = x(u,v) / w(u,v), g(u,v) = y(u,v) / w(u,v) and [y] = M*[v]
+        //                                                        [w]     [1]
+        //
+        // Then the differential scale factor between p = (u,v) and p' is |det J|,
+        // where J is the Jacobian for p': [df/du dg/du]
+        //                                 [df/dv dg/dv]
+        // and df/du = (w*dx/du - x*dw/du)/w^2,   dg/du = (w*dy/du - y*dw/du)/w^2
+        //     df/dv = (w*dx/dv - x*dw/dv)/w^2,   dg/dv = (w*dy/dv - y*dw/dv)/w^2
+        //
+        // From here, |det J| can be rewritten as |det J'/w^3|, where
+        //      [x     y     w    ]   [x   y   w  ]
+        // J' = [dx/du dy/du dw/du] = [m11 m12 m14]
+        //      [dx/dv dy/dv dw/dv]   [m21 m22 m24]
+        double x = (double) m11 * px + (double) m21 * py + (double) m41;
+        double y = (double) m12 * px + (double) m22 * py + (double) m42;
+        double w = (double) m14 * px + (double) m24 * py + (double) m44;
+
+        if (w <= MathUtil.EPS) {
+            // Reaching the discontinuity of xy/w and where the point would clip to w >= 0
+            return Float.POSITIVE_INFINITY;
+        }
+
+        double dxdu = m11;
+        double dxdv = m21;
+        double dydu = m12;
+        double dydv = m22;
+        double dwdu = m14;
+        double dwdv = m24;
+
+        double detJ = x * (dydu * dwdv - dwdu * dydv) +
+                y * (dwdu * dxdv - dxdu * dwdv) +
+                w * (dxdu * dydv - dydu * dxdv);
+        double denom = 1.0 / w;
+        denom = denom * denom * denom;  // 1/w^3
+        return (float) (Math.abs(detJ * denom));
+    }
+
+    /**
+     * Sets matrix to scale and translate src rect to dst rect. Returns false if
+     * src is empty, and sets matrix to identity. Returns true if dst is empty,
+     * and sets matrix to:
+     * <pre>
+     * | 0 0 0 |
+     * | 0 0 0 |
+     * | 0 0 1 |
+     * </pre>
+     *
+     * @param src rect to map from
+     * @param dst rect to map to
+     */
+    public void setRectToRect(Rect2fc src, Rect2fc dst) {
+        if (src.isEmpty()) {
+            setIdentity();
+            return;
+        }
+
+        if (dst.isEmpty()) {
+            m11 = 0.0f;
+            m12 = 0.0f;
+            m14 = 0.0f;
+            m21 = 0.0f;
+            m22 = 0.0f;
+            m24 = 0.0f;
+            m41 = 0.0f;
+            m42 = 0.0f;
+            m44 = 1.0f;
+            mTypeMask = kScale_Mask;
+        } else {
+            float sx = dst.width() / src.width();
+            float sy = dst.height() / src.height();
+            float tx = dst.left() - src.left() * sx;
+            float ty = dst.top() - src.top() * sy;
+            setScaleTranslate(sx, sy, tx, ty);
+        }
+    }
+
     /**
      * If the last column of the matrix is [0, 0, not_one]^T, we will treat the matrix as if it
      * is in perspective, even though it stills behaves like its affine. If we divide everything
@@ -2017,10 +2415,10 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @return true if matrix has only finite elements
      */
     public boolean isFinite() {
-        // product will either be NaN or 0, if product is NaN, this check will return false
-        return 0f * m11 * m12 * m14 *
-                m21 * m22 * m24 *
-                m41 * m42 * m44 == 0;
+        return MathUtil.isFinite(
+                m11, m12, m14,
+                m21, m22, m24,
+                m41, m42, m44);
     }
 
     private static int floatTo2sCompliment(float x) {
@@ -2148,15 +2546,15 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
 
     @Override
     public int hashCode() {
-        int result = Float.floatToIntBits(m11);
-        result = 31 * result + Float.floatToIntBits(m12);
-        result = 31 * result + Float.floatToIntBits(m14);
-        result = 31 * result + Float.floatToIntBits(m21);
-        result = 31 * result + Float.floatToIntBits(m22);
-        result = 31 * result + Float.floatToIntBits(m24);
-        result = 31 * result + Float.floatToIntBits(m41);
-        result = 31 * result + Float.floatToIntBits(m42);
-        result = 31 * result + Float.floatToIntBits(m44);
+        int result = (m11 != 0.0f ? Float.floatToIntBits(m11) : 0);
+        result = 31 * result + (m12 != 0.0f ? Float.floatToIntBits(m12) : 0);
+        result = 31 * result + (m14 != 0.0f ? Float.floatToIntBits(m14) : 0);
+        result = 31 * result + (m21 != 0.0f ? Float.floatToIntBits(m21) : 0);
+        result = 31 * result + (m22 != 0.0f ? Float.floatToIntBits(m22) : 0);
+        result = 31 * result + (m24 != 0.0f ? Float.floatToIntBits(m24) : 0);
+        result = 31 * result + (m41 != 0.0f ? Float.floatToIntBits(m41) : 0);
+        result = 31 * result + (m42 != 0.0f ? Float.floatToIntBits(m42) : 0);
+        result = 31 * result + (m44 != 0.0f ? Float.floatToIntBits(m44) : 0);
         return result;
     }
 

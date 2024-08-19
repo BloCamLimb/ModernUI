@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.compiler.tree;
@@ -92,7 +92,16 @@ public class Type extends Symbol {
     @Nonnull
     public static Type makeAliasType(String name, Type type) {
         assert (type == type.resolve());
-        return new AliasType(name, type);
+        return new AliasType(type.mPosition, name, type);
+    }
+
+    /**
+     * Creates an alias which maps to another type.
+     */
+    @Nonnull
+    public static Type makeAliasType(int position, String name, Type type) {
+        assert (type == type.resolve());
+        return new AliasType(position, name, type);
     }
 
     /**
@@ -479,6 +488,10 @@ public class Type extends Symbol {
      * @see CoercionCost
      */
     public final long getCoercionCost(Type other) {
+        return getCoercionCost(other, false);
+    }
+
+    private long getCoercionCost(Type other, boolean inArray) {
         if (matches(other)) {
             return CoercionCost.free();
         }
@@ -488,23 +501,23 @@ public class Type extends Symbol {
                 if (getRows() != other.getRows()) {
                     return CoercionCost.saturate();
                 }
-                return getComponentType().getCoercionCost(other.getComponentType());
+                return getComponentType().getCoercionCost(other.getComponentType(), inArray);
             }
             if (isMatrix()) {
                 if (getRows() != other.getRows() || getCols() != other.getCols()) {
                     return CoercionCost.saturate();
                 }
-                return getComponentType().getCoercionCost(other.getComponentType());
+                return getComponentType().getCoercionCost(other.getComponentType(), inArray);
             }
             if (isArray()) {
                 if (getArraySize() != other.getArraySize()) {
                     return CoercionCost.saturate();
                 }
-                return getElementType().getCoercionCost(other.getElementType());
+                return getElementType().getCoercionCost(other.getElementType(), true);
             }
         }
         if (isNumeric() && other.isNumeric()) {
-            if (getScalarKind() != other.getScalarKind()) {
+            if (inArray && getScalarKind() != other.getScalarKind()) {
                 return CoercionCost.saturate();
             } else if (other.getRank() >= getRank()) {
                 return CoercionCost.widening(other.getRank() - getRank());
@@ -1007,8 +1020,8 @@ public class Type extends Symbol {
 
         private final Type mUnderlyingType;
 
-        AliasType(String name, Type type) {
-            super(name, type.getDesc(), type.getTypeKind());
+        AliasType(int position, String name, Type type) {
+            super(name, type.getDesc(), type.getTypeKind(), position);
             mUnderlyingType = type;
         }
 
@@ -1481,8 +1494,12 @@ public class Type extends Symbol {
             mNestingDepth = nestingDepth;
             mInterfaceBlock = interfaceBlock;
             int components = 0;
-            for (Field field : mFields) {
-                components += field.type().getComponents();
+            try {
+                for (Field field : mFields) {
+                    components += field.type().getComponents();
+                }
+            } catch (AssertionError e) {
+                components = 0;
             }
             mComponents = components;
         }

@@ -1,25 +1,26 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -28,24 +29,26 @@ import java.util.Set;
 /**
  * Tracks the state across all the GrOps (really just the GrDrawOps) in a OpsTask flush.
  */
+@Deprecated
 public class OpFlushState implements MeshDrawTarget {
 
-    private final GpuDevice mDevice;
+    private final Device mDevice;
 
     private OpsRenderPass mOpsRenderPass;
 
-    public OpFlushState(GpuDevice device,
+    public OpFlushState(Device device,
                         ResourceProvider resourceProvider) {
         mDevice = device;
     }
 
-    public GpuDevice getDevice() {
+    public Device getDevice() {
         return mDevice;
     }
 
-    public final GraphicsPipelineState findOrCreateGraphicsPipelineState(
-            final PipelineInfo pipelineInfo) {
-        return mDevice.getContext().findOrCreateGraphicsPipelineState(pipelineInfo);
+    public final GraphicsPipeline findOrCreateGraphicsPipeline(
+            final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
+        //return mDevice.getContext().findOrCreateGraphicsPipeline(graphicsPipelineDesc);
+        return null;
     }
 
     @Override
@@ -85,12 +88,12 @@ public class OpFlushState implements MeshDrawTarget {
         return mOpsRenderPass;
     }
 
-    public OpsRenderPass beginOpsRenderPass(SurfaceView writeView,
+    public OpsRenderPass beginOpsRenderPass(ImageProxyView writeView,
                                             Rect2i contentBounds,
                                             byte colorOps,
                                             byte stencilOps,
                                             float[] clearColor,
-                                            Set<TextureProxy> sampledTextures,
+                                            Set<SurfaceProxy> sampledTextures,
                                             int pipelineFlags) {
         assert (mOpsRenderPass == null);
         OpsRenderPass opsRenderPass = mDevice.getOpsRenderPass(writeView, contentBounds,

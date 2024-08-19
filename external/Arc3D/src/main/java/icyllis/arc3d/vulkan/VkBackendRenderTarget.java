@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.vulkan;
@@ -33,17 +33,17 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    private final VulkanImageInfo mInfo;
-    final VulkanSharedImageInfo mState;
+    private final VulkanImageDesc mInfo;
+    final VulkanImageMutableState mState;
 
     private VkBackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
-    public VkBackendRenderTarget(int width, int height, VulkanImageInfo info) {
-        this(width, height, info, new VulkanSharedImageInfo(info.mImageLayout, info.mCurrentQueueFamily));
+    public VkBackendRenderTarget(int width, int height, VulkanImageDesc info) {
+        this(width, height, info, new VulkanImageMutableState(info.mImageLayout, info.mCurrentQueueFamily));
     }
 
-    VkBackendRenderTarget(int width, int height, VulkanImageInfo info, VulkanSharedImageInfo state) {
+    VkBackendRenderTarget(int width, int height, VulkanImageDesc info, VulkanImageMutableState state) {
         super(width, height);
         if (info.mImageUsageFlags == 0) {
             info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
@@ -64,13 +64,18 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
     }
 
     @Override
+    public int getDepthBits() {
+        return 0;
+    }
+
+    @Override
     public int getStencilBits() {
         // We always create stencil buffers internally for vulkan
         return 0;
     }
 
     @Override
-    public boolean getVkImageInfo(VulkanImageInfo info) {
+    public boolean getVkImageInfo(VulkanImageDesc info) {
         info.set(mInfo);
         info.mImageLayout = mState.getImageLayout();
         info.mCurrentQueueFamily = mState.getQueueFamilyIndex();
@@ -91,7 +96,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = VkBackendFormat.make(mInfo.mFormat, false);
+            mBackendFormat = VkBackendFormat.make(mInfo.mFormat);
         }
         return mBackendFormat;
     }

@@ -1,25 +1,26 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.ShaderKind;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -62,7 +63,9 @@ public final class InterfaceBlock extends TopLevelElement {
         if ((blockStorage & (Modifiers.kUniform_Flag | Modifiers.kBuffer_Flag)) != 0) {
             permittedLayoutFlags |= Layout.kBinding_LayoutFlag |
                     Layout.kSet_LayoutFlag |
-                    Layout.kPushConstant_LayoutFlag;
+                    Layout.kPushConstant_LayoutFlag |
+                    Layout.kStd140_LayoutFlag |
+                    Layout.kStd430_LayoutFlag;
         }
         if (blockStorage == Modifiers.kBuffer_Flag) {
             permittedFlags |= Modifiers.kMemory_Flags;
@@ -90,7 +93,7 @@ public final class InterfaceBlock extends TopLevelElement {
                     (fieldModifiers.flags() & Modifiers.kStorage_Flags) != blockStorage) {
                 context.error(field.modifiers().mPosition,
                         "storage qualifier of a member must be storage qualifier '" +
-                        Modifiers.describeFlag(blockStorage) + "' of the block");
+                                Modifiers.describeFlag(blockStorage) + "' of the block");
                 success = false;
             }
             if ((blockStorage & (Modifiers.kIn_Flag | Modifiers.kOut_Flag)) != 0) {

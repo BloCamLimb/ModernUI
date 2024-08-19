@@ -1,27 +1,27 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.engine.SurfaceDrawContext;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -91,12 +91,10 @@ public class Canvas implements AutoCloseable {
     // cache some objects for performance
     private static final int MAX_MC_POOL_SIZE = 32;
 
-    // a cached identity matrix for resetMatrix() call
-    private static final Matrix4 IDENTITY_MATRIX = Matrix4.identity();
-
     // the bottom-most device in the stack, only changed by init(). Image properties and the final
     // canvas pixels are determined by this device
-    private final Device mBaseDevice;
+    @SharedPtr
+    private Device mRootDevice;
 
     // keep track of the device clip bounds in the canvas' global space to reject draws before
     // invoking the top-level device.
@@ -113,19 +111,24 @@ public class Canvas implements AutoCloseable {
     // value returned by getSaveCount()
     private int mSaveCount;
 
-    private final MarkerStack mMarkerStack = new MarkerStack();
-
     // a temp rect that used with arguments
     private final Rect2f mTmpRect = new Rect2f();
-    private final Matrix4 mTmpMatrix = new Matrix4();
+    private final Rect2f mTmpRect2 = new Rect2f();
+    private final RoundRect mTmpRoundRect = new RoundRect();
+    private final Rect2f mTmpQuickBounds = new Rect2f();
+    private final Rect2f mTmpQuickBounds2 = new Rect2f();
+    private final Matrix mTmpMatrix = new Matrix();
+    private final Matrix4 mTmpMatrix44 = new Matrix4();
     private final Paint mTmpPaint = new Paint();
+
+    private final GlyphRunBuilder mScratchGlyphRunBuilder = new GlyphRunBuilder();
 
     /**
      * Creates an empty Canvas with no backing device or pixels, with
      * a width and height of zero.
      */
     public Canvas() {
-        this(0, 0);
+        this((Device) null);
     }
 
     /**
@@ -139,22 +142,30 @@ public class Canvas implements AutoCloseable {
         this(new NoPixelsDevice(0, 0, Math.max(width, 0), Math.max(height, 0)));
     }
 
-    Canvas(Device device) {
+    protected Canvas(@Nonnull Rect2ic bounds) {
+        this(new NoPixelsDevice(bounds.isEmpty() ? Rect2i.empty() : bounds));
+    }
+
+    @ApiStatus.Internal
+    public Canvas(@SharedPtr Device device) {
+        if (device == null) {
+            device = new NoPixelsDevice(Rect2i.empty());
+        }
         mSaveCount = 1;
         mMCStack[0] = new MCRec(device);
-        mBaseDevice = device;
+        mRootDevice = device;
         computeQuickRejectBounds();
     }
 
     /**
      * Returns ImageInfo for Canvas. If Canvas is not associated with raster surface or
-     * GPU surface, returned ColorType is set to {@link ImageInfo#CT_UNKNOWN}.
+     * GPU surface, returned ColorType is set to {@link ColorInfo#CT_UNKNOWN}.
      *
      * @return dimensions and ColorType of Canvas
      */
     @Nonnull
-    public ImageInfo getImageInfo() {
-        return mBaseDevice.imageInfo();
+    public final ImageInfo getImageInfo() {
+        return onGetImageInfo();
     }
 
     /**
@@ -165,7 +176,7 @@ public class Canvas implements AutoCloseable {
      * @return integral width of base layer
      */
     public final int getBaseLayerWidth() {
-        return mBaseDevice.width();
+        return mRootDevice.width();
     }
 
     /**
@@ -176,7 +187,7 @@ public class Canvas implements AutoCloseable {
      * @return integral height of base layer
      */
     public final int getBaseLayerHeight() {
-        return mBaseDevice.height();
+        return mRootDevice.height();
     }
 
     /**
@@ -187,8 +198,9 @@ public class Canvas implements AutoCloseable {
      * @return Surface matching info, or null if no match is available
      */
     @Nullable
-    public Surface makeSurface(ImageInfo info) {
-        return getTopDevice().makeSurface(info);
+    @SharedPtr
+    public final Surface makeSurface(ImageInfo info) {
+        return onNewSurface(info);
     }
 
     /**
@@ -196,15 +208,17 @@ public class Canvas implements AutoCloseable {
      *
      * @return GPU context, if available; null otherwise
      */
+    @RawPtr
     @Nullable
-    public RecordingContext getRecordingContext() {
-        return getTopDevice().getRecordingContext();
+    public final RecordingContext getRecordingContext() {
+        return topDevice().getRecordingContext();
     }
 
     /**
      * Sometimes a canvas is owned by a surface. If it is, getSurface() will return a bare
      * pointer to that surface, else this will return null.
      */
+    @RawPtr
     @Nullable
     public final Surface getSurface() {
         return mSurface;
@@ -213,7 +227,7 @@ public class Canvas implements AutoCloseable {
     /**
      * Saves the current matrix and clip onto a private stack.
      * <p>
-     * Subsequent calls to translate, scale, rotate, skew, concat or clipRect,
+     * Subsequent calls to translate, scale, rotate, shear, concat or clipRect,
      * clipPath will all operate as usual, but when the balancing call to
      * restore() is made, those calls will be forgotten, and the settings that
      * existed before the save() will be reinstated.
@@ -227,8 +241,10 @@ public class Canvas implements AutoCloseable {
     public final int save() {
         final int i = mSaveCount++;
         top().mDeferredSaveCount++;
-        return i;
+        return i; // return our prev value
     }
+
+    //TODO these saveLayer() methods are WIP
 
     /**
      * This behaves the same as {@link #save()}, but in addition it allocates and
@@ -381,12 +397,14 @@ public class Canvas implements AutoCloseable {
      */
     public final void restore() {
         if (top().mDeferredSaveCount > 0) {
+            assert mSaveCount > 1;
             mSaveCount--;
             top().mDeferredSaveCount--;
         } else {
             // check for underflow
             if (mMCIndex > 0) {
                 willRestore();
+                assert mSaveCount > 1;
                 mSaveCount--;
                 internalRestore();
                 didRestore();
@@ -428,11 +446,13 @@ public class Canvas implements AutoCloseable {
         if (saveCount < 1) {
             throw new IllegalStateException("Stack underflow");
         }
-        int n = getSaveCount() - saveCount;
+        int n = mSaveCount - saveCount;
         for (int i = 0; i < n; ++i) {
             restore();
         }
     }
+
+    //////////////////////////////////////////////////////////////////////////////
 
     /**
      * Translates the current matrix by dx along the x-axis and dy along the y-axis.
@@ -449,14 +469,36 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preTranslate(dx, dy);
-            getTopDevice().setGlobalTransform(transform);
-            didTranslate(dx, dy);
+            topDevice().setGlobalCTM(transform);
+            didTranslate(dx, dy, 0);
+        }
+    }
+
+    /**
+     * Translates the current matrix by dx along the x-axis, dy along the y-axis,
+     * and dz along the z-axis. Mathematically, pre-multiply the current matrix with
+     * a translation matrix.
+     * <p>
+     * This has the effect of moving the drawing by (dx, dy, dz) before transforming
+     * the result with the current matrix.
+     *
+     * @param dx the distance to translate on x-axis
+     * @param dy the distance to translate on y-axis
+     * @param dz the distance to translate on z-axis
+     */
+    public final void translate(float dx, float dy, float dz) {
+        if (dx != 0.0f || dy != 0.0f || dz != 0.0f) {
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preTranslate(dx, dy, dz);
+            topDevice().setGlobalCTM(transform);
+            didTranslate(dx, dy, dz);
         }
     }
 
     /**
      * Scales the current matrix by sx on the x-axis and sy on the y-axis.
-     * Mathematically, pre-multiply the current matrix with a scale matrix.
+     * Mathematically, pre-multiply the current matrix with a scaling matrix.
      * <p>
      * This has the effect of scaling the drawing by (sx, sy) before transforming
      * the result with the current matrix.
@@ -469,15 +511,37 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preScale(sx, sy);
-            getTopDevice().setGlobalTransform(transform);
-            didScale(sx, sy);
+            topDevice().setGlobalCTM(transform);
+            didScale(sx, sy, 1);
+        }
+    }
+
+    /**
+     * Scales the current matrix by sx on the x-axis, sy on the y-axis, and
+     * sz on the z-axis. Mathematically, pre-multiply the current matrix with a
+     * scaling matrix.
+     * <p>
+     * This has the effect of scaling the drawing by (sx, sy, sz) before transforming
+     * the result with the current matrix.
+     *
+     * @param sx the amount to scale on x-axis
+     * @param sy the amount to scale on y-axis
+     * @param sz the amount to scale on z-axis
+     */
+    public final void scale(float sx, float sy, float sz) {
+        if (sx != 1.0f || sy != 1.0f || sz != 1.0f) {
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preScale(sx, sy, sz);
+            topDevice().setGlobalCTM(transform);
+            didScale(sx, sy, sz);
         }
     }
 
     /**
      * Scales the current matrix by sx on the x-axis and sy on the y-axis at (px, py).
      * Mathematically, pre-multiply the current matrix with a translation matrix;
-     * pre-multiply the current matrix with a scale matrix; then pre-multiply the
+     * pre-multiply the current matrix with a scaling matrix; then pre-multiply the
      * current matrix with a negative translation matrix;
      * <p>
      * This has the effect of scaling the drawing by (sx, sy) before transforming
@@ -490,13 +554,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void scale(float sx, float sy, float px, float py) {
         if (sx != 1.0f || sy != 1.0f) {
-            checkForDeferredSave();
-            Matrix4 transform = top().mMatrix;
-            transform.preTranslate(px, py);
-            transform.preScale(sx, sy);
-            transform.preTranslate(-px, -py);
-            getTopDevice().setGlobalTransform(transform);
-            didScale(sx, sy, px, py);
+            mTmpMatrix.setScale(sx, sy, px, py);
+            concat(mTmpMatrix);
         }
     }
 
@@ -511,11 +570,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void rotate(float degrees) {
         if (degrees != 0.0f) {
-            checkForDeferredSave();
-            Matrix4 transform = top().mMatrix;
-            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-            getTopDevice().setGlobalTransform(transform);
-            didRotate(degrees);
+            mTmpMatrix.setRotate(degrees * MathUtil.DEG_TO_RAD);
+            concat(mTmpMatrix);
         }
     }
 
@@ -534,14 +590,40 @@ public class Canvas implements AutoCloseable {
      */
     public final void rotate(float degrees, float px, float py) {
         if (degrees != 0.0f) {
-            checkForDeferredSave();
-            Matrix4 transform = top().mMatrix;
-            transform.preTranslate(px, py);
-            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-            transform.preTranslate(-px, -py);
-            getTopDevice().setGlobalTransform(transform);
-            didRotate(degrees, px, py);
+            mTmpMatrix.setRotate(degrees * MathUtil.DEG_TO_RAD, px, py);
+            concat(mTmpMatrix);
         }
+    }
+
+    /**
+     * Shears the current matrix by sx on the x-axis and sy on the y-axis. A positive value
+     * of sx shears the drawing right as y-axis values increase; a positive value of sy shears
+     * the drawing down as x-axis values increase.
+     * <p>
+     * Mathematically, pre-multiply the current matrix with a shearing matrix.
+     * <p>
+     * This has the effect of shearing the drawing by (sx, sy) before transforming
+     * the result with the current matrix.
+     *
+     * @param sx the amount to shear on x-axis
+     * @param sy the amount to shear on y-axis
+     */
+    public final void shear(float sx, float sy) {
+        mTmpMatrix.setShear(sx, sy);
+        concat(mTmpMatrix);
+    }
+
+    /**
+     * Pre-multiply the current matrix by the specified shearing.
+     *
+     * @param sx the x-component of the shearing, y is unchanged
+     * @param sy the y-component of the shearing, x is unchanged
+     * @param px the x-component of the pivot (unchanged by the shear)
+     * @param py the y-component of the pivot (unchanged by the shear)
+     */
+    public final void shear(float sx, float sy, float px, float py) {
+        mTmpMatrix.setShear(sx, sy, px, py);
+        concat(mTmpMatrix);
     }
 
     /**
@@ -552,37 +634,28 @@ public class Canvas implements AutoCloseable {
      *
      * @param matrix the matrix to premultiply with the current matrix
      */
-    public final void concat(Matrix4 matrix) {
-        if (!matrix.isIdentity()) {
-            checkForDeferredSave();
-            Matrix4 transform = top().mMatrix;
-            transform.preConcat(matrix);
-            getTopDevice().setGlobalTransform(matrix);
-            didConcat(matrix);
+    public final void concat(@Nonnull Matrixc matrix) {
+        if (matrix.isIdentity()) {
+            return;
         }
+        matrix.toMatrix4(mTmpMatrix44);
+        concat(mTmpMatrix44);
     }
 
     /**
-     * Record a marker (provided by caller) for the current transform. This does not change anything
-     * about the transform or clip, but does "name" this matrix value, so it can be referenced by
-     * custom effects (who access it by specifying the same name).
+     * Pre-multiply the current matrix by the specified matrix.
      * <p>
-     * Within a save frame, marking with the same name more than once just replaces the previous
-     * value. However, between save frames, marking with the same name does not lose the marker
-     * in the previous save frame. It is "visible" when the current save() is balanced with
-     * a restore().
+     * This has the effect of transforming the drawn geometry by matrix, before
+     * transforming the result with the current matrix.
+     *
+     * @param matrix the matrix to premultiply with the current matrix
      */
-    public final void setMarker(String name) {
-        if (validateMarker(name)) {
-            mMarkerStack.setMarker(name.hashCode(), top().mMatrix, mMCIndex);
-        }
-    }
-
-    /**
-     * @see #setMarker(String)
-     */
-    public final boolean findMarker(String name, Matrix4 out) {
-        return validateMarker(name) && mMarkerStack.findMarker(name.hashCode(), out);
+    public final void concat(@Nonnull Matrix4c matrix) {
+        checkForDeferredSave();
+        Matrix4 transform = top().mMatrix;
+        transform.preConcat(matrix);
+        topDevice().setGlobalCTM(transform);
+        didConcat(matrix);
     }
 
     /**
@@ -591,9 +664,11 @@ public class Canvas implements AutoCloseable {
      *
      * @param matrix matrix to copy, replacing the current matrix
      */
-    public final void setMatrix(Matrix4 matrix) {
+    public final void setMatrix(@Nonnull Matrix4c matrix) {
         checkForDeferredSave();
-        internalSetMatrix(matrix);
+        Matrix4 transform = top().mMatrix;
+        transform.set(matrix);
+        topDevice().setGlobalCTM(transform);
         didSetMatrix(matrix);
     }
 
@@ -602,8 +677,11 @@ public class Canvas implements AutoCloseable {
      * Any prior matrix state is overwritten.
      */
     public final void resetMatrix() {
-        setMatrix(IDENTITY_MATRIX);
+        mTmpMatrix44.setIdentity();
+        setMatrix(mTmpMatrix44);
     }
+
+    //////////////////////////////////////////////////////////////////////////////
 
     /**
      * Intersect the current clip with the specified rectangle and updates
@@ -613,28 +691,9 @@ public class Canvas implements AutoCloseable {
      *
      * @param rect the rectangle to intersect with the current clip
      */
-    public final void clipRect(Rect2i rect) {
+    public final void clipRect(Rect2ic rect) {
         mTmpRect.set(rect);
-        clipRect(mTmpRect, false);
-    }
-
-    /**
-     * Intersect the current clip with the specified rectangle and updates
-     * the stencil buffer if changed, which is expressed in local coordinates.
-     * Resulting clip is aliased. The clip bounds cannot be expanded unless
-     * restore() is called.
-     *
-     * @param left   the left side of the rectangle to intersect with the
-     *               current clip
-     * @param top    the top of the rectangle to intersect with the current clip
-     * @param right  the right side of the rectangle to intersect with the
-     *               current clip
-     * @param bottom the bottom of the rectangle to intersect with the current
-     *               clip
-     */
-    public final void clipRect(int left, int top, int right, int bottom) {
-        mTmpRect.set(left, top, right, bottom);
-        clipRect(mTmpRect, false);
+        clipRect(mTmpRect, ClipOp.CLIP_OP_INTERSECT, false);
     }
 
     /**
@@ -645,8 +704,8 @@ public class Canvas implements AutoCloseable {
      *
      * @param rect the rectangle to intersect with the current clip
      */
-    public final void clipRect(Rect2f rect) {
-        clipRect(rect, false);
+    public final void clipRect(Rect2fc rect) {
+        clipRect(rect, ClipOp.CLIP_OP_INTERSECT, false);
     }
 
     /**
@@ -665,7 +724,7 @@ public class Canvas implements AutoCloseable {
      */
     public final void clipRect(float left, float top, float right, float bottom) {
         mTmpRect.set(left, top, right, bottom);
-        clipRect(mTmpRect, false);
+        clipRect(mTmpRect, ClipOp.CLIP_OP_INTERSECT, false);
     }
 
     /**
@@ -677,12 +736,8 @@ public class Canvas implements AutoCloseable {
      * @param rect the rectangle to intersect with the current clip
      * @param doAA true if clip is to be anti-aliased
      */
-    public final void clipRect(Rect2f rect, boolean doAA) {
-        if (rect.isFinite()) {
-            checkForDeferredSave();
-            rect.sort();
-            onClipRect(rect, doAA);
-        }
+    public final void clipRect(Rect2fc rect, boolean doAA) {
+        clipRect(rect, ClipOp.CLIP_OP_INTERSECT, doAA);
     }
 
     /**
@@ -702,8 +757,66 @@ public class Canvas implements AutoCloseable {
      */
     public final void clipRect(float left, float top, float right, float bottom, boolean doAA) {
         mTmpRect.set(left, top, right, bottom);
-        clipRect(mTmpRect, doAA);
+        clipRect(mTmpRect, ClipOp.CLIP_OP_INTERSECT, doAA);
     }
+
+    /**
+     * Replaces the current clip with the intersection or difference of the current clip
+     * and the given rect, with an aliased or anti-aliased clip edge. The rectangle is
+     * transformed by the current matrix before it is combined with clip.
+     *
+     * @param rect   rectangle to combine with clip
+     * @param clipOp ClipOp to apply to clip
+     */
+    public final void clipRect(Rect2ic rect, int clipOp) {
+        mTmpRect.set(rect);
+        clipRect(mTmpRect, clipOp, false);
+    }
+
+    /**
+     * Replaces the current clip with the intersection or difference of the current clip
+     * and the given rect, with an aliased or anti-aliased clip edge. The rectangle is
+     * transformed by the current matrix before it is combined with clip.
+     *
+     * @param rect   rectangle to combine with clip
+     * @param clipOp ClipOp to apply to clip
+     */
+    public final void clipRect(Rect2fc rect, int clipOp) {
+        clipRect(rect, clipOp, false);
+    }
+
+    /**
+     * Replaces the current clip with the intersection or difference of the current clip
+     * and the given rect, with an aliased or anti-aliased clip edge. The rectangle is
+     * transformed by the current matrix before it is combined with clip.
+     *
+     * @param clipOp ClipOp to apply to clip
+     */
+    public final void clipRect(float left, float top, float right, float bottom, int clipOp) {
+        mTmpRect.set(left, top, right, bottom);
+        clipRect(mTmpRect, clipOp, false);
+    }
+
+    /**
+     * Replaces the current clip with the intersection or difference of the current clip
+     * and the given rect, with an aliased or anti-aliased clip edge. The rectangle is
+     * transformed by the current matrix before it is combined with clip.
+     *
+     * @param rect   rectangle to combine with clip
+     * @param clipOp ClipOp to apply to clip
+     * @param doAA   true if clip mask is requested to be anti-aliased
+     */
+    public final void clipRect(Rect2fc rect, int clipOp, boolean doAA) {
+        if (!rect.isFinite()) {
+            return;
+        }
+        checkForDeferredSave();
+        mTmpRect2.set(rect);
+        mTmpRect2.sort();
+        onClipRect(mTmpRect2, clipOp, doAA);
+    }
+
+    //TODO clip round rect, clip path
 
     /**
      * Return true if the specified rectangle, after being transformed by the
@@ -719,8 +832,10 @@ public class Canvas implements AutoCloseable {
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
-    public final boolean quickReject(Rect2f rect) {
-        return quickReject(rect.mLeft, rect.mTop, rect.mRight, rect.mBottom);
+    public final boolean quickReject(Rect2fc rect) {
+        var devRect = mTmpQuickBounds2;
+        top().mMatrix.mapRect(rect, devRect);
+        return !devRect.isFinite() || !devRect.intersects(mQuickRejectBounds);
     }
 
     /**
@@ -745,9 +860,9 @@ public class Canvas implements AutoCloseable {
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
     public final boolean quickReject(float left, float top, float right, float bottom) {
-        mTmpRect.set(left, top, right, bottom);
-        top().mMatrix.mapRect(mTmpRect);
-        return !mTmpRect.isFinite() || !mTmpRect.intersects(mQuickRejectBounds);
+        var devRect = mTmpQuickBounds2;
+        top().mMatrix.mapRect(left, top, right, bottom, devRect);
+        return !devRect.isFinite() || !devRect.intersects(mQuickRejectBounds);
     }
 
     /**
@@ -762,13 +877,15 @@ public class Canvas implements AutoCloseable {
      * @return true if clip bounds is not empty
      */
     public final boolean getLocalClipBounds(Rect2f bounds) {
-        Device device = getTopDevice();
-        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
+        Device device = topDevice();
+        if (device.isClipEmpty()) {
             bounds.setEmpty();
             return false;
         } else {
+            Matrix inverse = new Matrix();
+            top().mMatrix.toMatrix(inverse);
             // if we can't invert the matrix, we can't return local clip bounds
-            if (!top().mMatrix.invert(mTmpMatrix)) {
+            if (!inverse.invert()) {
                 bounds.setEmpty();
                 return false;
             }
@@ -776,8 +893,8 @@ public class Canvas implements AutoCloseable {
             device.getDeviceToGlobal().mapRect(bounds);
             bounds.roundOut(bounds);
             // adjust it outwards in case we are antialiasing
-            bounds.inset(-1.0f, -1.0f);
-            mTmpMatrix.mapRect(bounds);
+            bounds.outset(1.0f, 1.0f);
+            inverse.mapRect(bounds);
             return !bounds.isEmpty();
         }
     }
@@ -793,16 +910,18 @@ public class Canvas implements AutoCloseable {
      * @return true if clip bounds is not empty
      */
     public final boolean getDeviceClipBounds(Rect2i bounds) {
-        Device device = getTopDevice();
-        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
+        Device device = topDevice();
+        if (device.isClipEmpty()) {
             bounds.setEmpty();
             return false;
         } else {
-            bounds.set(device.getClipBounds());
+            device.getClipBounds(bounds);
             device.getDeviceToGlobal().mapRectOut(bounds, bounds);
             return !bounds.isEmpty();
         }
     }
+
+    //////////////////////////////////////////////////////////////////////////////
 
     /**
      * Fills the current clip with the specified color, using SRC blend mode.
@@ -811,16 +930,6 @@ public class Canvas implements AutoCloseable {
      * @param color the un-premultiplied (straight) color to draw onto the canvas
      */
     public final void clear(@ColorInt int color) {
-        drawColor(color, BlendMode.SRC);
-    }
-
-    /**
-     * Fills the current clip with the specified color, using SRC blend mode.
-     * This has the effect of replacing all pixels contained by clip with color.
-     *
-     * @param color the un-premultiplied (straight) color to draw onto the canvas
-     */
-    public final void clear(Color color) {
         drawColor(color, BlendMode.SRC);
     }
 
@@ -838,12 +947,20 @@ public class Canvas implements AutoCloseable {
     }
 
     /**
-     * Fill the current clip with the specified color, using SRC_OVER blend mode.
-     *
-     * @param color the straight color to draw onto the canvas
+     * Makes Canvas contents undefined. Subsequent calls that read Canvas pixels,
+     * such as drawing with BlendMode, return undefined results. discard() does
+     * not change clip or Matrix.
+     * <p>
+     * discard() may do nothing, depending on the implementation of Surface or Device
+     * that created Canvas.
+     * <p>
+     * discard() allows optimized performance on subsequent draws by removing
+     * cached data associated with Surface or Device.
+     * It is not necessary to call discard() once done with Canvas;
+     * any cached data is deleted when owning Surface or Device is deleted.
      */
-    public final void drawColor(@ColorInt int color) {
-        drawColor(color, BlendMode.SRC_OVER);
+    public final void discard() {
+        onDiscard();
     }
 
     /**
@@ -851,7 +968,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param color the straight color to draw onto the canvas
      */
-    public final void drawColor(Color color) {
+    public final void drawColor(@ColorInt int color) {
         drawColor(color, BlendMode.SRC_OVER);
     }
 
@@ -877,22 +994,7 @@ public class Canvas implements AutoCloseable {
     public final void drawColor(@ColorInt int color, BlendMode mode) {
         Paint paint = mTmpPaint;
         paint.setColor(color);
-        paint.setBlender(mode);
-        drawPaint(paint);
-        paint.reset();
-    }
-
-    /**
-     * Fill the current clip with the specified color, the blend mode determines
-     * how color is combined with destination.
-     *
-     * @param color the straight color to draw onto the canvas
-     * @param mode  the blend mode used to combine source color and destination
-     */
-    public final void drawColor(Color color, BlendMode mode) {
-        Paint paint = mTmpPaint;
-        paint.setRGBA(color.mR, color.mG, color.mB, color.mA);
-        paint.setBlender(mode);
+        paint.setBlendMode(mode);
         drawPaint(paint);
         paint.reset();
     }
@@ -909,8 +1011,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void drawColor(float r, float g, float b, float a, BlendMode mode) {
         Paint paint = mTmpPaint;
-        paint.setRGBA(r, g, b, a);
-        paint.setBlender(mode);
+        paint.setColor4f(r, g, b, a);
+        paint.setBlendMode(mode);
         drawPaint(paint);
         paint.reset();
     }
@@ -924,30 +1026,184 @@ public class Canvas implements AutoCloseable {
      *
      * @param paint the paint used to draw onto the canvas
      */
-    public void drawPaint(Paint paint) {
-        internalDrawPaint(paint);
+    public final void drawPaint(Paint paint) {
+        onDrawPaint(paint);
+    }
+
+    /**
+     * The {@code PointMode} selects if an array of points is drawn as discrete points,
+     * as lines, or as an open polygon.
+     */
+    @MagicConstant(intValues = {POINT_MODE_POINTS, POINT_MODE_LINES, POINT_MODE_POLYGON})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface PointMode {
+    }
+
+    /**
+     * Draw each point separately.
+     */
+    public static final int POINT_MODE_POINTS = 0;
+    /**
+     * Draw each pair of points as a line segment.
+     */
+    public static final int POINT_MODE_LINES = 1;
+    /**
+     * Draw the array of points as an open polygon.
+     */
+    public static final int POINT_MODE_POLYGON = 2;
+
+    /**
+     * Draws pts using the current matrix, clip and specified paint.
+     * <var>count</var> is the number of points; if count is less than one, has no effect.
+     * mode may be one of: {@link #POINT_MODE_POINTS}, {@link #POINT_MODE_LINES}, or
+     * {@link #POINT_MODE_POLYGON}.
+     * <p>
+     * If mode is {@link #POINT_MODE_POINTS}, the shape of point drawn depends on paint
+     * Cap. If paint is set to {@link Paint#CAP_ROUND}, each point draws a
+     * circle of diameter paint stroke width. If paint is set to {@link Paint#CAP_SQUARE}
+     * or {@link Paint#CAP_BUTT}, each point draws a square of width and height
+     * paint stroke width.
+     * <p>
+     * If mode is {@link #POINT_MODE_LINES}, each pair of points draws a line segment.
+     * One line is drawn for every two points; each point is used once. If count is odd,
+     * the last point is ignored.
+     * <p>
+     * If mode is {@link #POINT_MODE_POLYGON}, each adjacent pair of points draws a line segment.
+     * count minus one lines are drawn; the first and last point are used once.
+     * <p>
+     * Each line segment respects paint Cap and paint stroke width.
+     * Paint style is ignored, as if were set to {@link Paint#STROKE}.
+     * <p>
+     * Always draws each element one at a time; is not affected by paint join,
+     * and unlike drawPath(), does not create a mask from all points
+     * and lines before drawing.
+     *
+     * @param mode   whether pts draws points or lines
+     * @param pts    array of points to draw
+     * @param offset offset in pts array, i.e., number of floats to skip
+     * @param count  number of points in pts array
+     * @param paint  stroke, blend, color, and so on, used to draw
+     */
+    public final void drawPoints(@PointMode int mode,
+                                 float[] pts, int offset, int count,
+                                 Paint paint) {
+        if (count <= 0) {
+            return;
+        }
+        assert pts.length >= offset + count * 2;
+        var oldStyle = paint.getStyle();
+        var oldCap = paint.getStrokeCap();
+        paint.setStyle(Paint.STROKE);
+        if (mode == POINT_MODE_POINTS && oldCap == Paint.CAP_BUTT) {
+            paint.setStrokeCap(Paint.CAP_SQUARE);
+        }
+        onDrawPoints(mode, pts, offset, count, paint);
+        paint.setStyle(oldStyle);
+        paint.setStrokeCap(oldCap);
+    }
+
+    /**
+     * Draws point at (x, y) using the current matrix, clip and specified paint.
+     * <p>
+     * The shape of point drawn depends on paint cap.
+     * If paint is set to {@link Paint#CAP_ROUND}, draw a circle of diameter
+     * paint stroke width. If paint is set to {@link Paint#CAP_SQUARE} or {@link Paint#CAP_BUTT},
+     * draw a square of width and height paint stroke width.
+     * Paint style is ignored, as if were set to {@link Paint#STROKE}.
+     *
+     * @param x     center X of circle or square
+     * @param y     center Y of circle or square
+     * @param paint stroke, blend, color, and so on, used to draw
+     */
+    public final void drawPoint(float x, float y,
+                                Paint paint) {
+        // draw a point by filling the stroke
+        var oldStyle = paint.getStyle();
+        paint.setStyle(Paint.FILL);
+        drawPoint(x, y,
+                paint.getStrokeCap(),
+                paint.getStrokeWidth(),
+                paint);
+        paint.setStyle(oldStyle);
+    }
+
+    /**
+     * Draws point at (x, y) using the current matrix, clip and specified paint.
+     * <p>
+     * The shape of point drawn depends on <var>cap</var>.
+     * If <var>cap</var> is {@link Paint#CAP_ROUND}, draw a circle of diameter
+     * <var>size</var>. If <var>cap</var> is {@link Paint#CAP_SQUARE} or {@link Paint#CAP_BUTT},
+     * draw a square of width and height <var>size</var>. In paint: Style determines if point
+     * is stroked or filled; If stroked (i.e. double stroke), stroke width describes the
+     * shape outline thickness, Cap describes line ends, Join draws the corners rounded
+     * or square, and Align determines the position or direction to stroke.
+     *
+     * @param x     center X of circle or square
+     * @param y     center Y of circle or square
+     * @param cap   the line end used to determine the shape of point
+     * @param size  the diameter of circle or width and height of square
+     * @param paint stroke, blend, color, and so on, used to draw
+     */
+    public final void drawPoint(float x, float y,
+                                @Paint.Cap int cap, float size, Paint paint) {
+        if (size >= 0) {
+            float radius = size * 0.5f;
+            if (cap == Paint.CAP_ROUND) {
+                drawCircle(x, y, radius, paint);
+            } else {
+                drawRect(x - radius, y - radius, x + radius, y + radius, paint);
+            }
+        }
+    }
+
+    /**
+     * Draws line segment from (x0, y0) to (x1, y1) using the current matrix,
+     * clip and specified paint. In paint: stroke width describes the line thickness;
+     * Cap draws the end rounded or square; Style is ignored, as if were set to
+     * {@link Paint#STROKE}.
+     *
+     * @param x0    start of line segment on x-axis
+     * @param y0    start of line segment on y-axis
+     * @param x1    end of line segment on x-axis
+     * @param y1    end of line segment on y-axis
+     * @param paint the paint used to draw the line
+     */
+    public final void drawLine(float x0, float y0, float x1, float y1,
+                               Paint paint) {
+        // draw a line by filling the stroke
+        var oldStyle = paint.getStyle();
+        paint.setStyle(Paint.FILL);
+        drawLine(x0, y0, x1, y1,
+                paint.getStrokeCap(),
+                paint.getStrokeWidth(),
+                paint);
+        paint.setStyle(oldStyle);
     }
 
     /**
      * Draw a line segment from (x0, y0) to (x1, y1) using the current matrix,
-     * clip and specified paint. Note that line shape is not line path, this will
-     * use shape renderer based on analytic geometry rather than path renderer.
+     * clip and specified paint. Note that line shape is a stroked line rather
+     * than a line path, you can fill or stroke the stroked line.
      * <p>
-     * The size describes the line shape thickness. In paint: Style determines
-     * if line shape is stroked or filled; Cap draws the shape end rounded or
-     * square; If stroked (that is, a hollow shape), stroke width describes the
-     * shape outline thickness, Join draws the corners rounded or square,
-     * if Cap is other than {@link Paint#CAP_ROUND}, and Align determines
-     * the position or direction to stroke.
+     * The <var>cap</var> describes the end of the line shape, the <var>width</var>
+     * describes the line shape thickness. In paint: Style determines if line shape
+     * is stroked or filled; If stroked (i.e. double stroke), stroke width describes the
+     * shape outline thickness, Cap describes line ends, Join draws the corners rounded
+     * or square, and Align determines the position or direction to stroke.
      *
      * @param x0    the start of line segment on x-axis
      * @param y0    the start of line segment on y-axis
      * @param x1    the end of line segment on x-axis
      * @param y1    the end of line segment on y-axis
-     * @param size  the thickness of line segment
+     * @param cap   the line end used to determine the shape of the line
+     * @param width the thickness of line segment
      * @param paint the paint used to draw the line
      */
-    public void drawLine(float x0, float y0, float x1, float y1, float size, Paint paint) {
+    public final void drawLine(float x0, float y0, float x1, float y1,
+                               @Paint.Cap int cap, float width, Paint paint) {
+        if (width >= 0) {
+            onDrawLine(x0, y0, x1, y1, cap, width, paint);
+        }
     }
 
     /**
@@ -959,8 +1215,10 @@ public class Canvas implements AutoCloseable {
      * @param r     the rectangle to be drawn.
      * @param paint the paint used to draw the rectangle
      */
-    public final void drawRect(Rect2f r, Paint paint) {
-        drawRect(r.mLeft, r.mTop, r.mRight, r.mBottom, paint);
+    public final void drawRect(Rect2fc r, Paint paint) {
+        mTmpRect.set(r);
+        mTmpRect.sort();
+        onDrawRect(mTmpRect, paint);
     }
 
     /**
@@ -972,8 +1230,10 @@ public class Canvas implements AutoCloseable {
      * @param r     the rectangle to be drawn.
      * @param paint the paint used to draw the rectangle
      */
-    public final void drawRect(Rect2i r, Paint paint) {
-        drawRect(r.mLeft, r.mTop, r.mRight, r.mBottom, paint);
+    public final void drawRect(Rect2ic r, Paint paint) {
+        mTmpRect.set(r);
+        mTmpRect.sort();
+        onDrawRect(mTmpRect, paint);
     }
 
     /**
@@ -989,7 +1249,9 @@ public class Canvas implements AutoCloseable {
      * @param paint  the paint used to draw the rect
      */
     public void drawRect(float left, float top, float right, float bottom, Paint paint) {
-
+        mTmpRect.set(left, top, right, bottom);
+        mTmpRect.sort();
+        onDrawRect(mTmpRect, paint);
     }
 
     /**
@@ -1000,8 +1262,9 @@ public class Canvas implements AutoCloseable {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(Rect2f rect, float radius, Paint paint) {
-        drawRoundRect(rect.mLeft, rect.mTop, rect.mRight, rect.mBottom, radius, radius, radius, radius, paint);
+    public final void drawRoundRect(Rect2fc rect, float radius, Paint paint) {
+        mTmpRoundRect.setRectXY(rect, radius, radius);
+        onDrawRoundRect(mTmpRoundRect, paint);
     }
 
     /**
@@ -1017,7 +1280,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void drawRoundRect(float left, float top, float right, float bottom,
                                     float radius, Paint paint) {
-        drawRoundRect(left, top, right, bottom, radius, radius, radius, radius, paint);
+        mTmpRoundRect.setRectXY(left, top, right, bottom, radius, radius);
+        onDrawRoundRect(mTmpRoundRect, paint);
     }
 
     /**
@@ -1053,6 +1317,10 @@ public class Canvas implements AutoCloseable {
                               float rUL, float rUR, float rLR, float rLL, Paint paint) {
     }
 
+    public void drawRoundRect(RoundRect roundRect, Paint paint) {
+        onDrawRoundRect(roundRect, paint);
+    }
+
     /**
      * Draw the specified circle at (cx, cy) with radius using the specified paint.
      * If radius is zero or less, nothing is drawn.
@@ -1064,12 +1332,15 @@ public class Canvas implements AutoCloseable {
      * @param radius the radius of the circle to be drawn
      * @param paint  the paint used to draw the circle
      */
-    public void drawCircle(float cx, float cy, float radius, Paint paint) {
-
+    public final void drawCircle(float cx, float cy, float radius, Paint paint) {
+        onDrawCircle(cx, cy, Math.max(radius, 0.0f), paint);
     }
 
+    //TODO draw ellipse and oval
+
     /**
-     * Draw a circular arc at (cx, cy) with radius using the specified paint.
+     * Draw a circular arc at (cx, cy) with radius using the current matrix,
+     * clip and specified paint.
      * <p>
      * If the start angle is negative or >= 360, the start angle is treated as
      * start angle modulo 360. If the sweep angle is >= 360, then the circle is
@@ -1087,33 +1358,102 @@ public class Canvas implements AutoCloseable {
      * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
      * @param paint      the paint used to draw the arc
      */
-    public void drawArc(float cx, float cy, float radius, float startAngle,
-                        float sweepAngle, Paint paint) {
-
+    public final void drawArc(float cx, float cy, float radius, float startAngle,
+                              float sweepAngle, Paint paint) {
+        if (radius > 0 && sweepAngle != 0) {
+            // draw an arc by filling the stroke
+            var oldStyle = paint.getStyle();
+            paint.setStyle(Paint.FILL);
+            drawArc(cx, cy, radius,
+                    startAngle, sweepAngle,
+                    paint.getStrokeCap(),
+                    paint.getStrokeWidth(),
+                    paint);
+            paint.setStyle(oldStyle);
+        }
     }
 
     /**
-     * Draw a quadratic Bézier curve using the specified paint. The three points represent
-     * the starting point, the first control point and the end control point respectively.
+     * Draw a circular arc at (cx, cy) with radius using the current matrix,
+     * clip and specified paint. Note that arc shape is a stroked arc rather
+     * than an arc path, you can fill or stroke the stroked arc.
      * <p>
-     * The style is ignored in the paint, Bézier curves are always stroked. The stroke width
-     * in the paint represents the width of the curve.
+     * If the start angle is negative or >= 360, the start angle is treated as
+     * start angle modulo 360. If the sweep angle is >= 360, then the circle is
+     * drawn completely. If the sweep angle is negative, the sweep angle is
+     * treated as sweep angle modulo 360.
      * <p>
-     * Note that the distance from a point to the quadratic curve requires the GPU to solve
-     * cubic equations. Therefore, this method has higher overhead to the GPU.
+     * The arc is drawn clockwise. An angle of 0 degrees correspond to the
+     * geometric angle of 0 degrees (3 o'clock on a watch). If radius is
+     * non-positive or sweep angle is zero, nothing is drawn.
+     * <p>
+     * The <var>cap</var> describes the end of the arc shape, the <var>width</var>
+     * describes the arc shape thickness. In paint: Style determines if arc shape
+     * is stroked or filled; If stroked (i.e. double stroke), stroke width describes the
+     * shape outline thickness, Cap describes line ends, Join draws the corners rounded
+     * or square, and Align determines the position or direction to stroke.
      *
-     * @param x0    the x-coordinate of the starting point of the Bézier curve
-     * @param y0    the y-coordinate of the starting point of the Bézier curve
-     * @param x1    the x-coordinate of the first control point of the Bézier curve
-     * @param y1    the y-coordinate of the first control point of the Bézier curve
-     * @param x2    the x-coordinate of the end control point of the Bézier curve
-     * @param y2    the y-coordinate of the end control point of the Bézier curve
-     * @param paint the paint used to draw the Bézier curve
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param cap        the line end used to determine the shape of the arc
+     * @param width      the thickness of arc segment
+     * @param paint      the paint used to draw the arc
      */
-    public void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
-                           Paint paint) {
-
+    public final void drawArc(float cx, float cy, float radius, float startAngle,
+                              float sweepAngle, @Paint.Cap int cap, float width, Paint paint) {
+        onDrawArc(cx, cy, radius, startAngle, sweepAngle, cap, width, paint);
     }
+
+    /**
+     * Draw a circular sector (i.e., a pie) at (cx, cy) with radius using the
+     * current matrix, clip and specified paint.
+     * <p>
+     * Similar to {@link #drawArc(float, float, float, float, float, Paint)}, but
+     * when the shape is not a full circle, the geometry is closed by the arc and
+     * two line segments from the end of the arc to the center of the circle.
+     * <p>
+     *
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
+     */
+    public final void drawPie(float cx, float cy, float radius, float startAngle,
+                              float sweepAngle, Paint paint) {
+        if (radius > 0 && sweepAngle != 0) {
+            onDrawPie(cx, cy, radius, startAngle, sweepAngle, paint);
+        }
+    }
+
+    /**
+     * Draw a circular segment (i.e., a cut disk) at (cx, cy) with radius using the
+     * current matrix, clip and specified paint.
+     * <p>
+     * Similar to {@link #drawArc(float, float, float, float, float, Paint)}, but
+     * when the shape is not a full circle, the geometry is closed by the arc and
+     * a line segment from the start of the arc segment to the end of the arc segment.
+     * <p>
+     *
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
+     */
+    public final void drawChord(float cx, float cy, float radius, float startAngle,
+                                float sweepAngle, Paint paint) {
+        if (radius > 0 && sweepAngle != 0) {
+            onDrawChord(cx, cy, radius, startAngle, sweepAngle, paint);
+        }
+    }
+
+    //TODO draw path
 
     /**
      * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
@@ -1131,7 +1471,28 @@ public class Canvas implements AutoCloseable {
      */
     public void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
                              Paint paint) {
+        //TODO
     }
+
+    /**
+     * The {@code SrcRectConstraint} controls the behavior at the edge of source rect,
+     * provided to drawImageRect() when there is any filtering. If STRICT is set,
+     * then extra code is used to ensure it never samples outside the src-rect.
+     * {@link #SRC_RECT_CONSTRAINT_STRICT} disables the use of mipmaps and anisotropic filtering.
+     */
+    @MagicConstant(intValues = {SRC_RECT_CONSTRAINT_FAST, SRC_RECT_CONSTRAINT_STRICT})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SrcRectConstraint {
+    }
+
+    /**
+     * Sample outside bounds; faster
+     */
+    public static final int SRC_RECT_CONSTRAINT_FAST = 0;
+    /**
+     * Sample only inside bounds; slower.
+     */
+    public static final int SRC_RECT_CONSTRAINT_STRICT = 1;
 
     /**
      * Draw the specified image with its top/left corner at (x,y), using the
@@ -1139,12 +1500,37 @@ public class Canvas implements AutoCloseable {
      * radius is ignored in the paint, images are always filled.
      *
      * @param image the image to be drawn
-     * @param left  the position of the left side of the image being drawn
-     * @param top   the position of the top side of the image being drawn
+     * @param x     the position of the left side of the image being drawn
+     * @param y     the position of the top side of the image being drawn
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public void drawImage(Image image, float left, float top, @Nullable Paint paint) {
+    public final void drawImage(@RawPtr Image image, float x, float y, SamplingOptions sampling,
+                                @Nullable Paint paint) {
+        if (image == null) {
+            return;
+        }
+        var src = new Rect2f(0, 0, image.getWidth(), image.getHeight());
+        var dst = new Rect2f(src);
+        dst.offset(x, y);
+        drawImageRect(image, src, dst, sampling, paint, SRC_RECT_CONSTRAINT_FAST);
+    }
 
+    /**
+     * Draw the specified image, scaling/translating automatically to fill the destination
+     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
+     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
+     *
+     * @param image the image to be drawn
+     * @param dst   the rectangle that the image will be scaled/translated to fit into
+     * @param paint the paint used to draw the image, null meaning a default paint
+     */
+    public final void drawImageRect(@RawPtr Image image, Rect2fc dst, SamplingOptions sampling,
+                                    @Nullable Paint paint) {
+        if (image == null) {
+            return;
+        }
+        var src = new Rect2f(0, 0, image.getWidth(), image.getHeight());
+        drawImageRect(image, src, dst, sampling, paint, SRC_RECT_CONSTRAINT_FAST);
     }
 
     /**
@@ -1157,63 +1543,132 @@ public class Canvas implements AutoCloseable {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public final void drawImage(Image image, @Nullable Rect2i src, Rect2f dst, @Nullable Paint paint) {
-        if (src == null) {
-            drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
-                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
-        } else {
-            drawImage(image, src.mLeft, src.mTop, src.mRight, src.mBottom,
-                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
+    public final void drawImageRect(@RawPtr Image image, Rect2fc src, Rect2fc dst, SamplingOptions sampling,
+                                    @Nullable Paint paint, @SrcRectConstraint int constraint) {
+        if (image == null) {
+            return;
         }
-    }
-
-    /**
-     * Draw the specified image, scaling/translating automatically to fill the destination
-     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
-     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
-     *
-     * @param image the image to be drawn
-     * @param src   the subset of the image to be drawn, null meaning full image
-     * @param dst   the rectangle that the image will be scaled/translated to fit into
-     * @param paint the paint used to draw the image, null meaning a default paint
-     */
-    public final void drawImage(Image image, @Nullable Rect2i src, Rect2i dst, @Nullable Paint paint) {
-        if (src == null) {
-            drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
-                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
-        } else {
-            drawImage(image, src.mLeft, src.mTop, src.mRight, src.mBottom,
-                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
+        if (!src.isFinite() || src.isEmpty() || !dst.isFinite() || dst.isEmpty()) {
+            return;
         }
+        var cleanedPaint = mTmpPaint;
+        if (paint != null) {
+            cleanedPaint.set(paint);
+            cleanedPaint.setStyle(Paint.FILL);
+            cleanedPaint.setPathEffect(null);
+        }
+        if (constraint == SRC_RECT_CONSTRAINT_STRICT) {
+            if (sampling.mMipmapMode != SamplingOptions.MIPMAP_MODE_NONE) {
+                // Use linear filter if either is linear
+                int filter = sampling.mMinFilter | sampling.mMagFilter;
+                sampling = filter == SamplingOptions.FILTER_MODE_LINEAR
+                        ? SamplingOptions.LINEAR
+                        : SamplingOptions.POINT;
+            } else if (sampling.isAnisotropy()) {
+                sampling = SamplingOptions.LINEAR;
+            }
+        }
+        onDrawImageRect(image, src, dst, sampling, cleanedPaint, constraint);
+        cleanedPaint.reset();
     }
 
     /**
-     * Draw the specified image, scaling/translating automatically to fill the destination
-     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
-     * draw. The Style and smooth radius is ignored in the paint, images are always filled.
+     * Draws count glyphs, at positions relative to origin styled with font and paint.
+     * <p>
+     * This function draw glyphs at the given positions relative to the given origin.
+     * It does not perform typeface fallback for glyphs not found in the Typeface in font.
+     * <p>
+     * The drawing obeys the current transform matrix and clipping.
+     * <p>
+     * All elements of paint: PathEffect, Shader, and ColorFilter; apply to text. By
+     * default, draws filled white glyphs.
      *
-     * @param image the image to be drawn
-     * @param paint the paint used to draw the image, null meaning a default paint
+     * @param glyphs     the array of glyphIDs to draw
+     * @param positions  where to draw each glyph relative to origin
+     * @param glyphCount number of glyphs to draw
+     * @param originX    the origin X of all the positions
+     * @param originY    the origin Y of all the positions
+     * @param font       typeface, text size and so, used to describe the text
+     * @param paint      blend, color, and so on, used to draw
      */
-    public void drawImage(Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
-                          float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint) {
+    public final void drawGlyphs(@Nonnull int[] glyphs, int glyphOffset,
+                                 @Nonnull float[] positions, int positionOffset,
+                                 int glyphCount,
+                                 float originX, float originY,
+                                 @Nonnull Font font, @Nonnull Paint paint) {
+        if (glyphCount <= 0) {
+            return;
+        }
 
+        GlyphRunList glyphRunList = mScratchGlyphRunBuilder.setGlyphRunList(
+                glyphs, glyphOffset,
+                positions, positionOffset,
+                glyphCount, font,
+                paint, originX, originY
+        );
+        onDrawGlyphRunList(glyphRunList, paint);
+        mScratchGlyphRunBuilder.clear();
     }
 
     /**
-     * Draw the specified image with rounded corners, whose top/left corner at (x,y)
-     * using the specified paint, transformed by the current matrix. The Style is
-     * ignored in the paint, images are always filled.
+     * Draws TextBlob blob at (x, y), using the current matrix, clip and specified paint.
+     * <p>
+     * <var>blob</var> contains glyphs, their positions, and Font.
+     * <p>
+     * Elements of paint: anti-alias, Blender, color including alpha,
+     * ColorFilter, Paint dither, PathEffect, Shader, and
+     * Paint style; apply to blob. If Paint contains stroke:
+     * Paint miter limit, Cap, Join, and Paint stroke width;
+     * apply to Path created from blob.
      *
-     * @param image  the image to be drawn
-     * @param left   the position of the left side of the image being drawn
-     * @param top    the position of the top side of the image being drawn
-     * @param radius the radius used to round the corners
-     * @param paint  the paint used to draw the round image
+     * @param blob    glyphs, positions, and their paints' text size, typeface, and so on
+     * @param originX horizontal offset applied to blob
+     * @param originY vertical offset applied to blob
+     * @param paint   blend, color, stroking, and so on, used to draw
      */
-    public void drawRoundImage(Image image, float left, float top,
-                               float radius, Paint paint) {
+    public final void drawTextBlob(TextBlob blob, float originX, float originY,
+                                   @Nonnull Paint paint) {
+        if (blob == null) {
+            return;
+        }
+        blob.getBounds(mTmpRect2);
+        mTmpRect2.offset(originX, originY);
+        if (!mTmpRect2.isFinite()) {
+            return;
+        }
+        onDrawTextBlob(blob, originX, originY, paint);
+    }
 
+    /**
+     * Draws the vertices, a triangle mesh, using current clip and matrix.
+     * If paint contains a Shader and vertices does not contain texCoords, the shader
+     * is mapped using the vertices' positions.
+     * <p>
+     * Blender is ignored if vertices does not have colors. Otherwise, it combines
+     * - the Shader if Paint contains Shader
+     * - or the solid Paint color if Paint does not contain Shader
+     * as the src of the blend and the interpolated vertex colors as the dst.
+     * <p>
+     * PathEffect, and antialiasing on Paint are ignored.
+     *
+     * @param vertices triangle mesh to draw
+     * @param blender  combines vertices' colors with Shader if present or Paint opaque color
+     *                 if not. Ignored if the vertices do not contain color.
+     * @param paint    specifies the Shader, used as Vertices texture, and ColorFilter.
+     */
+    public final void drawVertices(Vertices vertices,
+                                   @SharedPtr Blender blender,
+                                   Paint paint) {
+        if (vertices == null) {
+            RefCnt.move(blender);
+            return;
+        }
+        var cleanedPaint = mTmpPaint;
+        cleanedPaint.set(paint);
+        cleanedPaint.setStyle(Paint.FILL);
+        cleanedPaint.setPathEffect(null);
+        onDrawVertices(vertices, blender, cleanedPaint);
+        cleanedPaint.reset();
     }
 
     /**
@@ -1224,8 +1679,8 @@ public class Canvas implements AutoCloseable {
      *
      * @return true if clip is empty
      */
-    public final boolean isClipEmpty() {
-        return getTopDevice().getClipType() == Device.CLIP_TYPE_EMPTY;
+    public boolean isClipEmpty() {
+        return topDevice().isClipEmpty();
     }
 
     /**
@@ -1234,8 +1689,8 @@ public class Canvas implements AutoCloseable {
      *
      * @return true if clip is a Rect and not empty
      */
-    public final boolean isClipRect() {
-        return getTopDevice().getClipType() == Device.CLIP_TYPE_RECT;
+    public boolean isClipRect() {
+        return topDevice().isClipRect();
     }
 
     /**
@@ -1244,8 +1699,18 @@ public class Canvas implements AutoCloseable {
      *
      * @param storage transformation from local coordinates to device / pixels.
      */
-    public final void getLocalToDevice(Matrix4 storage) {
-        storage.set(top().mMatrix);
+    public final void getLocalToDevice(@Nonnull Matrix4 storage) {
+        top().mMatrix.store(storage);
+    }
+
+    /**
+     * Returns the current transform from local coordinates to the 'device', which for most
+     * purposes means pixels. Discards the 3rd row and column in the matrix, so be warned.
+     *
+     * @param storage transformation from local coordinates to device / pixels.
+     */
+    public final void getLocalToDevice(@Nonnull Matrix storage) {
+        top().mMatrix.toMatrix(storage);
     }
 
     /**
@@ -1254,9 +1719,23 @@ public class Canvas implements AutoCloseable {
      */
     @Override
     public void close() {
+        restoreToCount(1); // restore everything but the last
+        internalRestore(); // restore the last, since we're going away
+        mRootDevice = RefCnt.move(mRootDevice);
         if (mSurface != null) {
             throw new IllegalStateException("Surface-created canvas is owned by Surface, use Surface#close instead");
         }
+    }
+
+    @Nonnull
+    protected ImageInfo onGetImageInfo() {
+        return mRootDevice.imageInfo();
+    }
+
+    @Nullable
+    @SharedPtr
+    protected Surface onNewSurface(ImageInfo info) {
+        return mRootDevice.makeSurface(info);
     }
 
     protected void willSave() {
@@ -1274,33 +1753,16 @@ public class Canvas implements AutoCloseable {
     protected void didRestore() {
     }
 
-    protected void didTranslate(float dx, float dy) {
+    protected void didTranslate(float dx, float dy, float dz) {
     }
 
-    protected void didScale(float sx, float sy) {
+    protected void didScale(float sx, float sy, float sz) {
     }
 
-    protected void didScale(float sx, float sy, float px, float py) {
+    protected void didConcat(Matrix4c matrix) {
     }
 
-    protected void didRotate(float degrees) {
-    }
-
-    protected void didRotate(float degrees, float px, float py) {
-    }
-
-    protected void didConcat(Matrix4 matrix) {
-    }
-
-    protected void didSetMarker(String name) {
-    }
-
-    protected void didSetMatrix(Matrix4 matrix) {
-    }
-
-    protected void onClipRect(Rect2f rect, boolean doAA) {
-        getTopDevice().clipRect(rect, ClipOp.CLIP_OP_INTERSECT, doAA);
-        computeQuickRejectBounds();
+    protected void didSetMatrix(Matrix4c matrix) {
     }
 
     @Nonnull
@@ -1320,8 +1782,9 @@ public class Canvas implements AutoCloseable {
     }
 
     private void pop() {
-        if (mMCIndex-- >= MAX_MC_POOL_SIZE) {
-            mMCStack[mMCIndex + 1] = null;
+        final int i = mMCIndex--;
+        if (i >= MAX_MC_POOL_SIZE) {
+            mMCStack[i] = null;
         }
     }
 
@@ -1333,13 +1796,8 @@ public class Canvas implements AutoCloseable {
     // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
     // operations should route to this device.
     @Nonnull
-    private Device getTopDevice() {
+    private Device topDevice() {
         return top().mDevice;
-    }
-
-    @Nullable
-    private SurfaceDrawContext topDeviceSurfaceDrawContext() {
-        return getTopDevice().getSurfaceDrawContext();
     }
 
     private void checkForDeferredSave() {
@@ -1350,6 +1808,7 @@ public class Canvas implements AutoCloseable {
 
     private void doSave() {
         willSave();
+        assert top().mDeferredSaveCount > 0;
         top().mDeferredSaveCount--;
         internalSave();
     }
@@ -1359,11 +1818,11 @@ public class Canvas implements AutoCloseable {
         MCRec rec = top();
         push().set(rec);
 
-        getTopDevice().save();
+        topDevice().pushClipStack();
     }
 
     private void internalRestore() {
-        mMarkerStack.restore(mMCIndex);
+        assert mMCIndex >= 0;
 
         // now do the normal restore()
         pop();
@@ -1373,7 +1832,9 @@ public class Canvas implements AutoCloseable {
             return;
         }
 
-        getTopDevice().restore(top().mMatrix);
+        var top = top();
+        top.mDevice.popClipStack();
+        top.mDevice.setGlobalCTM(top.mMatrix);
 
         // Update the quick-reject bounds in case the restore changed the top device or the
         // removed save record had included modifications to the clip stack.
@@ -1390,7 +1851,7 @@ public class Canvas implements AutoCloseable {
             bounds = null;
         }
 
-        ImageFilter imageFilter = paint != null ? paint.getImageFilter() : null;
+        ImageFilter imageFilter = /*paint != null ? paint.getImageFilter() : */null;
         Matrix4 stashedMatrix = top().mMatrix;
 
         if (imageFilter != null) {
@@ -1402,12 +1863,6 @@ public class Canvas implements AutoCloseable {
         internalSave();
     }
 
-    private void internalSetMatrix(Matrix4 matrix) {
-        Matrix4 transform = top().mMatrix;
-        transform.set(matrix);
-        getTopDevice().setGlobalTransform(transform);
-    }
-
     private void internalDrawPaint(Paint paint) {
         // drawPaint does not call internalQuickReject() because computing its geometry is not free
         // (see getLocalClipBounds()), and the two conditions below are sufficient.
@@ -1415,7 +1870,9 @@ public class Canvas implements AutoCloseable {
             return;
         }
 
-        getTopDevice().drawPaint(paint);
+        if (aboutToDraw(paint)) {
+            topDevice().drawPaint(paint);
+        }
     }
 
     /**
@@ -1423,16 +1880,241 @@ public class Canvas implements AutoCloseable {
      * into the canvas' global space.
      */
     private void computeQuickRejectBounds() {
-        Device device = getTopDevice();
-        if (device.getClipType() == Device.CLIP_TYPE_EMPTY) {
+        Device device = topDevice();
+        if (device.isClipEmpty()) {
             mQuickRejectBounds.setEmpty();
         } else {
             mQuickRejectBounds.set(device.getClipBounds());
             device.getDeviceToGlobal().mapRect(mQuickRejectBounds);
             // Expand bounds out by 1 in case we are anti-aliasing.  We store the
             // bounds as floats to enable a faster quick reject implementation.
-            mQuickRejectBounds.inset(-1.0f, -1.0f);
+            mQuickRejectBounds.outset(1.0f, 1.0f);
         }
+    }
+
+    private boolean aboutToDraw(Paint paint) {
+        return predrawNotify(false);
+    }
+
+    // notify our surface (if we have one) that we are about to draw, so it
+    // can perform copy-on-write or invalidate any cached images
+    // returns false if the copy failed
+    private boolean predrawNotify(boolean willOverwritesEntireSurface) {
+        if (mSurface != null) {
+            return mSurface.aboutToDraw(willOverwritesEntireSurface
+                    ? Surface.kDiscard_ContentChangeMode
+                    : Surface.kPreserve_ContentChangeMode);
+        }
+        return true;
+    }
+
+    private boolean internalQuickReject(Rect2fc bounds, Paint paint) {
+        return internalQuickReject(bounds, paint, null);
+    }
+
+    private boolean internalQuickReject(Rect2fc bounds, Paint paint,
+                                        @Nullable Matrixc matrix) {
+        if (!bounds.isFinite() || paint.nothingToDraw()) {
+            return true;
+        }
+
+        if (paint.canComputeFastBounds(null)) {
+            var tmp = mTmpQuickBounds;
+            if (matrix != null) {
+                matrix.mapRect(bounds, tmp);
+            } else {
+                tmp.set(bounds);
+            }
+            paint.computeFastBounds(null, tmp, tmp);
+            return quickReject(tmp);
+        }
+
+        return false;
+    }
+
+    protected void onDiscard() {
+        if (mSurface != null) {
+            mSurface.aboutToDraw(Surface.kDiscard_ContentChangeMode);
+        }
+    }
+
+    protected void onDrawPaint(Paint paint) {
+        internalDrawPaint(paint);
+    }
+
+    protected void onDrawPoints(int mode, float[] pts, int offset,
+                                int count, Paint paint) {
+        if (count <= 0 || paint.nothingToDraw()) {
+            return;
+        }
+        var bounds = mTmpRect2;
+        bounds.setBounds(pts, offset, count);
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawPoints(mode, pts, offset, count, paint);
+        }
+    }
+
+    protected void onDrawLine(float x0, float y0, float x1, float y1,
+                              @Paint.Cap int cap, float width, Paint paint) {
+        var bounds = mTmpRect2;
+        bounds.set(x0, y0, x1, y1);
+        bounds.sort();
+        float outset;
+        if (cap == Paint.CAP_SQUARE) {
+            outset = MathUtil.SQRT2 * width * 0.5f;
+        } else {
+            outset = width * 0.5f;
+        }
+        bounds.outset(outset, outset);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawLine(x0, y0, x1, y1, cap, width, paint);
+        }
+    }
+
+    protected void onDrawRect(Rect2fc r, Paint paint) {
+        if (internalQuickReject(r, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawRect(r, paint);
+        }
+    }
+
+    protected void onDrawRoundRect(RoundRect roundRect, Paint paint) {
+        var bounds = mTmpRect2;
+        roundRect.getBounds(bounds);
+        if (roundRect.isRect()) {
+            bounds.sort();
+            onDrawRect(bounds, paint);
+            return;
+        }
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawRoundRect(roundRect, paint);
+        }
+    }
+
+    protected void onDrawCircle(float cx, float cy, float radius, Paint paint) {
+        var bounds = mTmpRect2;
+        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawCircle(cx, cy, radius, paint);
+        }
+    }
+
+    protected void onDrawArc(float cx, float cy, float radius, float startAngle,
+                             float sweepAngle, @Paint.Cap int cap, float width, Paint paint) {
+        var bounds = mTmpRect2;
+        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+        float outset = cap == Paint.CAP_SQUARE ? MathUtil.SQRT2 * width * 0.5f : width * 0.5f;
+        bounds.outset(outset, outset);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawArc(cx, cy, radius, startAngle, sweepAngle, cap, width, paint);
+        }
+    }
+
+    protected void onDrawPie(float cx, float cy, float radius, float startAngle,
+                             float sweepAngle, Paint paint) {
+        var bounds = mTmpRect2;
+        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawPie(cx, cy, radius, startAngle, sweepAngle, paint);
+        }
+    }
+
+    protected void onDrawChord(float cx, float cy, float radius, float startAngle,
+                               float sweepAngle, Paint paint) {
+        var bounds = mTmpRect2;
+        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawChord(cx, cy, radius, startAngle, sweepAngle, paint);
+        }
+    }
+
+    protected void onDrawImageRect(Image image, Rect2fc src, Rect2fc dst,
+                                   SamplingOptions sampling, Paint paint,
+                                   int constraint) {
+        if (internalQuickReject(dst, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawImageRect(image, src, dst, sampling, paint, constraint);
+        }
+    }
+
+    protected void onDrawTextBlob(TextBlob blob, float originX, float originY,
+                                  Paint paint) {
+        GlyphRunList glyphRunList = mScratchGlyphRunBuilder.blobToGlyphRunList(
+                blob, originX, originY
+        );
+        onDrawGlyphRunList(glyphRunList, paint);
+        mScratchGlyphRunBuilder.clear();
+    }
+
+    protected void onDrawGlyphRunList(GlyphRunList glyphRunList, Paint paint) {
+        var bounds = mTmpRect2;
+        glyphRunList.getSourceBoundsWithOrigin(bounds);
+        if (internalQuickReject(bounds, paint)) {
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawGlyphRunList(this, glyphRunList, paint);
+        }
+    }
+
+    protected void onDrawVertices(Vertices vertices, @SharedPtr Blender blender,
+                                  Paint paint) {
+        if (internalQuickReject(vertices.getBounds(), paint)) {
+            RefCnt.move(blender);
+            return;
+        }
+
+        if (aboutToDraw(paint)) {
+            topDevice().drawVertices(vertices, blender, paint);
+        } else {
+            RefCnt.move(blender);
+        }
+    }
+
+    protected void onClipRect(Rect2fc rect, int clipOp, boolean doAA) {
+        topDevice().clipRect(rect, clipOp, doAA);
+        computeQuickRejectBounds();
     }
 
     /**
@@ -1453,6 +2135,8 @@ public class Canvas implements AutoCloseable {
         int mDeferredSaveCount;
 
         MCRec() {
+            mMatrix.setIdentity();
+            mDeferredSaveCount = 0;
         }
 
         MCRec(Device device) {
@@ -1466,18 +2150,5 @@ public class Canvas implements AutoCloseable {
             mMatrix.set(prev.mMatrix);
             mDeferredSaveCount = 0;
         }
-    }
-
-    private static boolean validateMarker(String name) {
-        if (name.isEmpty()) {
-            return false;
-        }
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            if (c != '_' && !Character.isLetterOrDigit(c)) {
-                return false;
-            }
-        }
-        return true;
     }
 }

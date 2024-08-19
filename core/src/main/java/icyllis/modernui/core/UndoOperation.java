@@ -58,6 +58,7 @@ public abstract class UndoOperation<DATA> implements Parcelable {
     /**
      * Synonym for {@link #getOwner()}.{@link UndoOwner#getData()}.
      */
+    @SuppressWarnings("unchecked")
     public DATA getOwnerData() {
         return (DATA) mOwner.getData();
     }

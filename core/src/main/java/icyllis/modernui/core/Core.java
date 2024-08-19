@@ -18,12 +18,11 @@
 
 package icyllis.modernui.core;
 
-import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.RefCounted;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.opengl.GLCaps;
-import icyllis.arc3d.opengl.GLCore;
+import icyllis.arc3d.opengl.GLUtil;
 import icyllis.modernui.annotation.*;
-import org.apache.logging.log4j.Level;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -31,6 +30,8 @@ import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
+import org.slf4j.LoggerFactory;
+import org.slf4j.helpers.NOPLogger;
 
 import java.io.*;
 import java.lang.ref.Cleaner;
@@ -43,10 +44,12 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static icyllis.arc3d.opengl.GLUtil.*;
 import static icyllis.modernui.ModernUI.*;
 import static org.lwjgl.opengl.AMDDebugOutput.glDebugMessageCallbackAMD;
 import static org.lwjgl.opengl.ARBDebugOutput.glDebugMessageCallbackARB;
+import static org.lwjgl.opengl.GL11C.*;
+import static org.lwjgl.opengl.GL43C.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -72,7 +75,7 @@ public final class Core {
     private static final Executor sRenderThreadExecutor = Core::executeOnRenderThread;
     private static final Executor sUiThreadExecutor = Core::executeOnUiThread;
 
-    private static volatile DirectContext sDirectContext;
+    private static volatile ImmediateContext sImmediateContext;
     private static volatile RecordingContext sUiRecordingContext;
 
     private Core() {
@@ -89,6 +92,41 @@ public final class Core {
     @NonNull
     public static Cleaner.Cleanable registerCleanup(@NonNull Object target, @NonNull Runnable action) {
         return sCleaner.register(target, action);
+    }
+
+    /**
+     * Registers a target and a resource object to unref when the target becomes phantom
+     * reachable. The resource object should never hold any reference to the target object.
+     *
+     * @param target   the target to monitor
+     * @param resource a {@code RefCounted} to invoke when the target becomes phantom reachable
+     * @return a {@code Cleanable} instance representing the registry entry
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @NonNull
+    public static Cleaner.Cleanable registerNativeResource(@NonNull Object target, @NonNull RefCounted resource) {
+        return sCleaner.register(target, resource::unref);
+    }
+
+    /**
+     * Registers a target and a resource object to close when the target becomes phantom
+     * reachable. The resource object should never hold any reference to the target object.
+     *
+     * @param target   the target to monitor
+     * @param resource a {@code AutoCloseable} to invoke when the target becomes phantom reachable
+     * @return a {@code Cleanable} instance representing the registry entry
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @NonNull
+    public static Cleaner.Cleanable registerNativeResource(@NonNull Object target, @NonNull AutoCloseable resource) {
+        return sCleaner.register(target, () -> {
+            try {
+                resource.close();
+            } catch (Exception ignored) {
+            }
+        });
     }
 
     /**
@@ -163,12 +201,10 @@ public final class Core {
 
     @NonNull
     private static ContextOptions initContextOptions(@NonNull ContextOptions options) {
-        if (options.mErrorWriter == null) {
-            options.mErrorWriter = new PrintWriter(
-                    new LogWriter(LOGGER, Level.ERROR, MARKER),
-                    true
-            );
+        if (options.mLogger == null || options.mLogger == NOPLogger.NOP_LOGGER) {
+            options.mLogger = LoggerFactory.getLogger("Arc3D");
         }
+        options.mSkipGLErrorChecks = Boolean.TRUE;
         return options;
     }
 
@@ -187,10 +223,10 @@ public final class Core {
      */
     @RenderThread
     public static boolean initOpenGL(@NonNull ContextOptions options) {
-        final DirectContext dContext;
+        final ImmediateContext dc;
         synchronized (Core.class) {
-            if (sDirectContext != null) {
-                if (sDirectContext.getBackend() != Engine.BackendApi.kOpenGL) {
+            if (sImmediateContext != null) {
+                if (sImmediateContext.getBackend() != Engine.BackendApi.kOpenGL) {
                     throw new IllegalStateException();
                 }
                 return true;
@@ -201,21 +237,21 @@ public final class Core {
                 throw new IllegalStateException();
             }
             initContextOptions(options);
-            dContext = DirectContext.makeOpenGL(options);
-            if (dContext == null) {
+            dc = GLUtil.makeOpenGL(options);
+            if (dc == null) {
                 return false;
             }
-            sDirectContext = dContext;
+            sImmediateContext = dc;
         }
-        final String glVendor = GLCore.glGetString(GLCore.GL_VENDOR);
-        final String glRenderer = GLCore.glGetString(GLCore.GL_RENDERER);
-        final String glVersion = GLCore.glGetString(GLCore.GL_VERSION);
+        final String glVendor = GL11C.glGetString(GL11C.GL_VENDOR);
+        final String glRenderer = GL11C.glGetString(GL11C.GL_RENDERER);
+        final String glVersion = GL11C.glGetString(GL11C.GL_VERSION);
 
         LOGGER.info(MARKER, "OpenGL vendor: {}", glVendor);
         LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
         LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
 
-        LOGGER.debug(MARKER, "OpenGL caps: {}", dContext.getCaps());
+        LOGGER.debug(MARKER, "OpenGL caps: {}", dc.getCaps());
         return true;
     }
 
@@ -285,22 +321,23 @@ public final class Core {
     @RenderThread
     public static void glShowCapsErrorDialog() {
         Core.checkRenderThread();
-        if (GLCaps.MISSING_EXTENSIONS.isEmpty()) {
+        if (sImmediateContext != null) {
             return;
         }
-        final String glRenderer = glGetString(GL_RENDERER);
-        final String glVersion = glGetString(GL_VERSION);
+        final String glVendor = GL11C.glGetString(GL11C.GL_VENDOR);
+        final String glRenderer = GL11C.glGetString(GL11C.GL_RENDERER);
+        final String glVersion = GL11C.glGetString(GL11C.GL_VERSION);
         new Thread(() -> {
             String solution = "Please make sure you have up-to-date GPU drivers. " +
                     "Also make sure Java applications run with the discrete GPU if you have multiple GPUs.";
-            String extensions = String.join("\n", GLCaps.MISSING_EXTENSIONS);
             TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
-                    "GPU: " + glRenderer + ", OpenGL: " + glVersion + ". " +
-                            "The following ARB extensions are required:\n" + extensions + "\n" + solution,
+                    "GPU: " + glVendor + " " + glRenderer + ", OpenGL: " + glVersion + ". " +
+                            "OpenGL 3.3 or OpenGL ES 3.0 is required.\n" + solution,
                     "ok", "error", true);
         }, "GL-Error-Dialog").start();
     }
 
+    //TODO WIP
     @RenderThread
     public static boolean initVulkan() {
         return initVulkan(new ContextOptions());
@@ -314,12 +351,13 @@ public final class Core {
      *
      * @return true if successful
      */
+    //TODO WIP
     @RenderThread
     public static boolean initVulkan(@NonNull ContextOptions options) {
-        final DirectContext dContext;
+        final ImmediateContext dc;
         synchronized (Core.class) {
-            if (sDirectContext != null) {
-                if (sDirectContext.getBackend() != Engine.BackendApi.kVulkan) {
+            if (sImmediateContext != null) {
+                if (sImmediateContext.getBackend() != Engine.BackendApi.kVulkan) {
                     throw new IllegalStateException();
                 }
                 return true;
@@ -333,15 +371,15 @@ public final class Core {
                 var vkManager = VulkanManager.getInstance();
                 vkManager.initialize();
                 initContextOptions(options);
-                dContext = vkManager.createContext(options);
-                if (dContext == null) {
+                dc = vkManager.createContext(options);
+                if (dc == null) {
                     return false;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 return false;
             }
-            sDirectContext = dContext;
+            sImmediateContext = dc;
         }
         return true;
     }
@@ -376,14 +414,14 @@ public final class Core {
 
     @NonNull
     @RenderThread
-    public static DirectContext requireDirectContext() {
+    public static ImmediateContext requireImmediateContext() {
         checkRenderThread();
-        return Objects.requireNonNull(sDirectContext,
-                "Direct context has not been created yet, or creation failed");
+        return Objects.requireNonNull(sImmediateContext,
+                "Immediate context has not been created yet, or creation failed");
     }
 
-    public static DirectContext peekDirectContext() {
-        return sDirectContext;
+    public static ImmediateContext peekImmediateContext() {
+        return sImmediateContext;
     }
 
     /**
@@ -509,17 +547,11 @@ public final class Core {
                 sUiHandler = new Handler(looper);
                 sUiHandlerAsync = Handler.createAsync(looper);
 
-                if (sDirectContext != null) {
-                    if (sUiThread == sRenderThread) {
-                        sUiRecordingContext = RefCnt.create(sDirectContext);
-                    } else {
-                        sUiRecordingContext = RecordingContext.makeRecording(
-                                sDirectContext.getContextInfo()
-                        );
-                    }
+                if (sImmediateContext != null) {
+                    sUiRecordingContext = sImmediateContext.makeRecordingContext();
                     Objects.requireNonNull(sUiRecordingContext);
                 } else {
-                    LOGGER.warn(MARKER, "UI thread initializing without a direct context");
+                    LOGGER.warn(MARKER, "UI thread initializing without a GPU device");
                 }
 
                 return looper;

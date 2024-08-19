@@ -105,4 +105,7 @@ public interface Font {
 
     @ApiStatus.Internal
     Strike findOrCreateStrike(FontPaint paint);
+
+    @ApiStatus.Internal
+    icyllis.arc3d.core.Typeface getNativeTypeface();
 }

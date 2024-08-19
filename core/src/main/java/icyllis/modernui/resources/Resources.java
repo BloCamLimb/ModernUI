@@ -21,6 +21,7 @@ package icyllis.modernui.resources;
 import icyllis.modernui.util.DisplayMetrics;
 import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Experimental
 public class Resources {
 
     private final DisplayMetrics mMetrics = new DisplayMetrics();

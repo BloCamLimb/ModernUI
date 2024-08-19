@@ -1,23 +1,25 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
+
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -53,7 +55,7 @@ public abstract class RefCnt implements RefCounted {
         } catch (AssertionError e) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // subclasses should override toString() for debug purposes
-                TRACKER.forEach((o, __) -> System.err.printf("RefCnt %d: %s\n", o.getRefCntVolatile(), o));
+                TRACKER.forEach((o, __) -> System.err.printf("RefCnt %d: %s%n", o.getRefCntVolatile(), o));
                 assert TRACKER.isEmpty() : "Memory leaks in reference-counted objects";
             }, "RefCnt-Tracker"));
         }
@@ -85,14 +87,14 @@ public abstract class RefCnt implements RefCounted {
     }
 
     @SharedPtr
-    public static <T extends RefCounted> T create(@SharedPtr T that) {
+    public static <T extends RefCounted> T create(T that) {
         if (that != null)
             that.ref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends RefCounted> T create(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends RefCounted> T create(@SharedPtr T sp, T that) {
         if (sp != null)
             sp.unref();
         if (that != null)
@@ -174,5 +176,6 @@ public abstract class RefCnt implements RefCounted {
     /**
      * Override this method to invoke de-allocation of the underlying resource.
      */
+    @ApiStatus.OverrideOnly
     protected abstract void deallocate();
 }

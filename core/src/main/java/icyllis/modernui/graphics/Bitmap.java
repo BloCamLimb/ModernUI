@@ -76,15 +76,15 @@ public final class Bitmap implements AutoCloseable {
     @NonNull
     private final Format mFormat;
     @NonNull
-    private PixelMap mPixelMap;
+    private Pixmap mPixmap;
     @Nullable
-    private SafePixelRef mPixelRef;
+    private SafePixels mPixels;
 
     Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowStride,
            @Nullable LongConsumer freeFn) {
         mFormat = format;
-        mPixelMap = new PixelMap(info, null, addr, rowStride);
-        mPixelRef = new SafePixelRef(this, info, addr, rowStride, freeFn);
+        mPixmap = new Pixmap(info, null, addr, rowStride);
+        mPixels = new SafePixels(this, info, addr, rowStride, freeFn);
     }
 
     /**
@@ -128,8 +128,8 @@ public final class Bitmap implements AutoCloseable {
                 ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
                 : ColorSpace.get(ColorSpace.Named.SRGB);
         var at = format.hasAlpha() && !format.isChannelHDR()
-                ? ImageInfo.AT_UNPREMUL
-                : ImageInfo.AT_OPAQUE;
+                ? ColorInfo.AT_UNPREMUL
+                : ColorInfo.AT_OPAQUE;
         return new Bitmap(format,
                 ImageInfo.make(width, height, format.getColorType(), at, cs),
                 address, rowStride, MemoryUtil::nmemFree);
@@ -244,7 +244,7 @@ public final class Bitmap implements AutoCloseable {
 
     @NonNull
     public ImageInfo getInfo() {
-        return mPixelMap.getInfo();
+        return mPixmap.getInfo();
     }
 
     /**
@@ -258,27 +258,27 @@ public final class Bitmap implements AutoCloseable {
      * Returns the width of the bitmap.
      */
     public int getWidth() {
-        if (mPixelRef == null) {
+        if (mPixels == null) {
             LOGGER.warn(MARKER, "Called getWidth() on a recycle()'d bitmap! This is undefined behavior!");
         }
-        return mPixelMap.getWidth();
+        return mPixmap.getWidth();
     }
 
     /**
      * Returns the height of the bitmap.
      */
     public int getHeight() {
-        if (mPixelRef == null) {
+        if (mPixels == null) {
             LOGGER.warn(MARKER, "Called getHeight() on a recycle()'d bitmap! This is undefined behavior!");
         }
-        return mPixelMap.getHeight();
+        return mPixmap.getHeight();
     }
 
     /**
      * Returns the number of bytes that can be used to store this bitmap's pixels.
      */
     public long getSize() {
-        if (mPixelRef == null) {
+        if (mPixels == null) {
             LOGGER.warn(MARKER, "Called getSize() on a recycle()'d bitmap! This is undefined behavior!");
             return 0;
         }
@@ -287,12 +287,12 @@ public final class Bitmap implements AutoCloseable {
 
     @ApiStatus.Internal
     public int getColorType() {
-        return mPixelMap.getColorType();
+        return mPixmap.getColorType();
     }
 
     @ApiStatus.Internal
     public int getAlphaType() {
-        return mPixelMap.getAlphaType();
+        return mPixmap.getAlphaType();
     }
 
     /**
@@ -304,11 +304,11 @@ public final class Bitmap implements AutoCloseable {
      *                                  or bytesPerPixels mismatch
      */
     @ApiStatus.Internal
-    public void setColorInfo(@ImageInfo.ColorType int newColorType,
-                             @ImageInfo.AlphaType int newAlphaType) {
-        newAlphaType = ImageInfo.validateAlphaType(newColorType, newAlphaType);
+    public void setColorInfo(@ColorInfo.ColorType int newColorType,
+                             @ColorInfo.AlphaType int newAlphaType) {
+        newAlphaType = ColorInfo.validateAlphaType(newColorType, newAlphaType);
         var oldInfo = getInfo();
-        if (oldInfo.bytesPerPixel() != ImageInfo.bytesPerPixel(newColorType)) {
+        if (oldInfo.bytesPerPixel() != ColorInfo.bytesPerPixel(newColorType)) {
             throw new IllegalArgumentException("bpp mismatch");
         }
         var newInfo = new ImageInfo(
@@ -316,7 +316,7 @@ public final class Bitmap implements AutoCloseable {
                 newColorType, newAlphaType,
                 oldInfo.colorSpace()
         );
-        mPixelMap = new PixelMap(newInfo, mPixelMap);
+        mPixmap = new Pixmap(newInfo, mPixmap);
     }
 
     /**
@@ -325,7 +325,7 @@ public final class Bitmap implements AutoCloseable {
      */
     @Nullable
     public ColorSpace getColorSpace() {
-        return mPixelMap.getColorSpace();
+        return mPixmap.getColorSpace();
     }
 
     /**
@@ -371,7 +371,7 @@ public final class Bitmap implements AutoCloseable {
                 }
             }
         }
-        mPixelMap = new PixelMap(oldInfo.makeColorSpace(newColorSpace), mPixelMap);
+        mPixmap = new Pixmap(oldInfo.makeColorSpace(newColorSpace), mPixmap);
     }
 
     /**
@@ -382,10 +382,10 @@ public final class Bitmap implements AutoCloseable {
      */
     @ApiStatus.Internal
     public long getAddress() {
-        if (mPixelRef == null) {
+        if (mPixels == null) {
             return NULL;
         }
-        return mPixelMap.getAddress();
+        return mPixmap.getAddress();
     }
 
     /**
@@ -396,10 +396,10 @@ public final class Bitmap implements AutoCloseable {
      */
     public int getRowStride() {
         // XXX: row stride is always (width * bpp) in Modern UI
-        if (mPixelRef == null) {
+        if (mPixels == null) {
             throw new IllegalStateException("Can't call getRowStride() on a recycled bitmap");
         }
-        return mPixelMap.getRowStride();
+        return mPixmap.getRowStride();
     }
 
     /**
@@ -413,7 +413,7 @@ public final class Bitmap implements AutoCloseable {
      * by default.
      */
     public boolean hasAlpha() {
-        assert mPixelRef != null;
+        assert mPixels != null;
         return !getInfo().isOpaque();
     }
 
@@ -421,8 +421,8 @@ public final class Bitmap implements AutoCloseable {
      * Returns true if the bitmap is marked as immutable.
      */
     public boolean isImmutable() {
-        if (mPixelRef != null) {
-            return mPixelRef.isImmutable();
+        if (mPixels != null) {
+            return mPixels.isImmutable();
         }
         assert false;
         return false;
@@ -433,8 +433,8 @@ public final class Bitmap implements AutoCloseable {
      * After this method is called, this Bitmap cannot be made mutable again.
      */
     public void setImmutable() {
-        if (mPixelRef != null) {
-            mPixelRef.setImmutable();
+        if (mPixels != null) {
+            mPixels.setImmutable();
         }
     }
 
@@ -453,9 +453,9 @@ public final class Bitmap implements AutoCloseable {
      * otherwise
      */
     public boolean isPremultiplied() {
-        assert mPixelRef != null;
+        assert mPixels != null;
         // XXX: always false in Modern UI, and will be premul in GPU fragment shaders
-        return getAlphaType() == ImageInfo.AT_PREMUL;
+        return getAlphaType() == ColorInfo.AT_PREMUL;
     }
 
     private void checkOutOfBounds(int x, int y) {
@@ -519,30 +519,31 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * The current pixel map, which is usually paired with {@link PixelRef}.
+     * The current pixel map, which is usually paired with {@link Pixels}.
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the current pixel map
      */
     @ApiStatus.Internal
     @NonNull
-    public PixelMap getPixelMap() {
-        return mPixelMap;
+    public Pixmap getPixmap() {
+        return mPixmap;
     }
 
     /**
      * The ref of current pixel data, which may be shared across instances.
      * Calling this method won't affect the ref cnt. Every bitmap object
-     * ref the {@link PixelRef} on create, and unref on {@link #close()}.
+     * ref the {@link Pixels} on create, and unref on {@link #close()}.
      * <p>
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the ref of pixel data, or null if released
      */
     @ApiStatus.Internal
+    @RawPtr
     @Nullable
-    public PixelRef getPixelRef() {
-        return mPixelRef;
+    public Pixels getPixels() {
+        return mPixels;
     }
 
     /**
@@ -688,7 +689,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     private void checkReleased() {
-        if (mPixelRef == null) {
+        if (mPixels == null) {
             throw new IllegalStateException("Cannot operate a recycled bitmap!");
         }
     }
@@ -703,10 +704,10 @@ public final class Bitmap implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (mPixelRef != null) {
+        if (mPixels != null) {
             // Cleaner is synchronized
-            mPixelRef.mCleanup.clean();
-            mPixelRef = null;
+            mPixels.mCleanup.clean();
+            mPixels = null;
         }
     }
 
@@ -724,14 +725,14 @@ public final class Bitmap implements AutoCloseable {
      * @return true if the bitmap has been closed
      */
     public boolean isClosed() {
-        return mPixelRef == null;
+        return mPixels == null;
     }
 
     /**
      * @return the same as {@link #isClosed()}
      */
     public boolean isRecycled() {
-        return mPixelRef == null;
+        return mPixels == null;
     }
 
     @NonNull
@@ -740,7 +741,7 @@ public final class Bitmap implements AutoCloseable {
         return "Bitmap{" +
                 "mFormat=" + mFormat +
                 ", mInfo=" + getInfo() +
-                ", mPixelRef=" + mPixelRef +
+                ", mPixels=" + mPixels +
                 '}';
     }
 
@@ -752,35 +753,35 @@ public final class Bitmap implements AutoCloseable {
         /**
          * Grayscale, one channel, 8-bit per channel.
          */
-        GRAY_8         (1, ImageInfo.CT_GRAY_8       ),
+        GRAY_8         (1, ColorInfo.CT_GRAY_8       ),
         /**
          * Grayscale, with alpha, two channels, 8-bit per channel.
          */
-        GRAY_ALPHA_88  (2, ImageInfo.CT_GRAY_ALPHA_88),
+        GRAY_ALPHA_88  (2, ColorInfo.CT_GRAY_ALPHA_88),
         /**
          * RGB, three channels, 8-bit per channel.
          */
-        RGB_888        (3, ImageInfo.CT_RGB_888      ),
+        RGB_888        (3, ColorInfo.CT_RGB_888      ),
         /**
          * RGB, with alpha, four channels, 8-bit per channel.
          */
-        RGBA_8888      (4, ImageInfo.CT_RGBA_8888    ),
+        RGBA_8888      (4, ColorInfo.CT_RGBA_8888    ),
         // U16, SRGB
         @ApiStatus.Internal
-        GRAY_16        (1, ImageInfo.CT_UNKNOWN      ),
+        GRAY_16        (1, ColorInfo.CT_UNKNOWN      ),
         @ApiStatus.Internal
-        GRAY_ALPHA_1616(2, ImageInfo.CT_UNKNOWN      ),
+        GRAY_ALPHA_1616(2, ColorInfo.CT_UNKNOWN      ),
         @ApiStatus.Internal
-        RGB_161616     (3, ImageInfo.CT_UNKNOWN      ),
-        RGBA_16161616  (4, ImageInfo.CT_RGBA_16161616),
+        RGB_161616     (3, ColorInfo.CT_UNKNOWN      ),
+        RGBA_16161616  (4, ColorInfo.CT_RGBA_16161616),
         // HDR, LINEAR_SRGB
         @ApiStatus.Internal
-        GRAY_F32       (1, ImageInfo.CT_UNKNOWN      ),
+        GRAY_F32       (1, ColorInfo.CT_UNKNOWN      ),
         @ApiStatus.Internal
-        GRAY_ALPHA_F32 (2, ImageInfo.CT_UNKNOWN      ),
+        GRAY_ALPHA_F32 (2, ColorInfo.CT_UNKNOWN      ),
         @ApiStatus.Internal
-        RGB_F32        (3, ImageInfo.CT_UNKNOWN      ),
-        RGBA_F32       (4, ImageInfo.CT_RGBA_F32     );
+        RGB_F32        (3, ColorInfo.CT_UNKNOWN      ),
+        RGBA_F32       (4, ColorInfo.CT_RGBA_F32     );
         //@formatter:on
 
         private static final Format[] FORMATS = values();
@@ -792,7 +793,7 @@ public final class Bitmap implements AutoCloseable {
         Format(int chs, int ct) {
             mChannels = chs;
             mColorType = ct;
-            mBytesPerPixel = ImageInfo.bytesPerPixel(ct);
+            mBytesPerPixel = ColorInfo.bytesPerPixel(ct);
             assert (ordinal() & 3) == (chs - 1);
         }
 
@@ -811,7 +812,7 @@ public final class Bitmap implements AutoCloseable {
          *
          * @see #getBytesPerPixel()
          */
-        @ImageInfo.ColorType
+        @ColorInfo.ColorType
         public int getColorType() {
             return mColorType;
         }
@@ -1061,15 +1062,15 @@ public final class Bitmap implements AutoCloseable {
 
     // this ensures unref being called when Bitmap become phantom-reachable
     // but never called to close
-    private static final class SafePixelRef extends PixelRef implements Runnable {
+    private static final class SafePixels extends Pixels implements Runnable {
 
         final Cleaner.Cleanable mCleanup;
 
-        private SafePixelRef(@NonNull Bitmap owner,
-                             @NonNull ImageInfo info,
-                             long address,
-                             int rowStride,
-                             @Nullable LongConsumer freeFn) {
+        private SafePixels(@NonNull Bitmap owner,
+                           @NonNull ImageInfo info,
+                           long address,
+                           int rowStride,
+                           @Nullable LongConsumer freeFn) {
             super(info.width(), info.height(), null, address, rowStride, freeFn);
             mCleanup = Core.registerCleanup(owner, this);
         }

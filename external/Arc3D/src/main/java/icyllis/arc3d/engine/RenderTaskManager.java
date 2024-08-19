@@ -1,40 +1,42 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.ops.OpsTask;
+import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.trash.ops.OpsTask;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 
+@Deprecated
 public class RenderTaskManager {
 
     private final RecordingContext mContext;
-    private final DirectContext mDirect;
+    private final ImmediateContext mDirect;
 
     @SharedPtr
     private final ArrayList<RenderTask> mDAG = new ArrayList<>();
 
-    private final Reference2ObjectOpenHashMap<Object, RenderTask> mLastRenderTasks =
+    private final Reference2ObjectOpenHashMap<UniqueID, RenderTask> mLastRenderTasks =
             new Reference2ObjectOpenHashMap<>();
     private OpsTask mActiveOpsTask = null;
 
@@ -45,16 +47,16 @@ public class RenderTaskManager {
 
     public RenderTaskManager(RecordingContext context) {
         mContext = context;
-        if (context instanceof DirectContext direct) {
+        /*if (context instanceof ImmediateContext direct) {
             mDirect = direct;
             mFlushState = new OpFlushState(direct.getDevice(), direct.getResourceProvider());
             mSurfaceAllocator = new SurfaceAllocator(direct);
-        } else {
+        } else {*/
             // deferred
             mDirect = null;
             mFlushState = null;
             mSurfaceAllocator = null;
-        }
+        //}
     }
 
     void destroy() {
@@ -78,16 +80,16 @@ public class RenderTaskManager {
                     info.mSubmittedCallback.onSubmitted(false);
                 }
                 if (info.mFinishedCallback != null) {
-                    info.mFinishedCallback.onFinished();
+                    info.mFinishedCallback.onFinished(false);
                 }
             }
             return false;
         }
         mFlushing = true;
 
-        final DirectContext context = mDirect;
+        final ImmediateContext context = mDirect;
         assert (context != null);
-        final GpuDevice device = context.getDevice();
+        final Device device = context.getDevice();
         assert (device != null);
 
         closeTasks();
@@ -111,7 +113,7 @@ public class RenderTaskManager {
         clearTasks();
 
         if (cleanup) {
-            context.getResourceCache().cleanup();
+            //context.getResourceCache().cleanup();
         }
         mFlushing = false;
 
@@ -149,20 +151,23 @@ public class RenderTaskManager {
         return task;
     }
 
-    public void setLastRenderTask(SurfaceProxy surfaceProxy, RenderTask task) {
+    public void setLastRenderTask(@Nonnull SurfaceProxy surfaceProxy,
+                                  @Nullable RenderTask task) {
+        var key = surfaceProxy.getUniqueID();
         if (task != null) {
-            mLastRenderTasks.put(surfaceProxy.getUniqueID(), task);
+            mLastRenderTasks.put(key, task);
         } else {
-            mLastRenderTasks.remove(surfaceProxy);
+            mLastRenderTasks.remove(key);
         }
     }
 
-    public RenderTask getLastRenderTask(SurfaceProxy proxy) {
+    // nullable
+    public RenderTask getLastRenderTask(@Nonnull SurfaceProxy proxy) {
         return mLastRenderTasks.get(proxy.getUniqueID());
     }
 
     @SharedPtr
-    public OpsTask newOpsTask(SurfaceView writeView) {
+    public OpsTask newOpsTask(ImageProxyView writeView) {
 
         OpsTask opsTask = new OpsTask(this, writeView);
 

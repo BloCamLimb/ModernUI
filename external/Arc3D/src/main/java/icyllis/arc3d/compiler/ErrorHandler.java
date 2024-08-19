@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.compiler;
@@ -24,7 +24,9 @@ package icyllis.arc3d.compiler;
  */
 public abstract class ErrorHandler {
 
-    private char[] mSource;
+    protected char[] mSource;
+    protected int mOffset;
+    protected int mLength;
     private int mErrors;
     private int mWarnings;
 
@@ -32,8 +34,18 @@ public abstract class ErrorHandler {
         return mSource;
     }
 
-    public final void setSource(char[] source) {
+    public final int getSourceOffset() {
+        return mOffset;
+    }
+
+    public final int getSourceLength() {
+        return mLength;
+    }
+
+    public final void setSource(char[] source, int offset, int length) {
         mSource = source;
+        mOffset = offset;
+        mLength = length;
     }
 
     public final int errorCount() {

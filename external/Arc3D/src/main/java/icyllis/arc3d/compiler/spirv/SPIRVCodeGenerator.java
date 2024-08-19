@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
  * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.compiler.spirv;
@@ -42,7 +42,7 @@ import static org.lwjgl.util.spvc.Spv.*;
  */
 public final class SPIRVCodeGenerator extends CodeGenerator {
 
-    // Arc 3D is not registered, so higher 16 bits are zero
+    // Arc3D is not registered, so higher 16 bits are zero
     // We use 0x32D2 and 0x6D5C for the lower 16 bits (in the future)
     public static final int GENERATOR_MAGIC_NUMBER = 0x00000000;
     // We reserve the max SpvId as a sentinel (meaning not available)
@@ -171,7 +171,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         estimatedSize += mDecorationBuffer.size() * 4;
         estimatedSize += mConstantBuffer.size() * 4;
         estimatedSize += mFunctionBuffer.size() * 4;
-        estimatedSize = estimatedSize + 40; // ExecutionMode
+        estimatedSize = estimatedSize + 12; // ExecutionMode
 
         // Header
         // 0 - magic number
@@ -243,7 +243,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 return SpvStorageClassOutput;
             }
         }
-        if ((modifiers.flags() & Modifiers.kBuffer_Flag) != 0 &&
+        if (modifiers.isBuffer() &&
                 mOutputVersion.isAtLeast(SPIRVVersion.SPIRV_1_3)) {
             // missing before 1.3
             return SpvStorageClassStorageBuffer;
@@ -908,13 +908,22 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int resultId = getUniqueId();
         Variable variable = block.getVariable();
         Modifiers modifiers = variable.getModifiers();
+        final MemoryLayout desiredLayout;
+        if ((modifiers.layoutFlags() & Layout.kStd140_LayoutFlag) != 0) {
+            desiredLayout = MemoryLayout.Std140;
+        } else if ((modifiers.layoutFlags() & Layout.kStd430_LayoutFlag) != 0) {
+            desiredLayout = MemoryLayout.Std430;
+        } else {
+            desiredLayout = null;
+        }
         final MemoryLayout memoryLayout;
-        if ((modifiers.flags() & Modifiers.kBuffer_Flag) != 0) {
-            memoryLayout = MemoryLayout.Std430;
-        } else if ((modifiers.flags() & Modifiers.kUniform_Flag) != 0) {
-            memoryLayout = (modifiers.layoutFlags() & Layout.kPushConstant_LayoutFlag) != 0
-                    ? MemoryLayout.Std430
-                    : MemoryLayout.Extended;
+        if (modifiers.isBuffer()) {
+            memoryLayout = desiredLayout != null ? desiredLayout : MemoryLayout.Std430;
+        } else if (modifiers.isUniform()) {
+            memoryLayout = desiredLayout != null ? desiredLayout :
+                    (modifiers.layoutFlags() & Layout.kPushConstant_LayoutFlag) != 0
+                            ? MemoryLayout.Std430
+                            : MemoryLayout.Extended;
         } else {
             memoryLayout = null;
         }
@@ -930,7 +939,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         //FIXME not check block modifiers
         if (modifiers.layoutBuiltin() == -1) {
             boolean legacyBufferBlock =
-                    (modifiers.flags() & Modifiers.kBuffer_Flag) != 0 &&
+                    modifiers.isBuffer() &&
                             mOutputVersion.isBefore(SPIRVVersion.SPIRV_1_3);
             writeInstruction(SpvOpDecorate,
                     typeId,
@@ -1111,6 +1120,47 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private int writeBinaryOp(Type leftType, int lhs, Operator op,
                               Type rightType, int rhs,
                               Type resultType, Writer writer) {
+        // The comma operator ignores the type of the left-hand side entirely.
+        if (op == Operator.COMMA) {
+            return rhs;
+        }
+        Type operandType;
+        if (leftType.matches(rightType)) {
+            operandType = leftType;
+        } else {
+            Type leftComponentType = leftType.getComponentType();
+            Type rightComponentType = rightType.getComponentType();
+            if (leftType.getTypeKind() == rightType.getTypeKind() &&
+                    (leftType.isScalar() || leftType.isVector() || leftType.isMatrix()) &&
+                    leftType.getCols() == rightType.getCols() &&
+                    leftType.getRows() == rightType.getRows() &&
+                    leftComponentType.getScalarKind() == rightComponentType.getScalarKind() &&
+                    leftComponentType.getWidth() == rightComponentType.getWidth()) {
+                // only minWidth differs
+                operandType = leftType;
+            } else if (leftType.isVector() && rightType.isNumeric()) {
+                if (resultType.getComponentType().isFloat()) {
+                    switch (op) {
+                        case DIV: {
+                            int one = writeScalarConstant(1.0, rightType);
+                            int reciprocal = getUniqueId(rightType);
+                            writeInstruction(SpvOpFDiv, writeType(rightType), reciprocal, one, rhs, writer);
+                            rhs = reciprocal;
+                            // fallthrough
+                        }
+                        case MUL: {
+                            int result = getUniqueId(resultType);
+                            writeInstruction(SpvOpVectorTimesScalar, writeType(resultType),
+                                    result, lhs, rhs, writer);
+                            return result;
+                        }
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+
         return 0;
     }
 

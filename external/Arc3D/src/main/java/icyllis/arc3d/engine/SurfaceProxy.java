@@ -1,34 +1,33 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link SurfaceProxy} implements the proxy pattern for {@link ISurface},
- * it targets a {@link IGpuSurface} with three instantiation methods: deferred,
+ * The {@link SurfaceProxy} implements the proxy pattern for {@link GpuSurface},
+ * it targets a {@link GpuSurface} with three instantiation methods: deferred,
  * lazy-callback and wrapped.
  * <p>
  * Target: The backing GPU texture or framebuffer that referenced by this proxy.
@@ -38,7 +37,7 @@ import javax.annotation.Nullable;
  * <p>
  * BackingFit: Indicates whether a backing store needs to be an exact match or
  * can be larger than is strictly necessary. True: Exact; False: Approx. See
- * {@link #FLAG_APPROX_FIT}, the default is exact.
+ * {@link ISurface#FLAG_APPROX_FIT}, the default is exact.
  * <p>
  * UseAllocator:
  * <ul>
@@ -53,12 +52,12 @@ import javax.annotation.Nullable;
  * case where render thread will have ownership). This is because the backing GPU
  * texture can only be operated on render thread.
  * <p>
- * Use {@link SurfaceProvider} to obtain {@link SurfaceProxy} objects.
+ * Use {@link ImageProxyCache} to obtain {@link SurfaceProxy} objects.
  *
- * @see TextureProxy
- * @see SurfaceView
+ * @see ImageViewProxy
+ * @see ImageProxyView
  */
-public abstract class SurfaceProxy extends RefCnt implements ISurface {
+public abstract class SurfaceProxy extends RefCnt {
 
     /**
      * For wrapped resources, 'mFormat' and 'mDimensions' will always be filled in from the
@@ -67,6 +66,13 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     final BackendFormat mFormat;
     int mWidth;
     int mHeight;
+
+    /**
+     * For deferred textures it will be null until the backing store is instantiated.
+     * For wrapped textures it will point to the wrapped resource.
+     */
+    @SharedPtr
+    GpuSurface mGpuSurface;
 
     /**
      * BackingFit: Indicates whether a backing store needs to be an exact match or can be
@@ -84,21 +90,21 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
      *     <li>True: {@link SurfaceAllocator} should instantiate this surface.</li>
      * </ul>
      * <p>
-     * DeferredProvider: For TextureProxies created in a deferred list recording thread it is
+     * DeferredProvider: For {@link ImageViewProxy}s created in a deferred list recording thread it is
      * possible for the uniqueKey to be cleared on the backing Texture while the uniqueKey
      * remains on the surface. A 'mDeferredProvider' of 'true' loosens up asserts that the key of an
-     * instantiated uniquely-keyed texture is also always set on the backing {@link GpuTexture}.
+     * instantiated uniquely-keyed texture is also always set on the backing {@link Image}.
      * <p>
      * In many cases these flags aren't actually known until the surface has been instantiated.
      * However, Engine frequently needs to change its behavior based on these settings. For
      * internally create proxies we will know these properties ahead of time. For wrapped
-     * proxies we will copy the properties off of the {@link GpuTexture}. For lazy proxies we
+     * proxies we will copy the properties off of the {@link Image}. For lazy proxies we
      * force the call sites to provide the required information ahead of time. At
      * instantiation time we verify that the assumed properties match the actual properties.
      *
-     * @see IGpuSurface#FLAG_BUDGETED
-     * @see IGpuSurface#FLAG_APPROX_FIT
-     * @see IGpuSurface#FLAG_SKIP_ALLOCATOR
+     * @see ISurface#FLAG_BUDGETED
+     * @see ISurface#FLAG_APPROX_FIT
+     * @see ISurface#FLAG_SKIP_ALLOCATOR
      */
     int mSurfaceFlags;
 
@@ -107,7 +113,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     /**
      * Set from the backing resource for wrapped resources.
      */
-    final Object mUniqueID;
+    final UniqueID mUniqueID;
 
     int mTaskTargetCount = 0;
     boolean mIsDeferredListTarget = false;
@@ -124,11 +130,11 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
         if (format.isExternal()) {
             mSurfaceFlags |= ISurface.FLAG_READ_ONLY;
         }
-        mUniqueID = this;
+        mUniqueID = new UniqueID();
     }
 
     // Wrapped version
-    SurfaceProxy(@SharedPtr IGpuSurface surface,
+    SurfaceProxy(@SharedPtr GpuSurface surface,
                  int surfaceFlags) {
         assert (surface != null);
         mFormat = surface.getBackendFormat();
@@ -136,26 +142,26 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
         mHeight = surface.getHeight();
         mSurfaceFlags = surface.getSurfaceFlags() | surfaceFlags;
         assert (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
-        mUniqueID = surface; // converting from unique resource ID to a surface ID
+        mUniqueID = surface.getUniqueID(); // converting from unique resource ID to a surface ID
     }
 
     public static class LazyCallbackResult {
 
         @SharedPtr
-        public IGpuSurface mSurface;
+        public GpuSurface mSurface;
         /**
-         * Some lazy callbacks want to set their own (or no key) on the {@link GpuTexture}
-         * they return. Others want the {@link GpuTexture}'s key to be kept in sync with the surface's
+         * Some lazy callbacks want to set their own (or no key) on the {@link Image}
+         * they return. Others want the {@link Image}'s key to be kept in sync with the surface's
          * key. This flag controls the key relationship between proxies and their targets.
          * <ul>
-         *     <li>False: Don't key the {@link GpuTexture} with the surface's key. The lazy
-         *     instantiation callback is free to return a {@link GpuTexture} that already
+         *     <li>False: Don't key the {@link Image} with the surface's key. The lazy
+         *     instantiation callback is free to return a {@link Image} that already
          *     has a unique key unrelated to the surface's key.</li>
-         *     <li>True: Keep the {@link GpuTexture}'s unique key in sync with the surface's
-         *     unique key. The {@link GpuTexture} returned from the lazy instantiation callback
+         *     <li>True: Keep the {@link Image}'s unique key in sync with the surface's
+         *     unique key. The {@link Image} returned from the lazy instantiation callback
          *     must not have a unique key or have the same same unique key as the surface.
          *     If the surface is later assigned a key it is in turn assigned to the
-         *     {@link GpuTexture}.</li>
+         *     {@link Image}.</li>
          * </ul>
          */
         public boolean mSyncTargetKey = true;
@@ -168,11 +174,11 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
         public LazyCallbackResult() {
         }
 
-        public LazyCallbackResult(@SharedPtr IGpuSurface surface) {
+        public LazyCallbackResult(@SharedPtr GpuSurface surface) {
             mSurface = surface;
         }
 
-        public LazyCallbackResult(@SharedPtr IGpuSurface surface,
+        public LazyCallbackResult(@SharedPtr GpuSurface surface,
                                   boolean syncTargetKey,
                                   boolean releaseCallback) {
             mSurface = surface;
@@ -188,7 +194,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     public interface LazyInstantiateCallback extends AutoCloseable {
 
         /**
-         * Specifies the expected properties of the {@link IGpuSurface} returned by a lazy instantiation
+         * Specifies the expected properties of the {@link GpuSurface} returned by a lazy instantiation
          * callback. The dimensions will be negative in the case of a lazy-most surface.
          */
         LazyCallbackResult onLazyInstantiate(ResourceProvider provider,
@@ -310,11 +316,11 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
      *
      * @return a reference for identity hash map
      */
-    public final Object getUniqueID() {
+    public final UniqueID getUniqueID() {
         return mUniqueID;
     }
 
-    public abstract Object getBackingUniqueID();
+    public abstract UniqueID getBackingUniqueID();
 
     /**
      * Returns true if the backing store is instantiated.
@@ -361,14 +367,16 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     }
 
     @Nullable
-    public abstract IGpuSurface getGpuSurface();
+    @RawPtr
+    public abstract GpuSurface getGpuSurface();
 
     /**
      * If this is a texturable surface and the surface is already instantiated, return its
-     * backing {@link GpuTexture}; if not, return null.
+     * backing {@link Image}; if not, return null.
      */
     @Nullable
-    public GpuTexture getGpuTexture() {
+    @RawPtr
+    public Image getGpuImage() {
         return null;
     }
 
@@ -377,6 +385,7 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
      * backing {@link GpuRenderTarget}; if not, return null.
      */
     @Nullable
+    @RawPtr
     public GpuRenderTarget getGpuRenderTarget() {
         return null;
     }
@@ -406,15 +415,15 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     }
 
     public final boolean isManualMSAAResolve() {
-        return (mSurfaceFlags & ISurface.FLAG_MANUAL_MSAA_RESOLVE) != 0;
+        return (mSurfaceFlags & FramebufferDesc.FLAG_MANUAL_MSAA_RESOLVE) != 0;
     }
 
     public final boolean wrapsGLDefaultFB() {
-        return (mSurfaceFlags & ISurface.FLAG_GL_WRAP_DEFAULT_FB) != 0;
+        return (mSurfaceFlags & FramebufferDesc.FLAG_GL_WRAP_DEFAULT_FB) != 0;
     }
 
     public final boolean wrapsVkSecondaryCB() {
-        return (mSurfaceFlags & ISurface.FLAG_VK_WRAP_SECONDARY_CB) != 0;
+        return (mSurfaceFlags & FramebufferDesc.FLAG_VK_WRAP_SECONDARY_CB) != 0;
     }
 
     public final boolean isDeferredListTarget() {
@@ -431,7 +440,24 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
         return (mSurfaceFlags & ISurface.FLAG_APPROX_FIT) == 0;
     }
 
-    public TextureProxy asTexture() {
+    /**
+     * @return the texture proxy associated with the surface proxy, may be NULL.
+     */
+    public ImageViewProxy asImageProxy() {
+        return null;
+    }
+
+    /**
+     * @return the render target proxy associated with the surface proxy, may be NULL.
+     */
+    public RenderTargetProxy asRenderTargetProxy() {
+        return null;
+    }
+
+    /**
+     * @return the unique key for this proxy, may be NULL
+     */
+    public IUniqueKey getUniqueKey() {
         return null;
     }
 
@@ -459,4 +485,11 @@ public abstract class SurfaceProxy extends RefCnt implements ISurface {
     @ApiStatus.Internal
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public abstract boolean doLazyInstantiation(ResourceProvider resourceProvider);
+
+    @Nonnull
+    abstract IResourceKey computeScratchKey();
+
+    @Nullable
+    @SharedPtr
+    abstract GpuSurface createSurface(ResourceProvider resourceProvider);
 }

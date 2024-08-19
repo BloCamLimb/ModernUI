@@ -18,8 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.ColorSpace;
-import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
@@ -704,8 +703,8 @@ public final class BitmapFactory {
             }
             // images have un-premultiplied alpha by default, HDR has alpha of 1.0
             int at = !isHDR && (channels_in_file == 2 || channels_in_file == 4) && format.hasAlpha()
-                    ? ImageInfo.AT_UNPREMUL
-                    : ImageInfo.AT_OPAQUE;
+                    ? ColorInfo.AT_UNPREMUL
+                    : ColorInfo.AT_OPAQUE;
             // XXX: row stride is always (width * bpp) in STB
             Bitmap bitmap = new Bitmap(format,
                     ImageInfo.make(width, height, format.getColorType(), at, cs),

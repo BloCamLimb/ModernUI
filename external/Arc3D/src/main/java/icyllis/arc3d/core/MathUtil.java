@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
@@ -49,6 +49,12 @@ public class MathUtil {
     // SQRT2 == INV_SQRT2 * 2.0
     public static final float SQRT2 = 1.4142135623730951f;
     public static final float INV_SQRT2 = 0.7071067811865476f;
+
+    /**
+     * The tolerance (error) for 2D renderer.
+     */
+    // PATH_TOLERANCE == Math.ulp(2500.0f) == 1f / 4096
+    public static final float PATH_TOLERANCE = 1f / (1 << 12);
 
     static {
         if (USE_SIN_TABLE) {
@@ -87,6 +93,72 @@ public class MathUtil {
     }
 
     /**
+     * Decomposes <var>x</var> into a floating-point significand in the
+     * range <code>(-1,-0.5], [0.5,1.0)</code>, and an integral exponent of two,
+     * such that
+     * <pre>x = significand * 2<sup>exponent</sup></pre>
+     * If <var>x</var> is +- zero, +- Inf, or NaN, returns the input value
+     * as-is, and sets <var>exp</var> to 0.
+     *
+     * @param x   the input value
+     * @param exp the resulting exponent
+     * @return the resulting significand
+     */
+    public static float frexp(float x, int[] exp) { // fraction exponent
+        int bits = Float.floatToRawIntBits(x);
+        int high = bits & 0x7fffffff;
+        exp[0] = 0;
+        if (high == 0 | high >= 0x7f800000) {
+            // 0, Inf, or NaN
+            return x;
+        }
+        if (high < 0x00800000) {
+            // denorm
+            bits = Float.floatToRawIntBits(0x1p25f * x);
+            high = bits & 0x7fffffff;
+            exp[0] = -25;
+        }
+        exp[0] += (high >> 23) - 126;
+        return Float.intBitsToFloat((bits & 0x807fffff) | 0x3f000000);
+    }
+
+    /**
+     * Composes a floating-point number from <var>x</var> and the
+     * corresponding integral exponent of two in <var>exp</var>, resulting
+     * <pre>significand * 2<sup>exponent</sup></pre>
+     * If <var>x</var> is +- zero, +- Inf, or NaN, returns the input value
+     * as-is. If overflow or underflow occurs, returns a rounded value.
+     *
+     * @param x   the input significand
+     * @param exp the input exponent
+     * @return the resulting value
+     */
+    public static float ldexp(float x, int exp) { // load exponent
+        if (exp > 127) {
+            // large scaling
+            x *= 0x1p127f;
+            exp -= 127;
+            if (exp > 127) {
+                x *= 0x1p127f;
+                exp -= 127;
+                if (exp > 127)
+                    exp = 127; // huge scaling
+            }
+        } else if (exp < -126) {
+            // large scaling
+            x *= 0x1p-126f;
+            exp += 126;
+            if (exp < -126) {
+                x *= 0x1p-126f;
+                exp += 126;
+                if (exp < -126)
+                    exp = -126; // huge scaling
+            }
+        }
+        return x * Float.intBitsToFloat((exp + 127) << 23);
+    }
+
+    /**
      * @return true if <code>a</code> is approximately equal to zero
      */
     public static boolean isApproxZero(float a) {
@@ -94,52 +166,28 @@ public class MathUtil {
     }
 
     /**
-     * @return true if <code>a</code> is approximately equal to zero
+     * @return true if <code>a</code> is approximately equal to zero within a given tolerance
      */
-    public static boolean isApproxZero(float a, float b) {
-        return Math.abs(a) <= EPS && Math.abs(b) <= EPS;
-    }
-
-    /**
-     * @return true if <code>a</code> is approximately equal to zero
-     */
-    public static boolean isApproxZero(float a, float b, float c) {
-        return Math.abs(a) <= EPS && Math.abs(b) <= EPS && Math.abs(c) <= EPS;
-    }
-
-    /**
-     * @return true if <code>a</code> is approximately equal to zero
-     */
-    public static boolean isApproxZero(float a, float b, float c, float d) {
-        return Math.abs(a) <= EPS && Math.abs(b) <= EPS && Math.abs(c) <= EPS && Math.abs(d) <= EPS;
+    public static boolean isApproxZero(float a,
+                                       float tolerance) {
+        assert tolerance >= 0;
+        return Math.abs(a) <= tolerance;
     }
 
     /**
      * @return true if <code>a</code> is approximately equal to <code>b</code>
      */
     public static boolean isApproxEqual(float a, float b) {
-        return Math.abs(b - a) <= EPS;
+        return Math.abs(a - b) <= EPS;
     }
 
     /**
-     * @return true if <code>a</code> is approximately equal to <code>b</code>
+     * @return true if <code>a</code> is approximately equal to <code>b</code> within a given tolerance
      */
-    public static boolean isApproxEqual(float a, float b, float c) {
-        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS;
-    }
-
-    /**
-     * @return true if <code>a</code> is approximately equal to <code>b</code>
-     */
-    public static boolean isApproxEqual(float a, float b, float c, float d) {
-        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS && Math.abs(d - a) <= EPS;
-    }
-
-    /**
-     * @return true if <code>a</code> is approximately equal to <code>b</code>
-     */
-    public static boolean isApproxEqual(float a, float b, float c, float d, float e) {
-        return Math.abs(b - a) <= EPS && Math.abs(c - a) <= EPS && Math.abs(d - a) <= EPS && Math.abs(e - a) <= EPS;
+    public static boolean isApproxEqual(float a, float b,
+                                        float tolerance) {
+        assert tolerance >= 0;
+        return Math.abs(a - b) <= tolerance;
     }
 
     // square root
@@ -169,7 +217,7 @@ public class MathUtil {
      * @return x clamped between min and max, inclusively.
      */
     public static int clamp(int x, int min, int max) {
-        return Math.max(min, Math.min(x, max));
+        return Math.min(max, Math.max(x, min));
     }
 
     /**
@@ -179,7 +227,7 @@ public class MathUtil {
      * @return x clamped between min and max, inclusively.
      */
     public static long clamp(long x, long min, long max) {
-        return Math.max(min, Math.min(x, max));
+        return Math.min(max, Math.max(x, min));
     }
 
     /**
@@ -188,7 +236,7 @@ public class MathUtil {
      * @return x clamped between min and max
      */
     public static float clamp(float x, float min, float max) {
-        return Math.max(min, Math.min(x, max));
+        return Math.min(max, Math.max(x, min));
     }
 
     /**
@@ -197,7 +245,7 @@ public class MathUtil {
      * @return x clamped between min and max
      */
     public static double clamp(double x, double min, double max) {
-        return Math.max(min, Math.min(x, max));
+        return Math.min(max, Math.max(x, min));
     }
 
     /**
@@ -389,6 +437,68 @@ public class MathUtil {
     }
 
     /**
+     * Returns true if all values are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static boolean isFinite(float v0, float v1, float v2, float v3) {
+        float prod = v0 - v0;
+        prod = prod * v1 * v2 * v3;
+        // At this point, `prod` will either be NaN or 0.
+        return prod == prod;
+    }
+
+    /**
+     * Returns true if all values are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static boolean isFinite(float v0, float v1, float v2,
+                                   float v3, float v4, float v5) {
+        float prod = v0 - v0;
+        prod = prod * v1 * v2 * v3 * v4 * v5;
+        // At this point, `prod` will either be NaN or 0.
+        return prod == prod;
+    }
+
+    /**
+     * Returns true if all values are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static boolean isFinite(float v0, float v1, float v2,
+                                   float v3, float v4, float v5,
+                                   float v6, float v7, float v8) {
+        float prod = v0 - v0;
+        prod = prod * v1 * v2 * v3 * v4 * v5 * v6 * v7 * v8;
+        // At this point, `prod` will either be NaN or 0.
+        return prod == prod;
+    }
+
+    /**
+     * Returns true if all values are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static boolean isFinite(float[] values, int offset, int count) {
+        assert count > 0;
+        // Subtracting a value from itself will result in zero, except for NAN or ±Inf, which make NAN.
+        // Multiplying a group of values against zero will result in zero for each product, except for
+        // NAN or ±Inf, which will result in NAN and continue resulting in NAN for the rest of the elements.
+        float v0 = values[offset];
+        float prod = v0 - v0;
+        while (--count != 0) {
+            prod *= values[++offset];
+        }
+        // At this point, `prod` will either be NaN or 0.
+        return prod == prod;
+    }
+
+    /**
      * Aligns {@code a} up to 2 (half-word).
      */
     public static int align2(int a) {
@@ -488,6 +598,14 @@ public class MathUtil {
      * Aligns {@code a} up to a power of two.
      */
     public static int alignTo(int a, int alignment) {
+        assert alignment > 0 && (alignment & (alignment - 1)) == 0;
+        return (a + alignment - 1) & -alignment;
+    }
+
+    /**
+     * Aligns {@code a} up to a power of two.
+     */
+    public static long alignTo(long a, long alignment) {
         assert alignment > 0 && (alignment & (alignment - 1)) == 0;
         return (a + alignment - 1) & -alignment;
     }

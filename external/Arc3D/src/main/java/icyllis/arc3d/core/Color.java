@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
@@ -858,11 +858,11 @@ public final class Color {
         float[] dst4 = load_and_premul(dst);
         mode.apply(src4, dst4, dst4);
         float a = MathUtil.clamp(dst4[3], 0, 1);
-        if (a == 0) {
+        int result = (int) (a * 255.0f + 0.5f) << 24;
+        if (result == 0) {
             return TRANSPARENT;
         }
         // unpremul and store
-        int result = (int) (a * 255.0f + 0.5f) << 24;
         a = 255.0f / a;
         for (int i = 0; i < 3; i++) {
             result |= (int) MathUtil.clamp(dst4[2 - i] * a + 0.5f, 0, 255) << (i << 3);

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.engine.GpuResource;
+import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.engine.ISurface;
 import icyllis.arc3d.opengl.*;
 import icyllis.modernui.core.Core;
@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.util.Objects;
 
-import static icyllis.arc3d.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 /**
  * This class represents a framebuffer object. It is used for creation of
@@ -45,6 +45,7 @@ import static icyllis.arc3d.opengl.GLCore.*;
  *
  * @see <a href="https://www.khronos.org/opengl/wiki/Framebuffer_Object">Framebuffer Object</a>
  */
+@Deprecated
 public final class GLSurface implements AutoCloseable {
 
     public static final int NUM_RENDER_TARGETS = 3;
@@ -53,7 +54,7 @@ public final class GLSurface implements AutoCloseable {
     private final FloatBuffer mClearColor = BufferUtils.createFloatBuffer(4);
 
     private final GLTexture[] mColorAttachments = new GLTexture[NUM_RENDER_TARGETS];
-    private GLAttachment mStencilAttachment;
+    private GLRenderbuffer mStencilAttachment;
 
     private int mBackingWidth;
     private int mBackingHeight;
@@ -157,7 +158,7 @@ public final class GLSurface implements AutoCloseable {
         }
         mBackingWidth = width;
         mBackingHeight = height;
-        var dContext = Core.requireDirectContext();
+        var dContext = Core.requireImmediateContext();
         for (int i = 0; i < NUM_RENDER_TARGETS; i++) {
             if (mColorAttachments[i] != null) {
                 mColorAttachments[i].unref();
@@ -181,7 +182,7 @@ public final class GLSurface implements AutoCloseable {
         if (mStencilAttachment != null) {
             mStencilAttachment.unref();
         }
-        mStencilAttachment = GLAttachment.makeStencil(
+        mStencilAttachment = GLRenderbuffer.makeStencil(
                 (GLDevice) dContext.getDevice(),
                 width, height,
                 1, GL_STENCIL_INDEX8
@@ -191,7 +192,7 @@ public final class GLSurface implements AutoCloseable {
                 GL_FRAMEBUFFER,
                 GL_STENCIL_ATTACHMENT,
                 GL_RENDERBUFFER,
-                mStencilAttachment.getRenderbufferID()
+                mStencilAttachment.getHandle()
         );
         int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -206,8 +207,8 @@ public final class GLSurface implements AutoCloseable {
         }
         mFramebuffer = 0;
         for (int i = 0; i < NUM_RENDER_TARGETS; i++) {
-            mColorAttachments[i] = GpuResource.move(mColorAttachments[i]);
+            mColorAttachments[i] = RefCnt.move(mColorAttachments[i]);
         }
-        mStencilAttachment = GpuResource.move(mStencilAttachment);
+        mStencilAttachment = RefCnt.move(mStencilAttachment);
     }
 }

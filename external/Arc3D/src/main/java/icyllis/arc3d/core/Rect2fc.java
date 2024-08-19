@@ -1,20 +1,20 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.core;
@@ -121,6 +121,28 @@ public sealed interface Rect2fc permits Rect2f {
     void store(@Nonnull Rect2f dst);
 
     /**
+     * Stores the coordinates from this into dst.
+     *
+     * @param dst the rectangle to store
+     */
+    void store(@Nonnull Rect2i dst);
+
+    /**
+     * Returns true if this rectangle intersects the specified rectangle.
+     * In no event is this rectangle modified. To record the intersection,
+     * use intersect().
+     *
+     * @param left   the left side of the rectangle being tested for intersection
+     * @param top    the top of the rectangle being tested for intersection
+     * @param right  the right side of the rectangle being tested for
+     *               intersection
+     * @param bottom the bottom of the rectangle being tested for intersection
+     * @return true if the specified rectangle intersects this rectangle. In
+     * no event is this rectangle modified.
+     */
+    boolean intersects(float left, float top, float right, float bottom);
+
+    /**
      * Returns true if this rectangle intersects the specified rectangle.
      * In no event is this rectangle modified.
      *
@@ -153,6 +175,20 @@ public sealed interface Rect2fc permits Rect2f {
      * means left <= x < right and top <= y < bottom
      */
     boolean contains(float x, float y);
+
+    /**
+     * Returns true if the 4 specified sides of a rectangle are inside or equal
+     * to this rectangle. i.e. is this rectangle a superset of the specified
+     * rectangle. An empty rectangle never contains another rectangle.
+     *
+     * @param left   the left side of the rectangle being tested for containment
+     * @param top    the top of the rectangle being tested for containment
+     * @param right  the right side of the rectangle being tested for containment
+     * @param bottom the bottom of the rectangle being tested for containment
+     * @return true if the 4 specified sides of a rectangle are inside or
+     * equal to this rectangle
+     */
+    boolean contains(float left, float top, float right, float bottom);
 
     /**
      * Returns true if the specified rectangle r is inside or equal to this

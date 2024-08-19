@@ -1,23 +1,25 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
+
+import icyllis.arc3d.core.RawPtr;
 
 /**
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}
@@ -49,7 +51,7 @@ public interface Mesh {
      *                          in units of the size of a vertex from layout param
      * @param actualVertexCount the actual number of vertices allocated
      */
-    default void setVertexBuffer(GpuBuffer buffer, int baseVertex, int actualVertexCount) {
+    default void setVertexBuffer(@RawPtr Buffer buffer, int baseVertex, int actualVertexCount) {
         throw new IllegalStateException();
     }
 
@@ -77,7 +79,7 @@ public interface Mesh {
      *                            in units of the size of an instance from layout param
      * @param actualInstanceCount the actual number of instances allocated
      */
-    default void setInstanceBuffer(GpuBuffer buffer, int baseInstance, int actualInstanceCount) {
+    default void setInstanceBuffer(@RawPtr Buffer buffer, int baseInstance, int actualInstanceCount) {
         throw new IllegalStateException();
     }
 
@@ -98,7 +100,7 @@ public interface Mesh {
      *                         in units of the size of an index from layout param
      * @param actualIndexCount the actual number of indices allocated
      */
-    default void setIndexBuffer(GpuBuffer buffer, int baseIndex, int actualIndexCount) {
+    default void setIndexBuffer(@RawPtr Buffer buffer, int baseIndex, int actualIndexCount) {
         throw new IllegalStateException();
     }
 }

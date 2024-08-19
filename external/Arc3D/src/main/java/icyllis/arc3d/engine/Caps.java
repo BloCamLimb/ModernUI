@@ -1,26 +1,28 @@
 /*
- * This file is part of Arc 3D.
+ * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2023 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
  *
- * Arc 3D is free software; you can redistribute it and/or
+ * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Arc 3D is distributed in the hope that it will be useful,
+ * Arc3D is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Arc 3D. If not, see <https://www.gnu.org/licenses/>.
+ * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Color;
-import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.engine.trash.PipelineKey_old;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,6 +37,19 @@ import javax.annotation.Nullable;
  */
 @SuppressWarnings("unused")
 public abstract class Caps {
+
+    /**
+     * Most implementations support 4 or 8 simultaneous color targets.
+     */
+    public static final int MAX_COLOR_TARGETS = 8;
+    /**
+     * Max allowed number of vertex attribute locations.
+     * Most implementations support 16 or 32 attributes, and our engine uses
+     * 'int' as enable mask type, then this is 32, see {@link VertexInputLayout}.
+     */
+    public static final int MAX_VERTEX_ATTRIBUTES = 32;
+    public static final int MAX_VERTEX_BINDINGS = 32;
+    // the constants above are used to create fixed length arrays, however, there is no such thing in Java
 
     /**
      * Indicates the capabilities of the fixed function blend unit.
@@ -62,6 +77,8 @@ public abstract class Caps {
     protected boolean mTransferPixelsToRowBytesSupport = false;
     protected boolean mMustSyncGpuDuringDiscard = true;
     protected boolean mTextureBarrierSupport = false;
+    protected boolean mUseCpuStagingBuffers = false;
+    protected boolean mDepthClipNegativeOneToOne = false;
 
     // Not (yet) implemented in VK backend.
     protected boolean mDynamicStateArrayGeometryProcessorTextureSupport = false;
@@ -72,10 +89,14 @@ public abstract class Caps {
 
     protected int mMaxRenderTargetSize = 1;
     protected int mMaxPreferredRenderTargetSize = 1;
-    protected int mMaxVertexAttributes = 0;
+    protected int mMaxVertexAttributes = 16;
+    protected int mMaxVertexBindings = 16;
     protected int mMaxTextureSize = 1;
     protected int mInternalMultisampleCount = 0;
     protected int mMaxPushConstantsSize = 0;
+    protected int mMaxColorAttachments = 4;
+    protected int mMinUniformBufferOffsetAlignment = 256;
+    protected int mMinStorageBufferOffsetAlignment = 256;
 
     protected final DriverBugWorkarounds mDriverBugWorkarounds = new DriverBugWorkarounds();
 
@@ -276,11 +297,35 @@ public abstract class Caps {
         return true;
     }
 
+    public final boolean useCpuStagingBuffers() {
+        return mUseCpuStagingBuffers;
+    }
+
     /**
-     * Maximum number of attribute values per vertex
+     * @return minimum required alignment, in bytes, for the offset
+     * member of the {@link BufferViewInfo} structure for uniform buffers
+     */
+    public final int minUniformBufferOffsetAlignment() {
+        return mMinUniformBufferOffsetAlignment;
+    }
+
+    /**
+     * @return minimum required alignment, in bytes, for the offset
+     * member of the {@link BufferViewInfo} structure for shader storage buffers
+     */
+    public final int minStorageBufferOffsetAlignment() {
+        return mMinStorageBufferOffsetAlignment;
+    }
+
+    /**
+     * Maximum number of attribute values per vertex input
      */
     public final int maxVertexAttributes() {
         return mMaxVertexAttributes;
+    }
+
+    public final int maxVertexBindings() {
+        return mMaxVertexBindings;
     }
 
     public final int maxRenderTargetSize() {
@@ -295,12 +340,28 @@ public abstract class Caps {
         return mMaxPreferredRenderTargetSize;
     }
 
+    /**
+     * Maximum 2D/1D texture image dimension.
+     */
+    // OpenGL 3.3 spec      requires a minimum maxTextureSize of 1024
+    // OpenGL ES 3.0 spec   requires a minimum maxTextureSize of 2048
+    // Vulkan 1.0 spec      requires a minimum maxTextureSize of 4096
+    // Vulkan Roadmap 2022  requires a minimum maxTextureSize of 8192
+    // OpenGL 4.0 spec      requires a minimum maxTextureSize of 16384
     public final int maxTextureSize() {
         return mMaxTextureSize;
     }
 
     public final int maxPushConstantsSize() {
         return mMaxPushConstantsSize;
+    }
+
+    /**
+     * Max number of color attachments in a render pass.
+     * This is ranged from 4 (typically on mobile) to 8 (typically on desktop).
+     */
+    public final int maxColorAttachments() {
+        return mMaxColorAttachments;
     }
 
     public final int transferBufferAlignment() {
@@ -353,7 +414,7 @@ public abstract class Caps {
      * the minimum alignment of the offset into the transfer buffer.
      */
     public abstract long getSupportedWriteColorType(int dstColorType,
-                                                    BackendFormat dstFormat,
+                                                    ImageDesc dstDesc,
                                                     int srcColorType);
 
     /**
@@ -378,15 +439,15 @@ public abstract class Caps {
 
         // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
         // using a transfer buffer.
-        if (colorType == ImageInfo.CT_RGB_888x) {
+        if (colorType == ColorInfo.CT_RGB_888x) {
             transferOffsetAlignment = 0;
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
         // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
-        int channelFlags = ImageInfo.colorTypeChannelFlags(colorType);
+        int channelFlags = ColorInfo.colorTypeChannelFlags(colorType);
         if ((channelFlags == Color.COLOR_CHANNEL_FLAGS_RGBA || channelFlags == Color.COLOR_CHANNEL_FLAGS_RGB ||
                 channelFlags == Color.COLOR_CHANNEL_FLAG_ALPHA || channelFlags == Color.COLOR_CHANNEL_FLAG_GRAY) &&
-                ImageInfo.bytesPerPixel(colorType) == 4) {
+                ColorInfo.bytesPerPixel(colorType) == 4) {
             switch ((int) (transferOffsetAlignment & 0b11)) {
                 // offset alignment already a multiple of 4
                 case 0:
@@ -510,6 +571,14 @@ public abstract class Caps {
     }
 
     /**
+     * Whether clip space's depth is ranged from negative one to one (true) or
+     * zero to one (false).
+     */
+    public final boolean depthClipNegativeOneToOne() {
+        return mDepthClipNegativeOneToOne;
+    }
+
+    /**
      * If a texture or render target can be created with these params.
      */
     public final boolean validateSurfaceParams(int width, int height,
@@ -519,7 +588,8 @@ public abstract class Caps {
         if (width < 1 || height < 1) {
             return false;
         }
-        if (!isFormatTexturable(format)) {
+        if ((surfaceFlags & ISurface.FLAG_SAMPLED_IMAGE) != 0 &&
+                !isFormatTexturable(format)) {
             return false;
         }
         if ((surfaceFlags & ISurface.FLAG_RENDERABLE) != 0) {
@@ -528,13 +598,13 @@ public abstract class Caps {
                 return false;
             }
             return isFormatRenderable(format, sampleCount);
-        } else {
-            final int maxSize = maxTextureSize();
-            if (width > maxSize || height > maxSize) {
-                return false;
-            }
-            return sampleCount == 1;
         }
+        final int maxSize = maxTextureSize();
+        if (width > maxSize || height > maxSize) {
+            return false;
+        }
+        //TODO allow multisample textures?
+        return sampleCount == 1;
     }
 
     /**
@@ -554,19 +624,89 @@ public abstract class Caps {
     }
 
     public final boolean isFormatCompatible(int colorType, BackendFormat format) {
-        if (colorType == ImageInfo.CT_UNKNOWN) {
+        if (colorType == ColorInfo.CT_UNKNOWN) {
             return false;
         }
         int compression = format.getCompressionType();
-        if (compression != ImageInfo.COMPRESSION_NONE) {
+        if (compression != ColorInfo.COMPRESSION_NONE) {
             return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ImageInfo.CT_RGB_888x :
-                    ImageInfo.CT_RGBA_8888);
+                    ColorInfo.CT_RGB_888x :
+                    ColorInfo.CT_RGBA_8888);
         }
         return onFormatCompatible(colorType, format);
     }
 
     protected abstract boolean onFormatCompatible(int colorType, BackendFormat format);
+
+    /**
+     * @param imageType
+     * @param colorType
+     * @param width
+     * @param height
+     * @param depthOrArraySize
+     * @param imageFlags
+     * @return
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_SAMPLED_IMAGE
+     * @see ISurface#FLAG_STORAGE_IMAGE
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_MEMORYLESS
+     * @see ISurface#FLAG_PROTECTED
+     */
+    @Nullable
+    public ImageDesc getDefaultColorImageDesc(int imageType,
+                                              int colorType,
+                                              int width, int height,
+                                              int depthOrArraySize,
+                                              int imageFlags) {
+        return getDefaultColorImageDesc(imageType, colorType, width, height, depthOrArraySize,
+                0, 0, imageFlags);
+    }
+
+    /**
+     * @param imageType
+     * @param colorType
+     * @param width
+     * @param height
+     * @param depthOrArraySize
+     * @param mipLevelCount
+     * @param sampleCount
+     * @param imageFlags
+     * @return
+     * @see ISurface#FLAG_MIPMAPPED
+     * @see ISurface#FLAG_SAMPLED_IMAGE
+     * @see ISurface#FLAG_STORAGE_IMAGE
+     * @see ISurface#FLAG_RENDERABLE
+     * @see ISurface#FLAG_MEMORYLESS
+     * @see ISurface#FLAG_PROTECTED
+     */
+    @Nullable
+    public ImageDesc getDefaultColorImageDesc(int imageType,
+                                              int colorType,
+                                              int width, int height,
+                                              int depthOrArraySize,
+                                              int mipLevelCount,
+                                              int sampleCount,
+                                              int imageFlags) {
+        return null;
+    }
+
+    @Nullable
+    public ImageDesc getDefaultDepthStencilImageDesc(int depthBits,
+                                                     int stencilBits,
+                                                     int width, int height,
+                                                     int sampleCount,
+                                                     int imageFlags) {
+        return null;
+    }
+
+    @Nullable
+    public ImageDesc getImageDescForSampledCopy(ImageDesc src,
+                                                int width, int height,
+                                                int depthOrArraySize,
+                                                int imageFlags) {
+        return null;
+    }
 
     /**
      * These are used when creating a new texture internally.
@@ -575,7 +715,7 @@ public abstract class Caps {
     public final BackendFormat getDefaultBackendFormat(int colorType,
                                                        boolean renderable) {
         // Unknown color types are always an invalid format.
-        if (colorType == ImageInfo.CT_UNKNOWN) {
+        if (colorType == ColorInfo.CT_UNKNOWN) {
             return null;
         }
         BackendFormat format = onGetDefaultBackendFormat(colorType);
@@ -588,9 +728,10 @@ public abstract class Caps {
         // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
         // that could be a separate requirement from the caller. It seems less necessary if
         // renderability was requested.
-        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.CT_UNKNOWN) {
+        //TODO
+        /*if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ColorInfo.CT_UNKNOWN) {
             return null;
-        }
+        }*/
         if (renderable && !isFormatRenderable(colorType, format, 1)) {
             return null;
         }
@@ -604,26 +745,35 @@ public abstract class Caps {
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
 
     @Nonnull
-    public abstract PipelineDesc makeDesc(PipelineDesc desc,
-                                          GpuRenderTarget renderTarget,
-                                          final PipelineInfo pipelineInfo);
+    public abstract PipelineKey_old makeDesc(PipelineKey_old desc,
+                                             GpuRenderTarget renderTarget,
+                                             final GraphicsPipelineDesc_Old graphicsPipelineDesc);
 
-    public final short getReadSwizzle(BackendFormat format, int colorType) {
-        int compression = format.getCompressionType();
-        if (compression != ImageInfo.COMPRESSION_NONE) {
-            if (colorType == ImageInfo.CT_RGB_888x || colorType == ImageInfo.CT_RGBA_8888) {
+    @Nonnull
+    public abstract PipelineKey makeGraphicsPipelineKey(
+            PipelineKey old,
+            PipelineDesc pipelineDesc,
+            RenderPassDesc renderPassDesc);
+
+    public final short getReadSwizzle(ImageDesc desc, int colorType) {
+        int compression = desc.getCompressionType();
+        if (compression != ColorInfo.COMPRESSION_NONE) {
+            if (colorType == ColorInfo.CT_RGB_888x || colorType == ColorInfo.CT_RGBA_8888) {
                 return Swizzle.RGBA;
             }
             assert false;
             return Swizzle.RGBA;
         }
 
-        return onGetReadSwizzle(format, colorType);
+        return onGetReadSwizzle(desc, colorType);
     }
 
-    protected abstract short onGetReadSwizzle(BackendFormat format, int colorType);
+    protected abstract short onGetReadSwizzle(ImageDesc desc, int colorType);
 
-    public abstract short getWriteSwizzle(BackendFormat format, int colorType);
+    public abstract short getWriteSwizzle(ImageDesc desc, int colorType);
+
+    public abstract IResourceKey computeImageKey(ImageDesc desc,
+                                                 IResourceKey recycle);
 
     // unmodifiable
     public final DriverBugWorkarounds workarounds() {
