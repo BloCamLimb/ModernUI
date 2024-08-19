@@ -18,11 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.*;
-import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.text.*;
-import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -429,7 +427,7 @@ public abstract class Canvas {
      * @param top    The top of the rectangle used in the difference operation
      * @param right  The right side of the rectangle used in the difference operation
      * @param bottom The bottom of the rectangle used in the difference operation
-     * @return       true if the resulting clip is non-empty
+     * @return true if the resulting clip is non-empty
      */
     public abstract boolean clipOutRect(float left, float top, float right, float bottom);
 
@@ -475,13 +473,37 @@ public abstract class Canvas {
     public abstract boolean quickReject(float left, float top, float right, float bottom);
 
     /**
+     * Return the bounds of the current clip (in local coordinates) in the
+     * bounds parameter, and return true if it is non-empty. This can be useful
+     * in a way similar to quickReject, in that it tells you that drawing
+     * outside of these bounds will be clipped out.
+     *
+     * @param bounds Return the clip bounds here.
+     * @return true if the current clip is non-empty.
+     */
+    public abstract boolean getLocalClipBounds(@NonNull RectF bounds);
+
+    /**
      * Fills the current clip with the specified color, using SRC blend mode.
      * This has the effect of replacing all pixels contained by clip with color.
      *
-     * @param color the straight color to draw onto the canvas
+     * @param color the un-premultiplied (straight) color to draw onto the canvas
      */
     public final void clear(@ColorInt int color) {
         drawColor(color, BlendMode.SRC);
+    }
+
+    /**
+     * Fills the current clip with the specified color, using SRC blend mode.
+     * This has the effect of replacing all pixels contained by clip with color.
+     *
+     * @param r the red component of the straight color to draw onto the canvas
+     * @param g the red component of the straight color to draw onto the canvas
+     * @param b the red component of the straight color to draw onto the canvas
+     * @param a the red component of the straight color to draw onto the canvas
+     */
+    public final void clear(float r, float g, float b, float a) {
+        drawColor(r, g, b, a, BlendMode.SRC);
     }
 
     /**
@@ -494,14 +516,37 @@ public abstract class Canvas {
     }
 
     /**
+     * Fill the current clip with the specified color, using SRC_OVER blend mode.
+     *
+     * @param r the red component of the straight color to draw onto the canvas
+     * @param g the red component of the straight color to draw onto the canvas
+     * @param b the red component of the straight color to draw onto the canvas
+     * @param a the red component of the straight color to draw onto the canvas
+     */
+    public final void drawColor(float r, float g, float b, float a) {
+        drawColor(r, g, b, a, BlendMode.SRC_OVER);
+    }
+
+    /**
      * Fill the current clip with the specified color, the blend mode determines
      * how color is combined with destination.
      *
      * @param color the straight color to draw onto the canvas
      * @param mode  the blend mode used to combine source color and destination
      */
-    public void drawColor(@ColorInt int color, BlendMode mode) {
-    }
+    public abstract void drawColor(@ColorInt int color, @NonNull BlendMode mode);
+
+    /**
+     * Fill the current clip with the specified color, the blend mode determines
+     * how color is combined with destination.
+     *
+     * @param r    the red component of the straight color to draw onto the canvas
+     * @param g    the red component of the straight color to draw onto the canvas
+     * @param b    the red component of the straight color to draw onto the canvas
+     * @param a    the red component of the straight color to draw onto the canvas
+     * @param mode the blend mode used to combine source color and destination
+     */
+    public abstract void drawColor(float r, float g, float b, float a, @NonNull BlendMode mode);
 
     /**
      * Fills the current clip with the specified paint. Paint components, Shader,
@@ -512,26 +557,7 @@ public abstract class Canvas {
      *
      * @param paint the paint used to draw onto the canvas
      */
-    public void drawPaint(Paint paint) {
-    }
-
-    /**
-     * Draws a point centered at (x, y) using the specified paint.
-     * <p>
-     * The shape of point drawn depends on paint's cap. If paint is set to
-     * {@link Paint#CAP_ROUND}, draw a circle of diameter paint stroke width
-     * (as transformed by the canvas' matrix), with special treatment for
-     * a stroke width of 0, which always draws exactly 1 pixel (or at most 4
-     * if anti-aliasing is enabled). Otherwise, draw a square of width and
-     * height paint stroke width. Paint's style is ignored, as if were set to
-     * {@link Paint#FILL}.
-     *
-     * @param p     the center point of circle or square
-     * @param paint the paint used to draw the point
-     */
-    public final void drawPoint(PointF p, Paint paint) {
-        drawPoint(p.x, p.y, paint);
-    }
+    public abstract void drawPaint(@NonNull Paint paint);
 
     /**
      * Draws a point centered at (x, y) using the specified paint.
@@ -548,7 +574,24 @@ public abstract class Canvas {
      * @param y     the center y of circle or square
      * @param paint the paint used to draw the point
      */
-    public void drawPoint(float x, float y, Paint paint) {
+    public abstract void drawPoint(float x, float y, @NonNull Paint paint);
+
+    /**
+     * Draws a point centered at (x, y) using the specified paint.
+     * <p>
+     * The shape of point drawn depends on paint's cap. If paint is set to
+     * {@link Paint#CAP_ROUND}, draw a circle of diameter paint stroke width
+     * (as transformed by the canvas' matrix), with special treatment for
+     * a stroke width of 0, which always draws exactly 1 pixel (or at most 4
+     * if anti-aliasing is enabled). Otherwise, draw a square of width and
+     * height paint stroke width. Paint's style is ignored, as if were set to
+     * {@link Paint#FILL}.
+     *
+     * @param p     the center point of circle or square
+     * @param paint the paint used to draw the point
+     */
+    public final void drawPoint(@NonNull PointF p, @NonNull Paint paint) {
+        drawPoint(p.x, p.y, paint);
     }
 
     /**
@@ -567,15 +610,8 @@ public abstract class Canvas {
      *               uses two values, the number of "points" that are drawn is really (count >> 1).
      * @param paint  the paint used to draw the points
      */
-    public void drawPoints(float[] pts, int offset, int count, Paint paint) {
-        if (count < 2) {
-            return;
-        }
-        count >>= 1;
-        for (int i = 0; i < count; i++) {
-            drawPoint(pts[offset++], pts[offset++], paint);
-        }
-    }
+    public abstract void drawPoints(@Size(multiple = 2) @NonNull float[] pts, int offset, int count,
+                                    @NonNull Paint paint);
 
     /**
      * Draw a series of points. Each point is centered at the coordinate
@@ -590,19 +626,45 @@ public abstract class Canvas {
      * @param pts   the array of points to draw [x0 y0 x1 y1 x2 y2 ...]
      * @param paint the paint used to draw the points
      */
-    public final void drawPoints(float[] pts, Paint paint) {
+    public final void drawPoints(@Size(multiple = 2) @NonNull float[] pts, @NonNull Paint paint) {
         drawPoints(pts, 0, pts.length, paint);
     }
 
     /**
+     * Draws line segment from (x0, y0) to (x1, y1) using the current matrix,
+     * clip and specified paint. In paint: stroke width describes the line thickness;
+     * Cap draws the end rounded or square; Style is ignored, as if were set to
+     * {@link Paint#STROKE}.
+     *
+     * @param x0    start of line segment on x-axis
+     * @param y0    start of line segment on y-axis
+     * @param x1    end of line segment on x-axis
+     * @param y1    end of line segment on y-axis
+     * @param paint the paint used to draw the line
+     */
+    public abstract void drawLine(float x0, float y0, float x1, float y1, @NonNull Paint paint);
+
+    /**
+     * Draws line segment from (x0, y0) to (x1, y1) using the current matrix,
+     * clip and specified paint. In paint: stroke width describes the line thickness;
+     * Cap draws the end rounded or square; Style is ignored, as if were set to
+     * {@link Paint#STROKE}.
+     *
+     * @param p0    start of line segment
+     * @param p1    end of line segment
+     * @param paint the paint used to draw the line
+     */
+    public final void drawLine(@NonNull PointF p0, @NonNull PointF p1, @NonNull Paint paint) {
+        drawLine(p0.x, p0.y, p1.x, p1.y, paint);
+    }
+
+    /**
      * Draw a line segment from (x0, y0) to (x1, y1) using the specified paint.
      * <p>
      * Line covers an area, and is not a stroke path in the concept of Modern UI.
      * Therefore, a line may be either "filled" (path) or "stroked" (annular, hollow),
      * depending on paint's style. Additionally, paint's cap draws the end rounded
      * or square, if filled; the other properties of paint work as intended.
-     * <p>
-     * See {@link #drawLinePath(float, float, float, float, Paint)} for the path version.
      * <p>
      * If thickness = 0 (also known as hairline), then this uses the mesh version.
      * See {@link #drawLineListMesh(FloatBuffer, IntBuffer, Paint)} for the mesh version.
@@ -611,41 +673,32 @@ public abstract class Canvas {
      * @param y0        the start of the line segment on y-axis
      * @param x1        the end of the line segment on x-axis
      * @param y1        the end of the line segment on y-axis
+     * @param cap       the line end used to determine the shape of the line
      * @param thickness the thickness of the line segment
      * @param paint     the paint used to draw the line segment
      */
-    public void drawLine(float x0, float y0, float x1, float y1,
-                         float thickness, @NonNull Paint paint) {
+    public abstract void drawLine(float x0, float y0, float x1, float y1,
+                                  @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint);
+
+    /**
+     * Equivalent to {@link #drawLine(float, float, float, float, Paint.Cap, float, Paint)}.
+     * with a round cap.
+     *
+     * @param x0        the start of the line segment on x-axis
+     * @param y0        the start of the line segment on y-axis
+     * @param x1        the end of the line segment on x-axis
+     * @param y1        the end of the line segment on y-axis
+     * @param thickness the thickness of the line segment
+     * @param paint     the paint used to draw the line segment
+     */
+    public final void drawLine(float x0, float y0, float x1, float y1,
+                               float thickness, @NonNull Paint paint) {
         drawLine(x0, y0, x1, y1, Paint.Cap.ROUND, thickness, paint);
     }
 
     /**
-     * Draw a line segment from (x0, y0) to (x1, y1) using the specified paint.
-     * <p>
-     * Line covers an area, and is not a stroke path in the concept of Modern UI.
-     * Therefore, a line may be either "filled" (path) or "stroked" (annular, hollow),
-     * depending on paint's style. Additionally, paint's cap draws the end rounded
-     * or square, if filled; the other properties of paint work as intended.
-     * <p>
-     * See {@link #drawLinePath(float, float, float, float, Paint)} for the path version.
-     * <p>
-     * If thickness = 0 (also known as hairline), then this uses the mesh version.
-     * See {@link #drawLineListMesh(FloatBuffer, IntBuffer, Paint)} for the mesh version.
-     *
-     * @param x0        the start of the line segment on x-axis
-     * @param y0        the start of the line segment on y-axis
-     * @param x1        the end of the line segment on x-axis
-     * @param y1        the end of the line segment on y-axis
-     * @param thickness the thickness of the line segment
-     * @param paint     the paint used to draw the line segment
-     */
-    public void drawLine(float x0, float y0, float x1, float y1,
-                         @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint) {
-
-    }
-
-    /**
-     * Variant version of {@link #drawLine(float, float, float, float, float, Paint)}.
+     * Equivalent to {@link #drawLine(float, float, float, float, Paint.Cap, float, Paint)}.
+     * with a round cap.
      *
      * @param p0        start of line segment
      * @param p1        end of line segment
@@ -658,32 +711,57 @@ public abstract class Canvas {
     }
 
     /**
-     * Variant version of {@link #drawLine(float, float, float, float, float, Paint)}.
-     * Draw a "filled" line, Paint's stroke width describes the line thickness.
+     * Draw a series of lines.
+     * <p>
+     * If <var>connected</var> is false, each line is taken from 4 consecutive values in the pts array.
+     * Thus, to draw 1 line, the array must contain at least 4 values. This is logically the same as
+     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
+     * drawLine(pts[4], pts[5], pts[6], pts[7]) and so on.
+     * <p>
+     * If <var>connected</var> is true, the first line is taken from 4 consecutive values in the pts
+     * array, and each remaining line is taken from last 2 values and next 2 values in the array.
+     * Thus, to draw 1 line, the array must contain at least 4 values. This is logically the same as
+     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
+     * drawLine(pts[2], pts[3], pts[4], pts[5]) and so on.
      *
-     * @param x0    the start of the line segment on x-axis
-     * @param y0    the start of the line segment on y-axis
-     * @param x1    the end of the line segment on x-axis
-     * @param y1    the end of the line segment on y-axis
-     * @param paint the paint used to draw the line
+     * @param pts       The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param offset    Number of values in the array to skip before drawing.
+     * @param count     The number of values in the array to process, after skipping "offset" of them.
+     *                  Since each line uses 4 values, the number of "lines" that are drawn is really
+     *                  (count >> 2) if connected, or ((count - 2) >> 1) if separate.
+     * @param connected Whether line points are connected
+     * @param paint     The paint used to draw the lines
      */
-    public void drawLine(float x0, float y0, float x1, float y1, @NonNull Paint paint) {
-        var pStyle = paint.getStyle();
-        paint.setStyle(Paint.FILL);
-        drawLine(x0, y0, x1, y1, paint.getStrokeWidth(), paint);
-        paint.setStyle(pStyle);
-    }
+    public abstract void drawLines(@Size(multiple = 2) @NonNull float[] pts, int offset, int count,
+                                   boolean connected, @NonNull Paint paint);
 
     /**
-     * Variant version of {@link #drawLine(float, float, float, float, float, Paint)}.
-     * Draw a "filled" line, Paint's stroke width describes the line thickness.
+     * Draw a series of round lines.
+     * <p>
+     * When discontinuous, each line is taken from 4 consecutive values in the pts array. Thus,
+     * to draw 1 line, the array must contain at least 4 values. This is logically the same as
+     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
+     * drawLine(pts[4], pts[5], pts[6], pts[7]) and so on.
+     * <p>
+     * When continuous, the first line is taken from 4 consecutive values in the pts
+     * array, and each remaining line is taken from last 2 values and next 2 values in the array.
+     * Thus, to draw 1 line, the array must contain at least 4 values. This is logically the same as
+     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
+     * drawLine(pts[2], pts[3], pts[4], pts[5]) and so on.
      *
-     * @param p0    start of line segment
-     * @param p1    end of line segment
-     * @param paint the paint used to draw the line
+     * @param pts    The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param offset Number of values in the array to skip before drawing.
+     * @param count  The number of values in the array to process, after skipping "offset" of them.
+     *               Since each line uses 4 values, the number of "lines" that are drawn is really
+     *               (count >> 2) if continuous, or ((count - 2) >> 1) if discontinuous.
+     * @param strip  Whether line points are continuous
+     * @param paint  The paint used to draw the lines
+     * @deprecated use {@link #drawLines(float[], int, int, boolean, Paint)} instead
      */
-    public final void drawLine(@NonNull PointF p0, @NonNull PointF p1, @NonNull Paint paint) {
-        drawLine(p0.x, p0.y, p1.x, p1.y, paint);
+    @Deprecated
+    public void drawRoundLines(float[] pts, int offset, int count, boolean strip,
+                               Paint paint) {
+        drawLines(pts, offset, count, strip, paint);
     }
 
     /**
@@ -695,7 +773,7 @@ public abstract class Canvas {
      * @param r     the rectangle to be drawn.
      * @param paint the paint used to draw the rectangle
      */
-    public final void drawRect(RectF r, Paint paint) {
+    public final void drawRect(@NonNull RectF r, @NonNull Paint paint) {
         drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
@@ -708,7 +786,7 @@ public abstract class Canvas {
      * @param r     the rectangle to be drawn.
      * @param paint the paint used to draw the rectangle
      */
-    public final void drawRect(Rect r, Paint paint) {
+    public final void drawRect(@NonNull Rect r, @NonNull Paint paint) {
         drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
@@ -724,7 +802,7 @@ public abstract class Canvas {
      * @param bottom the bottom side of the rectangle to be drawn
      * @param paint  the paint used to draw the rect
      */
-    public abstract void drawRect(float left, float top, float right, float bottom, Paint paint);
+    public abstract void drawRect(float left, float top, float right, float bottom, @NonNull Paint paint);
 
     /**
      * Similar to {@link #drawRect(float, float, float, float, Paint)},
@@ -754,8 +832,8 @@ public abstract class Canvas {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(RectF rect, float radius, Paint paint) {
-        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, Gravity.NO_GRAVITY, paint);
+    public final void drawRoundRect(@NonNull RectF rect, float radius, @NonNull Paint paint) {
+        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, paint);
     }
 
     /**
@@ -769,10 +847,8 @@ public abstract class Canvas {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(float left, float top, float right, float bottom,
-                                    float radius, Paint paint) {
-        drawRoundRect(left, top, right, bottom, radius, Gravity.NO_GRAVITY, paint);
-    }
+    public abstract void drawRoundRect(float left, float top, float right, float bottom,
+                                       float radius, @NonNull Paint paint);
 
     /**
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
@@ -786,7 +862,7 @@ public abstract class Canvas {
      *               combination of two adjacent sides
      * @param paint  the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(RectF rect, float radius, int sides, Paint paint) {
+    public final void drawRoundRect(@NonNull RectF rect, float radius, int sides, @NonNull Paint paint) {
         drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, sides, paint);
     }
 
@@ -806,7 +882,7 @@ public abstract class Canvas {
      * @param paint  the paint used to draw the round rectangle
      */
     public abstract void drawRoundRect(float left, float top, float right, float bottom,
-                                       float radius, int sides, Paint paint);
+                                       float radius, int sides, @NonNull Paint paint);
 
     /**
      * Similar to {@link #drawRoundRect(float, float, float, float, float, Paint)},
@@ -856,7 +932,8 @@ public abstract class Canvas {
     }
 
     /**
-     * Draw a circular arc at (cx, cy) with radius using the specified paint.
+     * Draw a circular arc at (cx, cy) with radius using the current matrix,
+     * clip and specified paint.
      * <p>
      * If the start angle is negative or >= 360, the start angle is treated as
      * start angle modulo 360. If the sweep angle is >= 360, then the circle is
@@ -865,13 +942,7 @@ public abstract class Canvas {
      * <p>
      * The arc is drawn clockwise. An angle of 0 degrees correspond to the
      * geometric angle of 0 degrees (3 o'clock on a watch). If radius is
-     * not positive or sweep angle is zero, nothing is drawn.
-     * <p>
-     * Special note: Arc is a shape rather than a curved line in the concept
-     * of Modern UI. Therefore, an arc may be either filled (path) or stroked
-     * (annular, hollow).
-     * <p>
-     * The implementation is guaranteed to be analytical in Modern UI.
+     * non-positive or sweep angle is zero, nothing is drawn.
      *
      * @param cx         the x-coordinate of the center of the arc to be drawn
      * @param cy         the y-coordinate of the center of the arc to be drawn
@@ -879,7 +950,6 @@ public abstract class Canvas {
      * @param startAngle starting angle (in degrees) where the arc begins
      * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
      * @param paint      the paint used to draw the arc
-     * @see #drawPie(float, float, float, float, float, Paint)
      */
     public abstract void drawArc(float cx, float cy, float radius,
                                  float startAngle, float sweepAngle,
@@ -901,13 +971,46 @@ public abstract class Canvas {
     }
 
     /**
-     * Draw a circular sector at (cx, cy) with radius using the specified paint.
+     * Draw a circular arc at (cx, cy) with radius using the current matrix,
+     * clip and specified paint. Note that arc shape is a stroked arc rather
+     * than an arc path, you can fill or stroke the stroked arc.
+     * <p>
+     * If the start angle is negative or >= 360, the start angle is treated as
+     * start angle modulo 360. If the sweep angle is >= 360, then the circle is
+     * drawn completely. If the sweep angle is negative, the sweep angle is
+     * treated as sweep angle modulo 360.
+     * <p>
+     * The arc is drawn clockwise. An angle of 0 degrees correspond to the
+     * geometric angle of 0 degrees (3 o'clock on a watch). If radius is
+     * non-positive or sweep angle is zero, nothing is drawn.
+     * <p>
+     * The <var>cap</var> describes the end of the arc shape, the <var>width</var>
+     * describes the arc shape thickness. In paint: Style determines if arc shape
+     * is stroked or filled; If stroked (i.e. double stroke), stroke width describes the
+     * shape outline thickness, Cap describes line ends, Join draws the corners rounded
+     * or square, and Align determines the position or direction to stroke.
+     *
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param cap        the line end used to determine the shape of the arc
+     * @param thickness  the thickness of arc segment
+     * @param paint      the paint used to draw the arc
+     */
+    public abstract void drawArc(float cx, float cy, float radius,
+                                 float startAngle, float sweepAngle,
+                                 @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint);
+
+    /**
+     * Draw a circular sector (i.e., a pie) at (cx, cy) with radius using the
+     * current matrix, clip and specified paint.
      * <p>
      * Similar to {@link #drawArc(float, float, float, float, float, Paint)}, but
      * when the shape is not a full circle, the geometry is closed by the arc and
      * two line segments from the end of the arc to the center of the circle.
      * <p>
-     * The implementation is guaranteed to be analytical in Modern UI.
      *
      * @param cx         the x-coordinate of the center of the arc to be drawn
      * @param cy         the y-coordinate of the center of the arc to be drawn
@@ -935,30 +1038,39 @@ public abstract class Canvas {
         drawPie(center.x, center.y, radius, startAngle, sweepAngle, paint);
     }
 
-    //WIP
-    public void drawArcPath(float cx, float cy, float radius,
-                            float startAngle, float sweepAngle,
-                            @NonNull Paint paint) {
-    }
+    /**
+     * Draw a circular segment (i.e., a cut disk) at (cx, cy) with radius using the
+     * current matrix, clip and specified paint.
+     * <p>
+     * Similar to {@link #drawArc(float, float, float, float, float, Paint)}, but
+     * when the shape is not a full circle, the geometry is closed by the arc and
+     * a line segment from the start of the arc segment to the end of the arc segment.
+     * <p>
+     *
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
+     */
+    public abstract void drawChord(float cx, float cy, float radius,
+                                   float startAngle, float sweepAngle,
+                                   @NonNull Paint paint);
 
     /**
-     * Draw a quadratic Bézier curve using the specified paint. The three points represent
-     * the starting point, the first control point and the end control point respectively.
-     * <p>
-     * The style is ignored in the paint, Bézier curves are always stroked. The stroke width
-     * in the paint represents the width of the curve.
-     * <p>
-     * Note that the distance from a point to the quadratic curve requires the GPU to solve
-     * cubic equations. Therefore, this method has higher overhead to the GPU.
+     * Variant version of {@link #drawChord(float, float, float, float, float, Paint)}.
      *
-     * @param p0    the starting point of the Bézier curve
-     * @param p1    the first control point of the Bézier curve
-     * @param p2    the end control point of the Bézier curve
-     * @param paint the paint used to draw the Bézier curve
+     * @param center     the center point of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
      */
-    public final void drawBezier(PointF p0, PointF p1, PointF p2,
-                                 Paint paint) {
-        drawBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
+    public final void drawChord(@NonNull PointF center, float radius,
+                                float startAngle, float sweepAngle,
+                                @NonNull Paint paint) {
+        drawChord(center.x, center.y, radius, startAngle, sweepAngle, paint);
     }
 
     /**
@@ -978,9 +1090,33 @@ public abstract class Canvas {
      * @param x2    the x-coordinate of the end control point of the Bézier curve
      * @param y2    the y-coordinate of the end control point of the Bézier curve
      * @param paint the paint used to draw the Bézier curve
+     * @deprecated use drawPath() instead
      */
+    @Deprecated
     public abstract void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
                                     Paint paint);
+
+    /**
+     * Draw a quadratic Bézier curve using the specified paint. The three points represent
+     * the starting point, the first control point and the end control point respectively.
+     * <p>
+     * The style is ignored in the paint, Bézier curves are always stroked. The stroke width
+     * in the paint represents the width of the curve.
+     * <p>
+     * Note that the distance from a point to the quadratic curve requires the GPU to solve
+     * cubic equations. Therefore, this method has higher overhead to the GPU.
+     *
+     * @param p0    the starting point of the Bézier curve
+     * @param p1    the first control point of the Bézier curve
+     * @param p2    the end control point of the Bézier curve
+     * @param paint the paint used to draw the Bézier curve
+     * @deprecated use drawPath() instead
+     */
+    @Deprecated
+    public final void drawBezier(PointF p0, PointF p1, PointF p2,
+                                 Paint paint) {
+        drawBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
+    }
 
     /**
      * Draw the specified image with its top/left corner at (x,y), using the
@@ -1004,7 +1140,10 @@ public abstract class Canvas {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public final void drawImage(Image image, @Nullable Rect src, RectF dst, @Nullable Paint paint) {
+    public final void drawImage(Image image, @Nullable Rect src, @NonNull Rect dst, @Nullable Paint paint) {
+        if (image == null) {
+            return;
+        }
         if (src == null) {
             drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
                     dst.left, dst.top, dst.right, dst.bottom, paint);
@@ -1024,7 +1163,10 @@ public abstract class Canvas {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public final void drawImage(Image image, @Nullable Rect src, Rect dst, @Nullable Paint paint) {
+    public final void drawImage(Image image, @Nullable Rect src, @NonNull RectF dst, @Nullable Paint paint) {
+        if (image == null) {
+            return;
+        }
         if (src == null) {
             drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
                     dst.left, dst.top, dst.right, dst.bottom, paint);
@@ -1046,53 +1188,6 @@ public abstract class Canvas {
                                    float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint);
 
     /**
-     * Draw a series of round lines.
-     * <p>
-     * When discontinuous, each line is taken from 4 consecutive values in the pts array. Thus,
-     * to draw 1 line, the array must contain at least 4 values. This is logically the same as
-     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
-     * drawLine(pts[4], pts[5], pts[6], pts[7]) and so on.
-     * <p>
-     * When continuous, the first line is taken from 4 consecutive values in the pts
-     * array, and each remaining line is taken from last 2 values and next 2 values in the array.
-     * Thus, to draw 1 line, the array must contain at least 4 values. This is logically the same as
-     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
-     * drawLine(pts[2], pts[3], pts[4], pts[5]) and so on.
-     *
-     * @param pts    The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param offset Number of values in the array to skip before drawing.
-     * @param count  The number of values in the array to process, after skipping "offset" of them.
-     *               Since each line uses 4 values, the number of "lines" that are drawn is really
-     *               (count >> 2) if continuous, or ((count - 2) >> 1) if discontinuous.
-     * @param strip  Whether line points are continuous
-     * @param paint  The paint used to draw the lines
-     */
-    @Deprecated
-    public void drawRoundLines(float[] pts, int offset, int count, boolean strip,
-                               Paint paint) {
-        if ((offset | count | pts.length - offset - count) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (count < 4) {
-            return;
-        }
-        float thick = paint.getStrokeWidth();
-        if (strip) {
-            float x, y;
-            drawLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], Paint.Cap.ROUND, thick, paint);
-            count = (count - 4) >> 1;
-            for (int i = 0; i < count; i++) {
-                drawLine(x, y, x = pts[offset++], y = pts[offset++], Paint.Cap.ROUND, thick, paint);
-            }
-        } else {
-            count >>= 2;
-            for (int i = 0; i < count; i++) {
-                drawLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], Paint.Cap.ROUND, thick, paint);
-            }
-        }
-    }
-
-    /**
      * Draw the specified image with rounded corners, whose top/left corner at (x,y)
      * using the specified paint, transformed by the current matrix. The Style is
      * ignored in the paint, images are always filled.
@@ -1102,9 +1197,11 @@ public abstract class Canvas {
      * @param top    the position of the top side of the image being drawn
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round image
+     * @deprecated use ImageShader instead
      */
+    @Deprecated
     public abstract void drawRoundImage(Image image, float left, float top,
-                                        float radius, Paint paint);
+                                        float radius, @Nullable Paint paint);
 
     /**
      * Draw array of glyphs with specified font in order <em>visually left-to-right</em>.
@@ -1231,11 +1328,11 @@ public abstract class Canvas {
      * Supported primitive topologies, corresponding to OpenGL and Vulkan defined values.
      */
     public enum VertexMode {
-        POINTS(Vertices.kPoints_VertexMode),
-        LINES(Vertices.kLines_VertexMode),
-        LINE_STRIP(Vertices.kLineStrip_VertexMode),
-        TRIANGLES(Vertices.kTriangles_VertexMode),
-        TRIANGLE_STRIP(Vertices.kTriangleStrip_VertexMode);
+        POINTS(icyllis.arc3d.core.Vertices.kPoints_VertexMode),
+        LINES(icyllis.arc3d.core.Vertices.kLines_VertexMode),
+        LINE_STRIP(icyllis.arc3d.core.Vertices.kLineStrip_VertexMode),
+        TRIANGLES(icyllis.arc3d.core.Vertices.kTriangles_VertexMode),
+        TRIANGLE_STRIP(icyllis.arc3d.core.Vertices.kTriangleStrip_VertexMode);
 
         final int nativeInt;
 
@@ -1248,18 +1345,18 @@ public abstract class Canvas {
      * Draw an instance of a custom mesh with the given vertex data, the vertices are
      * interpreted as the given primitive topology.
      * <p>
-     * The <var>pos</var> is required, and specifies the x,y pairs for each vertex in
+     * The <var>positions</var> is required, and specifies the x,y pairs for each vertex in
      * local coordinates, numbered 0, 1, 2, ..., N-1, where N is the number of vertices
-     * and N = pos.remaining() / 2.
+     * and N = positions.remaining() / 2.
      * <p>
-     * If there is <var>color</var>, but there is no <var>tex</var>, then each color
-     * (AARRGGBB) blends with paint color using the given <var>blender</var>, and
+     * If there is <var>colors</var>, but there is no <var>texCoords</var>, then each colors
+     * (AARRGGBB) blends with paint colors using the given <var>blendMode</var>, and
      * is interpolated across its corresponding topology in a gradient. The default is
      * {@link BlendMode#DST} in this case.
      * <p>
-     * If there is <var>tex</var>, then it is used to specify the coordinate in UV
+     * If there is <var>texCoords</var>, then it is used to specify the coordinate in UV
      * coordinates to use at each vertex (the paint must have a shader in this case).
-     * If there is also <var>color</var>, then they behave as before, but blend with
+     * If there is also <var>colors</var>, then they behave as before, but blend with
      * paint shader. The default is {@link BlendMode#MODULATE} in this case.
      * <p>
      * If there is <var>indices</var> array, then it is used to specify the index of
@@ -1268,30 +1365,82 @@ public abstract class Canvas {
      * For {@link VertexMode#TRIANGLES} and {@link VertexMode#TRIANGLE_STRIP},
      * counterclockwise triangles face forward.
      * <p>
-     * MaskFilter and anti-aliasing are ignored, anti-aliasing state only depends on
+     * MaskFilter and antialiasing are ignored, antialiasing state only depends on
      * MSAA state of the current render target.
      *
-     * @param mode    how to interpret the array of vertices
-     * @param pos     array of positions for the mesh, remaining should be multiple of 2
-     * @param color   if not null, specifies a color for each vertex, to be interpolated
-     *                across the topology, remaining >= N
-     * @param tex     if not null, specifies the coordinates to sample into the current
-     *                shader (e.g. bitmap tile or gradient), remaining >= 2*N
-     * @param indices if not null, array of indices to reference into the vertex array
-     * @param blender blends vertices' colors with shader if present or paint color if
-     *                not, ignored if there is no color array, or null to use the default
-     * @param paint   specifies the texture to use if there is tex array and constant
-     *                color (a shader uniform) if there is no color array
-     * @throws java.nio.BufferUnderflowException insufficient vertex data
+     * @param mode           How to interpret the array of vertices
+     * @param vertexCount    The number of values in the vertices array (and corresponding texCoords and
+     *                       colors arrays if non-null). Each logical vertex is two values (x, y), vertexCount
+     *                       must be a multiple of 2.
+     * @param positions      Array of vertices for the mesh
+     * @param positionOffset Number of values in the positions to skip before drawing.
+     * @param texCoords      May be null. If not null, specifies the coordinates to sample into the current
+     *                       shader (e.g. bitmap tile or gradient)
+     * @param texCoordOffset Number of values in texCoords to skip before drawing.
+     * @param colors         May be null. If not null, specifies a color for each vertex, to be interpolated
+     *                       across the triangle.
+     * @param colorOffset    Number of values in colors to skip before drawing.
+     * @param indices        If not null, array of indices to reference into the vertex (texCoords, colors)
+     *                       array.
+     * @param indexCount     Number of entries in the indices array (if not null).
+     * @param paint          Specifies the shader to use if the texCoords array is non-null. Antialiasing is not
+     *                       supported.
      */
-    public void drawMesh(@NonNull VertexMode mode, @NonNull FloatBuffer pos,
-                         @Nullable IntBuffer color, @Nullable FloatBuffer tex,
-                         @Nullable ShortBuffer indices, @Nullable Blender blender,
-                         @NonNull Paint paint) {
-    }
+    public abstract void drawVertices(@NonNull VertexMode mode, int vertexCount,
+                                      @Size(multiple = 2) @NonNull float[] positions, int positionOffset,
+                                      @Size(multiple = 2) @Nullable float[] texCoords, int texCoordOffset,
+                                      @Nullable int[] colors, int colorOffset,
+                                      @Nullable short[] indices, int indexOffset, int indexCount,
+                                      @Nullable BlendMode blendMode, @NonNull Paint paint);
 
     /**
-     * Special case of {@link #drawMesh(VertexMode, FloatBuffer, IntBuffer, FloatBuffer, ShortBuffer, Blender, Paint)}.
+     * Draw an instance of a custom mesh with the given vertex data, the vertices are
+     * interpreted as the given primitive topology.
+     * <p>
+     * The <var>positions</var> is required, and specifies the x,y pairs for each vertex in
+     * local coordinates, numbered 0, 1, 2, ..., N-1, where N is the number of vertices
+     * and N = positions.remaining() / 2.
+     * <p>
+     * If there is <var>colors</var>, but there is no <var>texCoords</var>, then each colors
+     * (AARRGGBB) blends with paint colors using the given <var>blendMode</var>, and
+     * is interpolated across its corresponding topology in a gradient. The default is
+     * {@link BlendMode#DST} in this case.
+     * <p>
+     * If there is <var>texCoords</var>, then it is used to specify the coordinate in UV
+     * coordinates to use at each vertex (the paint must have a shader in this case).
+     * If there is also <var>colors</var>, then they behave as before, but blend with
+     * paint shader. The default is {@link BlendMode#MODULATE} in this case.
+     * <p>
+     * If there is <var>indices</var> array, then it is used to specify the index of
+     * each topology, rather than just walking through the arrays in order.
+     * <p>
+     * For {@link VertexMode#TRIANGLES} and {@link VertexMode#TRIANGLE_STRIP},
+     * counterclockwise triangles face forward.
+     * <p>
+     * MaskFilter and antialiasing are ignored, antialiasing state only depends on
+     * MSAA state of the current render target.
+     *
+     * @param mode      how to interpret the array of vertices
+     * @param positions array of positions for the mesh, remaining should be multiple of 2
+     * @param texCoords if not null, specifies the coordinates to sample into the current
+     *                  shader (e.g. bitmap tile or gradient), remaining >= 2*N
+     * @param colors    if not null, specifies a colors for each vertex, to be interpolated
+     *                  across the topology, remaining >= N
+     * @param indices   if not null, array of indices to reference into the vertex array
+     * @param blendMode blends vertices' colors with shader if present or paint colors if
+     *                  not, ignored if there is no colors array, or null to use the default
+     * @param paint     specifies the texture to use if there is texCoords array and constant
+     *                  colors (a shader uniform) if there is no colors array
+     * @throws java.nio.BufferUnderflowException insufficient vertex data
+     */
+    public abstract void drawMesh(@NonNull VertexMode mode, @NonNull FloatBuffer positions,
+                                  @Nullable FloatBuffer texCoords, @Nullable IntBuffer colors,
+                                  @Nullable ShortBuffer indices, @Nullable BlendMode blendMode,
+                                  @NonNull Paint paint);
+
+    /**
+     * Special case of
+     * {@link #drawMesh(VertexMode, FloatBuffer, FloatBuffer, IntBuffer, ShortBuffer, BlendMode, Paint)}.
      * <p>
      * Each point is always 1-pixel in screen-space (device space), no matter
      * what transformation is applied. It has zero area.
@@ -1302,11 +1451,12 @@ public abstract class Canvas {
      * @param paint specifies a constant color (a shader uniform) if there is no color array
      */
     public final void drawPointListMesh(@NonNull FloatBuffer pos, @Nullable IntBuffer color, @NonNull Paint paint) {
-        drawMesh(VertexMode.POINTS, pos, color, null, null, null, paint);
+        drawMesh(VertexMode.POINTS, pos, null, color, null, null, paint);
     }
 
     /**
-     * Special case of {@link #drawMesh(VertexMode, FloatBuffer, IntBuffer, FloatBuffer, ShortBuffer, Blender, Paint)}.
+     * Special case of
+     * {@link #drawMesh(VertexMode, FloatBuffer, FloatBuffer, IntBuffer, ShortBuffer, BlendMode, Paint)}.
      * <p>
      * Each line is always 1-pixel wide in screen-space (device space), no matter
      * what transformation is applied. This is known as hairline and it has zero area.
@@ -1317,11 +1467,12 @@ public abstract class Canvas {
      * @param paint specifies a constant color (a shader uniform) if there is no color array
      */
     public final void drawLineListMesh(@NonNull FloatBuffer pos, @Nullable IntBuffer color, @NonNull Paint paint) {
-        drawMesh(VertexMode.LINES, pos, color, null, null, null, paint);
+        drawMesh(VertexMode.LINES, pos, null, color, null, null, paint);
     }
 
     /**
-     * Special case of {@link #drawMesh(VertexMode, FloatBuffer, IntBuffer, FloatBuffer, ShortBuffer, Blender, Paint)}.
+     * Special case of
+     * {@link #drawMesh(VertexMode, FloatBuffer, FloatBuffer, IntBuffer, ShortBuffer, BlendMode, Paint)}.
      *
      * @param pos   array of positions for the mesh, remaining should be multiple of 2
      * @param color if not null, specifies a color for each vertex, to be interpolated
@@ -1329,7 +1480,7 @@ public abstract class Canvas {
      * @param paint specifies a constant color (a shader uniform) if there is no color array
      */
     public final void drawTriangleListMesh(@NonNull FloatBuffer pos, @Nullable IntBuffer color, @NonNull Paint paint) {
-        drawMesh(VertexMode.TRIANGLES, pos, color, null, null, null, paint);
+        drawMesh(VertexMode.TRIANGLES, pos, null, color, null, null, paint);
     }
 
     @ApiStatus.Experimental
@@ -1348,9 +1499,7 @@ public abstract class Canvas {
      *
      * @return true if clip is empty
      */
-    public boolean isClipEmpty() {
-        return false;
-    }
+    public abstract boolean isClipEmpty();
 
     /**
      * Returns true if clip is a Rect and not empty.
@@ -1358,7 +1507,5 @@ public abstract class Canvas {
      *
      * @return true if clip is a Rect and not empty
      */
-    public boolean isClipRect() {
-        return false;
-    }
+    public abstract boolean isClipRect();
 }
