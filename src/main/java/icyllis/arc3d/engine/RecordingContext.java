@@ -65,7 +65,7 @@ public final class RecordingContext extends Context {
     @Override
     public void freeGpuResources() {
         checkOwnerThread();
-        mAtlasProvider.compact();
+        mAtlasProvider.freeGpuResources();
         mResourceProvider.freeGpuResources();
         // This is technically not GPU memory, but there's no other place for the client to tell us to
         // clean this up, and without any cleanup it can grow unbounded.

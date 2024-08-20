@@ -980,7 +980,7 @@ public class DrawAtlas implements AutoCloseable {
         }
     }
 
-    public void compact(long startTokenForNextFlush) {
+    public void compact(long startTokenForNextFlush, boolean immediateCompact) {
         if (mNumActivePages == 0) {
             mPrevFlushToken = startTokenForNextFlush;
             return;
@@ -1010,7 +1010,7 @@ public class DrawAtlas implements AutoCloseable {
         // hasn't been used in a long time.
         // This is to handle the case where a lot of text or path rendering has occurred but then just
         // a blinking cursor is drawn.
-        if (atlasUsedThisFlush || mFlushesSinceLastUsed > 1200) {
+        if (immediateCompact || atlasUsedThisFlush || mFlushesSinceLastUsed > 1200) {
             ObjectArrayList<Plot> availablePlots = null;
             int lastPageIndex = mNumActivePages - 1;
 

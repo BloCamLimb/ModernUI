@@ -207,11 +207,11 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         }
     }
 
-    public void compact() {
+    public void compact(boolean immediateCompact) {
         var tokenTracker = mRC.getAtlasTokenTracker();
         for (var atlas : mAtlases) {
             if (atlas != null) {
-                atlas.compact(tokenTracker.nextFlushToken());
+                atlas.compact(tokenTracker.nextFlushToken(), immediateCompact);
             }
         }
     }
