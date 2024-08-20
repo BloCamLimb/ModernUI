@@ -365,7 +365,7 @@ public class TestGraniteRenderer {
                 mTestShader2 = RefCnt.create(mTestShader1);
                 mTestShader3 = RefCnt.create(mTestShader1);
             }
-            /* = AngularGradient.makeAngular(
+            /* = AngularGradient.make(
                 584, 534, 0, 360,
                 new float[]{
                         0.2f, 0.85f, 0.95f, 1,
@@ -382,7 +382,7 @@ public class TestGraniteRenderer {
                         GradientShader.Interpolation.kShorter_HueMethod),
                 null
         );*/
-            mGradShader = LinearGradient.makeLinear(
+            mGradShader = LinearGradient.make(
                     400, 350, 800, 350,
                     new float[]{
                             45 / 255f, 212 / 255f, 191 / 255f, 1,

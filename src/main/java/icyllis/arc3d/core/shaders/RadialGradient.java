@@ -99,15 +99,15 @@ public final class RadialGradient extends Gradient1DShader {
     @CheckReturnValue
     @Nullable
     @SharedPtr
-    public static Shader makeRadial(float centerX, float centerY,
-                                    float radius,
-                                    @Nonnull float[] colors,
-                                    @Nullable ColorSpace colorSpace,
-                                    @Nullable float[] positions,
-                                    int colorCount,
-                                    int tileMode,
-                                    int interpolation,
-                                    @Nullable Matrixc localMatrix) {
+    public static Shader make(float centerX, float centerY,
+                              float radius,
+                              @Nonnull float[] colors,
+                              @Nullable ColorSpace colorSpace,
+                              @Nullable float[] positions,
+                              int colorCount,
+                              int tileMode,
+                              int interpolation,
+                              @Nullable Matrixc localMatrix) {
         if (!(radius >= 0)) { // also capture NaN
             return null;
         }

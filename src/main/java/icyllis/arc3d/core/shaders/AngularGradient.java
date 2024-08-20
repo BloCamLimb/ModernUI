@@ -105,15 +105,15 @@ public final class AngularGradient extends Gradient1DShader {
     @CheckReturnValue
     @Nullable
     @SharedPtr
-    public static Shader makeAngular(float centerX, float centerY,
-                                     float startAngle, float endAngle,
-                                     @Nonnull float[] colors,
-                                     @Nullable ColorSpace colorSpace,
-                                     @Nullable float[] positions,
-                                     int colorCount,
-                                     int tileMode,
-                                     int interpolation,
-                                     @Nullable Matrixc localMatrix) {
+    public static Shader make(float centerX, float centerY,
+                              float startAngle, float endAngle,
+                              @Nonnull float[] colors,
+                              @Nullable ColorSpace colorSpace,
+                              @Nullable float[] positions,
+                              int colorCount,
+                              int tileMode,
+                              int interpolation,
+                              @Nullable Matrixc localMatrix) {
         if (!Float.isFinite(startAngle) || !Float.isFinite(endAngle)) {
             return null;
         }
@@ -144,7 +144,7 @@ public final class AngularGradient extends Gradient1DShader {
                 float[] newColor = {colors[0], colors[1], colors[2], colors[3],
                         colors[0], colors[1], colors[2], colors[3],
                         colors[i], colors[i + 1], colors[i + 2], colors[i + 3]};
-                return makeAngular(centerX, centerY, 0, endAngle,
+                return make(centerX, centerY, 0, endAngle,
                         newColor, colorSpace, newPos, 3, tileMode, interpolation, localMatrix);
             }
             return makeDegenerateGradient(colors, colorSpace, positions, colorCount, tileMode);
