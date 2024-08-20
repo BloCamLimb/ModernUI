@@ -46,7 +46,7 @@ public class DrawBufferManager {
      */
     public static final int VERTEX_BUFFER_SIZE = 1 << 17;
     public static final int INDEX_BUFFER_SIZE = 1 << 13;
-    public static final int UNIFORM_BUFFER_SIZE = 1 << 13;
+    public static final int UNIFORM_BUFFER_SIZE = 1 << 15;
 
     private static class BlockBuffer {
 
