@@ -556,7 +556,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                             Core.requireUiRecordingContext(),
                             ImageInfo.make(width, height,
                                     ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL,
-                                    null),
+                                    ColorSpace.get(ColorSpace.Named.SRGB)),
                             false,
                             Engine.SurfaceOrigin.kLowerLeft,
                             null

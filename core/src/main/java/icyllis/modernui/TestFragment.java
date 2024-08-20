@@ -350,6 +350,7 @@ public class TestFragment extends Fragment {
         ObjectAnimator mGoodAnim;
 
         ImageShader mTestImageShader;
+        LinearGradient mTestLinearGrad;
 
         public TestLinearLayout(Context context) {
             super(context);
@@ -480,6 +481,14 @@ public class TestFragment extends Fragment {
                  }
             } catch (IOException ignored) {
             }
+
+            mTestLinearGrad = new LinearGradient(
+                    0, 0, 128, 0,
+                    Color.argb(255, 45, 212, 191),
+                    Color.argb(255, 14, 165, 233),
+                    Shader.TileMode.MIRROR,
+                    null
+            );
 
             for (int i = 0; i < 12; i++) {
                 View v;
@@ -803,7 +812,12 @@ public class TestFragment extends Fragment {
             canvas.translate(400, 200);
             paint.setShader(mTestImageShader);
             paint.setStyle(Paint.FILL);
-            canvas.drawRoundRect(0, 0, 192, 192, 16, paint);
+            canvas.drawRoundRect(-48, 0, 144, 192, 96, paint);
+            canvas.translate(0, 200);
+            paint.setShader(mTestLinearGrad);
+            paint.setDither(true);
+            canvas.drawRoundRect(-192, 0, 192, 96, 32, paint);
+            paint.setDither(false);
             paint.setStyle(Paint.STROKE);
             paint.setShader(null);
             canvas.restore();
