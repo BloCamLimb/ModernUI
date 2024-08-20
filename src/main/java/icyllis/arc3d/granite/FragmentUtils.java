@@ -25,7 +25,6 @@ import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
 
 import javax.annotation.Nullable;
-import java.util.Arrays;
 
 /**
  * Build {@link icyllis.arc3d.engine.Key PaintParamsKey} and collect
@@ -536,12 +535,12 @@ public class FragmentUtils {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (Gradient1DShader) shader);
-        } else if (shader instanceof BlendModeShader) {
+        } else if (shader instanceof BlendShader) {
             append_to_key(keyContext,
                     keyBuilder,
                     uniformDataGatherer,
                     textureDataGatherer,
-                    (BlendModeShader) shader);
+                    (BlendShader) shader);
         } else if (shader instanceof EmptyShader) {
             append_to_key(keyContext,
                     keyBuilder,
@@ -787,7 +786,7 @@ public class FragmentUtils {
                                       KeyBuilder keyBuilder,
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
-                                      @RawPtr BlendModeShader shader) {
+                                      @RawPtr BlendShader shader) {
         keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
 
         appendToKey(
