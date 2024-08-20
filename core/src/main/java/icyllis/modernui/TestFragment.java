@@ -28,7 +28,8 @@ import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.graphics.text.FontFamily;
+import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.resources.SystemTheme;
@@ -44,7 +45,8 @@ import org.apache.logging.log4j.core.config.Configurator;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.nio.*;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
@@ -136,7 +138,7 @@ public class TestFragment extends Fragment {
             }
         });
         {
-            var params = new FrameLayout.LayoutParams(base.dp(640), base.dp(360));
+            var params = new FrameLayout.LayoutParams(base.dp(960), base.dp(540));
             params.gravity = Gravity.CENTER;
             base.setLayoutParams(params);
         }
@@ -351,6 +353,7 @@ public class TestFragment extends Fragment {
 
         ImageShader mTestImageShader;
         LinearGradient mTestLinearGrad;
+        AngularGradient mTestAngularGrad;
 
         public TestLinearLayout(Context context) {
             super(context);
@@ -410,7 +413,7 @@ public class TestFragment extends Fragment {
                     "\udd99";
 
             TextView tv = new TextView(getContext());
-            tv.setLayoutParams(new LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+            tv.setLayoutParams(new LayoutParams(tv.dp(640), WRAP_CONTENT));
             tv.setLineBreakWordStyle(LineBreakConfig.LINE_BREAK_WORD_STYLE_BREAK_ALL);
 
             Spannable spannable = new SpannableString(text);
@@ -420,7 +423,7 @@ public class TestFragment extends Fragment {
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new StyleSpan(Typeface.BOLD), text.length() - 50, text.length() - 40,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannable.setSpan(new URLSpan("https://www.bilibili.com/video/BV1HA41147a4"), firstPara, secondsPara - 1,
+            spannable.setSpan(new URLSpan("https://www.bilibili.com/video/BV1qm411Q7LX"), firstPara, secondsPara - 1,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new ForegroundColorSpan(0xff4f81bd), firstPara, secondsPara - 1,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -470,15 +473,15 @@ public class TestFragment extends Fragment {
             }
 
             try (Bitmap bitmap = BitmapFactory.decodePath(Path.of("E:/flux_core.png"))) {
-                 Image image = Image.createTextureFromBitmap(bitmap);
-                 if (image != null) {
-                     Matrix scalingMatrix = new Matrix();
-                     scalingMatrix.setScale(3, 3);
-                     mTestImageShader = new ImageShader(image, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT,
-                             ImageShader.FILTER_POINT, scalingMatrix);
-                 } else {
-                     LOGGER.warn("Failed to create image");
-                 }
+                Image image = Image.createTextureFromBitmap(bitmap);
+                if (image != null) {
+                    Matrix scalingMatrix = new Matrix();
+                    scalingMatrix.setScale(3, 3);
+                    mTestImageShader = new ImageShader(image, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT,
+                            ImageShader.FILTER_POINT, scalingMatrix);
+                } else {
+                    LOGGER.warn("Failed to create image");
+                }
             } catch (IOException ignored) {
             }
 
@@ -489,8 +492,18 @@ public class TestFragment extends Fragment {
                     Shader.TileMode.MIRROR,
                     null
             );
+            mTestAngularGrad = new AngularGradient.Builder(
+                    0, 0, 0, 360,
+                    Shader.TileMode.CLAMP, null, 5)
+                    .addColor(0.2f, 0.85f, 0.95f, 1)
+                    .addColor(0.85f, 0.5f, 0.75f, 1)
+                    .addColor(0.95f, 0.5f, 0.05f, 1)
+                    .addColor(0.75f, 0.95f, 0.7f, 1)
+                    .addColor(0.6f, 0.25f, 0.65f, 1)
+                    .setInterpolationColorSpace(GradientShader.InterpolationColorSpace.SRGB_LINEAR)
+                    .build();
 
-            for (int i = 0; i < 12; i++) {
+            for (int i = 0; i < 13; i++) {
                 View v;
                 LayoutParams p;
                 if (i == 1) {
@@ -809,7 +822,7 @@ public class TestFragment extends Fragment {
             canvas.drawRect(200, 450, 500, 550, paint);
 
             canvas.save();
-            canvas.translate(400, 200);
+            canvas.translate(400, 100);
             paint.setShader(mTestImageShader);
             paint.setStyle(Paint.FILL);
             canvas.drawRoundRect(-48, 0, 144, 192, 96, paint);
@@ -817,6 +830,9 @@ public class TestFragment extends Fragment {
             paint.setShader(mTestLinearGrad);
             paint.setDither(true);
             canvas.drawRoundRect(-192, 0, 192, 96, 32, paint);
+            canvas.translate(-200, 200);
+            paint.setShader(mTestAngularGrad);
+            canvas.drawRoundRect(-100, -100, 100, 100, 25, paint);
             paint.setDither(false);
             paint.setStyle(Paint.STROKE);
             paint.setShader(null);
@@ -1035,7 +1051,8 @@ public class TestFragment extends Fragment {
                 Paint paint = Paint.obtain();
                 paint.setARGB(128, 140, 200, 240);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-                TextUtils.drawTextRun(canvas, "18:52 modernui", 0, 14, 0, 14, getWidth() / 2f - 20f, offsetY + 24, false, mTextPaint);
+                TextUtils.drawTextRun(canvas, "18:52 modernui", 0, 14, 0, 14, getWidth() / 2f - 20f, offsetY + 24,
+                        false, mTextPaint);
                 paint.recycle();
             }
 
