@@ -111,15 +111,15 @@ public final class LinearGradient extends Gradient1DShader {
     @CheckReturnValue
     @Nullable
     @SharedPtr
-    public static Shader makeLinear(float startX, float startY,
-                                    float endX, float endY,
-                                    @Nonnull float[] colors,
-                                    @Nullable ColorSpace colorSpace,
-                                    @Nullable float[] positions,
-                                    int colorCount,
-                                    int tileMode,
-                                    int interpolation,
-                                    @Nullable Matrixc localMatrix) {
+    public static Shader make(float startX, float startY,
+                              float endX, float endY,
+                              @Nonnull float[] colors,
+                              @Nullable ColorSpace colorSpace,
+                              @Nullable float[] positions,
+                              int colorCount,
+                              int tileMode,
+                              int interpolation,
+                              @Nullable Matrixc localMatrix) {
         float dist = Point.distanceTo(endX, endY, startX, startY);
         if (!Float.isFinite(dist)) {
             return null;

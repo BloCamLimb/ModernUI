@@ -171,7 +171,7 @@ public class AngularGradient extends GradientShader {
         if (colorCount < 1) {
             throw new IllegalArgumentException("needs >= 1 number of colors");
         }
-        mShader = icyllis.arc3d.core.shaders.AngularGradient.makeAngular(
+        mShader = icyllis.arc3d.core.shaders.AngularGradient.make(
                 centerX, centerY,
                 startAngle, endAngle,
                 colors,
