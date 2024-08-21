@@ -130,7 +130,7 @@ public class RadialGradient extends GradientShader {
         if (colorCount < 1) {
             throw new IllegalArgumentException("needs >= 1 number of colors");
         }
-        mShader = icyllis.arc3d.core.shaders.RadialGradient.makeRadial(
+        mShader = icyllis.arc3d.core.shaders.RadialGradient.make(
                 centerX, centerY,
                 radius,
                 colors,

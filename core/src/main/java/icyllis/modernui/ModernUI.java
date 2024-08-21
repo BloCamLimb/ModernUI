@@ -149,8 +149,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         Monitor monitor = Monitor.getPrimary();
 
         /*TinyFileDialogs.tinyfd_messageBox(
-                "Arc3D Test",
-                "Arc3D starting with pid: " + ProcessHandle.current().pid(),
+                "ModernUI Test",
+                "ModernUI starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true

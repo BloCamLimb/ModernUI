@@ -20,9 +20,13 @@
 package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.BitSet;
 
 /**
  * Base class for gradient colors that can be represented by a 1D function,
@@ -183,14 +187,22 @@ public abstract class Gradient1DShader extends GradientShader {
         mLastStopIsImplicit = lastStopIsImplicit;
     }
 
+    @VisibleForTesting
     public float[] getColors() {
         return mColors;
     }
 
+    @VisibleForTesting
     public float[] getPositions() {
         return mPositions;
     }
 
+    public float getPos(int i) {
+        assert i < mColorCount;
+        return mPositions != null ? mPositions[i] : (float) i / (mColorCount - 1);
+    }
+
+    @Nonnull
     public ColorSpace getColorSpace() {
         return mColorSpace;
     }
@@ -207,6 +219,7 @@ public abstract class Gradient1DShader extends GradientShader {
         return mTileMode;
     }
 
+    @Nonnull
     public Matrixc getGradientMatrix() {
         return mPtsToUnit;
     }
@@ -238,6 +251,7 @@ public abstract class Gradient1DShader extends GradientShader {
                 // but approximate the final color as infinite repetitions of the colors, so
                 // it can be represented as the average color of the gradient.
                 //TODO
+                return new EmptyShader();
             }
             case TILE_MODE_CLAMP -> {
                 // Depending on how the gradient shape degenerates, there may be a more specialized
@@ -254,27 +268,100 @@ public abstract class Gradient1DShader extends GradientShader {
         return null;
     }
 
+    public static void srgb_to_hsl(int i, float[] colors,
+                                   BitSet hueIsPowerless) {
+        float r = colors[i * 4], g = colors[i * 4 + 1], b = colors[i * 4 + 2];
+        float max = Math.max(r, Math.max(g, b));
+        float min = Math.min(r, Math.min(g, b));
+        float hue = 0, sat = 0, light = (max + min) / 2;
+        float delta = max - min;
+
+        if (delta != 0) {
+            sat = (light == 0 || light == 1) ? 0 : (max - light) / Math.min(light, 1 - light);
+            if (max == r) {
+                hue = (g - b) / delta + (g < b ? 6 : 0);
+            } else if (max == g) {
+                hue = (b - r) / delta + 2;
+            } else { // max == blue
+                hue = (r - g) / delta + 4;
+            }
+
+            hue *= 60;
+        }
+        if (sat == 0) {
+            hueIsPowerless.set(i);
+        }
+        colors[i * 4] = hue;
+        colors[i * 4 + 1] = sat * 100;
+        colors[i * 4 + 2] = light * 100;
+    }
+
+    public static void srgb_to_hwb(int i, float[] colors,
+                                   BitSet hueIsPowerless) {
+        float r = colors[i * 4], g = colors[i * 4 + 1], b = colors[i * 4 + 2];
+        float max = Math.max(r, Math.max(g, b));
+        float min = Math.min(r, Math.min(g, b));
+        float hue = 0, sat = 0, light = (max + min) / 2;
+        float delta = max - min;
+
+        if (delta != 0) {
+            sat = (light == 0 || light == 1) ? 0 : (max - light) / Math.min(light, 1 - light);
+            if (max == r) {
+                hue = (g - b) / delta + (g < b ? 6 : 0);
+            } else if (max == g) {
+                hue = (b - r) / delta + 2;
+            } else { // max == blue
+                hue = (r - g) / delta + 4;
+            }
+
+            hue *= 60;
+        }
+        if (sat == 0) {
+            hueIsPowerless.set(i);
+        }
+        colors[i * 4] = hue;
+        colors[i * 4 + 1] = min * 100;
+        colors[i * 4 + 2] = (1 - max) * 100;
+    }
+
     public static class ColorTransformer {
 
-        public float[] mColors;     // unmodifiable
-        public float[] mPositions;  // unmodifiable, nullable
+        // only first 'count' entries are meaningful
+        public int mColorCount;
+        @Size(multiple = 4)
+        @Nonnull
+        public float[] mColors; // unmodifiable view
+        @Nullable
+        public float[] mPositions; // unmodifiable view, COW ARRAY for constructor
+        @Nonnull
         public ColorSpace mIntermediateColorSpace;
 
         public ColorTransformer(Gradient1DShader shader,
-                                ColorSpace dst) {
+                                ColorSpace dstCS) {
             int colorCount = shader.mColorCount;
+            mColorCount = colorCount;
             int interpolation = shader.mInterpolation;
+            byte cs = Interpolation.getColorSpace(interpolation);
+            boolean isPolarColorSpace = cs == Interpolation.kHSL_ColorSpace ||
+                    cs == Interpolation.kHWB_ColorSpace ||
+                    cs == Interpolation.kLCH_ColorSpace ||
+                    cs == Interpolation.kOKLCH_ColorSpace ||
+                    cs == Interpolation.kOKLCHGamutMap_ColorSpace;
 
             // 0) Copy the shader's position pointer. Certain interpolation modes might force us to add
             //    new stops, in which case we'll allocate & edit the positions.
             mPositions = shader.mPositions;
 
             // 1) Determine the color space of our intermediate colors.
-            mIntermediateColorSpace = intermediate_color_space(Interpolation.getColorSpace(interpolation), dst);
+            mIntermediateColorSpace = intermediate_color_space(cs, dstCS);
+            if (mIntermediateColorSpace == null) {
+                // keep consistent with FragmentUtils when dstCS is null
+                mIntermediateColorSpace = ColorSpace.get(ColorSpace.Named.SRGB);
+            }
 
             // 2) Convert all colors to the intermediate color space
             if (shader.mColorSpace.equals(mIntermediateColorSpace)) {
-                mColors = shader.mColors;
+                mColors = Arrays.copyOf(shader.mColors, colorCount * 4);
             } else {
                 mColors = new float[colorCount * 4];
                 float[] col = new float[4];
@@ -285,10 +372,193 @@ public abstract class Gradient1DShader extends GradientShader {
                 }
             }
 
-            //TODO
+            // 3) Transform to the interpolation color space (if it's special)
+            BitSet hueIsPowerless = null;
+            switch (cs) {
+                case Interpolation.kHSL_ColorSpace -> {
+                    hueIsPowerless = new BitSet(colorCount);
+                    for (int i = 0; i < colorCount; i++) {
+                        srgb_to_hsl(i, mColors, hueIsPowerless);
+                    }
+                }
+                case Interpolation.kHWB_ColorSpace -> {
+                    hueIsPowerless = new BitSet(colorCount);
+                    for (int i = 0; i < colorCount; i++) {
+                        srgb_to_hwb(i, mColors, hueIsPowerless);
+                    }
+                }
+                case Interpolation.kLab_ColorSpace, Interpolation.kLCH_ColorSpace -> {
+                    // xyz_to_lab
+                    float[] col = new float[4];
+                    ColorSpace labCS = ColorSpace.get(ColorSpace.Named.CIE_LAB);
+                    for (int i = 0; i < colorCount; i++) {
+                        System.arraycopy(mColors, i * 4, col, 0, 4);
+                        System.arraycopy(labCS.fromXyz(col), 0, mColors, i * 4, 4);
+                    }
+                    if (cs == Interpolation.kLCH_ColorSpace) {
+                        // The color space is technically LCH, but we produce HCL, so that all polar spaces have hue in
+                        // the first component. This simplifies the hue handling for HueMethod and premul/unpremul.
+                        hueIsPowerless = new BitSet(colorCount);
+                        // lab_to_hcl
+                        for (int i = 0; i < colorCount; i++) {
+                            float hue = (float) Math.toDegrees(Math.atan2(mColors[i * 4 + 2], mColors[i * 4 + 1]));
+                            float chroma = Point.length(mColors[i * 4 + 1], mColors[i * 4 + 2]);
+                            if (chroma <= 1e-2f) {
+                                hueIsPowerless.set(i);
+                            }
+                            mColors[i * 4 + 2] = mColors[i * 4];
+                            mColors[i * 4] = hue >= 0 ? hue : hue + 360;
+                            mColors[i * 4 + 1] = chroma;
+                        }
+                    }
+                }
+                case Interpolation.kOKLab_ColorSpace, Interpolation.kOKLabGamutMap_ColorSpace,
+                        Interpolation.kOKLCH_ColorSpace, Interpolation.kOKLCHGamutMap_ColorSpace -> {
+                    // https://bottosson.github.io/posts/oklab/#converting-from-linear-srgb-to-oklab
+                    for (int i = 0; i < colorCount; i++) {
+                        float l = 0.4122214708f * mColors[i * 4] + 0.5363325363f * mColors[i * 4 + 1] +
+                                0.0514459929f * mColors[i * 4 + 2];
+                        float m = 0.2119034982f * mColors[i * 4] + 0.6806995451f * mColors[i * 4 + 1] +
+                                0.1073969566f * mColors[i * 4 + 2];
+                        float s = 0.0883024619f * mColors[i * 4] + 0.2817188376f * mColors[i * 4 + 1] +
+                                0.6299787005f * mColors[i * 4 + 2];
+                        l = (float) Math.cbrt(l);
+                        m = (float) Math.cbrt(m);
+                        s = (float) Math.cbrt(s);
+                        mColors[i * 4] = 0.2104542553f * l + 0.7936177850f * m - 0.0040720468f * s;
+                        mColors[i * 4 + 1] = 1.9779984951f * l - 2.4285922050f * m + 0.4505937099f * s;
+                        mColors[i * 4 + 2] = 0.0259040371f * l + 0.7827717662f * m - 0.8086757660f * s;
+                    }
+                    if (cs == Interpolation.kOKLCH_ColorSpace || cs == Interpolation.kOKLCHGamutMap_ColorSpace) {
+                        // The color space is technically OkLCH, but we produce HCL, so that all polar spaces have
+                        // hue in the first component. This simplifies the hue handling for HueMethod and
+                        // premul/unpremul.
+                        hueIsPowerless = new BitSet(colorCount);
+                        // lab_to_hcl
+                        for (int i = 0; i < colorCount; i++) {
+                            float hue = (float) Math.toDegrees(Math.atan2(mColors[i * 4 + 2], mColors[i * 4 + 1]));
+                            float chroma = Point.length(mColors[i * 4 + 1], mColors[i * 4 + 2]);
+                            if (chroma <= 1e-6f) {
+                                hueIsPowerless.set(i);
+                            }
+                            mColors[i * 4 + 2] = mColors[i * 4];
+                            mColors[i * 4] = hue >= 0 ? hue : hue + 360;
+                            mColors[i * 4 + 1] = chroma;
+                        }
+                    }
+                }
+            }
+
+            if (isPolarColorSpace && !hueIsPowerless.isEmpty()) {
+                FloatArrayList newColors = new FloatArrayList();
+                FloatArrayList newPositions = new FloatArrayList();
+
+                for (int i = 0; i < colorCount; i++) {
+                    float curPos = shader.getPos(i);
+
+                    if (!hueIsPowerless.get(i)) {
+                        newColors.addElements(newColors.size(), mColors, i * 4, 4);
+                        newPositions.add(curPos);
+                        continue;
+                    }
+
+                    // In each case, we might be copying a powerless (invalid) hue from the neighbor, but
+                    // that should be fine, as it will match that neighbor perfectly, and any hue is ok.
+                    if (i != 0) {
+                        newPositions.add(curPos);
+                        newColors.add(mColors[(i - 1) * 4]); // prev hue
+                        newColors.add(mColors[i * 4 + 1]);
+                        newColors.add(mColors[i * 4 + 2]);
+                        newColors.add(mColors[i * 4 + 3]);
+                    }
+                    if (i != colorCount - 1) {
+                        newPositions.add(curPos);
+                        newColors.add(mColors[(i + 1) * 4]); // next hue
+                        newColors.add(mColors[i * 4 + 1]);
+                        newColors.add(mColors[i * 4 + 2]);
+                        newColors.add(mColors[i * 4 + 3]);
+                    }
+                }
+
+                mColors = newColors.elements();
+                mPositions = newPositions.elements();
+                assert newColors.size() / 4 == newPositions.size();
+                colorCount = newPositions.size();
+                mColorCount = colorCount;
+            }
+
+            // 4) For polar colors, adjust hue values to respect the hue method. We're using a trick here...
+            //    The specification looks at adjacent colors, and adjusts one or the other. Because we store
+            //    the stops in uniforms (and our backend conversions normalize the hue angle), we can
+            //    instead always apply the adjustment to the *second* color. That lets us keep a running
+            //    total, and do a single pass across all the colors to respect the requested hue method,
+            //    without needing to do any extra work per-pixel.
+            if (isPolarColorSpace) {
+                float delta = 0;
+                for (int i = 0; i < colorCount - 1; ++i) {
+                    final float h1 = mColors[i * 4];
+                    final int h2 = (i + 1) * 4;
+                    mColors[h2] += delta;
+                    switch (Interpolation.getHueMethod(interpolation)) {
+                        case Interpolation.kShorter_HueMethod:
+                            if (mColors[h2] - h1 > 180) {
+                                mColors[h2] -= 360;  // i.e. h1 += 360
+                                delta -= 360;
+                            } else if (mColors[h2] - h1 < -180) {
+                                mColors[h2] += 360;
+                                delta += 360;
+                            }
+                            break;
+                        case Interpolation.kLonger_HueMethod:
+                            if ((i == 0 && shader.mFirstStopIsImplicit) ||
+                                    (i == colorCount - 2 && shader.mLastStopIsImplicit)) {
+                                // Do nothing. We don't want to introduce a full revolution for these stops
+                                // Full rationale at skbug.com/13941
+                            } else if (0 < mColors[h2] - h1 && mColors[h2] - h1 < 180) {
+                                mColors[h2] -= 360;  // i.e. h1 += 360
+                                delta -= 360;
+                            } else if (-180 < mColors[h2] - h1 && mColors[h2] - h1 <= 0) {
+                                mColors[h2] += 360;
+                                delta += 360;
+                            }
+                            break;
+                        case Interpolation.kIncreasing_HueMethod:
+                            if (mColors[h2] < h1) {
+                                mColors[h2] += 360;
+                                delta += 360;
+                            }
+                            break;
+                        case Interpolation.kDecreasing_HueMethod:
+                            if (h1 < mColors[h2]) {
+                                mColors[h2] -= 360;  // i.e. h1 += 360;
+                                delta -= 360;
+                            }
+                            break;
+                    }
+                }
+            }
+
+            // 5) Apply premultiplication
+            if (Interpolation.isInPremul(interpolation)) {
+                if (isPolarColorSpace) {
+                    for (int i = 0; i < colorCount; i++) {
+                        // hue (R channel) is not premultiplied
+                        float a = mColors[i * 4 + 3];
+                        mColors[i * 4 + 1] *= a;
+                        mColors[i * 4 + 2] *= a;
+                    }
+                } else {
+                    for (int i = 0; i < colorCount; i++) {
+                        float a = mColors[i * 4 + 3];
+                        mColors[i * 4] *= a;
+                        mColors[i * 4 + 1] *= a;
+                        mColors[i * 4 + 2] *= a;
+                    }
+                }
+            }
         }
 
-        static ColorSpace intermediate_color_space(int cs,
+        static ColorSpace intermediate_color_space(byte cs,
                                                    ColorSpace dst) {
             return switch (cs) {
                 case Interpolation.kDestination_ColorSpace -> dst;

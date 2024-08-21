@@ -647,7 +647,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         mCurrentDepth = DrawOrder.CLEAR_DEPTH;
 
         // Any cleanup in the AtlasProvider
-        mRC.getAtlasProvider().compact();
+        mRC.getAtlasProvider().compact(/*immediateCompact=*/false);
 
         DrawTask drawTask = mSDC.snapDrawTask(mRC);
 

@@ -178,7 +178,7 @@ public final class ImageShader extends Shader {
             // Compose the image shader with the paint's shader. Alpha images+shaders should output the
             // texture's alpha multiplied by the shader's color. DstIn (d*sa) will achieve this with
             // the source image and dst shader (MakeBlend takes dst first, src second).
-            imageShader = BlendModeShader.make(BlendMode.DST_IN,
+            imageShader = BlendShader.make(BlendMode.DST_IN,
                     /*src*/ imageShader, /*dst*/ paint.refShader());
         }
 

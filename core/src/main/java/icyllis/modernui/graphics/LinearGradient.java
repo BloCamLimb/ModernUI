@@ -130,7 +130,7 @@ public class LinearGradient extends GradientShader {
         if (colorCount < 1) {
             throw new IllegalArgumentException("needs >= 1 number of colors");
         }
-        mShader = icyllis.arc3d.core.shaders.LinearGradient.makeLinear(
+        mShader = icyllis.arc3d.core.shaders.LinearGradient.make(
                 startX, startY,
                 endX, endY,
                 colors,
