@@ -398,7 +398,7 @@ public class FragmentUtils {
                 shader,
                 bias, scale,
                 shader.getTileMode(),
-                shader.getColorCount(),
+                colorTransformer.mColorCount,
                 colorTransformer.mColors,
                 colorTransformer.mPositions,
                 shader.getInterpolation()

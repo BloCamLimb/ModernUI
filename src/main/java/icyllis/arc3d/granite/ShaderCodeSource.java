@@ -101,7 +101,7 @@ public class ShaderCodeSource {
             """;
     // transfer function
     private static final String PRIV_TRANSFER_FUNCTION = """
-            float TransferFunction(float x, vec4 tf[2]) {
+            float _transfer_function(float x, vec4 tf[2]) {
                 float G = tf[0][0], A = tf[0][1], B = tf[0][2], C = tf[0][3],
                       D = tf[1][0], E = tf[1][1], F = tf[1][2];
                 float s = sign(x);
@@ -111,7 +111,7 @@ public class ShaderCodeSource {
             }
             """;
     private static final String PRIV_INV_TRANSFER_FUNCTION = """
-            float InvTransferFunction(float x, vec4 tf[2]) {
+            float _inv_transfer_function(float x, vec4 tf[2]) {
                 float G = tf[0][0], A = tf[0][1], B = tf[0][2], C = tf[0][3],
                       D = tf[1][0], E = tf[1][1], F = tf[1][2];
                 float s = sign(x);
@@ -152,17 +152,17 @@ public class ShaderCodeSource {
                 }
                         
                 if (bool(flags & kColorSpaceXformFlagLinearize)) {
-                    color.r = TransferFunction(color.r, srcTf);
-                    color.g = TransferFunction(color.g, srcTf);
-                    color.b = TransferFunction(color.b, srcTf);
+                    color.r = _transfer_function(color.r, srcTf);
+                    color.g = _transfer_function(color.g, srcTf);
+                    color.b = _transfer_function(color.b, srcTf);
                 }
                 if (bool(flags & kColorSpaceXformFlagGamutTransform)) {
                     color.rgb = gamutTransform * color.rgb;
                 }
                 if (bool(flags & kColorSpaceXformFlagEncode)) {
-                    color.r = InvTransferFunction(color.r, dstTf);
-                    color.g = InvTransferFunction(color.g, dstTf);
-                    color.b = InvTransferFunction(color.b, dstTf);
+                    color.r = _inv_transfer_function(color.r, dstTf);
+                    color.g = _inv_transfer_function(color.g, dstTf);
+                    color.b = _inv_transfer_function(color.b, dstTf);
                 }
                         
                 if (bool(flags & kColorSpaceXformFlagPremul)) {
@@ -185,7 +185,7 @@ public class ShaderCodeSource {
     // if any component is out of bounds, then that component is 0,
     // and (s.x * s.y) is 0, this eliminates branch
     private static final String PRIV_TILE_GRAD = """
-            vec2 TileGrad(int tileMode, vec2 t) {
+            vec2 _tile_grad(int tileMode, vec2 t) {
                 const int kTileModeRepeat = 0;
                 const int kTileModeMirror = 1;
                 const int kTileModeClamp  = 2;
@@ -217,7 +217,7 @@ public class ShaderCodeSource {
             }
             """;
     private static final String PRIV_COLORIZE_GRAD_4 = """
-            vec4 ColorizeGrad4(vec4 colors[4], vec4 offsets, vec2 t) {
+            vec4 _colorize_grad_4(vec4 colors[4], vec4 offsets, vec2 t) {
                 vec4 result;
                 if (t.y < 0.0) {
                     result = vec4(0);
@@ -241,7 +241,7 @@ public class ShaderCodeSource {
     // Unrolled binary search through intervals
     // ( .. 0), (0 .. 1), (1 .. 2), (2 .. 3), (3 .. 4), (4 .. 5), (5 .. 6), (6 .. 7), (7 .. ).
     private static final String PRIV_COLORIZE_GRAD_8 = """
-            vec4 ColorizeGrad8(vec4 colors[8], vec4 offsets[2], vec2 t) {
+            vec4 _colorize_grad_8(vec4 colors[8], vec4 offsets[2], vec2 t) {
                 vec4 result;
                 if (t.y < 0.0) {
                     result = vec4(0);
@@ -298,12 +298,12 @@ public class ShaderCodeSource {
     // causing pixels to choose the wrong offset when colorizing. This helps ensure pixels
     // along the same column or row choose the same gradient offsets.
     private static final String PRIV_LINEAR_GRAD_LAYOUT = """
-            vec2 LinearGradLayout(vec2 pos) {
+            vec2 _linear_grad_layout(vec2 pos) {
                 return vec2(pos.x + 0.00001, 1);
             }
             """;
     private static final String PRIV_RADIAL_GRAD_LAYOUT = """
-            vec2 RadialGradLayout(vec2 pos) {
+            vec2 _radial_grad_layout(vec2 pos) {
                 float t = length(pos);
                 return vec2(t, 1);
             }
@@ -311,10 +311,241 @@ public class ShaderCodeSource {
     // Hardcode pi/2 for the angle when x == 0, to avoid undefined behavior.
     // 0.1591549430918953 is 1/(2*pi), used since atan returns values [-pi, pi]
     private static final String PRIV_ANGULAR_GRAD_LAYOUT = """
-            vec2 AngularGradLayout(vec2 pos, float bias, float scale) {
+            vec2 _angular_grad_layout(vec2 pos, float bias, float scale) {
                 float angle = mix(sign(pos.y) * -1.5707963267948966, atan(-pos.y, -pos.x), pos.x != 0.0);
                 float t = (angle * 0.1591549430918953 + 0.5 + bias) * scale;
                 return vec2(t, 1);
+            }
+            """;
+    private static final String PRIV_CSS_LAB_TO_XYZ = """
+            vec3 _css_lab_to_xyz(vec3 lab) {
+                const float B = 841.0 / 108.0;
+                const float C = 4.0 / 29.0;
+                const float D = 6.0 / 29.0;
+                        
+                vec3 f;
+                f[1] = (lab[0] + 16.0) / 116.0;
+                f[0] = f[1] + (lab[1] * 0.002);
+                f[2] = f[1] - (lab[2] * 0.005);
+                        
+                vec3 xyz = mix((1.0 / B) * (f - C), pow(f, vec3(3)), greaterThan(f, vec3(D)));
+                        
+                const vec3 D50 = vec3(0.964212, 1.0, 0.825188);
+                return xyz * D50;
+            }
+            """;
+    /**
+     * We store all polar colors with hue in the first component, so this "LCH -> Lab" transform
+     * actually takes "HCL". This is also used to do the same polar transform for OkHCL to OkLAB.
+     * @see icyllis.arc3d.core.shaders.GradientShader
+     */
+    private static final String PRIV_CSS_HCL_TO_LAB = """
+            vec3 _css_hcl_to_lab(vec3 hcl) {
+                return vec3(
+                    hcl[2],
+                    hcl[1] * cos(radians(hcl[0])),
+                    hcl[1] * sin(radians(hcl[0]))
+                );
+            }
+            """;
+    private static final String PRIV_CSS_OKLAB_TO_LINEAR_SRGB = """
+            vec3 _css_oklab_to_linear_srgb(vec3 oklab) {
+                float l_ = oklab.x + 0.3963377774 * oklab.y + 0.2158037573 * oklab.z,
+                      m_ = oklab.x - 0.1055613458 * oklab.y - 0.0638541728 * oklab.z,
+                      s_ = oklab.x - 0.0894841775 * oklab.y - 1.2914855480 * oklab.z;
+                        
+                float l = l_*l_*l_,
+                      m = m_*m_*m_,
+                      s = s_*s_*s_;
+                        
+                return vec3(
+                    +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+                    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+                    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
+                );
+            }
+            """;
+    private static final String PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB = """
+            vec3 _css_oklab_gamut_map_to_linear_srgb(vec3 oklab) {
+                // Constants for the normal vector of the plane formed by white, black, and
+                // the specified vertex of the gamut.
+                const vec2 normal_R = vec2(0.409702, -0.912219);
+                const vec2 normal_M = vec2(-0.397919, -0.917421);
+                const vec2 normal_B = vec2(-0.906800, 0.421562);
+                const vec2 normal_C = vec2(-0.171122, 0.985250);
+                const vec2 normal_G = vec2(0.460276, 0.887776);
+                const vec2 normal_Y = vec2(0.947925, 0.318495);
+                        
+                // For the triangles formed by white (W) or black (K) with the vertices
+                // of Yellow and Red (YR), Red and Magenta (RM), etc, the constants to be
+                // used to compute the intersection of a line of constant hue and luminance
+                // with that plane.
+                const float c0_YR = 0.091132;
+                const vec2 cW_YR = vec2(0.070370, 0.034139);
+                const vec2 cK_YR = vec2(0.018170, 0.378550);
+                const float c0_RM = 0.113902;
+                const vec2 cW_RM = vec2(0.090836, 0.036251);
+                const vec2 cK_RM = vec2(0.226781, 0.018764);
+                const float c0_MB = 0.161739;
+                const vec2 cW_MB = vec2(-0.008202, -0.264819);
+                const vec2 cK_MB = vec2( 0.187156, -0.284304);
+                const float c0_BC = 0.102047;
+                const vec2 cW_BC = vec2(-0.014804, -0.162608);
+                const vec2 cK_BC = vec2(-0.276786,  0.004193);
+                const float c0_CG = 0.092029;
+                const vec2 cW_CG = vec2(-0.038533, -0.001650);
+                const vec2 cK_CG = vec2(-0.232572, -0.094331);
+                const float c0_GY = 0.081709;
+                const vec2 cW_GY = vec2(-0.034601, -0.002215);
+                const vec2 cK_GY = vec2( 0.012185,  0.338031);
+                        
+                vec2 ab = oklab.yz;
+                        
+                // Find the planes to intersect with and set the constants based on those
+                // planes.
+                float c0;
+                vec2 cW;
+                vec2 cK;
+                if (dot(ab, normal_R) < 0.0) {
+                    if (dot(ab, normal_G) < 0.0) {
+                        if (dot(ab, normal_C) < 0.0) {
+                            c0 = c0_BC; cW = cW_BC; cK = cK_BC;
+                        } else {
+                            c0 = c0_CG; cW = cW_CG; cK = cK_CG;
+                        }
+                    } else {
+                        if (dot(ab, normal_Y) < 0.0) {
+                            c0 = c0_GY; cW = cW_GY; cK = cK_GY;
+                        } else {
+                            c0 = c0_YR; cW = cW_YR; cK = cK_YR;
+                        }
+                    }
+                } else {
+                    if (dot(ab, normal_B) < 0.0) {
+                        if (dot(ab, normal_M) < 0.0) {
+                            c0 = c0_RM; cW = cW_RM; cK = cK_RM;
+                        } else {
+                            c0 = c0_MB; cW = cW_MB; cK = cK_MB;
+                        }
+                    } else {
+                        c0 = c0_BC; cW = cW_BC; cK = cK_BC;
+                    }
+                }
+                        
+                // Perform the intersection.
+                float alpha = 1.0;
+                        
+                // Intersect with the plane with white.
+                float w_denom = dot(cW, ab);
+                if (w_denom > 0.0) {
+                    float one_minus_L = 1.0 - oklab.r;
+                    float w_num = c0*one_minus_L;
+                    if (w_num < w_denom) {
+                        alpha = min(alpha, w_num / w_denom);
+                    }
+                }
+                        
+                // Intersect with the plane with black.
+                float k_denom = dot(cK, ab);
+                if (k_denom > 0.0) {
+                    float L = oklab.r;
+                    float k_num = c0*L;
+                    if (k_num < k_denom) {
+                        alpha = min(alpha,  k_num / k_denom);
+                    }
+                }
+                        
+                // Attenuate the ab coordinate by alpha.
+                oklab.yz *= alpha;
+                        
+                return _css_oklab_to_linear_srgb(oklab);
+            }
+            """;
+    private static final String PRIV_CSS_HSL_TO_SRGB = """
+            vec3 _css_hsl_to_srgb(vec3 hsl) {
+                hsl.x = mod(hsl.x, 360.0);
+                if (hsl.x < 0.0) {
+                    hsl.x += 360.0;
+                }
+                        
+                hsl.yz /= 100.0;
+                        
+                vec3 k = mod(vec3(0, 8, 4) + hsl.x/30.0, 12.0);
+                float a = hsl.y * min(hsl.z, 1.0 - hsl.z);
+                return hsl.z - a * clamp(min(k - 3.0, 9.0 - k), -1.0, 1.0);
+            }
+            """;
+    private static final String PRIV_CSS_HWB_TO_SRGB = """
+            vec3 _css_hwb_to_srgb(vec3 hwb) {
+                vec3 rgb;
+                hwb.yz /= 100.0;
+                if (hwb.y + hwb.z >= 1.0) {
+                    // grayscale
+                    rgb = vec3(hwb.y / (hwb.y + hwb.z));
+                } else {
+                    rgb = _css_hsl_to_srgb(vec3(hwb.x, 100, 50));
+                    rgb *= (1.0 - hwb.y - hwb.z);
+                    rgb += hwb.y;
+                }
+                return rgb;
+            }
+            """;
+    /**
+     * @see icyllis.arc3d.core.shaders.GradientShader
+     */
+    private static final String PRIV_INTERPOLATED_TO_RGB_UNPREMUL = """
+            vec4 _interpolated_to_rgb_unpremul(vec4 color, int colorSpace, int doUnpremul) {
+                const int kDestination   = 0;
+                const int kSRGB          = 1;
+                const int kSRGBLinear    = 2;
+                const int kLab           = 3;
+                const int kOKLab         = 4;
+                const int kOKLabGamutMap = 5;
+                const int kHSL           = 6;
+                const int kHWB           = 7;
+                const int kLCH           = 8;
+                const int kOKLCH         = 9;
+                const int kOKLCHGamutMap = 10;
+                
+                if (bool(doUnpremul)) {
+                    switch (colorSpace) {
+                        case kLab:
+                        case kOKLab:
+                        case kOKLabGamutMap: color.rgb /= max(color.a, 1e-7); break;
+                        case kHSL:
+                        case kHWB:
+                        case kLCH:
+                        case kOKLCH:
+                        case kOKLCHGamutMap: color.gb /= max(color.a, 1e-7); break;
+                    }
+                }
+                switch (colorSpace) {
+                    case kLab:
+                        color.rgb = _css_lab_to_xyz(color.rgb);
+                        break;
+                    case kOKLab:
+                        color.rgb = _css_oklab_to_linear_srgb(color.rgb);
+                        break;
+                    case kOKLabGamutMap:
+                        color.rgb = _css_oklab_gamut_map_to_linear_srgb(color.rgb);
+                        break;
+                    case kHSL:
+                        color.rgb = _css_hsl_to_srgb(color.rgb);
+                        break;
+                    case kHWB:
+                        color.rgb = _css_hwb_to_srgb(color.rgb);
+                        break;
+                    case kLCH:
+                        color.rgb = _css_lab_to_xyz(_css_hcl_to_lab(color.rgb));
+                        break;
+                    case kOKLCH:
+                        color.rgb = _css_oklab_to_linear_srgb(_css_hcl_to_lab(color.rgb));
+                        break;
+                    case kOKLCHGamutMap:
+                        color.rgb = _css_oklab_gamut_map_to_linear_srgb(_css_hcl_to_lab(color.rgb));
+                        break;
+                }
+                return color;
             }
             """;
     public static final String ARC_LINEAR_GRAD_4_SHADER = """
@@ -324,10 +555,10 @@ public class ShaderCodeSource {
                                           int tileMode,
                                           int colorSpace,
                                           int doUnpremul) {
-                vec2 t = LinearGradLayout(coords);
-                t = TileGrad(tileMode, t);
-                vec4 color = ColorizeGrad4(colors, offsets, t);
-                return color;
+                vec2 t = _linear_grad_layout(coords);
+                t = _tile_grad(tileMode, t);
+                vec4 color = _colorize_grad_4(colors, offsets, t);
+                return _interpolated_to_rgb_unpremul(color, colorSpace, doUnpremul);
             }
             """;
     public static final String ARC_LINEAR_GRAD_8_SHADER = """
@@ -337,10 +568,10 @@ public class ShaderCodeSource {
                                           int tileMode,
                                           int colorSpace,
                                           int doUnpremul) {
-                vec2 t = LinearGradLayout(coords);
-                t = TileGrad(tileMode, t);
-                vec4 color = ColorizeGrad8(colors, offsets, t);
-                return color;
+                vec2 t = _linear_grad_layout(coords);
+                t = _tile_grad(tileMode, t);
+                vec4 color = _colorize_grad_8(colors, offsets, t);
+                return _interpolated_to_rgb_unpremul(color, colorSpace, doUnpremul);
             }
             """;
     public static final String ARC_RADIAL_GRAD_4_SHADER = """
@@ -350,10 +581,10 @@ public class ShaderCodeSource {
                                           int tileMode,
                                           int colorSpace,
                                           int doUnpremul) {
-                vec2 t = RadialGradLayout(coords);
-                t = TileGrad(tileMode, t);
-                vec4 color = ColorizeGrad4(colors, offsets, t);
-                return color;
+                vec2 t = _radial_grad_layout(coords);
+                t = _tile_grad(tileMode, t);
+                vec4 color = _colorize_grad_4(colors, offsets, t);
+                return _interpolated_to_rgb_unpremul(color, colorSpace, doUnpremul);
             }
             """;
     public static final String ARC_RADIAL_GRAD_8_SHADER = """
@@ -363,10 +594,10 @@ public class ShaderCodeSource {
                                           int tileMode,
                                           int colorSpace,
                                           int doUnpremul) {
-                vec2 t = RadialGradLayout(coords);
-                t = TileGrad(tileMode, t);
-                vec4 color = ColorizeGrad8(colors, offsets, t);
-                return color;
+                vec2 t = _radial_grad_layout(coords);
+                t = _tile_grad(tileMode, t);
+                vec4 color = _colorize_grad_8(colors, offsets, t);
+                return _interpolated_to_rgb_unpremul(color, colorSpace, doUnpremul);
             }
             """;
     public static final String ARC_ANGULAR_GRAD_4_SHADER = """
@@ -378,10 +609,10 @@ public class ShaderCodeSource {
                                            int tileMode,
                                            int colorSpace,
                                            int doUnpremul) {
-                vec2 t = AngularGradLayout(coords, bias, scale);
-                t = TileGrad(tileMode, t);
-                vec4 color = ColorizeGrad4(colors, offsets, t);
-                return color;
+                vec2 t = _angular_grad_layout(coords, bias, scale);
+                t = _tile_grad(tileMode, t);
+                vec4 color = _colorize_grad_4(colors, offsets, t);
+                return _interpolated_to_rgb_unpremul(color, colorSpace, doUnpremul);
             }
             """;
     public static final String ARC_ANGULAR_GRAD_8_SHADER = """
@@ -393,14 +624,14 @@ public class ShaderCodeSource {
                                            int tileMode,
                                            int colorSpace,
                                            int doUnpremul) {
-                vec2 t = AngularGradLayout(coords, bias, scale);
-                t = TileGrad(tileMode, t);
-                vec4 color = ColorizeGrad8(colors, offsets, t);
-                return color;
+                vec2 t = _angular_grad_layout(coords, bias, scale);
+                t = _tile_grad(tileMode, t);
+                vec4 color = _colorize_grad_8(colors, offsets, t);
+                return _interpolated_to_rgb_unpremul(color, colorSpace, doUnpremul);
             }
             """;
     private static final String PRIV_TILE = """
-            float Tile(int tileMode, float f, float low, float high) {
+            float _tile(int tileMode, float f, float low, float high) {
                 const int kTileModeRepeat = 0;
                 const int kTileModeMirror = 1;
                 const int kTileModeClamp  = 2;
@@ -438,14 +669,14 @@ public class ShaderCodeSource {
     }
     // kLinearInset make sure we don't touch an outer row or column with a weight of 0 when linear filtering.
     private static final String PRIV_SAMPLE_IMAGE_SUBSET = """
-            vec4 SampleImageSubset(vec2 pos,
-                                   vec2 invImageSize,
-                                   vec4 subset,
-                                   int tileModeX,
-                                   int tileModeY,
-                                   int filterMode,
-                                   vec2 linearFilterInset,
-                                   sampler2D s) {
+            vec4 _sample_image_subset(vec2 pos,
+                                      vec2 invImageSize,
+                                      vec4 subset,
+                                      int tileModeX,
+                                      int tileModeY,
+                                      int filterMode,
+                                      vec2 linearFilterInset,
+                                      sampler2D s) {
                 const int kTileModeRepeat = 0;
                 const int kTileModeMirror = 1;
                 const int kTileModeClamp  = 2;
@@ -470,8 +701,8 @@ public class ShaderCodeSource {
                     return vec4(0);
                 }
                 
-                pos.x = Tile(tileModeX, pos.x, subset.x, subset.z);
-                pos.y = Tile(tileModeY, pos.y, subset.y, subset.w);
+                pos.x = _tile(tileModeX, pos.x, subset.x, subset.z);
+                pos.y = _tile(tileModeY, pos.y, subset.y, subset.w);
                 
                 // Clamp to an inset subset to prevent sampling neighboring texels when coords fall exactly at
                 // texel boundaries.
@@ -531,11 +762,11 @@ public class ShaderCodeSource {
             """;
     // simplified version from above, assuming filter is nearest and pos is clamped
     private static final String PRIV_SAMPLE_CUBIC_IMAGE_SUBSET = """
-            vec4 SampleCubicImageSubset(vec2 pos,
-                                        vec4 subset,
-                                        int tileModeX,
-                                        int tileModeY,
-                                        sampler2D s) {
+            vec4 _sample_cubic_image_subset(vec2 pos,
+                                            vec4 subset,
+                                            int tileModeX,
+                                            int tileModeY,
+                                            sampler2D s) {
                 const int kTileModeRepeat = 0;
                 const int kTileModeMirror = 1;
                 const int kTileModeClamp  = 2;
@@ -553,8 +784,8 @@ public class ShaderCodeSource {
                     return vec4(0);
                 }
                 
-                pos.x = Tile(tileModeX, pos.x, subset.x, subset.z);
-                pos.y = Tile(tileModeY, pos.y, subset.y, subset.w);
+                pos.x = _tile(tileModeX, pos.x, subset.x, subset.z);
+                pos.y = _tile(tileModeY, pos.y, subset.y, subset.w);
                 
                 // Clamp to an inset subset to prevent sampling neighboring texels when coords fall exactly at
                 // texel boundaries.
@@ -566,13 +797,13 @@ public class ShaderCodeSource {
             }
             """;
     private static final String PRIV_CUBIC_FILTER_IMAGE = """
-            vec4 CubicFilterImage(vec2 pos,
-                                  vec4 subset,
-                                  int tileModeX,
-                                  int tileModeY,
-                                  mat4 coeffs,
-                                  int cubicClamp,
-                                  sampler2D s) {
+            vec4 _cubic_filter_image(vec2 pos,
+                                     vec4 subset,
+                                     int tileModeX,
+                                     int tileModeY,
+                                     mat4 coeffs,
+                                     int cubicClamp,
+                                     sampler2D s) {
                 const int kFilterModeNearest = 0;
                 const int kFilterModeLinear  = 1;
                 const int kCubicClampUnpremul = 0;
@@ -592,7 +823,7 @@ public class ShaderCodeSource {
                 for (int y = 0; y < 4; ++y) {
                     vec4 rowColor = vec4(0);
                     for (int x = 0; x < 4; ++x) {
-                        rowColor += wx[x] * SampleCubicImageSubset(pos + vec2(x, y), subset,
+                        rowColor += wx[x] * _sample_cubic_image_subset(pos + vec2(x, y), subset,
                                                                    tileModeX, tileModeY, s);
                     }
                     color += wy[y] * rowColor;
@@ -616,7 +847,7 @@ public class ShaderCodeSource {
                                   int tileModeY,
                                   sampler2D s) {
                 const float kLinearInset = 0.5 + 0.00001;
-                return SampleImageSubset(coords, invImageSize, subset, tileModeX, tileModeY,
+                return _sample_image_subset(coords, invImageSize, subset, tileModeX, tileModeY,
                                          filterMode, vec2(kLinearInset), s);
             }
             """;
@@ -628,7 +859,7 @@ public class ShaderCodeSource {
                                         int tileModeX,
                                         int tileModeY,
                                         sampler2D s) {
-                return CubicFilterImage(coords, subset, tileModeX, tileModeY,
+                return _cubic_filter_image(coords, subset, tileModeX, tileModeY,
                                         cubicCoeffs, cubicClamp, s);
             }
             """;
@@ -926,8 +1157,10 @@ public class ShaderCodeSource {
                             sa + da * (1 - sa));
             }
             """;
+    // we know that Photoshop uses these values
+    // instead of (0.3, 0.59, 0.11)
     private static final String PRIV_BLEND_GET_LUM = """
-            float BlendGetLum(vec3 color) {
+            float _blend_get_lum(vec3 color) {
                 return dot(vec3(0.299, 0.587, 0.114), color);
             }
             """;
@@ -935,23 +1168,23 @@ public class ShaderCodeSource {
             vec4 blend_darker_color(vec4 src, vec4 dst) {
                 return mix(src * (1 - dst.a) + dst,
                            src + dst * (1 - src.a),
-                           bvec4(BlendGetLum(src.rgb) <= BlendGetLum(dst.rgb)));
+                           bvec4(_blend_get_lum(src.rgb) <= _blend_get_lum(dst.rgb)));
             }
             """;
     public static final String BLEND_LIGHTER_COLOR = """
             vec4 blend_lighter_color(vec4 src, vec4 dst) {
                 return mix(src * (1 - dst.a) + dst,
                            src + dst * (1 - src.a),
-                           bvec4(BlendGetLum(src.rgb) >= BlendGetLum(dst.rgb)));
+                           bvec4(_blend_get_lum(src.rgb) >= _blend_get_lum(dst.rgb)));
             }
             """;
     private static final String PRIV_BLEND_SET_LUM = """
-            vec3 BlendSetLum(vec3 cbase,
-                             vec3 clum, float alum,
-                             float alpha) {
-                float ldiff = BlendGetLum(clum) * alum - BlendGetLum(cbase);
+            vec3 _blend_set_lum(vec3 cbase,
+                                vec3 clum, float alum,
+                                float alpha) {
+                float ldiff = _blend_get_lum(clum) * alum - _blend_get_lum(cbase);
                 cbase += ldiff;
-                float lum = BlendGetLum(cbase);
+                float lum = _blend_get_lum(cbase);
                 float mincol = min(min(cbase.r, cbase.g), cbase.b);
                 float maxcol = max(max(cbase.r, cbase.g), cbase.b);
                 if (mincol < 0 && lum != mincol) {
@@ -964,10 +1197,10 @@ public class ShaderCodeSource {
             }
             """;
     private static final String PRIV_BLEND_SET_LUM_SAT = """
-            vec3 BlendSetLumSat(vec3 cbase,
-                                vec3 csat, float asat,
-                                vec3 clum, float alum,
-                                float alpha) {
+            vec3 _blend_set_lum_sat(vec3 cbase,
+                                    vec3 csat, float asat,
+                                    vec3 clum, float alum,
+                                    float alpha) {
                 float minbase = min(min(cbase.r, cbase.g), cbase.b);
                 float sbase = max(max(cbase.r, cbase.g), cbase.b) - minbase;
                 if (sbase > 0) {
@@ -976,14 +1209,14 @@ public class ShaderCodeSource {
                 } else {
                     cbase = vec3(0);
                 }
-                return BlendSetLum(cbase, clum, alum, alpha);
+                return _blend_set_lum(cbase, clum, alum, alpha);
             }
             """;
     public static final String BLEND_HUE = """
             vec4 blend_hue(vec4 src, vec4 dst) {
                 float alpha = src.a * dst.a;
                 vec3 c = src.rgb * dst.a;
-                c = BlendSetLumSat(c, dst.rgb, src.a, dst.rgb, src.a, alpha);
+                c = _blend_set_lum_sat(c, dst.rgb, src.a, dst.rgb, src.a, alpha);
                 return vec4(c + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a),
                             src.a + dst.a - alpha);
             }
@@ -992,7 +1225,7 @@ public class ShaderCodeSource {
             vec4 blend_saturation(vec4 src, vec4 dst) {
                 float alpha = src.a * dst.a;
                 vec3 c = dst.rgb * src.a;
-                c = BlendSetLumSat(c, src.rgb, dst.a, dst.rgb, src.a, alpha);
+                c = _blend_set_lum_sat(c, src.rgb, dst.a, dst.rgb, src.a, alpha);
                 return vec4(c + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a),
                             src.a + dst.a - alpha);
             }
@@ -1001,7 +1234,7 @@ public class ShaderCodeSource {
             vec4 blend_color(vec4 src, vec4 dst) {
                 float alpha = src.a * dst.a;
                 vec3 c = src.rgb * dst.a;
-                c = BlendSetLum(c, dst.rgb, src.a, alpha);
+                c = _blend_set_lum(c, dst.rgb, src.a, alpha);
                 return vec4(c + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a),
                             src.a + dst.a - alpha);
             }
@@ -1010,7 +1243,7 @@ public class ShaderCodeSource {
             vec4 blend_luminosity(vec4 src, vec4 dst) {
                 float alpha = src.a * dst.a;
                 vec3 c = dst.rgb * src.a;
-                c = BlendSetLum(c, src.rgb, dst.a, alpha);
+                c = _blend_set_lum(c, src.rgb, dst.a, alpha);
                 return vec4(c + src.rgb * (1 - dst.a) + dst.rgb * (1 - src.a),
                             src.a + dst.a - alpha);
             }
@@ -1175,6 +1408,10 @@ public class ShaderCodeSource {
                 kLocalCoords_ReqFlag,
                 "arc_linear_grad_4_shader",
                 new String[]{PRIV_TILE_GRAD, PRIV_LINEAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                        PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
+                        PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
+                        PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
+                        PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
                         ARC_LINEAR_GRAD_4_SHADER},
                 new Uniform[]{
                         GRAD_4_COLORS,
@@ -1192,6 +1429,10 @@ public class ShaderCodeSource {
                 kLocalCoords_ReqFlag,
                 "arc_linear_grad_8_shader",
                 new String[]{PRIV_TILE_GRAD, PRIV_LINEAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                        PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
+                        PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
+                        PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
+                        PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
                         ARC_LINEAR_GRAD_8_SHADER},
                 new Uniform[]{
                         GRAD_8_COLORS,
@@ -1209,6 +1450,10 @@ public class ShaderCodeSource {
                 kLocalCoords_ReqFlag,
                 "arc_radial_grad_4_shader",
                 new String[]{PRIV_TILE_GRAD, PRIV_RADIAL_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                        PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
+                        PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
+                        PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
+                        PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
                         ARC_RADIAL_GRAD_4_SHADER},
                 new Uniform[]{
                         GRAD_4_COLORS,
@@ -1226,6 +1471,10 @@ public class ShaderCodeSource {
                 kLocalCoords_ReqFlag,
                 "arc_radial_grad_8_shader",
                 new String[]{PRIV_TILE_GRAD, PRIV_RADIAL_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                        PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
+                        PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
+                        PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
+                        PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
                         ARC_RADIAL_GRAD_8_SHADER},
                 new Uniform[]{
                         GRAD_8_COLORS,
@@ -1243,6 +1492,10 @@ public class ShaderCodeSource {
                 kLocalCoords_ReqFlag,
                 "arc_angular_grad_4_shader",
                 new String[]{PRIV_TILE_GRAD, PRIV_ANGULAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                        PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
+                        PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
+                        PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
+                        PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
                         ARC_ANGULAR_GRAD_4_SHADER},
                 new Uniform[]{
                         GRAD_4_COLORS,
@@ -1262,6 +1515,10 @@ public class ShaderCodeSource {
                 kLocalCoords_ReqFlag,
                 "arc_angular_grad_8_shader",
                 new String[]{PRIV_TILE_GRAD, PRIV_ANGULAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                        PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
+                        PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
+                        PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
+                        PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
                         ARC_ANGULAR_GRAD_8_SHADER},
                 new Uniform[]{
                         GRAD_8_COLORS,
