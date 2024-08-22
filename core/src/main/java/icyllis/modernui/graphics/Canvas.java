@@ -1347,7 +1347,7 @@ public abstract class Canvas {
      * <p>
      * The <var>positions</var> is required, and specifies the x,y pairs for each vertex in
      * local coordinates, numbered 0, 1, 2, ..., N-1, where N is the number of vertices
-     * and N = positions.remaining() / 2.
+     * and N = <var>vertexCount</var> / 2.
      * <p>
      * If there is <var>colors</var>, but there is no <var>texCoords</var>, then each colors
      * (AARRGGBB) blends with paint colors using the given <var>blendMode</var>, and
@@ -1383,6 +1383,8 @@ public abstract class Canvas {
      * @param indices        If not null, array of indices to reference into the vertex (texCoords, colors)
      *                       array.
      * @param indexCount     Number of entries in the indices array (if not null).
+     * @param blendMode      Blends vertices' colors with shader if present or paint colors if
+     *                       not, ignored if there is no colors array, or null to use the default
      * @param paint          Specifies the shader to use if the texCoords array is non-null. Antialiasing is not
      *                       supported.
      */
