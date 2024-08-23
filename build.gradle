@@ -3,7 +3,7 @@ import org.gradle.internal.os.OperatingSystem
 apply plugin: 'java'
 apply plugin: 'java-library'
 
-version = 'b' + new Date().format('yyyyMMdd')
+version = "${arc3d_version}"
 group = 'icyllis.arc3d'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
