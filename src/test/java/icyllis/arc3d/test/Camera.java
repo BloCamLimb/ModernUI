@@ -31,7 +31,7 @@ public class Camera {
     public static void main(String[] args) {
         PrintWriter pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
 
-        Matrix4 mat = Matrix4.identity();
+        Matrix4 mat = new Matrix4();
         mat.m34 = 1 / 576f;
         //mat.preTranslateZ(-20f);
         mat.preRotateY(MathUtil.PI_O_3);
@@ -51,7 +51,7 @@ public class Camera {
 
 
         Camera3D camera3D = new Camera3D();
-        Matrix4 transformMat = Matrix4.identity();
+        Matrix4 transformMat = new Matrix4();
         transformMat.preRotateY(MathUtil.PI_O_3);
         Matrix3 outMatrix = new Matrix3();
         camera3D.getMatrix(transformMat, outMatrix, pw);
