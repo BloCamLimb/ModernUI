@@ -19,6 +19,9 @@
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.ApiStatus;
+import org.lwjgl.system.MemoryUtil;
+
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 
@@ -37,6 +40,12 @@ import java.util.Arrays;
  * If corner curves overlap, radii are proportionally reduced to fit within bounds.
  */
 public class RoundRect {
+
+    // these are compile-time constants
+    @ApiStatus.Internal
+    public static final int kSizeOf = 52;
+    @ApiStatus.Internal
+    public static final int kAlignOf = 4;
 
     /**
      * Type describes possible specializations of RoundRect. Each Type is
@@ -242,6 +251,37 @@ public class RoundRect {
     @Size(8)
     public float[] getRadii() {
         return mRadii;
+    }
+
+    // unflatten
+    @ApiStatus.Internal
+    public void set(long p) {
+        assert (p & (kAlignOf - 1)) == 0;
+        mLeft = MemoryUtil.memGetFloat(p);
+        mTop = MemoryUtil.memGetFloat(p + 4);
+        mRight = MemoryUtil.memGetFloat(p + 8);
+        mBottom = MemoryUtil.memGetFloat(p + 12);
+        for (int i = 0; i < 8; i++) {
+            p += 4;
+            mRadii[i] = MemoryUtil.memGetFloat(p);
+        }
+        mType = MemoryUtil.memGetInt(p + 4);
+    }
+
+    // flatten
+    @ApiStatus.Internal
+    public void store(long p) {
+        assert (p & (kAlignOf - 1)) == 0;
+        MemoryUtil.memPutFloat(p, mLeft);
+        MemoryUtil.memPutFloat(p + 4, mTop);
+        MemoryUtil.memPutFloat(p + 8, mRight);
+        MemoryUtil.memPutFloat(p + 12, mBottom);
+        // benchmark shows that a custom loop is faster than copyMemory at smaller size
+        for (int i = 0; i < 8; i++) {
+            p += 4;
+            MemoryUtil.memPutFloat(p, mRadii[i]);
+        }
+        MemoryUtil.memPutInt(p + 4, mType);
     }
 
     /**

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import icyllis.arc3d.core.TextBlob;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
@@ -25,10 +26,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Pools;
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.ApiStatus;
-
-import java.util.ArrayList;
 
 /**
  * Represents a line of styled text, for measuring in visual order and
@@ -74,13 +72,12 @@ public class TextLine {
     private final SpanSet<ReplacementSpan> mReplacementSpanSpanSet =
             new SpanSet<>(ReplacementSpan.class);
 
-    private final ArrayList<LayoutPiece> mCachedPieces = new ArrayList<>();
-    private final FloatArrayList mCachedXOffsets = new FloatArrayList();
+    private final TextBlob.Builder mTextBlobBuilder = new TextBlob.Builder();
     private final FontMetricsInt mCachedFontExtent = new FontMetricsInt();
 
-    private final ShapedText.RunConsumer mBuildCachedPieces = (piece, offsetX) -> {
-        mCachedPieces.add(piece);
-        mCachedXOffsets.add(offsetX);
+    private final ShapedText.RunConsumer mBuildTextBlob = (piece, offsetX, paint) ->
+            TextUtils.buildTextBlob(mTextBlobBuilder, piece, offsetX, paint);
+    private final ShapedText.RunConsumer mPassthrough = (piece, offsetX, paint) -> {
     };
 
     private TextLine() {
@@ -942,9 +939,7 @@ public class TextLine {
                     span.updateDrawState(activePaint);
                 }
 
-                final int flags =
-                        activePaint.getFontFlags() & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
-                activePaint.setFontFlags(activePaint.getFontFlags() & ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG));
+                final int flags = activePaint.checkTextDecorations();
 
                 x += handleText(activePaint, j, jnext, i, inext, runIsRtl, c, consumer, x,
                         top, y, bottom, needWidth || jnext < measureLimit,
@@ -999,7 +994,7 @@ public class TextLine {
                         mChars, contextStart, contextEnd, start, offset,
                         runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
-                        mBuildCachedPieces
+                        c != null ? mBuildTextBlob : mPassthrough
                 );
             } else {
                 final int delta = mStart;
@@ -1010,7 +1005,7 @@ public class TextLine {
                         buf, 0, len, start - contextStart, offset - contextStart,
                         runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
-                        mBuildCachedPieces
+                        c != null ? mBuildTextBlob : mPassthrough
                 );
                 TextUtils.recycle(buf);
             }
@@ -1035,13 +1030,8 @@ public class TextLine {
                 c.drawRect(leftX, top, rightX, bottom, paint);
             }
 
-            ArrayList<LayoutPiece> pieces = mCachedPieces;
-            FloatArrayList xOffsets = mCachedXOffsets;
-            assert pieces.size() == xOffsets.size();
-            for (int i = 0, count = pieces.size(); i < count; i++) {
-                TextUtils.drawTextRun(c,
-                        pieces.get(i), leftX + xOffsets.getFloat(i), y + wp.baselineShift, wp);
-            }
+            TextBlob blob = mTextBlobBuilder.build();
+            c.drawTextBlob(blob, Math.round(leftX), y + wp.baselineShift, wp);
 
             if (flags != 0) {
                 if (paint == null) {
@@ -1051,15 +1041,16 @@ public class TextLine {
                 }
                 //TODO we assume these values for now, should we extract these values from TrueType file?
                 // Also, TextPaint is not yet synchronized with this
+                float fontSize = wp.getInternalPaint().getFontSize();
                 if ((flags & TextPaint.UNDERLINE_FLAG) != 0) {
-                    float thickness = wp.getFontSize() / 18f;
-                    float strokeTop = y + wp.getFontSize() * (1f / 9f) - thickness * 0.5f + wp.baselineShift;
+                    float thickness = fontSize / 18f;
+                    float strokeTop = y + fontSize * (1f / 9f) - thickness * 0.5f + wp.baselineShift;
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
                 if ((flags & TextPaint.STRIKETHROUGH_FLAG) != 0) {
-                    float thickness = wp.getFontSize() / 18f;
-                    float strokeTop = y - wp.getFontSize() * (1f / 3f) - thickness * 0.5f + wp.baselineShift;
+                    float thickness = fontSize / 18f;
+                    float strokeTop = y - fontSize * (1f / 3f) - thickness * 0.5f + wp.baselineShift;
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
@@ -1068,9 +1059,6 @@ public class TextLine {
                 paint.recycle();
             }
         }
-
-        mCachedPieces.clear();
-        mCachedXOffsets.clear();
 
         return runIsRtl ? -totalWidth : totalWidth;
     }

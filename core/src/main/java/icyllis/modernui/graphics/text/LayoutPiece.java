@@ -25,6 +25,7 @@ import icyllis.modernui.graphics.Rect;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jetbrains.annotations.Unmodifiable;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
@@ -237,6 +238,7 @@ public final class LayoutPiece {
      *
      * @return glyphs
      */
+    @Unmodifiable
     public int[] getGlyphs() {
         return mGlyphs;
     }
@@ -247,6 +249,7 @@ public final class LayoutPiece {
      *
      * @return glyph positions
      */
+    @Unmodifiable
     public float[] getPositions() {
         return mPositions;
     }
@@ -280,6 +283,7 @@ public final class LayoutPiece {
      * @return advances, or null
      * @see LayoutCache#COMPUTE_CLUSTER_ADVANCES
      */
+    @Unmodifiable
     public float[] getAdvances() {
         return mAdvances;
     }

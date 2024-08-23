@@ -18,12 +18,17 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.Surface;
+
 import javax.annotation.Nonnull;
 
 //TODO wip
 public final class RenderNode extends RenderProperties {
 
     private Canvas mCurrentRecordingCanvas;
+    @SharedPtr
+    public Surface mLayerSurface;
 
     /**
      * Creates a new RenderNode that can be used to record batches of

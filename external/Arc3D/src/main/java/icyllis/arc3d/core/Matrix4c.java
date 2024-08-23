@@ -217,6 +217,13 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      */
     void mapRectOut(@Nonnull Rect2fc r, @Nonnull Rect2i dest);
 
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    void mapRectIn(@Nonnull Rect2fc r, @Nonnull Rect2i dest);
+
     boolean hasPerspective();
 
     /**

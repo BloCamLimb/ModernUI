@@ -157,6 +157,9 @@ public final class TextBlob {
                 if (mGlyphs != null) {
                     mGlyphOffset = mGlyphs.length;
                     mPositionOffset = mPositions.length;
+                } else {
+                    assert mGlyphOffset == 0;
+                    assert mPositionOffset == 0;
                 }
 
                 reserve(count, true);
@@ -192,6 +195,8 @@ public final class TextBlob {
             if (mRunCount == 0) {
                 assert mGlyphs == null;
                 assert mPositions == null;
+                assert mGlyphOffset == 0;
+                assert mPositionOffset == 0;
                 assert mFonts == null;
                 assert mCounts == null;
                 assert mBounds.isEmpty();
@@ -208,6 +213,8 @@ public final class TextBlob {
             );
             mGlyphs = null;
             mPositions = null;
+            mGlyphOffset = 0;
+            mPositionOffset = 0;
             mFonts = null;
             mCounts = null;
             mRunCount = 0;

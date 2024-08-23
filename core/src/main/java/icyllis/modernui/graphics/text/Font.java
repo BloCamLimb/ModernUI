@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.arc3d.core.Strike;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
@@ -102,9 +101,6 @@ public interface Font {
                           IntArrayList glyphs, FloatArrayList positions,
                           float[] advances, int advanceOffset,
                           Rect bounds, float x, float y);
-
-    @ApiStatus.Internal
-    Strike findOrCreateStrike(FontPaint paint);
 
     @ApiStatus.Internal
     icyllis.arc3d.core.Typeface getNativeTypeface();

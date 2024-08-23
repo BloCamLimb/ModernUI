@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.TextBlob;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.view.Gravity;
@@ -1240,6 +1241,10 @@ public abstract class Canvas {
                                     float x, float y,
                                     @NonNull Paint paint);
 
+    @ApiStatus.Experimental
+    public abstract void drawTextBlob(TextBlob blob, float x, float y,
+                                      @NonNull Paint paint);
+
     /**
      * Draw a single style run of positioned glyphs in order <em>visually left-to-right</em>,
      * where a single style run may contain multiple BiDi runs and font runs.
@@ -1253,47 +1258,7 @@ public abstract class Canvas {
      */
     public final void drawShapedText(@NonNull ShapedText text,
                                      float x, float y, @NonNull Paint paint) {
-        drawShapedText(text, 0, text.getGlyphCount(), x, y, paint);
-    }
-
-    /**
-     * Draw a single style run of positioned glyphs in order <em>visually left-to-right</em>,
-     * where a single style run may contain multiple BiDi runs and font runs.
-     * The Paint must be the same as the one passed to any of {@link icyllis.modernui.text.TextShaper} methods.
-     *
-     * @param text       A sequence of positioned glyphs.
-     * @param glyphStart Number of glyphs to skip before drawing text.
-     * @param glyphCount Number of glyphs to be drawn.
-     * @param x          Additional amount of x offset of the glyph X positions, i.e. left position
-     * @param y          Additional amount of y offset of the glyph Y positions, i.e. baseline position
-     * @param paint      Paint used for drawing.
-     * @see icyllis.modernui.text.TextShaper
-     */
-    public final void drawShapedText(@NonNull ShapedText text, int glyphStart, int glyphCount,
-                                     float x, float y, @NonNull Paint paint) {
-        if ((glyphStart | glyphCount | glyphStart + glyphCount |
-                text.getGlyphCount() - glyphStart - glyphCount) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (glyphCount == 0) {
-            return;
-        }
-        var lastFont = text.getFont(glyphStart);
-        int lastPos = glyphStart;
-        int currPos = glyphStart + 1;
-        for (int end = glyphStart + glyphCount; currPos < end; currPos++) {
-            var curFont = text.getFont(currPos);
-            if (lastFont != curFont) {
-                drawGlyphs(text.getGlyphs(), lastPos,
-                        text.getPositions(), lastPos << 1, currPos - lastPos,
-                        lastFont, x, y, paint);
-                lastFont = curFont;
-                lastPos = currPos;
-            }
-        }
-        drawGlyphs(text.getGlyphs(), lastPos,
-                text.getPositions(), lastPos << 1, currPos - lastPos,
-                lastFont, x, y, paint);
+        drawTextBlob(text.getTextBlob(), x, y, paint);
     }
 
     public final void drawSimpleText(@NonNull char[] text, @NonNull Font font,
@@ -1301,11 +1266,10 @@ public abstract class Canvas {
         if (text.length == 0) {
             return;
         }
-        if (font instanceof OutlineFont of) {
-            var f = of.chooseFont(paint.getFontSize());
-            var frc = OutlineFont.getFontRenderContext(
-                    FontPaint.computeRenderFlags(paint));
-            var gv = f.createGlyphVector(frc, text);
+        if (font instanceof OutlineFont outlineFont) {
+            var face = outlineFont.chooseFont(paint);
+            var frc = OutlineFont.getFontRenderContext(paint);
+            var gv = face.createGlyphVector(frc, text);
             int nGlyphs = gv.getNumGlyphs();
             drawGlyphs(gv.getGlyphCodes(0, nGlyphs, null),
                     0,

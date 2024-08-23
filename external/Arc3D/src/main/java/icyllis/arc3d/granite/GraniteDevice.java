@@ -282,7 +282,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     public void drawPaint(Paint paint) {
         //TODO fill the clip, not fullscreen clear
         float[] color = new float[4];
-        if (PaintParams.getSolidColor(paint, mInfo, color)) {
+        if (PaintParams.getSolidColor(paint, imageInfo(), color)) {
             mSDC.clear(color);
         }
     }
@@ -647,7 +647,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         mCurrentDepth = DrawOrder.CLEAR_DEPTH;
 
         // Any cleanup in the AtlasProvider
-        mRC.getAtlasProvider().compact(/*immediateCompact=*/false);
+        mRC.getAtlasProvider().compact();
 
         DrawTask drawTask = mSDC.snapDrawTask(mRC);
 

@@ -180,7 +180,7 @@ public final class LayoutCache {
         int mLimit;
         FontCollection mFont;
         int mFlags;
-        int mSize;
+        float mSize;
         Locale mLocale;
         boolean mIsRtl;
 
@@ -233,7 +233,7 @@ public final class LayoutCache {
             }
             result = 31 * result + mFont.hashCode();
             result = 31 * result + mFlags;
-            result = 31 * result + mSize;
+            result = 31 * result + Float.floatToIntBits(mSize);
             result = 31 * result + mStart;
             result = 31 * result + mLimit;
             result = 31 * result + mLocale.hashCode();
@@ -268,7 +268,7 @@ public final class LayoutCache {
             mLimit = limit - contextStart;
             mFont = paint.mFont;
             mFlags = paint.mFlags;
-            mSize = paint.mSize;
+            mSize = paint.getFontSize();
             mLocale = paint.mLocale;
             mIsRtl = dir;
             return this;
@@ -304,7 +304,7 @@ public final class LayoutCache {
             }
             result = 31 * result + mFont.hashCode();
             result = 31 * result + mFlags;
-            result = 31 * result + mSize;
+            result = 31 * result + Float.floatToIntBits(mSize);
             result = 31 * result + mStart;
             result = 31 * result + mLimit;
             result = 31 * result + mLocale.hashCode();

@@ -486,7 +486,7 @@ public class MeasuredText {
                     mStart, mEnd,
                     mStart, mEnd,
                     mIsRtl, mPaint,
-                    null, (piece, __) -> {
+                    null, (piece, __, paint) -> {
                         pieces.add(piece);
                         if (mIsRtl) {
                             offsets.add(offset[0]);

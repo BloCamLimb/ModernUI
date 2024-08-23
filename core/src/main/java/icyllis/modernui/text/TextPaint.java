@@ -331,12 +331,10 @@ public class TextPaint extends Paint {
         return offset == -1 ? -1 : offset + contextStart;
     }
 
-    int getFontFlags() {
-        return mFlags;
-    }
-
-    void setFontFlags(int flags) {
-        mFlags = flags;
+    int checkTextDecorations() {
+        int flags = mFlags & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
+        mFlags &= ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
+        return flags;
     }
 
     /**
@@ -379,16 +377,16 @@ public class TextPaint extends Paint {
      *
      * @return a shared internal paint
      */
+    @ApiStatus.Internal
     @NonNull
     public final FontPaint getInternalPaint() {
         FontPaint p = mInternalPaint;
         p.setFont(mTypeface);
         p.setLocale(mLocale);
-        p.setFontSize(getFontSize());
-        p.setFontStyle(getFontStyle());
-        p.setRenderFlags(
-               FontPaint.computeRenderFlags(this)
-        );
+        p.setFontSize(getTextSize());
+        p.setFontStyle(getTextStyle());
+        p.setAntiAlias(isTextAntiAlias());
+        p.setLinearMetrics(isLinearText());
         return p;
     }
 
@@ -398,6 +396,7 @@ public class TextPaint extends Paint {
      *
      * @return an internal paint
      */
+    @ApiStatus.Internal
     @NonNull
     public final FontPaint createInternalPaint() {
         return new FontPaint(getInternalPaint());

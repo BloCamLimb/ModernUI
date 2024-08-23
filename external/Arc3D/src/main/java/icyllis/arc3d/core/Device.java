@@ -35,8 +35,8 @@ public abstract class Device extends RefCnt {
             CLIP_TYPE_RECT = 1,
             CLIP_TYPE_COMPLEX = 2;
 
-    protected final ImageInfo mInfo;
-    protected final Rect2i mBounds = new Rect2i();
+    private final ImageInfo mInfo;
+    private final Rect2i mBounds = new Rect2i();
 
     final Matrix4 mLocalToDevice = Matrix4.identity();
     final Matrix mLocalToDevice33 = new Matrix();

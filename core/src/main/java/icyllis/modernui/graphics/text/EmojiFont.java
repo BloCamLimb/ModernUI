@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.BreakIterator;
-import icyllis.arc3d.core.Strike;
 import icyllis.arc3d.core.Typeface;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -35,7 +34,7 @@ import java.util.Locale;
 /**
  * Special font for Color Emoji.
  */
-//TODO the layout code is not correct
+//TODO the layout code is not correct, add rendering
 public final class EmojiFont implements Font {
 
     private final String mName;
@@ -87,7 +86,7 @@ public final class EmojiFont implements Font {
 
     @Override
     public int getMetrics(@NonNull FontPaint paint, @Nullable FontMetricsInt fm) {
-        int size = paint.getFontSize();
+        float size = paint.getFontSize();
         int ascent = (int) (0.95 + mBaseAscent * size);
         int descent = (int) (0.95 + mBaseDescent * size);
         if (fm != null) {
@@ -164,7 +163,7 @@ public final class EmojiFont implements Font {
         final var iterator = new CharArrayIterator(buf, layoutStart, layoutLimit);
         breaker.setText(iterator);
 
-        boolean hint = (paint.getRenderFlags() & FontPaint.RENDER_FLAG_LINEAR_METRICS) == 0;
+        boolean hint = !paint.isLinearMetrics();
         float sz = paint.getFontSize();
         float add = mBaseSpacing * sz;
         if (hint) {
@@ -218,7 +217,7 @@ public final class EmojiFont implements Font {
         }
 
         if (bounds != null) {
-            int s = paint.getFontSize();
+            float s = paint.getFontSize();
             bounds.union(
                     (int) x,
                     (int) (y - mBaseAscent * s - 0.05),
@@ -228,11 +227,6 @@ public final class EmojiFont implements Font {
         }
 
         return currAdvance;
-    }
-
-    @Override
-    public Strike findOrCreateStrike(FontPaint paint) {
-        return null;
     }
 
     @Override
