@@ -667,7 +667,7 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mTestShader1));
                 paint.setStyle(Paint.FILL);
                 paint.setAlphaF(0.7f);
-                var mat = Matrix4.identity();
+                var mat = new Matrix4();
                 mat.setTranslate(1000, 100, 0);
                 canvas.setMatrix(mat);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);

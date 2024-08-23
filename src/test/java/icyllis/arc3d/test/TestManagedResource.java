@@ -483,11 +483,11 @@ public class TestManagedResource {
     }
 
     public static void testRightHandedRotation(PrintWriter pw) {
-        Matrix4 mat = Matrix4.identity();
+        Matrix4 mat = new Matrix4();
         mat.preRotateZ(MathUtil.PI_O_3);
         pw.println("preRotateX " + mat);
 
-        Matrix4 mat2 = Matrix4.identity();
+        Matrix4 mat2 = new Matrix4();
         mat2.setPerspective(Math.toRadians(75), 16 / 9., 0, 2000, false);
         pw.println("preRotateAxisAngle " + mat2);
 
@@ -506,13 +506,13 @@ public class TestManagedResource {
     }
 
     public static void testSimilarity(PrintWriter pw) {
-        Matrix4 transform = Matrix4.identity();
+        Matrix4 transform = new Matrix4();
         transform.m34 = 1 / 4096f;
         transform.preRotateX(MathUtil.PI_O_3);
         Matrix matrix3 = transform.toMatrix();
         pw.println(matrix3);
 
-        Matrix4 mat = Matrix4.identity();
+        Matrix4 mat = new Matrix4();
         mat.preRotateZ(MathUtil.PI_O_2 * 29);
         Matrix m3 = mat.toMatrix();
         pw.println(m3);

@@ -124,7 +124,7 @@ public class TestDrawPass {
                     rad, rad
             );
             draw.mGeometry = rrect;
-            var transform = Matrix4.identity();
+            var transform = new Matrix4();
             float cx = rrect.centerX();
             float cy = rrect.centerY();
             transform.preTranslate(cx, cy);
