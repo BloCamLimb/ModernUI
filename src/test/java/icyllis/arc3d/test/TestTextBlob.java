@@ -44,6 +44,8 @@ public class TestTextBlob {
         float[] positions = {0, 0, 16, 0, 25, 0, 30, 0, 35, 0, 44, 2, 56, 0, 71.5f, 0, 80, 0,
                 171, 0, 162, 0, 150, 0, 134.5f, 0, 120, 0, 105, 0, 92, 0, 88, 0};
 
+        var builder = new TextBlob.Builder();
+
         {
             TextBlob blob1 = TextBlob.make(
                     glyphs, 0,
@@ -54,7 +56,6 @@ public class TestTextBlob {
 
             TextBlob blob2;
             {
-                var builder = new TextBlob.Builder();
                 builder.allocRunPos(font1, glyphs.length, null)
                         .addGlyphs(glyphs, 0, glyphs.length)
                         .addPositions(positions, 0, glyphs.length);
@@ -75,7 +76,6 @@ public class TestTextBlob {
 
             TextBlob blob2;
             {
-                var builder = new TextBlob.Builder();
                 builder.allocRunPos(font2, count, null)
                         .addGlyphs(glyphs, 6, count)
                         .addPositions(positions, 10, count);
@@ -91,7 +91,6 @@ public class TestTextBlob {
 
             TextBlob blob;
             {
-                var builder = new TextBlob.Builder();
                 builder.allocRunPos(font1, count1, null)
                         .addGlyphs(glyphs, 0, count1)
                         .addPositions(positions, 0, count1);
