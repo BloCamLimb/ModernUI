@@ -20,7 +20,6 @@ package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.Paint;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -54,17 +53,16 @@ public class FontPaint {
 
     public static final int FONT_STYLE_MASK = NORMAL | BOLD | ITALIC;
 
-    public static final int RENDER_FLAG_ANTI_ALIAS = 0x1;
-    public static final int RENDER_FLAG_LINEAR_METRICS = 0x2;
+    public static final float INV_FONT_SIZE_GRANULARITY = 3.0f;
 
-    public static final int RENDER_FLAG_MASK = 0x3;
-    public static final int RENDER_FLAG_SHIFT = 4;
+    private static final int RENDER_FLAG_ANTI_ALIAS = 0x10;
+    private static final int RENDER_FLAG_LINEAR_METRICS = 0x20;
 
     // shared pointer
     FontCollection mFont;
     Locale mLocale;
     int mFlags;
-    int mSize;
+    private float mSize;
 
     @ApiStatus.Internal
     public FontPaint() {
@@ -123,19 +121,20 @@ public class FontPaint {
     }
 
     /**
-     * Set the paint's text size, in points. This value clamps to 8 and 96.
-     * You can have even larger glyphs through matrix transformation, and our engine
-     * will attempt to use SDF text rendering.
+     * Set the paint's text size in pixel units. For example, a text size
+     * of 16 (1em) means the letter 'M' is 16 pixels high in device space.
+     * Very large or small sizes will impact rendering performance, and the
+     * rendering system might not render text at these sizes. For now, text
+     * sizes will clamp to 1 and 2184.
      * <p>
      * Note: the point size is measured at 72 dpi, while Windows has 96 dpi.
      * This indicates that the font size 12 in MS Word is equal to the font size 16 here.
      *
      * @param fontSize set the paint's text size in pixel units.
      */
-    public void setFontSize(int fontSize) {
-        // our engine assumes 8..96, do not edit
-        //TODO Remove this restriction, once our rendering engine updates
-        mSize = MathUtil.clamp(fontSize, 8, 96);
+    public void setFontSize(float fontSize) {
+        // our layout engine assumes 1..2184, do not edit
+        mSize = MathUtil.pin(getCanonicalFontSize(fontSize), 1, 2184);
     }
 
     /**
@@ -143,17 +142,32 @@ public class FontPaint {
      *
      * @return the paint's text size in pixel units.
      */
-    public int getFontSize() {
+    public float getFontSize() {
         return mSize;
     }
 
-    public void setRenderFlags(int flags) {
-        mFlags = (mFlags & ~(RENDER_FLAG_MASK << RENDER_FLAG_SHIFT)) |
-                ((flags & RENDER_FLAG_MASK) << RENDER_FLAG_SHIFT);
+    public void setAntiAlias(boolean aa) {
+        if (aa) {
+            mFlags |= RENDER_FLAG_ANTI_ALIAS;
+        } else {
+            mFlags &= ~RENDER_FLAG_ANTI_ALIAS;
+        }
     }
 
-    public int getRenderFlags() {
-        return (mFlags >> RENDER_FLAG_SHIFT) & RENDER_FLAG_MASK;
+    public boolean isAntiAlias() {
+        return (mFlags & RENDER_FLAG_ANTI_ALIAS) != 0;
+    }
+
+    public void setLinearMetrics(boolean linearMetrics) {
+        if (linearMetrics) {
+            mFlags |= RENDER_FLAG_LINEAR_METRICS;
+        } else {
+            mFlags &= ~RENDER_FLAG_LINEAR_METRICS;
+        }
+    }
+
+    public boolean isLinearMetrics() {
+        return (mFlags & RENDER_FLAG_LINEAR_METRICS) != 0;
     }
 
     /**
@@ -194,9 +208,32 @@ public class FontPaint {
         return height;
     }
 
-    public static int computeRenderFlags(@NonNull Paint paint) {
-        return (paint.isTextAntiAlias() ? FontPaint.RENDER_FLAG_ANTI_ALIAS : 0) |
-                (paint.isLinearText() ? FontPaint.RENDER_FLAG_LINEAR_METRICS : 0);
+    /**
+     * Populates font attributes to native font object, excluding the typeface.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public void getNativeFont(@NonNull icyllis.arc3d.core.Font nativeFont) {
+        nativeFont.setSize(getFontSize());
+        nativeFont.setEdging(isAntiAlias()
+                ? icyllis.arc3d.core.Font.kAntiAlias_Edging
+                : icyllis.arc3d.core.Font.kAlias_Edging);
+        nativeFont.setLinearMetrics(isLinearMetrics());
+    }
+
+    public static float getCanonicalFontSize(float fontSize) {
+        assert fontSize >= 0;
+        return (int) (fontSize * INV_FONT_SIZE_GRANULARITY + 0.5f) / INV_FONT_SIZE_GRANULARITY;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = mFont.hashCode();
+        h = 31 * h + mLocale.hashCode();
+        h = 31 * h + mFlags;
+        h = 31 * h + Float.floatToIntBits(mSize);
+        return h;
     }
 
     @Override
@@ -206,19 +243,10 @@ public class FontPaint {
 
         FontPaint that = (FontPaint) o;
 
-        if (mSize != that.mSize) return false;
         if (mFlags != that.mFlags) return false;
+        if (mSize != that.mSize) return false;
         if (!mFont.equals(that.mFont)) return false;
         return mLocale.equals(that.mLocale);
-    }
-
-    @Override
-    public int hashCode() {
-        int h = mFont.hashCode();
-        h = 31 * h + mLocale.hashCode();
-        h = 31 * h + mFlags;
-        h = 31 * h + mSize;
-        return h;
     }
 
     @Override

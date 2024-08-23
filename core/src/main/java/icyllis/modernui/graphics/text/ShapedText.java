@@ -20,6 +20,7 @@ package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
+import icyllis.arc3d.core.TextBlob;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
@@ -28,6 +29,7 @@ import it.unimi.dsi.fastutil.floats.FloatArrays;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Unmodifiable;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
@@ -97,6 +99,7 @@ public class ShapedText {
      *
      * @return glyphs
      */
+    @Unmodifiable
     public int[] getGlyphs() {
         return mGlyphs;
     }
@@ -114,6 +117,7 @@ public class ShapedText {
      *
      * @return glyph positions
      */
+    @Unmodifiable
     public float[] getPositions() {
         return mPositions;
     }
@@ -216,6 +220,11 @@ public class ShapedText {
         return mAdvance;
     }
 
+    @ApiStatus.Experimental
+    public TextBlob getTextBlob() {
+        return mTextBlob;
+    }
+
     @ApiStatus.Internal
     public int getMemoryUsage() {
         int m = 48;
@@ -262,6 +271,8 @@ public class ShapedText {
 
     // total advance
     private final float mAdvance;
+
+    private final TextBlob mTextBlob;
 
     /**
      * Generate the shaped text layout. The layout object will not be associated with the
@@ -316,6 +327,7 @@ public class ShapedText {
             mAscent = 0;
             mDescent = 0;
             mAdvance = 0;
+            mTextBlob = null;
             return;
         }
         //TODO currently we don't compute/store per-cluster advances
@@ -402,11 +414,46 @@ public class ShapedText {
 
         assert mGlyphs.length * 2 == mPositions.length;
         assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
+
+        int nGlyphs = mGlyphs.length;
+        if (nGlyphs == 0) {
+            mTextBlob = null;
+        } else if (mFontIndices == null) {
+            // single font case
+            var nativeFont = new icyllis.arc3d.core.Font();
+            paint.getNativeFont(nativeFont);
+            nativeFont.setTypeface(mFonts[0].getNativeTypeface());
+            mTextBlob = TextBlob.makeNoCopy(mGlyphs, mPositions,
+                    nativeFont, null);
+        } else {
+            // theoretically, we don't need to copy the array in this case, but...
+            final TextBlob.Builder builder = new TextBlob.Builder();
+            var nativeFont = new icyllis.arc3d.core.Font();
+            paint.getNativeFont(nativeFont);
+            var lastFont = getFont(0);
+            int lastPos = 0;
+            int currPos = 1;
+            for (; currPos <= nGlyphs; currPos++) {
+                var currFont = currPos == nGlyphs ? null : getFont(currPos);
+                if (lastFont != currFont) {
+                    nativeFont.setTypeface(lastFont.getNativeTypeface());
+                    int runCount = currPos - lastPos;
+                    var runBuffer = builder.allocRunPos(
+                            nativeFont, runCount, null
+                    );
+                    runBuffer.addGlyphs(mGlyphs, lastPos, runCount);
+                    runBuffer.addPositions(mPositions, lastPos << 1, runCount);
+                    lastFont = currFont;
+                    lastPos = currPos;
+                }
+            }
+            mTextBlob = builder.build();
+        }
     }
 
     @FunctionalInterface
     public interface RunConsumer {
-        void accept(LayoutPiece piece, float offsetX);
+        void accept(LayoutPiece piece, float offsetX, FontPaint paint);
     }
 
     // BiDi run, visual order, append layout pieces
@@ -531,7 +578,7 @@ public class ShapedText {
                         advances, advanceOffset, srcAdvances.length);
             }
         } else {
-            consumer.accept(src, curAdvance);
+            consumer.accept(src, curAdvance, paint);
         }
         if (extent != null) {
             extent.extendBy(src.getAscent(), src.getDescent());

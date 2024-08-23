@@ -19,12 +19,12 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.util.ULocale;
+import icyllis.arc3d.core.TextBlob;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.text.LayoutPiece;
-import icyllis.modernui.graphics.text.ShapedText;
+import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
@@ -493,11 +493,13 @@ public final class TextUtils {
         if (start == end) {
             return;
         }
+        final TextBlob.Builder builder = new TextBlob.Builder();
         ShapedText.doLayoutRun(
                 text, contextStart, contextEnd,
                 start, end, isRtl, paint.getInternalPaint(), null,
-                (piece, offsetX) -> drawTextRun(canvas, piece, x + offsetX, y, paint)
+                (piece, offsetX, fontPaint) -> buildTextBlob(builder, piece, offsetX, fontPaint)
         );
+        canvas.drawTextBlob(builder.build(), x, y, paint);
     }
 
     /**
@@ -542,55 +544,53 @@ public final class TextUtils {
         if (start == end) {
             return;
         }
+        final TextBlob.Builder builder = new TextBlob.Builder();
         final int len = contextEnd - contextStart;
         final char[] buf = obtain(len);
         getChars(text, contextStart, contextEnd, buf, 0);
         ShapedText.doLayoutRun(
                 buf, 0, len,
                 start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
-                (piece, offsetX) -> drawTextRun(canvas, piece, x + offsetX, y, paint)
+                (piece, offsetX, fontPaint) -> buildTextBlob(builder, piece, offsetX, fontPaint)
         );
         recycle(buf);
+        canvas.drawTextBlob(builder.build(), x, y, paint);
     }
 
     /**
-     * Draw a layout piece, the base unit to draw a text.
+     * Add a layout piece to text blob builder, the base unit to draw a text.
      *
      * @param piece the layout piece to draw
-     * @param x     the horizontal position at which to draw the text between runs
-     * @param y     the vertical baseline of the line of text
-     * @param paint the paint used to draw the text, only color will be taken
      * @see TextUtils#drawTextRun
      */
-    @ApiStatus.Internal
-    static void drawTextRun(@NonNull Canvas canvas, @NonNull LayoutPiece piece,
-                            float x, float y, @NonNull Paint paint) {
-        //TODO this bounds check is not correct, this is logical bounds not visual pixel bounds
-        if (piece.getAdvance() == 0 || (piece.getGlyphs().length == 0)
-                || canvas.quickReject(x, y + piece.getAscent(),
-                x + piece.getAdvance(), y + piece.getDescent())) {
-            return;
-        }
+    static void buildTextBlob(@NonNull TextBlob.Builder builder, @NonNull LayoutPiece piece,
+                              float offsetX, @NonNull FontPaint paint) {
         final int nGlyphs = piece.getGlyphCount();
         if (nGlyphs == 0) {
             return;
         }
+        var nativeFont = new icyllis.arc3d.core.Font();
+        paint.getNativeFont(nativeFont);
         var lastFont = piece.getFont(0);
         int lastPos = 0;
         int currPos = 1;
-        for (; currPos < nGlyphs; currPos++) {
-            var curFont = piece.getFont(currPos);
-            if (lastFont != curFont) {
-                canvas.drawGlyphs(piece.getGlyphs(), lastPos,
-                        piece.getPositions(), lastPos << 1, currPos - lastPos,
-                        lastFont, x, y, paint);
-                lastFont = curFont;
+        for (; currPos <= nGlyphs; currPos++) {
+            var currFont = currPos == nGlyphs ? null : piece.getFont(currPos);
+            if (lastFont != currFont) {
+                nativeFont.setTypeface(lastFont.getNativeTypeface());
+                int runCount = currPos - lastPos;
+                var runBuffer = builder.allocRunPos(
+                        nativeFont, runCount, null
+                );
+                runBuffer.addGlyphs(piece.getGlyphs(), lastPos, runCount);
+                var positions = piece.getPositions();
+                for (int i = 0, j = lastPos << 1; i < runCount; i += 1, j += 2) {
+                    runBuffer.addPosition(positions[j] + offsetX, positions[j|1]);
+                }
+                lastFont = currFont;
                 lastPos = currPos;
             }
         }
-        canvas.drawGlyphs(piece.getGlyphs(), lastPos,
-                piece.getPositions(), lastPos << 1, currPos - lastPos,
-                lastFont, x, y, paint);
     }
 
     /**

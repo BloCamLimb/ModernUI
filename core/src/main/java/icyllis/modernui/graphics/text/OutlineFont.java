@@ -18,11 +18,11 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.arc3d.core.Strike;
 import icyllis.arc3d.core.Typeface;
 import icyllis.arc3d.core.j2d.Typeface_JDK;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.SparseArray;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -42,11 +42,11 @@ public final class OutlineFont implements Font {
         for (int mask = 0; mask < 4; mask++) {
             var graphics = image.createGraphics();
             graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                    (mask & FontPaint.RENDER_FLAG_ANTI_ALIAS) != 0
+                    (mask & 1) != 0
                             ? RenderingHints.VALUE_TEXT_ANTIALIAS_ON
                             : RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
             graphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
-                    (mask & FontPaint.RENDER_FLAG_LINEAR_METRICS) != 0
+                    (mask & 2) != 0
                             ? RenderingHints.VALUE_FRACTIONALMETRICS_ON
                             : RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
             sGraphics[mask] = graphics;
@@ -74,8 +74,13 @@ public final class OutlineFont implements Font {
                 .anyMatch(s -> s.equalsIgnoreCase(font.getName()));
     }
 
-    public static FontRenderContext getFontRenderContext(int renderFlags) {
-        return sGraphics[renderFlags].getFontRenderContext();
+    private static Graphics2D getGraphics(@NonNull FontPaint paint) {
+        return sGraphics[(paint.isAntiAlias() ? 1 : 0) | (paint.isLinearMetrics() ? 2 : 0)];
+    }
+
+    public static FontRenderContext getFontRenderContext(@NonNull Paint paint) {
+        return sGraphics[(paint.isTextAntiAlias() ? 1 : 0) | (paint.isLinearText() ? 2 : 0)]
+                .getFontRenderContext();
     }
 
     @Override
@@ -94,20 +99,31 @@ public final class OutlineFont implements Font {
     }
 
     @NonNull
-    public java.awt.Font chooseFont(int size) {
+    private java.awt.Font chooseFont(float size) {
         if (size <= 1) {
             return mFont;
         }
         if (size <= 96) {
-            var value = mFonts.get(size);
+            int key = (int) (size * FontPaint.INV_FONT_SIZE_GRANULARITY + 0.5f);
+            var value = mFonts.get(key);
             if (value != null) {
                 return value;
             }
-            value = mFont.deriveFont((float) size);
-            mFonts.put(size, value);
+            value = mFont.deriveFont(key / FontPaint.INV_FONT_SIZE_GRANULARITY);
+            mFonts.put(key, value);
             return value;
         }
-        return mFont.deriveFont((float) size);
+        return mFont.deriveFont(size);
+    }
+
+    @NonNull
+    public java.awt.Font chooseFont(int size) {
+        return chooseFont((float) size);
+    }
+
+    @NonNull
+    public java.awt.Font chooseFont(@NonNull Paint paint) {
+        return chooseFont(FontPaint.getCanonicalFontSize(paint.getTextSize()));
     }
 
     @Override
@@ -116,8 +132,7 @@ public final class OutlineFont implements Font {
             throw new IllegalArgumentException();
         }
         var font = chooseFont(paint.getFontSize());
-        var metrics = sGraphics[paint.getRenderFlags()]
-                .getFontMetrics(font);
+        var metrics = getGraphics(paint).getFontMetrics(font);
         int ascent = metrics.getAscent(); // positive
         int descent = metrics.getDescent(); // positive
         int leading = metrics.getLeading(); // positive
@@ -150,11 +165,9 @@ public final class OutlineFont implements Font {
         if (start != 0 || limit != buf.length) {
             buf = Arrays.copyOfRange(buf, start, limit);
         }
+        var frc = getGraphics(paint).getFontRenderContext();
         var vector = chooseFont(paint.getFontSize())
-                .createGlyphVector(
-                        getFontRenderContext(paint.getRenderFlags()),
-                        buf
-                );
+                .createGlyphVector(frc, buf);
         int nGlyphs = vector.getNumGlyphs();
 
         if (glyphs != null || positions != null) {
@@ -195,7 +208,7 @@ public final class OutlineFont implements Font {
             layoutFlags |= java.awt.Font.LAYOUT_NO_LIMIT_CONTEXT;
         }
         var face = chooseFont(paint.getFontSize());
-        var frc = getFontRenderContext(paint.getRenderFlags());
+        var frc = getGraphics(paint).getFontRenderContext();
         var vector = face.layoutGlyphVector(
                 frc, buf,
                 layoutStart, layoutLimit,
@@ -248,11 +261,6 @@ public final class OutlineFont implements Font {
         }
 
         return (float) vector.getGlyphPosition(nGlyphs).getX();
-    }
-
-    @Override
-    public Strike findOrCreateStrike(FontPaint paint) {
-        return null;
     }
 
     @Override

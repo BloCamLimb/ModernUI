@@ -20,6 +20,7 @@
 package icyllis.arc3d.core;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 
 /**
  * The NoPixelsDevice draws nothing, but tracks device's clip.
@@ -30,10 +31,8 @@ public class NoPixelsDevice extends Device {
     // cache some objects and their references for performance
     private static final int CLIP_POOL_SIZE = 16;
 
-    private ClipState[] mClipStack = new ClipState[CLIP_POOL_SIZE];
+    private ConservativeClip[] mClipStack = new ConservativeClip[CLIP_POOL_SIZE];
     private int mClipIndex = 0;
-
-    private final Rect2i mTmpBounds = new Rect2i();
 
     public NoPixelsDevice(@Nonnull Rect2ic bounds) {
         this(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
@@ -42,60 +41,60 @@ public class NoPixelsDevice extends Device {
     public NoPixelsDevice(int left, int top, int right, int bottom) {
         super(new ImageInfo(right - left, bottom - top));
         setOrigin(null, left, top);
-        ClipState state = new ClipState();
-        state.setRect(mBounds);
-        mClipStack[0] = state;
+        var clip = new ConservativeClip();
+        clip.setRect(bounds());
+        mClipStack[0] = clip;
     }
 
+    //TODO should be reviewed if there's picture support
     public final void resetForNextPicture(int left, int top, int right, int bottom) {
         resize(right - left, bottom - top);
         setOrigin(null, left, top);
         for (int i = mClipIndex; i > 0; i--) {
             pop();
         }
-        ClipState state = mClipStack[0];
-        state.setRect(mBounds);
-        state.mDeferredSaveCount = 0;
+        var clip = mClipStack[0];
+        clip.setRect(bounds());
+        clip.mDeferredSaveCount = 0;
     }
 
     @Nonnull
-    private ClipState push() {
+    private ConservativeClip push() {
         final int i = ++mClipIndex;
-        ClipState[] stack = mClipStack;
+        ConservativeClip[] stack = mClipStack;
         if (i == stack.length) {
-            mClipStack = new ClipState[i + (i >> 1)];
-            System.arraycopy(stack, 0, mClipStack, 0, i);
-            stack = mClipStack;
+            mClipStack = stack = Arrays.copyOf(stack, i + (i >> 1));
         }
-        ClipState state = stack[i];
-        if (state == null) {
-            stack[i] = state = new ClipState();
+        var clip = stack[i];
+        if (clip == null) {
+            stack[i] = clip = new ConservativeClip();
         }
-        return state;
+        return clip;
     }
 
     private void pop() {
-        if (mClipIndex-- >= CLIP_POOL_SIZE) {
-            mClipStack[mClipIndex + 1] = null;
+        final int i = mClipIndex--;
+        if (i >= CLIP_POOL_SIZE) {
+            mClipStack[i] = null;
         }
     }
 
     @Nonnull
-    private ClipState clip() {
+    private ConservativeClip getClip() {
         return mClipStack[mClipIndex];
     }
 
     @Nonnull
-    private ClipState writableClip() {
-        ClipState state = mClipStack[mClipIndex];
-        if (state.mDeferredSaveCount > 0) {
-            state.mDeferredSaveCount--;
-            ClipState next = push();
-            next.set(state);
+    private ConservativeClip getWritableClip() {
+        var current = mClipStack[mClipIndex];
+        if (current.mDeferredSaveCount > 0) {
+            current.mDeferredSaveCount--;
+            var next = push();
+            next.set(current);
             next.mDeferredSaveCount = 0;
             return next;
         } else {
-            return state;
+            return current;
         }
     }
 
@@ -106,9 +105,9 @@ public class NoPixelsDevice extends Device {
 
     @Override
     public void popClipStack() {
-        ClipState state = mClipStack[mClipIndex];
-        if (state.mDeferredSaveCount > 0) {
-            state.mDeferredSaveCount--;
+        var clip = mClipStack[mClipIndex];
+        if (clip.mDeferredSaveCount > 0) {
+            clip.mDeferredSaveCount--;
         } else {
             pop();
         }
@@ -116,14 +115,14 @@ public class NoPixelsDevice extends Device {
 
     @Override
     public void clipRect(Rect2fc rect, int clipOp, boolean doAA) {
-        writableClip().opRect(rect, getLocalToDevice(), clipOp, doAA);
+        getWritableClip().op(rect, getLocalToDevice(), clipOp, doAA, true);
     }
 
-    public void replaceClip(Rect2i globalRect) {
-        final Rect2i deviceRect = mTmpBounds;
+    public void replaceClip(Rect2ic globalRect) {
+        final Rect2i deviceRect = new Rect2i();
         getGlobalToDevice().mapRect(globalRect, deviceRect);
-        final ClipState clip = writableClip();
-        if (!deviceRect.intersect(mBounds)) {
+        var clip = getWritableClip();
+        if (!deviceRect.intersect(bounds())) {
             clip.setEmpty();
         } else {
             clip.setRect(deviceRect);
@@ -132,22 +131,22 @@ public class NoPixelsDevice extends Device {
 
     @Override
     public boolean isClipAA() {
-        return clip().mIsAA;
+        return getClip().mIsAA;
     }
 
     @Override
     public boolean isClipEmpty() {
-        return clip().mClipBounds.isEmpty();
+        return getClipBounds().isEmpty();
     }
 
     @Override
     public boolean isClipRect() {
-        return clip().mIsRect;
+        return getClip().mIsRect && !isClipEmpty();
     }
 
     @Override
     public boolean isClipWideOpen() {
-        return clip().mIsRect && getClipBounds().equals(mBounds);
+        return getClip().mIsRect && getClipBounds().equals(bounds());
     }
 
     @Override
@@ -157,7 +156,7 @@ public class NoPixelsDevice extends Device {
 
     @Override
     protected Rect2ic getClipBounds() {
-        return clip().getBounds();
+        return getClip().getBounds();
     }
 
     @Override
@@ -217,22 +216,17 @@ public class NoPixelsDevice extends Device {
      * The ConservativeClip computes the maximum rectangular bounds of the actual clipping region
      * for quick rejection. This can skip operations that have no rendering results.
      */
-    private static final class ClipState {
+    private static final class ConservativeClip {
 
         private final Rect2i mClipBounds = new Rect2i();
         private int mDeferredSaveCount = 0;
         private boolean mIsAA = false;
         private boolean mIsRect = true;
 
-        ClipState() {
+        ConservativeClip() {
         }
 
-        private void applyOpParams(int op, boolean aa, boolean rect) {
-            mIsAA |= aa;
-            mIsRect &= (op == ClipOp.CLIP_OP_INTERSECT && rect);
-        }
-
-        public void set(ClipState clip) {
+        public void set(ConservativeClip clip) {
             mClipBounds.set(clip.mClipBounds);
             mIsRect = clip.mIsRect;
             mIsAA = clip.mIsAA;
@@ -249,61 +243,55 @@ public class NoPixelsDevice extends Device {
             mIsAA = false;
         }
 
-        public void setRect(int left, int top, int right, int bottom) {
-            mClipBounds.set(left, top, right, bottom);
+        public void setRect(Rect2ic r) {
+            mClipBounds.set(r);
             mIsRect = true;
             mIsAA = false;
         }
 
-        public void setRect(Rect2i r) {
-            setRect(r.mLeft, r.mTop, r.mRight, r.mBottom);
-        }
-
-        public void opRect(final Rect2fc localRect, final Matrix4c localToDevice, int clipOp, boolean doAA) {
-            applyOpParams(clipOp, doAA, localToDevice.isScaleTranslate());
-            switch (clipOp) {
-                case ClipOp.CLIP_OP_INTERSECT:
-                    break;
-                case ClipOp.CLIP_OP_DIFFERENCE:
+        public void op(Rect2fc localBounds, Matrix4c localToDevice,
+                       int op, boolean isAA, boolean isRect) {
+            mIsAA |= isAA;
+            boolean isDeviceRect = isRect && localToDevice.isAxisAligned();
+            if (op == ClipOp.CLIP_OP_INTERSECT) {
+                if (!localBounds.isEmpty()) {
+                    final Rect2i deviceRect = new Rect2i();
+                    if (isAA) {
+                        localToDevice.mapRectOut(localBounds, deviceRect);
+                    } else {
+                        localToDevice.mapRect(localBounds, deviceRect);
+                    }
+                    if (!mClipBounds.intersect(deviceRect)) {
+                        mClipBounds.setEmpty();
+                    }
+                } else {
+                    mClipBounds.setEmpty();
+                }
+                // A rectangular clip remains rectangular if the intersection is a rect
+                mIsRect &= isDeviceRect;
+            } else if (isDeviceRect) {
+                // Conservatively, we can leave the clip bounds unchanged and respect the difference op.
+                // But, if we're subtracting out an axis-aligned rectangle that fully spans our existing
+                // clip on an axis, we can shrink the clip bounds.
+                assert op == ClipOp.CLIP_OP_DIFFERENCE;
+                final Rect2i deviceRect = new Rect2i();
+                if (isAA) {
+                    localToDevice.mapRectIn(localBounds, deviceRect);
+                } else {
+                    localToDevice.mapRect(localBounds, deviceRect);
+                }
+                final Rect2i difference = new Rect2i();
+                if (Rect2i.subtract(mClipBounds, deviceRect, difference)) {
+                    mClipBounds.set(difference);
+                } else {
                     // Difference can only shrink the current clip.
                     // Leaving clip unchanged conservatively fulfills the contract.
-                    return;
-                default:
-                    throw new IllegalArgumentException();
-            }
-            final Rect2i deviceRect = new Rect2i();
-            if (doAA) {
-                localToDevice.mapRectOut(localRect, deviceRect);
+                    mIsRect = false;
+                }
             } else {
-                localToDevice.mapRect(localRect, deviceRect);
+                // A non-rect shape was applied
+                mIsRect = false;
             }
-            opRect(deviceRect, clipOp);
-        }
-
-        public void opRect(final Rect2i deviceRect, int clipOp) {
-            applyOpParams(clipOp, false, true);
-
-            if (clipOp == ClipOp.CLIP_OP_INTERSECT) {
-                if (!mClipBounds.intersect(deviceRect)) {
-                    mClipBounds.setEmpty();
-                }
-                return;
-            }
-
-            if (clipOp == ClipOp.CLIP_OP_DIFFERENCE) {
-                if (mClipBounds.isEmpty()) {
-                    return;
-                }
-                if (deviceRect.isEmpty() || !Rect2i.intersects(mClipBounds, deviceRect)) {
-                    return;
-                }
-                if (deviceRect.contains(mClipBounds)) {
-                    mClipBounds.setEmpty();
-                    return;
-                }
-            }
-
-            throw new IllegalArgumentException();
         }
     }
 }

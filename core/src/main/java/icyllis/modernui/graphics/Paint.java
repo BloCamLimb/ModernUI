@@ -278,7 +278,7 @@ public class Paint {
      */
     public static final int BOLD_ITALIC = FontPaint.BOLD_ITALIC;
 
-    public static final int FONT_STYLE_MASK = NORMAL | BOLD | ITALIC;
+    static final int TEXT_STYLE_MASK = NORMAL | BOLD | ITALIC;
 
     static final int TEXT_ANTI_ALIAS_DEFAULT = 0x0;
     static final int TEXT_ANTI_ALIAS_OFF = 0x4;
@@ -308,7 +308,7 @@ public class Paint {
 
     // style + rendering hints (+ text decoration)
     protected int mFlags;
-    protected float mFontSize;
+    private float mFontSize;
 
     /**
      * Creates a new Paint with defaults.
@@ -897,12 +897,8 @@ public class Paint {
      * @return the desired style of the font
      */
     @TextStyle
-    public final int getTextStyle() {
-        return getFontStyle();
-    }
-
-    public int getFontStyle() {
-        return mFlags & FONT_STYLE_MASK;
+    public int getTextStyle() {
+        return mFlags & TEXT_STYLE_MASK;
     }
 
     /**
@@ -913,59 +909,38 @@ public class Paint {
      *
      * @param textStyle the desired style of the font
      */
-    public final void setTextStyle(@TextStyle int textStyle) {
-        setFontStyle(textStyle);
-    }
-
-    public void setFontStyle(int fontStyle) {
-        if ((fontStyle & ~FONT_STYLE_MASK) == 0) {
-            mFlags |= fontStyle;
-        } else {
-            mFlags &= ~FONT_STYLE_MASK;
-        }
+    public void setTextStyle(@TextStyle int textStyle) {
+        mFlags = (mFlags & ~TEXT_STYLE_MASK) | (textStyle & TEXT_STYLE_MASK);
     }
 
     /**
-     * Return the paint's text size in pixel units. For example, a text size
-     * of 16 means the letter 'M' is 16 pixels high in device space.
-     * For performance reasons, this value is always rounded to an integer.
+     * Return the paint's text size in pixel units.
      * <p>
      * The default value is 16.
      *
      * @return the paint's text size in pixel units.
+     * @see #setTextSize(float)
      */
     public float getTextSize() {
         return mFontSize;
     }
 
-    public int getFontSize() {
-        return (int) (mFontSize + 0.5);
-    }
-
     /**
      * Set the paint's text size in pixel units. For example, a text size
      * of 16 (1em) means the letter 'M' is 16 pixels high in device space.
-     * For performance reasons, this value is always rounded to an integer,
-     * and clamps to 8 and 96. You can have even larger glyphs through matrix
-     * transformation, and our engine will attempt to use SDF text rendering.
-     * <p>
-     * Note: the point size is measured at 72 dpi, while Windows has 96 dpi.
-     * This indicates that the font size 12 in MS Word is equal to the font
-     * size 16 here (12 * 4/3 == 16).
+     * Very large or small sizes will impact rendering performance, and the
+     * rendering system might not render text at these sizes. For now, text
+     * sizes will clamp to 1 and 2184. You can have even larger glyphs through
+     * matrix transformation, and our engine will attempt to use SDF text rendering.
+     * This method has no effect if size is not greater than or equal to zero.
      * <p>
      * The default value is 16.
      *
      * @param textSize set the paint's text size in pixel units.
      */
     public void setTextSize(float textSize) {
-        if (textSize > 0) {
+        if (textSize >= 0) {
             mFontSize = textSize;
-        }
-    }
-
-    public void setFontSize(int fontSize) {
-        if (fontSize > 0) {
-            mFontSize = fontSize;
         }
     }
 
@@ -977,9 +952,9 @@ public class Paint {
         };
     }
 
-    public void setTextAntiAlias(boolean textAntiAlias) {
+    public void setTextAntiAlias(boolean textAA) {
         mFlags = (mFlags & ~TEXT_ANTI_ALIAS_MASK) |
-                (textAntiAlias ? TEXT_ANTI_ALIAS_ON : TEXT_ANTI_ALIAS_OFF);
+                (textAA ? TEXT_ANTI_ALIAS_ON : TEXT_ANTI_ALIAS_OFF);
     }
 
     /**
@@ -1004,9 +979,9 @@ public class Paint {
      */
     public void setLinearText(boolean linearText) {
         if (linearText) {
-            mFlags &= ~LINEAR_TEXT_FLAG;
-        } else {
             mFlags |= LINEAR_TEXT_FLAG;
+        } else {
+            mFlags &= ~LINEAR_TEXT_FLAG;
         }
     }
 
@@ -1091,11 +1066,25 @@ public class Paint {
         return mPaint;
     }
 
+    /**
+     * Populates font attributes to native font object, excluding the typeface.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public void getNativeFont(@NonNull icyllis.arc3d.core.Font nativeFont) {
+        nativeFont.setSize(FontPaint.getCanonicalFontSize(getTextSize()));
+        nativeFont.setEdging(isTextAntiAlias()
+                ? icyllis.arc3d.core.Font.kAntiAlias_Edging
+                : icyllis.arc3d.core.Font.kAlias_Edging);
+        nativeFont.setLinearMetrics(isLinearText());
+    }
+
     @Override
     public int hashCode() {
         int result = mPaint.hashCode();
         result = 31 * result + mFlags;
-        result = 31 * result + Float.hashCode(mFontSize);
+        result = 31 * result + Float.floatToIntBits(mFontSize);
         return result;
     }
 

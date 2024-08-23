@@ -1051,7 +1051,8 @@ public class TestFragment extends Fragment {
                 Paint paint = Paint.obtain();
                 paint.setARGB(128, 140, 200, 240);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-                TextUtils.drawTextRun(canvas, "18:52 modernui", 0, 14, 0, 14, getWidth() / 2f - 20f, offsetY + 24,
+                int x = getWidth() / 2 - 20;
+                TextUtils.drawTextRun(canvas, "18:52 modernui", 0, 14, 0, 14, x, offsetY + 24,
                         false, mTextPaint);
                 paint.recycle();
             }

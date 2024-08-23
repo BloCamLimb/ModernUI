@@ -209,8 +209,8 @@ public class ArcCanvas extends Canvas {
     public void drawLines(@NonNull float[] pts, int offset, int count, boolean connected,
                           @NonNull Paint paint) {
         Objects.checkFromIndexSize(offset, count, pts.length);
-        mCanvas.drawPoints(connected ?
-                        icyllis.arc3d.core.Canvas.POINT_MODE_POLYGON
+        mCanvas.drawPoints(connected
+                        ? icyllis.arc3d.core.Canvas.POINT_MODE_POLYGON
                         : icyllis.arc3d.core.Canvas.POINT_MODE_LINES,
                 pts, offset, count >> 1, paint.getNativePaint());
     }
@@ -320,19 +320,20 @@ public class ArcCanvas extends Canvas {
                            @NonNull float[] positions, int positionOffset,
                            int glyphCount, @NonNull Font font,
                            float x, float y, @NonNull Paint paint) {
-        icyllis.arc3d.core.Font nativeFont = new icyllis.arc3d.core.Font();
+        var nativeFont = new icyllis.arc3d.core.Font();
         nativeFont.setTypeface(font.getNativeTypeface());
-        nativeFont.setSize(paint.getFontSize());
-        nativeFont.setEdging(paint.isTextAntiAlias()
-                ? icyllis.arc3d.core.Font.kAntiAlias_Edging
-                : icyllis.arc3d.core.Font.kAlias_Edging);
-        nativeFont.setLinearMetrics(paint.isLinearText());
         if (nativeFont.getTypeface() == null) {
             return;
         }
+        paint.getNativeFont(nativeFont);
         mCanvas.drawGlyphs(glyphs, glyphOffset,
                 positions, positionOffset,
                 glyphCount, x, y, nativeFont, paint.getNativePaint());
+    }
+
+    @Override
+    public void drawTextBlob(TextBlob blob, float x, float y, @NonNull Paint paint) {
+        mCanvas.drawTextBlob(blob, x, y, paint.getNativePaint());
     }
 
     @Override
