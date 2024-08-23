@@ -3088,6 +3088,42 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         dest.mBottom = (int) Math.ceil(MathUtil.max(y1, y2, y3, y4));
     }
 
+    @Override
+    public void mapRectIn(@Nonnull Rect2fc r, @Nonnull Rect2i dest) {
+        mapRectIn(r.left(), r.top(), r.right(), r.bottom(), dest);
+    }
+
+    public void mapRectIn(float left, float top, float right, float bottom, @Nonnull Rect2i dest) {
+        float x1 = m11 * left + m21 * top + m41;
+        float y1 = m12 * left + m22 * top + m42;
+        float x2 = m11 * right + m21 * top + m41;
+        float y2 = m12 * right + m22 * top + m42;
+        float x3 = m11 * left + m21 * bottom + m41;
+        float y3 = m12 * left + m22 * bottom + m42;
+        float x4 = m11 * right + m21 * bottom + m41;
+        float y4 = m12 * right + m22 * bottom + m42;
+        if (hasPerspective()) {
+            // project
+            float w;
+            w = 1.0f / (m14 * left + m24 * top + m44);
+            x1 *= w;
+            y1 *= w;
+            w = 1.0f / (m14 * right + m24 * top + m44);
+            x2 *= w;
+            y2 *= w;
+            w = 1.0f / (m14 * left + m24 * bottom + m44);
+            x3 *= w;
+            y3 *= w;
+            w = 1.0f / (m14 * right + m24 * bottom + m44);
+            x4 *= w;
+            y4 *= w;
+        }
+        dest.mLeft = (int) Math.ceil(MathUtil.min(x1, x2, x3, x4));
+        dest.mTop = (int) Math.ceil(MathUtil.min(y1, y2, y3, y4));
+        dest.mRight = (int) Math.floor(MathUtil.max(x1, x2, x3, x4));
+        dest.mBottom = (int) Math.floor(MathUtil.max(y1, y2, y3, y4));
+    }
+
     /**
      * Map a point in the X-Y plane.
      *
@@ -3177,8 +3213,8 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      */
     public boolean isAxisAligned() {
         return isAffine() && (
-                (MathUtil.isApproxZero(m11) && MathUtil.isApproxZero(m22) && !MathUtil.isApproxZero(m12) && !MathUtil.isApproxZero(m21)) ||
-                        (MathUtil.isApproxZero(m12) && MathUtil.isApproxZero(m21) && !MathUtil.isApproxZero(m11) && !MathUtil.isApproxZero(m22))
+                (m11 == 0 && m22 == 0 && m12 != 0 && m21 != 0) ||
+                        (m12 == 0 && m21 == 0 && m11 != 0 && m22 != 0)
         );
     }
 
