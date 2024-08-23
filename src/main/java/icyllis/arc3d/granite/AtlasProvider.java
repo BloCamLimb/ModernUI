@@ -56,14 +56,21 @@ public class AtlasProvider implements AutoCloseable {
     }
 
     public void freeGpuResources() {
-        // Only compact the atlases, not fully free the atlases. freeGpuResources() can be called while
-        // there is pending work on the Recorder that refers to pages. In the event this is called right
-        // after a snap(), all pages would be eligible for cleanup during compaction anyway.
-        compact(/*immediateCompact=*/true);
+        // Remove as much memory from atlases while allowing any draws to continue, as
+        // freeGpuResources() can be called while there is pending work on the Recorder
+        // that refers to pages. In the event this is called right after a snap(), all
+        // pages would eligible for cleanup anyways.
+        purge();
     }
 
-    public void compact(boolean immediateCompact) {
-        mGlyphAtlasManager.compact(immediateCompact);
+    // Handle any post-flush work (garbage collection)
+    public void compact() {
+        mGlyphAtlasManager.compact();
+    }
+
+    // Reduce memory as much as possible while allowing current work to continue
+    public void purge() {
+        mGlyphAtlasManager.purge();
     }
 
     public void invalidateAtlases() {

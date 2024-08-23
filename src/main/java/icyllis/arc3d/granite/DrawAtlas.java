@@ -980,7 +980,16 @@ public class DrawAtlas implements AutoCloseable {
         }
     }
 
-    public void compact(long startTokenForNextFlush, boolean immediateCompact) {
+    // Number of atlas-related flushes beyond which we consider a plot to no longer be in use.
+    //
+    // This value is somewhat arbitrary -- the idea is to keep it low enough that
+    // a page with unused plots will get removed reasonably quickly, but allow it
+    // to hang around for a bit in case it's needed.
+    private static final int kPlotRecentlyUsedCount = 300;
+    private static final int kAtlasRecentlyUsedCount = 1200;
+
+    // Reduce Page use as much as possible while retaining some temporal coherence.
+    public void compact(long startTokenForNextFlush) {
         if (mNumActivePages == 0) {
             mPrevFlushToken = startTokenForNextFlush;
             return;
@@ -1010,7 +1019,7 @@ public class DrawAtlas implements AutoCloseable {
         // hasn't been used in a long time.
         // This is to handle the case where a lot of text or path rendering has occurred but then just
         // a blinking cursor is drawn.
-        if (immediateCompact || atlasUsedThisFlush || mFlushesSinceLastUsed > 1200) {
+        if (atlasUsedThisFlush || mFlushesSinceLastUsed > kAtlasRecentlyUsedCount) {
             ObjectArrayList<Plot> availablePlots = null;
             int lastPageIndex = mNumActivePages - 1;
 
@@ -1032,7 +1041,7 @@ public class DrawAtlas implements AutoCloseable {
 
                         // Count plots we can potentially upload to in all pages except the last one
                         // (the potential compactee).
-                        if (plot.numFlushesSinceLastUsed() > 300) {
+                        if (plot.numFlushesSinceLastUsed() > kPlotRecentlyUsedCount) {
                             availablePlots.push(plot);
                         }
                     }
@@ -1052,7 +1061,7 @@ public class DrawAtlas implements AutoCloseable {
                 }
 
                 // If this plot was used recently
-                if (plot.numFlushesSinceLastUsed() <= 300) {
+                if (plot.numFlushesSinceLastUsed() <= kPlotRecentlyUsedCount) {
                     ++usedPlots;
                 } else if (plot.getLastUseToken() != AtlasToken.INVALID_TOKEN) {
                     // otherwise if aged out just evict it.
@@ -1067,7 +1076,7 @@ public class DrawAtlas implements AutoCloseable {
             if (availablePlots != null && !availablePlots.isEmpty() && usedPlots <= mNumPlots / 4) {
                 for (Plot plot = lastPage.mHead; plot != null; plot = plot.mNext) {
                     // If this plot was used recently
-                    if (plot.numFlushesSinceLastUsed() <= 300) {
+                    if (plot.numFlushesSinceLastUsed() <= kPlotRecentlyUsedCount) {
                         // See if there's room in a lower index page and if so evict.
                         // We need to be somewhat harsh here so that a handful of plots that are
                         // consistently in use don't end up locking the page in memory.
@@ -1090,6 +1099,40 @@ public class DrawAtlas implements AutoCloseable {
             }
         }
 
+        mPrevFlushToken = startTokenForNextFlush;
+    }
+
+    // Reduce memory as much as possible while still allowing the current flush to proceed.
+    public void purge(long startTokenForNextFlush) {
+        // Go through each page from last to first. We evict any plots that are not in
+        // use this flush. If a page has no plots used this flush, we can deactivate it and
+        // remove its texture. However, once we hit a page that is in use, we can't deactivate
+        // any further due to the first-to-last nature of the DrawAtlas page management.
+        boolean atlasUsedThisFlush = false;
+        for (int pageIndex = mNumActivePages - 1; pageIndex >= 0; --pageIndex) {
+            Page page = mPages[pageIndex];
+            for (Plot plot = page.mHead; plot != null; plot = plot.mNext) {
+                if (AtlasToken.inInterval(plot.getLastUseToken(),
+                        mPrevFlushToken, startTokenForNextFlush)) {
+                    plot.resetFlushesSinceLastUsed();
+                    atlasUsedThisFlush = true;
+                } else {
+                    evictAndReset(plot);
+                    // Don't need to worry about incrementing flushesSinceLastUsed
+                    // because we're evicting.
+                }
+            }
+            // Can only remove Pages in last-to-first order at the moment
+            if (!atlasUsedThisFlush) {
+                deactivateLastPage();
+            }
+        }
+
+        // Set the params used by compact()
+        // We can set flushesSinceLastUsed to 0 whether the atlas has been used or not.
+        // If it has been used, we set to 0 as normal. If it hasn't been used, we've
+        // deactivated all the Pages so we might as well set it to 0.
+        mFlushesSinceLastUsed = 0;
         mPrevFlushToken = startTokenForNextFlush;
     }
 
