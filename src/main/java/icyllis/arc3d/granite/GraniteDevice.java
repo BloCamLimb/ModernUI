@@ -282,7 +282,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     public void drawPaint(Paint paint) {
         //TODO fill the clip, not fullscreen clear
         float[] color = new float[4];
-        if (PaintParams.getSolidColor(paint, mInfo, color)) {
+        if (PaintParams.getSolidColor(paint, imageInfo(), color)) {
             mSDC.clear(color);
         }
     }
