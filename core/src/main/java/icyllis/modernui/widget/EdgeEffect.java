@@ -365,7 +365,7 @@ public class EdgeEffect {
         update();
         canvas.save();
 
-        final float centerX = (mWidth + mHeight) * 0.5f;
+        final float centerX = mWidth * 0.5f;
         final float centerY = mHeight - mRadius;
 
         canvas.scale(1.f, Math.min(mGlowScaleY, 1.f) * mBaseGlowScale, centerX, 0);
