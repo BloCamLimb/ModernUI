@@ -175,8 +175,8 @@ public class Canvas implements AutoCloseable {
      *
      * @return integral width of base layer
      */
-    public final int getBaseLayerWidth() {
-        return mRootDevice.width();
+    public int getBaseLayerWidth() {
+        return mRootDevice.getWidth();
     }
 
     /**
@@ -186,8 +186,8 @@ public class Canvas implements AutoCloseable {
      *
      * @return integral height of base layer
      */
-    public final int getBaseLayerHeight() {
-        return mRootDevice.height();
+    public int getBaseLayerHeight() {
+        return mRootDevice.getHeight();
     }
 
     /**
@@ -210,7 +210,7 @@ public class Canvas implements AutoCloseable {
      */
     @RawPtr
     @Nullable
-    public final RecordingContext getRecordingContext() {
+    public RecordingContext getRecordingContext() {
         return topDevice().getRecordingContext();
     }
 
@@ -1729,13 +1729,20 @@ public class Canvas implements AutoCloseable {
 
     @Nonnull
     protected ImageInfo onGetImageInfo() {
-        return mRootDevice.imageInfo();
+        return mRootDevice.getImageInfo();
     }
 
     @Nullable
     @SharedPtr
     protected Surface onNewSurface(ImageInfo info) {
         return mRootDevice.makeSurface(info);
+    }
+
+    // The bottom-most device in the stack, only changed by init(). Image properties and the final
+    // canvas pixels are determined by this device.
+    @RawPtr
+    protected Device getRootDevice() {
+        return mRootDevice;
     }
 
     protected void willSave() {
@@ -1990,10 +1997,10 @@ public class Canvas implements AutoCloseable {
         }
     }
 
-    protected void onDrawRoundRect(RoundRect roundRect, Paint paint) {
+    protected void onDrawRoundRect(RoundRect rr, Paint paint) {
         var bounds = mTmpRect2;
-        roundRect.getBounds(bounds);
-        if (roundRect.isRect()) {
+        rr.getBounds(bounds);
+        if (rr.isRect()) {
             bounds.sort();
             onDrawRect(bounds, paint);
             return;
@@ -2004,7 +2011,7 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            topDevice().drawRoundRect(roundRect, paint);
+            topDevice().drawRoundRect(rr, paint);
         }
     }
 
@@ -2065,7 +2072,7 @@ public class Canvas implements AutoCloseable {
         }
     }
 
-    protected void onDrawImageRect(Image image, Rect2fc src, Rect2fc dst,
+    protected void onDrawImageRect(@RawPtr Image image, Rect2fc src, Rect2fc dst,
                                    SamplingOptions sampling, Paint paint,
                                    int constraint) {
         if (internalQuickReject(dst, paint)) {

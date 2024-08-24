@@ -136,7 +136,7 @@ public class RasterDevice extends Device {
     }
 
     @Override
-    public void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+    public void drawImageRect(@RawPtr Image image, Rect2fc src, Rect2fc dst,
                               SamplingOptions sampling, Paint paint, int constraint) {
 
     }

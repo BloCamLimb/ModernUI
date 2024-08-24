@@ -20,7 +20,6 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.granite.SurfaceDrawContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,11 +28,6 @@ import javax.annotation.Nullable;
  * Base class for drawing devices.
  */
 public abstract class Device extends RefCnt {
-
-    protected static final int
-            CLIP_TYPE_EMPTY = 0,
-            CLIP_TYPE_RECT = 1,
-            CLIP_TYPE_COMPLEX = 2;
 
     private final ImageInfo mInfo;
     private final Rect2i mBounds = new Rect2i();
@@ -66,22 +60,22 @@ public abstract class Device extends RefCnt {
      * Return image info for this device.
      */
     @Nonnull
-    public final ImageInfo imageInfo() {
+    public final ImageInfo getImageInfo() {
         return mInfo;
     }
 
-    public final int width() {
+    public final int getWidth() {
         return mInfo.width();
     }
 
-    public final int height() {
+    public final int getHeight() {
         return mInfo.height();
     }
 
     /**
      * @return read-only bounds
      */
-    public final Rect2ic bounds() {
+    public final Rect2ic getBounds() {
         return mBounds;
     }
 
@@ -89,7 +83,7 @@ public abstract class Device extends RefCnt {
      * Return the bounds of the device in the coordinate space of this device.
      */
     public final void getBounds(@Nonnull Rect2i bounds) {
-        bounds.set(bounds());
+        bounds.set(mBounds);
     }
 
     /**
@@ -98,7 +92,7 @@ public abstract class Device extends RefCnt {
      * such as those associated with saveLayer may have a non-zero origin.
      */
     public final void getGlobalBounds(@Nonnull Rect2i bounds) {
-        mDeviceToGlobal.mapRectOut(bounds(), bounds);
+        mDeviceToGlobal.mapRectOut(mBounds, bounds);
     }
 
     /**
@@ -176,11 +170,6 @@ public abstract class Device extends RefCnt {
 
     @Nullable
     public RecordingContext getRecordingContext() {
-        return null;
-    }
-
-    @Nullable
-    public SurfaceDrawContext getSurfaceDrawContext() {
         return null;
     }
 
@@ -279,7 +268,7 @@ public abstract class Device extends RefCnt {
     public abstract void drawChord(float cx, float cy, float radius, float startAngle,
                                    float sweepAngle, Paint paint);
 
-    public abstract void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+    public abstract void drawImageRect(@RawPtr Image image, Rect2fc src, Rect2fc dst,
                                        SamplingOptions sampling, Paint paint,
                                        int constraint);
 
