@@ -20,7 +20,6 @@ package icyllis.modernui.test;
 
 import com.ibm.icu.text.NumberFormat;
 import icyllis.arc3d.core.Matrix4;
-import icyllis.arc3d.engine.SamplerState;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.text.Emoji;
 import icyllis.modernui.graphics.text.FontCollection;
