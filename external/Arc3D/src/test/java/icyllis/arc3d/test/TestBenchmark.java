@@ -43,7 +43,7 @@ public class TestBenchmark {
                 .run();
     }
 
-    private final Matrix4 mMatrix = Matrix4.identity();
+    private final Matrix4 mMatrix = new Matrix4();
     {
         mMatrix.preRotate(MathUtil.PI_O_3, MathUtil.PI_O_6, MathUtil.PI_O_4);
     }

@@ -223,7 +223,7 @@ public class TestJ2D {
         matrix.setTranslate(pivotX + translationX, pivotY + translationY, 0);
         matrix.preScale(scaleX, scaleY);
         matrix.preTranslate(-pivotX, -pivotY);
-        Matrix4 matrix2 = Matrix4.identity();
+        Matrix4 matrix2 = new Matrix4();
         matrix2.m34 = 1 / 1920f;
         matrix2.preRotate(Math.toRadians(-rotationX),
                 Math.toRadians(-rotationY),
@@ -236,11 +236,11 @@ public class TestJ2D {
 
     public static Matrix4 getNewMatrix(float pivotX, float pivotY, float translationX, float translationY,
                                        float scaleX, float scaleY, float rotationX, float rotationY, float rotationZ) {
-        Matrix4 matrix = Matrix4.identity();
+        Matrix4 matrix = new Matrix4();
         matrix.preTranslate(pivotX, pivotY);
         matrix.preScale(scaleX, scaleY);
         matrix.preTranslate(-pivotX, -pivotY);
-        Matrix4 matrix2 = Matrix4.identity();
+        Matrix4 matrix2 = new Matrix4();
         matrix2.m34 = 1 / 1920f;
         matrix2.preRotate(Math.toRadians(-rotationX),
                 Math.toRadians(-rotationY),
@@ -253,7 +253,7 @@ public class TestJ2D {
 
     public static Matrix4 getNewMatrix2(float pivotX, float pivotY, float translationX, float translationY,
                                         float scaleX, float scaleY, float rotationX, float rotationY, float rotationZ) {
-        Matrix4 matrix = Matrix4.identity();
+        Matrix4 matrix = new Matrix4();
         matrix.m34 = 1 / 1920f;
         matrix.preRotate(Math.toRadians(-rotationX),
                 Math.toRadians(-rotationY),

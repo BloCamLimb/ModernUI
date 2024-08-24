@@ -78,6 +78,12 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
         return mUseFastSolidColor;
     }
 
+    public boolean mayRequireLocalCoords() {
+        return !mUseFastSolidColor &&
+                (mPaintParamsKey.size() != 1 ||
+                        mPaintParamsKey.get(0) != FragmentStage.kSolidColorShader_BuiltinStageID);
+    }
+
     private FragmentNode createNode(ShaderCodeSource codeSource,
                                     StringBuilder label,
                                     int[] currentStageIndex) {

@@ -161,13 +161,6 @@ public class DrawPass implements AutoCloseable {
 
                         textureDataGatherer.reset();
 
-                        // collect geometry data
-                        uniformDataGatherer.reset();
-                        // first add the 2D orthographic projection
-                        uniformDataGatherer.write4f(projX, projY, projZ, projW);
-                        step.writeUniformsAndTextures(context, draw, uniformDataGatherer, textureDataGatherer);
-                        var geometryUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
-
                         // collect fragment data and pipeline key
                         uniformDataGatherer.reset();
                         if (step.performsShading() && draw.mPaintParams != null) {
@@ -187,13 +180,21 @@ public class DrawPass implements AutoCloseable {
                         }
                         var fragmentUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
 
-                        // geometry texture samplers and then fragment texture samplers
-                        // we build shader code and set binding points in this order as well
-                        var textures = textureDataGatherer.finish();
-
                         int pipelineIndex = pipelineToIndex.computeIfAbsent(
                                 lookupDesc.set(step, paintParamsKeyBuilder, finalBlendMode, useFastSolidColor),
                                 pipelineAccumulator);
+
+                        // collect geometry data
+                        uniformDataGatherer.reset();
+                        // first add the 2D orthographic projection
+                        uniformDataGatherer.write4f(projX, projY, projZ, projW);
+                        step.writeUniformsAndTextures(context, draw, uniformDataGatherer, textureDataGatherer,
+                                lookupDesc.mayRequireLocalCoords());
+                        var geometryUniforms = uniformDataCache.insert(uniformDataGatherer.finish());
+
+                        // geometry texture samplers and then fragment texture samplers
+                        // we build shader code and set binding points in this order as well
+                        var textures = textureDataGatherer.finish();
 
                         var geometryUniformIndex = geometryUniformTracker.trackUniforms(
                                 pipelineIndex,
@@ -230,7 +231,7 @@ public class DrawPass implements AutoCloseable {
 
             Rect2ic lastScissor = new Rect2i(0, 0, deviceInfo.width(), deviceInfo.height());
             int lastPipelineIndex = INVALID_INDEX;
-            float[] cachedSolidColor = new float[4];
+            float[] tmpSolidColor = new float[4];
 
             commandList.setScissor(lastScissor, surfaceHeight, surfaceOrigin);
 
@@ -295,14 +296,16 @@ public class DrawPass implements AutoCloseable {
                 }
 
                 float[] solidColor = null;
-                if (step.performsShading() && draw.mPaintParams != null) {
-                    if (step.handlesSolidColor() &&
-                            draw.mPaintParams.getSolidColor(deviceInfo, cachedSolidColor)) {
-                        solidColor = cachedSolidColor;
-                    }
+                var pipelineDesc = indexToPipeline.get(pipelineIndex);
+                if (pipelineDesc.usesFastSolidColor()) {
+                    assert draw.mPaintParams != null;
+                    boolean res = draw.mPaintParams.getSolidColor(deviceInfo, tmpSolidColor);
+                    assert res;
+                    solidColor = tmpSolidColor;
                 }
 
-                step.writeMesh(drawWriter, draw, solidColor);
+                step.writeMesh(drawWriter, draw, solidColor,
+                        pipelineDesc.mayRequireLocalCoords());
 
                 if (bufferManager.hasMappingFailed()) {
                     return null;

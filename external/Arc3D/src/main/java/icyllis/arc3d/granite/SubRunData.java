@@ -29,17 +29,13 @@ public class SubRunData {
     private final int mStartGlyphIndex;
     private final int mGlyphCount;
 
+    // subRunToLocal is affine, no copy
     public SubRunData(SubRunContainer.AtlasSubRun subRun,
-                      Matrix4c localToDevice,
-                      float originX, float originY,
+                      Matrix subRunToLocal, int filter,
                       int startGlyphIndex, int glyphCount) {
         mSubRun = subRun;
-        var subRunToLocal = new Matrix();
-        mFilter = subRun.getSubRunToLocalAndFilter(
-                localToDevice,
-                originX, originY,
-                subRunToLocal);
         mSubRunToLocal = subRunToLocal;
+        mFilter = filter;
         mStartGlyphIndex = startGlyphIndex;
         mGlyphCount = glyphCount;
     }
@@ -48,10 +44,14 @@ public class SubRunData {
         return mSubRun;
     }
 
+    // affine matrix
     public Matrixc getSubRunToLocal() {
         return mSubRunToLocal;
     }
 
+    /**
+     * @see icyllis.arc3d.engine.SamplerDesc
+     */
     public int getFilter() {
         return mFilter;
     }

@@ -48,6 +48,8 @@ import java.nio.FloatBuffer;
 @SuppressWarnings("unused")
 public non-sealed class Matrix4 implements Matrix4c, Cloneable {
 
+    private static final Matrix4 IDENTITY = new Matrix4();
+
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java (before Vector API)
     // [m11 m12 m13 m14]
@@ -72,11 +74,10 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     public float m44;
 
     /**
-     * Create a zero matrix.
-     *
-     * @see #identity()
+     * Create a new identity matrix.
      */
     public Matrix4() {
+        m11 = m22 = m33 = m44 = 1.0f;
     }
 
     /**
@@ -106,20 +107,18 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @return a copy of the matrix
      */
     @Nonnull
-    public static Matrix4 copy(@Nullable Matrix4 m) {
-        return m == null ? identity() : m.clone();
+    public static Matrix4 copy(@Nullable Matrix4c m) {
+        return m == null ? new Matrix4() : m.clone();
     }
 
     /**
-     * Create a new identity matrix.
+     * Returns a read-only identity matrix.
      *
      * @return an identity matrix
      */
     @Nonnull
-    public static Matrix4 identity() {
-        final Matrix4 m = new Matrix4();
-        m.m11 = m.m22 = m.m33 = m.m44 = 1.0f;
-        return m;
+    public static Matrix4c identity() {
+        return IDENTITY;
     }
 
     /**
