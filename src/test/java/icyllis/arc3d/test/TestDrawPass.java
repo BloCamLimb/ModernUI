@@ -130,7 +130,7 @@ public class TestDrawPass {
             transform.preTranslate(cx, cy);
             transform.preRotateZ(i);
             transform.preTranslate(-cx, -cy);
-            draw.mTransform = transform;
+            draw.mTransform = transform.toMatrix();
             int stroke = (int) (Math.random() * 50);
             draw.mHalfWidth = stroke < 25 ? -1 : stroke - 20;
             float[] col = {(float) Math.random(), (float) Math.random(), (float) Math.random(), 1.0f};

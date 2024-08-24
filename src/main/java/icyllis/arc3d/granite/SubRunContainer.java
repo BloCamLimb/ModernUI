@@ -155,7 +155,7 @@ public class SubRunContainer {
          * local-to-device matrix and origin, and return it.
          */
         @SuppressWarnings("AssertWithSideEffects")
-        public int getSubRunToLocalAndFilter(Matrix4c localToDevice,
+        public int getSubRunToLocalAndFilter(Matrixc localToDevice,
                                              float originX, float originY,
                                              Matrix outSubRunToLocal) {
             // the creation matrix has no perspective

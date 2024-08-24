@@ -189,7 +189,7 @@ public class RasterTextStep extends GeometryStep {
         );
         assert texture != null;
 
-        uniformDataGatherer.writeMatrix4fAs2D(draw.mTransform); // SubRunToDevice
+        uniformDataGatherer.writeMatrix3f(draw.mTransform); // SubRunToDevice
         uniformDataGatherer.writeMatrix3f(subRunData.getSubRunToLocal());
         uniformDataGatherer.write2f(
                 1.f / texture.getWidth(),
