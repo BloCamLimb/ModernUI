@@ -541,6 +541,28 @@ public sealed interface Matrixc permits Matrix {
     float differentialAreaScale(float px, float py);
 
     /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
+    float localAARadius(Rect2fc bounds);
+
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
+    float localAARadius(float left, float top, float right, float bottom);
+
+    /**
      * Returns true if all elements of the matrix are finite. Returns false if any
      * element is infinity, or NaN.
      *
@@ -556,4 +578,7 @@ public sealed interface Matrixc permits Matrix {
 
     @Override
     String toString();
+
+    @Nonnull
+    Matrix clone();
 }

@@ -730,7 +730,7 @@ public class Quaternion {
     public Matrix4 toMatrix4() {
         final float sq = lengthSq();
         if (sq < 1.0e-6f) {
-            return Matrix4.identity();
+            return new Matrix4();
         }
         final float is;
         if (MathUtil.isApproxEqual(sq, 1.0f)) {

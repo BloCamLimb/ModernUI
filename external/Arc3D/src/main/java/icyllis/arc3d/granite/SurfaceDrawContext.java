@@ -40,7 +40,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
 
     private TaskList mDrawTaskList;
 
-    private Matrix4 mLastTransform; // for deduplication
+    private Matrix mLastTransform; // for deduplication
     private final ObjectArrayList<Draw> mPendingDraws =
             new ObjectArrayList<>();
     private int mNumSteps;
@@ -297,8 +297,8 @@ public final class SurfaceDrawContext implements AutoCloseable {
         return task;
     }
 
-    private Matrix4c getStableTransform(Matrix4c transform) {
-        Matrix4 last = mLastTransform;
+    private Matrixc getStableTransform(Matrixc transform) {
+        Matrix last = mLastTransform;
         if (!transform.equals(last)) {
             var copy = transform.clone();
             mLastTransform = copy;

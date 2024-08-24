@@ -38,12 +38,12 @@ public abstract class Device extends RefCnt {
     private final ImageInfo mInfo;
     private final Rect2i mBounds = new Rect2i();
 
-    final Matrix4 mLocalToDevice = Matrix4.identity();
+    final Matrix4 mLocalToDevice = new Matrix4();
     final Matrix mLocalToDevice33 = new Matrix();
 
     // mDeviceToGlobal and mGlobalToDevice are inverses of each other
-    final Matrix4 mDeviceToGlobal = Matrix4.identity();
-    final Matrix4 mGlobalToDevice = Matrix4.identity();
+    final Matrix4 mDeviceToGlobal = new Matrix4();
+    final Matrix4 mGlobalToDevice = new Matrix4();
 
     public Device(ImageInfo info) {
         mInfo = info;

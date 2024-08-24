@@ -145,19 +145,51 @@ public class SubRunContainer {
             writer.endAppender();
         }
 
+        /**
+         * @see icyllis.arc3d.granite.geom.RasterTextStep
+         */
+        public void fillInstanceData(MeshDrawWriter writer,
+                                     int offset, int count,
+                                     float offsetX, float offsetY,
+                                     float depth) {
+            writer.beginInstances(null, null, 4);
+            long instanceData = writer.append(count);
+
+            var glyphs = mGlyphs.getGlyphs();
+            var positions = mPositions;
+            for (int i = offset, j = offset << 1, e = offset + count; i < e; i += 1, j += 2) {
+                var glyph = glyphs[i];
+                // xy pos
+                MemoryUtil.memPutFloat(instanceData, positions[j] + offsetX);
+                MemoryUtil.memPutFloat(instanceData + 4, positions[j | 1] + offsetY);
+                // uv pos
+                MemoryUtil.memPutShort(instanceData + 8, glyph.u1);
+                MemoryUtil.memPutShort(instanceData + 10, glyph.v1);
+                // size
+                MemoryUtil.memPutShort(instanceData + 12, glyph.width());
+                MemoryUtil.memPutShort(instanceData + 14, glyph.height());
+                // painter's depth
+                MemoryUtil.memPutFloat(instanceData + 16, depth);
+                instanceData += 20;
+            }
+
+            writer.endAppender();
+        }
+
         public Rect2fc getBounds() {
             return mCreationBounds;
         }
 
         /**
-         * Compute sub-run-to-local matrix with the given origin and store
-         * in <var>outSubRunToLocal</var>. Compute filter based on
-         * local-to-device matrix and origin, and return it.
+         * Compute sub-run-to-local matrix and sub-run-to-device with the
+         * given origin. Compute filter based on local-to-device matrix and
+         * origin, and return it.
          */
         @SuppressWarnings("AssertWithSideEffects")
-        public int getSubRunToLocalAndFilter(Matrix4c localToDevice,
-                                             float originX, float originY,
-                                             Matrix outSubRunToLocal) {
+        public int getMatrixAndFilter(Matrixc localToDevice,
+                                      float originX, float originY,
+                                      Matrix outSubRunToLocal,
+                                      Matrix outSubRunToDevice) {
             // the creation matrix has no perspective
             if (mCreationMatrix.invert(outSubRunToLocal)) {
                 outSubRunToLocal.postTranslate(originX, originY);
@@ -165,27 +197,30 @@ public class SubRunContainer {
             } else {
                 outSubRunToLocal.setIdentity();
             }
-            if (mCanDrawDirect) {
-                boolean compatible = !localToDevice.hasPerspective() &&
-                        localToDevice.m11() == mCreationMatrix.m11() &&
-                        localToDevice.m12() == mCreationMatrix.m12() &&
-                        localToDevice.m21() == mCreationMatrix.m21() &&
-                        localToDevice.m22() == mCreationMatrix.m22();
-                if (compatible) {
-                    // compatible means only the difference is translation
-                    float mappedOriginX = localToDevice.m11() * originX +
-                            localToDevice.m21() * originY + localToDevice.m41();
-                    float mappedOriginY = localToDevice.m12() * originX +
-                            localToDevice.m22() * originY + localToDevice.m42();
-                    // creation matrix has no perspective, so translate vector is its origin
-                    float offsetX = mappedOriginX - mCreationMatrix.getTranslateX();
-                    float offsetY = mappedOriginY - mCreationMatrix.getTranslateY();
-                    if (offsetX == (float) Math.floor(offsetX) &&
-                            offsetY == (float) Math.floor(offsetY)) {
-                        // integer translate
-                        return SamplerDesc.FILTER_NEAREST;
-                    }
+            boolean compatible = !localToDevice.hasPerspective() &&
+                    localToDevice.m11() == mCreationMatrix.m11() &&
+                    localToDevice.m12() == mCreationMatrix.m12() &&
+                    localToDevice.m21() == mCreationMatrix.m21() &&
+                    localToDevice.m22() == mCreationMatrix.m22();
+            if (compatible) {
+                // compatible means only the difference is translation
+                float mappedOriginX = localToDevice.m11() * originX +
+                        localToDevice.m21() * originY + localToDevice.m41();
+                float mappedOriginY = localToDevice.m12() * originX +
+                        localToDevice.m22() * originY + localToDevice.m42();
+                // creation matrix has no perspective, so translate vector is its origin
+                float offsetX = mappedOriginX - mCreationMatrix.getTranslateX();
+                float offsetY = mappedOriginY - mCreationMatrix.getTranslateY();
+                outSubRunToDevice.setTranslate(offsetX, offsetY);
+                if (mCanDrawDirect &&
+                        offsetX == (float) Math.floor(offsetX) &&
+                        offsetY == (float) Math.floor(offsetY)) {
+                    // integer translate in device space
+                    return SamplerDesc.FILTER_NEAREST;
                 }
+            } else {
+                outSubRunToDevice.set(localToDevice);
+                outSubRunToDevice.preConcat(outSubRunToLocal);
             }
             return SamplerDesc.FILTER_LINEAR;
         }

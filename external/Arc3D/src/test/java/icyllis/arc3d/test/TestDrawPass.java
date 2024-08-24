@@ -124,20 +124,20 @@ public class TestDrawPass {
                     rad, rad
             );
             draw.mGeometry = rrect;
-            var transform = Matrix4.identity();
+            var transform = new Matrix4();
             float cx = rrect.centerX();
             float cy = rrect.centerY();
             transform.preTranslate(cx, cy);
             transform.preRotateZ(i);
             transform.preTranslate(-cx, -cy);
-            draw.mTransform = transform;
+            draw.mTransform = transform.toMatrix();
             int stroke = (int) (Math.random() * 50);
             draw.mHalfWidth = stroke < 25 ? -1 : stroke - 20;
             float[] col = {(float) Math.random(), (float) Math.random(), (float) Math.random(), 1.0f};
             for (int j = 0; j < 4; j++) {
                 col[j] *= 0.5f; // premultiplied color
             }
-            step.writeMesh(drawWriter, draw, col);
+            step.writeMesh(drawWriter, draw, col, true);
         }
 
         drawWriter.flush();

@@ -24,7 +24,7 @@ import icyllis.arc3d.core.*;
 public class TestMatrixAAOutset {
 
     public static void main(String[] args) {
-        Matrix4 matrix = Matrix4.identity();
+        Matrix4 matrix = new Matrix4();
         matrix.m34 = 1 / 576f;
         matrix.preRotateX(Math.PI / 6);
         Rect2f rect = new Rect2f(-10, -50, 10, 50);

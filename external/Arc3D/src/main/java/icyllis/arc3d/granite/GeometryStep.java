@@ -117,7 +117,7 @@ public abstract class GeometryStep {
      * any uniform values.
      * <p>
      * See {@link #emitFragmentColorCode(Formatter, String)} and
-     * {@link #writeMesh(MeshDrawWriter, Draw, float[])}.
+     * {@link #writeMesh(MeshDrawWriter, Draw, float[], boolean)}.
      * <p>
      * Not compatible with {@link #FLAG_EMIT_PRIMITIVE_COLOR}.
      */
@@ -430,10 +430,12 @@ public abstract class GeometryStep {
     @Nonnull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
 
-    public void emitVaryings(VaryingHandler varyingHandler) {
+    public void emitVaryings(VaryingHandler varyingHandler,
+                             boolean usesFastSolidColor) {
     }
 
-    public void emitUniforms(UniformHandler uniformHandler) {
+    public void emitUniforms(UniformHandler uniformHandler,
+                             boolean mayRequireLocalCoords) {
     }
 
     public void emitSamplers(UniformHandler uniformHandler) {
@@ -447,7 +449,8 @@ public abstract class GeometryStep {
      */
     public void emitVertexGeomCode(Formatter vs,
                                    @Nonnull String worldPosVar,
-                                   @Nullable String localPosVar) {
+                                   @Nullable String localPosVar,
+                                   boolean usesFastSolidColor) {
     }
 
     /**
@@ -469,12 +472,15 @@ public abstract class GeometryStep {
     public void emitFragmentCoverageCode(Formatter fs, String outputCoverage) {
     }
 
-    public void writeMesh(MeshDrawWriter writer, Draw draw, @Nullable float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw draw,
+                          @Nullable float[] solidColor,
+                          boolean mayRequireLocalCoords) {
     }
 
     public void writeUniformsAndTextures(RecordingContext context, Draw draw,
                                          UniformDataGatherer uniformDataGatherer,
-                                         TextureDataGatherer textureDataGatherer) {
+                                         TextureDataGatherer textureDataGatherer,
+                                         boolean mayRequireLocalCoords) {
     }
 
     /**

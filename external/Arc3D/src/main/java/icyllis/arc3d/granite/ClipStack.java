@@ -97,7 +97,7 @@ public final class ClipStack {
 
     private final ClipElement mTmpElement = new ClipElement();
 
-    public void clipRect(@Nullable Matrix4c viewMatrix,
+    public void clipRect(@Nullable Matrixc viewMatrix,
                          @Nonnull Rect2fc localRect,
                          int clipOp) {
         clip(mTmpElement.init(
@@ -317,7 +317,7 @@ public final class ClipStack {
             assert elementsForMask.isEmpty();
 
             mTmpDraw.init(
-                    shapeInDeviceSpace ? Matrix4.identity() : draw.mTransform,
+                    shapeInDeviceSpace ? Matrix.identity() : draw.mTransform,
                     shapeBounds,
                     drawBounds
             );
@@ -419,7 +419,7 @@ public final class ClipStack {
 
         Rect2fc shape();
 
-        Matrix4c viewMatrix();
+        Matrixc viewMatrix();
 
         Rect2fc outerBounds();
 
@@ -568,17 +568,17 @@ public final class ClipStack {
 
         // owned memory
         final Rect2f mShape;
-        final Matrix4 mViewMatrix;
+        final Matrix mViewMatrix;
         int mClipOp;
 
         Element() {
             mShape = new Rect2f();
-            mViewMatrix = new Matrix4();
+            mViewMatrix = new Matrix();
         }
 
-        Element(Rect2fc shape, Matrix4c viewMatrix, int clipOp) {
+        Element(Rect2fc shape, Matrixc viewMatrix, int clipOp) {
             mShape = new Rect2f(shape);
-            mViewMatrix = new Matrix4(viewMatrix);
+            mViewMatrix = new Matrix(viewMatrix);
             mClipOp = clipOp;
         }
 
@@ -590,7 +590,7 @@ public final class ClipStack {
 
         // local to device
         // do not modify
-        public Matrix4c viewMatrix() {
+        public Matrixc viewMatrix() {
             return mViewMatrix;
         }
 
@@ -614,7 +614,7 @@ public final class ClipStack {
         boolean mInverseFill;
 
         // cached inverse of fLocalToDevice for contains() optimization
-        final Matrix4 mInverseViewMatrix = new Matrix4();
+        final Matrix mInverseViewMatrix = new Matrix();
 
         // Device space bounds. These bounds are not snapped to pixels with the assumption that if
         // a relation (intersects, contains, etc.) is true for the bounds it will be true for the
@@ -668,7 +668,7 @@ public final class ClipStack {
         public ClipElement init(Rect2ic deviceBounds,
                                 Rect2fc shape,
                                 boolean inverseFill,
-                                Matrix4c viewMatrix,
+                                Matrixc viewMatrix,
                                 int clipOp) {
             mShape.set(shape);
             mViewMatrix.set(viewMatrix);
@@ -1108,8 +1108,8 @@ public final class ClipStack {
         }
 
         @Override
-        public Matrix4c viewMatrix() {
-            return Matrix4.identity();
+        public Matrixc viewMatrix() {
+            return Matrix.identity();
         }
 
         public Rect2fc outerBounds() {
@@ -1438,11 +1438,11 @@ public final class ClipStack {
 
     static final class ClipDraw implements ClipGeometry {
 
-        final Matrix4 mViewMatrix = new Matrix4();
+        final Matrix mViewMatrix = new Matrix();
         final Rect2f mShape = new Rect2f();
         final Rect2f mDrawBounds = new Rect2f();
 
-        public ClipDraw init(Matrix4c viewMatrix,
+        public ClipDraw init(Matrixc viewMatrix,
                              Rect2fc shape,
                              Rect2fc drawBounds) {
             mViewMatrix.set(viewMatrix);
@@ -1462,7 +1462,7 @@ public final class ClipStack {
         }
 
         @Override
-        public Matrix4 viewMatrix() {
+        public Matrixc viewMatrix() {
             return mViewMatrix;
         }
 

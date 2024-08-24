@@ -108,7 +108,9 @@ public class VerticesStep extends GeometryStep {
     }
 
     @Override
-    public void emitVaryings(VaryingHandler varyingHandler) {
+    public void emitVaryings(VaryingHandler varyingHandler,
+                             boolean usesFastSolidColor) {
+        assert !usesFastSolidColor;
         // vertex color
         if (mHasColor) {
             varyingHandler.addVarying("f_Color", SLDataType.kFloat4);
@@ -116,7 +118,8 @@ public class VerticesStep extends GeometryStep {
     }
 
     @Override
-    public void emitUniforms(UniformHandler uniformHandler) {
+    public void emitUniforms(UniformHandler uniformHandler,
+                             boolean mayRequireLocalCoords) {
         uniformHandler.addUniform(Engine.ShaderFlags.kVertex,
                 SLDataType.kFloat3x3, "u_LocalToDevice", -1);
         uniformHandler.addUniform(Engine.ShaderFlags.kVertex,
@@ -126,7 +129,9 @@ public class VerticesStep extends GeometryStep {
     @Override
     public void emitVertexGeomCode(Formatter vs,
                                    @Nonnull String worldPosVar,
-                                   @Nullable String localPosVar) {
+                                   @Nullable String localPosVar,
+                                   boolean usesFastSolidColor) {
+        assert !usesFastSolidColor;
         if (mHasColor) {
             vs.format("""
                     %1$s = vec4(%2$s.rgb * %2$s.a, %2$s.a);
@@ -148,7 +153,9 @@ public class VerticesStep extends GeometryStep {
     }
 
     @Override
-    public void writeMesh(MeshDrawWriter writer, Draw draw, @Nullable float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw draw,
+                          @Nullable float[] solidColor,
+                          boolean mayRequireLocalCoords) {
         assert solidColor == null;
         Vertices vertices = (Vertices) draw.mGeometry;
         int vertexCount = vertices.getVertexCount();
@@ -209,8 +216,9 @@ public class VerticesStep extends GeometryStep {
     @Override
     public void writeUniformsAndTextures(RecordingContext context, Draw draw,
                                          UniformDataGatherer uniformDataGatherer,
-                                         TextureDataGatherer textureDataGatherer) {
-        uniformDataGatherer.writeMatrix4fAs2D(draw.mTransform);
+                                         TextureDataGatherer textureDataGatherer,
+                                         boolean mayRequireLocalCoords) {
+        uniformDataGatherer.writeMatrix3f(draw.mTransform); // LocalToDevice
         uniformDataGatherer.write1f(draw.getDepthAsFloat());
     }
 }
