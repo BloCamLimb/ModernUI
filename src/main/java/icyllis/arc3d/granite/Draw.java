@@ -38,7 +38,7 @@ public final class Draw implements AutoCloseable {
     /**
      * This matrix transforms geometry's local space to device space.
      */
-    public Matrix4c mTransform;
+    public Matrixc mTransform;
     public Object mGeometry;
     /**
      * Clip params (immutable), set by {@link ClipStack}.

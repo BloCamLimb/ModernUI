@@ -238,7 +238,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
     @Override
     public void clipRect(Rect2fc rect, int clipOp, boolean doAA) {
-        mClipStack.clipRect(getLocalToDevice(), rect, clipOp);
+        mClipStack.clipRect(getLocalToDevice33(), rect, clipOp);
     }
 
     @Override
@@ -321,19 +321,19 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                          @Paint.Cap int cap, float width, Paint paint) {
         var shape = new SimpleShape();
         shape.setLine(x0, y0, x1, y1, cap, width);
-        drawGeometry(getLocalToDevice(), shape, SimpleShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, paint,
                 mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawRect(Rect2fc r, Paint paint) {
-        drawGeometry(getLocalToDevice(), new SimpleShape(r), SimpleShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), new SimpleShape(r), SimpleShape::getBounds, paint,
                 mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
     @Override
     public void drawRoundRect(RoundRect rr, Paint paint) {
-        drawGeometry(getLocalToDevice(), new SimpleShape(rr), SimpleShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), new SimpleShape(rr), SimpleShape::getBounds, paint,
                 mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
@@ -341,7 +341,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     public void drawCircle(float cx, float cy, float radius, Paint paint) {
         var shape = new SimpleShape();
         shape.setEllipseXY(cx, cy, radius, radius);
-        drawGeometry(getLocalToDevice(), shape, SimpleShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, paint,
                 mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
 
@@ -355,7 +355,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
             case Paint.CAP_SQUARE -> ArcShape.kArcSquare_Type;
             default -> throw new AssertionError();
         };
-        drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, paint,
                 mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
@@ -364,7 +364,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                         float sweepAngle, Paint paint) {
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
         shape.mType = ArcShape.kPie_Type;
-        drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, paint,
                 mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
@@ -373,7 +373,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                           float sweepAngle, Paint paint) {
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
         shape.mType = ArcShape.kChord_Type;
-        drawGeometry(getLocalToDevice(), shape, ArcShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, paint,
                 mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
@@ -428,7 +428,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
     @Override
     public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
-        drawGeometry(getLocalToDevice(), vertices, Vertices::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), vertices, Vertices::getBounds, paint,
                 mRC.getRendererProvider().getVertices(
                         vertices.getVertexMode(), vertices.hasColors(), vertices.hasTexCoords()),
                 blender); // move
@@ -456,12 +456,12 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
             }
             if (glyphsPrepared > 0) {
                 SubRunData subRunData = new SubRunData(subRun,
-                        getLocalToDevice(), originX, originY,
+                        getLocalToDevice33(), originX, originY,
                         subRunCursor, glyphsPrepared);
                 // subRunToDevice is our "localToDevice",
                 // as sub run's coordinates are returned in sub run's space
-                Matrix4 subRunToDevice = new Matrix4(getLocalToDevice());
-                subRunToDevice.preConcat2D(subRunData.getSubRunToLocal());
+                Matrix subRunToDevice = new Matrix(getLocalToDevice33());
+                subRunToDevice.preConcat(subRunData.getSubRunToLocal());
 
                 subRunPaint.set(paint);
                 if (subRun.getMaskFormat() == Engine.MASK_FORMAT_ARGB) {
@@ -531,7 +531,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                 paintParams.getPrimitiveBlender());
     }
 
-    public <GEO> void drawGeometry(Matrix4c localToDevice,
+    public <GEO> void drawGeometry(Matrixc localToDevice,
                                    GEO geometry,
                                    BiConsumer<GEO, Rect2f> boundsFn,
                                    Paint paint,

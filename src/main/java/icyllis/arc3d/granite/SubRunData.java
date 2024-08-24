@@ -30,7 +30,7 @@ public class SubRunData {
     private final int mGlyphCount;
 
     public SubRunData(SubRunContainer.AtlasSubRun subRun,
-                      Matrix4c localToDevice,
+                      Matrixc localToDevice,
                       float originX, float originY,
                       int startGlyphIndex, int glyphCount) {
         mSubRun = subRun;

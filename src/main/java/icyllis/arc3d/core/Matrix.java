@@ -2218,21 +2218,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         return (float) Math.sqrt(0.5 * (s1 + s2));
     }
 
-    /**
-     * Returns the minimum scaling factor of this matrix by decomposing the scaling and
-     * shearing elements. When this matrix has perspective, the scaling factor is specific
-     * to the given point <var>p</var>.<br>
-     * Returns -1 if scale factor overflows.
-     *
-     * @param px the x-coord of point
-     * @param py the y-coord of point
-     * @return minimum scale factor
-     */
-    public float getMinScale(float px, float py) {
-        if (!hasPerspective()) {
-            return getMinScale();
-        }
-
+    private float computeMinScale(double px, double py) {
         double x = m11 * px + m21 * py + m41;
         double y = m12 * px + m22 * py + m42;
         double w = m14 * px + m24 * py + m44;
@@ -2252,6 +2238,23 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         double dgdv = (w * dydv - y * dwdv) * invW2; // non-persp -> dydv -> m22
 
         return computeMinScale(dfdu, dfdv, dgdu, dgdv);
+    }
+
+    /**
+     * Returns the minimum scaling factor of this matrix by decomposing the scaling and
+     * shearing elements. When this matrix has perspective, the scaling factor is specific
+     * to the given point <var>p</var>.<br>
+     * Returns -1 if scale factor overflows.
+     *
+     * @param px the x-coord of point
+     * @param py the y-coord of point
+     * @return minimum scale factor
+     */
+    public float getMinScale(float px, float py) {
+        if (!hasPerspective()) {
+            return getMinScale();
+        }
+        return computeMinScale(px, py);
     }
 
     /**
@@ -2345,6 +2348,53 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         double denom = 1.0 / w;
         denom = denom * denom * denom;  // 1/w^3
         return (float) (Math.abs(detJ * denom));
+    }
+
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
+    public float localAARadius(Rect2fc bounds) {
+        return localAARadius(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
+    }
+
+    /**
+     * Return the minimum distance needed to move in local (pre-transform) space to ensure that the
+     * transformed coordinates are at least 1px away from the original mapped point. This minimum
+     * distance is specific to the given local 'bounds' since the scale factors change with
+     * perspective.
+     * <p>
+     * If the bounds will be clipped by the w=0 plane or otherwise is ill-conditioned, this will
+     * return positive infinity.
+     */
+    public float localAARadius(float left, float top, float right, float bottom) {
+        float min;
+        if ((getType() & kPerspective_Mask) == 0) {
+            min = getMinScale();
+        } else {
+            // Calculate the minimum scale factor over the 4 corners of the bounding box
+            float tl = computeMinScale(left, top);
+            float tr = computeMinScale(right, top);
+            float br = computeMinScale(right, bottom);
+            float bl = computeMinScale(left, bottom);
+            min = MathUtil.min(tl, tr, br, bl);
+        }
+
+        // Moving 1 from 'p' before transforming will move at least 'min' and at most 'max' from
+        // the transformed point. Thus moving between [1/max, 1/min] pre-transformation means post
+        // transformation moves between [1,max/min] so using 1/min as the local AA radius ensures that
+        // the post-transformed point is at least 1px away from the original.
+        float aaRadius = 1.0f / min;
+        if (Float.isFinite(aaRadius)) { // check Inf and NaN
+            return aaRadius;
+        } else {
+            return Float.POSITIVE_INFINITY;
+        }
     }
 
     /**

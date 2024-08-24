@@ -320,7 +320,7 @@ public class AnalyticArcStep extends GeometryStep {
         int join = (mType == ArcShape.kArc_Type || mType == ArcShape.kArcSquare_Type)
                 && draw.mJoinLimit >= MathUtil.SQRT2 ? 16 : 0;
         MemoryUtil.memPutInt(instanceData + 44, (draw.getDepth() << 16) | (join | dir));
-        draw.mTransform.storeAs2D(instanceData + 48);
+        draw.mTransform.store(instanceData + 48);
         writer.endAppender();
     }
 }

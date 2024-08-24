@@ -210,7 +210,7 @@ public class VerticesStep extends GeometryStep {
     public void writeUniformsAndTextures(RecordingContext context, Draw draw,
                                          UniformDataGatherer uniformDataGatherer,
                                          TextureDataGatherer textureDataGatherer) {
-        uniformDataGatherer.writeMatrix4fAs2D(draw.mTransform);
+        uniformDataGatherer.writeMatrix3f(draw.mTransform);
         uniformDataGatherer.write1f(draw.getDepthAsFloat());
     }
 }
