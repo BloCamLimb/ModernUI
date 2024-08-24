@@ -101,7 +101,7 @@ public class PipelineBuilder {
 
     public PipelineDesc.GraphicsPipelineInfo build() {
 
-        mDesc.geomStep().emitVaryings(mVaryings);
+        mDesc.geomStep().emitVaryings(mVaryings, mDesc.usesFastSolidColor());
         if (needsLocalCoords()) {
             mVaryings.addVarying(LOCAL_COORDS_VARYING_NAME, SLDataType.kFloat2);
         }
@@ -113,7 +113,7 @@ public class PipelineBuilder {
                 SLDataType.kFloat4,
                 UniformHandler.PROJECTION_NAME,
                 -1);
-        mDesc.geomStep().emitUniforms(mGeometryUniforms);
+        mDesc.geomStep().emitUniforms(mGeometryUniforms, mDesc.mayRequireLocalCoords());
         mDesc.geomStep().emitSamplers(mFragmentUniforms);
 
         for (var root : mRootNodes) {
@@ -215,7 +215,8 @@ public class PipelineBuilder {
         // shader will define the world pos local variable
         mDesc.geomStep().emitVertexGeomCode(vs,
                 WORLD_POS_VAR_NAME,
-                needsLocalCoords() ? LOCAL_COORDS_VARYING_NAME : null);
+                needsLocalCoords() ? LOCAL_COORDS_VARYING_NAME : null,
+                mDesc.usesFastSolidColor());
 
         // map into clip space
         // remember to preserve the painter's depth in depth buffer, it must be first multiplied by w,

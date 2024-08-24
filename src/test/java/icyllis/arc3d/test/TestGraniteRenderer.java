@@ -716,6 +716,12 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mTestShader3));
                 canvas.translate(wid, 0);
                 canvas.drawRect(rect, paint);
+            } else if (TEST_SCENE == 3) {
+                paint.setStyle(Paint.STROKE);
+                paint.setStrokeJoin(Paint.JOIN_MITER);
+                paint.setStrokeWidth(2);
+                canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 400, 400, paint);
+                canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 800, 620, paint);
             }
             paint.close();
             canvas.restore();

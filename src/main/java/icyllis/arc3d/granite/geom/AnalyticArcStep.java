@@ -113,7 +113,7 @@ public class AnalyticArcStep extends GeometryStep {
     }
 
     @Override
-    public void emitVaryings(VaryingHandler varyingHandler) {
+    public void emitVaryings(VaryingHandler varyingHandler, boolean usesFastSolidColor) {
         // the local coords, center point is (0,0)
         varyingHandler.addVarying("f_ArcEdge", SLDataType.kFloat2);
         // cos(sweepAngle), sin(sweepAngle)
@@ -128,15 +128,18 @@ public class AnalyticArcStep extends GeometryStep {
             varyingHandler.addVarying("f_Radii", SLDataType.kFloat3,
                     VaryingHandler.kCanBeFlat_Interpolation);
         }
-        // solid color
-        varyingHandler.addVarying("f_Color", SLDataType.kFloat4,
-                VaryingHandler.kCanBeFlat_Interpolation);
+        if (usesFastSolidColor) {
+            // solid color
+            varyingHandler.addVarying("f_Color", SLDataType.kFloat4,
+                    VaryingHandler.kCanBeFlat_Interpolation);
+        }
     }
 
     @Override
     public void emitVertexGeomCode(Formatter vs,
                                    @Nonnull String worldPosVar,
-                                   @Nullable String localPosVar) {
+                                   @Nullable String localPosVar,
+                                   boolean usesFastSolidColor) {
         // {(-1,-1), (-1,1), (1,-1), (1,1)}
         // corner selector, CCW
         vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * 2.0 - 1.0;\n");
@@ -181,8 +184,10 @@ public class AnalyticArcStep extends GeometryStep {
                     """, RADII.name(), FLAGS_AND_DEPTH.name(), "f_ArcEdge", "f_Span", "f_Radii");
         }
 
-        // setup pass through color
-        vs.format("%s = %s;\n", "f_Color", SOLID_COLOR.name());
+        if (usesFastSolidColor) {
+            // setup pass through color
+            vs.format("%s = %s;\n", "f_Color", SOLID_COLOR.name());
+        }
 
         // setup position
         vs.format("""
@@ -277,7 +282,9 @@ public class AnalyticArcStep extends GeometryStep {
     }
 
     @Override
-    public void writeMesh(MeshDrawWriter writer, Draw draw, @Nullable float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw draw,
+                          @Nullable float[] solidColor,
+                          boolean mayRequireLocalCoords) {
         writer.beginInstances(null, null, 4);
         long instanceData = writer.append(1);
         if (solidColor != null) {

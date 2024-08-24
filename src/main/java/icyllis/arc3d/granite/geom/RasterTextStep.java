@@ -91,18 +91,21 @@ public class RasterTextStep extends GeometryStep {
     }
 
     @Override
-    public void emitVaryings(VaryingHandler varyingHandler) {
+    public void emitVaryings(VaryingHandler varyingHandler, boolean usesFastSolidColor) {
+        assert !usesFastSolidColor;
         varyingHandler.addVarying("f_TexCoords", SLDataType.kFloat2);
     }
 
     @Override
-    public void emitUniforms(UniformHandler uniformHandler) {
+    public void emitUniforms(UniformHandler uniformHandler, boolean mayRequireLocalCoords) {
         // may have perspective
         uniformHandler.addUniform(Engine.ShaderFlags.kVertex,
                 SLDataType.kFloat3x3, "u_SubRunToDevice", -1);
-        // no perspective
-        uniformHandler.addUniform(Engine.ShaderFlags.kVertex,
-                SLDataType.kFloat3x3, "u_SubRunToLocal", -1);
+        if (mayRequireLocalCoords) {
+            // no perspective
+            uniformHandler.addUniform(Engine.ShaderFlags.kVertex,
+                    SLDataType.kFloat3x3, "u_SubRunToLocal", -1);
+        }
         uniformHandler.addUniform(Engine.ShaderFlags.kVertex,
                 SLDataType.kFloat2, "u_InvAtlasSize", -1);
     }
@@ -116,7 +119,9 @@ public class RasterTextStep extends GeometryStep {
     @Override
     public void emitVertexGeomCode(Formatter vs,
                                    @Nonnull String worldPosVar,
-                                   @Nullable String localPosVar) {
+                                   @Nullable String localPosVar,
+                                   boolean usesFastSolidColor) {
+        assert !usesFastSolidColor;
         // {(0,0), (0,1), (1,0), (1,1)}
         // corner selector, CCW
         vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * vec2(%s);\n",
@@ -159,7 +164,7 @@ public class RasterTextStep extends GeometryStep {
     public void emitFragmentCoverageCode(Formatter fs, String outputCoverage) {
         // A8 and LCD only
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
-            // A8 is always backed by R8 texture
+            // A8 is always backed by R8 texture, colors are premultiplied
             fs.format("%s = texture(%s, %s).rrrr;\n", outputCoverage, "u_GlyphAtlas", "f_TexCoords");
         } else {
             fs.format("%s = texture(%s, %s);\n", outputCoverage, "u_GlyphAtlas", "f_TexCoords");
@@ -167,21 +172,38 @@ public class RasterTextStep extends GeometryStep {
     }
 
     @Override
-    public void writeMesh(MeshDrawWriter writer, Draw draw, @Nullable float[] solidColor) {
+    public void writeMesh(MeshDrawWriter writer, Draw draw,
+                          @Nullable float[] solidColor,
+                          boolean mayRequireLocalCoords) {
         assert solidColor == null;
         var subRunData = (SubRunData) draw.mGeometry;
-        subRunData.getSubRun().fillInstanceData(
-                writer,
-                subRunData.getStartGlyphIndex(),
-                subRunData.getGlyphCount(),
-                draw.getDepthAsFloat()
-        );
+        // SubRunToDevice
+        if (!mayRequireLocalCoords && draw.mTransform.isTranslate()) {
+            // if local coordinates are not required and SubRunToDevice is translation only,
+            // we can extract translation to XY and reduce uniform binding changes
+            subRunData.getSubRun().fillInstanceData(
+                    writer,
+                    subRunData.getStartGlyphIndex(),
+                    subRunData.getGlyphCount(),
+                    draw.mTransform.getTranslateX(),
+                    draw.mTransform.getTranslateY(),
+                    draw.getDepthAsFloat()
+            );
+        } else {
+            subRunData.getSubRun().fillInstanceData(
+                    writer,
+                    subRunData.getStartGlyphIndex(),
+                    subRunData.getGlyphCount(),
+                    draw.getDepthAsFloat()
+            );
+        }
     }
 
     @Override
     public void writeUniformsAndTextures(RecordingContext context, Draw draw,
                                          UniformDataGatherer uniformDataGatherer,
-                                         TextureDataGatherer textureDataGatherer) {
+                                         TextureDataGatherer textureDataGatherer,
+                                         boolean mayRequireLocalCoords) {
         var subRunData = (SubRunData) draw.mGeometry;
         @RawPtr
         var texture = context.getAtlasProvider().getGlyphAtlasManager().getCurrentTexture(
@@ -189,8 +211,17 @@ public class RasterTextStep extends GeometryStep {
         );
         assert texture != null;
 
-        uniformDataGatherer.writeMatrix3f(draw.mTransform); // SubRunToDevice
-        uniformDataGatherer.writeMatrix3f(subRunData.getSubRunToLocal());
+        // SubRunToDevice
+        if (!mayRequireLocalCoords && draw.mTransform.isTranslate()) {
+            // if local coordinates are not required and SubRunToDevice is translation only,
+            // we can extract translation to XY and reduce uniform binding changes
+            uniformDataGatherer.writeMatrix3f(Matrix.identity());
+        } else {
+            uniformDataGatherer.writeMatrix3f(draw.mTransform);
+        }
+        if (mayRequireLocalCoords) {
+            uniformDataGatherer.writeMatrix3f(subRunData.getSubRunToLocal());
+        }
         uniformDataGatherer.write2f(
                 1.f / texture.getWidth(),
                 1.f / texture.getHeight()

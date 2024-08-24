@@ -137,7 +137,7 @@ public class TestDrawPass {
             for (int j = 0; j < 4; j++) {
                 col[j] *= 0.5f; // premultiplied color
             }
-            step.writeMesh(drawWriter, draw, col);
+            step.writeMesh(drawWriter, draw, col, true);
         }
 
         drawWriter.flush();
