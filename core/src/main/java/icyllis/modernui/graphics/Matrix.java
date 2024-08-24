@@ -93,10 +93,14 @@ public class Matrix extends icyllis.arc3d.core.Matrix {
             return;
         }
         if ((typeMask & ~(kScale_Mask | kTranslate_Mask)) == 0) {
-            r.left =   r.left   * m11 + m41;
-            r.top =    r.top    * m22 + m42;
-            r.right =  r.right  * m11 + m41;
-            r.bottom = r.bottom * m22 + m42;
+            float x1 = r.left   * m11 + m41;
+            float y1 = r.top    * m22 + m42;
+            float x2 = r.right  * m11 + m41;
+            float y2 = r.bottom * m22 + m42;
+            r.left   = Math.min(x1, x2);
+            r.top    = Math.min(y1, y2);
+            r.right  = Math.max(x1, x2);
+            r.bottom = Math.max(y1, y2);
             return;
         }
         float x1 = m11 * r.left +  m21 * r.top    + m41;
@@ -167,6 +171,7 @@ public class Matrix extends icyllis.arc3d.core.Matrix {
             out.top =    Math.round(top    * m22 + m42);
             out.right =  Math.round(right  * m11 + m41);
             out.bottom = Math.round(bottom * m22 + m42);
+            out.sort();
             return;
         }
         float x1 = m11 * left +  m21 * top    + m41;
@@ -237,6 +242,7 @@ public class Matrix extends icyllis.arc3d.core.Matrix {
             out.top =    (int) Math.floor(top    * m22 + m42);
             out.right =  (int) Math.ceil (right  * m11 + m41);
             out.bottom = (int) Math.ceil (bottom * m22 + m42);
+            out.sort();
             return;
         }
         float x1 = m11 * left +  m21 * top    + m41;
