@@ -455,13 +455,18 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                 break;
             }
             if (glyphsPrepared > 0) {
-                SubRunData subRunData = new SubRunData(subRun,
-                        getLocalToDevice33(), originX, originY,
-                        subRunCursor, glyphsPrepared);
                 // subRunToDevice is our "localToDevice",
                 // as sub run's coordinates are returned in sub run's space
-                Matrix subRunToDevice = new Matrix(getLocalToDevice33());
-                subRunToDevice.preConcat(subRunData.getSubRunToLocal());
+                Matrix subRunToLocal = new Matrix();
+                Matrix subRunToDevice = new Matrix();
+                int filter = subRun.getMatrixAndFilter(
+                        getLocalToDevice33(),
+                        originX, originY,
+                        subRunToLocal,
+                        subRunToDevice);
+                SubRunData subRunData = new SubRunData(subRun,
+                        subRunToLocal, filter,
+                        subRunCursor, glyphsPrepared);
 
                 subRunPaint.set(paint);
                 if (subRun.getMaskFormat() == Engine.MASK_FORMAT_ARGB) {
