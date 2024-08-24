@@ -42,7 +42,7 @@ public class NoPixelsDevice extends Device {
         super(new ImageInfo(right - left, bottom - top));
         setOrigin(null, left, top);
         var clip = new ConservativeClip();
-        clip.setRect(bounds());
+        clip.setRect(getBounds());
         mClipStack[0] = clip;
     }
 
@@ -54,7 +54,7 @@ public class NoPixelsDevice extends Device {
             pop();
         }
         var clip = mClipStack[0];
-        clip.setRect(bounds());
+        clip.setRect(getBounds());
         clip.mDeferredSaveCount = 0;
     }
 
@@ -122,7 +122,7 @@ public class NoPixelsDevice extends Device {
         final Rect2i deviceRect = new Rect2i();
         getGlobalToDevice().mapRect(globalRect, deviceRect);
         var clip = getWritableClip();
-        if (!deviceRect.intersect(bounds())) {
+        if (!deviceRect.intersect(getBounds())) {
             clip.setEmpty();
         } else {
             clip.setRect(deviceRect);
@@ -146,7 +146,7 @@ public class NoPixelsDevice extends Device {
 
     @Override
     public boolean isClipWideOpen() {
-        return getClip().mIsRect && getClipBounds().equals(bounds());
+        return getClip().mIsRect && getClipBounds().equals(getBounds());
     }
 
     @Override
@@ -199,7 +199,7 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void drawImageRect(Image image, Rect2fc src, Rect2fc dst,
+    public void drawImageRect(@RawPtr Image image, Rect2fc src, Rect2fc dst,
                               SamplingOptions sampling, Paint paint, int constraint) {
     }
 

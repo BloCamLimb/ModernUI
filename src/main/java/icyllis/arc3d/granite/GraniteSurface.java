@@ -35,7 +35,7 @@ public final class GraniteSurface extends icyllis.arc3d.core.Surface {
     private GraniteDevice mDevice;
 
     public GraniteSurface(@SharedPtr GraniteDevice device) {
-        super(device.width(), device.height());
+        super(device.getWidth(), device.getHeight());
         mDevice = device;
     }
 
@@ -124,7 +124,7 @@ public final class GraniteSurface extends icyllis.arc3d.core.Surface {
     @Nonnull
     @Override
     public ImageInfo getImageInfo() {
-        return mDevice.imageInfo();
+        return mDevice.getImageInfo();
     }
 
     @Override
