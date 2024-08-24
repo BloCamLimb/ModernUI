@@ -47,16 +47,17 @@ import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.system.*;
+import org.lwjgl.system.Configuration;
+import org.lwjgl.system.Platform;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.*;
-import java.nio.IntBuffer;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -128,6 +129,33 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         return sInstance;
     }
 
+    private void findHighestGLVersion() {
+        GLFWErrorCallback callback = glfwSetErrorCallback(null);
+        final int[][] versions = {{4, 6}, {4, 5}, {4, 4}, {4, 3}, {4, 2}, {4, 1}, {4, 0}, {3, 3}};
+        long window = 0;
+        try {
+            for (int[] version : versions) {
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, version[0]);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, version[1]);
+                LOGGER.debug(MARKER, "Trying OpenGL {}.{}", version[0], version[1]);
+                window = glfwCreateWindow(640, 480, "System Testing", 0, 0);
+                if (window != 0) {
+                    LOGGER.info(MARKER, "Will use OpenGL {}.{} Core Profile",
+                            version[0], version[1]);
+                    return;
+                }
+            }
+            throw new RuntimeException("OpenGL 3.3 or OpenGL ES 3.0 is required");
+        } catch (Exception e) {
+            throw new RuntimeException("OpenGL 3.3 or OpenGL ES 3.0 is required");
+        } finally {
+            if (window != 0) {
+                glfwDestroyWindow(window);
+            }
+            glfwSetErrorCallback(callback);
+        }
+    }
+
     /**
      * Runs the Modern UI with the default application setups.
      * This method is only called by the <code>main()</code> on the main thread.
@@ -148,13 +176,13 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         LOGGER.debug(MARKER, "Initializing window system");
         Monitor monitor = Monitor.getPrimary();
 
-        /*TinyFileDialogs.tinyfd_messageBox(
+        TinyFileDialogs.tinyfd_messageBox(
                 "ModernUI Test",
                 "ModernUI starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true
-        );*/
+        );
 
         String name = Configuration.OPENGL_LIBRARY_NAME.get();
         if (name != null) {
@@ -167,13 +195,18 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
         glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_DEPTH_BITS, 0);
         glfwWindowHint(GLFW_STENCIL_BITS, 0);
         glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, NAME_CPT);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        if (Platform.get() == Platform.MACOSX) {
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+        } else {
+            findHighestGLVersion();
+        }
         //glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         if (monitor == null) {
             LOGGER.info(MARKER, "No monitor connected");
