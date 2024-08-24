@@ -1848,10 +1848,14 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
             return true;
         }
         if ((typeMask & ~(kScale_Mask | kTranslate_Mask)) == 0) {
-            dst.mLeft =   left   * m11 + m41;
-            dst.mTop =    top    * m22 + m42;
-            dst.mRight =  right  * m11 + m41;
-            dst.mBottom = bottom * m22 + m42;
+            float x1 = left   * m11 + m41;
+            float y1 = top    * m22 + m42;
+            float x2 = right  * m11 + m41;
+            float y2 = bottom * m22 + m42;
+            dst.mLeft   = Math.min(x1, x2);
+            dst.mTop    = Math.min(y1, y2);
+            dst.mRight  = Math.max(x1, x2);
+            dst.mBottom = Math.max(y1, y2);
             return true;
         }
         float x1 = m11 * left +  m21 * top    + m41;
@@ -1905,6 +1909,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
             dst.mTop =    Math.round(top    * m22 + m42);
             dst.mRight =  Math.round(right  * m11 + m41);
             dst.mBottom = Math.round(bottom * m22 + m42);
+            dst.sort();
             return;
         }
         float x1 = m11 * left +  m21 * top    + m41;
@@ -1957,6 +1962,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
             dst.mTop =    (int) Math.floor(top    * m22 + m42);
             dst.mRight =  (int) Math.ceil (right  * m11 + m41);
             dst.mBottom = (int) Math.ceil (bottom * m22 + m42);
+            dst.sort();
             return;
         }
         float x1 = m11 * left +  m21 * top    + m41;
