@@ -217,6 +217,22 @@ public class ImageShader extends Shader {
     }
 
     /**
+     * Return true if the local matrix of the shader is equal to the given local matrix.
+     *
+     * @param localMatrix the local matrix to compare, null means identity
+     * @return true if local matrix equals
+     */
+    public boolean localMatrixEquals(@Nullable Matrix localMatrix) {
+        if (localMatrix == null || localMatrix.isIdentity()) {
+            return mLocalMatrix == null;
+        } else if (mLocalMatrix == null) {
+            return false;
+        } else {
+            return mLocalMatrix.equals(localMatrix);
+        }
+    }
+
+    /**
      * @hidden
      */
     @ApiStatus.Internal
