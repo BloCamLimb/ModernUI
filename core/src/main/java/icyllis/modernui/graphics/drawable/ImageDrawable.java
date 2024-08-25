@@ -21,9 +21,11 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.Gravity;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +34,6 @@ import java.io.InputStream;
  * A Drawable that wraps an image and can be tiled, stretched, or aligned. You can create a
  * ImageDrawable from a file path, an input stream, or from a {@link Image} object.
  */
-//TODO texture tint blending, current it's MODULATE
 public class ImageDrawable extends Drawable {
 
     // lazily init
@@ -56,6 +57,8 @@ public class ImageDrawable extends Drawable {
 
     /**
      * Create a drawable by opening a given file path and decoding the image.
+     * <p>
+     * This method may only be called from UI thread.
      */
     public ImageDrawable(@NonNull String namespace, @NonNull String path) {
         Image image = Image.create(namespace, path);
@@ -69,7 +72,7 @@ public class ImageDrawable extends Drawable {
      * the given stream after read operation has completed. The stream will be at end if
      * read operation succeeds.
      * <p>
-     * This method may be called from either render thread or UI thread.
+     * This method may only be called from UI thread.
      */
     public ImageDrawable(@NonNull InputStream stream) {
         Image image = null;
@@ -130,7 +133,11 @@ public class ImageDrawable extends Drawable {
     /**
      * Specifies the subset of the image to draw. To draw the full image,
      * call {@link #setSrcRect(Rect)} with null.
+     * <p>
+     * Caveat: this method is marked experimental since 3.11 and may be redesigned
+     * in the future releases.
      */
+    @ApiStatus.Experimental
     public void setSrcRect(int left, int top, int right, int bottom) {
         if (mSrcRect == null) {
             mSrcRect = new Rect(left, top, right, bottom);
@@ -151,6 +158,7 @@ public class ImageDrawable extends Drawable {
      *
      * @param srcRect the subset of the image
      */
+    @ApiStatus.Experimental
     public void setSrcRect(@Nullable Rect srcRect) {
         if (srcRect == null) {
             mFullImage = true;
@@ -162,6 +170,7 @@ public class ImageDrawable extends Drawable {
             }
             mFullImage = false;
         }
+        invalidateSelf();
     }
 
     /**
@@ -186,6 +195,145 @@ public class ImageDrawable extends Drawable {
         return true;
     }
 
+    /**
+     * Enables or disables antialiasing for this drawable. Antialiasing affects
+     * the edges of the image only so it applies only when the drawable is rotated.
+     * The default is true.
+     *
+     * @param aa True if the image should be anti-aliased, false otherwise.
+     * @see #isAntiAlias()
+     */
+    public void setAntiAlias(boolean aa) {
+        //TODO set to false by default once Arc3D is updated with a faster pipeline
+        mImageState.mPaint.setAntiAlias(aa);
+        invalidateSelf();
+    }
+
+    /**
+     * Indicates whether antialiasing is enabled for this drawable.
+     * The default is true.
+     *
+     * @return True if antialiasing is enabled, false otherwise.
+     * @see #setAntiAlias(boolean)
+     */
+    public boolean isAntiAlias() {
+        return mImageState.mPaint.isAntiAlias();
+    }
+
+    /**
+     * Sets a hint that indicates if color error may be distributed to smooth color transition.
+     * For example, drawing 16-bit per channel image onto an 8-bit per channel device.
+     * The default value is false.
+     */
+    public void setDither(boolean dither) {
+        mImageState.mPaint.setDither(dither);
+        invalidateSelf();
+    }
+
+    /**
+     * Returns true if color error may be distributed to smooth color transition.
+     * The default value is false.
+     */
+    public boolean isDither() {
+        return mImageState.mPaint.isDither();
+    }
+
+    /**
+     * Set to true to have the drawable filter texture images with bilinear
+     * sampling when they are scaled or rotated. The default is true.
+     *
+     * @param filter true to use bilinear sampling, false to use nearest neighbor sampling
+     */
+    public void setFilter(boolean filter) {
+        if (mImageState.mPaint.isFilter() != filter) {
+            mImageState.mPaint.setFilter(filter);
+            mImageState.mRebuildShader = true;
+            invalidateSelf();
+        }
+    }
+
+    /**
+     * Returns the current filter. The default is true.
+     */
+    public boolean isFilter() {
+        return mImageState.mPaint.isFilter();
+    }
+
+    /**
+     * Indicates the repeat behavior of this drawable on the X axis.
+     *
+     * @return {@link Shader.TileMode#CLAMP} if the image does not repeat,
+     * {@link Shader.TileMode#REPEAT} or
+     * {@link Shader.TileMode#MIRROR} otherwise.
+     */
+    @Nullable
+    public Shader.TileMode getTileModeX() {
+        return mImageState.mTileModeX;
+    }
+
+    /**
+     * Indicates the repeat behavior of this drawable on the Y axis.
+     *
+     * @return {@link Shader.TileMode#CLAMP} if the image does not repeat,
+     * {@link Shader.TileMode#REPEAT} or
+     * {@link Shader.TileMode#MIRROR} otherwise.
+     */
+    @Nullable
+    public Shader.TileMode getTileModeY() {
+        return mImageState.mTileModeY;
+    }
+
+    /**
+     * Sets the repeat behavior of this drawable on the X axis. By default, the drawable
+     * does not repeat its image. Using {@link Shader.TileMode#REPEAT} or
+     * {@link Shader.TileMode#MIRROR} the image can be repeated (or tiled)
+     * if the image is smaller than this drawable.
+     *
+     * @param mode The repeat mode for this drawable.
+     * @see #setTileModeY(Shader.TileMode)
+     * @see #setTileModeXY(Shader.TileMode, Shader.TileMode)
+     */
+    public void setTileModeX(@Nullable Shader.TileMode mode) {
+        setTileModeXY(mode, mImageState.mTileModeY);
+    }
+
+    /**
+     * Sets the repeat behavior of this drawable on the Y axis. By default, the drawable
+     * does not repeat its image. Using {@link Shader.TileMode#REPEAT} or
+     * {@link Shader.TileMode#MIRROR} the image can be repeated (or tiled)
+     * if the image is smaller than this drawable.
+     *
+     * @param mode The repeat mode for this drawable.
+     * @see #setTileModeX(Shader.TileMode)
+     * @see #setTileModeXY(Shader.TileMode, Shader.TileMode)
+     */
+    public final void setTileModeY(@Nullable Shader.TileMode mode) {
+        setTileModeXY(mImageState.mTileModeX, mode);
+    }
+
+    /**
+     * Sets the repeat behavior of this drawable on both axis. By default, the drawable
+     * does not repeat its image. Using {@link Shader.TileMode#REPEAT} or
+     * {@link Shader.TileMode#MIRROR} the image can be repeated (or tiled)
+     * if the image is smaller than this drawable.
+     *
+     * @param tileModeX The X tile mode for this drawable.
+     * @param tileModeY The Y tile mode for this drawable.
+     * @see #setTileModeX(Shader.TileMode)
+     * @see #setTileModeY(Shader.TileMode)
+     */
+    public void setTileModeXY(@Nullable Shader.TileMode tileModeX,
+                              @Nullable Shader.TileMode tileModeY) {
+        final ImageState state = mImageState;
+        if (state.mTileModeX != tileModeX || state.mTileModeY != tileModeY) {
+            state.mTileModeX = tileModeX;
+            state.mTileModeY = tileModeY;
+            state.mRebuildShader = true;
+            mDstRectAndInsetsDirty = true;
+            invalidateSelf();
+        }
+    }
+
     @Override
     public void setAutoMirrored(boolean mirrored) {
         if (mImageState.mAutoMirrored != mirrored) {
@@ -206,18 +354,7 @@ public class ImageDrawable extends Drawable {
     @Override
     protected void onBoundsChange(@NonNull Rect bounds) {
         mDstRectAndInsetsDirty = true;
-    }
-
-    private void updateDstRectAndInsetsIfDirty() {
-        if (mDstRectAndInsetsDirty) {
-            final Image image = mImageState.mImage;
-            if (image != null) {
-                final int layoutDirection = getLayoutDirection();
-                Gravity.apply(mImageState.mGravity, image.getWidth(), image.getHeight(),
-                        getBounds(), mDstRect, layoutDirection);
-            }
-            mDstRectAndInsetsDirty = false;
-        }
+        mImageState.mRebuildShader = true;
     }
 
     @Override
@@ -230,6 +367,34 @@ public class ImageDrawable extends Drawable {
         final ImageState state = mImageState;
         final Paint paint = state.mPaint;
 
+        final boolean useShader;
+        boolean rebuildShader;
+        final Shader.TileMode tileModeX = state.mTileModeX;
+        final Shader.TileMode tileModeY = state.mTileModeY;
+        if (state.mRebuildShader) {
+            if (tileModeX == null && tileModeY == null) {
+                paint.setShader(null);
+                rebuildShader = false;
+                useShader = false;
+            } else {
+                rebuildShader = true;
+                useShader = true;
+            }
+            state.mRebuildShader = false;
+        } else {
+            rebuildShader = false;
+            useShader = paint.getShader() != null;
+        }
+
+        final int restoreAlpha;
+        if (state.mBaseAlpha != 1.0f) {
+            final Paint p = getPaint();
+            restoreAlpha = p.getAlpha();
+            p.setAlpha((int) (restoreAlpha * state.mBaseAlpha + 0.5f));
+        } else {
+            restoreAlpha = -1;
+        }
+
         final boolean clearColorFilter;
         if (mBlendModeFilter != null && paint.getColorFilter() == null) {
             paint.setColorFilter(mBlendModeFilter);
@@ -241,21 +406,64 @@ public class ImageDrawable extends Drawable {
         updateDstRectAndInsetsIfDirty();
 
         final boolean needMirroring = needMirroring();
-        if (needMirroring) {
-            canvas.save();
-            // Flip horizontal
-            canvas.translate(mDstRect.width(), 0);
-            canvas.scale(-1.0f, 1.0f);
-        }
+        if (!useShader) {
+            if (needMirroring) {
+                canvas.save();
+                // Flip horizontal
+                canvas.translate(mDstRect.width(), 0);
+                canvas.scale(-1.0f, 1.0f);
+            }
 
-        canvas.drawImage(image, mFullImage ? null : mSrcRect, mDstRect, paint);
+            canvas.drawImage(image, mFullImage ? null : mSrcRect, mDstRect, paint);
 
-        if (needMirroring) {
-            canvas.restore();
+            if (needMirroring) {
+                canvas.restore();
+            }
+        } else {
+            if (rebuildShader) {
+                paint.setShader(new ImageShader(image,
+                        tileModeX == null ? Shader.TileMode.CLAMP : tileModeX,
+                        tileModeY == null ? Shader.TileMode.CLAMP : tileModeY,
+                        paint.getFilterMode(),
+                        updateShaderMatrix(needMirroring)
+                ));
+            }
+            canvas.drawRect(mDstRect, paint);
         }
 
         if (clearColorFilter) {
             paint.setColorFilter(null);
+        }
+
+        if (restoreAlpha >= 0) {
+            paint.setAlpha(restoreAlpha);
+        }
+    }
+
+    @Nullable
+    private Matrix updateShaderMatrix(boolean needMirroring) {
+        if (needMirroring) {
+            Matrix matrix = new Matrix();
+
+            // fixed by Modern UI
+            matrix.setScaleTranslate(-1.0f, 1.0f, mDstRect.width(), 0);
+
+            return matrix;
+        } else {
+            return null;
+        }
+    }
+
+    private void updateDstRectAndInsetsIfDirty() {
+        if (mDstRectAndInsetsDirty) {
+            if (mImageState.mTileModeX == null && mImageState.mTileModeY == null) {
+                final int layoutDirection = getLayoutDirection();
+                Gravity.apply(mImageState.mGravity, getIntrinsicWidth(), getIntrinsicHeight(),
+                        getBounds(), mDstRect, layoutDirection);
+            } else {
+                copyBounds(mDstRect);
+            }
+            mDstRectAndInsetsDirty = false;
         }
     }
 
@@ -296,7 +504,7 @@ public class ImageDrawable extends Drawable {
     }
 
     /**
-     * A mutable BitmapDrawable still shares its Bitmap with any other Drawable
+     * A mutable ImageDrawable still shares its Image with any other Drawable
      * that comes from the same resource.
      *
      * @return This drawable.
@@ -375,25 +583,42 @@ public class ImageDrawable extends Drawable {
         BlendMode mBlendMode = DEFAULT_BLEND_MODE;
 
         int mGravity = Gravity.FILL;
+        float mBaseAlpha = 1.0f;
+        Shader.TileMode mTileModeX = null;
+        Shader.TileMode mTileModeY = null;
 
         boolean mAutoMirrored = false;
+
+        boolean mRebuildShader;
 
         ImageState(Image image) {
             mImage = image;
             mPaint = new Paint();
         }
 
+        @SuppressWarnings("IncompleteCopyConstructor")
         ImageState(@NonNull ImageState imageState) {
             mImage = imageState.mImage;
             mTint = imageState.mTint;
+            mBlendMode = imageState.mBlendMode;
             mGravity = imageState.mGravity;
+            mTileModeX = imageState.mTileModeX;
+            mTileModeY = imageState.mTileModeY;
+            mBaseAlpha = imageState.mBaseAlpha;
             mPaint = new Paint(imageState.mPaint);
+            mRebuildShader = imageState.mRebuildShader;
             mAutoMirrored = imageState.mAutoMirrored;
         }
 
         @NonNull
         @Override
         public Drawable newDrawable() {
+            return new ImageDrawable(this);
+        }
+
+        @NonNull
+        @Override
+        public Drawable newDrawable(Resources res) {
             return new ImageDrawable(this);
         }
     }

@@ -401,6 +401,7 @@ public abstract class Drawable {
      * return value is 255 if the class does not override this method to return a value
      * specific to its use of alpha.
      */
+    @IntRange(from = 0, to = 255)
     public int getAlpha() {
         return 0xFF;
     }
