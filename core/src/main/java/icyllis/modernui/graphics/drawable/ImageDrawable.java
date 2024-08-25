@@ -99,11 +99,16 @@ public class ImageDrawable extends Drawable {
     }
 
     /**
-     * Switch to a new Image object.
+     * Switch to a new Image object. Calling this method will also reset
+     * the subset to the full image, see {@link #setSrcRect(Rect)}.
      */
     public void setImage(@Nullable Image image) {
         if (mImageState.mImage != image) {
             mImageState.mImage = image;
+            if (mSrcRect != null && image != null) {
+                mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+            }
+            mFullImage = true;
             invalidateSelf();
         }
     }
@@ -134,43 +139,83 @@ public class ImageDrawable extends Drawable {
      * Specifies the subset of the image to draw. To draw the full image,
      * call {@link #setSrcRect(Rect)} with null.
      * <p>
-     * Caveat: this method is marked experimental since 3.11 and may be redesigned
-     * in the future releases.
+     * Calling this method when there's no image has no effect. Next call
+     * to {@link #setImage(Image)} will reset the subset to the full image.
      */
-    @ApiStatus.Experimental
     public void setSrcRect(int left, int top, int right, int bottom) {
-        if (mSrcRect == null) {
-            mSrcRect = new Rect(left, top, right, bottom);
-            invalidateSelf();
-        } else {
-            Rect oldBounds = mSrcRect;
-            if (oldBounds.left != left || oldBounds.top != top ||
-                    oldBounds.right != right || oldBounds.bottom != bottom) {
-                mSrcRect.set(left, top, right, bottom);
+        final Image image = mImageState.mImage;
+        if (image == null) {
+            return;
+        }
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        if (left <= 0 && top <= 0 &&
+                right >= imageWidth && bottom >= imageHeight) {
+            if (!mFullImage) {
                 invalidateSelf();
             }
+            mFullImage = true;
+        } else {
+            if (mSrcRect == null) {
+                mSrcRect = new Rect(0, 0, imageWidth, imageHeight);
+                if (!mSrcRect.intersect(left, top, right, bottom)) {
+                    mSrcRect.setEmpty();
+                }
+                invalidateSelf();
+            } else {
+                Rect oldBounds = mSrcRect;
+                if (oldBounds.left != left || oldBounds.top != top ||
+                        oldBounds.right != right || oldBounds.bottom != bottom) {
+                    mSrcRect.set(0, 0, imageWidth, imageHeight);
+                    if (!mSrcRect.intersect(left, top, right, bottom)) {
+                        mSrcRect.setEmpty();
+                    }
+                    invalidateSelf();
+                }
+            }
+            mFullImage = false;
         }
-        mFullImage = false;
     }
 
     /**
      * Specifies the subset of the image to draw. Null for the full image.
+     * <p>
+     * Calling this method when there's no image has no effect. Next call
+     * to {@link #setImage(Image)} will reset the subset to the full image.
      *
      * @param srcRect the subset of the image
      */
-    @ApiStatus.Experimental
     public void setSrcRect(@Nullable Rect srcRect) {
-        if (srcRect == null) {
+        final Image image = mImageState.mImage;
+        if (image == null) {
+            return;
+        }
+        int imageWidth = image.getWidth();
+        int imageHeight = image.getHeight();
+        if (srcRect == null || (srcRect.left <= 0 && srcRect.top <= 0 &&
+                srcRect.right >= imageWidth && srcRect.bottom >= imageHeight)) {
+            if (!mFullImage) {
+                invalidateSelf();
+            }
             mFullImage = true;
         } else {
             if (mSrcRect == null) {
-                mSrcRect = srcRect.copy();
+                mSrcRect = new Rect(0, 0, imageWidth, imageHeight);
+                if (!mSrcRect.intersect(srcRect)) {
+                    mSrcRect.setEmpty();
+                }
+                invalidateSelf();
             } else {
-                mSrcRect.set(srcRect);
+                if (!mSrcRect.equals(srcRect)) {
+                    mSrcRect.set(0, 0, imageWidth, imageHeight);
+                    if (!mSrcRect.intersect(srcRect)) {
+                        mSrcRect.setEmpty();
+                    }
+                    invalidateSelf();
+                }
             }
             mFullImage = false;
         }
-        invalidateSelf();
     }
 
     /**
@@ -181,6 +226,7 @@ public class ImageDrawable extends Drawable {
      * @param mipmap True if the image should use mipmaps, false otherwise.
      * @see #hasMipmap()
      */
+    @ApiStatus.Experimental
     public void setMipmap(boolean mipmap) {
     }
 
@@ -191,6 +237,7 @@ public class ImageDrawable extends Drawable {
      * is null, this method always returns false.
      * @see #setMipmap(boolean)
      */
+    @ApiStatus.Experimental
     public boolean hasMipmap() {
         return true;
     }
@@ -501,6 +548,18 @@ public class ImageDrawable extends Drawable {
                     blendMode);
             invalidateSelf();
         }
+    }
+
+    @Override
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+        mImageState.mPaint.setColorFilter(colorFilter);
+        invalidateSelf();
+    }
+
+    @Nullable
+    @Override
+    public ColorFilter getColorFilter() {
+        return mImageState.mPaint.getColorFilter();
     }
 
     /**

@@ -18,17 +18,14 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.drawable.ImageDrawable;
-import icyllis.modernui.graphics.drawable.LevelListDrawable;
+import icyllis.modernui.graphics.drawable.*;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Displays image resources, for example {@link icyllis.modernui.graphics.Image}
@@ -52,16 +49,21 @@ public class ImageView extends View {
     private int mMaxHeight = Integer.MAX_VALUE;
 
     // these are applied to the drawable
+    private ColorFilter mImageColorFilter = null;
+    private boolean mHasImageColorFilter = false;
     private int mImageAlpha = 255;
     private boolean mHasImageAlpha = false;
 
     private Drawable mDrawable = null;
     private ImageDrawable mRecycleImageDrawable = null;
     private ColorStateList mDrawableTintList = null;
+    private BlendMode mDrawableBlendMode = null;
     private boolean mHasDrawableTint = false;
+    private boolean mHasDrawableBlendMode = false;
 
     private int[] mState = null;
     private boolean mMergeState = false;
+    private boolean mHasLevelSet = false;
     private int mLevel = 0;
     private int mDrawableWidth;
     private int mDrawableHeight;
@@ -77,7 +79,7 @@ public class ImageView extends View {
     }
 
     @Override
-    protected boolean verifyDrawable(@Nonnull Drawable dr) {
+    protected boolean verifyDrawable(@NonNull Drawable dr) {
         return mDrawable == dr || super.verifyDrawable(dr);
     }
 
@@ -90,7 +92,7 @@ public class ImageView extends View {
     }
 
     @Override
-    public void invalidateDrawable(@Nonnull Drawable dr) {
+    public void invalidateDrawable(@NonNull Drawable dr) {
         if (dr == mDrawable) {
             // update cached drawable dimensions if they've changed
             final int w = dr.getIntrinsicWidth();
@@ -246,7 +248,7 @@ public class ImageView extends View {
 
     /**
      * Applies a tint to the image drawable. Does not modify the current tint
-     * mode, which is <code>SRC_IN</code> by default.
+     * mode, which is {@link BlendMode#SRC_IN} by default.
      * <p>
      * Subsequent calls to {@link #setImageDrawable(Drawable)} will automatically
      * mutate the drawable and apply the specified tint and tint mode using
@@ -275,12 +277,44 @@ public class ImageView extends View {
         return mDrawableTintList;
     }
 
+    /**
+     * Specifies the blending mode used to apply the tint specified by
+     * {@link #setImageTintList(ColorStateList)}} to the image drawable. The default
+     * mode is {@link BlendMode#SRC_IN}.
+     *
+     * @param blendMode the blending mode used to apply the tint, may be
+     *                  {@code null} to clear tint
+     * @see #getImageTintBlendMode()
+     * @see Drawable#setTintBlendMode(BlendMode)
+     */
+    public void setImageTintBlendMode(@Nullable BlendMode blendMode) {
+        mDrawableBlendMode = blendMode;
+        mHasDrawableBlendMode = true;
+
+        applyImageTint();
+    }
+
+    /**
+     * Gets the blending mode used to apply the tint to the image Drawable
+     *
+     * @return the blending mode used to apply the tint to the image Drawable
+     * @see #setImageTintBlendMode(BlendMode)
+     */
+    @Nullable
+    public BlendMode getImageTintBlendMode() {
+        return mDrawableBlendMode;
+    }
+
     private void applyImageTint() {
-        if (mDrawable != null && (mHasDrawableTint)) {
+        if (mDrawable != null && (mHasDrawableTint || mHasDrawableBlendMode)) {
             mDrawable = mDrawable.mutate();
 
             if (mHasDrawableTint) {
                 mDrawable.setTintList(mDrawableTintList);
+            }
+
+            if (mHasDrawableBlendMode) {
+                mDrawable.setTintBlendMode(mDrawableBlendMode);
             }
 
             // The drawable (or one of its children) may not have been
@@ -340,6 +374,7 @@ public class ImageView extends View {
      */
     public void setImageLevel(int level) {
         mLevel = level;
+        mHasLevelSet = true;
         if (mDrawable != null) {
             mDrawable.setLevel(level);
             resizeFromDrawable();
@@ -352,7 +387,7 @@ public class ImageView extends View {
      *
      * @param scaleType The desired scaling mode.
      */
-    public void setScaleType(@Nonnull ScaleType scaleType) {
+    public void setScaleType(@NonNull ScaleType scaleType) {
         if (mScaleType != scaleType) {
             mScaleType = scaleType;
 
@@ -367,9 +402,24 @@ public class ImageView extends View {
      * @return The ScaleType used to scale the image.
      * @see ImageView.ScaleType
      */
-    @Nonnull
+    @NonNull
     public ScaleType getScaleType() {
         return mScaleType;
+    }
+
+    /**
+     * Returns the view's optional matrix. This is applied to the
+     * view's drawable when it is drawn. If there is no matrix,
+     * this method will return an identity matrix.
+     * Do not change this matrix in place but make a copy.
+     * If you want a different matrix applied to the drawable,
+     * be sure to call setImageMatrix().
+     */
+    public Matrix getImageMatrix() {
+        if (mDrawMatrix == null) {
+            return new Matrix();
+        }
+        return mDrawMatrix;
     }
 
     /**
@@ -388,11 +438,7 @@ public class ImageView extends View {
         // don't invalidate unless we're actually changing our matrix
         if (matrix == null && !mMatrix.isIdentity() ||
                 matrix != null && !mMatrix.equals(matrix)) {
-            if (matrix == null) {
-                mMatrix.setIdentity();
-            } else {
-                mMatrix.set(matrix);
-            }
+            mMatrix.set(matrix);
             configureBounds();
             invalidate();
         }
@@ -422,7 +468,7 @@ public class ImageView extends View {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public int[] onCreateDrawableState(int extraSpace) {
         if (mState == null) {
@@ -463,10 +509,13 @@ public class ImageView extends View {
                 final boolean visible = isAttachedToWindow() && getWindowVisibility() == VISIBLE && isShown();
                 d.setVisible(visible, true);
             }
-            d.setLevel(mLevel);
+            if (mHasLevelSet) {
+                d.setLevel(mLevel);
+            }
             mDrawableWidth = d.getIntrinsicWidth();
             mDrawableHeight = d.getIntrinsicHeight();
             applyImageTint();
+            applyColorFilter();
             applyAlpha();
 
             configureBounds();
@@ -624,16 +673,16 @@ public class ImageView extends View {
         final int specSize = MeasureSpec.getSize(measureSpec);
         switch (specMode) {
             case MeasureSpec.UNSPECIFIED ->
-                    // Parent says we can be as big as we want. Just don't be larger
-                    // than max size imposed on ourselves.
+                // Parent says we can be as big as we want. Just don't be larger
+                // than max size imposed on ourselves.
                     result = Math.min(desiredSize, maxSize);
             case MeasureSpec.AT_MOST ->
-                    // Parent says we can be as big as we want, up to specSize.
-                    // Don't be larger than specSize, and don't be larger than
-                    // the max size imposed on ourselves.
+                // Parent says we can be as big as we want, up to specSize.
+                // Don't be larger than specSize, and don't be larger than
+                // the max size imposed on ourselves.
                     result = Math.min(Math.min(desiredSize, specSize), maxSize);
             case MeasureSpec.EXACTLY ->
-                    // No choice. Do what we are told.
+                // No choice. Do what we are told.
                     result = specSize;
         }
         return result;
@@ -699,8 +748,7 @@ public class ImageView extends View {
                     dy = (vheight - dheight * scale) * 0.5f;
                 }
 
-                mDrawMatrix.setTranslate(Math.round(dx), Math.round(dy));
-                mDrawMatrix.preScale(scale, scale);
+                mDrawMatrix.setScaleTranslate(scale, scale, Math.round(dx), Math.round(dy));
             } else if (ScaleType.CENTER_INSIDE == mScaleType) {
                 mDrawMatrix = mMatrix;
                 float scale;
@@ -717,13 +765,13 @@ public class ImageView extends View {
                 dx = Math.round((vwidth - dwidth * scale) * 0.5f);
                 dy = Math.round((vheight - dheight * scale) * 0.5f);
 
-                mDrawMatrix.setTranslate(dx, dy);
-                mDrawMatrix.preScale(scale, scale);
+                mDrawMatrix.setScaleTranslate(scale, scale, dx, dy);
             } else {
                 mDrawMatrix = mMatrix;
                 float tx = 0, sx = (float) vwidth / dwidth;
                 float ty = 0, sy = (float) vheight / dheight;
                 boolean xLarger = false;
+
                 if (mScaleType != ScaleType.FIT_XY) {
                     if (sx > sy) {
                         xLarger = true;
@@ -753,8 +801,7 @@ public class ImageView extends View {
                     }
                 }
 
-                mDrawMatrix.setTranslate(tx, ty);
-                mDrawMatrix.preScale(sx, sy);
+                mDrawMatrix.setScaleTranslate(sx, sy, tx, ty);
             }
         }
     }
@@ -809,7 +856,7 @@ public class ImageView extends View {
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
 
         if (mDrawable == null) {
@@ -898,6 +945,32 @@ public class ImageView extends View {
     }
 
     /**
+     * Returns the active color filter for this ImageView.
+     *
+     * @return the active color filter for this ImageView
+     * @see #setColorFilter(ColorFilter)
+     */
+    @Nullable
+    public ColorFilter getColorFilter() {
+        return mImageColorFilter;
+    }
+
+    /**
+     * Apply an arbitrary color filter to the image.
+     *
+     * @param colorFilter the color filter to apply (can be null)
+     * @see #getColorFilter()
+     */
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+        if (mImageColorFilter != colorFilter) {
+            mImageColorFilter = colorFilter;
+            mHasImageColorFilter = true;
+            applyColorFilter();
+            invalidate();
+        }
+    }
+
+    /**
      * Returns the alpha that will be applied to the drawable of this ImageView.
      *
      * @return the alpha value that will be applied to the drawable of this
@@ -923,6 +996,13 @@ public class ImageView extends View {
             mHasImageAlpha = true;
             applyAlpha();
             invalidate();
+        }
+    }
+
+    private void applyColorFilter() {
+        if (mDrawable != null && mHasImageColorFilter) {
+            mDrawable = mDrawable.mutate();
+            mDrawable.setColorFilter(mImageColorFilter);
         }
     }
 

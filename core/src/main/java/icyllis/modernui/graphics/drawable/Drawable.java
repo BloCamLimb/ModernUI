@@ -28,6 +28,7 @@ import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.ImageView;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -193,6 +194,7 @@ public abstract class Drawable {
      * @see #copyBounds()
      * @see #copyBounds(Rect)
      */
+    @UnmodifiableView
     @NonNull
     public final Rect getBounds() {
         if (mBounds == ZERO_BOUNDS_RECT) {
@@ -391,7 +393,7 @@ public abstract class Drawable {
      * Specify an alpha value for the drawable. 0 means fully transparent, and
      * 255 means fully opaque.
      */
-    public void setAlpha(int alpha) {
+    public void setAlpha(@IntRange(from = 0, to = 255) int alpha) {
     }
 
     /**
@@ -409,8 +411,16 @@ public abstract class Drawable {
     /**
      * Specifies tint color for this drawable.
      * <p>
+     * A Drawable's drawing content will be blended together with its tint
+     * before it is drawn to the screen.
+     * </p>
+     * <p>
      * To clear the tint, pass {@code null} to
      * {@link #setTintList(ColorStateList)}.
+     * </p>
+     * <p class="note"><strong>Note:</strong> Setting a color filter via
+     * {@link #setColorFilter(ColorFilter)} overrides tint.
+     * </p>
      *
      * @param tintColor Color to use for tinting this drawable
      * @see #setTintList(ColorStateList)
@@ -422,6 +432,13 @@ public abstract class Drawable {
 
     /**
      * Specifies tint color for this drawable as a color state list.
+     * <p>
+     * A Drawable's drawing content will be blended together with its tint
+     * before it is drawn to the screen.
+     * </p>
+     * <p class="note"><strong>Note:</strong> Setting a color filter via
+     * {@link #setColorFilter(ColorFilter)} overrides tint.
+     * </p>
      *
      * @param tint Color state list to use for tinting this drawable, or
      *             {@code null} to clear the tint
@@ -436,12 +453,47 @@ public abstract class Drawable {
      * <p>
      * Defines how this drawable's tint color should be blended into the drawable
      * before it is drawn to screen. Default tint mode is {@link BlendMode#SRC_IN}.
+     * </p>
+     * <p class="note"><strong>Note:</strong> Setting a color filter via
+     * {@link #setColorFilter(ColorFilter)}
+     * </p>
      *
-     * @param blendMode BlendMode to apply to the drawable
+     * @param blendMode BlendMode to apply to the drawable, a value of null sets the default
+     *                  blend mode value of {@link BlendMode#SRC_IN}
      * @see #setTint(int)
      * @see #setTintList(ColorStateList)
      */
     public void setTintBlendMode(@NonNull BlendMode blendMode) {
+    }
+
+    /**
+     * Specify an optional color filter for the drawable.
+     * <p>
+     * If a Drawable has a ColorFilter, each output pixel of the Drawable's
+     * drawing contents will be modified by the color filter before it is
+     * blended onto the render target of a Canvas.
+     * </p>
+     * <p>
+     * Pass {@code null} to remove any existing color filter.
+     * </p>
+     * <p class="note"><strong>Note:</strong> Setting a non-{@code null} color
+     * filter disables {@link #setTintList(ColorStateList) tint}.
+     * </p>
+     *
+     * @param colorFilter The color filter to apply, or {@code null} to remove the
+     *                    existing color filter
+     */
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+    }
+
+    /**
+     * Returns the current color filter, or {@code null} if none set.
+     *
+     * @return the current color filter, or {@code null} if none set
+     */
+    @Nullable
+    public ColorFilter getColorFilter() {
+        return null;
     }
 
     /**
