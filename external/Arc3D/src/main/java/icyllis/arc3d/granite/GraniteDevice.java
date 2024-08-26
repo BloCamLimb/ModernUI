@@ -71,7 +71,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         // TODO: These could be exposed as context options or surface options, and we may want to have
         // different strategies in place for a base device vs. a layer's device.
         mColorDepthBoundsManager = new HybridBoundsManager(
-                width(), height(),
+                getWidth(), getHeight(),
                 16, 64, 32
         );
         //mColorDepthBoundsManager = new SimpleBoundsManager();
@@ -206,7 +206,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         assert mRC.isOwnerThread();
         flushPendingWork();
 
-        var srcInfo = imageInfo();
+        var srcInfo = getImageInfo();
         @RawPtr
         var srcView = mSDC.getReadView();
         String label = srcView.getLabel();
@@ -282,7 +282,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     public void drawPaint(Paint paint) {
         //TODO fill the clip, not fullscreen clear
         float[] color = new float[4];
-        if (PaintParams.getSolidColor(paint, imageInfo(), color)) {
+        if (PaintParams.getSolidColor(paint, getImageInfo(), color)) {
             mSDC.clear(color);
         }
     }
