@@ -610,8 +610,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         @Override
         protected void endDrawLocked(@NonNull Canvas canvas) {
             mLastFrameTask = Core.requireUiRecordingContext().snap();
-            mRenderHandler.post(this::render);
             synchronized (mRenderLock) {
+                mRenderHandler.post(this::render);
                 try {
                     mRenderLock.wait();
                 } catch (InterruptedException e) {
