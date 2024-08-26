@@ -2449,14 +2449,28 @@ public class View implements Drawable.Callback {
         canvas.translate(-sx, -sy);
 
         if (hasSpace) {
-            if (alpha < 0.999f) {
+            /*if (alpha < 0.999f) {
                 canvas.saveLayer(sx, sy, sx + mRight - mLeft, sy + mBottom - mTop, (int) (alpha * 255));
-            }
-
-            if ((mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW) {
-                dispatchDraw(canvas);
+            }*/
+            //TODO this is a temporary solution
+            // we delete the old nested layer support since 3.11, but still no new render tree IMPL yet,
+            // use alpha filter canvas no matter we have overlapping alpha or not,
+            // additional, this only works if clip is rectangular in device space....
+            if (alpha < 0.999f && canvas instanceof ArcCanvas ac) {
+                try (AlphaFilterCanvas afc = new AlphaFilterCanvas(ac.getCanvas(), alpha)) {
+                    Canvas filterCanvas = new ArcCanvas(afc);
+                    if ((mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW) {
+                        dispatchDraw(filterCanvas);
+                    } else {
+                        draw(filterCanvas);
+                    }
+                }
             } else {
-                draw(canvas);
+                if ((mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW) {
+                    dispatchDraw(canvas);
+                } else {
+                    draw(canvas);
+                }
             }
         }
         canvas.restoreToCount(saveCount);

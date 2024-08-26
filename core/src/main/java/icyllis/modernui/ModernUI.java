@@ -49,7 +49,6 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.Configuration;
 import org.lwjgl.system.Platform;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.*;
 import java.nio.channels.*;
@@ -609,21 +608,22 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         @Override
         protected void endDrawLocked(@NonNull Canvas canvas) {
-            mLastFrameTask = Core.requireUiRecordingContext().snap();
+            RootTask task = Core.requireUiRecordingContext().snap();
             synchronized (mRenderLock) {
+                mLastFrameTask = RefCnt.move(mLastFrameTask, task);
                 mRenderHandler.post(this::render);
                 try {
                     mRenderLock.wait();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
+                mLastFrameTask = RefCnt.move(mLastFrameTask);
             }
         }
 
         @RenderThread
         private void render() {
             ImmediateContext context = Core.requireImmediateContext();
-            boolean added;
             int width, height;
             RootTask task;
             synchronized (mRenderLock) {
@@ -633,7 +633,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 mLastFrameTask = null;
                 mRenderLock.notifyAll();
             }
-            added = context.addTask(task);
+            if (task == null) {
+                return;
+            }
+            boolean added = context.addTask(task);
             RefCnt.move(task);
             if (added) {
                 GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);

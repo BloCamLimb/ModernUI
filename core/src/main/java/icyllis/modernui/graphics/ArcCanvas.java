@@ -42,6 +42,11 @@ public class ArcCanvas extends Canvas {
         mCanvas = canvas;
     }
 
+    @RawPtr
+    public icyllis.arc3d.core.Canvas getCanvas() {
+        return mCanvas;
+    }
+
     @Override
     public int save() {
         return mCanvas.save();

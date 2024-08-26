@@ -62,9 +62,9 @@ public final class ClipStack {
 
     public ClipStack(GraniteDevice device) {
         mDevice = device;
-        mDeviceBounds = new Rect2i(device.bounds());
-        mDeviceBoundsF = new Rect2f(device.bounds());
-        mSaves.add(new SaveRecord(device.bounds()));
+        mDeviceBounds = new Rect2i(device.getBounds());
+        mDeviceBoundsF = new Rect2f(device.getBounds());
+        mSaves.add(new SaveRecord(device.getBounds()));
     }
 
     public int currentClipState() {
