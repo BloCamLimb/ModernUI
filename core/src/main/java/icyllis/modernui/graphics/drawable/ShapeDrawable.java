@@ -82,6 +82,9 @@ public class ShapeDrawable extends Drawable {
         return srcAlpha * multiplier >> 8;
     }
 
+    /**
+     * @hidden
+     */
     @MagicConstant(intValues = {RECTANGLE, CIRCLE, RING, HLINE, VLINE})
     @Retention(RetentionPolicy.SOURCE)
     public @interface Shape {
@@ -90,20 +93,20 @@ public class ShapeDrawable extends Drawable {
     private static final float DEFAULT_INNER_RADIUS_RATIO = 3.0f;
     private static final float DEFAULT_THICKNESS_RATIO = 9.0f;
 
-    private ShapeState mShapeState;
+    ShapeState mShapeState;
 
     private Rect mPadding;
 
-    private final Paint mFillPaint = new Paint();
+    final Paint mFillPaint = new Paint();
     private Paint mStrokePaint;   // optional, set by the caller
     private ColorFilter mColorFilter;   // optional, set by the caller
     private BlendModeColorFilter mBlendModeColorFilter;
-    private boolean mShapeIsDirty;
+    boolean mShapeIsDirty;
 
-    private final RectF mRect = new RectF();
+    final RectF mRect = new RectF();
 
     private int mAlpha = 0xFF;  // modified by the caller
-    private boolean mMutated;
+    boolean mMutated;
 
     public ShapeDrawable() {
         this(new ShapeState(), null);
@@ -115,7 +118,7 @@ public class ShapeDrawable extends Drawable {
      *
      * @return true if the resulting rectangle is empty
      */
-    boolean updateRectIsEmpty() {
+    final boolean updateRectIsEmpty() {
         if (mShapeIsDirty) {
             mShapeIsDirty = false;
 
@@ -126,6 +129,8 @@ public class ShapeDrawable extends Drawable {
                 float inset = mStrokePaint.getStrokeWidth() * 0.5f;
                 mRect.inset(inset, inset);
             }
+
+            updateGradient();
         }
         if (mShapeState.mStrokeWidth > 0) {
             // fixed by Modern UI: do not skip stroke-only draw
@@ -133,6 +138,10 @@ public class ShapeDrawable extends Drawable {
         } else {
             return mRect.isEmpty();
         }
+    }
+
+    // Used by GradientDrawable subclass
+    void updateGradient() {
     }
 
     @Override
@@ -157,6 +166,7 @@ public class ShapeDrawable extends Drawable {
         // that fills and strokes with different colors simultaneously
 
         mFillPaint.setAlpha(currFillAlpha);
+        mFillPaint.setDither(st.mDither);
         mFillPaint.setColorFilter(colorFilter);
         if (colorFilter != null && st.mSolidColors == null) {
             // Modern UI convention is white alpha
@@ -169,6 +179,7 @@ public class ShapeDrawable extends Drawable {
         if (mStrokePaint != null &&
                 mStrokePaint.getStrokeWidth() > 0) {
             mStrokePaint.setAlpha(currStrokeAlpha);
+            // stroke won't use dithering
             mStrokePaint.setColorFilter(colorFilter);
             haveStroke = !mStrokePaint.getNativePaint().nothingToDraw();
             restoreStroke = true;
@@ -178,7 +189,7 @@ public class ShapeDrawable extends Drawable {
         }
 
         if (haveFill | haveStroke) {
-            RectF r = mRect;
+            final RectF r = mRect;
             switch (st.mShape) {
                 case RECTANGLE -> {
                     if (st.mRadius > 0.0f) {
@@ -278,8 +289,8 @@ public class ShapeDrawable extends Drawable {
      * of a drawable loaded from a resource. It is recommended to invoke
      * {@link #mutate()} before changing this property.</p>
      *
-     * @param shape The desired shape for this drawable: {@link #HLINE},
-     *              {@link #CIRCLE}, {@link #RECTANGLE} or {@link #VLINE}
+     * @param shape The desired shape for this drawable: {@link #RECTANGLE},
+     *              {@link #CIRCLE}, {@link #RING}, {@link #HLINE} or {@link #VLINE}
      * @see #mutate()
      */
     public void setShape(@Shape int shape) {
@@ -288,8 +299,8 @@ public class ShapeDrawable extends Drawable {
     }
 
     /**
-     * Returns the type of shape used by this drawable, one of {@link #HLINE},
-     * {@link #CIRCLE}, {@link #RECTANGLE} or {@link #VLINE}.
+     * Returns the type of shape used by this drawable, one of {@link #RECTANGLE},
+     * {@link #CIRCLE}, {@link #RING}, {@link #HLINE} or {@link #VLINE}.
      *
      * @return the type of shape used by this drawable
      * @see #setShape(int)
@@ -300,7 +311,10 @@ public class ShapeDrawable extends Drawable {
     }
 
     /**
-     * <p>Sets whether to draw circles and rings based on level.</p>
+     * <p>Sets whether to draw circles and rings based on level. If {@link #getLevel()}
+     * is less than {@link #MAX_LEVEL}, a circle shape becomes a pie, and a ring shape
+     * becomes an open arc. {@link #CIRCLE} and {@link #RING} will start at 0 o'clock
+     * direction and sweep clockwise. The default is true.</p>
      * <p><strong>Note</strong>: changing this property will affect all instances
      * of a drawable loaded from a resource. It is recommended to invoke
      * {@link #mutate()} before changing this property.</p>
@@ -321,14 +335,14 @@ public class ShapeDrawable extends Drawable {
     }
 
     /**
-     * Configure the padding of the shape
+     * Configure the padding of the shape, there is no padding by default.
      *
      * @param left   Left padding of the shape
      * @param top    Top padding of the shape
      * @param right  Right padding of the shape
      * @param bottom Bottom padding of the shape
      */
-    public void setPadding(int left, int top, int right, int bottom) {
+    public void setPadding(@Px int left, @Px int top, @Px int right, @Px int bottom) {
         if (mShapeState.mPadding == null) {
             mShapeState.mPadding = new Rect();
         }
@@ -762,6 +776,8 @@ public class ShapeDrawable extends Drawable {
         public int mInnerRadius = -1;
         public int mThickness = -1;
 
+        public boolean mDither = false;
+
         boolean mUseLevelForShape = true;
 
         ColorStateList mTint = null;
@@ -785,6 +801,7 @@ public class ShapeDrawable extends Drawable {
             mThicknessRatio = orig.mThicknessRatio;
             mInnerRadius = orig.mInnerRadius;
             mThickness = orig.mThickness;
+            mDither = orig.mDither;
             mUseLevelForShape = orig.mUseLevelForShape;
             mTint = orig.mTint;
             mBlendMode = orig.mBlendMode;
@@ -835,7 +852,7 @@ public class ShapeDrawable extends Drawable {
         updateLocalState(res);
     }
 
-    private void updateLocalState(@Nullable Resources res) {
+    void updateLocalState(@Nullable Resources res) {
         final ShapeState state = mShapeState;
 
         if (state.mSolidColors != null) {
