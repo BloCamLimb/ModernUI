@@ -46,7 +46,7 @@ import java.lang.annotation.RetentionPolicy;
 public class ShapeDrawable extends Drawable {
 
     /**
-     * Shape is a rectangle, possibly with rounded corners
+     * Shape is a rectangle, possibly with rounded corners.
      */
     public static final int RECTANGLE = 0;
 
@@ -61,12 +61,12 @@ public class ShapeDrawable extends Drawable {
     public static final int RING = 2;
 
     /**
-     * Shape is a horizontal line, rounded.
+     * Shape is a horizontal line.
      */
     public static final int HLINE = 3;
 
     /**
-     * Shape is a vertical line, rounded.
+     * Shape is a vertical line.
      */
     public static final int VLINE = 4;
 
@@ -96,6 +96,7 @@ public class ShapeDrawable extends Drawable {
 
     private final Paint mFillPaint = new Paint();
     private Paint mStrokePaint;   // optional, set by the caller
+    private ColorFilter mColorFilter;   // optional, set by the caller
     private BlendModeColorFilter mBlendModeColorFilter;
     private boolean mShapeIsDirty;
 
@@ -108,44 +109,12 @@ public class ShapeDrawable extends Drawable {
         this(new ShapeState(), null);
     }
 
-    ShapeDrawable(@NonNull ShapeState state, @Nullable Resources res) {
-        mShapeState = state;
-
-        updateLocalState(res);
-    }
-
-    private void updateLocalState(@Nullable Resources res) {
-        final ShapeState state = mShapeState;
-
-        if (state.mSolidColors != null) {
-            final int[] currentState = getState();
-            final int stateColor = state.mSolidColors.getColorForState(currentState, 0);
-            mFillPaint.setColor(stateColor);
-        } else {
-            mFillPaint.setColor(Color.TRANSPARENT);
-        }
-
-        mPadding = state.mPadding;
-
-        if (state.mStrokeWidth >= 0) {
-            mStrokePaint = new Paint();
-            mStrokePaint.setStyle(Paint.STROKE);
-            mStrokePaint.setStrokeWidth(state.mStrokeWidth);
-
-            if (state.mStrokeColors != null) {
-                final int[] currentState = getState();
-                final int strokeStateColor = state.mStrokeColors.getColorForState(
-                        currentState, 0);
-                mStrokePaint.setColor(strokeStateColor);
-            }
-        }
-
-        mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter,
-                state.mTint, state.mBlendMode);
-
-        mShapeIsDirty = true;
-    }
-
+    /**
+     * This checks mShapeIsDirty, and if it is true, recomputes the drawing
+     * rectangle (mRect).
+     *
+     * @return true if the resulting rectangle is empty
+     */
     boolean updateRectIsEmpty() {
         if (mShapeIsDirty) {
             mShapeIsDirty = false;
@@ -153,14 +122,14 @@ public class ShapeDrawable extends Drawable {
             mRect.set(getBounds());
 
             if (mStrokePaint != null) {
-                // the stroke direction is center, inset halfStrokeWidth to fit in bounds
+                // the stroke align is center, inset half stroke width to fit in bounds
                 float inset = mStrokePaint.getStrokeWidth() * 0.5f;
                 mRect.inset(inset, inset);
             }
         }
         if (mShapeState.mStrokeWidth > 0) {
-            //TODO Google bug: find out if there's nothing to draw (with stroke)
-            return false;
+            // fixed by Modern UI: do not skip stroke-only draw
+            return getBounds().isEmpty();
         } else {
             return mRect.isEmpty();
         }
@@ -180,115 +149,126 @@ public class ShapeDrawable extends Drawable {
         final int currFillAlpha = modulateAlpha(prevFillAlpha, mAlpha);
         final int currStrokeAlpha = modulateAlpha(prevStrokeAlpha, mAlpha);
 
-        final boolean haveFill = currFillAlpha > 0;
-        final boolean haveStroke = currStrokeAlpha > 0 && mStrokePaint != null &&
-                mStrokePaint.getStrokeWidth() > 0;
-        //TODO Google bug: also check BlendMode/Shader/ColorFilter to determine there's fill or stroke
         final ShapeState st = mShapeState;
-        final ColorFilter colorFilter = mBlendModeColorFilter;
+        final ColorFilter colorFilter = mColorFilter != null ? mColorFilter : mBlendModeColorFilter;
+
+        //TODO currently we don't have layer support, so fill+stroke with alpha<255 or non-null color filter
+        // results in rendering artifacts. once we have custom effect support, we will write a dedicated shader
+        // that fills and strokes with different colors simultaneously
 
         mFillPaint.setAlpha(currFillAlpha);
         mFillPaint.setColorFilter(colorFilter);
         if (colorFilter != null && st.mSolidColors == null) {
-            mFillPaint.setColor(mAlpha << 24);
+            // Modern UI convention is white alpha
+            mFillPaint.setRGBA(255, 255, 255, mAlpha);
         }
-        if (haveStroke) {
+        // fixed by Modern UI: also check BlendMode/Shader/ColorFilter to determine there's fill or stroke
+        final boolean haveFill = !mFillPaint.getNativePaint().nothingToDraw();
+        final boolean haveStroke;
+        final boolean restoreStroke;
+        if (mStrokePaint != null &&
+                mStrokePaint.getStrokeWidth() > 0) {
             mStrokePaint.setAlpha(currStrokeAlpha);
             mStrokePaint.setColorFilter(colorFilter);
+            haveStroke = !mStrokePaint.getNativePaint().nothingToDraw();
+            restoreStroke = true;
+        } else {
+            haveStroke = false;
+            restoreStroke = false;
         }
 
-        RectF r = mRect;
-
-        switch (st.mShape) {
-            case RECTANGLE -> {
-                if (st.mRadius > 0.0f) {
-                    // since the caller is only giving us 1 value, we will force
-                    // it to be square if the rect is too small in one dimension
-                    // to show it. If we did nothing, Skia would clamp the rad
-                    // independently along each axis, giving us a thin ellipse
-                    // if the rect were very wide but not very tall
-                    float rad = Math.min(st.mRadius,
-                            Math.min(r.width(), r.height()) * 0.5f);
-                    canvas.drawRoundRect(r, rad, mFillPaint);
-                    if (haveStroke) {
-                        mStrokePaint.setStrokeCap(Paint.CAP_ROUND);
-                        canvas.drawRoundRect(r, rad, mStrokePaint);
-                    }
-                } else {
-                    if (mFillPaint.getColor() != 0 ||
-                            colorFilter != null ||
-                            mFillPaint.getShader() != null) {
-                        canvas.drawRect(r, mFillPaint);
-                    }
-                    if (haveStroke) {
-                        mStrokePaint.setStrokeCap(Paint.CAP_SQUARE);
-                        canvas.drawRect(r, mStrokePaint);
+        if (haveFill | haveStroke) {
+            RectF r = mRect;
+            switch (st.mShape) {
+                case RECTANGLE -> {
+                    if (st.mRadius > 0.0f) {
+                        float rad = Math.min(st.mRadius,
+                                Math.min(r.width(), r.height()) * 0.5f);
+                        if (haveFill) {
+                            canvas.drawRoundRect(r, rad, mFillPaint);
+                        }
+                        if (haveStroke) {
+                            canvas.drawRoundRect(r, rad, mStrokePaint);
+                        }
+                    } else {
+                        if (haveFill) {
+                            canvas.drawRect(r, mFillPaint);
+                        }
+                        if (haveStroke) {
+                            canvas.drawRect(r, mStrokePaint);
+                        }
                     }
                 }
-            }
-            case CIRCLE -> {
-                float cx = r.centerX();
-                float cy = r.centerY();
-                float radius = Math.min(r.width(), r.height()) * 0.5f;
-                if (st.mUseLevelForShape) {
-                    float sweep = 360.0f * getLevel() / 10000.0f;
-                    canvas.drawPie(cx, cy, radius, -90, sweep, mFillPaint);
-                    if (haveStroke) {
-                        mStrokePaint.setStrokeCap(Paint.CAP_BUTT);
-                        canvas.drawPie(cx, cy, radius, -90, sweep, mStrokePaint);
-                    }
-                } else {
-                    canvas.drawCircle(cx, cy, radius, mFillPaint);
-                    if (haveStroke) {
-                        mStrokePaint.setStrokeCap(Paint.CAP_BUTT);
-                        canvas.drawCircle(cx, cy, radius, mStrokePaint);
+                case CIRCLE -> {
+                    float cx = r.centerX();
+                    float cy = r.centerY();
+                    float radius = Math.min(r.width(), r.height()) * 0.5f;
+                    if (st.mUseLevelForShape && getLevel() < MAX_LEVEL) {
+                        float sweep = 360.0f * getLevel() / MAX_LEVEL;
+                        if (haveFill) {
+                            canvas.drawPie(cx, cy, radius, -90, sweep, mFillPaint);
+                        }
+                        if (haveStroke) {
+                            canvas.drawPie(cx, cy, radius, -90, sweep, mStrokePaint);
+                        }
+                    } else {
+                        if (haveFill) {
+                            canvas.drawCircle(cx, cy, radius, mFillPaint);
+                        }
+                        if (haveStroke) {
+                            canvas.drawCircle(cx, cy, radius, mStrokePaint);
+                        }
                     }
                 }
-            }
-            case RING -> {
-                //TODO new arc render
-                float cx = r.centerX();
-                float cy = r.centerY();
-                float thickness = st.mThickness != -1 ?
-                        st.mThickness : r.width() / st.mThicknessRatio;
-                // inner radius
-                float radius = st.mInnerRadius != -1 ?
-                        st.mInnerRadius : r.width() / st.mInnerRadiusRatio;
-                radius += thickness * 0.5f;
-                Paint paint = Paint.obtain();
-                paint.set(mFillPaint);
-                paint.setStrokeWidth(thickness);
-                float sweep = st.mUseLevelForShape ? (360.0f * getLevel() / 10000.0f) : 360f;
-                canvas.drawArc(cx, cy, radius, -90, sweep, paint);
-                paint.recycle();
-            }
-            case HLINE -> {
-                float y = r.centerY();
-                if (haveStroke) {
-                    mStrokePaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
-                    canvas.drawLine(r.left, y, r.right, y, mStrokePaint);
-                } else {
-                    // Modern UI added, both are the same
-                    mFillPaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
-                    canvas.drawLine(r.left, y, r.right, y, r.height(), mFillPaint);
+                case RING -> {
+                    float cx = r.centerX();
+                    float cy = r.centerY();
+                    float thickness = st.mThickness != -1 ?
+                            st.mThickness : Math.min(r.width(), r.height()) / st.mThicknessRatio;
+                    float innerRadius = st.mInnerRadius != -1 ?
+                            st.mInnerRadius : Math.min(r.width(), r.height()) / st.mInnerRadiusRatio;
+                    float radius = innerRadius + thickness * 0.5f;
+                    float sweep = st.mUseLevelForShape ? (360.0f * getLevel() / MAX_LEVEL) : 360f;
+                    Paint.Cap cap = st.mRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
+                    if (haveFill) {
+                        canvas.drawArc(cx, cy, radius, -90, sweep,
+                                cap, thickness, mFillPaint);
+                    }
+                    if (haveStroke) {
+                        canvas.drawArc(cx, cy, radius, -90, sweep,
+                                cap, thickness, mStrokePaint);
+                    }
                 }
-            }
-            case VLINE -> {
-                float x = r.centerX();
-                if (haveStroke) {
-                    mStrokePaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
-                    canvas.drawLine(x, r.top, x, r.bottom, mStrokePaint);
-                } else {
-                    // Modern UI added, both are the same
-                    mFillPaint.setStrokeCap(st.mRadius > 0 ? Paint.CAP_ROUND : Paint.CAP_SQUARE);
-                    canvas.drawLine(x, r.top, x, r.bottom, r.width(), mFillPaint);
+                case HLINE -> {
+                    float y = r.centerY();
+                    Paint.Cap cap = st.mRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
+                    if (haveStroke) {
+                        mStrokePaint.setStrokeCap(cap);
+                        canvas.drawLine(r.left, y, r.right, y, mStrokePaint);
+                    } else {
+                        // Modern UI added, both are the same
+                        canvas.drawLine(r.left, y, r.right, y, cap, r.height(), mFillPaint);
+                    }
+                }
+                case VLINE -> {
+                    float x = r.centerX();
+                    Paint.Cap cap = st.mRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
+                    if (haveStroke) {
+                        mStrokePaint.setStrokeCap(cap);
+                        canvas.drawLine(x, r.top, x, r.bottom, mStrokePaint);
+                    } else {
+                        // Modern UI added, both are the same
+                        canvas.drawLine(x, r.top, x, r.bottom, cap, r.width(), mFillPaint);
+                    }
                 }
             }
         }
 
         mFillPaint.setAlpha(prevFillAlpha);
-        if (haveStroke) {
+        mFillPaint.setColorFilter(null);
+        if (restoreStroke) {
             mStrokePaint.setAlpha(prevStrokeAlpha);
+            mStrokePaint.setColorFilter(null);
         }
     }
 
@@ -388,7 +368,8 @@ public class ShapeDrawable extends Drawable {
      * then the drawable is drawn in a round-rectangle, rather than a
      * rectangle. This property is honored only when the shape is of type
      * {@link #RECTANGLE}. Specifically, if this is > 0, the line ends are
-     * rounded when the shape is of type {@link #HLINE} or {@link #VLINE}.
+     * rounded when the shape is of type {@link #HLINE}, {@link #VLINE} or
+     * {@link #RING}.
      * <p>
      * <strong>Note</strong>: changing this property will affect all instances
      * of a drawable loaded from a resource. It is recommended to invoke
@@ -504,7 +485,7 @@ public class ShapeDrawable extends Drawable {
             color = Color.TRANSPARENT;
         } else {
             final int[] stateSet = getState();
-            color = colorStateList.getColorForState(stateSet, 0);
+            color = colorStateList.getColorForState(stateSet, Color.TRANSPARENT);
         }
         setStrokeInternal(width, color);
     }
@@ -528,7 +509,7 @@ public class ShapeDrawable extends Drawable {
      */
     public void setInnerRadiusRatio(
             @FloatRange(from = 0.0f, fromInclusive = false) float innerRadiusRatio) {
-        if (innerRadiusRatio <= 0) {
+        if (!(innerRadiusRatio > 0)) {
             throw new IllegalArgumentException("Ratio must be greater than zero");
         }
         mShapeState.mInnerRadiusRatio = innerRadiusRatio;
@@ -551,7 +532,7 @@ public class ShapeDrawable extends Drawable {
      *
      * @see #getInnerRadius()
      */
-    public void setInnerRadius(int innerRadius) {
+    public void setInnerRadius(@Px int innerRadius) {
         mShapeState.mInnerRadius = innerRadius;
         invalidateSelf();
     }
@@ -562,6 +543,7 @@ public class ShapeDrawable extends Drawable {
      *
      * @see #setInnerRadius(int)
      */
+    @Px
     public int getInnerRadius() {
         return mShapeState.mInnerRadius;
     }
@@ -574,7 +556,7 @@ public class ShapeDrawable extends Drawable {
      */
     public void setThicknessRatio(
             @FloatRange(from = 0.0f, fromInclusive = false) float thicknessRatio) {
-        if (thicknessRatio <= 0) {
+        if (!(thicknessRatio > 0)) {
             throw new IllegalArgumentException("Ratio must be greater than zero");
         }
         mShapeState.mThicknessRatio = thicknessRatio;
@@ -595,7 +577,7 @@ public class ShapeDrawable extends Drawable {
      * Configure the thickness of the ring, or -1 to use {@link #getThicknessRatio()}.
      * The default value is -1.
      */
-    public void setThickness(int thickness) {
+    public void setThickness(@Px int thickness) {
         mShapeState.mThickness = thickness;
         invalidateSelf();
     }
@@ -606,6 +588,7 @@ public class ShapeDrawable extends Drawable {
      *
      * @see #setThickness(int)
      */
+    @Px
     public int getThickness() {
         return mShapeState.mThickness;
     }
@@ -617,7 +600,7 @@ public class ShapeDrawable extends Drawable {
         final ShapeState s = mShapeState;
         final ColorStateList solidColors = s.mSolidColors;
         if (solidColors != null) {
-            final int newColor = solidColors.getColorForState(stateSet, 0);
+            final int newColor = solidColors.getColorForState(stateSet, Color.TRANSPARENT);
             final int oldColor = mFillPaint.getColor();
             if (oldColor != newColor) {
                 mFillPaint.setColor(newColor);
@@ -629,7 +612,7 @@ public class ShapeDrawable extends Drawable {
         if (strokePaint != null) {
             final ColorStateList strokeColors = s.mStrokeColors;
             if (strokeColors != null) {
-                final int newColor = strokeColors.getColorForState(stateSet, 0);
+                final int newColor = strokeColors.getColorForState(stateSet, Color.TRANSPARENT);
                 final int oldColor = strokePaint.getColor();
                 if (oldColor != newColor) {
                     strokePaint.setColor(newColor);
@@ -657,14 +640,16 @@ public class ShapeDrawable extends Drawable {
         final ShapeState s = mShapeState;
         return super.isStateful()
                 || (s.mSolidColors != null && s.mSolidColors.isStateful())
-                || (s.mStrokeColors != null && s.mStrokeColors.isStateful());
+                || (s.mStrokeColors != null && s.mStrokeColors.isStateful())
+                || (s.mTint != null && s.mTint.isStateful());
     }
 
     @Override
     public boolean hasFocusStateSpecified() {
         final ShapeState s = mShapeState;
         return (s.mSolidColors != null && s.mSolidColors.hasFocusStateSpecified())
-                || (s.mStrokeColors != null && s.mStrokeColors.hasFocusStateSpecified());
+                || (s.mStrokeColors != null && s.mStrokeColors.hasFocusStateSpecified())
+                || (s.mTint != null && s.mTint.hasFocusStateSpecified());
     }
 
     @Override
@@ -678,6 +663,20 @@ public class ShapeDrawable extends Drawable {
     @Override
     public int getAlpha() {
         return mAlpha;
+    }
+
+    @Override
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+        if (colorFilter != mColorFilter) {
+            mColorFilter = colorFilter;
+            invalidateSelf();
+        }
+    }
+
+    @Nullable
+    @Override
+    public ColorFilter getColorFilter() {
+        return mColorFilter;
     }
 
     @Override
@@ -787,15 +786,12 @@ public class ShapeDrawable extends Drawable {
             mInnerRadius = orig.mInnerRadius;
             mThickness = orig.mThickness;
             mUseLevelForShape = orig.mUseLevelForShape;
+            mTint = orig.mTint;
+            mBlendMode = orig.mBlendMode;
         }
 
         public void setShape(@Shape int shape) {
             mShape = shape;
-        }
-
-        public void setSize(int width, int height) {
-            mWidth = width;
-            mHeight = height;
         }
 
         public void setSolidColors(@Nullable ColorStateList colors) {
@@ -808,7 +804,16 @@ public class ShapeDrawable extends Drawable {
         }
 
         public void setCornerRadius(float radius) {
-            mRadius = Math.max(radius, 0);
+            if (radius >= 0) {
+                mRadius = radius;
+            } else {
+                mRadius = 0;
+            }
+        }
+
+        public void setSize(int width, int height) {
+            mWidth = width;
+            mHeight = height;
         }
 
         @NonNull
@@ -822,5 +827,42 @@ public class ShapeDrawable extends Drawable {
         public Drawable newDrawable(@Nullable Resources res) {
             return new ShapeDrawable(this, res);
         }
+    }
+
+    ShapeDrawable(@NonNull ShapeState state, @Nullable Resources res) {
+        mShapeState = state;
+
+        updateLocalState(res);
+    }
+
+    private void updateLocalState(@Nullable Resources res) {
+        final ShapeState state = mShapeState;
+
+        if (state.mSolidColors != null) {
+            final int[] currentState = getState();
+            final int stateColor = state.mSolidColors.getColorForState(currentState, 0);
+            mFillPaint.setColor(stateColor);
+        } else {
+            mFillPaint.setColor(Color.TRANSPARENT);
+        }
+
+        mPadding = state.mPadding;
+
+        if (state.mStrokeWidth >= 0) {
+            mStrokePaint = new Paint();
+            mStrokePaint.setStyle(Paint.STROKE);
+            mStrokePaint.setStrokeWidth(state.mStrokeWidth);
+
+            if (state.mStrokeColors != null) {
+                final int[] currentState = getState();
+                final int strokeStateColor = state.mStrokeColors.getColorForState(
+                        currentState, Color.TRANSPARENT);
+                mStrokePaint.setColor(strokeStateColor);
+            }
+        }
+
+        mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter,
+                state.mTint, state.mBlendMode);
+        mShapeIsDirty = true;
     }
 }

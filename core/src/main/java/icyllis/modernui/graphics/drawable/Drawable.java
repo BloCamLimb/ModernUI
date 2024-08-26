@@ -632,7 +632,7 @@ public abstract class Drawable {
      * returns false.
      * @see #MAX_LEVEL
      */
-    public final boolean setLevel(int level) {
+    public final boolean setLevel(@IntRange(from = 0, to = MAX_LEVEL) int level) {
         if (mLevel != level) {
             mLevel = level;
             return onLevelChange(level);
@@ -646,6 +646,7 @@ public abstract class Drawable {
      * @return int Current level, from 0 (minimum) to 10000 (maximum).
      * @see #MAX_LEVEL
      */
+    @IntRange(from = 0, to = MAX_LEVEL)
     public final int getLevel() {
         return mLevel;
     }
