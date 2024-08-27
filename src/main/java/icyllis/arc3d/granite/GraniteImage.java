@@ -31,11 +31,12 @@ import javax.annotation.Nullable;
  */
 public final class GraniteImage extends icyllis.arc3d.core.Image {
 
-    Context mContext;
+    @RawPtr
+    RecordingContext mContext;
     @SharedPtr
     ImageViewProxy mImageViewProxy;
 
-    public GraniteImage(@Nonnull Context context,
+    public GraniteImage(@Nonnull @RawPtr RecordingContext context,
                         @Nonnull @SharedPtr ImageViewProxy view,
                         int colorType, int alphaType,
                         @Nullable ColorSpace colorSpace) {
@@ -116,24 +117,12 @@ public final class GraniteImage extends icyllis.arc3d.core.Image {
     }
 
     @Override
-    public boolean isValid(@Nullable Context context) {
-        /*if (mContext.isDiscarded()) {
-            return false;
-        }
-        if (context != null) {
-            return !context.isDiscarded() && mContext.matches(context);
-        }*/
-        //TODO
+    public boolean isTextureBacked() {
         return true;
     }
 
     @Override
-    public boolean isGpuBacked() {
-        return true;
-    }
-
-    @Override
-    public long getGpuMemorySize() {
+    public long getTextureSize() {
         return mImageViewProxy.getMemorySize();
     }
 
