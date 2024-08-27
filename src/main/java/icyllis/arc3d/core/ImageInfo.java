@@ -208,8 +208,8 @@ public final class ImageInfo {
      *
      * @return width() times bytesPerPixel() as integer
      */
-    public int minRowBytes() {
-        return width() * bytesPerPixel();
+    public long minRowBytes() {
+        return width() * (long) bytesPerPixel();
     }
 
     /**
@@ -244,8 +244,22 @@ public final class ImageInfo {
      */
     public boolean isValid() {
         return width > 0 && height > 0 &&
+                width <= (Integer.MAX_VALUE >> 2) &&
+                height <= (Integer.MAX_VALUE >> 2) &&
                 colorType != ColorInfo.CT_UNKNOWN &&
                 alphaType != ColorInfo.AT_UNKNOWN;
+    }
+
+    public long computeByteSize(long rowBytes) {
+        if (height == 0) {
+            return 0;
+        }
+        //TODO possible need to check for 64-bit signed overflow?
+        return (height - 1) * rowBytes + minRowBytes();
+    }
+
+    public long computeMinByteSize() {
+        return computeByteSize(minRowBytes());
     }
 
     /**
