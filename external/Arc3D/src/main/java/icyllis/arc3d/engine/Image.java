@@ -136,14 +136,14 @@ public abstract class Image extends Resource {
      * @return true if this image can be used as storage images.
      */
     public final boolean isStorageImage() {
-        return (mFlags & ISurface.FLAG_STORAGE_IMAGE) != 0;
+        return mDesc.isStorageImage();
     }
 
     /**
      * @return true if this image can be used as color and depth/stencil attachments
      */
     public final boolean isRenderable() {
-        return (mFlags & ISurface.FLAG_RENDERABLE) != 0;
+        return mDesc.isRenderable();
     }
 
     /**
@@ -177,7 +177,7 @@ public abstract class Image extends Resource {
      * @return true if we are working with protected content
      */
     public final boolean isProtected() {
-        return (mFlags & ISurface.FLAG_PROTECTED) != 0;
+        return mDesc.isProtected();
     }
 
     /**
@@ -210,7 +210,8 @@ public abstract class Image extends Resource {
      *
      * @return combination of the above flags
      */
-    public final int getSurfaceFlags() {
+    @Deprecated
+    final int getSurfaceFlags() {
         int flags = mFlags;
         if (isBudgeted()) {
             flags |= ISurface.FLAG_BUDGETED;

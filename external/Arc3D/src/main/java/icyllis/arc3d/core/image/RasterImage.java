@@ -20,14 +20,19 @@
 package icyllis.arc3d.core.image;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.Context;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class RasterImage extends Image {
 
+    public static final int COPY_MODE_IF_MUTABLE = 0;
+    public static final int COPY_MODE_ALWAYS = 1;
+    public static final int COPY_MODE_NEVER = 2;
+
     final Pixmap mPixmap;
+    @SharedPtr
     Pixels mPixels;
 
     /**
@@ -35,20 +40,71 @@ public class RasterImage extends Image {
      * @param pixels raw ptr to pixel ref
      */
     public RasterImage(@Nonnull Pixmap pixmap,
-                       @Nonnull @RawPtr Pixels pixels) {
+                       @Nonnull @RawPtr Pixels pixels,
+                       boolean mayBeMutable) {
         super(pixmap.getInfo());
+        if (!(mayBeMutable || pixels.isImmutable())) {
+            throw new IllegalArgumentException();
+        }
         mPixmap = pixmap;
         mPixels = RefCnt.create(pixels);
+    }
+
+    @Nullable
+    @SharedPtr
+    public static Image makeFromBitmap(@Nonnull Pixmap pixmap,
+                                       @RawPtr Pixels pixels) {
+        return makeFromRasterBitmap(pixmap, pixels, COPY_MODE_IF_MUTABLE);
+    }
+
+    @Nullable
+    @SharedPtr
+    public static Image makeFromRasterBitmap(@Nonnull Pixmap pixmap,
+                                             @RawPtr Pixels pixels,
+                                             int copyMode) {
+        if (pixels == null) {
+            return null;
+        }
+        if (!pixmap.getInfo().isValid() || pixmap.getRowStride() < pixmap.getInfo().minRowBytes()) {
+            return null;
+        }
+        if (pixels.getAddress() == MemoryUtil.NULL && pixels.getBase() == null) {
+            return null;
+        }
+        if (copyMode == COPY_MODE_ALWAYS || (!pixels.isImmutable() && copyMode != COPY_MODE_NEVER)) {
+            long size = pixmap.getInfo().computeByteSize(pixmap.getRowStride());
+            if (size < 0) {
+                return null;
+            }
+            long addr = MemoryUtil.nmemAlloc(size);
+            if (addr == MemoryUtil.NULL) {
+                return null;
+            }
+            PixelUtils.copyImage(
+                    pixels.getBase(),
+                    pixels.getAddress(),
+                    pixmap.getRowStride(),
+                    null,
+                    addr,
+                    pixmap.getRowStride(),
+                    pixmap.getRowStride(),
+                    pixmap.getHeight()
+            );
+            Pixmap newPixmap = new Pixmap(pixmap.getInfo(),
+                    null, addr, pixmap.getRowStride());
+            Pixels newPixels = new Pixels(pixmap.getWidth(), pixmap.getHeight(),
+                    null, addr, pixmap.getRowStride(), MemoryUtil::nmemFree);
+            newPixels.setImmutable();
+            Image result = new RasterImage(newPixmap, newPixels, false);
+            newPixels.unref();
+            return result;
+        }
+        return new RasterImage(pixmap, pixels, copyMode == COPY_MODE_NEVER);
     }
 
     @Override
     protected void deallocate() {
         mPixels = RefCnt.move(mPixels);
-    }
-
-    @Override
-    public boolean isValid(@Nullable Context context) {
-        return true;
     }
 
     @Override
