@@ -639,7 +639,7 @@ public final class GLDevice extends Device {
         if (texture.isReadOnly() || texture.getSampleCount() > 1) {
             return false;
         }
-        if ((texture.getSurfaceFlags() & ISurface.FLAG_SAMPLED_IMAGE) == 0) {
+        if (!texture.isSampledImage()) {
             return false;
         }
         assert (texture.getWidth() > 0 && texture.getHeight() > 0);
@@ -942,7 +942,7 @@ public final class GLDevice extends Device {
                              Image dst,
                              int dstL, int dstT, int dstR, int dstB,
                              int filter) {
-        if ((dst.getSurfaceFlags() & ISurface.FLAG_READ_ONLY) != 0) {
+        if (dst.isReadOnly()) {
             return false;
         }
         return onCopyImage(
