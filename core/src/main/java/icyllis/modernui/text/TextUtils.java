@@ -578,14 +578,16 @@ public final class TextUtils {
             var currFont = currPos == nGlyphs ? null : piece.getFont(currPos);
             if (lastFont != currFont) {
                 nativeFont.setTypeface(lastFont.getNativeTypeface());
-                int runCount = currPos - lastPos;
-                var runBuffer = builder.allocRunPos(
-                        nativeFont, runCount, null
-                );
-                runBuffer.addGlyphs(piece.getGlyphs(), lastPos, runCount);
-                var positions = piece.getPositions();
-                for (int i = 0, j = lastPos << 1; i < runCount; i += 1, j += 2) {
-                    runBuffer.addPosition(positions[j] + offsetX, positions[j|1]);
+                if (nativeFont.getTypeface() != null) {
+                    int runCount = currPos - lastPos;
+                    var runBuffer = builder.allocRunPos(
+                            nativeFont, runCount, null
+                    );
+                    runBuffer.addGlyphs(piece.getGlyphs(), lastPos, runCount);
+                    var positions = piece.getPositions();
+                    for (int i = 0, j = lastPos << 1; i < runCount; i += 1, j += 2) {
+                        runBuffer.addPosition(positions[j] + offsetX, positions[j | 1]);
+                    }
                 }
                 lastFont = currFont;
                 lastPos = currPos;
