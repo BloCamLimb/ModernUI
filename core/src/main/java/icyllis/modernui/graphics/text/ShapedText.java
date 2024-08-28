@@ -419,12 +419,16 @@ public class ShapedText {
         if (nGlyphs == 0) {
             mTextBlob = null;
         } else if (mFontIndices == null) {
-            // single font case
+            // optimize for single font
             var nativeFont = new icyllis.arc3d.core.Font();
             paint.getNativeFont(nativeFont);
             nativeFont.setTypeface(mFonts[0].getNativeTypeface());
-            mTextBlob = TextBlob.makeNoCopy(mGlyphs, mPositions,
-                    nativeFont, null);
+            if (nativeFont.getTypeface() != null) {
+                mTextBlob = TextBlob.makeNoCopy(mGlyphs, mPositions,
+                        nativeFont, null);
+            } else {
+                mTextBlob = null;
+            }
         } else {
             // theoretically, we don't need to copy the array in this case, but...
             final TextBlob.Builder builder = new TextBlob.Builder();
@@ -437,12 +441,14 @@ public class ShapedText {
                 var currFont = currPos == nGlyphs ? null : getFont(currPos);
                 if (lastFont != currFont) {
                     nativeFont.setTypeface(lastFont.getNativeTypeface());
-                    int runCount = currPos - lastPos;
-                    var runBuffer = builder.allocRunPos(
-                            nativeFont, runCount, null
-                    );
-                    runBuffer.addGlyphs(mGlyphs, lastPos, runCount);
-                    runBuffer.addPositions(mPositions, lastPos << 1, runCount);
+                    if (nativeFont.getTypeface() != null) {
+                        int runCount = currPos - lastPos;
+                        var runBuffer = builder.allocRunPos(
+                                nativeFont, runCount, null
+                        );
+                        runBuffer.addGlyphs(mGlyphs, lastPos, runCount);
+                        runBuffer.addPositions(mPositions, lastPos << 1, runCount);
+                    }
                     lastFont = currFont;
                     lastPos = currPos;
                 }
