@@ -69,10 +69,8 @@ public final class Core {
     private static volatile Handler sUiHandlerAsync;
 
     private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
-    private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
     private static final Executor sMainThreadExecutor = Core::executeOnMainThread;
-    private static final Executor sRenderThreadExecutor = Core::executeOnRenderThread;
     private static final Executor sUiThreadExecutor = Core::executeOnUiThread;
 
     private static volatile ImmediateContext sImmediateContext;
@@ -478,48 +476,11 @@ public final class Core {
     }
 
     /**
-     * Post an async operation that will be executed on render thread.
-     *
-     * @param r the runnable
-     */
-    public static void postOnRenderThread(@NonNull Runnable r) {
-        sRenderCalls.offer(r);
-    }
-
-    /**
-     * Post a runnable to the render thread queue or execute the runnable immediately.
-     *
-     * @param r the runnable
-     */
-    public static void executeOnRenderThread(@NonNull Runnable r) {
-        if (isOnRenderThread()) {
-            r.run();
-        } else {
-            postOnRenderThread(r);
-        }
-    }
-
-    @NonNull
-    public static Executor getRenderThreadExecutor() {
-        return sRenderThreadExecutor;
-    }
-
-    /**
      * Flush main thread calls if the main thread is not a looper thread.
      */
     public static void flushMainCalls() {
         //noinspection UnnecessaryLocalVariable
         final ConcurrentLinkedQueue<Runnable> queue = sMainCalls;
-        Runnable r;
-        while ((r = queue.poll()) != null) r.run();
-    }
-
-    /**
-     * Flush render thread calls if the render thread is not a looper thread.
-     */
-    public static void flushRenderCalls() {
-        //noinspection UnnecessaryLocalVariable
-        final ConcurrentLinkedQueue<Runnable> queue = sRenderCalls;
         Runnable r;
         while ((r = queue.poll()) != null) r.run();
     }
