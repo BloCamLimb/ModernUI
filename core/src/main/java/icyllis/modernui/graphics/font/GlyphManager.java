@@ -347,7 +347,7 @@ public class GlyphManager {
     private static void debug(GLFontAtlas atlas, String name) {
         if (atlas != null) {
             String path = Bitmap.saveDialogGet(Bitmap.SaveFormat.PNG, null, name);
-            Core.executeOnRenderThread(() -> atlas.debug(path));
+            atlas.debug(path);
         }
     }
 
