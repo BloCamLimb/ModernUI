@@ -27,7 +27,6 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.material.MaterialCheckBox;
@@ -158,7 +157,6 @@ public class TestFragment extends Fragment {
 
             content.setOnKeyListener((v, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEY_E && event.getAction() == KeyEvent.ACTION_UP) {
-                    GlyphManager.getInstance().debug();
                     /*getParentFragmentManager().beginTransaction()
                             .replace(getId(), new FragmentB())
                             .addToBackStack(null)

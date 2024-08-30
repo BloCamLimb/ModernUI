@@ -92,7 +92,6 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             Class.forName("icyllis.modernui.text.CharSequenceIterator");
             Class.forName("icyllis.modernui.text.Directions");
             Class.forName("icyllis.modernui.text.DynamicLayout");
-            Class.forName("icyllis.modernui.graphics.font.GlyphManager");
             Class.forName("icyllis.modernui.graphics.text.GraphemeBreak");
             Class.forName("icyllis.modernui.text.Layout");
             Class.forName("icyllis.modernui.graphics.text.LayoutCache");
