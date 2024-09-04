@@ -18,8 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
@@ -257,6 +256,34 @@ public class HorizontalScrollView extends FrameLayout {
     @ColorInt
     public int getRightEdgeEffectColor() {
         return mEdgeGlowRight.getColor();
+    }
+
+    /**
+     * Sets the left edge effect blend mode, the default is {@link EdgeEffect#DEFAULT_BLEND_MODE}.
+     *
+     * @param blendMode The blend mode for the left edge effect.
+     */
+    public void setLeftEdgeEffectBlendMode(@Nullable BlendMode blendMode) {
+        mEdgeGlowLeft.setBlendMode(blendMode);
+    }
+
+    /**
+     * Sets the right edge effect blend mode, the default is {@link EdgeEffect#DEFAULT_BLEND_MODE}.
+     *
+     * @param blendMode The blend mode for the right edge effect.
+     */
+    public void setRightEdgeEffectBlendMode(@Nullable BlendMode blendMode) {
+        mEdgeGlowRight.setBlendMode(blendMode);
+    }
+
+    @Nullable
+    public BlendMode getLeftEdgeEffectBlendMode() {
+        return mEdgeGlowLeft.getBlendMode();
+    }
+
+    @Nullable
+    public BlendMode getRightEdgeEffectBlendMode() {
+        return mEdgeGlowRight.getBlendMode();
     }
 
     @Override

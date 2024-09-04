@@ -26,7 +26,7 @@ import icyllis.arc3d.engine.*;
  *
  * @since 3.8
  */
-//TODO
+@Deprecated
 public interface CustomDrawable {
 
     /**
