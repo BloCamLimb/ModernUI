@@ -285,7 +285,7 @@ public class Paint {
     static final int TEXT_ANTI_ALIAS_ON = 0x8;
     static final int TEXT_ANTI_ALIAS_MASK = 0xC;
 
-    public static final int LINEAR_TEXT_FLAG = 0x10;
+    static final int LINEAR_TEXT_FLAG = 0x10;
 
     static final int FILTER_MODE_SHIFT = 5;
     static final int FILTER_MODE_MASK = 0x20;
@@ -293,7 +293,8 @@ public class Paint {
     static final int MIPMAP_MODE_SHIFT = 6;
     static final int MIPMAP_MODE_MASK = 0xC0;
 
-    static final int DEFAULT_FLAGS = NORMAL | (ImageShader.FILTER_MODE_LINEAR << FILTER_MODE_SHIFT);
+    static final int DEFAULT_FLAGS = NORMAL | (ImageShader.FILTER_MODE_LINEAR << FILTER_MODE_SHIFT) |
+            TEXT_ANTI_ALIAS_DEFAULT | LINEAR_TEXT_FLAG;
 
     // the recycle bin, see obtain()
     private static final Paint[] sPool = new Paint[8];

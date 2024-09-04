@@ -93,7 +93,8 @@ public final class LayoutCache {
             synchronized (LayoutCache.class) {
                 if (sCache == null) {
                     sCache = Caffeine.newBuilder()
-                            .maximumSize(2000)
+                            //TODO make this configurable
+                            .maximumSize(5000)
                             //.expireAfterAccess(5, TimeUnit.MINUTES)
                             .build();
                 }
