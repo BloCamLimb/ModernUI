@@ -22,8 +22,7 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
@@ -684,7 +683,7 @@ public class ViewPager extends ViewGroup {
     }
 
     /**
-     * Sets the edge effect color for both top and bottom edge effects.
+     * Sets the edge effect color for both left and right edge effects.
      *
      * @param color The color for the edge effects.
      * @see #setLeftEdgeEffectColor(int)
@@ -747,6 +746,34 @@ public class ViewPager extends ViewGroup {
      */
     public int getRightEdgeEffectColor() {
         return mRightEdge.getColor();
+    }
+
+    /**
+     * Sets the left edge effect blend mode, the default is {@link EdgeEffect#DEFAULT_BLEND_MODE}.
+     *
+     * @param blendMode The blend mode for the left edge effect.
+     */
+    public void setLeftEdgeEffectBlendMode(@Nullable BlendMode blendMode) {
+        mLeftEdge.setBlendMode(blendMode);
+    }
+
+    /**
+     * Sets the right edge effect blend mode, the default is {@link EdgeEffect#DEFAULT_BLEND_MODE}.
+     *
+     * @param blendMode The blend mode for the right edge effect.
+     */
+    public void setRightEdgeEffectBlendMode(@Nullable BlendMode blendMode) {
+        mRightEdge.setBlendMode(blendMode);
+    }
+
+    @Nullable
+    public BlendMode getLeftEdgeEffectBlendMode() {
+        return mLeftEdge.getBlendMode();
+    }
+
+    @Nullable
+    public BlendMode getRightEdgeEffectBlendMode() {
+        return mRightEdge.getBlendMode();
     }
 
     @Override

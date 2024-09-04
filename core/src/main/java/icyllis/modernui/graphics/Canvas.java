@@ -1449,10 +1449,11 @@ public abstract class Canvas {
         drawMesh(VertexMode.TRIANGLES, pos, null, color, null, null, paint);
     }
 
-    @ApiStatus.Experimental
+    @Deprecated
     public void drawCustomDrawable(@NonNull CustomDrawable drawable, @Nullable Matrix4 matrix) {
     }
 
+    @Deprecated
     public final void drawCustomDrawable(@NonNull CustomDrawable drawable) {
         drawCustomDrawable(drawable, null);
     }

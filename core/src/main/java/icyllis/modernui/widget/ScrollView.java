@@ -18,8 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
@@ -233,6 +232,34 @@ public class ScrollView extends FrameLayout {
     @ColorInt
     public int getBottomEdgeEffectColor() {
         return mEdgeGlowBottom.getColor();
+    }
+
+    /**
+     * Sets the top edge effect blend mode, the default is {@link EdgeEffect#DEFAULT_BLEND_MODE}.
+     *
+     * @param blendMode The blend mode for the top edge effect.
+     */
+    public void setTopEdgeEffectBlendMode(@Nullable BlendMode blendMode) {
+        mEdgeGlowTop.setBlendMode(blendMode);
+    }
+
+    /**
+     * Sets the bottom edge effect blend mode, the default is {@link EdgeEffect#DEFAULT_BLEND_MODE}.
+     *
+     * @param blendMode The blend mode for the bottom edge effect.
+     */
+    public void setBottomEdgeEffectBlendMode(@Nullable BlendMode blendMode) {
+        mEdgeGlowBottom.setBlendMode(blendMode);
+    }
+
+    @Nullable
+    public BlendMode getTopEdgeEffectBlendMode() {
+        return mEdgeGlowTop.getBlendMode();
+    }
+
+    @Nullable
+    public BlendMode getBottomEdgeEffectBlendMode() {
+        return mEdgeGlowBottom.getBlendMode();
     }
 
     @Override

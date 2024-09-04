@@ -30,7 +30,7 @@ import java.util.Locale;
 
 /**
  * Globally shared layout cache. Useful when recycling layouts, or raw data source and
- * layout information are separated. Max memory usage: 3~4 MB.
+ * layout information are separated. Max memory usage: 7~10 MB.
  *
  * @see LayoutPiece
  * @since 2.6
