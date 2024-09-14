@@ -1,5 +1,219 @@
 Changelogs
 ===
+### Modern UI 3.11.0 (2024-09-14)
+The changelog is simplified
+#### Core Framework
+* Enable linear text by default, increase layout cache limit
+* Delete render thread executor
+* Delete old text rendering code
+* Add GradientDrawable that draw shapes with gradient colors
+* Update/fix ShapeDrawable with latest rendering pipeline
+* Add set/get ColorFilter to Drawable and ImageView Add ImageView.setImageTintBlendMode
+* Rework ImageDrawable.setSrcRect() method
+* Update ImageDrawable with antialias, dither, filter, and tile modes
+* Add setter/getter to change blend mode for edge effect
+* Change default blend mode for EdgeEffect from SRC_OVER to SRC_ATOP
+* Fix Matrix.mapRect()
+* Fix EdgeEffect centerX
+* Improve text rendering
+* Add AngularGradient API and implementation
+* Add RadialGradient API and implementation
+* Add LinearGradient API and implementation
+* Add GradientShader API and implementation
+* Add new draw methods to Canvas class
+* Add BlendModeColorFilter and make it work finally, default blend mode for ImageDrawable is SRC_IN
+* Add ColorFilter class that can be installed on Paint
+* Refactor Image class and fix Image.close() issue
+* Refactor Paint class
+* Add ImageShader class
+* Add Shader class that can be installed on Paint
+* Add TextView.setTextSize() that specifies a unit, default is sp
+* Full migration to the new rendering pipeline, Arc3D Granite Renderer; delete old GLSurfaceCanvas
+* Avoid re-layout on window minimized, since framebuffer is destroyed and size is 0
+* Deprecate Canvas.saveLayer() for future layer compositor and render tree
+#### Core Framework - Kotlin Extension
+* No changes
+#### Markdown Extension
+* No changes
+#### Arc3D Graphics Engine
+* Remove old usage of Image.getSurfaceFlags
+* Add Image.getUniqueID() and static methods to create raster images
+* Add utility NoDrawCanvas NWayCanvas and PaintFilterCanvas
+* Fix Matrix.mapRect() is not correct
+* Fix compiler error
+* Optimize text ops if subRunToDevice is translation-only and pipeline does not require local coords trivially
+* Optimize matrix computation for text ops
+* Replace Matrix4 in rendering code with Matrix
+* Make Matrix4() construct an identity matrix, and Matrix4.identity() return a read-only identity matrix
+* Fix TextBlobBuilder offsets not reset after build
+* Add RoundRect flatten methods
+* Improve NoPixelsDevice clip tracking, remove ConservativeClip
+* Add DrawAtlas.purge() to free unused pages
+* Add implementation for gradients in other interpolation color spaces and for all hue interpolation methods
+* Allow DrawAtlas to perform an immediate compact
+* Rename some classes and methods
+* Change the default uniform buffer block size to 32KB
+* Fix color array copy in Vertices::makeCopy
+* Fix persistent mapping check in GLBuffer
+* Temporarily enable RGB texture in OpenGL
+* Try to share vertex array objects in OpenGL backend
+* Expose resource cleanup API, also cleanup framebuffer cache and strike cache
+* Review ResourceCache, fix some legacy issues
+* Add support for alpha-only images, add missing Shaders shader implementation
+* Purge framebuffers immediately after one attachment was destroyed
+* Complete the compatibility with OpenGL 3.3 and OpenGL ES 3.0
+* Improve texture and renderbuffer creation
+* Deprecate old Device methods
+* Fix OpenGL 3.3 and GLSL 330 compatibility
+* Finalize BoundsManager, add samples
+* Add plus_clamped, minus, and minus_clamped blend info
+* Remove 01 coverage in non-aa case
+* Add blend equation in GL backend
+* Mark old code as deprecated
+* Implement basic functionality for final blender, enable dual source blending
+* Fully implement BakedTextBlob and TextBlobCache for text rendering
+* Fix blend shader doesn't compile
+* Add TextBlob as an immutable container for glyph rendering
+* Rework FramebufferDesc, add FramebufferCache to manage framebuffers
+* Basically implement texture copy task, implement Surface.onNewImageSnapshot()
+* Add factory method to create Surface
+* Implement Device management
+* Invalidate atlases if RC.snap() failed
+* Fix several threading issues for OpenGL backend
+* Handle ColorFilter properly
+* Add BlendModeShader
+* Fix color space transformation on paint's solid color
+* Add primitive color blending and color space transform
+* Add blending with shader and paint's alpha
+* Fix color space transformation on BlendModeColorFilter
+* Add implementation of BlendModeShader and BlendModeColorFilter
+* Remove Geometry interface
+* Add Vertices class and Vertices step to drawVertices
+* Add shader implementation for 42 blend modes
+* Fix arg name for uniforms that start with no mangle prefix
+* Add StaticBufferManager and Buffer-to-Buffer copy task
+* Fix ImageUploadTask bug
+* Implement remaining important Canvas methods
+* Add and implement new Canvas methods in Device
+* Fix depth is perspective-correct; the depth should be preserved, then multiply it by w.
+* Fix bugs on arc shader with square end
+* Finish methods to create and draw GlyphRuns
+* Add method to set Matrix elements
+* Fix Matrix4.hashCode() for negative zero
+* Add Geometry.getBounds() to compute bounds
+* Improve ClipStack to compute several bounds
+* Fix stroke inflation radius computation for inner and outer stroke
+* Optimize draw when it does not depend on dst
+* Fix several issues on Device
+* Implement the creation of AtlasSubRuns
+* Add method to compute res scales if matrix has perspective
+* Fix AnalyticSimpleBoxStep instance data type
+* Add method to draw pie and chord, optimize shaders
+* Add rendering with three cap types of stroke arcs initially
+* Implement Atlas text op at low level, improve solid color fast path, trying to handle primitive color
+* Fix ScalerContext_JDK does not return a reliable glyph bounds
+* Fix DrawAtlas assertion and GlyphAtlasManager row stride
+* Fix Strike and ScalerContext bugs, remove stroke cap in StrikeDesc
+* Improve finite check and non-invertible matrix
+* Add RendererProvider to manage GeometryRenderers
+* Finish implementation of atlas management for draw ops and glyph atlas
+* Calculate the Path byte size when generating Glyph in Strike
+* Implement Strike, StrikeCache, and ScalerContext basically
+* Add Paint.setPathEffect(), add missing javadoc in Font
+* Add Path.transform(), add PathIterator.getFillRule()
+* Add GPU dithering implementation (no texture lookup)
+* Fix GLCaps.FormatInfo for RGB565
+* Update Paint and related classes
+* Make Blender and ColorFilter strictly ref-counted
+* Add Shader.isConstant()
+* Fix Canvas.drawCircle()
+* Add Paint.setColor4f()
+* Fix Paint.setStrokeWidth() and Paint.setStrokeMiter() for NaN values
+* Remove Paint's SmoothWidth, MaskFilter and ImageFilter
+* Add PathEffect skeleton class
+* Fix several hashCode implementation for negative zeros
+* Update Paint.nothingToDraw() for more blend modes
+* Add more methods to RoundRect
+* Update Surface, Canvas, and related classes
+* Add Stroke, PathIterable, update PathStroker
+* Optimize shaders
+* Use short-circuit for transfer function
+* Use texelFetch for cubic shader, remove invImageSize uniform
+* Add perspective correction for local matrix shader
+* Extract color space transform from image shaders
+* Ensure subset sampling does not use mipmaps
+* Implement bicubic and strict subset sampling
+* Change AnalyticSimpleBoxStep to use L1 norm
+* Fix bug on GLImageDesc.equals()
+* Fix bug on uniform block layout
+* Change Paint constants and SamplingOptions, adding classes for text rendering
+* Done depth stencil work, fix several bugs
+* Add flipY and unorm clamp for PixelUtils
+* Implement LinearGradient, RadialGradient, AngularGradient
+* Fix bugs on ImageShader.makeSubset()
+* Fix bugs on premul & unpremul in some classes
+* Improve ColorSpace transform, add PixelUtils.convertPixels()
+* Add new ColorSpace transform shader
+* Fix GLSampler TEXTURE_WRAP_R is not set, add validation for SamplerDesc
+* Fix Matrix4.invert, add Matrix.toMatrix4, fix UniformDataGatherer for mat3
+* Make Paint, PaintParams, and Draw classes closeable
+* Fix TextureTracker; rename gradient shaders
+* Optimize box shader
+* Accumulated updates on fragment effects and shading pipeline
+* Implement simple pixel upload using image-to-image copy
+* Add new Shader and ColorFilter classes
+* Rename PixelMap to Pixmap, PixelRef to Pixels
+* Switch slow JNI to PixelUtils.copyImage() for array to off-heap copy
+* Remove the offset parameter of Buffer.unmap()
+* Finish AnalyticSimpleBoxStep
+* Allow implicit conversion between numerics
+* Add DepthStencilSettings and BoundsManager, limit the number of geometry steps
+* Optimize vertex writer and uniform writer, optimize uniform data deduplication
+* Basically complete the Granite Renderer
+* Add geometry projection, solid color simplification
+* Finish RenderPassTask execution Fix scissor origin, initial scissor setup
+* Complete DrawPass's texture sampler binding
+* Add TextureDataGatherer, texture sampler binding and tracker
+* Add UniformDataGatherer and UniformDataCache
+* Fix Matrix4.store()
+* Add framebuffer creation and some tests
+* Some work on new PipelineBuilder
+* Update Buffer, GLBuffer, persistent mapping and so on
+* Accumulative updates for new renderer
+* Add method for updating clip draws
+* Update ClipStack
+* Improve vertex specification and buffer binding
+* Rename the project from 'Arc 3D' to 'Arc3D'
+* Commit all accumulative updates
+* Change BlendMode.apply() to static methods
+* Accumulative updates for the new pipeline
+* Attempt to refactor pipeline
+* Add more classes for new pipeline
+* Add frexp & ldexp impl
+* Some attempts on pipeline
+* Refactor GPU Image, RenderTarget, SurfaceProxy classes; remove Texture
+* Add Image and Framebuffer creation, add reusable framebuffers
+* Refactor GpuResource class hierarchy
+* Support GL_CONTEXT_LOST
+* Tons of work on Engine and OpenGL backend, not listed
+* Add pre-defined extensions to compile options
+* A lot of work on abstraction between GL3 and GLES3
+* Initially add GLInterface for both OpenGL & OpenGL ES support
+* Add std140/std430 layout qualifiers, add include directive parsing
+* Abandon usage of GLSL ARB extensions that core in later versions
+* Fix GLCaps crash for some capabilities
+* Fix some bugs in preprocessing
+* Other improvements
+* Add new preprocessing methods, allow sub-range source
+* Add StringLiteral grammar, fix Whitespace grammar
+* Add FatalError to terminate compiler
+* Add identifier name length check (1024 at most)
+* Add benchmark between Arc3D and shaderc (glslang)
+* Update Lexer
+* Add directive grammar
+* Add 'using' grammar for type aliases
+* Add newline token, fix block comment grammar
+
 ### Modern UI 3.10.1 (2024-03-30)
 #### Core Framework 3.10.1
 * Update typecast checks, add ArrayMap.forEach
