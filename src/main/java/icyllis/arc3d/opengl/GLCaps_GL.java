@@ -131,6 +131,12 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         // DSA-like extensions must be supported as well
         mDSASupport = caps.OpenGL45 ||
                 (caps.GL_ARB_direct_state_access && mInvalidateBufferType == INVALIDATE_BUFFER_TYPE_INVALIDATE);
+        if (mDSASupport && mVendor == GLUtil.GLVendor.INTEL) {
+            // many issues on Intel GPU, for example, using DSA method to create vertex array
+            // may or may not work, but running program with RenderDoc goes well
+            mDSASupport = false;
+            options.mLogger.debug("Intel GPU detected, disabling DSA");
+        }
 
         mTransferPixelsToRowBytesSupport = true;
 
