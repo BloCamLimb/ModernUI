@@ -21,6 +21,9 @@ package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.*;
 import org.lwjgl.vulkan.VkDevice;
+import org.lwjgl.vulkan.VkPhysicalDevice;
+
+import static org.lwjgl.vulkan.VK11.*;
 
 public abstract class VulkanDevice extends Device {
 
@@ -36,8 +39,23 @@ public abstract class VulkanDevice extends Device {
         return mDevice;
     }
 
+    public VkPhysicalDevice physicalDevice() {
+        return null;
+    }
+
     public int getQueueIndex() {
         return mQueueIndex;
+    }
+
+    public boolean checkResult(int result) {
+        if (result == VK_SUCCESS || result > 0) {
+            return true;
+        }
+        switch (result) {
+            case VK_ERROR_DEVICE_LOST -> mDeviceIsLost = true;
+            case VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_OUT_OF_HOST_MEMORY -> mOutOfMemoryEncountered = true;
+        }
+        return false;
     }
 
     public boolean isProtectedContext() {
