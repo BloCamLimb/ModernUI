@@ -283,8 +283,8 @@ public final class GLDevice extends Device {
     }
 
     @Override
-    public GLResourceProvider makeResourceProvider(Context context) {
-        return new GLResourceProvider(this, context);
+    public GLResourceProvider makeResourceProvider(Context context, long maxResourceBudget) {
+        return new GLResourceProvider(this, context, maxResourceBudget);
     }
 
     @Override

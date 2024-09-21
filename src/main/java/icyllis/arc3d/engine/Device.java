@@ -234,7 +234,7 @@ public abstract class Device implements Engine {
         return mCompiler;
     }
 
-    public abstract ResourceProvider makeResourceProvider(Context context);
+    public abstract ResourceProvider makeResourceProvider(Context context, long maxResourceBudget);
 
     public final SharedResourceCache getSharedResourceCache() {
         return mSharedResourceCache;
