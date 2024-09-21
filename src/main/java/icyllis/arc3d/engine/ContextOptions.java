@@ -35,7 +35,7 @@ import org.slf4j.helpers.NOPLogger;
  * <p>
  * This class is part of public API.
  */
-public final class ContextOptions {
+public final class ContextOptions extends BaseContextOptions {
 
     /**
      * Controls whether we check for GL errors after functions that allocate resources (e.g.
@@ -132,6 +132,8 @@ public final class ContextOptions {
      * for mixed API usage between Arc3D and other programs.
      */
     public boolean mVolatileContext = false;
+
+    public long mVulkanVMALargeHeapBlockSize = 0;
 
     public DriverBugWorkarounds mDriverBugWorkarounds;
 

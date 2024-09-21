@@ -77,8 +77,14 @@ public final class ImmediateContext extends Context {
     @Nullable
     @SharedPtr
     public RecordingContext makeRecordingContext() {
+        return makeRecordingContext(new RecordingContextOptions());
+    }
+
+    @Nullable
+    @SharedPtr
+    public RecordingContext makeRecordingContext(RecordingContextOptions options) {
         RecordingContext rContext = new RecordingContext(mDevice);
-        if (rContext.init()) {
+        if (rContext.init(options)) {
             return rContext;
         }
         rContext.unref();
@@ -165,7 +171,6 @@ public final class ImmediateContext extends Context {
         mDevice.purgeResourcesNotUsedSince(timeMillis);
     }
 
-    @Override
     public boolean init() {
         assert isOwnerThread();
         if (mDevice == null) {
@@ -173,7 +178,7 @@ public final class ImmediateContext extends Context {
         }
 
         //mContextInfo.init(mDevice);
-        if (!super.init()) {
+        if (!super.init(mDevice.getOptions())) {
             return false;
         }
         mQueueManager.mContext = this;
