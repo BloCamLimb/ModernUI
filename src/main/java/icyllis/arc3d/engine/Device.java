@@ -34,11 +34,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * A {@link Device} represents a logical GPU device and provides shared context info
- * of the backend 3D API.
- * <p>
- * It is responsible for
- * creating/deleting 3D API objects, transferring data, submitting 3D API commands, etc.
+ * The {@link Device} represents a logical GPU device and provides shared context info
+ * of the backend 3D API. A {@link Device} is created with an {@link ImmediateContext}.
  */
 public abstract class Device implements Engine {
 
@@ -86,8 +83,8 @@ public abstract class Device implements Engine {
 
     protected final Stats mStats = new Stats();
 
-    protected boolean mOutOfMemoryEncountered = false;
-    protected boolean mDeviceIsLost = false;
+    protected volatile boolean mOutOfMemoryEncountered = false;
+    protected volatile boolean mDeviceIsLost = false;
 
     private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
