@@ -80,11 +80,6 @@ public final class FunctionDecl extends Symbol {
                     returnType.getName() + "'");
             return false;
         }
-        if (returnType.isGeneric()) {
-            context.error(pos, "functions may not return generic type '" +
-                    returnType.getName() + "'");
-            return false;
-        }
         if (returnType.isUnsizedArray()) {
             context.error(pos, "functions may not return unsized array type '" +
                     returnType.getName() + "'");

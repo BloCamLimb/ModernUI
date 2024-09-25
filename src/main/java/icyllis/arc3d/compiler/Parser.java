@@ -623,7 +623,15 @@ public class Parser {
         }
 
         if (Token.kind(peek) == Token.TK_STRUCT) {
-            StructDeclaration();
+            Type type = StructDeclaration();
+            if (type != null) {
+                long name = checkIdentifier();
+                if (name != Token.NO_TOKEN) {
+                    GlobalVarDeclarationRest(rangeFrom(name), modifiers, type, name);
+                } else {
+                    expect(Token.TK_SEMICOLON, "';' to complete structure definition");
+                }
+            }
             return true;
         }
 
@@ -752,8 +760,8 @@ public class Parser {
             );
             return true;
         } else {
-            mCompiler.getContext().
-                    enterScope();
+            mCompiler.getContext()
+                    .enterScope();
             try {
                 if (decl != null) {
                     for (Variable param : decl.getParameters()) {
@@ -1899,7 +1907,47 @@ public class Parser {
         expect(Token.TK_STRUCT, "'struct'");
         long typeName = expectIdentifier();
         expect(Token.TK_LBRACE, "'{'");
-        return null;
+        Context context = mCompiler.getContext();
+        List<Type.Field> fields = new ArrayList<>();
+        do {
+            int startPos = position(peek());
+            Modifiers fieldModifiers = Modifiers();
+            Type baseType = TypeSpecifier(fieldModifiers);
+            if (baseType == null) {
+                return null;
+            }
+            do {
+                long fieldName = expectIdentifier();
+                Type fieldType = ArraySpecifier(startPos, baseType);
+                if (fieldType == null) {
+                    return null;
+                }
+                if (checkNext(Token.TK_EQ)) {
+                    Expression init = AssignmentExpression();
+                    if (init == null) {
+                        return null;
+                    }
+                    context.error(init.mPosition, "initializers are not permitted in structures");
+                }
+                fields.add(new Type.Field(
+                        rangeFrom(startPos),
+                        fieldModifiers,
+                        fieldType,
+                        text(fieldName)
+                ));
+            } while (checkNext(Token.TK_COMMA));
+
+            expect(Token.TK_SEMICOLON, "';' to complete member declaration");
+        } while (!checkNext(Token.TK_RBRACE));
+        StructDefinition definition = StructDefinition.convert(context,
+                rangeFrom(start),
+                text(typeName),
+                fields);
+        if (definition == null) {
+            return null;
+        }
+        mUniqueElements.add(definition);
+        return definition.getType();
     }
 
     @Nonnull
@@ -1944,6 +1992,16 @@ public class Parser {
             case Token.TK_IF -> IfStatement();
             case Token.TK_FOR -> ForStatement();
             case Token.TK_SWITCH -> SwitchStatement();
+            case Token.TK_LBRACE -> {
+                mCompiler.getContext()
+                        .enterScope();
+                try {
+                    yield ScopedBlock();
+                } finally {
+                    mCompiler.getContext()
+                            .leaveScope();
+                }
+            }
             case Token.TK_SEMICOLON -> {
                 long t = nextToken();
                 yield new EmptyStatement(position(t));
