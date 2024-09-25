@@ -34,9 +34,9 @@ public abstract class Node {
         FUNCTION_DEFINITION(FunctionDefinition.class),
         FUNCTION_PROTOTYPE(FunctionPrototype.class),
         GLOBAL_VARIABLE(GlobalVariableDecl.class),
-        INTERFACE_BLOCK(TopLevelElement.class),
+        INTERFACE_BLOCK(InterfaceBlock.class),
         MODIFIERS(TopLevelElement.class),
-        STRUCT_DEFINITION(TopLevelElement.class);
+        STRUCT_DEFINITION(StructDefinition.class);
 
         private final Class<? extends TopLevelElement> mType;
 

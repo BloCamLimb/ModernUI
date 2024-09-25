@@ -56,6 +56,10 @@ public abstract class TreeVisitor {
         return visitTopLevelElement(interfaceBlock);
     }
 
+    public boolean visitStructDefinition(StructDefinition structDefinition) {
+        return visitTopLevelElement(structDefinition);
+    }
+
     /**
      * Fallback method for any element kind that has not been overridden.
      */
