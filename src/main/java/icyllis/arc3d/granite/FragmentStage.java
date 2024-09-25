@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite;
 
+import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ShaderVar;
 import icyllis.arc3d.granite.shading.UniformHandler;
@@ -59,14 +60,31 @@ public class FragmentStage {
             kColorSpaceXformColorFilter_BuiltinStageID = 21,
             kBlend_BuiltinStageID = 22,
             kBlendModeBlender_BuiltinStageID = 23,
-            kPrimitiveColor_BuiltinStageID = 24,
-            kCompose_BuiltinStageID = 25;
+            kPorterDuffBlender_BuiltinStageID = 24,
+            kPrimitiveColor_BuiltinStageID = 25,
+            kCompose_BuiltinStageID = 26;
+    // Fixed blend modes hard code a specific blend function into the shader tree. This can be
+    // valuable when an internal effect is known to always do a certain blend and we want to
+    // benefit from inlining constants. It is also important for being able to convert the final
+    // blend of the SkPaint into fixed function HW blending, where each HW blend is part of the
+    // pipeline key, so using a known blend mode ID ensures the PaintParamsKey are also different.
+    //
+    // Lastly, for advanced blend modes that require complex shader calculations, we assume they
+    // are used rarely and with intent (i.e. unlikely to share a common shader tree with another
+    // advanced blend if we were to add branching). This keeps the amount of reachable code that
+    // must be compiled for a given pipeline with advanced blends to a minimum.
+    //
+    // NOTE: Pipeline code generation depends on the fixed-function code IDs being contiguous and be
+    // defined last in the enum. They are ordered to match BlendMode such that:
+    //     (id - kFirstFixedBlend) == BlendMode).
     public static final int
-            kInlineSrcOverBlend_BuiltinStageID = 26,
-            kInlineSrcInBlend_BuiltinStageID = 27;
+            kFirstFixedBlend_BuiltinStageID = 27;
+    // this is not compile-time constant
+    public static final int
+            kLastFixedBlend_BuiltinStageID = kFirstFixedBlend_BuiltinStageID + BlendMode.COUNT - 1;
 
     public static final int
-            kLast_BuiltinStageID = kInlineSrcInBlend_BuiltinStageID;
+            kLast_BuiltinStageID = kLastFixedBlend_BuiltinStageID;
     public static final int
             kBuiltinStageIDCount = kLast_BuiltinStageID + 1;
 

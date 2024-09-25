@@ -226,28 +226,28 @@ public final class PaintParams implements AutoCloseable {
         return switch (dstCT) {
             case ColorInfo.CT_RGB_565 -> 1 / 31.f; // 5-bit
             case ColorInfo.CT_ALPHA_8,
-                    ColorInfo.CT_GRAY_8,
-                    ColorInfo.CT_GRAY_ALPHA_88,
-                    ColorInfo.CT_R_8,
-                    ColorInfo.CT_RG_88,
-                    ColorInfo.CT_RGB_888,
-                    ColorInfo.CT_RGB_888x,
-                    ColorInfo.CT_RGBA_8888,
-                    ColorInfo.CT_RGBA_8888_SRGB,
-                    ColorInfo.CT_BGRA_8888 -> 1 / 255.f; // 8-bit
+                 ColorInfo.CT_GRAY_8,
+                 ColorInfo.CT_GRAY_ALPHA_88,
+                 ColorInfo.CT_R_8,
+                 ColorInfo.CT_RG_88,
+                 ColorInfo.CT_RGB_888,
+                 ColorInfo.CT_RGB_888x,
+                 ColorInfo.CT_RGBA_8888,
+                 ColorInfo.CT_RGBA_8888_SRGB,
+                 ColorInfo.CT_BGRA_8888 -> 1 / 255.f; // 8-bit
             case ColorInfo.CT_RGBA_1010102,
-                    ColorInfo.CT_BGRA_1010102 -> 1 / 1023.f; // 10-bit
+                 ColorInfo.CT_BGRA_1010102 -> 1 / 1023.f; // 10-bit
             case ColorInfo.CT_ALPHA_16,
-                    ColorInfo.CT_R_16,
-                    ColorInfo.CT_RG_1616,
-                    ColorInfo.CT_RGBA_16161616 -> 1 / 32767.f; // 16-bit
+                 ColorInfo.CT_R_16,
+                 ColorInfo.CT_RG_1616,
+                 ColorInfo.CT_RGBA_16161616 -> 1 / 32767.f; // 16-bit
             case ColorInfo.CT_UNKNOWN,
-                    ColorInfo.CT_ALPHA_F16,
-                    ColorInfo.CT_R_F16,
-                    ColorInfo.CT_RG_F16,
-                    ColorInfo.CT_RGBA_F16,
-                    ColorInfo.CT_RGBA_F16_CLAMPED,
-                    ColorInfo.CT_RGBA_F32 -> 0.f; // no dithering
+                 ColorInfo.CT_ALPHA_F16,
+                 ColorInfo.CT_R_F16,
+                 ColorInfo.CT_RG_F16,
+                 ColorInfo.CT_RGBA_F16,
+                 ColorInfo.CT_RGBA_F16_CLAMPED,
+                 ColorInfo.CT_RGBA_F32 -> 0.f; // no dithering
             default -> throw new AssertionError(dstCT);
         };
     }
@@ -352,7 +352,13 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // blend
-            keyBuilder.addInt(FragmentStage.kInlineSrcInBlend_BuiltinStageID);
+            FragmentUtils.appendFixedBlendMode(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    BlendMode.SRC_IN
+            );
         } else {
             handlePrimitiveColor(
                     keyContext,
