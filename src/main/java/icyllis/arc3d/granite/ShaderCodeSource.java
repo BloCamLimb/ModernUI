@@ -19,8 +19,7 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.PixelUtils;
-import icyllis.arc3d.core.SLDataType;
+import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.SamplerDesc;
 import icyllis.arc3d.granite.shading.UniformHandler;
@@ -1157,6 +1156,50 @@ public class ShaderCodeSource {
                             sa + da * (1 - sa));
             }
             """;
+    // single function declarations
+    // dark_color, lighter_color, and HSLC are special
+    private static final EnumMap<BlendMode, String> BLEND_MODE_FUNCTIONS;
+
+    static {
+        EnumMap<BlendMode, String> map = new EnumMap<>(BlendMode.class);
+        map.put(BlendMode.CLEAR, BLEND_CLEAR);
+        map.put(BlendMode.SRC, BLEND_SRC);
+        map.put(BlendMode.DST, BLEND_DST);
+        map.put(BlendMode.SRC_OVER, BLEND_SRC_OVER);
+        map.put(BlendMode.DST_OVER, BLEND_DST_OVER);
+        map.put(BlendMode.SRC_IN, BLEND_SRC_IN);
+        map.put(BlendMode.DST_IN, BLEND_DST_IN);
+        map.put(BlendMode.SRC_OUT, BLEND_SRC_OUT);
+        map.put(BlendMode.DST_OUT, BLEND_DST_OUT);
+        map.put(BlendMode.SRC_ATOP, BLEND_SRC_ATOP);
+        map.put(BlendMode.DST_ATOP, BLEND_DST_ATOP);
+        map.put(BlendMode.XOR, BLEND_XOR);
+        map.put(BlendMode.PLUS, BLEND_PLUS);
+        map.put(BlendMode.PLUS_CLAMPED, BLEND_PLUS_CLAMPED);
+        map.put(BlendMode.MINUS, BLEND_MINUS);
+        map.put(BlendMode.MINUS_CLAMPED, BLEND_MINUS_CLAMPED);
+        map.put(BlendMode.MODULATE, BLEND_MODULATE);
+        map.put(BlendMode.MULTIPLY, BLEND_MULTIPLY);
+        map.put(BlendMode.SCREEN, BLEND_SCREEN);
+        map.put(BlendMode.OVERLAY, BLEND_OVERLAY);
+        map.put(BlendMode.DARKEN, BLEND_DARKEN);
+        map.put(BlendMode.LIGHTEN, BLEND_LIGHTEN);
+        map.put(BlendMode.COLOR_DODGE, BLEND_COLOR_DODGE);
+        map.put(BlendMode.COLOR_BURN, BLEND_COLOR_BURN);
+        map.put(BlendMode.HARD_LIGHT, BLEND_HARD_LIGHT);
+        map.put(BlendMode.SOFT_LIGHT, BLEND_SOFT_LIGHT);
+        map.put(BlendMode.DIFFERENCE, BLEND_DIFFERENCE);
+        map.put(BlendMode.EXCLUSION, BLEND_EXCLUSION);
+        map.put(BlendMode.SUBTRACT, BLEND_SUBTRACT);
+        map.put(BlendMode.DIVIDE, BLEND_DIVIDE);
+        map.put(BlendMode.LINEAR_DODGE, BLEND_LINEAR_DODGE);
+        map.put(BlendMode.LINEAR_BURN, BLEND_LINEAR_BURN);
+        map.put(BlendMode.VIVID_LIGHT, BLEND_VIVID_LIGHT);
+        map.put(BlendMode.LINEAR_LIGHT, BLEND_LINEAR_LIGHT);
+        map.put(BlendMode.PIN_LIGHT, BLEND_PIN_LIGHT);
+        map.put(BlendMode.HARD_MIX, BLEND_HARD_MIX);
+        BLEND_MODE_FUNCTIONS = map;
+    }
     // we know that Photoshop uses these values
     // instead of (0.3, 0.59, 0.11)
     private static final String PRIV_BLEND_GET_LUM = """
@@ -1341,6 +1384,28 @@ public class ShaderCodeSource {
                     case kLuminosity   : return blend_luminosity     (src,dst);
                     default            : return vec4(0);
                 }
+            }
+            """;
+    // This multi-purpose Porter-Duff blend function can perform any of the twelve blends above,
+    // when passed one of the following values for BlendOp:
+    // - Clear:          0*src +        0*dst = (0 +  0*dstA)*src + (0 +  0*srcA)*dst = (0,  0,  0,  0)
+    // - Src:            1*src +        0*dst = (1 +  0*dstA)*src + (0 +  0*srcA)*dst = (1,  0,  0,  0)
+    // - Dst:            0*src +        1*dst = (0 +  0*dstA)*src + (1 +  0*srcA)*dst = (0,  1,  0,  0)
+    // - SrcOver:        1*src + (1-srcA)*dst = (1 +  0*dstA)*src + (1 + -1*srcA)*dst = (1,  1,  0, -1)
+    // - DstOver: (1-dstA)*src +        1*dst = (1 + -1*dstA)*src + (1 +  0*srcA)*dst = (1,  1, -1,  0)
+    // - SrcIn:       dstA*src +        0*dst = (0 +  1*dstA)*src + (0 +  0*srcA)*dst = (0,  0,  1,  0)
+    // - DstIn:          0*src +     srcA*dst = (0 +  0*dstA)*src + (0 +  1*srcA)*dst = (0,  0,  0,  1)
+    // - SrcOut:  (1-dstA)*src +        0*dst = (1 + -1*dstA)*src + (0 +  0*srcA)*dst = (1,  0, -1,  0)
+    // - DstOut:         0*src + (1-srcA)*dst = (0 +  0*dstA)*src + (1 + -1*srcA)*dst = (0,  1,  0, -1)
+    // - SrcATop:     dstA*src + (1-srcA)*dst = (0 +  1*dstA)*src + (1 + -1*srcA)*dst = (0,  1,  1, -1)
+    // - DstATop: (1-dstA)*src +     srcA*dst = (1 + -1*dstA)*src + (0 +  1*srcA)*dst = (1,  0, -1,  1)
+    // - Xor:     (1-dstA)*src + (1-srcA)*dst = (1 + -1*dstA)*src + (1 + -1*srcA)*dst = (1,  1, -1, -1)
+    public static final String ARC_PORTER_DUFF_BLEND = """
+            vec4 arc_porter_duff_blend(vec4 blendOp, vec4 src, vec4 dst) {
+                // The supported blend modes all have coefficients that are of the form (C + S*alpha), where
+                // alpha is the other color's alpha channel. C can be 0 or 1, S can be -1, 0, or 1.
+                vec2 coeff = blendOp.xy + blendOp.zw * vec2(dst.a, src.a);
+                return src * coeff.x + dst * coeff.y;
             }
             """;
 
@@ -1693,6 +1758,18 @@ public class ShaderCodeSource {
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
+        mBuiltinCodeSnippets[kPorterDuffBlender_BuiltinStageID] = new FragmentStage(
+                "PorterDuffBlender",
+                kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                "arc_porter_duff_blend",
+                new String[]{ARC_PORTER_DUFF_BLEND},
+                new Uniform[]{
+                        new Uniform(SLDataType.kFloat4, "U_Coeffs")
+                },
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
         mBuiltinCodeSnippets[kPrimitiveColor_BuiltinStageID] = new FragmentStage(
                 "PrimitiveColor",
                 kPrimitiveColor_ReqFlag,
@@ -1718,34 +1795,80 @@ public class ShaderCodeSource {
                 ShaderCodeSource::generateComposeExpression,
                 2
         );
-        mBuiltinCodeSnippets[kInlineSrcOverBlend_BuiltinStageID] = new FragmentStage(
-                "SrcOver",
+        for (int i = 0; i < BlendMode.COUNT; i++) {
+            BlendMode mode = BlendMode.modeAt(i);
+            String function = BLEND_MODE_FUNCTIONS.get(mode);
+            if (function != null) {
+                mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + i] = new FragmentStage(
+                        mode.name(),
+                        kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                        mode.getBlendFuncName(),
+                        new String[]{function},
+                        NO_UNIFORMS,
+                        NO_SAMPLERS,
+                        ShaderCodeSource::generateDefaultExpression,
+                        0
+                );
+            }
+        }
+        mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + BlendMode.DARKER_COLOR.ordinal()] = new FragmentStage(
+                "DarkerColor",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
-                "blend_src_over",
-                NO_FUNCTIONS,
+                "blend_darker_color",
+                new String[]{PRIV_BLEND_GET_LUM, BLEND_DARKER_COLOR},
                 NO_UNIFORMS,
                 NO_SAMPLERS,
-                (node, localCoords, priorStageOutput, blenderDstColor, output, code) -> {
-                    assert node.codeID() == kInlineSrcOverBlend_BuiltinStageID;
-                    code.format("""
-                            %1$s = %2$s + %3$s * (1 - %2$s.a);
-                            """, output, priorStageOutput, blenderDstColor);
-                },
+                ShaderCodeSource::generateDefaultExpression,
                 0
         );
-        mBuiltinCodeSnippets[kInlineSrcInBlend_BuiltinStageID] = new FragmentStage(
-                "SrcIn",
+        mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + BlendMode.LIGHTER_COLOR.ordinal()] = new FragmentStage(
+                "LighterColor",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
-                "blend_src_in",
-                NO_FUNCTIONS,
+                "blend_lighter_color",
+                new String[]{PRIV_BLEND_GET_LUM, BLEND_LIGHTER_COLOR},
                 NO_UNIFORMS,
                 NO_SAMPLERS,
-                (node, localCoords, priorStageOutput, blenderDstColor, output, code) -> {
-                    assert node.codeID() == kInlineSrcInBlend_BuiltinStageID;
-                    code.format("""
-                            %1$s = %2$s * %3$s.a;
-                            """, output, priorStageOutput, blenderDstColor);
-                },
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + BlendMode.HUE.ordinal()] = new FragmentStage(
+                "Hue",
+                kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                "blend_hue",
+                new String[]{PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, PRIV_BLEND_SET_LUM_SAT, BLEND_HUE},
+                NO_UNIFORMS,
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + BlendMode.SATURATION.ordinal()] = new FragmentStage(
+                "Saturation",
+                kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                "blend_saturation",
+                new String[]{PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, PRIV_BLEND_SET_LUM_SAT, BLEND_SATURATION},
+                NO_UNIFORMS,
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + BlendMode.COLOR.ordinal()] = new FragmentStage(
+                "Color",
+                kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                "blend_color",
+                new String[]{PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, BLEND_COLOR},
+                NO_UNIFORMS,
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + BlendMode.LUMINOSITY.ordinal()] = new FragmentStage(
+                "Luminosity",
+                kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
+                "blend_luminosity",
+                new String[]{PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, BLEND_LUMINOSITY},
+                NO_UNIFORMS,
+                NO_SAMPLERS,
+                ShaderCodeSource::generateDefaultExpression,
                 0
         );
     }

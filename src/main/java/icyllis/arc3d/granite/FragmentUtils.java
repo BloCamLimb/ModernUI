@@ -412,13 +412,13 @@ public class FragmentUtils {
 
         switch (GradientShader.Interpolation.getColorSpace(shader.getInterpolation())) {
             case GradientShader.Interpolation.kLab_ColorSpace,
-                    GradientShader.Interpolation.kOKLab_ColorSpace,
-                    GradientShader.Interpolation.kOKLabGamutMap_ColorSpace,
-                    GradientShader.Interpolation.kHSL_ColorSpace,
-                    GradientShader.Interpolation.kHWB_ColorSpace,
-                    GradientShader.Interpolation.kLCH_ColorSpace,
-                    GradientShader.Interpolation.kOKLCH_ColorSpace,
-                    GradientShader.Interpolation.kOKLCHGamutMap_ColorSpace ->
+                 GradientShader.Interpolation.kOKLab_ColorSpace,
+                 GradientShader.Interpolation.kOKLabGamutMap_ColorSpace,
+                 GradientShader.Interpolation.kHSL_ColorSpace,
+                 GradientShader.Interpolation.kHWB_ColorSpace,
+                 GradientShader.Interpolation.kLCH_ColorSpace,
+                 GradientShader.Interpolation.kOKLCH_ColorSpace,
+                 GradientShader.Interpolation.kOKLCHGamutMap_ColorSpace ->
                 // In these exotic spaces, unpremul the colors if necessary (no need to do this if
                 // they're all opaque), and then convert them to the intermediate ColorSpace
                     inputPremul = false;
@@ -464,7 +464,91 @@ public class FragmentUtils {
         keyBuilder.addInt(FragmentStage.kColorSpaceXformColorFilter_BuiltinStageID);
     }
 
-    public static void appendBlendModeBlenderBlock(
+    public static void appendBlendMode(
+            KeyContext keyContext,
+            KeyBuilder keyBuilder,
+            UniformDataGatherer uniformDataGatherer,
+            TextureDataGatherer textureDataGatherer,
+            BlendMode bm
+    ) {
+        boolean coeffs = false;
+        switch (bm) {
+            case CLEAR -> {
+                uniformDataGatherer.write4f(0, 0, 0, 0);
+                coeffs = true;
+            }
+            case SRC -> {
+                uniformDataGatherer.write4f(1, 0, 0, 0);
+                coeffs = true;
+            }
+            case DST -> {
+                uniformDataGatherer.write4f(0, 1, 0, 0);
+                coeffs = true;
+            }
+            case SRC_OVER -> {
+                uniformDataGatherer.write4f(1, 1, 0, -1);
+                coeffs = true;
+            }
+            case DST_OVER -> {
+                uniformDataGatherer.write4f(1, 1, -1, 0);
+                coeffs = true;
+            }
+            case SRC_IN -> {
+                uniformDataGatherer.write4f(0, 0, 1, 0);
+                coeffs = true;
+            }
+            case DST_IN -> {
+                uniformDataGatherer.write4f(0, 0, 0, 1);
+                coeffs = true;
+            }
+            case SRC_OUT -> {
+                uniformDataGatherer.write4f(1, 0, -1, 0);
+                coeffs = true;
+            }
+            case DST_OUT -> {
+                uniformDataGatherer.write4f(0, 1, 0, -1);
+                coeffs = true;
+            }
+            case SRC_ATOP -> {
+                uniformDataGatherer.write4f(0, 1, 1, -1);
+                coeffs = true;
+            }
+            case DST_ATOP -> {
+                uniformDataGatherer.write4f(1, 0, -1, 1);
+                coeffs = true;
+            }
+            case XOR -> {
+                uniformDataGatherer.write4f(1, 1, -1, -1);
+                coeffs = true;
+            }
+        }
+        // For non-fixed blends, coefficient blend modes are combined into the same shader snippet.
+        // The remaining advanced blends are fairly unique in their implementations.
+        // To avoid having to compile all of their shader code, they are treated as fixed blend modes.
+        if (coeffs) {
+            keyBuilder.addInt(FragmentStage.kPorterDuffBlender_BuiltinStageID);
+        } else {
+            appendFixedBlendMode(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    bm
+            );
+        }
+    }
+
+    public static void appendFixedBlendMode(
+            KeyContext keyContext,
+            KeyBuilder keyBuilder,
+            UniformDataGatherer uniformDataGatherer,
+            TextureDataGatherer textureDataGatherer,
+            BlendMode bm
+    ) {
+        keyBuilder.addInt(FragmentStage.kFirstFixedBlend_BuiltinStageID + bm.ordinal());
+    }
+
+    /*public static void appendBlendModeBlenderBlock(
             KeyContext keyContext,
             KeyBuilder keyBuilder,
             UniformDataGatherer uniformDataGatherer,
@@ -474,7 +558,7 @@ public class FragmentUtils {
         uniformDataGatherer.write1i(bm.ordinal());
 
         keyBuilder.addInt(FragmentStage.kBlendModeBlender_BuiltinStageID);
-    }
+    }*/
 
     public static void appendPrimitiveColorBlock(
             KeyContext keyContext,
@@ -662,15 +746,7 @@ public class FragmentUtils {
         if (imageToDraw.isAlphaOnly()) {
             keyBuilder.addInt(FragmentStage.kBlend_BuiltinStageID);
 
-            // src
-            appendRGBOpaquePaintColorBlock(
-                    keyContext,
-                    keyBuilder,
-                    uniformDataGatherer,
-                    textureDataGatherer
-            );
-
-            // dst, ignore color space transform
+            // src, ignore color space transform
             appendImageShaderBlock(keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -684,8 +760,21 @@ public class FragmentUtils {
                     srcAlphaType,
                     view);
 
-            // blend, this should be dst-in, but src-in is equivalent
-            keyBuilder.addInt(FragmentStage.kInlineSrcInBlend_BuiltinStageID);
+            // dst
+            appendRGBOpaquePaintColorBlock(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer
+            );
+
+            appendFixedBlendMode(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    BlendMode.DST_IN
+            );
         } else {
             keyBuilder.addInt(FragmentStage.kCompose_BuiltinStageID);
 
@@ -805,7 +894,7 @@ public class FragmentUtils {
                 shader.getDst()
         );
 
-        appendBlendModeBlenderBlock(
+        appendBlendMode(
                 keyContext,
                 keyBuilder,
                 uniformDataGatherer,
@@ -847,7 +936,7 @@ public class FragmentUtils {
         // dst
         keyBuilder.addInt(FragmentStage.kPassthrough_BuiltinStageID);
 
-        appendBlendModeBlenderBlock(
+        appendBlendMode(
                 keyContext,
                 keyBuilder,
                 uniformDataGatherer,
@@ -885,7 +974,7 @@ public class FragmentUtils {
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
                                       @RawPtr BlendMode blender) {
-        appendBlendModeBlenderBlock(
+        appendBlendMode(
                 keyContext,
                 keyBuilder,
                 uniformDataGatherer,

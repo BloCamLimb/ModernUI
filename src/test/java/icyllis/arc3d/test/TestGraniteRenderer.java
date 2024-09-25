@@ -114,7 +114,7 @@ public class TestGraniteRenderer {
         //GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Test Window", 0, 0);
         if (window == 0) {
-            throw new RuntimeException();
+            throw new RuntimeException("0x" + Integer.toHexString(GLFW.nglfwGetError(MemoryUtil.NULL)));
         }
         GLFW.glfwMakeContextCurrent(window);
         GLFW.glfwSwapInterval(1);
@@ -676,8 +676,8 @@ public class TestGraniteRenderer {
                 paint.setShader(null);
                 canvas.translate(-1000, 0);
                 if (!TEST_OPENGL_ES) {
-                    canvas.drawVertices(mVertices1, BlendMode.MULTIPLY, paint);
-                    canvas.drawVertices(mVertices2, BlendMode.MULTIPLY, paint);
+                    canvas.drawVertices(mVertices1, BlendMode.MODULATE, paint);
+                    canvas.drawVertices(mVertices2, BlendMode.MODULATE, paint);
                 }
 
                 paint.setARGB(255, 233, 30, 99);
