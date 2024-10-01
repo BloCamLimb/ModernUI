@@ -25,15 +25,15 @@ import icyllis.arc3d.compiler.tree.*;
 import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 
-import static org.lwjgl.util.spvc.Spv.*;
 import static icyllis.arc3d.compiler.GLSLstd450.*;
+import static org.lwjgl.util.spvc.Spv.*;
 
 /**
  * SPIR-V code generator for OpenGL 4.5 and Vulkan 1.0 or above.
@@ -56,6 +56,33 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             kSPIRV_IntrinsicOpcodeKind = 2,
             kSpecial_IntrinsicOpcodeKind = 3;
 
+    private static final int
+            kAtan_SpecialIntrinsic = 0,
+            kClamp_SpecialIntrinsic = 1,
+            kMatrixCompMult_SpecialIntrinsic = 2,
+            kMax_SpecialIntrinsic = 3,
+            kMin_SpecialIntrinsic = 4,
+            kMix_SpecialIntrinsic = 5,
+            kMod_SpecialIntrinsic = 6,
+            kDFdy_SpecialIntrinsic = 7,
+            kSaturate_SpecialIntrinsic = 8,
+            kSampledImage_SpecialIntrinsic = 9,
+            kSmoothStep_SpecialIntrinsic = 10,
+            kStep_SpecialIntrinsic = 11,
+            kSubpassLoad_SpecialIntrinsic = 12,
+            kTexture_SpecialIntrinsic = 13,
+            kTextureGrad_SpecialIntrinsic = 14,
+            kTextureLod_SpecialIntrinsic = 15,
+            kTextureRead_SpecialIntrinsic = 16,
+            kTextureWrite_SpecialIntrinsic = 17,
+            kTextureWidth_SpecialIntrinsic = 18,
+            kTextureHeight_SpecialIntrinsic = 19,
+            kAtomicAdd_SpecialIntrinsic = 20,
+            kAtomicLoad_SpecialIntrinsic = 21,
+            kAtomicStore_SpecialIntrinsic = 22,
+            kStorageBarrier_SpecialIntrinsic = 23,
+            kWorkgroupBarrier_SpecialIntrinsic = 24;
+
     // flattened intrinsic data:
     //
     // struct Intrinsic {
@@ -65,19 +92,21 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     //     int32_t unsignedOp;
     //     int32_t booleanOp;
     // };
-    private static final int[] sIntrinsicData = new int[IntrinsicList.kCount * 5];
+    private static final int kIntrinsicDataColumn = 5;
+    private static final int[] sIntrinsicData = new int[IntrinsicList.kCount * kIntrinsicDataColumn];
 
     private static void setIntrinsic(int intrinsic, int opKind,
                                      int floatOp, int signedOp, int unsignedOp, int booleanOp) {
         assert intrinsic >= 0 && intrinsic < IntrinsicList.kCount;
-        int index = intrinsic * 5;
+        int index = intrinsic * kIntrinsicDataColumn;
         sIntrinsicData[index] = opKind;
-        sIntrinsicData[index+1] = floatOp;
-        sIntrinsicData[index+2] = signedOp;
-        sIntrinsicData[index+3] = unsignedOp;
-        sIntrinsicData[index+4] = booleanOp;
+        sIntrinsicData[index + 1] = floatOp;
+        sIntrinsicData[index + 2] = signedOp;
+        sIntrinsicData[index + 3] = unsignedOp;
+        sIntrinsicData[index + 4] = booleanOp;
     }
 
+    // setup intrinsics
     static {
         setIntrinsic(IntrinsicList.kRound,
                 kGLSLstd450_IntrinsicOpcodeKind,
@@ -88,6 +117,53 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         setIntrinsic(IntrinsicList.kTrunc,
                 kGLSLstd450_IntrinsicOpcodeKind,
                 GLSLstd450Trunc, GLSLstd450Trunc, GLSLstd450Trunc, GLSLstd450Trunc);
+        setIntrinsic(IntrinsicList.kAbs,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450FAbs, GLSLstd450SAbs, GLSLstd450SAbs, GLSLstd450Bad);
+
+        setIntrinsic(IntrinsicList.kSin,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Sin, GLSLstd450Sin, GLSLstd450Sin, GLSLstd450Sin);
+        setIntrinsic(IntrinsicList.kCos,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Cos, GLSLstd450Cos, GLSLstd450Cos, GLSLstd450Cos);
+
+        setIntrinsic(IntrinsicList.kSaturate,
+                kSpecial_IntrinsicOpcodeKind,
+                kSaturate_SpecialIntrinsic, kSaturate_SpecialIntrinsic,
+                kSaturate_SpecialIntrinsic, kSaturate_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kDot,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpDot, SpvOpUndef, SpvOpUndef, SpvOpUndef);
+        setIntrinsic(IntrinsicList.kMix,
+                kSpecial_IntrinsicOpcodeKind,
+                kMix_SpecialIntrinsic, kMix_SpecialIntrinsic,
+                kMix_SpecialIntrinsic, kMix_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kStep,
+                kSpecial_IntrinsicOpcodeKind,
+                kStep_SpecialIntrinsic, kStep_SpecialIntrinsic,
+                kStep_SpecialIntrinsic, kStep_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kSmoothStep,
+                kSpecial_IntrinsicOpcodeKind,
+                kSmoothStep_SpecialIntrinsic, kSmoothStep_SpecialIntrinsic,
+                kSmoothStep_SpecialIntrinsic, kSmoothStep_SpecialIntrinsic);
+
+        setIntrinsic(IntrinsicList.kLength,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Length, GLSLstd450Length, GLSLstd450Length, GLSLstd450Length);
+        setIntrinsic(IntrinsicList.kDistance,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Distance, GLSLstd450Distance, GLSLstd450Distance, GLSLstd450Distance);
+        setIntrinsic(IntrinsicList.kCross,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Cross, GLSLstd450Cross, GLSLstd450Cross, GLSLstd450Cross);
+        setIntrinsic(IntrinsicList.kNormalize,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Normalize, GLSLstd450Normalize, GLSLstd450Normalize, GLSLstd450Normalize);
+
+        setIntrinsic(IntrinsicList.kFwidth,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFwidth, SpvOpUndef, SpvOpUndef, SpvOpUndef);
     }
 
     public final TargetApi mOutputTarget;
@@ -105,8 +181,12 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // key is a pointer to symbol table, hash is based on address (reference equality)
     // struct type to SpvId[MemoryLayout.ordinal + 1], no memory layout is at [0]
     private final HashMap<Type, int[]> mStructTable = new HashMap<>();
-    private final Object2IntOpenHashMap<FunctionDecl> mFunctionTable = new Object2IntOpenHashMap<>();
-    private final Object2IntOpenHashMap<Variable> mVariableTable = new Object2IntOpenHashMap<>();
+    private final Reference2IntOpenHashMap<FunctionDecl> mFunctionTable = new Reference2IntOpenHashMap<>();
+    private final Reference2IntOpenHashMap<Variable> mVariableTable = new Reference2IntOpenHashMap<>();
+
+    // reused arrays storing SpvId; there are nested calls, but won't be too deep
+    private final IntArrayList[] mIdListPool = new IntArrayList[4];
+    private int mIdListPoolSize = 0;
 
     // a stack of instruction builders
     // used to write nested types or structures
@@ -167,10 +247,6 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
      * This has no semantic impact (debug only). The default is false.
      */
     private boolean mEmitNames;
-
-    // reused array storing SpvId
-    private final IntArrayList mTmpIdList = new IntArrayList();
-    private final IntArrayList mTmpIdList2 = new IntArrayList();
 
     public SPIRVCodeGenerator(@Nonnull ShaderCompiler compiler,
                               @Nonnull TranslationUnit translationUnit,
@@ -867,34 +943,37 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                           Writer writer) {
         // If this is a vector/matrix composed entirely of literals, write a constant-composite instead.
         if (type.isVector() || type.isMatrix()) {
-            IntArrayList constants = mTmpIdList2;
-            constants.clear();
-            boolean isConstant = true;
-            for (int i = 0; i < count; i++) {
-                if (!getConstants(values[i], constants)) {
-                    isConstant = false;
-                    break;
-                }
-            }
-            if (isConstant) {
-                if (type.isVector()) {
-                    // Create a vector from literals.
-                    return writeOpConstantComposite(type, constants.elements(), 0, constants.size());
-                } else {
-                    // Create each matrix column.
-                    assert type.isMatrix();
-                    assert constants.size() == type.getComponents();
-                    int start = constants.size();
-                    Type columnType = type.getComponentType().toVector(getContext(), type.getRows());
-                    for (int index = 0; index < type.getCols(); index++) {
-                        constants.add(
-                                writeOpConstantComposite(columnType,
-                                        constants.elements(), index * type.getRows(), type.getRows())
-                        );
+            IntArrayList constants = obtainIdList();
+            try {
+                boolean isConstant = true;
+                for (int i = 0; i < count; i++) {
+                    if (!getConstants(values[i], constants)) {
+                        isConstant = false;
+                        break;
                     }
-                    // Compose the matrix from its columns.
-                    return writeOpConstantComposite(type, constants.elements(), start, type.getCols());
                 }
+                if (isConstant) {
+                    if (type.isVector()) {
+                        // Create a vector from literals.
+                        return writeOpConstantComposite(type, constants.elements(), 0, constants.size());
+                    } else {
+                        // Create each matrix column.
+                        assert type.isMatrix();
+                        assert constants.size() == type.getComponents();
+                        int start = constants.size();
+                        Type columnType = type.getComponentType().toVector(getContext(), type.getRows());
+                        for (int index = 0; index < type.getCols(); index++) {
+                            constants.add(
+                                    writeOpConstantComposite(columnType,
+                                            constants.elements(), index * type.getRows(), type.getRows())
+                            );
+                        }
+                        // Compose the matrix from its columns.
+                        return writeOpConstantComposite(type, constants.elements(), start, type.getCols());
+                    }
+                }
+            } finally {
+                releaseIdList(constants);
             }
         }
 
@@ -1291,6 +1370,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 Swizzle swizzle = (Swizzle) expr;
                 yield writeRValueSwizzle(swizzle.getBase(), swizzle.getComponents(), writer);
             }
+            case FUNCTION_CALL -> writeFunctionCall((FunctionCall) expr, writer);
             default -> {
                 getContext().error(expr.mPosition, "unsupported expression");
                 yield NONE_ID;
@@ -1306,15 +1386,68 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             // Splat the input scalar across a vector.
             int vectorSize = type.getRows();
 
-            IntArrayList values = mTmpIdList;
-            values.clear();
-            for (int i = 0; i < vectorSize; i++) {
-                values.add(id);
+            IntArrayList values = obtainIdList();
+            try {
+                for (int i = 0; i < vectorSize; i++) {
+                    values.add(id);
+                }
+                return writeOpCompositeConstruct(type, values.elements(), vectorSize, writer);
+            } finally {
+                releaseIdList(values);
             }
-            return writeOpCompositeConstruct(type, values.elements(), vectorSize, writer);
         }
 
         return id;
+    }
+
+    private int vectorize(float value, int vectorSize, Writer writer) {
+        assert (vectorSize >= 1 && vectorSize <= 4);
+        Type type = getContext().getTypes().mFloat;
+        int id = writeScalarConstant(value, type);
+        if (vectorSize > 1) {
+            return broadcast(type.toVector(getContext(), vectorSize), id, writer);
+        }
+        return id;
+    }
+
+    /**
+     * Promotes an expression to a vector. If the expression is already a vector with vectorSize
+     * columns, returns it unmodified. If the expression is a scalar, either promotes it to a
+     * vector (if vectorSize > 1) or returns it unmodified (if vectorSize == 1). Asserts if the
+     * expression is already a vector and it does not have vectorSize columns.
+     */
+    private int vectorize(Expression arg, int vectorSize, Writer writer) {
+        assert (vectorSize >= 1 && vectorSize <= 4);
+        Type argType = arg.getType();
+        if (argType.isScalar() && vectorSize > 1) {
+            int argId = writeExpression(arg, writer);
+            return broadcast(argType.toVector(getContext(), vectorSize), argId, writer);
+        }
+
+        assert (vectorSize == argType.getRows());
+        return writeExpression(arg, writer);
+    }
+
+    /**
+     * Given a list of potentially mixed scalars and vectors, promotes the scalars to match the
+     * size of the vectors and returns the ids of the written expressions. e.g. given (float, vec2),
+     * returns (vec2(float), vec2). It is an error to use mismatched vector sizes, e.g. (float,
+     * vec2, vec3).
+     */
+    private void vectorize(Expression[] args, IntArrayList result, Writer writer) {
+        int vectorSize = 1;
+        for (Expression arg : args) {
+            if (arg.getType().isVector()) {
+                if (vectorSize > 1) {
+                    assert (arg.getType().getRows() == vectorSize);
+                } else {
+                    vectorSize = arg.getType().getRows();
+                }
+            }
+        }
+        for (Expression arg : args) {
+            result.add(vectorize(arg, vectorSize, writer));
+        }
     }
 
     private int writeBinaryExpression(@Nonnull BinaryExpression expr, Writer writer) {
@@ -1578,16 +1711,19 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         // do each vector op
-        IntArrayList columns = mTmpIdList;
-        columns.clear();
-        for (int i = 0; i < resultType.getCols(); i++) {
-            int leftColumn = leftMat ? writeOpCompositeExtract(columnType, lhs, i, writer) : lhs;
-            int rightColumn = rightMat ? writeOpCompositeExtract(columnType, rhs, i, writer) : rhs;
-            int resultId = getUniqueId(resultType);
-            writeInstruction(op, columnTypeId, resultId, leftColumn, rightColumn, writer);
-            columns.add(resultId);
+        IntArrayList columns = obtainIdList();
+        try {
+            for (int i = 0; i < resultType.getCols(); i++) {
+                int leftColumn = leftMat ? writeOpCompositeExtract(columnType, lhs, i, writer) : lhs;
+                int rightColumn = rightMat ? writeOpCompositeExtract(columnType, rhs, i, writer) : rhs;
+                int resultId = getUniqueId(resultType);
+                writeInstruction(op, columnTypeId, resultId, leftColumn, rightColumn, writer);
+                columns.add(resultId);
+            }
+            return writeOpCompositeConstruct(resultType, columns.elements(), resultType.getCols(), writer);
+        } finally {
+            releaseIdList(columns);
         }
-        return writeOpCompositeConstruct(resultType, columns.elements(), resultType.getCols(), writer);
     }
 
     // raw binary op
@@ -1839,6 +1975,264 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
+    private void writeFunctionCallArgument(IntArrayList argList,
+                                           FunctionCall call,
+                                           int argIndex,
+                                           ArrayList<OutVar> tmpOutVars,
+                                           Writer writer) {
+        FunctionDecl funcDecl = call.getFunction();
+        Expression arg = call.getArguments()[argIndex];
+        Variable param = funcDecl.getParameters().get(argIndex);
+        Modifiers paramModifiers = param.getModifiers();
+
+        if (arg instanceof VariableReference && arg.getType().isOpaque()) {
+            // Opaque handle (sampler/texture) arguments are always declared as pointers but never
+            // stored in intermediates when calling user-defined functions.
+            //
+            // The case for intrinsics (which take opaque arguments by value) is handled above just like
+            // regular pointers.
+            //
+            // See getFunctionParameterType for further explanation.
+            Variable variable = ((VariableReference) arg).getVariable();
+
+            int entry = mVariableTable.getInt(variable);
+            assert entry != 0;
+            argList.add(entry);
+            return;
+        }
+
+        // ID of temporary variable that we will use to hold this argument, or 0 if it is being
+        // passed directly
+        int tmpVar;
+        // if we need a temporary var to store this argument, this is the value to store in the var
+        int tmpValueId = NONE_ID;
+
+        if ((paramModifiers.flags() & Modifiers.kOut_Flag) != 0) {
+            LValue lValue = writeLValue(arg, writer);
+            // We handle out params with a temp var that we copy back to the original variable at the
+            // end of the call. GLSL guarantees that the original variable will be unchanged until the
+            // end of the call, and also that out params are written back to their original variables in
+            // a specific order (left-to-right), so it's unsafe to pass a pointer to the original value.
+            if ((paramModifiers.flags() & Modifiers.kIn_Flag) != 0) {
+                tmpValueId = lValue.load(this, writer);
+            }
+            tmpVar = getUniqueId(arg.getType());
+            tmpOutVars.add(new OutVar(tmpVar, arg.getType(), lValue));
+        } else if (funcDecl.isIntrinsic()) {
+            // Unlike user function calls, non-out intrinsic arguments don't need pointer parameters.
+            tmpValueId = writeExpression(arg, writer);
+            argList.add(tmpValueId);
+            return;
+        } else {
+            // We always use pointer parameters when calling user functions.
+            // See getFunctionParameterType for further explanation.
+            tmpValueId = writeExpression(arg, writer);
+            tmpVar = getUniqueId();
+        }
+
+        int ptrTypeId = writePointerType(arg.getType(), SpvStorageClassFunction);
+        writeInstruction(SpvOpVariable,
+                ptrTypeId,
+                tmpVar,
+                SpvStorageClassFunction,
+                mVariableBuffer);
+        if (tmpValueId != NONE_ID) {
+            writeOpStore(SpvStorageClassFunction, tmpVar, tmpValueId, writer);
+        }
+        argList.add(tmpVar);
+    }
+
+    private void copyBackOutArguments(ArrayList<OutVar> tmpOutVars, Writer writer) {
+        for (OutVar outVar : tmpOutVars) {
+            int loadId = getUniqueId(outVar.mType);
+            int typeId = writeType(outVar.mType);
+            writeInstruction(SpvOpLoad, typeId, loadId, outVar.mId, writer);
+            outVar.mLValue.store(this, loadId, writer);
+        }
+    }
+
+    private void writeGLSLExtendedInstruction(Type type, int id,
+                                              int floatInst, int signedInst, int unsignedInst,
+                                              IntArrayList args, Writer writer) {
+        writeOpcode(SpvOpExtInst, 5 + args.size(), writer);
+        int typeId = writeType(type);
+        writer.writeWord(typeId);
+        writer.writeWord(id);
+        writer.writeWord(mGLSLExtendedInstructions);
+        writer.writeWord(select_by_component_type(type, floatInst, signedInst, unsignedInst, GLSLstd450Bad));
+        writer.writeWords(args.elements(), args.size());
+    }
+
+    private int writeSpecialIntrinsic(FunctionCall call, int kind, Writer writer) {
+        Expression[] arguments = call.getArguments();
+        int resultId = getUniqueId();
+        Type callType = call.getType();
+        switch (kind) {
+            case kSaturate_SpecialIntrinsic -> {
+                assert (arguments.length == 1);
+                int vectorSize = arguments[0].getType().getRows();
+                IntArrayList argumentIds = obtainIdList();
+                argumentIds.add(vectorize(arguments[0], vectorSize, writer));
+                argumentIds.add(vectorize(0.0f, vectorSize, writer));
+                argumentIds.add(vectorize(1.0f, vectorSize, writer));
+                writeGLSLExtendedInstruction(callType, resultId,
+                        GLSLstd450FClamp, GLSLstd450SClamp, GLSLstd450UClamp,
+                        argumentIds, writer);
+                releaseIdList(argumentIds);
+            }
+            case kMix_SpecialIntrinsic -> {
+                IntArrayList argumentIds = obtainIdList();
+                vectorize(arguments, argumentIds, writer);
+                assert argumentIds.size() == 3;
+                if (arguments[2].getType().isBooleanOrCompound()) {
+                    // Use OpSelect to implement Boolean mix().
+                    int falseId = writeExpression(arguments[0], writer);
+                    int trueId = writeExpression(arguments[1], writer);
+                    int conditionId = writeExpression(arguments[2], writer);
+                    int typeId = writeType(arguments[0].getType());
+                    writeInstruction(SpvOpSelect, typeId, resultId,
+                            conditionId, trueId, falseId, writer);
+                } else {
+                    writeGLSLExtendedInstruction(callType, resultId,
+                            GLSLstd450FMix, SpvOpUndef, SpvOpUndef,
+                            argumentIds, writer);
+                }
+                releaseIdList(argumentIds);
+            }
+            case kStep_SpecialIntrinsic -> {
+                IntArrayList argumentIds = obtainIdList();
+                vectorize(arguments, argumentIds, writer);
+                assert argumentIds.size() == 2;
+                writeGLSLExtendedInstruction(callType, resultId,
+                        GLSLstd450Step, SpvOpUndef, SpvOpUndef,
+                        argumentIds, writer);
+                releaseIdList(argumentIds);
+            }
+            case kSmoothStep_SpecialIntrinsic -> {
+                IntArrayList argumentIds = obtainIdList();
+                vectorize(arguments, argumentIds, writer);
+                assert argumentIds.size() == 3;
+                writeGLSLExtendedInstruction(callType, resultId,
+                        GLSLstd450SmoothStep, GLSLstd450Bad, GLSLstd450Bad,
+                        argumentIds, writer);
+                releaseIdList(argumentIds);
+            }
+        }
+        return resultId;
+    }
+
+    private int writeIntrinsicCall(FunctionCall call, Writer writer) {
+        FunctionDecl funcDecl = call.getFunction();
+        assert funcDecl.isIntrinsic();
+        int dataIndex = funcDecl.getIntrinsicKind() * kIntrinsicDataColumn;
+        if (sIntrinsicData[dataIndex] == kInvalid_IntrinsicOpcodeKind) {
+            getContext().error(call.mPosition, "unsupported intrinsic '" +
+                    funcDecl + "'");
+            return NONE_ID;
+        }
+
+        Expression[] arguments = call.getArguments();
+        int intrinsicId = sIntrinsicData[dataIndex + 1];
+        if (arguments.length > 0) {
+            Type type = arguments[0].getType();
+            if (sIntrinsicData[dataIndex] != kSpecial_IntrinsicOpcodeKind) {
+                intrinsicId = select_by_component_type(type,
+                        sIntrinsicData[dataIndex + 1], sIntrinsicData[dataIndex + 2],
+                        sIntrinsicData[dataIndex + 3], sIntrinsicData[dataIndex + 4]);
+            }
+            // else keep the default float op.
+        }
+        switch (sIntrinsicData[dataIndex]) {
+            case kGLSLstd450_IntrinsicOpcodeKind -> {
+                int resultId = getUniqueId(call.getType());
+                int typeId = writeType(call.getType());
+                IntArrayList argumentIds = obtainIdList();
+                ArrayList<OutVar> tmpOutVars = new ArrayList<>();
+                for (int i = 0; i < arguments.length; i++) {
+                    writeFunctionCallArgument(argumentIds, call, i, tmpOutVars,
+                            writer);
+                }
+                writeOpcode(SpvOpExtInst, 5 + argumentIds.size(), writer);
+                writer.writeWord(typeId);
+                writer.writeWord(resultId);
+                writer.writeWord(mGLSLExtendedInstructions);
+                writer.writeWord(intrinsicId);
+                writer.writeWords(argumentIds.elements(), argumentIds.size());
+                copyBackOutArguments(tmpOutVars, writer);
+                releaseIdList(argumentIds);
+                return resultId;
+            }
+            case kSPIRV_IntrinsicOpcodeKind -> {
+                // GLSL supports dot(float, float), but SPIR-V does not. Convert it to FMul
+                if (intrinsicId == SpvOpDot && arguments[0].getType().isScalar()) {
+                    intrinsicId = SpvOpFMul;
+                }
+                int resultId = getUniqueId(call.getType());
+                IntArrayList argumentIds = obtainIdList();
+                ArrayList<OutVar> tmpOutVars = new ArrayList<>();
+                for (int i = 0; i < arguments.length; i++) {
+                    writeFunctionCallArgument(argumentIds, call, i, tmpOutVars,
+                            writer);
+                }
+                if (!call.getType().isVoid()) {
+                    int typeId = writeType(call.getType());
+                    writeOpcode(intrinsicId, 3 + arguments.length, writer);
+                    writer.writeWord(typeId);
+                    writer.writeWord(resultId);
+                } else {
+                    writeOpcode(intrinsicId, 1 + arguments.length, writer);
+                }
+                writer.writeWords(argumentIds.elements(), argumentIds.size());
+                copyBackOutArguments(tmpOutVars, writer);
+                releaseIdList(argumentIds);
+                return resultId;
+            }
+            case kSpecial_IntrinsicOpcodeKind -> {
+                return writeSpecialIntrinsic(call, intrinsicId, writer);
+            }
+            default -> {
+                getContext().error(call.mPosition, "unsupported intrinsic '" +
+                        funcDecl + "'");
+                return NONE_ID;
+            }
+        }
+    }
+
+    private int writeFunctionCall(FunctionCall call, Writer writer) {
+        // Handle intrinsics.
+        FunctionDecl funcDecl = call.getFunction();
+        if (funcDecl.isIntrinsic() && funcDecl.getDefinition() == null) {
+            return writeIntrinsicCall(call, writer);
+        }
+
+        int entry = mFunctionTable.getInt(funcDecl);
+        if (entry == 0) {
+            getContext().error(call.mPosition, "function '" + funcDecl +
+                    "' is not defined");
+            return NONE_ID;
+        }
+
+        // Temp variables are used to write back out-parameters after the function call is complete.
+        Expression[] arguments = call.getArguments();
+        IntArrayList argumentIds = obtainIdList();
+        ArrayList<OutVar> tmpOutVars = new ArrayList<>();
+        for (int i = 0; i < arguments.length; i++) {
+            writeFunctionCallArgument(argumentIds, call, i, tmpOutVars,
+                    writer);
+        }
+        int resultId = getUniqueId();
+        int typeId = writeType(call.getType());
+        writeOpcode(SpvOpFunctionCall, 4 + argumentIds.size(), writer);
+        writer.writeWord(typeId);
+        writer.writeWord(resultId);
+        writer.writeWord(entry);
+        writer.writeWords(argumentIds.elements(), argumentIds.size());
+        // Now that the call is complete, we copy temp out-variables back to their real lvalues.
+        copyBackOutArguments(tmpOutVars, writer);
+        releaseIdList(argumentIds);
+        return resultId;
+    }
+
     private void buildInstructions(@Nonnull TranslationUnit translationUnit) {
         mGLSLExtendedInstructions = getUniqueId();
         // always enable Shader capability, this implicitly declares Matrix capability
@@ -1885,7 +2279,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         // Add global variables to the list of interface variables.
-        for (var e : mVariableTable.object2IntEntrySet()) {
+        for (var e : mVariableTable.reference2IntEntrySet()) {
             Variable variable = e.getKey();
             if (variable.getStorage() == Variable.kGlobal_Storage &&
                     variable.getModifiers().layoutBuiltin() == -1) {
@@ -2099,10 +2493,27 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private void releaseInstBuilder(InstructionBuilder key) {
+    private void releaseInstBuilder(@Nonnull InstructionBuilder key) {
         if (mInstBuilderPoolSize == mInstBuilderPool.length) {
             return;
         }
         mInstBuilderPool[mInstBuilderPoolSize++] = key;
+    }
+
+    @Nonnull
+    private IntArrayList obtainIdList() {
+        if (mIdListPoolSize == 0) {
+            return new IntArrayList();
+        }
+        var r = mIdListPool[--mIdListPoolSize];
+        r.clear();
+        return r;
+    }
+
+    private void releaseIdList(@Nonnull IntArrayList idList) {
+        if (mIdListPoolSize == mIdListPool.length) {
+            return;
+        }
+        mIdListPool[mIdListPoolSize++] = idList;
     }
 }
