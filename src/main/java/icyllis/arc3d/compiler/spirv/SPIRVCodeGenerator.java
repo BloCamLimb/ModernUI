@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Objects;
 
 import static org.lwjgl.util.spvc.Spv.*;
+import static icyllis.arc3d.compiler.GLSLstd450.*;
 
 /**
  * SPIR-V code generator for OpenGL 4.5 and Vulkan 1.0 or above.
@@ -48,6 +49,46 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // We reserve the max SpvId as a sentinel (meaning not available)
     // SpvId 0 is reserved by SPIR-V and also represents absence in map
     public static final int NONE_ID = 0xFFFFFFFF;
+
+    private static final int
+            kInvalid_IntrinsicOpcodeKind = 0,
+            kGLSLstd450_IntrinsicOpcodeKind = 1,
+            kSPIRV_IntrinsicOpcodeKind = 2,
+            kSpecial_IntrinsicOpcodeKind = 3;
+
+    // flattened intrinsic data:
+    //
+    // struct Intrinsic {
+    //     IntrinsicOpcodeKind opKind;
+    //     int32_t floatOp;
+    //     int32_t signedOp;
+    //     int32_t unsignedOp;
+    //     int32_t booleanOp;
+    // };
+    private static final int[] sIntrinsicData = new int[IntrinsicList.kCount * 5];
+
+    private static void setIntrinsic(int intrinsic, int opKind,
+                                     int floatOp, int signedOp, int unsignedOp, int booleanOp) {
+        assert intrinsic >= 0 && intrinsic < IntrinsicList.kCount;
+        int index = intrinsic * 5;
+        sIntrinsicData[index] = opKind;
+        sIntrinsicData[index+1] = floatOp;
+        sIntrinsicData[index+2] = signedOp;
+        sIntrinsicData[index+3] = unsignedOp;
+        sIntrinsicData[index+4] = booleanOp;
+    }
+
+    static {
+        setIntrinsic(IntrinsicList.kRound,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Round, GLSLstd450Round, GLSLstd450Round, GLSLstd450Round);
+        setIntrinsic(IntrinsicList.kRoundEven,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450RoundEven, GLSLstd450RoundEven, GLSLstd450RoundEven, GLSLstd450RoundEven);
+        setIntrinsic(IntrinsicList.kTrunc,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Trunc, GLSLstd450Trunc, GLSLstd450Trunc, GLSLstd450Trunc);
+    }
 
     public final TargetApi mOutputTarget;
     public final SPIRVVersion mOutputVersion;
@@ -129,6 +170,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     // reused array storing SpvId
     private final IntArrayList mTmpIdList = new IntArrayList();
+    private final IntArrayList mTmpIdList2 = new IntArrayList();
 
     public SPIRVCodeGenerator(@Nonnull ShaderCompiler compiler,
                               @Nonnull TranslationUnit translationUnit,
@@ -825,7 +867,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                           Writer writer) {
         // If this is a vector/matrix composed entirely of literals, write a constant-composite instead.
         if (type.isVector() || type.isMatrix()) {
-            IntArrayList constants = mTmpIdList;
+            IntArrayList constants = mTmpIdList2;
             constants.clear();
             boolean isConstant = true;
             for (int i = 0; i < count; i++) {
@@ -942,6 +984,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
         assert type.getWidth() == 32;
         return writeOpConstant(type, valueBits);
+    }
+
+    private int writeLiteral(@Nonnull Literal literal) {
+        return writeScalarConstant(literal.getValue(), literal.getType());
     }
 
     /**
@@ -1169,7 +1215,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private static boolean isCompileTimeConstant(VariableDecl variableDecl) {
+    private static boolean is_compile_time_constant(VariableDecl variableDecl) {
         return variableDecl.getVariable().getModifiers().isConst() &&
                 (variableDecl.getVariable().getType().isScalar() ||
                         variableDecl.getVariable().getType().isVector()) &&
@@ -1180,7 +1226,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private boolean writeGlobalVariableDecl(VariableDecl variableDecl) {
         // If this global variable is a compile-time constant then we'll emit OpConstant or
         // OpConstantComposite later when the variable is referenced. Avoid declaring an OpVariable now.
-        if (isCompileTimeConstant(variableDecl)) {
+        if (is_compile_time_constant(variableDecl)) {
             return true;
         }
 
@@ -1214,11 +1260,37 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
+    private void writeVariableDecl(VariableDecl variableDecl, Writer writer) {
+        // If this variable is a compile-time constant then we'll emit OpConstant or
+        // OpConstantComposite later when the variable is referenced. Avoid declaring an OpVariable now.
+        if (is_compile_time_constant(variableDecl)) {
+            return;
+        }
+
+        Variable variable = variableDecl.getVariable();
+        int id = getUniqueId(variable.getType());
+        mVariableTable.put(variable, id);
+        int ptrTypeId = writePointerType(variable.getType(), SpvStorageClassFunction);
+        writeInstruction(SpvOpVariable, ptrTypeId, id, SpvStorageClassFunction, mVariableBuffer);
+        if (mEmitNames) {
+            writeInstruction(SpvOpName, id, variable.getName(), mNameBuffer);
+        }
+        if (variableDecl.getInit() != null) {
+            int init = writeExpression(variableDecl.getInit(), writer);
+            writeOpStore(SpvStorageClassFunction, id, init, writer);
+        }
+    }
+
     private int writeExpression(@Nonnull Expression expr, Writer writer) {
         return switch (expr.getKind()) {
+            case LITERAL -> writeLiteral((Literal) expr);
             case BINARY -> writeBinaryExpression((BinaryExpression) expr, writer);
             case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr, writer);
             case FIELD_ACCESS -> writeLValue(expr, writer).load(this, writer);
+            case SWIZZLE -> {
+                Swizzle swizzle = (Swizzle) expr;
+                yield writeRValueSwizzle(swizzle.getBase(), swizzle.getComponents(), writer);
+            }
             default -> {
                 getContext().error(expr.mPosition, "unsupported expression");
                 yield NONE_ID;
@@ -1370,32 +1442,39 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     leftComponentType.getWidth() == rightComponentType.getWidth()) {
                 // only minWidth differs
                 operandType = leftType;
-            } else if (leftType.isVector() && rightType.isNumeric()) {
-                if (resultType.getComponentType().isFloat()) {
-                    switch (op) {
-                        case DIV: {
-                            int one = writeScalarConstant(1.0, rightType);
-                            int reciprocal = getUniqueId(rightType);
-                            writeInstruction(SpvOpFDiv, writeType(rightType), reciprocal, one, rhs, writer);
-                            rhs = reciprocal;
-                            // fallthrough
+            } else
+                // IR allows mismatched types in expressions (e.g. float2 * float), but they need special
+                // handling in SPIR-V
+                if (leftType.isVector() && rightType.isNumeric()) {
+                    if (resultType.getComponentType().isFloat()) {
+                        if (op == Operator.MUL) {
+                            int resultId = getUniqueId(resultType);
+                            int typeId = writeType(resultType);
+                            writeInstruction(SpvOpVectorTimesScalar, typeId, resultId,
+                                    lhs, rhs, writer);
+                            return resultId;
                         }
-                        case MUL: {
-                            int result = getUniqueId(resultType);
-                            writeInstruction(SpvOpVectorTimesScalar, writeType(resultType),
-                                    result, lhs, rhs, writer);
-                            return result;
-                        }
-                        default:
-                            break;
                     }
+                    // Vectorize the right-hand side.
+                    rhs = broadcast(leftType, rhs, writer);
+                    operandType = leftType;
+                } else if (leftType.isNumeric() && rightType.isVector()) {
+                    if (resultType.getComponentType().isFloat()) {
+                        if (op == Operator.MUL) {
+                            int resultId = getUniqueId(resultType);
+                            int typeId = writeType(resultType);
+                            writeInstruction(SpvOpVectorTimesScalar, typeId, resultId,
+                                    rhs, lhs, writer);
+                            return resultId;
+                        }
+                    }
+                    // Vectorize the left-hand side.
+                    lhs = broadcast(rightType, lhs, writer);
+                    operandType = rightType;
+                } else {
+                    getContext().error(pos, "unsupported mixed-type expression");
+                    return NONE_ID;
                 }
-                operandType = rightType;
-            } else {
-                getContext().error(pos, "unsupported mixed-type expression " +
-                        leftType + " " + op + " " + rightType);
-                return NONE_ID;
-            }
         }
 
         switch (op) {
@@ -1469,8 +1548,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         SpvOpFMod, SpvOpSMod, SpvOpUMod, SpvOpUndef,
                         writer);
             default:
-                getContext().error(pos, "unsupported expression " +
-                        leftType + " " + op + " " + rightType);
+                getContext().error(pos, "unsupported expression");
                 return NONE_ID;
         }
     }
@@ -1558,6 +1636,30 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return writeLValue(ref, writer).load(this, writer);
     }
 
+    private int writeRValueSwizzle(Expression baseExpr,
+                                   byte[] components, Writer writer) {
+        int count = components.length;
+        assert count >= 1 && count <= 4;
+        Type type = baseExpr.getType().getComponentType().toVector(getContext(), count);
+        int baseId = writeExpression(baseExpr, writer);
+
+        if (count == 1) {
+            return writeOpCompositeExtract(type, baseId, components[0], writer);
+        }
+
+        int resultId = getUniqueId(type);
+        int typeId = writeType(type);
+        writeOpcode(SpvOpVectorShuffle, 5 + count, writer);
+        writer.writeWord(typeId);
+        writer.writeWord(resultId);
+        writer.writeWord(baseId);
+        writer.writeWord(baseId);
+        for (int component : components) {
+            writer.writeWord(component); // 0...3
+        }
+        return resultId;
+    }
+
     private void pruneConditionalOps(int numReachableOps, int numStoreOps) {
         // Remove ops which are no longer reachable.
         while (mReachableOps.size() > numReachableOps) {
@@ -1580,6 +1682,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private void writeStatement(@Nonnull Statement stmt, Writer writer) {
         switch (stmt.getKind()) {
+            case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt, writer);
             case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), writer);
             case DISCARD -> {
                 if (mOutputVersion.isAtLeast(SPIRVVersion.SPIRV_1_6)) {

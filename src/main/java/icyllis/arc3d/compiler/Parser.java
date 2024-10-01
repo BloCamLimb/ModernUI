@@ -835,6 +835,9 @@ public class Parser {
             if (checkNext(Token.TK_RBRACE)) {
                 int pos = rangeFrom(start);
                 return BlockStatement.makeBlock(pos, statements);
+            } else if (peek(Token.TK_END_OF_FILE)) {
+                error(peek(), "expected '}', but found end of file");
+                return null;
             } else {
                 Statement statement = Statement();
                 if (statement != null) {
@@ -2049,7 +2052,7 @@ public class Parser {
      * }</pre>
      */
     private Statement SwitchStatement() {
-        return null;
+        throw new FatalError();
     }
 
     /**
