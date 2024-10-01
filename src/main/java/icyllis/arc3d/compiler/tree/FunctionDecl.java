@@ -318,6 +318,10 @@ public final class FunctionDecl extends Symbol {
         return mReturnType;
     }
 
+    public int getIntrinsicKind() {
+        return mIntrinsicKind;
+    }
+
     public boolean isIntrinsic() {
         return mIntrinsicKind != IntrinsicList.kNotIntrinsic;
     }
