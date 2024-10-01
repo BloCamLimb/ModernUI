@@ -246,6 +246,8 @@ public final class IntrinsicList {
      */
     public static final int
             kSubpassLoad = 153;
+    public static final int
+            kCount = 154;
 
     private static final Object2IntOpenHashMap<String> sIntrinsicMap;
 
