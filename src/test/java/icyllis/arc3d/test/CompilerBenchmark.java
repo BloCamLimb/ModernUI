@@ -35,40 +35,66 @@ import static org.lwjgl.util.shaderc.Shaderc.*;
 
 @Fork(2)
 @Threads(2)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Warmup(iterations = 3, time = 2)
+@Measurement(iterations = 5, time = 2)
 @State(Scope.Thread)
 public class CompilerBenchmark {
 
     public static final String SOURCE = """
-            #version 450    core
-                # pragma deep dark # line 2
-                      \s
-                      
-                # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
-            const int blockSize = -4 + 6;
-            layout(binding = 0, set = 0) uniform UniformBlock {
-                mat4 u_Projection;
-                mat4 u_ModelView;
-                vec4 u_Color;
-            } u_Buffer0;
+            #version 450 core
+            
+            layout(std140, binding = 1) uniform SmoothBlock {
+                float u_SmoothRadius;
+            };
+            layout(std140, binding = 2) uniform PaintBlock {
+                vec2 u_CenterPos;
+                float u_MiddleAngle;
+                float u_SweepAngle;
+                float u_Radius;
+                float u_StrokeRadius;
+            };
+            
             layout(location = 0) smooth in vec2 f_Position;
             layout(location = 1) smooth in vec4 f_Color;
-            layout(location = 0, index = 0) out vec4 FragColor0;
-            layout(location = 0, index = 1) out vec4 FragColor1;
-            void main(void) {
-                // M4 m = "what?";
-                FragColor0 = u_Buffer0.u_Color;
+            
+            layout(location = 0, index = 0) out vec4 fragColor;
+            
+            void main() {
+                vec2 v = f_Position - u_CenterPos;
+            
+                // smoothing normal direction
+                float d1 = abs(length(v) - u_Radius) - u_StrokeRadius;
+                float a1 = smoothstep(-u_SmoothRadius, 0.0, d1);
+            
+                // sweep angle (0,360) in degrees
+                float c = cos(u_SweepAngle * 0.00872664626);
+            
+                float f = u_MiddleAngle * 0.01745329252;
+                // normalized vector from the center to the middle of the arc
+                vec2 up = vec2(cos(f), sin(f));
+            
+                // smoothing tangent direction
+                float d2 = dot(up, normalize(v)) - c;
+            
+                // proportional to how much `d2` changes between pixels
+                float w = u_SmoothRadius * fwidth(d2);
+                float a2 = smoothstep(w * -0.5, w * 0.5, d2);
+            
+                // mix alpha value
+                float a = (1.0 - a1) * a2;
+            
+                fragColor = f_Color * a;
             }
             """;
 
     public static final char[] SOURCE_CHARS = SOURCE.toCharArray();
+    public static final ModuleUnit COMMON_MODULE = ModuleLoader.getInstance().loadCommonModule(new ShaderCompiler());
 
     public static final ByteBuffer SOURCE_BUFFER = MemoryUtil.memUTF8(SOURCE, false);
     public static final ByteBuffer FILE_NAME_BUFFER = MemoryUtil.memUTF8("file");
     public static final ByteBuffer ENTRY_NAME_BUFFER = MemoryUtil.memUTF8("main");
 
-    // the benchmark shows that our compiler is 100x faster than glslang
+    // the benchmark shows that our compiler is 20x to 32x faster than glslang
     public static void main(String[] args) throws RunnerException {
         new Runner(new OptionsBuilder()
                 .include(CompilerBenchmark.class.getSimpleName())
@@ -98,7 +124,7 @@ public class CompilerBenchmark {
     public static void arc3d(Blackhole blackhole) {
         ShaderCompiler compiler = new ShaderCompiler();
         ByteBuffer spirv = compiler.compileIntoSPIRV(SOURCE_CHARS, 0, SOURCE_CHARS.length, ShaderKind.FRAGMENT,
-                new ShaderCaps(), new CompileOptions(), ModuleLoader.getInstance().getRootModule());
+                new ShaderCaps(), new CompileOptions(), COMMON_MODULE);
         blackhole.consume(Objects.requireNonNull(spirv));
     }
 }

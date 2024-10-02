@@ -185,7 +185,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private final Reference2IntOpenHashMap<Variable> mVariableTable = new Reference2IntOpenHashMap<>();
 
     // reused arrays storing SpvId; there are nested calls, but won't be too deep
-    private final IntArrayList[] mIdListPool = new IntArrayList[4];
+    private final IntArrayList[] mIdListPool = new IntArrayList[6];
     private int mIdListPoolSize = 0;
 
     // a stack of instruction builders
@@ -543,6 +543,15 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             default -> false;
         };
+    }
+
+    private boolean getConstants(IntArrayList values, IntArrayList constants) {
+        for (int i = 0; i < values.size(); i++) {
+            if (!getConstants(values.getInt(i), constants)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -938,43 +947,58 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         );
     }
 
+    private int writeOpCompositeExtract(@Nonnull Type type,
+                                        int base,
+                                        int index1,
+                                        int index2,
+                                        Writer writer) {
+        // If the base op is a composite, we can extract from it directly.
+        int result = getComponent(base, index1);
+        if (result != NONE_ID) {
+            return writeOpCompositeExtract(type, result, index2, writer);
+        }
+        int typeId = writeType(type);
+        return writeInstructionWithCache(
+                getInstBuilder(SpvOpCompositeExtract)
+                        .addWord(typeId)
+                        .addResult()
+                        .addWord(base)
+                        .addWord(index1)
+                        .addWord(index2),
+                writer
+        );
+    }
+
     private int writeOpCompositeConstruct(@Nonnull Type type,
-                                          int[] values, int count,
+                                          IntArrayList values,
                                           Writer writer) {
         // If this is a vector/matrix composed entirely of literals, write a constant-composite instead.
         if (type.isVector() || type.isMatrix()) {
             IntArrayList constants = obtainIdList();
-            try {
-                boolean isConstant = true;
-                for (int i = 0; i < count; i++) {
-                    if (!getConstants(values[i], constants)) {
-                        isConstant = false;
-                        break;
+            if (getConstants(values, constants)) {
+                int resultId;
+                if (type.isVector()) {
+                    // Create a vector from literals.
+                    resultId = writeOpConstantComposite(type, constants.elements(), 0, constants.size());
+                } else {
+                    // Create each matrix column.
+                    assert type.isMatrix();
+                    assert constants.size() == type.getComponents();
+                    int start = constants.size();
+                    Type columnType = type.getComponentType().toVector(getContext(), type.getRows());
+                    for (int index = 0; index < type.getCols(); index++) {
+                        constants.add(
+                                writeOpConstantComposite(columnType,
+                                        constants.elements(), index * type.getRows(), type.getRows())
+                        );
                     }
+                    // Compose the matrix from its columns.
+                    resultId = writeOpConstantComposite(type, constants.elements(), start, type.getCols());
                 }
-                if (isConstant) {
-                    if (type.isVector()) {
-                        // Create a vector from literals.
-                        return writeOpConstantComposite(type, constants.elements(), 0, constants.size());
-                    } else {
-                        // Create each matrix column.
-                        assert type.isMatrix();
-                        assert constants.size() == type.getComponents();
-                        int start = constants.size();
-                        Type columnType = type.getComponentType().toVector(getContext(), type.getRows());
-                        for (int index = 0; index < type.getCols(); index++) {
-                            constants.add(
-                                    writeOpConstantComposite(columnType,
-                                            constants.elements(), index * type.getRows(), type.getRows())
-                            );
-                        }
-                        // Compose the matrix from its columns.
-                        return writeOpConstantComposite(type, constants.elements(), start, type.getCols());
-                    }
-                }
-            } finally {
                 releaseIdList(constants);
+                return resultId;
             }
+            releaseIdList(constants);
         }
 
         int typeId = writeType(type);
@@ -982,7 +1006,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 getInstBuilder(SpvOpCompositeConstruct)
                         .addWord(typeId)
                         .addResult()
-                        .addWords(values, 0, count),
+                        .addWords(values.elements(), 0, values.size()),
                 writer
         );
     }
@@ -1130,7 +1154,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             if (descriptorSet < 0) {
                 if (!mOutputTarget.isOpenGL()) {
-                    getContext().error(modifiers.mPosition, "'set' is missing");
+                    getContext().warning(modifiers.mPosition, "'set' is missing");
                 }
             } else if (mOutputTarget.isOpenGL() && descriptorSet != 0) {
                 getContext().error(modifiers.mPosition, "'set' must be 0");
@@ -1363,16 +1387,17 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private int writeExpression(@Nonnull Expression expr, Writer writer) {
         return switch (expr.getKind()) {
             case LITERAL -> writeLiteral((Literal) expr);
+            case PREFIX -> writePrefixExpression((PrefixExpression) expr, writer);
             case BINARY -> writeBinaryExpression((BinaryExpression) expr, writer);
             case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr, writer);
-            case FIELD_ACCESS -> writeLValue(expr, writer).load(this, writer);
-            case SWIZZLE -> {
-                Swizzle swizzle = (Swizzle) expr;
-                yield writeRValueSwizzle(swizzle.getBase(), swizzle.getComponents(), writer);
-            }
+            case FIELD_ACCESS -> writeFieldAccess((FieldAccess) expr, writer);
+            case SWIZZLE -> writeSwizzle((Swizzle) expr, writer);
             case FUNCTION_CALL -> writeFunctionCall((FunctionCall) expr, writer);
+            case CONSTRUCTOR_COMPOUND -> writeConstructorCompound((ConstructorCompound) expr, writer);
+            case CONSTRUCTOR_SCALAR_TO_VECTOR -> writeConstructorScalar2Vector((ConstructorScalar2Vector) expr, writer);
+            case CONSTRUCTOR_SCALAR_TO_MATRIX -> writeConstructorScalar2Matrix((ConstructorScalar2Matrix) expr, writer);
             default -> {
-                getContext().error(expr.mPosition, "unsupported expression");
+                getContext().error(expr.mPosition, "unsupported expression: " + expr.getKind());
                 yield NONE_ID;
             }
         };
@@ -1387,14 +1412,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             int vectorSize = type.getRows();
 
             IntArrayList values = obtainIdList();
-            try {
-                for (int i = 0; i < vectorSize; i++) {
-                    values.add(id);
-                }
-                return writeOpCompositeConstruct(type, values.elements(), vectorSize, writer);
-            } finally {
-                releaseIdList(values);
+            for (int i = 0; i < vectorSize; i++) {
+                values.add(id);
             }
+            id = writeOpCompositeConstruct(type, values, writer);
+            releaseIdList(values);
         }
 
         return id;
@@ -1448,6 +1470,54 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         for (Expression arg : args) {
             result.add(vectorize(arg, vectorSize, writer));
         }
+    }
+
+    private int writePrefixExpression(@Nonnull PrefixExpression expr, Writer writer) {
+        Type type = expr.getType();
+        return switch (expr.getOperator()) {
+            case ADD -> writeExpression(expr.getOperand(), writer); // positive
+            case SUB -> {
+                // negative
+                int negateOp = select_by_component_type(type,
+                        SpvOpFNegate, SpvOpSNegate, SpvOpSNegate, SpvOpUndef);
+                assert (negateOp != SpvOpUndef);
+                int id = writeExpression(expr.getOperand(), writer);
+                if (type.isMatrix()) {
+                    yield writeUnaryMatrixOperation(type, id, negateOp, writer);
+                }
+                int resultId = getUniqueId(type);
+                int typeId = writeType(type);
+                writeInstruction(negateOp, typeId, resultId, id, writer);
+                yield resultId;
+            }
+            default -> {
+                getContext().error(expr.mPosition,
+                        "unsupported prefix expression");
+                yield NONE_ID;
+            }
+        };
+    }
+
+    // negate matrix
+    private int writeUnaryMatrixOperation(@Nonnull Type operandType,
+                                          int operand,
+                                          int op,
+                                          Writer writer) {
+        assert (operandType.isMatrix());
+        Type columnType = operandType.getComponentType().toVector(getContext(), operandType.getRows());
+        int columnTypeId = writeType(columnType);
+
+        IntArrayList columns = obtainIdList();
+        for (int i = 0; i < operandType.getCols(); i++) {
+            int srcColumn = writeOpCompositeExtract(columnType, operand, i, writer);
+            int dstColumn = getUniqueId(operandType);
+            writeInstruction(op, columnTypeId, dstColumn, srcColumn, writer);
+            columns.add(dstColumn);
+        }
+
+        int resultId = writeOpCompositeConstruct(operandType, columns, writer);
+        releaseIdList(columns);
+        return resultId;
     }
 
     private int writeBinaryExpression(@Nonnull BinaryExpression expr, Writer writer) {
@@ -1712,18 +1782,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
         // do each vector op
         IntArrayList columns = obtainIdList();
-        try {
-            for (int i = 0; i < resultType.getCols(); i++) {
-                int leftColumn = leftMat ? writeOpCompositeExtract(columnType, lhs, i, writer) : lhs;
-                int rightColumn = rightMat ? writeOpCompositeExtract(columnType, rhs, i, writer) : rhs;
-                int resultId = getUniqueId(resultType);
-                writeInstruction(op, columnTypeId, resultId, leftColumn, rightColumn, writer);
-                columns.add(resultId);
-            }
-            return writeOpCompositeConstruct(resultType, columns.elements(), resultType.getCols(), writer);
-        } finally {
-            releaseIdList(columns);
+        for (int i = 0; i < resultType.getCols(); i++) {
+            int leftColumn = leftMat ? writeOpCompositeExtract(columnType, lhs, i, writer) : lhs;
+            int rightColumn = rightMat ? writeOpCompositeExtract(columnType, rhs, i, writer) : rhs;
+            int resultId = getUniqueId(resultType);
+            writeInstruction(op, columnTypeId, resultId, leftColumn, rightColumn, writer);
+            columns.add(resultId);
         }
+        int resultId = writeOpCompositeConstruct(resultType, columns, writer);
+        releaseIdList(columns);
+        return resultId;
     }
 
     // raw binary op
@@ -1772,6 +1840,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return writeLValue(ref, writer).load(this, writer);
     }
 
+    private int writeFieldAccess(FieldAccess f, Writer writer) {
+        return writeLValue(f, writer).load(this, writer);
+    }
+
     private int writeRValueSwizzle(Expression baseExpr,
                                    byte[] components, Writer writer) {
         int count = components.length;
@@ -1794,6 +1866,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             writer.writeWord(component); // 0...3
         }
         return resultId;
+    }
+
+    private int writeSwizzle(Swizzle swizzle, Writer writer) {
+        return writeRValueSwizzle(swizzle.getBase(), swizzle.getComponents(), writer);
     }
 
     private void pruneConditionalOps(int numReachableOps, int numStoreOps) {
@@ -1827,6 +1903,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     writeInstruction(SpvOpKill, writer);
                 }
             }
+            default -> getContext().error(stmt.mPosition, "unsupported statement: " + stmt.getKind());
         }
     }
 
@@ -1934,7 +2011,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 Variable variable = ((VariableReference) expr).getVariable();
 
                 int entry = mVariableTable.getInt(variable);
-                assert entry != 0;
+                assert entry != 0 : variable;
 
                 //TODO layout may be wrong
                 int typeId = writeType(type, variable.getModifiers(), null);
@@ -2231,6 +2308,167 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         copyBackOutArguments(tmpOutVars, writer);
         releaseIdList(argumentIds);
         return resultId;
+    }
+
+    private int writeConstructorScalar2Vector(ConstructorScalar2Vector ctor, Writer writer) {
+        // Write the splat argument as a scalar, then splat it.
+        int argument = writeExpression(ctor.getArguments()[0], writer);
+        return broadcast(ctor.getType(), argument, writer);
+    }
+
+    private int writeConstructorScalar2Matrix(ConstructorScalar2Matrix ctor, Writer writer) {
+        Type type = ctor.getType();
+        assert (type.isMatrix());
+        assert (ctor.getArguments()[0].getType().isScalar());
+
+        // Write out the scalar argument.
+        int diagonal = writeExpression(ctor.getArguments()[0], writer);
+
+        // Build the diagonal matrix.
+        int zeroId = writeScalarConstant(0.0f, getContext().getTypes().mFloat);
+
+        Type columnType = type.getComponentType().toVector(getContext(), type.getRows());
+        IntArrayList columnIds = obtainIdList();
+        IntArrayList arguments = obtainIdList();
+        for (int column = 0; column < type.getCols(); column++) {
+            for (int row = 0; row < type.getRows(); row++) {
+                arguments.add((row == column) ? diagonal : zeroId);
+            }
+            columnIds.add(writeOpCompositeConstruct(columnType, arguments, writer));
+            arguments.clear();
+        }
+        int resultId = writeOpCompositeConstruct(type, columnIds, writer);
+        releaseIdList(columnIds);
+        releaseIdList(arguments);
+        return resultId;
+    }
+
+    private int writeVectorConstructor(ConstructorCompound ctor, Writer writer) {
+        Type type = ctor.getType();
+        Type componentType = type.getComponentType();
+        assert (type.isVector());
+
+        IntArrayList argumentIds = obtainIdList();
+        for (Expression arg : ctor.getArguments()) {
+            Type argType = arg.getType();
+            assert (componentType.getScalarKind() == argType.getComponentType().getScalarKind());
+
+            int argId = writeExpression(arg, writer);
+            if (argType.isMatrix()) {
+                // CompositeConstruct cannot take a 2x2 matrix as an input, so we need to extract out
+                // each scalar separately.
+                assert (argType.getRows() == 2);
+                assert (argType.getCols() == 2);
+                for (int j = 0; j < 4; ++j) {
+                    argumentIds.add(writeOpCompositeExtract(componentType, argId,
+                            j / 2, j % 2, writer));
+                }
+            } else if (argType.isVector()) {
+                // There's a bug in the Intel Vulkan driver where OpCompositeConstruct doesn't handle
+                // vector arguments at all, so we always extract each vector component and pass them
+                // into OpCompositeConstruct individually.
+                for (int j = 0; j < argType.getRows(); j++) {
+                    argumentIds.add(writeOpCompositeExtract(componentType, argId,
+                            j, writer));
+                }
+            } else {
+                argumentIds.add(argId);
+            }
+        }
+
+        int resultId = writeOpCompositeConstruct(type, argumentIds, writer);
+        releaseIdList(argumentIds);
+        return resultId;
+    }
+
+    // append entry to the current column
+    private void addColumnEntry(Type columnType,
+                                IntArrayList currentColumn,
+                                IntArrayList columnIds,
+                                int rows,
+                                int entry,
+                                Writer writer) {
+        assert (currentColumn.size() < rows);
+        currentColumn.add(entry);
+        if (currentColumn.size() == rows) {
+            // Synthesize this column into a vector.
+            int columnId = writeOpCompositeConstruct(columnType, currentColumn, writer);
+            columnIds.add(columnId);
+            currentColumn.clear();
+        }
+    }
+
+    private int writeMatrixConstructor(ConstructorCompound ctor, Writer writer) {
+        Type type = ctor.getType();
+        Type componentType = type.getComponentType();
+        assert (type.isMatrix());
+
+        Type arg0Type = ctor.getArguments()[0].getType();
+        // go ahead and write the arguments so we don't try to write new instructions in the middle of
+        // an instruction
+        IntArrayList arguments = obtainIdList();
+        for (Expression arg : ctor.getArguments()) {
+            arguments.add(writeExpression(arg, writer));
+        }
+
+        int rows = type.getRows();
+        Type columnType = componentType.toVector(getContext(), rows);
+
+        if (arguments.size() == 1 && arg0Type.isVector()) {
+            // Special-case handling of float4 -> mat2x2.
+            assert (type.getRows() == 2 && type.getCols() == 2);
+            assert (arg0Type.getRows() == 4);
+            int argId = arguments.getInt(0);
+            arguments.clear();
+            for (int i = 0; i < 2; i++) {
+                arguments.add(writeOpCompositeExtract(componentType, argId, i, writer));
+            }
+            int v0v1 = writeOpCompositeConstruct(columnType, arguments, writer);
+            arguments.clear();
+            for (int i = 2; i < 4; i++) {
+                arguments.add(writeOpCompositeExtract(componentType, argId, i, writer));
+            }
+            int v2v3 = writeOpCompositeConstruct(columnType, arguments, writer);
+            arguments.clear();
+            arguments.add(v0v1);
+            arguments.add(v2v3);
+            int resultId = writeOpCompositeConstruct(type, arguments, writer);
+            releaseIdList(arguments);
+            return resultId;
+        }
+
+        // SpvIds of completed columns of the matrix.
+        IntArrayList columnIds = obtainIdList();
+        // SpvIds of scalars we have written to the current column so far.
+        IntArrayList currentColumn = obtainIdList();
+        for (int i = 0; i < arguments.size(); i++) {
+            Type argType = ctor.getArguments()[i].getType();
+            if (currentColumn.isEmpty() && argType.isVector() && argType.getRows() == rows) {
+                // This vector is a complete matrix column by itself and can be used as-is.
+                columnIds.add(arguments.getInt(i));
+            } else if (argType.getRows() == 1) {
+                // This argument is a lone scalar and can be added to the current column as-is.
+                addColumnEntry(columnType, currentColumn, columnIds, rows, arguments.getInt(i), writer);
+            } else {
+                // This argument needs to be decomposed into its constituent scalars.
+                for (int j = 0; j < argType.getRows(); ++j) {
+                    int swizzle = writeOpCompositeExtract(argType.getComponentType(),
+                            arguments.getInt(i), j, writer);
+                    addColumnEntry(columnType, currentColumn, columnIds, rows, swizzle, writer);
+                }
+            }
+        }
+        assert (columnIds.size() == type.getCols());
+        int resultId = writeOpCompositeConstruct(type, columnIds, writer);
+        releaseIdList(columnIds);
+        releaseIdList(currentColumn);
+        return resultId;
+    }
+
+    private int writeConstructorCompound(ConstructorCompound ctor, Writer writer) {
+        return ctor.getType().isMatrix()
+                ? writeMatrixConstructor(ctor, writer)
+                : writeVectorConstructor(ctor, writer);
     }
 
     private void buildInstructions(@Nonnull TranslationUnit translationUnit) {
