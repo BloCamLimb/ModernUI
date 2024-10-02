@@ -22,6 +22,11 @@ package icyllis.arc3d.test;
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.lex.Lexer;
 import icyllis.arc3d.core.MathUtil;
+import static org.lwjgl.util.spvc.Spvc.*;
+
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.IOException;
@@ -139,7 +144,8 @@ public class TestCompiler {
         System.out.println(translationUnit.getExtensions());*/
 
         ShaderCaps shaderCaps = new ShaderCaps();
-        shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_5;
+        shaderCaps.mTargetApi = TargetApi.OPENGL_4_5;
+        shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
 
         ByteBuffer spirv = compiler.generateSPIRV(translationUnit, shaderCaps);
         System.out.print(compiler.getErrorMessage());
@@ -159,6 +165,37 @@ public class TestCompiler {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        testCompileToGLSL(spirv.rewind());
+    }
+
+    public static void testCompileToGLSL(ByteBuffer spirv) {
+        try(var stack = MemoryStack.stackPush()) {
+            PointerBuffer pointer = stack.mallocPointer(1);
+
+            spvc_context_create(pointer);
+            long context = pointer.get(0);
+
+            // the spirv is in host endianness, just reinterpret
+            spvc_context_parse_spirv(context, spirv.asIntBuffer(), spirv.remaining() / 4, pointer);
+            long parsed_ir = pointer.get(0);
+
+            spvc_context_create_compiler(context, SPVC_BACKEND_GLSL, parsed_ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP,
+                    pointer);
+            long compiler_glsl = pointer.get(0);
+
+            spvc_compiler_create_compiler_options(compiler_glsl, pointer);
+            long options = pointer.get(0);
+            spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_GLSL_VERSION, 450);
+            spvc_compiler_options_set_bool(options, SPVC_COMPILER_OPTION_GLSL_ES, false);
+            spvc_compiler_install_compiler_options(compiler_glsl, options);
+
+            spvc_compiler_compile(compiler_glsl, pointer);
+            System.out.print("Cross-compiled source: ");
+            System.out.println(MemoryUtil.memUTF8(pointer.get(0)));
+
+            spvc_context_destroy(context);
         }
     }
 }

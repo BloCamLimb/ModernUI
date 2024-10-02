@@ -19,11 +19,14 @@
 
 package icyllis.arc3d.test;
 
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.util.shaderc.Shaderc.*;
+import static org.lwjgl.util.spvc.Spvc.*;
 
 /**
  * Test glslang compile result.
@@ -41,29 +44,53 @@ public class TestShaderc {
         // SPIRV-Tools optimization LOWER the performance on NVIDIA GPU
         shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
 
-        long result = shaderc_compile_into_spv_assembly(
+        long result = shaderc_compile_into_spv(
                 compiler,
                 """
-                       #version 450    core
-                            # pragma deep dark # line 2
-                                  
-                                  \s
-                            # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
-                                  \s
-                        const int blockSize = -4 + 6;
-                        layout(binding = 0, set = 0) uniform UniformBlock {
-                            mat4 u_Projection;
-                            mat4 u_ModelView;
-                            vec4 u_Color;
-                        } u_Buffer0;
-                        layout(location = 0) smooth in vec2 f_Position;
-                        layout(location = 1) smooth in vec4 f_Color;
-                        layout(location = 0, index = 0) out vec4 FragColor0;
-                        layout(location = 0, index = 1) out vec4 FragColor1;
-                        void main(void) {
-                            // M4 m = "what?";
-                            FragColor0 = u_Buffer0.u_Color;
-                        }""",
+                        #version 450 core
+                        
+                          layout(std140, binding = 1) uniform SmoothBlock {
+                              float u_SmoothRadius;
+                          };
+                          layout(std140, binding = 2) uniform PaintBlock {
+                              vec2 u_CenterPos;
+                              float u_MiddleAngle;
+                              float u_SweepAngle;
+                              float u_Radius;
+                              float u_StrokeRadius;
+                          };
+                        
+                          layout(location = 0) smooth in vec2 f_Position;
+                          layout(location = 1) smooth in vec4 f_Color;
+                        
+                          layout(location = 0, index = 0) out vec4 fragColor;
+                        
+                          void main() {
+                              vec2 v = f_Position - u_CenterPos;
+                        
+                              // smoothing normal direction
+                              float d1 = abs(length(v) - u_Radius) - u_StrokeRadius;
+                              float a1 = smoothstep(-u_SmoothRadius, 0.0, d1);
+                        
+                              // sweep angle (0,360) in degrees
+                              float c = cos(u_SweepAngle * 0.00872664626);
+                        
+                              float f = u_MiddleAngle * 0.01745329252;
+                              // normalized vector from the center to the middle of the arc
+                              vec2 up = vec2(cos(f), sin(f));
+                        
+                              // smoothing tangent direction
+                              float d2 = dot(up, normalize(v)) - c;
+                        
+                              // proportional to how much `d2` changes between pixels
+                              float w = u_SmoothRadius * fwidth(d2);
+                              float a2 = smoothstep(w * -0.5, w * 0.5, d2);
+                        
+                              // mix alpha value
+                              float a = (1.0 - a1) * a2;
+                        
+                              fragColor = f_Color * a;
+                          }""",
                 shaderc_fragment_shader,
                 "test_shader",
                 "main",
@@ -83,8 +110,9 @@ public class TestShaderc {
             System.out.println("Bytes: " + len);
             ByteBuffer bytes = shaderc_result_get_bytes(result);
             if (bytes != null) {
-                String s = MemoryUtil.memASCII(bytes);
-                System.out.println(s);
+                /*String s = MemoryUtil.memASCII(bytes);
+                System.out.println(s);*/
+                testCompileToGLSL(bytes);
             } else {
                 System.out.println("No bytes");
             }
@@ -94,5 +122,34 @@ public class TestShaderc {
         shaderc_result_release(result);
         shaderc_compile_options_release(options);
         shaderc_compiler_release(compiler);
+    }
+
+    public static void testCompileToGLSL(ByteBuffer spirv) {
+        try(var stack = MemoryStack.stackPush()) {
+            PointerBuffer pointer = stack.mallocPointer(1);
+
+            spvc_context_create(pointer);
+            long context = pointer.get(0);
+
+            // the spirv is in host endianness, just reinterpret
+            spvc_context_parse_spirv(context, spirv.asIntBuffer(), spirv.remaining() / 4, pointer);
+            long parsed_ir = pointer.get(0);
+
+            spvc_context_create_compiler(context, SPVC_BACKEND_GLSL, parsed_ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP,
+                    pointer);
+            long compiler_glsl = pointer.get(0);
+
+            spvc_compiler_create_compiler_options(compiler_glsl, pointer);
+            long options = pointer.get(0);
+            spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_GLSL_VERSION, 450);
+            spvc_compiler_options_set_bool(options, SPVC_COMPILER_OPTION_GLSL_ES, false);
+            spvc_compiler_install_compiler_options(compiler_glsl, options);
+
+            spvc_compiler_compile(compiler_glsl, pointer);
+            System.out.print("Cross-compiled source: ");
+            System.out.println(MemoryUtil.memUTF8(pointer.get(0)));
+
+            spvc_context_destroy(context);
+        }
     }
 }
