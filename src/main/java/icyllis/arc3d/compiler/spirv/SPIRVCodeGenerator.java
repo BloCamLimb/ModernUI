@@ -1461,7 +1461,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case LITERAL -> writeLiteral((Literal) expr);
             case PREFIX -> writePrefixExpression((PrefixExpression) expr, writer);
             case BINARY -> writeBinaryExpression((BinaryExpression) expr, writer);
+            case CONDITIONAL -> writeConditionalExpression((ConditionalExpression) expr, writer);
             case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr, writer);
+            case INDEX -> writeIndexExpression((IndexExpression) expr, writer);
             case FIELD_ACCESS -> writeFieldAccess((FieldAccess) expr, writer);
             case SWIZZLE -> writeSwizzle((Swizzle) expr, writer);
             case FUNCTION_CALL -> writeFunctionCall((FunctionCall) expr, writer);
@@ -1469,6 +1471,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case CONSTRUCTOR_VECTOR_SPLAT -> writeConstructorVectorSplat((ConstructorVectorSplat) expr, writer);
             case CONSTRUCTOR_DIAGONAL_MATRIX ->
                     writeConstructorDiagonalMatrix((ConstructorDiagonalMatrix) expr, writer);
+            case CONSTRUCTOR_SCALAR_CAST -> writeConstructorScalarCast((ConstructorScalarCast) expr, writer);
+            case CONSTRUCTOR_COMPOUND_CAST -> writeConstructorCompoundCast((ConstructorCompoundCast) expr, writer);
+            case CONSTRUCTOR_ARRAY, CONSTRUCTOR_STRUCT -> writeCompositeConstructor((ConstructorCall) expr, writer);
+            case CONSTRUCTOR_ARRAY_CAST -> writeExpression(((ConstructorArrayCast) expr).getArgument(), writer);
             default -> {
                 getContext().error(expr.mPosition, "unsupported expression: " + expr.getKind());
                 yield NONE_ID;
@@ -1495,9 +1501,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return id;
     }
 
-    private int vectorize(float value, int vectorSize, Writer writer) {
+    // construct scalar constant or vector constant
+    private int vectorize(double value, Type type, int vectorSize, Writer writer) {
         assert (vectorSize >= 1 && vectorSize <= 4);
-        Type type = getContext().getTypes().mFloat;
         int id = writeScalarConstant(value, type);
         if (vectorSize > 1) {
             return broadcast(type.toVector(getContext(), vectorSize), id, writer);
@@ -1905,12 +1911,80 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
+    private int writeConditionalExpression(ConditionalExpression expr, Writer writer) {
+        Type type = expr.getType();
+        int cond = writeExpression(expr.getCondition(), writer);
+        int trueId = writeExpression(expr.getWhenTrue(), writer);
+        int falseId = writeExpression(expr.getWhenFalse(), writer);
+        int resultId = getUniqueId();
+        int typeId = writeType(type);
+
+        // result type is scalar or vector, and expressions are trivial
+        if (type.isScalar() || type.isVector()) {
+            if (getContext().getOptions().mNoShortCircuit ||
+                    (Analysis.isTrivialExpression(expr.getWhenTrue()) &&
+                            Analysis.isTrivialExpression(expr.getWhenFalse()))) {
+                // use OpSelect for this ?: expression
+
+                // broadcast condition to vector, if necessary (AST is always scalar)
+                // Before 1.4, like for mix(), starting with 1.4, keep it scalar
+                if (mOutputVersion.isBefore(SPIRVVersion.SPIRV_1_4) && type.isVector()) {
+                    Type condType = expr.getCondition().getType();
+                    assert condType.isBoolean();
+                    cond = broadcast(condType.toVector(getContext(), type.getRows()), cond, writer);
+                }
+
+                writeInstruction(SpvOpSelect, typeId, resultId,
+                        cond, trueId, falseId, writer);
+                return resultId;
+            }
+        }
+
+        int numReachableOps = mReachableOps.size();
+        int numStoreOps = mStoreOps.size();
+
+        // similar to glslang
+        int variable = getUniqueId();
+        int ptrTypeId = writePointerType(type, SpvStorageClassFunction);
+        writeInstruction(SpvOpVariable, ptrTypeId,
+                variable, SpvStorageClassFunction, mVariableBuffer);
+        int trueLabel = getUniqueId();
+        int falseLabel = getUniqueId();
+        int end = getUniqueId();
+        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
+        writeInstruction(SpvOpBranchConditional, cond, trueLabel, falseLabel, writer);
+        writeLabel(trueLabel, writer);
+        writeOpStore(SpvStorageClassFunction, variable, trueId, writer);
+        writeInstruction(SpvOpBranch, end, writer);
+        writeLabel(falseLabel, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        writeOpStore(SpvStorageClassFunction, variable, falseId, writer);
+        writeInstruction(SpvOpBranch, end, writer);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        writeInstruction(SpvOpLoad, typeId, resultId,
+                variable, writer);
+
+        return resultId;
+    }
+
     private int writeVariableReference(VariableReference ref, Writer writer) {
         Expression constExpr = ConstantFolder.getConstantValueOrNullForVariable(ref);
         if (constExpr != null) {
             return writeExpression(constExpr, writer);
         }
         return writeLValue(ref, writer).load(this, writer);
+    }
+
+    private int writeIndexExpression(IndexExpression expr, Writer writer) {
+        if (expr.getBase().getType().isVector()) {
+            int base = writeExpression(expr.getBase(), writer);
+            int index = writeExpression(expr.getIndex(), writer);
+            int resultId = getUniqueId();
+            int typeId = writeType(expr.getType());
+            writeInstruction(SpvOpVectorExtractDynamic, typeId, resultId,
+                    base, index, writer);
+            return resultId;
+        }
+        return writeLValue(expr, writer).load(this, writer);
     }
 
     private int writeFieldAccess(FieldAccess f, Writer writer) {
@@ -2130,7 +2204,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             default -> {
                 //TODO temp vars
-                assert false;
+                assert false : expr;
                 throw new UnsupportedOperationException();
             }
         }
@@ -2261,8 +2335,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 int vectorSize = arguments[0].getType().getRows();
                 IntArrayList argumentIds = obtainIdList();
                 argumentIds.add(vectorize(arguments[0], vectorSize, writer));
-                argumentIds.add(vectorize(0.0f, vectorSize, writer));
-                argumentIds.add(vectorize(1.0f, vectorSize, writer));
+                argumentIds.add(vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, writer));
+                argumentIds.add(vectorize(1.0f, getContext().getTypes().mFloat, vectorSize, writer));
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FClamp, GLSLstd450SClamp, GLSLstd450UClamp,
                         argumentIds, writer);
@@ -2419,6 +2493,163 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         copyBackOutArguments(tmpOutVars, writer);
         releaseIdList(argumentIds);
         return resultId;
+    }
+
+    // cast scalar to scalar, cast vector to vector
+    private int writeConversion(int inputId,
+                                Type inputType,
+                                Type outputType,
+                                Writer writer) {
+        assert inputType.isScalar() || inputType.isVector();
+        assert inputType.getTypeKind() == outputType.getTypeKind();
+        assert inputType.getRows() == outputType.getRows();
+        int vectorSize = inputType.getRows();
+
+        if (outputType.isFloatOrCompound()) {
+            // Currently we have no double type, casting a float to float is a no-op.
+            if (inputType.isFloatOrCompound()) {
+                assert inputType.getComponentType().getWidth() == outputType.getComponentType().getWidth();
+                return inputId;
+            }
+
+            // Given the input type, generate the appropriate instruction to cast to float.
+            int resultId = getUniqueId(outputType);
+            int typeId = writeType(outputType);
+            if (inputType.isBooleanOrCompound()) {
+                // Use OpSelect to convert the boolean argument to a literal 1.0 or 0.0.
+                int oneId = vectorize(1.0f, getContext().getTypes().mFloat, vectorSize, writer);
+                int zeroId = vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, writer);
+                writeInstruction(SpvOpSelect, typeId, resultId,
+                        inputId, oneId, zeroId, writer);
+            } else if (inputType.isSignedOrCompound()) {
+                writeInstruction(SpvOpConvertSToF, typeId, resultId,
+                        inputId, writer);
+            } else if (inputType.isUnsignedOrCompound()) {
+                writeInstruction(SpvOpConvertUToF, typeId, resultId,
+                        inputId, writer);
+            } else {
+                assert false : ("unsupported type for float typecast: " + inputType);
+                return NONE_ID;
+            }
+            return resultId;
+        }
+
+        if (outputType.isSignedOrCompound()) {
+            // Currently we have no long type, casting a signed int to signed int is a no-op.
+            if (inputType.isSignedOrCompound()) {
+                assert inputType.getComponentType().getWidth() == outputType.getComponentType().getWidth();
+                return inputId;
+            }
+
+            // Given the input type, generate the appropriate instruction to cast to signed int.
+            int resultId = getUniqueId(outputType);
+            int typeId = writeType(outputType);
+            if (inputType.isBooleanOrCompound()) {
+                // Use OpSelect to convert the boolean argument to a literal 1 or 0.
+                int oneId = vectorize(1, getContext().getTypes().mInt, vectorSize, writer);
+                int zeroId = vectorize(0, getContext().getTypes().mInt, vectorSize, writer);
+                writeInstruction(SpvOpSelect, typeId, resultId,
+                        inputId, oneId, zeroId, writer);
+            } else if (inputType.isFloatOrCompound()) {
+                writeInstruction(SpvOpConvertFToS, typeId, resultId,
+                        inputId, writer);
+            } else if (inputType.isUnsignedOrCompound()) {
+                writeInstruction(SpvOpBitcast, typeId, resultId,
+                        inputId, writer);
+            } else {
+                assert false : ("unsupported type for signed int typecast: " + inputType);
+                return NONE_ID;
+            }
+            return resultId;
+        }
+
+        if (outputType.isUnsignedOrCompound()) {
+            // Currently we have no long type, casting a signed int to signed int is a no-op.
+            if (inputType.isUnsignedOrCompound()) {
+                assert inputType.getComponentType().getWidth() == outputType.getComponentType().getWidth();
+                return inputId;
+            }
+
+            // Given the input type, generate the appropriate instruction to cast to unsigned int.
+            int resultId = getUniqueId(outputType);
+            int typeId = writeType(outputType);
+            if (inputType.isBooleanOrCompound()) {
+                // Use OpSelect to convert the boolean argument to a literal 1u or 0u.
+                int oneId = vectorize(1, getContext().getTypes().mUInt, vectorSize, writer);
+                int zeroId = vectorize(0, getContext().getTypes().mUInt, vectorSize, writer);
+                writeInstruction(SpvOpSelect, typeId, resultId,
+                        inputId, oneId, zeroId, writer);
+            } else if (inputType.isFloatOrCompound()) {
+                writeInstruction(SpvOpConvertFToU, typeId, resultId,
+                        inputId, writer);
+            } else if (inputType.isSignedOrCompound()) {
+                writeInstruction(SpvOpBitcast, typeId, resultId,
+                        inputId, writer);
+            } else {
+                assert false : ("unsupported type for unsigned int typecast: " + inputType);
+                return NONE_ID;
+            }
+            return resultId;
+        }
+
+        if (outputType.isBooleanOrCompound()) {
+            // Casting a bool to bool is a no-op.
+            if (inputType.isBooleanOrCompound()) {
+                return inputId;
+            }
+
+            // Given the input type, generate the appropriate instruction to cast to bool.
+            int resultId = getUniqueId();
+            int typeId = writeType(outputType);
+            if (inputType.isSignedOrCompound()) {
+                // Synthesize a boolean result by comparing the input against a signed zero literal.
+                int zeroId = vectorize(0, getContext().getTypes().mInt, vectorSize, writer);
+                writeInstruction(SpvOpINotEqual, typeId, resultId,
+                        inputId, zeroId, writer);
+            } else if (inputType.isUnsignedOrCompound()) {
+                // Synthesize a boolean result by comparing the input against an unsigned zero literal.
+                int zeroId = vectorize(0, getContext().getTypes().mUInt, vectorSize, writer);
+                writeInstruction(SpvOpINotEqual, typeId, resultId,
+                        inputId, zeroId, writer);
+            } else if (inputType.isFloatOrCompound()) {
+                // Synthesize a boolean result by comparing the input against a floating-point zero literal.
+                int zeroId = vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, writer);
+                writeInstruction(SpvOpFUnordNotEqual, typeId, resultId,
+                        inputId, zeroId, writer);
+            } else {
+                assert false : ("unsupported type for boolean typecast: " + inputType);
+                return NONE_ID;
+            }
+            return resultId;
+        }
+
+        getContext().error(Position.NO_POS, "unsupported cast: " + inputType + " to " +
+                outputType);
+        return inputId;
+    }
+
+    private int writeConstructorScalarCast(ConstructorScalarCast ctor, Writer writer) {
+        Expression argument = ctor.getArgument();
+        int argumentId = writeExpression(argument, writer);
+        return writeConversion(argumentId, argument.getType(), ctor.getType(), writer);
+    }
+
+    private int writeConstructorCompoundCast(ConstructorCompoundCast ctor, Writer writer) {
+        Type ctorType = ctor.getType();
+        Type argType = ctor.getArgument().getType();
+        assert (ctorType.isVector() || ctorType.isMatrix());
+
+        // Write the composite that we are casting.
+        int compositeId = writeExpression(ctor.getArgument(), writer);
+
+        if (ctorType.isMatrix()) {
+            // we have only float and min16float matrix, no conversion needed
+            assert ctorType.getComponentType().getWidth() == argType.getComponentType().getWidth();
+            assert ctorType.getComponentType().getScalarKind() == argType.getComponentType().getScalarKind();
+            return compositeId;
+        }
+
+        return writeConversion(compositeId, argType, ctorType, writer);
     }
 
     private int writeConstructorVectorSplat(ConstructorVectorSplat ctor, Writer writer) {
@@ -2582,6 +2813,18 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 : writeVectorConstructor(ctor, writer);
     }
 
+    private int writeCompositeConstructor(ConstructorCall ctor, Writer writer) {
+        assert (ctor.getType().isArray() || ctor.getType().isStruct());
+
+        IntArrayList argumentIds = obtainIdList();
+        for (Expression arg : ctor.getArguments()) {
+            argumentIds.add(writeExpression(arg, writer));
+        }
+        int resultId = writeOpCompositeConstruct(ctor.getType(), argumentIds, writer);
+        releaseIdList(argumentIds);
+        return resultId;
+    }
+
     private void buildInstructions(@Nonnull TranslationUnit translationUnit) {
         mGLSLExtendedInstructions = getUniqueId();
         // always enable Shader capability, this implicitly declares Matrix capability
@@ -2680,6 +2923,30 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         if ((count & 0xFFFF0000) != 0) {
             getContext().error(Position.NO_POS, "too many words");
         }
+        assert (opcode != SpvOpLoad || writer != mConstantBuffer);
+        assert (opcode != SpvOpUndef);
+        boolean foundDeadCode = false;
+        switch (opcode) {
+            case SpvOpReturn:
+            case SpvOpReturnValue:
+            case SpvOpKill:
+            case SpvOpSwitch:
+            case SpvOpBranch:
+            case SpvOpBranchConditional:
+                // This instruction causes us to leave the current block.
+                foundDeadCode = (mCurrentBlock == 0);
+                mCurrentBlock = 0;
+                break;
+            default:
+                break;
+        }
+
+        if (foundDeadCode) {
+            // We just encountered dead code--an instruction that don't have an associated block.
+            // Synthesize a label if this happens; this is necessary to satisfy the validator.
+            writeLabel(getUniqueId(), writer);
+        }
+
         writer.writeWord((count << 16) | opcode);
     }
 
