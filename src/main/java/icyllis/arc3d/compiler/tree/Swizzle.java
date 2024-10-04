@@ -419,7 +419,7 @@ public final class Swizzle extends Expression {
         // Replace swizzles with equivalent splat constructors (`scalar.xxx` --> `half3(value)`).
         //TODO
         if (baseType.isScalar()) {
-            return ConstructorScalar2Vector.make(position,
+            return ConstructorVectorSplat.make(position,
                     baseType.toVector(context, numComponents), base);
         }
 
@@ -458,19 +458,19 @@ public final class Swizzle extends Expression {
         // `half4(scalar).zyy` can be optimized to `half3(scalar)`, and `half3(scalar).y` can be
         // optimized to just `scalar`. The swizzle components don't actually matter, as every field
         // in a splat constructor holds the same value.
-        if (value instanceof ConstructorScalar2Vector ctor) {
+        if (value instanceof ConstructorVectorSplat ctor) {
             Type ctorType = ctor.getComponentType().toVector(context, numComponents);
-            return ConstructorScalar2Vector.make(
+            return ConstructorVectorSplat.make(
                     position,
                     ctorType,
-                    ctor.getArguments()[0].clone());
+                    ctor.getArgument().clone());
         }
 
         // Swizzles on casts, like `half4(myFloat4).zyy`, can optimize to `half3(myFloat4.zyy)`.
         if (value instanceof ConstructorCompoundCast ctor) {
             Type ctorType = ctor.getComponentType().toVector(context, numComponents);
             Expression swizzled = make(context,
-                    position, ctor.getArguments()[0].clone(), components, numComponents);
+                    position, ctor.getArgument().clone(), components, numComponents);
             Objects.requireNonNull(swizzled);
             return (ctorType.getRows() > 1)
                     ? ConstructorCompoundCast.make(position, ctorType, swizzled)

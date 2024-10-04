@@ -120,14 +120,71 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         setIntrinsic(IntrinsicList.kAbs,
                 kGLSLstd450_IntrinsicOpcodeKind,
                 GLSLstd450FAbs, GLSLstd450SAbs, GLSLstd450SAbs, GLSLstd450Bad);
-
+        setIntrinsic(IntrinsicList.kSign,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450FSign, GLSLstd450SSign, GLSLstd450SSign, GLSLstd450Bad);
+        setIntrinsic(IntrinsicList.kFloor,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Floor, GLSLstd450Floor, GLSLstd450Floor, GLSLstd450Floor);
+        setIntrinsic(IntrinsicList.kCeil,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Ceil, GLSLstd450Ceil, GLSLstd450Ceil, GLSLstd450Ceil);
+        setIntrinsic(IntrinsicList.kFract,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Fract, GLSLstd450Fract, GLSLstd450Fract, GLSLstd450Fract);
+        setIntrinsic(IntrinsicList.kRadians,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Radians, GLSLstd450Radians, GLSLstd450Radians, GLSLstd450Radians);
+        setIntrinsic(IntrinsicList.kDegrees,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Degrees, GLSLstd450Degrees, GLSLstd450Degrees, GLSLstd450Degrees);
         setIntrinsic(IntrinsicList.kSin,
                 kGLSLstd450_IntrinsicOpcodeKind,
                 GLSLstd450Sin, GLSLstd450Sin, GLSLstd450Sin, GLSLstd450Sin);
         setIntrinsic(IntrinsicList.kCos,
                 kGLSLstd450_IntrinsicOpcodeKind,
                 GLSLstd450Cos, GLSLstd450Cos, GLSLstd450Cos, GLSLstd450Cos);
+        setIntrinsic(IntrinsicList.kTan,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Tan, GLSLstd450Tan, GLSLstd450Tan, GLSLstd450Tan);
+        setIntrinsic(IntrinsicList.kAsin,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Asin, GLSLstd450Asin, GLSLstd450Asin, GLSLstd450Asin);
+        setIntrinsic(IntrinsicList.kAcos,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Acos, GLSLstd450Acos, GLSLstd450Acos, GLSLstd450Acos);
 
+        setIntrinsic(IntrinsicList.kPow,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Pow, GLSLstd450Pow, GLSLstd450Pow, GLSLstd450Pow);
+        setIntrinsic(IntrinsicList.kExp,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Exp, GLSLstd450Exp, GLSLstd450Exp, GLSLstd450Exp);
+        setIntrinsic(IntrinsicList.kLog,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Log, GLSLstd450Log, GLSLstd450Log, GLSLstd450Log);
+        setIntrinsic(IntrinsicList.kExp2,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Exp2, GLSLstd450Exp2, GLSLstd450Exp2, GLSLstd450Exp2);
+        setIntrinsic(IntrinsicList.kLog2,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Log2, GLSLstd450Log2, GLSLstd450Log2, GLSLstd450Log2);
+        setIntrinsic(IntrinsicList.kSqrt,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Sqrt, GLSLstd450Sqrt, GLSLstd450Sqrt, GLSLstd450Sqrt);
+
+        setIntrinsic(IntrinsicList.kMin,
+                kSpecial_IntrinsicOpcodeKind,
+                kMin_SpecialIntrinsic, kMin_SpecialIntrinsic,
+                kMin_SpecialIntrinsic, kMin_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kMax,
+                kSpecial_IntrinsicOpcodeKind,
+                kMax_SpecialIntrinsic, kMax_SpecialIntrinsic,
+                kMax_SpecialIntrinsic, kMax_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kClamp,
+                kSpecial_IntrinsicOpcodeKind,
+                kClamp_SpecialIntrinsic, kClamp_SpecialIntrinsic,
+                kClamp_SpecialIntrinsic, kClamp_SpecialIntrinsic);
         setIntrinsic(IntrinsicList.kSaturate,
                 kSpecial_IntrinsicOpcodeKind,
                 kSaturate_SpecialIntrinsic, kSaturate_SpecialIntrinsic,
@@ -160,7 +217,22 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         setIntrinsic(IntrinsicList.kNormalize,
                 kGLSLstd450_IntrinsicOpcodeKind,
                 GLSLstd450Normalize, GLSLstd450Normalize, GLSLstd450Normalize, GLSLstd450Normalize);
+        setIntrinsic(IntrinsicList.kFaceForward,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450FaceForward, GLSLstd450FaceForward, GLSLstd450FaceForward, GLSLstd450FaceForward);
+        setIntrinsic(IntrinsicList.kReflect,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Reflect, GLSLstd450Reflect, GLSLstd450Reflect, GLSLstd450Reflect);
+        setIntrinsic(IntrinsicList.kRefract,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Refract, GLSLstd450Refract, GLSLstd450Refract, GLSLstd450Refract);
 
+        setIntrinsic(IntrinsicList.kDPdx,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpDPdx, SpvOpUndef, SpvOpUndef, SpvOpUndef);
+        setIntrinsic(IntrinsicList.kDPdy,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpDPdy, SpvOpUndef, SpvOpUndef, SpvOpUndef);
         setIntrinsic(IntrinsicList.kFwidth,
                 kSPIRV_IntrinsicOpcodeKind,
                 SpvOpFwidth, SpvOpUndef, SpvOpUndef, SpvOpUndef);
@@ -835,7 +907,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         mCurrentBlock = 0;
         writeLabel(getUniqueId(), writer);
         mBodyBuffer.clear();
-        writeBlock(func.getBody(), mBodyBuffer);
+        writeBlockStatement(func.getBody(), mBodyBuffer);
         writer.writeWords(mVariableBuffer.elements(), mVariableBuffer.size());
         if (func.getFunctionDecl().isEntryPoint()) {
             writer.writeWords(mGlobalInitBuffer.elements(), mGlobalInitBuffer.size());
@@ -1394,8 +1466,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case SWIZZLE -> writeSwizzle((Swizzle) expr, writer);
             case FUNCTION_CALL -> writeFunctionCall((FunctionCall) expr, writer);
             case CONSTRUCTOR_COMPOUND -> writeConstructorCompound((ConstructorCompound) expr, writer);
-            case CONSTRUCTOR_SCALAR_TO_VECTOR -> writeConstructorScalar2Vector((ConstructorScalar2Vector) expr, writer);
-            case CONSTRUCTOR_SCALAR_TO_MATRIX -> writeConstructorScalar2Matrix((ConstructorScalar2Matrix) expr, writer);
+            case CONSTRUCTOR_VECTOR_SPLAT -> writeConstructorVectorSplat((ConstructorVectorSplat) expr, writer);
+            case CONSTRUCTOR_DIAGONAL_MATRIX ->
+                    writeConstructorDiagonalMatrix((ConstructorDiagonalMatrix) expr, writer);
             default -> {
                 getContext().error(expr.mPosition, "unsupported expression: " + expr.getKind());
                 yield NONE_ID;
@@ -1894,6 +1967,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private void writeStatement(@Nonnull Statement stmt, Writer writer) {
         switch (stmt.getKind()) {
+            case BLOCK -> writeBlockStatement((BlockStatement) stmt, writer);
+            case RETURN -> writeReturnStatement((ReturnStatement) stmt, writer);
             case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt, writer);
             case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), writer);
             case DISCARD -> {
@@ -1927,9 +2002,18 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         throw new AssertionError(type);
     }
 
-    private void writeBlock(BlockStatement blockStmt, Writer writer) {
-        for (var stmt : blockStmt.getStatements()) {
+    private void writeBlockStatement(BlockStatement b, Writer writer) {
+        for (var stmt : b.getStatements()) {
             writeStatement(stmt, writer);
+        }
+    }
+
+    private void writeReturnStatement(ReturnStatement r, Writer writer) {
+        if (r.getExpression() != null) {
+            int expr = writeExpression(r.getExpression(), writer);
+            writeInstruction(SpvOpReturnValue, expr, writer);
+        } else {
+            writeInstruction(SpvOpReturn, writer);
         }
     }
 
@@ -2145,6 +2229,33 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int resultId = getUniqueId();
         Type callType = call.getType();
         switch (kind) {
+            case kMin_SpecialIntrinsic -> {
+                IntArrayList argumentIds = obtainIdList();
+                vectorize(arguments, argumentIds, writer);
+                assert argumentIds.size() == 2;
+                writeGLSLExtendedInstruction(callType, resultId,
+                        GLSLstd450FMin, GLSLstd450SMin, GLSLstd450UMin,
+                        argumentIds, writer);
+                releaseIdList(argumentIds);
+            }
+            case kMax_SpecialIntrinsic -> {
+                IntArrayList argumentIds = obtainIdList();
+                vectorize(arguments, argumentIds, writer);
+                assert argumentIds.size() == 2;
+                writeGLSLExtendedInstruction(callType, resultId,
+                        GLSLstd450FMax, GLSLstd450SMax, GLSLstd450UMax,
+                        argumentIds, writer);
+                releaseIdList(argumentIds);
+            }
+            case kClamp_SpecialIntrinsic -> {
+                IntArrayList argumentIds = obtainIdList();
+                vectorize(arguments, argumentIds, writer);
+                assert argumentIds.size() == 3;
+                writeGLSLExtendedInstruction(callType, resultId,
+                        GLSLstd450FClamp, GLSLstd450SClamp, GLSLstd450UClamp,
+                        argumentIds, writer);
+                releaseIdList(argumentIds);
+            }
             case kSaturate_SpecialIntrinsic -> {
                 assert (arguments.length == 1);
                 int vectorSize = arguments[0].getType().getRows();
@@ -2310,19 +2421,19 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private int writeConstructorScalar2Vector(ConstructorScalar2Vector ctor, Writer writer) {
-        // Write the splat argument as a scalar, then splat it.
-        int argument = writeExpression(ctor.getArguments()[0], writer);
+    private int writeConstructorVectorSplat(ConstructorVectorSplat ctor, Writer writer) {
+        // Write the splat argument as a scalar, then broadcast it.
+        int argument = writeExpression(ctor.getArgument(), writer);
         return broadcast(ctor.getType(), argument, writer);
     }
 
-    private int writeConstructorScalar2Matrix(ConstructorScalar2Matrix ctor, Writer writer) {
+    private int writeConstructorDiagonalMatrix(ConstructorDiagonalMatrix ctor, Writer writer) {
         Type type = ctor.getType();
         assert (type.isMatrix());
-        assert (ctor.getArguments()[0].getType().isScalar());
+        assert (ctor.getArgument().getType().isScalar());
 
         // Write out the scalar argument.
-        int diagonal = writeExpression(ctor.getArguments()[0], writer);
+        int diagonal = writeExpression(ctor.getArgument(), writer);
 
         // Build the diagonal matrix.
         int zeroId = writeScalarConstant(0.0f, getContext().getTypes().mFloat);

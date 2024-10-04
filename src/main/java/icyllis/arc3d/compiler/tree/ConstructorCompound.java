@@ -84,8 +84,8 @@ public final class ConstructorCompound extends ConstructorCall {
 
                 // Matrix-from-scalar creates a diagonal matrix; vector-from-scalar creates a splat.
                 return type.isMatrix()
-                        ? ConstructorScalar2Matrix.make(pos, type, typecast)
-                        : ConstructorScalar2Vector.make(pos, type, typecast);
+                        ? ConstructorDiagonalMatrix.make(pos, type, typecast)
+                        : ConstructorVectorSplat.make(pos, type, typecast);
             } else if (argument.getType().isVector()) {
                 // A vector constructor containing a single vector with the same number of columns is a
                 // cast (e.g. float3 -> int3).
@@ -107,7 +107,7 @@ public final class ConstructorCompound extends ConstructorCall {
                             argument);
 
                     // Casting a matrix type into another matrix type is a resize.
-                    return ConstructorMatrix2Matrix.make(pos, type,
+                    return ConstructorMatrixResize.make(pos, type,
                             argument);
                 }
 
