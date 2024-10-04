@@ -44,11 +44,11 @@ public final class Analysis {
             protected boolean visitExpression(Expression expr) {
                 return switch (expr.getKind()) {
                     case CONSTRUCTOR_ARRAY,
-                            CONSTRUCTOR_COMPOUND,
-                            CONSTRUCTOR_MATRIX_TO_MATRIX,
-                            CONSTRUCTOR_SCALAR_TO_MATRIX,
-                            CONSTRUCTOR_STRUCT,
-                            CONSTRUCTOR_SCALAR_TO_VECTOR ->
+                         CONSTRUCTOR_COMPOUND,
+                         CONSTRUCTOR_DIAGONAL_MATRIX,
+                         CONSTRUCTOR_MATRIX_RESIZE,
+                         CONSTRUCTOR_STRUCT,
+                         CONSTRUCTOR_VECTOR_SPLAT ->
                         // Constructors might be compile-time constants, if they are composed entirely
                         // of literals and constructors. (Casting constructors are intentionally omitted
                         // here. If the value inside was a compile-time constant, we would have not
@@ -99,7 +99,7 @@ public final class Analysis {
                 // Only consider small arrays/structs of compile-time-constants to be trivial.
                 return expr.getType().getComponents() <= 4 && isCompileTimeConstant(expr);
             }
-            case CONSTRUCTOR_ARRAY_CAST, CONSTRUCTOR_MATRIX_TO_MATRIX -> {
+            case CONSTRUCTOR_ARRAY_CAST, CONSTRUCTOR_MATRIX_RESIZE -> {
                 // These operations require function calls in Metal, so they're never trivial.
                 return false;
             }
@@ -108,13 +108,13 @@ public final class Analysis {
                 return isCompileTimeConstant(expr);
             }
             case CONSTRUCTOR_COMPOUND_CAST,
-                    CONSTRUCTOR_SCALAR_CAST,
-                    CONSTRUCTOR_SCALAR_TO_VECTOR,
-                    CONSTRUCTOR_SCALAR_TO_MATRIX -> {
+                 CONSTRUCTOR_SCALAR_CAST,
+                 CONSTRUCTOR_VECTOR_SPLAT,
+                 CONSTRUCTOR_DIAGONAL_MATRIX -> {
                 ConstructorCall ctor = (ConstructorCall) expr;
                 // Single-argument constructors are trivial when their inner expression is trivial.
                 assert (ctor.getArguments().length == 1);
-                Expression inner = ctor.getArguments()[0];
+                Expression inner = ctor.getArgument();
                 return isTrivialExpression(inner);
             }
             default -> {
@@ -146,11 +146,11 @@ public final class Analysis {
             case CONSTRUCTOR_ARRAY_CAST:
             case CONSTRUCTOR_COMPOUND:
             case CONSTRUCTOR_COMPOUND_CAST:
-            case CONSTRUCTOR_MATRIX_TO_MATRIX:
-            case CONSTRUCTOR_SCALAR_TO_MATRIX:
+            case CONSTRUCTOR_DIAGONAL_MATRIX:
+            case CONSTRUCTOR_MATRIX_RESIZE:
             case CONSTRUCTOR_SCALAR_CAST:
             case CONSTRUCTOR_STRUCT:
-            case CONSTRUCTOR_SCALAR_TO_VECTOR: {
+            case CONSTRUCTOR_VECTOR_SPLAT: {
                 if (left.getKind() != right.getKind()) {
                     return false;
                 }
@@ -173,14 +173,12 @@ public final class Analysis {
                         isSameExpressionTree(leftExpr.getBase(), rightExpr.getBase());
             }
 
-            /*case INDEX: {
-                var leftExpr = ( ArrayExpression) left;
-                var rightExpr = (ArrayExpression) right;
-                return IsSameExpressionTree( * left.as < IndexExpression > ().index(),
-                                        *right.as<IndexExpression> ().index()) &&
-                IsSameExpressionTree( * left.as < IndexExpression > ().base(),
-                                        *right.as<IndexExpression> ().base());
-            }*/
+            case INDEX: {
+                var leftExpr = (IndexExpression) left;
+                var rightExpr = (IndexExpression) right;
+                return isSameExpressionTree(leftExpr.getIndex(), rightExpr.getIndex()) &&
+                        isSameExpressionTree(leftExpr.getBase(), rightExpr.getBase());
+            }
 
             case PREFIX: {
                 var leftExpr = (PrefixExpression) left;

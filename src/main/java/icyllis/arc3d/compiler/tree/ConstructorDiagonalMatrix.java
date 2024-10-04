@@ -29,9 +29,9 @@ import java.util.OptionalDouble;
  * <p>
  * These always contain exactly 1 scalar.
  */
-public final class ConstructorScalar2Matrix extends ConstructorCall {
+public final class ConstructorDiagonalMatrix extends ConstructorCall {
 
-    private ConstructorScalar2Matrix(int position, Type type, Expression... arguments) {
+    private ConstructorDiagonalMatrix(int position, Type type, Expression... arguments) {
         super(position, type, arguments);
         assert arguments.length == 1;
     }
@@ -46,12 +46,12 @@ public final class ConstructorScalar2Matrix extends ConstructorCall {
         // to be replaced with `mat4(5.0)`.
         arg = ConstantFolder.makeConstantValueForVariable(position, arg);
 
-        return new ConstructorScalar2Matrix(position, type, arg);
+        return new ConstructorDiagonalMatrix(position, type, arg);
     }
 
     @Override
     public ExpressionKind getKind() {
-        return ExpressionKind.CONSTRUCTOR_SCALAR_TO_MATRIX;
+        return ExpressionKind.CONSTRUCTOR_DIAGONAL_MATRIX;
     }
 
     @Override
@@ -65,12 +65,12 @@ public final class ConstructorScalar2Matrix extends ConstructorCall {
         assert (col < getType().getCols());
         assert (row < getType().getRows());
 
-        return (col == row) ? getArguments()[0].getConstantValue(0) : OptionalDouble.of(0.0);
+        return (col == row) ? getArgument().getConstantValue(0) : OptionalDouble.of(0.0);
     }
 
     @Nonnull
     @Override
     public Expression clone(int position) {
-        return new ConstructorScalar2Matrix(position, getType(), cloneArguments());
+        return new ConstructorDiagonalMatrix(position, getType(), cloneArguments());
     }
 }

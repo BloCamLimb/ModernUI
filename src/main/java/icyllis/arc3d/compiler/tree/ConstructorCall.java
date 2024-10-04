@@ -19,8 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
+import org.jetbrains.annotations.Unmodifiable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,6 +34,7 @@ import java.util.*;
  */
 public abstract class ConstructorCall extends Expression {
 
+    @Unmodifiable
     private final Expression[] mArguments;
 
     protected ConstructorCall(int position, Type type,
@@ -92,7 +94,12 @@ public abstract class ConstructorCall extends Expression {
         return getType().getComponentType();
     }
 
-    // **immutable**
+    public final Expression getArgument() {
+        assert mArguments.length == 1;
+        return mArguments[0];
+    }
+
+    @Unmodifiable
     public final Expression[] getArguments() {
         return mArguments;
     }
