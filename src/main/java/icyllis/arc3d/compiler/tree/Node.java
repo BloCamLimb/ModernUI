@@ -77,8 +77,8 @@ public abstract class Node {
         FOR_LOOP(ForLoop.class),
         IF(IfStatement.class),
         RETURN(ReturnStatement.class),
-        SWITCH(Statement.class),
-        SWITCH_CASE(Statement.class),
+        SWITCH(SwitchStatement.class),
+        SWITCH_CASE(SwitchCase.class),
         VARIABLE_DECL(VariableDecl.class);
 
         private final Class<? extends Statement> mType;

@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.tree.*;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -165,6 +164,14 @@ public abstract class TreeVisitor {
     }
 
     public boolean visitReturn(ReturnStatement stmt) {
+        return visitStatement(stmt);
+    }
+
+    public boolean visitSwitch(SwitchStatement stmt) {
+        return visitStatement(stmt);
+    }
+
+    public boolean visitSwitchCase(SwitchCase stmt) {
         return visitStatement(stmt);
     }
 

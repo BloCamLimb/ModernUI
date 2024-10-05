@@ -424,6 +424,10 @@ public class Parser {
                 long profile = nextPpToken();
                 if (Token.kind(profile) == Token.TK_NEWLINE ||
                         Token.kind(profile) == Token.TK_END_OF_FILE) {
+                    if (validProfile.equals("es")) {
+                        error(profile, "expected the es profile");
+                        return false;
+                    }
                     return true;
                 }
                 if (Token.kind(profile) != Token.TK_IDENTIFIER) {
@@ -2047,12 +2051,71 @@ public class Parser {
 
     /**
      * <pre>{@literal
+     * SwitchCaseBody
+     *     : COLON Statement*
+     * }</pre>
+     */
+    private boolean SwitchCaseBody(List<Expression> values,
+                                   List<Statement> caseBlocks,
+                                   Expression caseValue) {
+        expect(Token.TK_COLON, "':'");
+        ArrayList<Statement> statements = new ArrayList<>();
+        while (!peek(Token.TK_RBRACE) &&
+                !peek(Token.TK_CASE) &&
+                !peek(Token.TK_DEFAULT)) {
+            Statement s = Statement();
+            if (s == null) {
+                return false;
+            }
+            statements.add(s);
+        }
+        values.add(caseValue);
+        caseBlocks.add(BlockStatement.make(Position.NO_POS,
+                statements, false));
+        return true;
+    }
+
+    /**
+     * <pre>{@literal
      * SwitchStatement
      *     : SWITCH LPAREN Expression RPAREN LBRACE Statement* RBRACE
      * }</pre>
      */
     private Statement SwitchStatement() {
-        throw new FatalError();
+        long start = expect(Token.TK_SWITCH, "'switch'");
+        expect(Token.TK_LPAREN, "'('");
+        Expression init = Expression();
+        if (init == null) {
+            return null;
+        }
+        expect(Token.TK_RPAREN, "')'");
+        expect(Token.TK_LBRACE, "'{'");
+
+        ArrayList<Expression> values = new ArrayList<>();
+        ArrayList<Statement> caseBlocks = new ArrayList<>();
+
+        //TODO symbol table inside switch block
+
+        while (checkNext(Token.TK_CASE)) {
+            Expression caseValue = Expression();
+            if (caseValue == null) {
+                return null;
+            }
+            if (!SwitchCaseBody(values, caseBlocks, caseValue)) {
+                return null;
+            }
+        }
+        //TODO allow default label to be other than last
+        if (checkNext(Token.TK_DEFAULT)) {
+            if (!SwitchCaseBody(values, caseBlocks, null)) {
+                return null;
+            }
+        }
+        expect(Token.TK_RBRACE, "'}'");
+
+        int pos = rangeFrom(start);
+        return statementOrEmpty(pos, SwitchStatement.convert(mCompiler.getContext(),
+                pos, init, values, caseBlocks));
     }
 
     /**
