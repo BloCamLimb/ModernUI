@@ -1,3 +1,4 @@
+#extension GL_EXT_arc3d_shading_language : require
 __pure __genFType radians(__genFType degrees);
 __pure __genHType radians(__genHType degrees);
 __pure __genFType degrees(__genFType radians);

@@ -131,7 +131,7 @@ public class TestCompiler {
                 source,
                 ShaderKind.FRAGMENT,
                 options,
-                ModuleLoader.getInstance().loadCommonModule(compiler)
+                ModuleLoader.getInstance().loadGLSLFragModule(compiler)
         );
 
         System.out.print(compiler.getErrorMessage());

@@ -39,6 +39,10 @@ public class ModuleLoader {
 
     @GuardedBy("mRootModule")
     private volatile ModuleUnit mCommonModule;
+    @GuardedBy("mRootModule")
+    private volatile ModuleUnit mGLSLVertModule;
+    @GuardedBy("mRootModule")
+    private volatile ModuleUnit mGLSLFragModule;
 
     private ModuleLoader() {
         mRootModule = new ModuleUnit();
@@ -310,12 +314,48 @@ public class ModuleLoader {
         synchronized (mRootModule) {
             if (mCommonModule == null) {
                 mCommonModule = loadModule(compiler,
-                        loadModuleSource("slang_common.txt"),
+                        loadModuleSource("cm_common.aksl"),
                         ShaderKind.FRAGMENT,
                         mRootModule,
                         true);
             }
         }
         return mCommonModule;
+    }
+
+    @Nonnull
+    public ModuleUnit loadGLSLVertModule(ShaderCompiler compiler) {
+        if (mGLSLVertModule != null) {
+            return mGLSLVertModule;
+        }
+        ModuleUnit commonModule = loadCommonModule(compiler);
+        synchronized (mRootModule) {
+            if (mGLSLVertModule == null) {
+                mGLSLVertModule = loadModule(compiler,
+                        loadModuleSource("cm_glsl_vert.aksl"),
+                        ShaderKind.VERTEX,
+                        commonModule,
+                        true);
+            }
+        }
+        return mGLSLVertModule;
+    }
+
+    @Nonnull
+    public ModuleUnit loadGLSLFragModule(ShaderCompiler compiler) {
+        if (mGLSLFragModule != null) {
+            return mGLSLFragModule;
+        }
+        ModuleUnit commonModule = loadCommonModule(compiler);
+        synchronized (mRootModule) {
+            if (mGLSLFragModule == null) {
+                mGLSLFragModule = loadModule(compiler,
+                        loadModuleSource("cm_glsl_frag.aksl"),
+                        ShaderKind.FRAGMENT,
+                        commonModule,
+                        true);
+            }
+        }
+        return mGLSLFragModule;
     }
 }

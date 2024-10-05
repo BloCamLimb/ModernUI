@@ -1,0 +1,2 @@
+#extension GL_EXT_arc3d_shading_language : require
+layout(builtin=frag_coord) in vec4 gl_FragCoord;
