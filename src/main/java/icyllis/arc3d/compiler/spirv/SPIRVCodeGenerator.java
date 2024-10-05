@@ -1577,6 +1577,37 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         };
     }
 
+    private int writeMatrixComparison(Type operandType, int lhs, int rhs,
+                                      int floatOp, int intOp,
+                                      int vectorMergeOp, int mergeOp,
+                                      Writer writer) {
+        int compareOp = operandType.isFloatOrCompound() ? floatOp : intOp;
+        assert (operandType.isMatrix());
+        Type columnType = operandType.getComponentType().toVector(
+                getContext(), operandType.getRows());
+        Type boolType = getContext().getTypes().mBool;
+        Type bvecType = boolType.toVector(getContext(), operandType.getRows());
+        int boolTypeId = writeType(boolType);
+        int bvecTypeId = writeType(bvecType);
+        int result = 0;
+        for (int i = 0; i < operandType.getCols(); i++) {
+            int columnL = writeOpCompositeExtract(columnType, lhs, i, writer);
+            int columnR = writeOpCompositeExtract(columnType, rhs, i, writer);
+            int compare = getUniqueId(operandType);
+            writeInstruction(compareOp, bvecTypeId, compare, columnL, columnR, writer);
+            int merge = getUniqueId();
+            writeInstruction(vectorMergeOp, boolTypeId, merge, compare, writer);
+            if (result != 0) {
+                int next = getUniqueId();
+                writeInstruction(mergeOp, boolTypeId, next, result, merge, writer);
+                result = next;
+            } else {
+                result = merge;
+            }
+        }
+        return result;
+    }
+
     // negate matrix
     private int writeUnaryMatrixOperation(@Nonnull Type operandType,
                                           int operand,
@@ -1753,6 +1784,52 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     // Vectorize the left-hand side.
                     lhs = broadcast(rightType, lhs, writer);
                     operandType = rightType;
+                } else if (leftType.isMatrix() || rightType.isMatrix()) {
+                    if (op == Operator.MUL) {
+                        // Matrix-times-vector and matrix-times-scalar have dedicated ops in SPIR-V.
+                        int spvOp;
+                        if (leftType.isMatrix() && rightType.isVector()) {
+                            spvOp = SpvOpMatrixTimesVector;
+                        } else if (leftType.isVector() && rightType.isMatrix()) {
+                            spvOp = SpvOpVectorTimesMatrix;
+                        } else if (leftType.isScalar() || rightType.isScalar()) {
+                            spvOp = SpvOpMatrixTimesScalar;
+                        } else {
+                            getContext().error(pos, "unsupported mixed-type expression");
+                            return NONE_ID;
+                        }
+                        int resultId = getUniqueId(resultType);
+                        int typeId = writeType(resultType);
+                        if (leftType.isScalar()) {
+                            writeInstruction(spvOp, typeId, resultId,
+                                    rhs, lhs, writer);
+                        } else {
+                            writeInstruction(spvOp, typeId, resultId,
+                                    lhs, rhs, writer);
+                        }
+                        return resultId;
+                    } else {
+                        assert (leftType.isMatrix() && rightType.isScalar()) ||
+                                (rightType.isMatrix() && leftType.isScalar());
+                        return switch (op) {
+                            case ADD -> writeBinaryMatrixOperation(pos,
+                                    resultType, leftType, rightType, lhs, rhs,
+                                    SpvOpFAdd, SpvOpIAdd, SpvOpIAdd,
+                                    writer);
+                            case SUB -> writeBinaryMatrixOperation(pos,
+                                    resultType, leftType, rightType, lhs, rhs,
+                                    SpvOpFSub, SpvOpISub, SpvOpISub,
+                                    writer);
+                            case DIV -> writeBinaryMatrixOperation(pos,
+                                    resultType, leftType, rightType, lhs, rhs,
+                                    SpvOpFDiv, SpvOpSDiv, SpvOpUDiv,
+                                    writer);
+                            default -> {
+                                getContext().error(pos, "unsupported mixed-type expression");
+                                yield NONE_ID;
+                            }
+                        };
+                    }
                 } else {
                     getContext().error(pos, "unsupported mixed-type expression");
                     return NONE_ID;
@@ -1760,6 +1837,81 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         switch (op) {
+            case EQ:
+                if (operandType.isMatrix()) {
+                    return writeMatrixComparison(operandType, lhs, rhs,
+                            SpvOpFOrdEqual, SpvOpIEqual, SpvOpAll, SpvOpLogicalAnd, writer);
+                }
+                if (operandType.isArray()) {
+                    return writeArrayComparison(operandType, lhs, op, rhs, writer);
+                }
+            {
+                assert resultType.isBoolean();
+                Type tmpType;
+                if (operandType.isVector()) {
+                    tmpType = resultType.toVector(getContext(), operandType.getRows());
+                } else {
+                    tmpType = resultType;
+                }
+                int id = writeBinaryOperation(pos,
+                        tmpType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpFOrdEqual, SpvOpIEqual,
+                        SpvOpIEqual, SpvOpLogicalEqual,
+                        writer);
+                if (operandType.isVector()) {
+                    int resultId = getUniqueId();
+                    int typeId = writeType(resultType);
+                    writeInstruction(SpvOpAll, typeId, resultId, id, writer);
+                    return resultId;
+                }
+                return id;
+            }
+            case NE:
+                if (operandType.isMatrix()) {
+                    return writeMatrixComparison(operandType, lhs, rhs,
+                            SpvOpFUnordNotEqual, SpvOpINotEqual, SpvOpAny, SpvOpLogicalOr, writer);
+                }
+                if (operandType.isArray()) {
+                    return writeArrayComparison(operandType, lhs, op, rhs, writer);
+                }
+                // fallthrough
+            case LOGICAL_XOR: {
+                assert resultType.isBoolean();
+                Type tmpType;
+                if (operandType.isVector()) {
+                    tmpType = resultType.toVector(getContext(), operandType.getRows());
+                } else {
+                    tmpType = resultType;
+                }
+                int id = writeBinaryOperation(pos,
+                        tmpType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpFUnordNotEqual, SpvOpINotEqual,
+                        SpvOpINotEqual, SpvOpLogicalNotEqual,
+                        writer);
+                if (operandType.isVector()) {
+                    int resultId = getUniqueId();
+                    int typeId = writeType(resultType);
+                    writeInstruction(SpvOpAny, typeId, resultId, id, writer);
+                    return resultId;
+                }
+                return id;
+            }
+            case LOGICAL_AND:
+                assert resultType.isBoolean();
+                return writeBinaryOperation(pos,
+                        resultType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpLogicalAnd,
+                        writer);
+            case LOGICAL_OR:
+                assert resultType.isBoolean();
+                return writeBinaryOperation(pos,
+                        resultType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpLogicalOr,
+                        writer);
             case LT:
                 assert resultType.isBoolean();
                 return writeBinaryOperation(pos,
@@ -1828,6 +1980,36 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFMod, SpvOpSMod, SpvOpUMod, SpvOpUndef,
+                        writer);
+            case SHL:
+                return writeBinaryOperation(pos,
+                        resultType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpUndef, SpvOpShiftLeftLogical, SpvOpShiftLeftLogical, SpvOpUndef,
+                        writer);
+            case SHR:
+                return writeBinaryOperation(pos,
+                        resultType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpUndef, SpvOpShiftRightArithmetic, SpvOpShiftRightLogical, SpvOpUndef,
+                        writer);
+            case BITWISE_XOR:
+                return writeBinaryOperation(pos,
+                        resultType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpUndef, SpvOpBitwiseXor, SpvOpBitwiseXor, SpvOpUndef,
+                        writer);
+            case BITWISE_AND:
+                return writeBinaryOperation(pos,
+                        resultType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpUndef, SpvOpBitwiseAnd, SpvOpBitwiseAnd, SpvOpUndef,
+                        writer);
+            case BITWISE_OR:
+                return writeBinaryOperation(pos,
+                        resultType, operandType, lhs, rhs,
+                        /*matrixOpIsComponentWise*/false,
+                        SpvOpUndef, SpvOpBitwiseOr, SpvOpBitwiseOr, SpvOpUndef,
                         writer);
             default:
                 getContext().error(pos, "unsupported expression");
@@ -1909,6 +2091,57 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int typeId = writeType(resultType);
         writeInstruction(op, typeId, resultId, lhs, rhs, writer);
         return resultId;
+    }
+
+    private int writeArrayComparison(Type arrayType, int lhs, Operator op,
+                                     int rhs, Writer writer) {
+        // The inputs must be arrays, and the op must be == or !=.
+        assert (op == Operator.EQ || op == Operator.NE);
+        assert (arrayType.isArray());
+        Type elementType = arrayType.getElementType();
+        int arraySize = arrayType.getArraySize();
+        assert (arraySize > 0);
+
+        // Synthesize equality checks for each item in the array.
+        Type boolType = getContext().getTypes().mBool;
+        int result = 0;
+        for (int index = 0; index < arraySize; ++index) {
+            // Get the left and right item in the array.
+            int itemL = writeOpCompositeExtract(elementType, lhs, index, writer);
+            int itemR = writeOpCompositeExtract(elementType, rhs, index, writer);
+            // Use `writeBinaryExpression` with the requested == or != operator on these items.
+            int comparison = writeBinaryExpression(Position.NO_POS, elementType, itemL, op,
+                    elementType, itemR, boolType, writer);
+            // Merge this comparison result with all the other comparisons we've done.
+            result = mergeComparisons(comparison, result, op, writer);
+        }
+        return result;
+    }
+
+    private int mergeComparisons(int comparison, int result, Operator op,
+                                 Writer writer) {
+        // If this is the first entry, we don't need to merge comparison results with anything.
+        if (result == 0) {
+            return comparison;
+        }
+        // Use LogicalAnd or LogicalOr to combine the comparison with all the other comparisons.
+        Type boolType = getContext().getTypes().mBool;
+        int boolTypeId = writeType(boolType);
+        int next = getUniqueId();
+        switch (op) {
+            case EQ:
+                writeInstruction(SpvOpLogicalAnd, boolTypeId, next,
+                        comparison, result, writer);
+                break;
+            case NE:
+                writeInstruction(SpvOpLogicalOr, boolTypeId, next,
+                        comparison, result, writer);
+                break;
+            default:
+                assert false : ("mergeComparisons only supports == and !=, not " + op);
+                return NONE_ID;
+        }
+        return next;
     }
 
     private int writeConditionalExpression(ConditionalExpression expr, Writer writer) {
@@ -2043,6 +2276,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         switch (stmt.getKind()) {
             case BLOCK -> writeBlockStatement((BlockStatement) stmt, writer);
             case RETURN -> writeReturnStatement((ReturnStatement) stmt, writer);
+            case IF -> writeIfStatement((IfStatement) stmt, writer);
             case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt, writer);
             case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), writer);
             case DISCARD -> {
@@ -2088,6 +2322,41 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             writeInstruction(SpvOpReturnValue, expr, writer);
         } else {
             writeInstruction(SpvOpReturn, writer);
+        }
+    }
+
+    private void writeIfStatement(IfStatement stmt, Writer writer) {
+        int cond = writeExpression(stmt.getCondition(), writer);
+        int trueId = getUniqueId();
+        int falseId = getUniqueId();
+
+        int numReachableOps = mReachableOps.size();
+        int numStoreOps = mStoreOps.size();
+
+        if (stmt.getWhenFalse() != null) {
+            int end = getUniqueId();
+            writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
+            writeInstruction(SpvOpBranchConditional, cond, trueId, falseId, writer);
+            writeLabel(trueId, writer);
+            writeStatement(stmt.getWhenTrue(), writer);
+            if (mCurrentBlock != 0) {
+                writeInstruction(SpvOpBranch, end, writer);
+            }
+            writeLabel(falseId, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+            writeStatement(stmt.getWhenFalse(), writer);
+            if (mCurrentBlock != 0) {
+                writeInstruction(SpvOpBranch, end, writer);
+            }
+            writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        } else {
+            writeInstruction(SpvOpSelectionMerge, falseId, SpvSelectionControlMaskNone, writer);
+            writeInstruction(SpvOpBranchConditional, cond, trueId, falseId, writer);
+            writeLabel(trueId, writer);
+            writeStatement(stmt.getWhenTrue(), writer);
+            if (mCurrentBlock != 0) {
+                writeInstruction(SpvOpBranch, falseId, writer);
+            }
+            writeLabel(falseId, kBranchIsAbove, numReachableOps, numStoreOps, writer);
         }
     }
 
@@ -2893,10 +3162,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     int pointer,
                     Writer writer) {
         // Look for this pointer in our load-cache.
-        int cachedOp = mStoreCache.get(pointer);
+        /*int cachedOp = mStoreCache.get(pointer);
         if (cachedOp != 0) {
             return cachedOp;
-        }
+        }*/
 
         // Write the requested OpLoad instruction.
         int resultId = getUniqueId(relaxedPrecision);
