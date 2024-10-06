@@ -2105,9 +2105,14 @@ public class Parser {
                 return null;
             }
         }
-        //TODO allow default label to be other than last
-        if (checkNext(Token.TK_DEFAULT)) {
+        //TODO allow default label to be other than last, need to update the rest part of compiler
+        if (peek(Token.TK_DEFAULT)) {
+            long defaultToken = nextToken();
             if (!SwitchCaseBody(values, caseBlocks, null)) {
+                return null;
+            }
+            if (peek(Token.TK_CASE)) {
+                error(defaultToken, "'default' should be the last case");
                 return null;
             }
         }

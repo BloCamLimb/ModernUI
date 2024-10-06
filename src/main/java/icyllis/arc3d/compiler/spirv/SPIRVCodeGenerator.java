@@ -173,6 +173,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 kGLSLstd450_IntrinsicOpcodeKind,
                 GLSLstd450Sqrt, GLSLstd450Sqrt, GLSLstd450Sqrt, GLSLstd450Sqrt);
 
+        setIntrinsic(IntrinsicList.kMod,
+                kSpecial_IntrinsicOpcodeKind,
+                kMod_SpecialIntrinsic, kMod_SpecialIntrinsic,
+                kMod_SpecialIntrinsic, kMod_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kModf,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Modf, GLSLstd450Modf, GLSLstd450Modf, GLSLstd450Modf);
         setIntrinsic(IntrinsicList.kMin,
                 kSpecial_IntrinsicOpcodeKind,
                 kMin_SpecialIntrinsic, kMin_SpecialIntrinsic,
@@ -236,6 +243,52 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         setIntrinsic(IntrinsicList.kFwidth,
                 kSPIRV_IntrinsicOpcodeKind,
                 SpvOpFwidth, SpvOpUndef, SpvOpUndef, SpvOpUndef);
+
+        setIntrinsic(IntrinsicList.kAny,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpAny);
+        setIntrinsic(IntrinsicList.kAll,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpAll);
+        setIntrinsic(IntrinsicList.kLogicalNot,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpLogicalNot);
+        setIntrinsic(IntrinsicList.kEqual,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdEqual,
+                SpvOpIEqual,
+                SpvOpIEqual,
+                SpvOpLogicalEqual);
+        setIntrinsic(IntrinsicList.kNotEqual,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFUnordNotEqual,
+                SpvOpINotEqual,
+                SpvOpINotEqual,
+                SpvOpLogicalNotEqual);
+        setIntrinsic(IntrinsicList.kLessThan,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdLessThan,
+                SpvOpSLessThan,
+                SpvOpULessThan,
+                SpvOpUndef);
+        setIntrinsic(IntrinsicList.kLessThanEqual,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdLessThanEqual,
+                SpvOpSLessThanEqual,
+                SpvOpULessThanEqual,
+                SpvOpUndef);
+        setIntrinsic(IntrinsicList.kGreaterThan,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdGreaterThan,
+                SpvOpSGreaterThan,
+                SpvOpUGreaterThan,
+                SpvOpUndef);
+        setIntrinsic(IntrinsicList.kGreaterThanEqual,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdGreaterThanEqual,
+                SpvOpSGreaterThanEqual,
+                SpvOpUGreaterThanEqual,
+                SpvOpUndef);
     }
 
     public final TargetApi mOutputTarget;
@@ -289,6 +342,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     // label of the current block, or 0 if we are not in a block
     private int mCurrentBlock = 0;
+    private final IntStack mBreakTarget = new IntArrayList();
+    private final IntStack mContinueTarget = new IntArrayList();
 
     // Use "BranchIsAbove" for labels which are referenced by OpBranch or OpBranchConditional
     // ops that are above the label in the code--i.e., the branch skips forward in the code.
@@ -2277,8 +2332,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case BLOCK -> writeBlockStatement((BlockStatement) stmt, writer);
             case RETURN -> writeReturnStatement((ReturnStatement) stmt, writer);
             case IF -> writeIfStatement((IfStatement) stmt, writer);
+            case SWITCH -> writeSwitchStatement((SwitchStatement) stmt, writer);
             case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt, writer);
             case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), writer);
+            case BREAK -> writeInstruction(SpvOpBranch, mBreakTarget.topInt(), writer);
+            case CONTINUE -> writeInstruction(SpvOpBranch, mContinueTarget.topInt(), writer);
             case DISCARD -> {
                 if (mOutputVersion.isAtLeast(SPIRVVersion.SPIRV_1_6)) {
                     writeInstruction(SpvOpTerminateInvocation, writer);
@@ -2358,6 +2416,78 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             writeLabel(falseId, kBranchIsAbove, numReachableOps, numStoreOps, writer);
         }
+    }
+
+    private void writeSwitchStatement(SwitchStatement s, Writer writer) {
+        int init = writeExpression(s.getInit(), writer);
+
+        int numReachableOps = mReachableOps.size();
+        int numStoreOps = mStoreOps.size();
+
+        IntArrayList labels = obtainIdList();
+        int end = getUniqueId();
+        int defaultLabel = end;
+        mBreakTarget.push(end);
+        int size = 3;
+        List<Statement> cases = s.getCases();
+        for (Statement stmt : cases) {
+            SwitchCase sc = (SwitchCase) stmt;
+            int label = getUniqueId();
+            labels.add(label);
+            if (!sc.isDefault()) {
+                size += 2;
+            } else {
+                defaultLabel = label;
+            }
+        }
+
+        // We should have exactly one label for each case.
+        assert (labels.size() == cases.size());
+
+        // Collapse adjacent switch-cases into one; that is, reduce `case 1: case 2: case 3:` into a
+        // single OpLabel. The Tint SPIR-V reader does not support switch-case fallthrough, but it
+        // does support multiple switch-cases branching to the same label.
+        BitSet caseIsCollapsed = new BitSet(cases.size());
+        for (int index = cases.size() - 2; index >= 0; index--) {
+            SwitchCase sc = (SwitchCase) cases.get(index);
+            if (sc.getStatement().isEmpty()) {
+                caseIsCollapsed.set(index);
+                labels.set(index, labels.getInt(index + 1));
+            }
+        }
+
+        labels.add(end);
+
+        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
+        writeOpcode(SpvOpSwitch, size, writer);
+        writer.writeWord(init);
+        writer.writeWord(defaultLabel);
+
+        for (int i = 0; i < cases.size(); ++i) {
+            SwitchCase sc = (SwitchCase) cases.get(i);
+            if (sc.isDefault()) {
+                continue;
+            }
+            writer.writeWord((int) sc.getValue());
+            writer.writeWord(labels.getInt(i));
+        }
+        for (int i = 0; i < cases.size(); ++i) {
+            if (caseIsCollapsed.get(i)) {
+                continue;
+            }
+            SwitchCase sc = (SwitchCase) cases.get(i);
+            if (i == 0) {
+                writeLabel(labels.getInt(i), writer);
+            } else {
+                writeLabel(labels.getInt(i), kBranchIsAbove, numReachableOps, numStoreOps, writer);
+            }
+            writeStatement(sc.getStatement(), writer);
+            if (mCurrentBlock != 0) {
+                writeInstruction(SpvOpBranch, labels.getInt(i + 1), writer);
+            }
+        }
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        mBreakTarget.popInt();
     }
 
     private void writeLabel(int label, Writer writer) {
@@ -2569,86 +2699,87 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private int writeSpecialIntrinsic(FunctionCall call, int kind, Writer writer) {
         Expression[] arguments = call.getArguments();
+        IntArrayList argumentIds = obtainIdList();
         int resultId = getUniqueId();
         Type callType = call.getType();
         switch (kind) {
+            case kMod_SpecialIntrinsic -> {
+                vectorize(arguments, argumentIds, writer);
+                assert argumentIds.size() == 2;
+                Type operandType = arguments[0].getType();
+                int op = select_by_component_type(operandType,
+                        SpvOpFMod, SpvOpSMod, SpvOpUMod, SpvOpUndef);
+                assert op != SpvOpUndef;
+                int typeId = writeType(operandType);
+                writeInstruction(op, typeId, resultId,
+                        argumentIds.getInt(0),
+                        argumentIds.getInt(1),
+                        writer);
+            }
             case kMin_SpecialIntrinsic -> {
-                IntArrayList argumentIds = obtainIdList();
                 vectorize(arguments, argumentIds, writer);
                 assert argumentIds.size() == 2;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FMin, GLSLstd450SMin, GLSLstd450UMin,
                         argumentIds, writer);
-                releaseIdList(argumentIds);
             }
             case kMax_SpecialIntrinsic -> {
-                IntArrayList argumentIds = obtainIdList();
                 vectorize(arguments, argumentIds, writer);
                 assert argumentIds.size() == 2;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FMax, GLSLstd450SMax, GLSLstd450UMax,
                         argumentIds, writer);
-                releaseIdList(argumentIds);
             }
             case kClamp_SpecialIntrinsic -> {
-                IntArrayList argumentIds = obtainIdList();
                 vectorize(arguments, argumentIds, writer);
                 assert argumentIds.size() == 3;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FClamp, GLSLstd450SClamp, GLSLstd450UClamp,
                         argumentIds, writer);
-                releaseIdList(argumentIds);
             }
             case kSaturate_SpecialIntrinsic -> {
                 assert (arguments.length == 1);
                 int vectorSize = arguments[0].getType().getRows();
-                IntArrayList argumentIds = obtainIdList();
                 argumentIds.add(vectorize(arguments[0], vectorSize, writer));
                 argumentIds.add(vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, writer));
                 argumentIds.add(vectorize(1.0f, getContext().getTypes().mFloat, vectorSize, writer));
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FClamp, GLSLstd450SClamp, GLSLstd450UClamp,
                         argumentIds, writer);
-                releaseIdList(argumentIds);
             }
             case kMix_SpecialIntrinsic -> {
-                IntArrayList argumentIds = obtainIdList();
                 vectorize(arguments, argumentIds, writer);
                 assert argumentIds.size() == 3;
                 if (arguments[2].getType().isBooleanOrCompound()) {
                     // Use OpSelect to implement Boolean mix().
-                    int falseId = writeExpression(arguments[0], writer);
-                    int trueId = writeExpression(arguments[1], writer);
-                    int conditionId = writeExpression(arguments[2], writer);
                     int typeId = writeType(arguments[0].getType());
                     writeInstruction(SpvOpSelect, typeId, resultId,
-                            conditionId, trueId, falseId, writer);
+                            argumentIds.getInt(2),
+                            argumentIds.getInt(1),
+                            argumentIds.getInt(0),
+                            writer);
                 } else {
                     writeGLSLExtendedInstruction(callType, resultId,
                             GLSLstd450FMix, SpvOpUndef, SpvOpUndef,
                             argumentIds, writer);
                 }
-                releaseIdList(argumentIds);
             }
             case kStep_SpecialIntrinsic -> {
-                IntArrayList argumentIds = obtainIdList();
                 vectorize(arguments, argumentIds, writer);
                 assert argumentIds.size() == 2;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450Step, SpvOpUndef, SpvOpUndef,
                         argumentIds, writer);
-                releaseIdList(argumentIds);
             }
             case kSmoothStep_SpecialIntrinsic -> {
-                IntArrayList argumentIds = obtainIdList();
                 vectorize(arguments, argumentIds, writer);
                 assert argumentIds.size() == 3;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450SmoothStep, GLSLstd450Bad, GLSLstd450Bad,
                         argumentIds, writer);
-                releaseIdList(argumentIds);
             }
         }
+        releaseIdList(argumentIds);
         return resultId;
     }
 

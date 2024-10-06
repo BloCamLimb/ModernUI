@@ -351,6 +351,9 @@ public final class IntrinsicList {
         map.put("dFdyCoarse"            , kDPdyCoarse               );
         map.put("fwidthCoarse"          , kFwidthCoarse             );
 
+        map.put("texture"               , kTexture                  );
+        map.put("texelFetch"            , kTextureFetch             );
+
         sIntrinsicMap = map;
     }
 
