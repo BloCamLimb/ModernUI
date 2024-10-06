@@ -220,3 +220,8 @@ __pure __genHType dFdx(__genHType p);
 __pure __genHType dFdy(__genHType p);
 __pure __genFType fwidth(__genFType p);
 __pure __genHType fwidth(__genHType p);
+
+__pure vec4 texture(sampler2D s, vec2 P);
+__pure vec4 texture(sampler2D s, vec2 P, float bias);
+
+__pure vec4 texelFetch(sampler2D s, ivec2 P, int lod);
