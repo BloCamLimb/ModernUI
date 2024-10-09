@@ -144,7 +144,7 @@ public class TestCompiler {
         System.out.println(translationUnit.getExtensions());*/
 
         ShaderCaps shaderCaps = new ShaderCaps();
-        shaderCaps.mTargetApi = TargetApi.OPENGL_4_5;
+        shaderCaps.mTargetApi = TargetApi.VULKAN_1_0;
         shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
 
         ByteBuffer spirv = compiler.generateSPIRV(translationUnit, shaderCaps);

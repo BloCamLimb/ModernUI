@@ -64,15 +64,15 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             kMin_SpecialIntrinsic = 4,
             kMix_SpecialIntrinsic = 5,
             kMod_SpecialIntrinsic = 6,
-            kDFdy_SpecialIntrinsic = 7,
-            kSaturate_SpecialIntrinsic = 8,
-            kSampledImage_SpecialIntrinsic = 9,
-            kSmoothStep_SpecialIntrinsic = 10,
-            kStep_SpecialIntrinsic = 11,
-            kSubpassLoad_SpecialIntrinsic = 12,
-            kTexture_SpecialIntrinsic = 13,
-            kTextureGrad_SpecialIntrinsic = 14,
-            kTextureLod_SpecialIntrinsic = 15,
+            kSaturate_SpecialIntrinsic = 7,
+            kSampledImage_SpecialIntrinsic = 8,
+            kSmoothStep_SpecialIntrinsic = 9,
+            kStep_SpecialIntrinsic = 10,
+            kSubpassLoad_SpecialIntrinsic = 11,
+            kTexture_SpecialIntrinsic = 12,
+            kTextureGrad_SpecialIntrinsic = 13,
+            kTextureLod_SpecialIntrinsic = 14,
+            kTextureFetch_SpecialIntrinsic = 15,
             kTextureRead_SpecialIntrinsic = 16,
             kTextureWrite_SpecialIntrinsic = 17,
             kTextureWidth_SpecialIntrinsic = 18,
@@ -243,6 +243,15 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         setIntrinsic(IntrinsicList.kFwidth,
                 kSPIRV_IntrinsicOpcodeKind,
                 SpvOpFwidth, SpvOpUndef, SpvOpUndef, SpvOpUndef);
+
+        setIntrinsic(IntrinsicList.kTexture,
+                kSpecial_IntrinsicOpcodeKind,
+                kTexture_SpecialIntrinsic, kTexture_SpecialIntrinsic,
+                kTexture_SpecialIntrinsic, kTexture_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kTextureFetch,
+                kSpecial_IntrinsicOpcodeKind,
+                kTextureFetch_SpecialIntrinsic, kTextureFetch_SpecialIntrinsic,
+                kTextureFetch_SpecialIntrinsic, kTextureFetch_SpecialIntrinsic);
 
         setIntrinsic(IntrinsicList.kAny,
                 kSPIRV_IntrinsicOpcodeKind,
@@ -503,7 +512,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             if (type.isInterfaceBlock()) {
                 return SpvStorageClassUniform;
             }
-            if (!mOutputTarget.isOpenGL()) {
+            if (mOutputTarget.isVulkan()) {
                 getContext().error(variable.mPosition, "uniform variables at global scope are not allowed");
             }
             return SpvStorageClassUniformConstant;
@@ -773,7 +782,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     stride = memoryLayout.stride(type);
                     assert stride > 0;
                 } else {
-                    stride = 0;
+                    // If explicit layout is not required, we still need to use a default layout
+                    // to ensure type matching, unless it is not supported (bool and bvec array)
+                    if (MemoryLayout.Std140.isSupported(type)) {
+                        stride = MemoryLayout.Std140.stride(type);
+                        assert stride > 0;
+                    } else {
+                        stride = 0;
+                    }
                 }
                 int elementTypeId = writeType(type.getElementType(), modifiers, memoryLayout);
                 final int resultId;
@@ -811,6 +827,47 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 yield resultId;
             }
             case Type.kStruct_TypeKind -> writeStruct(type, memoryLayout);
+            case Type.kSampler_TypeKind -> {
+                if (type.isSeparateSampler()) {
+                    // pure sampler
+                    yield writeInstructionWithCache(
+                            getInstBuilder(SpvOpTypeSampler)
+                                    .addResult(),
+                            mConstantBuffer
+                    );
+                }
+                int sampledTypeId = writeType(type.getComponentType());
+                //TODO get image format for storage image
+                int format = SpvImageFormatUnknown;
+
+                int imageTypeId = writeInstructionWithCache(
+                        getInstBuilder(SpvOpTypeImage)
+                                .addResult()
+                                .addWord(sampledTypeId)
+                                .addWord(type.getDimensions())      // dim
+                                .addWord(type.isShadow() ? 1 : 0)   // depth
+                                .addWord(type.isArrayed() ? 1 : 0)
+                                .addWord(type.isMultiSampled() ? 1 : 0)
+                                .addWord(type.isSampled() ? 1 : 2)
+                                .addWord(format),
+                        mConstantBuffer
+                );
+                if (type.isCombinedSampler()) {
+                    //TODO spir-v 1.6
+                    if (type.getDimensions() == SpvDimBuffer) {
+                        mCapabilities.add(SpvCapabilitySampledBuffer);
+                    }
+                    yield writeInstructionWithCache(
+                            getInstBuilder(SpvOpTypeSampledImage)
+                                    .addResult()
+                                    .addWord(imageTypeId),
+                            mConstantBuffer
+                    );
+                } else {
+                    // pure texture (sampled image), storage image, or subpass data
+                    yield imageTypeId;
+                }
+            }
             default -> {
                 // compiler defines some intermediate types
                 getContext().error(type.mPosition, "type '" + type +
@@ -1227,9 +1284,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         Layout layout = modifiers.layout();
         boolean hasLocation = false;
         boolean hasBinding = false;
+        boolean isPushConstant = false;
         int descriptorSet = -1;
         if (layout != null) {
-            boolean isPushConstant = (layout.layoutFlags() & Layout.kPushConstant_LayoutFlag) != 0;
+            isPushConstant = (layout.layoutFlags() & Layout.kPushConstant_LayoutFlag) != 0;
             if (layout.mLocation >= 0) {
                 writeInstruction(SpvOpDecorate, targetId, SpvDecorationLocation,
                         layout.mLocation, mDecorationBuffer);
@@ -1280,11 +1338,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 getContext().warning(modifiers.mPosition, "'binding' is missing");
             }
             if (descriptorSet < 0) {
-                if (!mOutputTarget.isOpenGL()) {
-                    getContext().warning(modifiers.mPosition, "'set' is missing");
+                if (mOutputTarget.isVulkan() && !isPushConstant) {
+                    // add a default descriptor set
+                    writeInstruction(SpvOpDecorate, targetId, SpvDecorationDescriptorSet,
+                            0, mDecorationBuffer);
                 }
-            } else if (mOutputTarget.isOpenGL() && descriptorSet != 0) {
-                getContext().error(modifiers.mPosition, "'set' must be 0");
+            } else if (mOutputTarget.isOpenGL()) {
+                getContext().error(modifiers.mPosition, "'set' is not allowed");
             }
         }
 
@@ -2778,6 +2838,46 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         GLSLstd450SmoothStep, GLSLstd450Bad, GLSLstd450Bad,
                         argumentIds, writer);
             }
+            case kTexture_SpecialIntrinsic -> {
+                for (var arg : arguments) {
+                    argumentIds.add(writeExpression(arg, writer));
+                }
+                int typeId = writeType(callType);
+                if (argumentIds.size() == 3) {
+                    writeInstruction(SpvOpImageSampleImplicitLod,
+                            typeId, resultId,
+                            argumentIds.getInt(0),
+                            argumentIds.getInt(1),
+                            SpvImageOperandsBiasMask,
+                            argumentIds.getInt(2),
+                            writer);
+                } else {
+                    assert argumentIds.size() == 2;
+                    writeInstruction(SpvOpImageSampleImplicitLod,
+                            typeId, resultId,
+                            argumentIds.getInt(0),
+                            argumentIds.getInt(1),
+                            writer);
+                }
+            }
+            case kTextureFetch_SpecialIntrinsic -> {
+                for (var arg : arguments) {
+                    argumentIds.add(writeExpression(arg, writer));
+                }
+                int typeId = writeType(callType);
+                //TODO for 1D, 2D (non-MS), 3D, there are three args, not for others
+                assert argumentIds.size() == 3;
+                writeInstruction(SpvOpImageFetch,
+                        typeId, resultId,
+                        argumentIds.getInt(0),
+                        argumentIds.getInt(1),
+                        SpvImageOperandsLodMask,
+                        argumentIds.getInt(2),
+                        writer);
+            }
+            default -> {
+                assert false;
+            }
         }
         releaseIdList(argumentIds);
         return resultId;
@@ -3271,13 +3371,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         // Add global variables to the list of interface variables.
-        for (var e : mVariableTable.reference2IntEntrySet()) {
+        for (var it = mVariableTable.reference2IntEntrySet().fastIterator(); it.hasNext(); ) {
+            var e = it.next();
             Variable variable = e.getKey();
-            if (variable.getStorage() == Variable.kGlobal_Storage &&
-                    variable.getModifiers().layoutBuiltin() == -1) {
-                // Before version 1.4, the interface’s storage classes are
+            if (variable.getStorage() == Variable.kGlobal_Storage) {
+                // Before version 1.4, the interface's storage classes are
                 // limited to the Input and Output storage classes. Starting with
-                // version 1.4, the interface’s storage classes are all storage classes
+                // version 1.4, the interface's storage classes are all storage classes
                 // used in declaring all global variables referenced by the entry point's
                 // call tree.
                 if (mOutputVersion.isAtLeast(SPIRVVersion.SPIRV_1_4) ||
@@ -3293,6 +3393,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     int pointer,
                     Writer writer) {
         // Look for this pointer in our load-cache.
+        //TODO find a way to eliminate store ops if we are using store cache
         /*int cachedOp = mStoreCache.get(pointer);
         if (cachedOp != 0) {
             return cachedOp;
