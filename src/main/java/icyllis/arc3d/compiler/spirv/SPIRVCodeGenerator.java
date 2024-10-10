@@ -1575,6 +1575,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return switch (expr.getKind()) {
             case LITERAL -> writeLiteral((Literal) expr);
             case PREFIX -> writePrefixExpression((PrefixExpression) expr, writer);
+            case POSTFIX -> writePostfixExpression((PrefixExpression) expr, writer);
             case BINARY -> writeBinaryExpression((BinaryExpression) expr, writer);
             case CONDITIONAL -> writeConditionalExpression((ConditionalExpression) expr, writer);
             case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr, writer);
@@ -1684,9 +1685,84 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 writeInstruction(negateOp, typeId, resultId, id, writer);
                 yield resultId;
             }
+            case INC -> {
+                LValue lv = writeLValue(expr.getOperand(), writer);
+                int oneId = vectorize(1, type.getComponentType(), type.getRows(), writer);
+                int resultId = writeBinaryOperation(expr.mPosition,
+                        type, type,
+                        lv.load(this, writer), oneId,
+                        /*matrixOpIsComponentWise*/true,
+                        SpvOpFAdd, SpvOpIAdd,
+                        SpvOpIAdd, SpvOpUndef,
+                        writer);
+                lv.store(this, resultId, writer);
+                yield resultId;
+            }
+            case DEC -> {
+                LValue lv = writeLValue(expr.getOperand(), writer);
+                int oneId = vectorize(1, type.getComponentType(), type.getRows(), writer);
+                int resultId = writeBinaryOperation(expr.mPosition,
+                        type, type,
+                        lv.load(this, writer), oneId,
+                        /*matrixOpIsComponentWise*/true,
+                        SpvOpFSub, SpvOpISub,
+                        SpvOpISub, SpvOpUndef,
+                        writer);
+                lv.store(this, resultId, writer);
+                yield resultId;
+            }
+            case LOGICAL_NOT -> {
+                assert expr.getOperand().getType().isBoolean();
+                int id = writeExpression(expr.getOperand(), writer);
+                int resultId = getUniqueId();
+                int typeId = writeType(type);
+                writeInstruction(SpvOpLogicalNot, typeId, resultId, id, writer);
+                yield resultId;
+            }
+            case BITWISE_NOT -> {
+                int id = writeExpression(expr.getOperand(), writer);
+                int resultId = getUniqueId();
+                int typeId = writeType(type);
+                writeInstruction(SpvOpNot, typeId, resultId, id, writer);
+                yield resultId;
+            }
             default -> {
                 getContext().error(expr.mPosition,
                         "unsupported prefix expression");
+                yield NONE_ID;
+            }
+        };
+    }
+
+    private int writePostfixExpression(@Nonnull PrefixExpression expr, Writer writer) {
+        Type type = expr.getType();
+        LValue lv = writeLValue(expr.getOperand(), writer);
+        int oneId = vectorize(1, type.getComponentType(), type.getRows(), writer);
+        int resultId = lv.load(this, writer);
+        return switch (expr.getOperator()) {
+            case INC -> {
+                int tmp = writeBinaryOperation(expr.mPosition,
+                        type, type, resultId, oneId,
+                        /*matrixOpIsComponentWise*/true,
+                        SpvOpFAdd, SpvOpIAdd,
+                        SpvOpIAdd, SpvOpUndef,
+                        writer);
+                lv.store(this, tmp, writer);
+                yield resultId;
+            }
+            case DEC -> {
+                int tmp = writeBinaryOperation(expr.mPosition,
+                        type, type, resultId, oneId,
+                        /*matrixOpIsComponentWise*/true,
+                        SpvOpFSub, SpvOpISub,
+                        SpvOpISub, SpvOpUndef,
+                        writer);
+                lv.store(this, tmp, writer);
+                yield resultId;
+            }
+            default -> {
+                getContext().error(expr.mPosition,
+                        "unsupported postfix expression");
                 yield NONE_ID;
             }
         };
@@ -2392,6 +2468,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case BLOCK -> writeBlockStatement((BlockStatement) stmt, writer);
             case RETURN -> writeReturnStatement((ReturnStatement) stmt, writer);
             case IF -> writeIfStatement((IfStatement) stmt, writer);
+            case FOR_LOOP -> writeForLoop((ForLoop) stmt, writer);
             case SWITCH -> writeSwitchStatement((SwitchStatement) stmt, writer);
             case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt, writer);
             case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), writer);
@@ -2476,6 +2553,51 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             writeLabel(falseId, kBranchIsAbove, numReachableOps, numStoreOps, writer);
         }
+    }
+
+    private void writeForLoop(ForLoop f, Writer writer) {
+        if (f.getInit() != null) {
+            writeStatement(f.getInit(), writer);
+        }
+
+        int numReachableOps = mReachableOps.size();
+        int numStoreOps = mStoreOps.size();
+
+        // The store cache isn't trustworthy in the presence of branches; store caching only makes sense
+        // in the context of linear straight-line execution. If we wanted to be more clever, we could
+        // only invalidate store cache entries for variables affected by the loop body, but for now we
+        // simply clear the entire cache whenever branching occurs.
+        int header = getUniqueId();
+        int start = getUniqueId();
+        int body = getUniqueId();
+        int next = getUniqueId();
+        mContinueTarget.push(next);
+        int end = getUniqueId();
+        mBreakTarget.push(end);
+        writeInstruction(SpvOpBranch, header, writer);
+        writeLabel(header, kBranchIsBelow, numReachableOps, numStoreOps, writer);
+        writeInstruction(SpvOpLoopMerge, end, next, SpvLoopControlMaskNone, writer);
+        writeInstruction(SpvOpBranch, start, writer);
+        writeLabel(start, writer);
+        if (f.getCondition() != null) {
+            int cond = writeExpression(f.getCondition(), writer);
+           writeInstruction(SpvOpBranchConditional, cond, body, end, writer);
+        } else {
+            writeInstruction(SpvOpBranch, body, writer);
+        }
+        writeLabel(body, writer);
+        writeStatement(f.getStatement(), writer);
+        if (mCurrentBlock != 0) {
+            writeInstruction(SpvOpBranch, next, writer);
+        }
+        writeLabel(next, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        if (f.getStep() != null) {
+            writeExpression(f.getStep(), writer);
+        }
+        writeInstruction(SpvOpBranch, header, writer);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        mBreakTarget.popInt();
+        mContinueTarget.popInt();
     }
 
     private void writeSwitchStatement(SwitchStatement s, Writer writer) {
@@ -2864,9 +2986,21 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 for (var arg : arguments) {
                     argumentIds.add(writeExpression(arg, writer));
                 }
-                int typeId = writeType(callType);
-                //TODO for 1D, 2D (non-MS), 3D, there are three args, not for others
+                //TODO for 1D, 2D (non-MS), 3D, there are three args; but not for others
                 assert argumentIds.size() == 3;
+                if (arguments[0].getType().isCombinedSampler()) {
+                    // extract the image type
+                    int samplerId = argumentIds.getInt(0);
+                    int imageId = getUniqueId();
+                    int samplerTypeId = writeType(arguments[0].getType());
+                    // OpTypeSampledImage ResultID ImageType
+                    int imageTypeId = mSpvIdCache.get(samplerTypeId)
+                            .mWords[1];
+                    writeInstruction(SpvOpImage, imageTypeId, imageId,
+                            samplerId, writer);
+                    argumentIds.set(0, imageId);
+                }
+                int typeId = writeType(callType);
                 writeInstruction(SpvOpImageFetch,
                         typeId, resultId,
                         argumentIds.getInt(0),
