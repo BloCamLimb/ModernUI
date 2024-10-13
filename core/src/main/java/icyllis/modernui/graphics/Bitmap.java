@@ -30,8 +30,7 @@ import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.*;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.*;
@@ -89,27 +88,35 @@ public final class Bitmap implements AutoCloseable {
 
     /**
      * Creates a mutable bitmap and its allocation, the content are initialized to zeros.
+     * <p>
+     * The newly created bitmap will have non-premultiplied alpha if the format has an alpha channel.
+     * The newly created bitmap is in the {@link ColorSpace.Named#SRGB sRGB} color space,
+     * unless the format is alpha only, in which case the color space is null.
+     * You may change the format, alpha type, and color space after creating the bitmap.
      *
-     * @param width  width in pixels, ranged from 1 to 32768
-     * @param height height in pixels, ranged from 1 to 32768
+     * @param width  width in pixels, must be > 0
+     * @param height height in pixels, must be > 0
      * @param format the number of channels and the bit depth
      * @throws IllegalArgumentException width or height out of range
      * @throws OutOfMemoryError         out of native memory
      */
     @NonNull
-    public static Bitmap createBitmap(@Size(min = 1, max = 32768) int width,
-                                      @Size(min = 1, max = 32768) int height,
+    public static Bitmap createBitmap(@Size(min = 1) int width,
+                                      @Size(min = 1) int height,
                                       @NonNull Format format) {
-        if (width < 1 || height < 1) {
+        if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
                     + " must be positive");
         }
-        if (width > 32768 || height > 32768) {
-            throw new IllegalArgumentException("Image dimensions " + width + "x" + height
-                    + " must be less than or equal to 32768");
+        int bpp = format.getBytesPerPixel();
+        if (bpp == 0) {
+            throw new IllegalArgumentException("Cannot create bitmap with format " + format);
         }
-        int rowStride = width * format.getBytesPerPixel(); // no overflow
-        long size = (long) rowStride * height; // <= 16GB
+        if (width > Integer.MAX_VALUE / bpp) {
+            throw new IllegalArgumentException("Image width " + width + " is too large");
+        }
+        int rowBytes = width * bpp; // no overflow
+        long size = (long) rowBytes * height; // no overflow
         long address = nmemCalloc(size, 1);
         if (address == NULL) {
             // execute ref.Cleaner
@@ -132,7 +139,38 @@ public final class Bitmap implements AutoCloseable {
                 : ColorInfo.AT_OPAQUE;
         return new Bitmap(format,
                 ImageInfo.make(width, height, format.getColorType(), at, cs),
-                address, rowStride, MemoryUtil::nmemFree);
+                address, rowBytes, MemoryUtil::nmemFree);
+    }
+
+    /**
+     * Create a mutable bitmap by wrapping an existing address in an unsafe manner.
+     *
+     * @param address         base address
+     * @param rowBytes        size of one row of buffer; width times bpp, or larger
+     * @param freeFn          free function for address
+     * @param width           width of pixels
+     * @param height          height of pixels
+     * @param format          a color interpretation
+     * @param isPremultiplied an alpha interpretation
+     * @param colorSpace      a color space describing the pixels
+     * @return a bitmap
+     */
+    @ApiStatus.Experimental
+    @NonNull
+    public static Bitmap wrap(@NativeType("const void *") long address, int rowBytes,
+                              @Nullable LongConsumer freeFn,
+                              @Size(min = 1) int width, @Size(min = 1) int height,
+                              @NonNull Format format, boolean isPremultiplied,
+                              @Nullable ColorSpace colorSpace) {
+        int alphaType = format.hasAlpha()
+                ? isPremultiplied
+                ? ColorInfo.AT_PREMUL
+                : ColorInfo.AT_UNPREMUL
+                : ColorInfo.AT_OPAQUE;
+        alphaType = ColorInfo.validateAlphaType(format.getColorType(), alphaType);
+        ImageInfo info = ImageInfo.make(width, height,
+                format.getColorType(), alphaType, colorSpace);
+        return new Bitmap(format, info, address, rowBytes, freeFn);
     }
 
     /**
