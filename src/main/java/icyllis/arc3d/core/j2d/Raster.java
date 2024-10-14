@@ -88,10 +88,10 @@ public class Raster implements AutoCloseable {
     protected Pixels mPixels;
 
     public Raster(@Nullable BufferedImage bufImg, @Nonnull ImageInfo info,
-                  @Nullable Object data, int baseOffset, int rowStride) {
+                  @Nullable Object data, int baseOffset, int rowBytes) {
         mBufImg = bufImg;
-        mPixmap = new Pixmap(info, data, baseOffset, rowStride);
-        mPixels = new Pixels(info.width(), info.height(), data, baseOffset, rowStride, /*freeFn*/ null);
+        mPixmap = new Pixmap(info, data, baseOffset, rowBytes);
+        mPixels = new Pixels(info.width(), info.height(), data, baseOffset, rowBytes, /*freeFn*/ null);
     }
 
     @Nonnull
@@ -106,33 +106,33 @@ public class Raster implements AutoCloseable {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
                     + " must be less than or equal to 32768");
         }
-        final int ct, at, rowStride;
+        final int ct, at, rowBytes;
         final int imageType = switch (format) {
             case FORMAT_GRAY_8 -> {
                 ct = ColorInfo.CT_GRAY_8;
                 at = ColorInfo.AT_OPAQUE;
-                rowStride = width;
+                rowBytes = width;
                 yield BufferedImage.TYPE_BYTE_GRAY;
             }
             case FORMAT_GRAY_16 -> {
                 //TODO add GRAY_16 color type
                 ct = ColorInfo.CT_UNKNOWN;
                 at = ColorInfo.AT_OPAQUE;
-                rowStride = width << 1;
+                rowBytes = width << 1;
                 yield BufferedImage.TYPE_USHORT_GRAY;
             }
             case FORMAT_RGB_565 -> {
                 ct = ColorInfo.CT_RGB_565;
                 at = ColorInfo.AT_OPAQUE;
-                rowStride = width << 1;
+                rowBytes = width << 1;
                 yield BufferedImage.TYPE_USHORT_565_RGB;
             }
             case FORMAT_RGB_888 -> {
                 //TODO add BGR_888 color type
                 ct = ColorInfo.CT_UNKNOWN;
                 at = ColorInfo.AT_OPAQUE;
-                rowStride = width * 3;
-                if (rowStride * height < 0) {
+                rowBytes = width * 3;
+                if (rowBytes * height < 0) {
                     throw new IllegalArgumentException("Image is too large");
                 }
                 yield BufferedImage.TYPE_3BYTE_BGR;
@@ -140,7 +140,7 @@ public class Raster implements AutoCloseable {
             case FORMAT_UNKNOWN -> {
                 ct = ColorInfo.CT_UNKNOWN;
                 at = ColorInfo.AT_UNKNOWN;
-                rowStride = 0;
+                rowBytes = 0;
                 yield BufferedImage.TYPE_CUSTOM;
             }
             default -> throw new IllegalArgumentException("Unrecognized format " + format);
@@ -178,9 +178,10 @@ public class Raster implements AutoCloseable {
             data = null;
             baseOffset = 0;
         }
-        return new Raster(bufImg, info, data, baseOffset, rowStride);
+        return new Raster(bufImg, info, data, baseOffset, rowBytes);
     }
 
+    @Format
     public int getFormat() {
         if (mBufImg == null) {
             return FORMAT_UNKNOWN;

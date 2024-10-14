@@ -220,9 +220,9 @@ public class TestGraniteRenderer {
             e.printStackTrace();
         }
         {
-            long rowStride = (long) CANVAS_WIDTH * 4;
-            long srcPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
-            long dstPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
+            long rowBytes = (long) CANVAS_WIDTH * 4;
+            long srcPixels = MemoryUtil.nmemAlloc(rowBytes * CANVAS_HEIGHT);
+            long dstPixels = MemoryUtil.nmemAlloc(rowBytes * CANVAS_HEIGHT);
             if (TEST_OPENGL_ES) {
                 GLES20.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
                         GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, srcPixels);
@@ -235,15 +235,15 @@ public class TestGraniteRenderer {
                     ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL, null);
             ImageInfo dstInfo = srcInfo.makeAlphaType(ColorInfo.AT_UNPREMUL);
             boolean res = PixelUtils.convertPixels(
-                    srcInfo, null, srcPixels, rowStride,
-                    dstInfo, null, dstPixels, rowStride,
+                    srcInfo, null, srcPixels, rowBytes,
+                    dstInfo, null, dstPixels, rowBytes,
                     true
             );
             assert res;
             MemoryUtil.nmemFree(srcPixels);
             STBImageWrite.stbi_write_png_compression_level.put(0, 15);
             STBImageWrite.stbi_write_png("test_granite.png", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
-                    MemoryUtil.memByteBuffer(dstPixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), (int) rowStride);
+                    MemoryUtil.memByteBuffer(dstPixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), (int) rowBytes);
             MemoryUtil.nmemFree(dstPixels);
         }
         immediateContext.unref();
