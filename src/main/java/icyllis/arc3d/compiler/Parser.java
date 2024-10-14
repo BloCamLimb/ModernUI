@@ -1720,6 +1720,8 @@ public class Parser {
     private static int findBuiltinValue(@Nonnull String text) {
         return switch (text) {
             case "position" -> Spv.SpvBuiltInPosition;
+            case "vertex_id" -> Spv.SpvBuiltInVertexId;
+            case "instance_id" -> Spv.SpvBuiltInInstanceId;
             case "vertex_index" -> Spv.SpvBuiltInVertexIndex;
             case "instance_index" -> Spv.SpvBuiltInInstanceIndex;
             case "frag_coord" -> Spv.SpvBuiltInFragCoord;

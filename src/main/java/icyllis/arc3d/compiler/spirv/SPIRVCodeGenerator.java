@@ -2581,7 +2581,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         writeLabel(start, writer);
         if (f.getCondition() != null) {
             int cond = writeExpression(f.getCondition(), writer);
-           writeInstruction(SpvOpBranchConditional, cond, body, end, writer);
+            writeInstruction(SpvOpBranchConditional, cond, body, end, writer);
         } else {
             writeInstruction(SpvOpBranch, body, writer);
         }
