@@ -34,32 +34,32 @@ public class Pixels extends RefCnt {
     protected final int mHeight;
     protected final Object mBase;
     protected final long mAddress;
-    protected final int mRowStride;
+    protected final int mRowBytes;
     protected final LongConsumer mFreeFn;
 
     protected boolean mImmutable;
 
     /**
      * Creates {@link Pixels} from width, height.
-     * <var>rowStride</var> should be width times bpp, or larger.
+     * <var>rowBytes</var> should be width times bpp, or larger.
      * <var>freeFn</var> is used to free the <var>address</var>.
      *
-     * @param base      array if heap buffer; may be null
-     * @param address   address if native buffer, or array base offset; may be NULL
-     * @param rowStride size of one row of buffer; width times bpp, or larger
-     * @param freeFn    free function for native buffer; may be null
+     * @param base     array if heap buffer; may be null
+     * @param address  address if native buffer, or array base offset; may be NULL
+     * @param rowBytes size of one row of buffer; width times bpp, or larger
+     * @param freeFn   free function for native buffer; may be null
      */
     public Pixels(int width,
                   int height,
                   @Nullable Object base,
                   @NativeType("void *") long address,
-                  int rowStride,
+                  int rowBytes,
                   @Nullable LongConsumer freeFn) {
         mWidth = width;
         mHeight = height;
         mBase = base;
         mAddress = address;
-        mRowStride = rowStride;
+        mRowBytes = rowBytes;
         mFreeFn = freeFn;
     }
 
@@ -98,8 +98,8 @@ public class Pixels extends RefCnt {
      * including any unused padding between them. This value must be at least the width multiplied
      * by the bytes-per-pixel, where the bytes-per-pixel depends on the color type.
      */
-    public int getRowStride() {
-        return mRowStride;
+    public int getRowBytes() {
+        return mRowBytes;
     }
 
     /**
@@ -126,7 +126,7 @@ public class Pixels extends RefCnt {
                 ", mHeight=" + mHeight +
                 ", mBase=" + mBase +
                 ", mAddress=0x" + Long.toHexString(mAddress) +
-                ", mRowStride=" + mRowStride +
+                ", mRowBytes=" + mRowBytes +
                 ", mImmutable=" + mImmutable +
                 '}';
     }
