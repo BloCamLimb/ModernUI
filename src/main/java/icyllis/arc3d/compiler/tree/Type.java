@@ -20,6 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
+import org.jetbrains.annotations.Unmodifiable;
 import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
@@ -287,6 +288,9 @@ public class Type extends Symbol {
         return SymbolKind.TYPE;
     }
 
+    /**
+     * Returns this.
+     */
     @Nonnull
     @Override
     public final Type getType() {
@@ -313,7 +317,7 @@ public class Type extends Symbol {
     /**
      * For matrices and vectors, returns the scalar type of individual cells (e.g. mat2 has a component
      * type of Float). For textures, returns the sampled type (e.g. texture2D has a component type
-     * of Half). For arrays, returns the component type of their base type. For all other types,
+     * of Float). For arrays, returns the component type of their base type. For all other types,
      * returns the type itself.
      */
     @Nonnull
@@ -632,6 +636,7 @@ public class Type extends Symbol {
         throw new AssertionError();
     }
 
+    @Unmodifiable
     @Nonnull
     public Field[] getFields() {
         throw new AssertionError();

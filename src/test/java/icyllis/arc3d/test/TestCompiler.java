@@ -48,7 +48,7 @@ public class TestCompiler {
                       using M4          \s
                       = mat4;
             const int blockSize = -4 + 6;
-            layout(std140, binding = 0, set = 0) uniform UniformBlock {
+            layout(std140, binding = 0) uniform UniformBlock {
                 M4 u_Projection;
                 M4 u_ModelView;
                 vec4 u_Color;
@@ -86,6 +86,8 @@ public class TestCompiler {
             layout(location = 0, index = 1) out vec4 FragColor1;
             void main(void) {
                 // M4 m = "what?";
+                float[] arr = {1,2,3,4};
+                M4 v = {{2,2,3,1},vec4(1),vec4(2),vec4(3),};
                 FragColor0 = u_Buffer0.u_Color;
             }
             """;
@@ -113,7 +115,7 @@ public class TestCompiler {
 
         var options = new CompileOptions();
 
-        String file = TinyFileDialogs.tinyfd_openFileDialog("Open shader source",
+        /*String file = TinyFileDialogs.tinyfd_openFileDialog("Open shader source",
                 null, null, null, false);
         if (file == null) {
             return;
@@ -125,10 +127,10 @@ public class TestCompiler {
         } catch (IOException e) {
             e.printStackTrace();
             return;
-        }
+        }*/
 
         TranslationUnit translationUnit = compiler.parse(
-                source,
+                SOURCE,
                 ShaderKind.FRAGMENT,
                 options,
                 ModuleLoader.getInstance().loadCommonModule(compiler)
@@ -144,7 +146,7 @@ public class TestCompiler {
         System.out.println(translationUnit.getExtensions());*/
 
         ShaderCaps shaderCaps = new ShaderCaps();
-        shaderCaps.mTargetApi = TargetApi.VULKAN_1_0;
+        shaderCaps.mTargetApi = TargetApi.OPENGL_4_5;
         shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
 
         ByteBuffer spirv = compiler.generateSPIRV(translationUnit, shaderCaps);

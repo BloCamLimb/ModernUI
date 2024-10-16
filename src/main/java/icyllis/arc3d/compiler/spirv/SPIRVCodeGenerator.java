@@ -153,6 +153,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         setIntrinsic(IntrinsicList.kAcos,
                 kGLSLstd450_IntrinsicOpcodeKind,
                 GLSLstd450Acos, GLSLstd450Acos, GLSLstd450Acos, GLSLstd450Acos);
+        setIntrinsic(IntrinsicList.kAtan,
+                kSpecial_IntrinsicOpcodeKind,
+                kAtan_SpecialIntrinsic, kAtan_SpecialIntrinsic,
+                kAtan_SpecialIntrinsic, kAtan_SpecialIntrinsic);
 
         setIntrinsic(IntrinsicList.kPow,
                 kGLSLstd450_IntrinsicOpcodeKind,
@@ -1575,7 +1579,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return switch (expr.getKind()) {
             case LITERAL -> writeLiteral((Literal) expr);
             case PREFIX -> writePrefixExpression((PrefixExpression) expr, writer);
-            case POSTFIX -> writePostfixExpression((PrefixExpression) expr, writer);
+            case POSTFIX -> writePostfixExpression((PostfixExpression) expr, writer);
             case BINARY -> writeBinaryExpression((BinaryExpression) expr, writer);
             case CONDITIONAL -> writeConditionalExpression((ConditionalExpression) expr, writer);
             case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr, writer);
@@ -1734,7 +1738,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         };
     }
 
-    private int writePostfixExpression(@Nonnull PrefixExpression expr, Writer writer) {
+    private int writePostfixExpression(@Nonnull PostfixExpression expr, Writer writer) {
         Type type = expr.getType();
         LValue lv = writeLValue(expr.getOperand(), writer);
         int oneId = vectorize(1, type.getComponentType(), type.getRows(), writer);
@@ -2885,6 +2889,21 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int resultId = getUniqueId();
         Type callType = call.getType();
         switch (kind) {
+            case kAtan_SpecialIntrinsic -> {
+                for (var arg : arguments) {
+                    argumentIds.add(writeExpression(arg, writer));
+                }
+                if (argumentIds.size() == 2) {
+                    writeGLSLExtendedInstruction(callType, resultId,
+                            GLSLstd450Atan2, GLSLstd450Bad, GLSLstd450Bad,
+                            argumentIds, writer);
+                } else {
+                    assert argumentIds.size() == 1;
+                    writeGLSLExtendedInstruction(callType, resultId,
+                            GLSLstd450Atan, GLSLstd450Bad, GLSLstd450Bad,
+                            argumentIds, writer);
+                }
+            }
             case kMod_SpecialIntrinsic -> {
                 vectorize(arguments, argumentIds, writer);
                 assert argumentIds.size() == 2;

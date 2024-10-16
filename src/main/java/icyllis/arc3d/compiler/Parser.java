@@ -654,6 +654,93 @@ public class Parser {
         }
     }
 
+    @Nullable
+    private Expression Initializer(Type type) {
+        if (peek(Token.TK_LBRACE)) {
+            long start = nextToken();
+            if (type.isStruct()) {
+                Type.Field[] fields = type.getFields();
+                ArrayList<Expression> args = new ArrayList<>(fields.length);
+                for (Type.Field field : fields) {
+                    Expression expr = Initializer(field.type());
+                    if (expr == null) {
+                        return null;
+                    }
+                    args.add(expr);
+                    if (!checkNext(Token.TK_COMMA)) {
+                        break;
+                    }
+                }
+                expect(Token.TK_RBRACE, "'}' to complete initializer list");
+                int pos = rangeFrom(start);
+                if (fields.length != args.size() || args.isEmpty()) {
+                    mCompiler.getContext().error(pos,
+                            String.format("invalid arguments to '%s' constructor " +
+                                    "(expected %d elements, but found %d)", type, fields.length,
+                            args.size()));
+                }
+                return ConstructorStruct.convert(mCompiler.getContext(),
+                        pos, type, args);
+            } else if (type.isVector() || type.isMatrix() || type.isArray()) {
+                if (type.isUnsizedArray()) {
+                    ArrayList<Expression> args = new ArrayList<>();
+                    for (;;) {
+                        Expression expr = Initializer(type.getElementType());
+                        if (expr == null) {
+                            return null;
+                        }
+                        args.add(expr);
+                        if (!checkNext(Token.TK_COMMA)) {
+                            break;
+                        }
+                        if (peek(Token.TK_RBRACE)) {
+                            break;
+                        }
+                    }
+                    expect(Token.TK_RBRACE, "'}' to complete initializer list");
+                    int pos = rangeFrom(start);
+                    return ConstructorArray.convert(mCompiler.getContext(),
+                            pos, type, args);
+                } else {
+                    int elements;
+                    if (type.isVector()) {
+                        elements = type.getRows();
+                    } else if (type.isMatrix()) {
+                        elements = type.getCols();
+                    } else {
+                        elements = type.getArraySize();
+                    }
+                    ArrayList<Expression> args = new ArrayList<>(elements);
+                    for (int i = 0; i < elements; i++) {
+                        Expression expr = Initializer(type.getElementType());
+                        if (expr == null) {
+                            return null;
+                        }
+                        args.add(expr);
+                        if (!checkNext(Token.TK_COMMA)) {
+                            break;
+                        }
+                    }
+                    expect(Token.TK_RBRACE, "'}' to complete initializer list");
+                    int pos = rangeFrom(start);
+                    if (elements != args.size() || args.isEmpty()) {
+                        mCompiler.getContext().error(pos,
+                                String.format("invalid arguments to '%s' constructor " +
+                                        "(expected %d elements, but found %d)", type, elements,
+                                args.size()));
+                    }
+                    return ConstructorCall.convert(mCompiler.getContext(),
+                            pos, type, args);
+                }
+            } else {
+                error(start, "cannot construct non-composite type '" + type + "'");
+                return null;
+            }
+        } else {
+            return AssignmentExpression();
+        }
+    }
+
     private boolean InterfaceBlock(@Nonnull Modifiers modifiers) {
         long name = expectIdentifier();
         String blockName = text(name);
@@ -664,7 +751,7 @@ public class Parser {
         }
         nextToken();
         Context context = mCompiler.getContext();
-        List<Type.Field> fields = new ArrayList<>();
+        ArrayList<Type.Field> fields = new ArrayList<>();
         do {
             int startPos = position(peek());
             Modifiers fieldModifiers = Modifiers();
@@ -679,7 +766,7 @@ public class Parser {
                     return false;
                 }
                 if (checkNext(Token.TK_EQ)) {
-                    Expression init = AssignmentExpression();
+                    Expression init = Initializer(fieldType);
                     if (init == null) {
                         return false;
                     }
@@ -727,7 +814,7 @@ public class Parser {
                                             Modifiers modifiers,
                                             Type returnType,
                                             long name) {
-        List<Variable> parameters = new ArrayList<>();
+        ArrayList<Variable> parameters = new ArrayList<>();
         if (!peek(Token.TK_RPAREN)) {
             if (peek(Token.TK_IDENTIFIER) && "void".equals(text(peek()))) {
                 // '(void)' means no parameters.
@@ -834,7 +921,7 @@ public class Parser {
 
     private BlockStatement ScopedBlock() {
         long start = expect(Token.TK_LBRACE, "'{'");
-        List<Statement> statements = new ArrayList<>();
+        ArrayList<Statement> statements = new ArrayList<>();
         for (;;) {
             if (checkNext(Token.TK_RBRACE)) {
                 int pos = rangeFrom(start);
@@ -868,7 +955,7 @@ public class Parser {
             }
             Expression init = null;
             if (checkNext(Token.TK_EQ)) {
-                init = AssignmentExpression();
+                init = Initializer(type);
                 if (init == null) {
                     return;
                 }
@@ -1415,7 +1502,7 @@ public class Parser {
                 case Token.TK_LPAREN -> {
                     nextToken();
                     // constructor call, function call, method call
-                    List<Expression> args = new ArrayList<>();
+                    ArrayList<Expression> args = new ArrayList<>();
                     if (!peek(Token.TK_RPAREN)) {
                         if (peek(Token.TK_IDENTIFIER) && "void".equals(text(peek()))) {
                             // '(void)' means no arguments.
@@ -1813,7 +1900,7 @@ public class Parser {
         }
         Expression init = null;
         if (checkNext(Token.TK_EQ)) {
-            init = AssignmentExpression();
+            init = Initializer(type);
             if (init == null) {
                 return null;
             }
@@ -1836,7 +1923,7 @@ public class Parser {
             }
             init = null;
             if (checkNext(Token.TK_EQ)) {
-                init = AssignmentExpression();
+                init = Initializer(type);
                 if (init == null) {
                     break;
                 }
@@ -1917,7 +2004,7 @@ public class Parser {
         long typeName = expectIdentifier();
         expect(Token.TK_LBRACE, "'{'");
         Context context = mCompiler.getContext();
-        List<Type.Field> fields = new ArrayList<>();
+        ArrayList<Type.Field> fields = new ArrayList<>();
         do {
             int startPos = position(peek());
             Modifiers fieldModifiers = Modifiers();
@@ -1932,7 +2019,7 @@ public class Parser {
                     return null;
                 }
                 if (checkNext(Token.TK_EQ)) {
-                    Expression init = AssignmentExpression();
+                    Expression init = Initializer(fieldType);
                     if (init == null) {
                         return null;
                     }
