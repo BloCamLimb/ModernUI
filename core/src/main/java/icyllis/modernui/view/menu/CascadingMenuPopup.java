@@ -239,6 +239,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
                 return true;
             }
         });
+        //TODO configurable
         popupWindow.setEnterTransition(new AutoTransition());
         popupWindow.setExitTransition(new AutoTransition());
         // always overlap

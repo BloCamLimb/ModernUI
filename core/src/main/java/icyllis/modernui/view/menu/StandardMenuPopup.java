@@ -140,6 +140,7 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
                 return true;
             }
         });
+        //TODO configurable
         mPopup.setEnterTransition(new AutoTransition());
         mPopup.setExitTransition(new AutoTransition());
         // always overlap

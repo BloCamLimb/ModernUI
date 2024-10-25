@@ -118,6 +118,11 @@ public final class WindowGroup extends ViewGroup implements WindowManager {
     }
 
     @Override
+    protected boolean onRequestFocusInDescendants(int direction, Rect previouslyFocusedRect) {
+        return super.onRequestFocusInDescendants(View.FOCUS_BACKWARD, previouslyFocusedRect);
+    }
+
+    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         final int count = getChildCount();
         for (int i = 0; i < count; i++) {
