@@ -35,11 +35,11 @@ public abstract class VulkanDevice extends Device {
         super(Engine.BackendApi.kVulkan, options, caps);
     }
 
-    public VkDevice device() {
+    public VkDevice vkDevice() {
         return mDevice;
     }
 
-    public VkPhysicalDevice physicalDevice() {
+    public VkPhysicalDevice vkPhysicalDevice() {
         return null;
     }
 
@@ -53,7 +53,8 @@ public abstract class VulkanDevice extends Device {
         }
         switch (result) {
             case VK_ERROR_DEVICE_LOST -> mDeviceIsLost = true;
-            case VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_OUT_OF_HOST_MEMORY -> mOutOfMemoryEncountered = true;
+            case VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                 VK_ERROR_OUT_OF_HOST_MEMORY -> mOutOfMemoryEncountered = true;
         }
         return false;
     }
