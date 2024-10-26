@@ -37,16 +37,19 @@ public final class VulkanImageView extends ManagedResource {
 
     private final long mImageView;
     private final int mBaseMipLevel;
-    private final int mMipLevelCount;
-    private final int mArraySlice;
+    private final int mLevelCount;
+    private final int mBaseArrayLayer;
+    private final int mLayerCount;
 
     VulkanImageView(VulkanDevice device, long imageView,
-                    int baseMipLevel, int mipLevelCount, int arraySlice) {
+                    int baseMipLevel, int levelCount,
+                    int baseArrayLayer, int layerCount) {
         super(device);
         mImageView = imageView;
         mBaseMipLevel = baseMipLevel;
-        mMipLevelCount = mipLevelCount;
-        mArraySlice = arraySlice;
+        mLevelCount = levelCount;
+        mBaseArrayLayer = baseArrayLayer;
+        mLayerCount = layerCount;
     }
 
     private static int get_aspect_mask(int format) {
@@ -76,17 +79,14 @@ public final class VulkanImageView extends ManagedResource {
         };
     }
 
-    /**
-     * @see icyllis.arc3d.engine.Swizzle#indexToChar(int)
-     */
     private static int get_swizzle(int index) {
         return switch (index) {
-            case 0 -> VK_COMPONENT_SWIZZLE_R;
-            case 1 -> VK_COMPONENT_SWIZZLE_G;
-            case 2 -> VK_COMPONENT_SWIZZLE_B;
-            case 3 -> VK_COMPONENT_SWIZZLE_A;
-            case 4 -> VK_COMPONENT_SWIZZLE_ZERO;
-            case 5 -> VK_COMPONENT_SWIZZLE_ONE;
+            case Swizzle.COMPONENT_R    -> VK_COMPONENT_SWIZZLE_R;
+            case Swizzle.COMPONENT_G    -> VK_COMPONENT_SWIZZLE_G;
+            case Swizzle.COMPONENT_B    -> VK_COMPONENT_SWIZZLE_B;
+            case Swizzle.COMPONENT_A    -> VK_COMPONENT_SWIZZLE_A;
+            case Swizzle.COMPONENT_ZERO -> VK_COMPONENT_SWIZZLE_ZERO;
+            case Swizzle.COMPONENT_ONE  -> VK_COMPONENT_SWIZZLE_ONE;
             default -> {
                 assert false : index;
                 yield VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -96,6 +96,9 @@ public final class VulkanImageView extends ManagedResource {
 
     /**
      * Create a shader resource view as shader input, for texture sampling.
+     *
+     * @param imageType see {@link ImageType}
+     * @param swizzle   see {@link Swizzle}
      */
     @Nullable
     public static VulkanImageView makeTexture(@Nonnull VulkanDevice device,
@@ -103,8 +106,8 @@ public final class VulkanImageView extends ManagedResource {
                                               int imageType,
                                               @NativeType("VkFormat") int format,
                                               short swizzle,
-                                              int baseMipLevel,
-                                              int mipLevelCount) {
+                                              int mipLevelCount,
+                                              int layerCount) {
         try (var stack = MemoryStack.stackPush()) {
             var pCreateInfo = VkImageViewCreateInfo.malloc(stack)
                     .sType$Default()
@@ -115,10 +118,10 @@ public final class VulkanImageView extends ManagedResource {
                     .format(format);
             if (swizzle != Swizzle.RGBA) {
                 pCreateInfo.components().set(
-                        get_swizzle(swizzle & 0xF),
-                        get_swizzle((swizzle >> 4) & 0xF),
-                        get_swizzle((swizzle >> 8) & 0xF),
-                        get_swizzle(swizzle >>> 12)
+                        get_swizzle(Swizzle.getR(swizzle)),
+                        get_swizzle(Swizzle.getG(swizzle)),
+                        get_swizzle(Swizzle.getB(swizzle)),
+                        get_swizzle(Swizzle.getA(swizzle))
                 );
             } else {
                 pCreateInfo.components().set(
@@ -130,10 +133,10 @@ public final class VulkanImageView extends ManagedResource {
             }
             pCreateInfo.subresourceRange()
                     .aspectMask(get_aspect_mask(format))
-                    .baseMipLevel(baseMipLevel)
+                    .baseMipLevel(0)
                     .levelCount(mipLevelCount)
                     .baseArrayLayer(0)
-                    .layerCount(1);
+                    .layerCount(layerCount);
             var pView = stack.mallocLong(1);
             var result = vkCreateImageView(
                     device.vkDevice(),
@@ -147,7 +150,8 @@ public final class VulkanImageView extends ManagedResource {
                         VKCore.getResultMessage(result));
                 return null;
             }
-            return new VulkanImageView(device, pView.get(0), baseMipLevel, mipLevelCount, 0);
+            return new VulkanImageView(device, pView.get(0),
+                    0, mipLevelCount, 0, layerCount);
         }
     }
 
@@ -195,7 +199,8 @@ public final class VulkanImageView extends ManagedResource {
                         VKCore.getResultMessage(result));
                 return null;
             }
-            return new VulkanImageView(device, pView.get(0), mipLevel, 1, arraySlice);
+            return new VulkanImageView(device, pView.get(0),
+                    mipLevel, 1, arraySlice, 1);
         }
     }
 
@@ -208,12 +213,16 @@ public final class VulkanImageView extends ManagedResource {
         return mBaseMipLevel;
     }
 
-    public int getMipLevelCount() {
-        return mMipLevelCount;
+    public int getLevelCount() {
+        return mLevelCount;
     }
 
-    public int getArraySlice() {
-        return mArraySlice;
+    public int getBaseArrayLayer() {
+        return mBaseArrayLayer;
+    }
+
+    public int getLayerCount() {
+        return mLayerCount;
     }
 
     @Override
