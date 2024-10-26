@@ -781,12 +781,12 @@ public final class GLCommandBuffer extends CommandBuffer {
             // OpenGL ES does not support GL_TEXTURE_SWIZZLE_RGBA
             for (int i = 0; i < 4; ++i) {
                 int swiz = switch ((swizzle >> (i << 2)) & 0xF) {
-                    case 0 -> GL_RED;
-                    case 1 -> GL_GREEN;
-                    case 2 -> GL_BLUE;
-                    case 3 -> GL_ALPHA;
-                    case 4 -> GL_ZERO;
-                    case 5 -> GL_ONE;
+                    case Swizzle.COMPONENT_R    -> GL_RED;
+                    case Swizzle.COMPONENT_G    -> GL_GREEN;
+                    case Swizzle.COMPONENT_B    -> GL_BLUE;
+                    case Swizzle.COMPONENT_A    -> GL_ALPHA;
+                    case Swizzle.COMPONENT_ZERO -> GL_ZERO;
+                    case Swizzle.COMPONENT_ONE  -> GL_ONE;
                     default -> throw new AssertionError(swizzle);
                 };
                 // swizzle enums are sequential

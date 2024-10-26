@@ -72,7 +72,7 @@ public class OpsTask extends RenderTask {
         mLoadClearColor[1] = green;
         mLoadClearColor[2] = blue;
         mLoadClearColor[3] = alpha;
-        Swizzle.apply(mWriteView.getSwizzle(), mLoadClearColor);
+        Swizzle.apply(mWriteView.getSwizzle(), mLoadClearColor, mLoadClearColor);
         if (loadOp == LoadOp.kClear) {
             SurfaceProxy target = getTarget();
             mTotalBounds.set(0, 0,

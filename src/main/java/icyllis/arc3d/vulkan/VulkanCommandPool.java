@@ -60,7 +60,7 @@ public class VulkanCommandPool extends ManagedResource {
         try (var stack = MemoryStack.stackPush()) {
             var pCommandPool = stack.mallocLong(1);
             var result = vkCreateCommandPool(
-                    device.device(),
+                    device.vkDevice(),
                     VkCommandPoolCreateInfo
                             .malloc(stack)
                             .sType$Default()
@@ -79,7 +79,7 @@ public class VulkanCommandPool extends ManagedResource {
                 VulkanPrimaryCommandBuffer.create(device, commandPool);
         if (primaryCommandBuffer == null) {
             vkDestroyCommandPool(
-                    device.device(),
+                    device.vkDevice(),
                     commandPool,
                     null
             );
@@ -91,7 +91,7 @@ public class VulkanCommandPool extends ManagedResource {
     @Override
     protected void deallocate() {
         vkDestroyCommandPool(
-                getDevice().device(),
+                getDevice().vkDevice(),
                 mCommandPool,
                 null
         );
@@ -103,7 +103,7 @@ public class VulkanCommandPool extends ManagedResource {
         if (mSubmitFence[0] == VK_NULL_HANDLE) {
             try (var stack = MemoryStack.stackPush()) {
                 var result = vkCreateFence(
-                        getDevice().device(),
+                        getDevice().vkDevice(),
                         VkFenceCreateInfo
                                 .calloc(stack)
                                 .sType$Default(),
@@ -117,7 +117,7 @@ public class VulkanCommandPool extends ManagedResource {
             }
         } else {
             _CHECK_ERROR_(vkResetFences(
-                    getDevice().device(),
+                    getDevice().vkDevice(),
                     mSubmitFence
             ));
         }
@@ -133,7 +133,7 @@ public class VulkanCommandPool extends ManagedResource {
             return true;
         }
         var result = vkGetFenceStatus(
-                getDevice().device(),
+                getDevice().vkDevice(),
                 mSubmitFence[0]
         );
         if (result == VK_SUCCESS ||
@@ -150,7 +150,7 @@ public class VulkanCommandPool extends ManagedResource {
         assert isSubmitted();
 
         vkResetCommandPool(
-                getDevice().device(),
+                getDevice().vkDevice(),
                 mCommandPool,
                 0
         );

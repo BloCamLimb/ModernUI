@@ -36,7 +36,7 @@ public final class VulkanPrimaryCommandBuffer extends VulkanCommandBuffer {
         try (var stack = MemoryStack.stackPush()) {
             var pCommandBuffer = stack.mallocPointer(1);
             var result = vkAllocateCommandBuffers(
-                    device.device(),
+                    device.vkDevice(),
                     VkCommandBufferAllocateInfo
                             .malloc(stack)
                             .sType$Default()
@@ -49,7 +49,7 @@ public final class VulkanPrimaryCommandBuffer extends VulkanCommandBuffer {
             if (result != VK_SUCCESS) {
                 return null;
             }
-            return new VulkanPrimaryCommandBuffer(device.device(), pCommandBuffer.get(0));
+            return new VulkanPrimaryCommandBuffer(device.vkDevice(), pCommandBuffer.get(0));
         }
     }
 }
