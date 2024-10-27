@@ -27,12 +27,20 @@ import static org.lwjgl.vulkan.VK11.*;
 
 public abstract class VulkanDevice extends Device {
 
+    private VkPhysicalDevice mPhysicalDevice;
     private VkDevice mDevice;
+    private VulkanMemoryAllocator mMemoryAllocator;
     private boolean mProtectedContext;
     private int mQueueIndex;
 
-    public VulkanDevice(ContextOptions options, VulkanCaps caps) {
+    public VulkanDevice(ContextOptions options, VulkanCaps caps,
+                        VulkanBackendContext backendContext,
+                        VulkanMemoryAllocator memoryAllocator) {
         super(Engine.BackendApi.kVulkan, options, caps);
+        mMemoryAllocator = memoryAllocator;
+        mPhysicalDevice = backendContext.mPhysicalDevice;
+        mDevice = backendContext.mDevice;
+        mQueueIndex = backendContext.mGraphicsQueueIndex;
     }
 
     public VkDevice vkDevice() {
@@ -40,11 +48,15 @@ public abstract class VulkanDevice extends Device {
     }
 
     public VkPhysicalDevice vkPhysicalDevice() {
-        return null;
+        return mPhysicalDevice;
     }
 
     public int getQueueIndex() {
         return mQueueIndex;
+    }
+
+    public VulkanMemoryAllocator getMemoryAllocator() {
+        return mMemoryAllocator;
     }
 
     public boolean checkResult(int result) {

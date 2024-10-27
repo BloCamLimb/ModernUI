@@ -22,7 +22,7 @@ package icyllis.arc3d.vulkan;
 import org.lwjgl.vulkan.*;
 
 /**
- * The {@link VkBackendContext} contains all the base Vulkan objects needed by the
+ * The {@link VulkanBackendContext} contains all the base Vulkan objects needed by the
  * {@link VulkanDevice}. The assumption is that the client will set these up and pass
  * them to the {@link VulkanDevice} constructor. The {@link VulkanDevice} created must
  * support at least one graphics queue, which is passed in as well.
@@ -32,7 +32,7 @@ import org.lwjgl.vulkan.*;
  * (either by deleting the struct or manually releasing the refs) before the underlying Vulkan
  * device and instance are destroyed.
  */
-public final class VkBackendContext {
+public final class VulkanBackendContext {
 
     public VkInstance mInstance;
     public VkPhysicalDevice mPhysicalDevice;
@@ -49,6 +49,7 @@ public final class VkBackendContext {
     // mDeviceFeatures and mDeviceFeatures2 are null we will assume no features are enabled.
     public VkPhysicalDeviceFeatures mDeviceFeatures;
     public VkPhysicalDeviceFeatures2 mDeviceFeatures2;
+    public VulkanMemoryAllocator mMemoryAllocator;
     // Indicates that we are working with protected content and all CommandPool and Queue operations
     // should be done in a protected context.
     public boolean mProtectedContext;

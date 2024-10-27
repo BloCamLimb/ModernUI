@@ -50,9 +50,9 @@ public class VulkanMemoryAllocator implements AutoCloseable {
     public static final int
             kLazyAllocation_AllocFlag = 0x4;
 
-    private /*VmaAllocator*/ long mAllocator;
+    protected /*VmaAllocator*/ long mAllocator;
 
-    private VulkanMemoryAllocator(long allocator) {
+    public VulkanMemoryAllocator(long allocator) {
         mAllocator = allocator;
     }
 
@@ -155,9 +155,12 @@ public class VulkanMemoryAllocator implements AutoCloseable {
             var result = vmaAllocateMemoryForBuffer(
                     mAllocator, buffer, pCreateInfo, pAllocation, pAllocationInfo
             );
-            if (device.checkResult(result) && result == VK_SUCCESS) {
-                getAllocInfo(stack, pAllocation.get(0), pAllocationInfo, outAllocInfo);
-                return true;
+            if (device.checkResult(result)) {
+                if (result == VK_SUCCESS) {
+                    getAllocInfo(stack, pAllocation.get(0), pAllocationInfo, outAllocInfo);
+                    return true;
+                }
+                vmaFreeMemory(mAllocator, pAllocation.get(0));
             }
             return false;
         }
@@ -194,9 +197,12 @@ public class VulkanMemoryAllocator implements AutoCloseable {
             var result = vmaAllocateMemoryForImage(
                     mAllocator, image, pCreateInfo, pAllocation, pAllocationInfo
             );
-            if (device.checkResult(result) && result == VK_SUCCESS) {
-                getAllocInfo(stack, pAllocation.get(0), pAllocationInfo, outAllocInfo);
-                return true;
+            if (device.checkResult(result)) {
+                if (result == VK_SUCCESS) {
+                    getAllocInfo(stack, pAllocation.get(0), pAllocationInfo, outAllocInfo);
+                    return true;
+                }
+                vmaFreeMemory(mAllocator, pAllocation.get(0));
             }
             return false;
         }
