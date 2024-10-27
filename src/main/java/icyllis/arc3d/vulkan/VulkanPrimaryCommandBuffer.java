@@ -23,7 +23,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandBufferAllocateInfo;
 import org.lwjgl.vulkan.VkDevice;
 
-import static icyllis.arc3d.vulkan.VKCore.*;
+import static org.lwjgl.vulkan.VK11.*;
 
 public final class VulkanPrimaryCommandBuffer extends VulkanCommandBuffer {
 

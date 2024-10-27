@@ -26,7 +26,7 @@ import org.lwjgl.vulkan.VkFenceCreateInfo;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.vulkan.VKCore.*;
+import static org.lwjgl.vulkan.VK11.*;
 
 /**
  * VkCommandPool is created with a single primary command buffer and (optional)
@@ -116,7 +116,7 @@ public class VulkanCommandPool extends ManagedResource {
                 mSubmitFence[0] = VK_NULL_HANDLE;
             }
         } else {
-            _CHECK_ERROR_(vkResetFences(
+            VKUtil._CHECK_ERROR_(vkResetFences(
                     getDevice().vkDevice(),
                     mSubmitFence
             ));
@@ -143,7 +143,7 @@ public class VulkanCommandPool extends ManagedResource {
         if (result == VK_NOT_READY) {
             return false;
         }
-        throw new RuntimeException(VKCore.getResultMessage(result));
+        throw new RuntimeException(VKUtil.getResultMessage(result));
     }
 
     public void reset() {

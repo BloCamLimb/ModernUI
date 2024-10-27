@@ -19,19 +19,20 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Color;
+import icyllis.arc3d.core.ColorInfo;
 import org.lwjgl.system.NativeType;
-import org.lwjgl.vulkan.VK11;
 
 import static org.lwjgl.vulkan.EXTDebugReport.VK_ERROR_VALIDATION_FAILED_EXT;
 import static org.lwjgl.vulkan.KHRDisplaySwapchain.VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
+import static org.lwjgl.vulkan.VK11.*;
 
 /**
- * Provides native interfaces of Vulkan 1.1 core and user-defined utilities.
+ * Provides user-defined Vulkan utilities.
  */
-public final class VKCore extends VK11 {
+public final class VKUtil {
 
     /**
      * Runtime assertion against a {@code VkResult} value, throws an exception
@@ -117,25 +118,25 @@ public final class VKCore extends VK11 {
     public static int vkFormatChannels(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_FORMAT_R16G16B16A16_UNORM,
-                    VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
-                    VK_FORMAT_R8G8B8A8_SRGB,
-                    VK_FORMAT_R4G4B4A4_UNORM_PACK16,
-                    VK_FORMAT_B4G4R4A4_UNORM_PACK16,
-                    VK_FORMAT_A2R10G10B10_UNORM_PACK32,
-                    VK_FORMAT_A2B10G10R10_UNORM_PACK32,
-                    VK_FORMAT_R16G16B16A16_SFLOAT,
-                    VK_FORMAT_B8G8R8A8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGBA;
+                 VK_FORMAT_R16G16B16A16_UNORM,
+                 VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+                 VK_FORMAT_R8G8B8A8_SRGB,
+                 VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+                 VK_FORMAT_B4G4R4A4_UNORM_PACK16,
+                 VK_FORMAT_A2R10G10B10_UNORM_PACK32,
+                 VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+                 VK_FORMAT_R16G16B16A16_SFLOAT,
+                 VK_FORMAT_B8G8R8A8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGBA;
             case VK_FORMAT_R8_UNORM,
-                    VK_FORMAT_R16_UNORM,
-                    VK_FORMAT_R16_SFLOAT -> Color.COLOR_CHANNEL_FLAG_RED;
+                 VK_FORMAT_R16_UNORM,
+                 VK_FORMAT_R16_SFLOAT -> Color.COLOR_CHANNEL_FLAG_RED;
             case VK_FORMAT_R5G6B5_UNORM_PACK16,
-                    VK_FORMAT_BC1_RGB_UNORM_BLOCK,
-                    VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK,
-                    VK_FORMAT_R8G8B8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGB;
+                 VK_FORMAT_BC1_RGB_UNORM_BLOCK,
+                 VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK,
+                 VK_FORMAT_R8G8B8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGB;
             case VK_FORMAT_R8G8_UNORM,
-                    VK_FORMAT_R16G16_SFLOAT,
-                    VK_FORMAT_R16G16_UNORM -> Color.COLOR_CHANNEL_FLAGS_RG;
+                 VK_FORMAT_R16G16_SFLOAT,
+                 VK_FORMAT_R16G16_UNORM -> Color.COLOR_CHANNEL_FLAGS_RG;
             // either depth/stencil format or unsupported yet
             default -> 0;
         };
@@ -166,30 +167,30 @@ public final class VKCore extends VK11 {
     public static int vkFormatBytesPerBlock(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_FORMAT_D24_UNORM_S8_UINT,
-                    VK_FORMAT_R16G16_SFLOAT,
-                    VK_FORMAT_R16G16_UNORM,
-                    VK_FORMAT_R8G8B8A8_SRGB,
-                    VK_FORMAT_A2R10G10B10_UNORM_PACK32,
-                    VK_FORMAT_A2B10G10R10_UNORM_PACK32,
-                    VK_FORMAT_B8G8R8A8_UNORM -> 4;
+                 VK_FORMAT_D24_UNORM_S8_UINT,
+                 VK_FORMAT_R16G16_SFLOAT,
+                 VK_FORMAT_R16G16_UNORM,
+                 VK_FORMAT_R8G8B8A8_SRGB,
+                 VK_FORMAT_A2R10G10B10_UNORM_PACK32,
+                 VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+                 VK_FORMAT_B8G8R8A8_UNORM -> 4;
             case VK_FORMAT_R8_UNORM,
-                    VK_FORMAT_S8_UINT -> 1;
+                 VK_FORMAT_S8_UINT -> 1;
             case VK_FORMAT_R5G6B5_UNORM_PACK16,
-                    VK_FORMAT_R16_UNORM,
-                    VK_FORMAT_R4G4B4A4_UNORM_PACK16,
-                    VK_FORMAT_B4G4R4A4_UNORM_PACK16,
-                    VK_FORMAT_R8G8_UNORM,
-                    VK_FORMAT_R16_SFLOAT -> 2;
+                 VK_FORMAT_R16_UNORM,
+                 VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+                 VK_FORMAT_B4G4R4A4_UNORM_PACK16,
+                 VK_FORMAT_R8G8_UNORM,
+                 VK_FORMAT_R16_SFLOAT -> 2;
             case VK_FORMAT_R16G16B16A16_SFLOAT,
-                    VK_FORMAT_D32_SFLOAT_S8_UINT,
-                    VK_FORMAT_R16G16B16A16_UNORM,
-                    VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
-                    VK_FORMAT_BC1_RGB_UNORM_BLOCK,
-                    VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> 8;
+                 VK_FORMAT_D32_SFLOAT_S8_UINT,
+                 VK_FORMAT_R16G16B16A16_UNORM,
+                 VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+                 VK_FORMAT_BC1_RGB_UNORM_BLOCK,
+                 VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> 8;
             case VK_FORMAT_R8G8B8_UNORM,
-                    VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                    VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM -> 3;
+                 VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
+                 VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM -> 3;
             default -> 0;
         };
     }
@@ -197,11 +198,11 @@ public final class VKCore extends VK11 {
     public static int vkFormatDepthBits(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_D16_UNORM,
-                    VK_FORMAT_D16_UNORM_S8_UINT -> 16;
+                 VK_FORMAT_D16_UNORM_S8_UINT -> 16;
             case VK_FORMAT_D24_UNORM_S8_UINT,
-                    VK_FORMAT_X8_D24_UNORM_PACK32 -> 24;
+                 VK_FORMAT_X8_D24_UNORM_PACK32 -> 24;
             case VK_FORMAT_D32_SFLOAT,
-                    VK_FORMAT_D32_SFLOAT_S8_UINT -> 32;
+                 VK_FORMAT_D32_SFLOAT_S8_UINT -> 32;
             default -> 0;
         };
     }
@@ -209,9 +210,9 @@ public final class VKCore extends VK11 {
     public static int vkFormatStencilBits(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_S8_UINT,
-                    VK_FORMAT_D16_UNORM_S8_UINT,
-                    VK_FORMAT_D24_UNORM_S8_UINT,
-                    VK_FORMAT_D32_SFLOAT_S8_UINT -> 8;
+                 VK_FORMAT_D16_UNORM_S8_UINT,
+                 VK_FORMAT_D24_UNORM_S8_UINT,
+                 VK_FORMAT_D32_SFLOAT_S8_UINT -> 8;
             default -> 0;
         };
     }
@@ -243,6 +244,20 @@ public final class VKCore extends VK11 {
             case VK_FORMAT_D24_UNORM_S8_UINT -> "D24_UNORM_S8_UINT";
             case VK_FORMAT_D32_SFLOAT_S8_UINT -> "D32_SFLOAT_S8_UINT";
             default -> "Unknown";
+        };
+    }
+
+    public static int toVkSampleCount(int sampleCount) {
+        assert sampleCount >= 1;
+        return switch (sampleCount) {
+            case 1 -> VK_SAMPLE_COUNT_1_BIT;
+            case 2 -> VK_SAMPLE_COUNT_2_BIT;
+            case 4 -> VK_SAMPLE_COUNT_4_BIT;
+            case 8 -> VK_SAMPLE_COUNT_8_BIT;
+            case 16 -> VK_SAMPLE_COUNT_16_BIT;
+            case 32 -> VK_SAMPLE_COUNT_32_BIT;
+            case 64 -> VK_SAMPLE_COUNT_64_BIT;
+            default -> 0;
         };
     }
 }

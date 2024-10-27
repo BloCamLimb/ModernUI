@@ -25,6 +25,8 @@ import icyllis.arc3d.engine.ContextOptions;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
+import static org.lwjgl.vulkan.VK11.*;
+
 public abstract class VulkanCaps extends Caps {
 
     public VulkanCaps(ContextOptions options,
@@ -43,17 +45,17 @@ public abstract class VulkanCaps extends Caps {
 
         try (var stack = MemoryStack.stackPush()) {
             VkPhysicalDeviceProperties properties = VkPhysicalDeviceProperties.malloc(stack);
-            VKCore.vkGetPhysicalDeviceProperties(physDev, properties);
+            vkGetPhysicalDeviceProperties(physDev, properties);
             VkPhysicalDeviceLimits limits = properties.limits();
 
             if (Integer.compareUnsigned(physicalDeviceVersion,
-                    VKCore.VK_MAKE_VERSION(1, 3, 0)) >= 0) {
+                    VK_MAKE_VERSION(1, 3, 0)) >= 0) {
                 shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_6;
             } else if (Integer.compareUnsigned(physicalDeviceVersion,
-                    VKCore.VK_MAKE_VERSION(1, 2, 0)) >= 0) {
+                    VK_MAKE_VERSION(1, 2, 0)) >= 0) {
                 shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_5;
             } else if (Integer.compareUnsigned(physicalDeviceVersion,
-                    VKCore.VK_MAKE_VERSION(1, 1, 0)) >= 0) {
+                    VK_MAKE_VERSION(1, 1, 0)) >= 0) {
                 shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_3;
             } else {
                 shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
