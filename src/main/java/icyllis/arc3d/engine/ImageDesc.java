@@ -36,15 +36,17 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public abstract class ImageDesc {
 
+    protected final int mFlags;
     protected final int mWidth;
     protected final int mHeight;
     protected final short mDepth;
     protected final short mArraySize;
     protected final byte mMipLevelCount;
     protected final byte mSampleCount;
-    protected final int mFlags;
+    protected final byte mImageType;
 
-    protected ImageDesc(int width, int height,
+    protected ImageDesc(int imageType,
+                        int width, int height,
                         int depth, int arraySize,
                         int mipLevelCount, int sampleCount,
                         int flags) {
@@ -52,6 +54,8 @@ public abstract class ImageDesc {
                 depth > 0 && arraySize > 0 &&
                 mipLevelCount > 0 && sampleCount > 0;
         assert mipLevelCount == 1 || sampleCount == 1;
+        assert imageType <= Byte.MAX_VALUE;
+        mImageType = (byte) imageType;
         mWidth = width;
         mHeight = height;
         mDepth = (short) depth;
@@ -71,7 +75,9 @@ public abstract class ImageDesc {
      *
      * @return see {@link Engine.ImageType}
      */
-    public abstract int getImageType();
+    public final int getImageType() {
+        return mImageType;
+    }
 
     /**
      * @return the width in texels
@@ -141,8 +147,8 @@ public abstract class ImageDesc {
         return (mFlags & ISurface.FLAG_RENDERABLE) != 0;
     }
 
-    public boolean isProtected() {
-        throw new UnsupportedOperationException();
+    public final boolean isProtected() {
+        return (mFlags & ISurface.FLAG_PROTECTED) != 0;
     }
 
     /**

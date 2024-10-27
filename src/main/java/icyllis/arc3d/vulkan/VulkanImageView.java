@@ -147,7 +147,7 @@ public final class VulkanImageView extends ManagedResource {
             device.checkResult(result);
             if (result != VK_SUCCESS) {
                 device.getLogger().error("Failed to create shader resource view: {}",
-                        VKCore.getResultMessage(result));
+                        VKUtil.getResultMessage(result));
                 return null;
             }
             return new VulkanImageView(device, pView.get(0),
@@ -196,7 +196,7 @@ public final class VulkanImageView extends ManagedResource {
             device.checkResult(result);
             if (result != VK_SUCCESS) {
                 device.getLogger().error("Failed to create render target view: {}",
-                        VKCore.getResultMessage(result));
+                        VKUtil.getResultMessage(result));
                 return null;
             }
             return new VulkanImageView(device, pView.get(0),

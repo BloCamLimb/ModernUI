@@ -25,7 +25,7 @@ import icyllis.arc3d.engine.Engine.BackendApi;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arc3d.vulkan.VKCore.*;
+import static org.lwjgl.vulkan.VK11.*;
 
 /**
  * When importing external memory,
@@ -33,6 +33,7 @@ import static icyllis.arc3d.vulkan.VKCore.*;
  * as <code>void*</code>, we can safely truncate it because Win32 handles are 32-bit significant).
  * If it is an NT handle, it must be released manually by the memory exporter (e.g. Vulkan).
  */
+//TODO
 public final class VulkanBackendImage extends BackendImage {
 
     // We don't know if the backend texture is made renderable or not, so we default the usage flags
@@ -54,15 +55,12 @@ public final class VulkanBackendImage extends BackendImage {
     // The VkImageInfo can NOT be modified anymore.
     public VulkanBackendImage(int width, int height, VulkanImageDesc desc) {
         //TODO disallow VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT
-        this(width, height, desc, new VulkanImageMutableState(desc), VkBackendFormat.make(desc.mFormat));
+        this(width, height, desc, null, VkBackendFormat.make(desc.mFormat));
     }
 
     VulkanBackendImage(int width, int height, VulkanImageDesc desc,
                        VulkanImageMutableState state, BackendFormat backendFormat) {
         super(desc, state);
-        if (desc.mImageUsageFlags == 0) {
-            desc.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
-        }
         mInfo = desc;
         mState = state;
         mBackendFormat = backendFormat;
@@ -78,16 +76,16 @@ public final class VulkanBackendImage extends BackendImage {
         return mBackendFormat.isExternal();
     }
 
-    /**
+    /*
      * Copies a snapshot of the {@link VulkanImageDesc} struct into the passed in pointer.
      * This snapshot will set the {@link VulkanImageDesc#mImageLayout} to the current layout
      * state.
      */
-    public void getVulkanImageInfo(VulkanImageDesc desc) {
+    /*public void getVulkanImageInfo(VulkanImageDesc desc) {
         desc.set(mInfo);
         desc.mImageLayout = mState.getImageLayout();
         desc.mCurrentQueueFamily = mState.getQueueFamilyIndex();
-    }
+    }*/
 
     @Override
     public void setVkImageLayout(int layout) {
@@ -107,13 +105,13 @@ public final class VulkanBackendImage extends BackendImage {
 
     @Override
     public boolean isProtected() {
-        return mInfo.mProtected;
+        return mInfo.isProtected();
     }
 
     @Override
     public boolean isSameImage(BackendImage image) {
         if (image instanceof VulkanBackendImage t) {
-            return mInfo.mImage == t.mInfo.mImage;
+            return mImage == t.mImage;
         }
         return false;
     }

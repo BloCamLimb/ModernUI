@@ -26,7 +26,7 @@ import org.lwjgl.vulkan.*;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.vulkan.VKCore.*;
+import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.util.vma.Vma.*;
 
 /**

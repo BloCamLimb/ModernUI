@@ -29,10 +29,6 @@ public final class VulkanImageMutableState extends ImageMutableState {
     private volatile int mLayout;
     private volatile int mQueueFamilyIndex;
 
-    public VulkanImageMutableState(VulkanImageDesc desc) {
-        this(desc.mImageLayout, desc.mCurrentQueueFamily);
-    }
-
     public VulkanImageMutableState(int layout, int queueFamilyIndex) {
         mLayout = layout;
         mQueueFamilyIndex = queueFamilyIndex;
