@@ -38,7 +38,7 @@ import static org.lwjgl.opengl.GL43C.*;
  * <p>
  * OpenGL 3.3 or OpenGL ES 3.0 is the minimum requirement.
  */
-public class GLCaps extends Caps {
+public abstract class GLCaps extends Caps {
 
     /**
      * Contains missing extensions on the last creation of GPU.
@@ -144,7 +144,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RGBA;
+                    ioFormat.mExternalTexImageFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
@@ -153,7 +153,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_BGRA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_BGRA;
+                    ioFormat.mExternalTexImageFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
                 }
             }
@@ -172,7 +172,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_BGRA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_BGRA;
+                    ioFormat.mExternalTexImageFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
                 }
 
@@ -181,7 +181,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -200,7 +200,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGB_888x;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RGBA;
+                    ioFormat.mExternalTexImageFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -236,7 +236,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_R_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RED;
+                    ioFormat.mExternalTexImageFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
@@ -245,7 +245,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_R_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -266,7 +266,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_ALPHA_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RED;
+                    ioFormat.mExternalTexImageFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
@@ -275,7 +275,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_ALPHA_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -295,7 +295,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_GRAY_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RED;
+                    ioFormat.mExternalTexImageFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
@@ -304,7 +304,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_GRAY_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -338,7 +338,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGB_565;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT_5_6_5;
-                    ioFormat.mExternalWriteFormat = GL_RGB;
+                    ioFormat.mExternalTexImageFormat = GL_RGB;
                     ioFormat.mExternalReadFormat = GL_RGB;
                 }
 
@@ -347,7 +347,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -383,7 +383,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
-                    ioFormat.mExternalWriteFormat = GL_RGBA;
+                    ioFormat.mExternalTexImageFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
@@ -392,7 +392,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -411,7 +411,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_F16_CLAMPED;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
-                    ioFormat.mExternalWriteFormat = GL_RGBA;
+                    ioFormat.mExternalTexImageFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
@@ -420,7 +420,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -458,7 +458,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_ALPHA_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
-                    ioFormat.mExternalWriteFormat = GL_RED;
+                    ioFormat.mExternalTexImageFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
@@ -467,7 +467,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_ALPHA_F32xxx;
                     ioFormat.mExternalType = GL_FLOAT;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -502,7 +502,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGB_888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RGB;
+                    ioFormat.mExternalTexImageFormat = GL_RGB;
                     ioFormat.mExternalReadFormat = GL_RGB;
                 }
 
@@ -511,7 +511,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -547,7 +547,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RG_88;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RG;
+                    ioFormat.mExternalTexImageFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
                 }
 
@@ -556,7 +556,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -577,7 +577,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_GRAY_ALPHA_88;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RG;
+                    ioFormat.mExternalTexImageFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
                 }
             }
@@ -613,7 +613,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_1010102;
                     ioFormat.mExternalType = GL_UNSIGNED_INT_2_10_10_10_REV;
-                    ioFormat.mExternalWriteFormat = GL_RGBA;
+                    ioFormat.mExternalTexImageFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
@@ -622,7 +622,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -641,7 +641,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_BGRA_1010102;
                     ioFormat.mExternalType = GL_UNSIGNED_INT_2_10_10_10_REV;
-                    ioFormat.mExternalWriteFormat = GL_BGRA;
+                    ioFormat.mExternalTexImageFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
                 }
 
@@ -650,7 +650,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -688,7 +688,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888_SRGB;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = GL_RGBA;
+                    ioFormat.mExternalTexImageFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -768,7 +768,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_ALPHA_16;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
-                    ioFormat.mExternalWriteFormat = GL_RED;
+                    ioFormat.mExternalTexImageFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
@@ -777,7 +777,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_ALPHA_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -813,7 +813,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RG_1616;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
-                    ioFormat.mExternalWriteFormat = GL_RG;
+                    ioFormat.mExternalTexImageFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
                 }
 
@@ -822,7 +822,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -858,7 +858,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_16161616;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
-                    ioFormat.mExternalWriteFormat = GL_RGBA;
+                    ioFormat.mExternalTexImageFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
@@ -867,7 +867,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -903,7 +903,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RG_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
-                    ioFormat.mExternalWriteFormat = GL_RG;
+                    ioFormat.mExternalTexImageFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
                 }
 
@@ -912,7 +912,7 @@ public class GLCaps extends Caps {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ColorInfo.CT_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
-                    ioFormat.mExternalWriteFormat = 0;
+                    ioFormat.mExternalTexImageFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -992,6 +992,12 @@ public class GLCaps extends Caps {
     public GLUtil.GLDriver getDriver() {
         return mDriver;
     }
+
+    /**
+     * Returns true if OpenGL ES (embedded system),
+     * returns false if OpenGL (desktop, core profile).
+     */
+    public abstract boolean isGLES();
 
     /**
      * Modern OpenGL means OpenGL 4.5 is supported, so all of the following are supported:
@@ -1394,7 +1400,7 @@ public class GLCaps extends Caps {
                 final ColorTypeInfo ctInfo = formatInfo.mColorTypeInfos[i];
                 foundSurfaceCT = true;
                 for (final ExternalIOFormat ioInfo : ctInfo.mExternalIOFormats) {
-                    if (ioInfo.mExternalWriteFormat != 0) {
+                    if (ioInfo.mExternalTexImageFormat != 0) {
                         if (ioInfo.mColorType == srcColorType) {
                             return srcColorType | (transferOffsetAlignment << 32);
                         }
@@ -1635,16 +1641,16 @@ public class GLCaps extends Caps {
          * of format and color types.
          */
         int mExternalType = 0;
-        int mExternalWriteFormat = 0;
+        int mExternalTexImageFormat = 0;
         int mExternalReadFormat = 0;
 
         @Override
         public String toString() {
             return "ExternalIOFormat{" +
-                    "mColorType=" + ColorInfo.colorTypeToString(mColorType) +
-                    ", mExternalType=" + mExternalType +
-                    ", mExternalWriteFormat=" + mExternalWriteFormat +
-                    ", mExternalReadFormat=" + mExternalReadFormat +
+                    "colorType=" + ColorInfo.colorTypeToString(mColorType) +
+                    ", externalType=0x" + Integer.toHexString(mExternalType) +
+                    ", externalTexImageFormat=0x" + Integer.toHexString(mExternalTexImageFormat) +
+                    ", externalReadFormat=0x" + Integer.toHexString(mExternalReadFormat) +
                     '}';
         }
     }
@@ -1653,7 +1659,7 @@ public class GLCaps extends Caps {
 
         int mColorType = ColorInfo.CT_UNKNOWN;
 
-        public static final int
+        static final int
                 UPLOAD_DATA_FLAG = 0x1,
                 RENDERABLE_FLAG = 0x2;
         int mFlags = 0;
@@ -1667,7 +1673,7 @@ public class GLCaps extends Caps {
             for (ExternalIOFormat ioFormat : mExternalIOFormats) {
                 if (ioFormat.mColorType == srcColorType) {
                     if (write) {
-                        return ioFormat.mExternalWriteFormat;
+                        return ioFormat.mExternalTexImageFormat;
                     } else {
                         return ioFormat.mExternalReadFormat;
                     }
@@ -1688,11 +1694,11 @@ public class GLCaps extends Caps {
         @Override
         public String toString() {
             return "ColorTypeInfo{" +
-                    "mColorType=" + ColorInfo.colorTypeToString(mColorType) +
-                    ", mFlags=0x" + Integer.toHexString(mFlags) +
-                    ", mReadSwizzle=" + Swizzle.toString(mReadSwizzle) +
-                    ", mWriteSwizzle=" + Swizzle.toString(mWriteSwizzle) +
-                    ", mExternalIOFormats=" + Arrays.toString(mExternalIOFormats) +
+                    "colorType=" + ColorInfo.colorTypeToString(mColorType) +
+                    ", flags=0x" + Integer.toHexString(mFlags) +
+                    ", readSwizzle=" + Swizzle.toString(mReadSwizzle) +
+                    ", writeSwizzle=" + Swizzle.toString(mWriteSwizzle) +
+                    ", externalIOFormats=" + Arrays.toString(mExternalIOFormats) +
                     '}';
         }
     }
@@ -1705,7 +1711,7 @@ public class GLCaps extends Caps {
          * <p>
          * TRANSFERS_FLAG: pixel buffer objects supported in/out of this format.
          */
-        public static final int
+        static final int
                 TEXTURABLE_FLAG = 0x01,
                 COLOR_ATTACHMENT_FLAG = 0x02,
                 COLOR_ATTACHMENT_WITH_MSAA_FLAG = 0x04,
@@ -1713,7 +1719,7 @@ public class GLCaps extends Caps {
                 TRANSFERS_FLAG = 0x10;
         int mFlags = 0;
 
-        public static final int
+        static final int
                 FORMAT_TYPE_UNKNOWN = 0,
                 FORMAT_TYPE_NORMALIZED_FIXED_POINT = 1,
                 FORMAT_TYPE_FLOAT = 2;
@@ -1778,15 +1784,15 @@ public class GLCaps extends Caps {
         @Override
         public String toString() {
             return "FormatInfo{" +
-                    "mFlags=0x" + Integer.toHexString(mFlags) +
-                    ", mFormatType=" + mFormatType +
-                    ", mInternalFormatForTexture=" + mInternalFormatForTexture +
-                    ", mInternalFormatForRenderbuffer=" + mInternalFormatForRenderbuffer +
-                    ", mDefaultExternalFormat=" + mDefaultExternalFormat +
-                    ", mDefaultExternalType=" + mDefaultExternalType +
-                    ", mDefaultColorType=" + ColorInfo.colorTypeToString(mDefaultColorType) +
-                    ", mColorSampleCounts=" + Arrays.toString(mColorSampleCounts) +
-                    ", mColorTypeInfos=" + Arrays.toString(mColorTypeInfos) +
+                    "flags=0x" + Integer.toHexString(mFlags) +
+                    ", formatType=" + mFormatType +
+                    ", internalFormatForTexture=" + mInternalFormatForTexture +
+                    ", internalFormatForRenderbuffer=" + mInternalFormatForRenderbuffer +
+                    ", defaultExternalFormat=" + mDefaultExternalFormat +
+                    ", defaultExternalType=" + mDefaultExternalType +
+                    ", defaultColorType=" + ColorInfo.colorTypeToString(mDefaultColorType) +
+                    ", colorSampleCounts=" + Arrays.toString(mColorSampleCounts) +
+                    ", colorTypeInfos=" + Arrays.toString(mColorTypeInfos) +
                     '}';
         }
     }
