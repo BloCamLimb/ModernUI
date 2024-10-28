@@ -24,7 +24,6 @@ import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.task.Task;
 import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.StaticBufferManager;
-import icyllis.arc3d.vulkan.VkBackendContext;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -45,33 +44,6 @@ public final class ImmediateContext extends Context {
     public ImmediateContext(Device device, QueueManager queueManager) {
         super(device);
         mQueueManager = queueManager;
-    }
-
-    /**
-     * Creates a DirectContext for a backend context, using default context options.
-     *
-     * @return context or null if failed to create
-     * @see #makeVulkan(VkBackendContext, ContextOptions)
-     */
-    @Nullable
-    public static ImmediateContext makeVulkan(VkBackendContext backendContext) {
-        return makeVulkan(backendContext, new ContextOptions());
-    }
-
-    /**
-     * Creates a DirectContext for a backend context, using specified context options.
-     * <p>
-     * The Vulkan context (VkQueue, VkDevice, VkInstance) must be kept alive until the returned
-     * DirectContext is destroyed. This also means that any objects created with this
-     * DirectContext (e.g. Surfaces, Images, etc.) must also be released as they may hold
-     * refs on the DirectContext. Once all these objects and the DirectContext are released,
-     * then it is safe to delete the Vulkan objects.
-     *
-     * @return context or null if failed to create
-     */
-    @Nullable
-    public static ImmediateContext makeVulkan(VkBackendContext backendContext, ContextOptions options) {
-        return null;
     }
 
     @Nullable

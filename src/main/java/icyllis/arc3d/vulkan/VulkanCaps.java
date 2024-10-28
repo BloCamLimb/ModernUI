@@ -20,8 +20,9 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.engine.Caps;
-import icyllis.arc3d.engine.ContextOptions;
+import icyllis.arc3d.compiler.ShaderCaps;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -60,10 +61,46 @@ public abstract class VulkanCaps extends Caps {
             } else {
                 shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
             }
+
+            mMaxTextureSize = (int) Math.min(
+                    Integer.toUnsignedLong(limits.maxImageDimension2D()), Integer.MAX_VALUE);
         }
     }
 
     public boolean hasUnifiedMemory() {
         return false;
+    }
+
+    static class ColorTypeInfo {
+
+        int mColorType = ColorInfo.CT_UNKNOWN;
+
+        static final int
+                UPLOAD_DATA_FLAG = 0x1,
+                RENDERABLE_FLAG = 0x2;
+        int mFlags = 0;
+
+        short mReadSwizzle = Swizzle.RGBA;
+        short mWriteSwizzle = Swizzle.RGBA;
+
+        @Override
+        public String toString() {
+            return "ColorTypeInfo{" +
+                    "colorType=" + ColorInfo.colorTypeToString(mColorType) +
+                    ", flags=0x" + Integer.toHexString(mFlags) +
+                    ", readSwizzle=" + Swizzle.toString(mReadSwizzle) +
+                    ", writeSwizzle=" + Swizzle.toString(mWriteSwizzle) +
+                    '}';
+        }
+    }
+
+    static class FormatInfo {
+
+        /*VkFormatFeatureFlags*/ int mOptimalTilingFeatures = 0;
+        /*VkFormatFeatureFlags*/ int mLinearTilingFeatures = 0;
+
+        int[] mColorSampleCounts = {};
+
+        ColorTypeInfo[] mColorTypeInfos = {};
     }
 }

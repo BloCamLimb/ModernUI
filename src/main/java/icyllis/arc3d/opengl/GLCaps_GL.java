@@ -383,6 +383,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
     }
 
     @Override
+    public boolean isGLES() {
+        return false;
+    }
+
+    @Override
     public void glEnable(int cap) {
         GL11C.glEnable(cap);
     }

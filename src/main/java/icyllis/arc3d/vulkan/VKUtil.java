@@ -21,7 +21,11 @@ package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.engine.ContextOptions;
+import icyllis.arc3d.engine.ImmediateContext;
 import org.lwjgl.system.NativeType;
+
+import javax.annotation.Nullable;
 
 import static org.lwjgl.vulkan.EXTDebugReport.VK_ERROR_VALIDATION_FAILED_EXT;
 import static org.lwjgl.vulkan.KHRDisplaySwapchain.VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;
@@ -33,6 +37,33 @@ import static org.lwjgl.vulkan.VK11.*;
  * Provides user-defined Vulkan utilities.
  */
 public final class VKUtil {
+
+    /**
+     * Creates a DirectContext for a backend context, using default context options.
+     *
+     * @return context or null if failed to create
+     * @see #makeVulkan(VulkanBackendContext, ContextOptions)
+     */
+    @Nullable
+    public static ImmediateContext makeVulkan(VulkanBackendContext backendContext) {
+        return makeVulkan(backendContext, new ContextOptions());
+    }
+
+    /**
+     * Creates a DirectContext for a backend context, using specified context options.
+     * <p>
+     * The Vulkan context (VkQueue, VkDevice, VkInstance) must be kept alive until the returned
+     * DirectContext is destroyed. This also means that any objects created with this
+     * DirectContext (e.g. Surfaces, Images, etc.) must also be released as they may hold
+     * refs on the DirectContext. Once all these objects and the DirectContext are released,
+     * then it is safe to delete the Vulkan objects.
+     *
+     * @return context or null if failed to create
+     */
+    @Nullable
+    public static ImmediateContext makeVulkan(VulkanBackendContext backendContext, ContextOptions options) {
+        return null;
+    }
 
     /**
      * Runtime assertion against a {@code VkResult} value, throws an exception
@@ -111,6 +142,27 @@ public final class VKUtil {
             default -> "Other";
         };
     }
+
+    /**
+     * @see #vkFormatToIndex(int)
+     */
+    //@formatter:off
+    public static final int
+            LAST_COLOR_FORMAT_INDEX = 3;
+
+    /**
+     * Lists all supported Vulkan image formats and converts to table index.
+     * 0 is reserved for unsupported formats.
+     */
+    public static int vkFormatToIndex(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_R8G8B8A8_UNORM                       -> 1;
+            case VK_FORMAT_R8_UNORM                             -> 2;
+            case VK_FORMAT_R5G6B5_UNORM_PACK16                  -> 3;
+            default -> 0;
+        };
+    }
+    //@formatter:on
 
     /**
      * @return see Color

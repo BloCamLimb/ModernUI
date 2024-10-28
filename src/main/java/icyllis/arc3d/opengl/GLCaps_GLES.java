@@ -278,6 +278,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
     }
 
     @Override
+    public boolean isGLES() {
+        return true;
+    }
+
+    @Override
     public void glEnable(int cap) {
         GLES20.glEnable(cap);
     }
