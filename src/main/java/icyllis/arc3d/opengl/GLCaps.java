@@ -88,7 +88,7 @@ public abstract class GLCaps extends Caps {
     final FormatInfo[] mFormatTable =
             new FormatInfo[GLUtil.LAST_COLOR_FORMAT_INDEX + 1];
 
-    // may contain null values that representing invalid
+    // may contain GL_NONE(0) values that representing unsupported
     private final int[] mColorTypeToBackendFormat =
             new int[ColorInfo.CT_COUNT];
     private final GLBackendFormat[] mCompressionTypeToBackendFormat =
@@ -980,7 +980,6 @@ public abstract class GLCaps extends Caps {
     }
 
     private void setColorTypeFormat(int colorType, int format) {
-        assert mColorTypeToBackendFormat[colorType] == 0;
         assert GLUtil.glFormatIsSupported(format);
         mColorTypeToBackendFormat[colorType] = format;
     }
