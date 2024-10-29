@@ -200,4 +200,45 @@ public final class VulkanImage extends Image {
             vkDestroyImage(device.vkDevice(), mImage, null);
         }
     }
+
+    @Override
+    public String toString() {
+        return "VulkanImage{" +
+                "mDesc=" + getDesc() +
+                ", mImage=0x" + Long.toHexString(mImage) +
+                ", mMemoryAlloc=" + mMemoryAlloc +
+                ", mDestroyed=" + isDestroyed() +
+                ", mLabel=" + getLabel() +
+                ", mMemorySize=" + getMemorySize() +
+                '}';
+    }
+
+    public static final class ResourceKey implements IResourceKey {
+
+        private final VulkanImageDesc mDesc;
+
+        public ResourceKey(VulkanImageDesc desc) {
+            mDesc = desc;
+        }
+
+        @Override
+        public IResourceKey copy() {
+            return new ResourceKey(mDesc);
+        }
+
+        @Override
+        public int hashCode() {
+            return mDesc.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ResourceKey that = (ResourceKey) o;
+
+            return mDesc.equals(that.mDesc);
+        }
+    }
 }

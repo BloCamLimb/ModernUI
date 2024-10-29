@@ -19,13 +19,18 @@
 
 package icyllis.arc3d.vulkan;
 
+import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.engine.*;
-import org.lwjgl.vulkan.VkDevice;
-import org.lwjgl.vulkan.VkPhysicalDevice;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.vulkan.*;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Set;
 
 import static org.lwjgl.vulkan.VK11.*;
 
-public abstract class VulkanDevice extends Device {
+public class VulkanDevice extends Device {
 
     private VkPhysicalDevice mPhysicalDevice;
     private VkDevice mDevice;
@@ -41,6 +46,40 @@ public abstract class VulkanDevice extends Device {
         mPhysicalDevice = backendContext.mPhysicalDevice;
         mDevice = backendContext.mDevice;
         mQueueIndex = backendContext.mGraphicsQueueIndex;
+    }
+
+    @Nullable
+    public static VulkanDevice make(@Nonnull VulkanBackendContext context,
+                                    ContextOptions options) {
+        if (context.mInstance == null ||
+                context.mPhysicalDevice == null ||
+                context.mDevice == null ||
+                context.mQueue == null) {
+            return null;
+        }
+
+        VulkanCaps caps;
+        try (var stack = MemoryStack.stackPush()) {
+            final VkPhysicalDeviceProperties2 properties2 = VkPhysicalDeviceProperties2
+                    .calloc(stack)
+                    .sType$Default();
+            vkGetPhysicalDeviceProperties2(context.mPhysicalDevice, properties2);
+            final VkPhysicalDeviceProperties properties = properties2.properties();
+            caps = new VulkanCaps(options,
+                    context.mPhysicalDevice,
+                    properties.apiVersion(),
+                    context.mDeviceFeatures2,
+                    context.mInstance.getCapabilities(),
+                    context.mDevice.getCapabilities());
+        }
+
+        VulkanMemoryAllocator allocator = context.mMemoryAllocator;
+        if (allocator == null) {
+            return null;
+        }
+
+        return new VulkanDevice(options, caps,
+                context, allocator);
     }
 
     public VkDevice vkDevice() {
@@ -73,5 +112,68 @@ public abstract class VulkanDevice extends Device {
 
     public boolean isProtectedContext() {
         return mProtectedContext;
+    }
+
+    @Override
+    public ResourceProvider makeResourceProvider(Context context, long maxResourceBudget) {
+        return new VulkanResourceProvider(this, context, maxResourceBudget);
+    }
+
+    @Nullable
+    @Override
+    protected GpuRenderTarget onCreateRenderTarget(int width, int height, int sampleCount, int numColorTargets, @Nullable Image[] colorTargets, @Nullable Image[] resolveTargets, @Nullable int[] mipLevels, @Nullable Image depthStencilTarget, int surfaceFlags) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    protected GpuRenderTarget onWrapRenderableBackendTexture(BackendImage texture, int sampleCount, boolean ownership) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public GpuRenderTarget onWrapBackendRenderTarget(BackendRenderTarget backendRenderTarget) {
+        return null;
+    }
+
+    @Override
+    protected OpsRenderPass onGetOpsRenderPass(ImageProxyView writeView, Rect2i contentBounds, byte colorOps, byte stencilOps, float[] clearColor, Set<SurfaceProxy> sampledTextures, int pipelineFlags) {
+        return null;
+    }
+
+    @Override
+    protected void onResolveRenderTarget(GpuRenderTarget renderTarget, int resolveLeft, int resolveTop, int resolveRight, int resolveBottom) {
+
+    }
+
+    @Override
+    public long insertFence() {
+        return 0;
+    }
+
+    @Override
+    public boolean checkFence(long fence) {
+        return false;
+    }
+
+    @Override
+    public void deleteFence(long fence) {
+
+    }
+
+    @Override
+    public void addFinishedCallback(FlushInfo.FinishedCallback callback) {
+
+    }
+
+    @Override
+    public void checkFinishedCallbacks() {
+
+    }
+
+    @Override
+    public void waitForQueue() {
+
     }
 }

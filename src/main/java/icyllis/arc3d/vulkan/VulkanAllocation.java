@@ -72,4 +72,16 @@ public class VulkanAllocation {
         if (mSize != vkAlloc.mSize) return false;
         return mMemoryFlags == vkAlloc.mMemoryFlags;
     }
+
+    @Override
+    public String toString() {
+        return "VulkanAllocation{" +
+                "mMemory=0x" + Long.toHexString(mMemory) +
+                ", mOffset=" + mOffset +
+                ", mSize=" + mSize +
+                ", mMappedPointer=0x" + Long.toHexString(mMappedPointer) +
+                ", mMemoryFlags=0x" + Integer.toHexString(mMemoryFlags) +
+                ", mAllocation=0x" + Long.toHexString(mAllocation) +
+                '}';
+    }
 }

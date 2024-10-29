@@ -50,18 +50,28 @@ public final class VKUtil {
     }
 
     /**
-     * Creates a DirectContext for a backend context, using specified context options.
+     * Creates a ImmediateContext for a backend context, using specified context options.
      * <p>
      * The Vulkan context (VkQueue, VkDevice, VkInstance) must be kept alive until the returned
-     * DirectContext is destroyed. This also means that any objects created with this
-     * DirectContext (e.g. Surfaces, Images, etc.) must also be released as they may hold
-     * refs on the DirectContext. Once all these objects and the DirectContext are released,
+     * ImmediateContext is destroyed. This also means that any objects created with this
+     * ImmediateContext (e.g. Surfaces, Images, etc.) must also be released as they may hold
+     * refs on the ImmediateContext. Once all these objects and the ImmediateContext are released,
      * then it is safe to delete the Vulkan objects.
      *
      * @return context or null if failed to create
      */
     @Nullable
     public static ImmediateContext makeVulkan(VulkanBackendContext backendContext, ContextOptions options) {
+        var device = VulkanDevice.make(backendContext, options);
+        if (device == null) {
+            return null;
+        }
+        var queueManager = new VulkanQueueManager(device);
+        ImmediateContext context = new ImmediateContext(device, queueManager);
+        if (context.init()) {
+            return context;
+        }
+        context.unref();
         return null;
     }
 
@@ -163,6 +173,18 @@ public final class VKUtil {
         };
     }
     //@formatter:on
+
+    /**
+     * Consistent with {@link #vkFormatToIndex(int)}
+     */
+    public static boolean vkFormatIsSupported(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_R8G8B8A8_UNORM,
+                 VK_FORMAT_R8_UNORM,
+                 VK_FORMAT_R5G6B5_UNORM_PACK16 -> true;
+            default -> false;
+        };
+    }
 
     /**
      * @return see Color
