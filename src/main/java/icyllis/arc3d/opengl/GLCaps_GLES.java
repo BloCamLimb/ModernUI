@@ -126,10 +126,13 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         final int glslVersion;
         if (caps.GLES32) {
             glslVersion = 320;
+            options.mLogger.info("Using OpenGL ES 3.2 and GLSL 3.20");
         } else if (caps.GLES31) {
             glslVersion = 310;
+            options.mLogger.info("Using OpenGL ES 3.1 and GLSL 3.10");
         } else {
             glslVersion = 300;
+            options.mLogger.info("Using OpenGL ES 3.0 and GLSL 3.00");
         }
         mGLSLVersion = glslVersion;
         if (glslVersion == 320) {

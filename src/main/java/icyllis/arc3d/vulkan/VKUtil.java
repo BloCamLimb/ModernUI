@@ -23,6 +23,7 @@ import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.engine.ContextOptions;
 import icyllis.arc3d.engine.ImmediateContext;
+import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nullable;
@@ -140,6 +141,38 @@ public final class VKUtil {
                     "presentable image layout, or is incompatible in a way that prevents sharing an image.";
             case VK_ERROR_VALIDATION_FAILED_EXT -> "A validation layer found an error.";
             default -> String.format("%s [%d]", "Unknown", result);
+        };
+    }
+
+    /**
+     * Known vendor IDs.
+     */
+    public static final int
+            kAMD_VendorID = 0x1002,
+            kImgTec_VendorID = 0x1010,
+            kApple_VendorID = 0x106B,
+            kNVIDIA_VendorID = 0x10DE,
+            kARM_VendorID = 0x13B5,
+            kBroadcom_VendorID = 0x14E4,
+            kGoogle_VendorID = 0x1AE0,
+            kMooreThreads_VendorID = 0x1ED5,
+            kQualcomm_VendorID = 0x5143,
+            kIntel_VendorID = 0x8086;
+
+    public static String getVendorIDName(int vkVendorID) {
+        return switch (vkVendorID) {
+            case kAMD_VendorID -> "AMD";
+            case kImgTec_VendorID -> "ImgTec";
+            case kApple_VendorID -> "Apple";
+            case kNVIDIA_VendorID -> "NVIDIA";
+            case kARM_VendorID -> "ARM";
+            case kBroadcom_VendorID -> "Broadcom";
+            case kGoogle_VendorID -> "Google";
+            case kMooreThreads_VendorID -> "Moore Threads";
+            case kQualcomm_VendorID -> "Qualcomm";
+            case kIntel_VendorID -> "Intel";
+            case VK_VENDOR_ID_MESA -> "Mesa";
+            default -> APIUtil.apiUnknownToken(vkVendorID);
         };
     }
 

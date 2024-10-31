@@ -25,7 +25,6 @@ import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.engine.trash.PipelineKey_old;
-import icyllis.arc3d.opengl.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import org.lwjgl.system.MemoryStack;
@@ -104,7 +103,7 @@ public class VulkanCaps extends Caps {
             final int format = VK_FORMAT_R8G8B8A8_UNORM;
             FormatInfo info = getFormatInfo(format);
             info.init(options, physDev, physProps, format, stack);
-            if (info.isTexturable(VK_IMAGE_TILING_OPTIMAL)) {
+            if (info.isSampled(VK_IMAGE_TILING_OPTIMAL)) {
                 info.mColorTypeInfos = new ColorTypeInfo[2];
                 // Format: VK_FORMAT_R8G8B8A8_UNORM, Surface: kRGBA_8888
                 {
@@ -205,9 +204,16 @@ public class VulkanCaps extends Caps {
         sampleCount = Math.max(1, sampleCount);
         int format = mColorTypeToBackendFormat[colorType];
         FormatInfo formatInfo = getFormatInfo(format);
-        if (!formatInfo.isTexturable(VK_IMAGE_TILING_OPTIMAL) ||
-                ((imageFlags & ISurface.FLAG_RENDERABLE) != 0 &&
-                        !formatInfo.isRenderable(VK_IMAGE_TILING_OPTIMAL, sampleCount))) {
+        if ((imageFlags & ISurface.FLAG_SAMPLED_IMAGE) != 0 &&
+                !formatInfo.isSampled(VK_IMAGE_TILING_OPTIMAL)) {
+            return null;
+        }
+        if ((imageFlags & ISurface.FLAG_STORAGE_IMAGE) != 0 &&
+                !formatInfo.isStorage(VK_IMAGE_TILING_OPTIMAL)) {
+            return null;
+        }
+        if ((imageFlags & ISurface.FLAG_RENDERABLE) != 0 &&
+                !formatInfo.isRenderable(VK_IMAGE_TILING_OPTIMAL, sampleCount)) {
             return null;
         }
 
@@ -246,12 +252,20 @@ public class VulkanCaps extends Caps {
             return null;
         }
 
-        int usage = VK_IMAGE_USAGE_SAMPLED_BIT |
-                VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+        int usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        if ((imageFlags & ISurface.FLAG_SAMPLED_IMAGE) != 0) {
+            usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+        if ((imageFlags & ISurface.FLAG_STORAGE_IMAGE) != 0) {
+            usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+        }
         if ((imageFlags & ISurface.FLAG_RENDERABLE) != 0) {
             usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                     VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+            if ((imageFlags & ISurface.FLAG_MEMORYLESS) != 0) {
+                usage |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+            }
         }
 
         return new VulkanImageDesc(
@@ -363,7 +377,7 @@ public class VulkanCaps extends Caps {
 
         static final int
                 kUploadData_Flag = 0x1,
-                kRenderable_Flag = 0x2; // renderable by engine
+                kRenderable_Flag = 0x2;
         int mFlags = 0;
 
         short mReadSwizzle = Swizzle.RGBA;
@@ -408,15 +422,16 @@ public class VulkanCaps extends Caps {
 
                 if ((mOptimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0) {
                     // We make all renderable images support being used as input attachment
+                    int usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                            VK_IMAGE_USAGE_SAMPLED_BIT |
+                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                            VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
                     mColorSampleCounts = initSampleCounts(options,
                             physDev,
                             physProps,
                             format,
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                    VK_IMAGE_USAGE_SAMPLED_BIT |
-                                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                                    VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                            usage,
                             stack);
                 }
             } finally {
@@ -424,10 +439,18 @@ public class VulkanCaps extends Caps {
             }
         }
 
-        boolean isTexturable(int imageTiling) {
+        boolean isSampled(int imageTiling) {
             return switch (imageTiling) {
                 case VK_IMAGE_TILING_OPTIMAL -> (mOptimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
                 case VK_IMAGE_TILING_LINEAR -> (mLinearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0;
+                default -> false;
+            };
+        }
+
+        boolean isStorage(int imageTiling) {
+            return switch (imageTiling) {
+                case VK_IMAGE_TILING_OPTIMAL -> (mOptimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
+                case VK_IMAGE_TILING_LINEAR -> (mLinearTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
                 default -> false;
             };
         }
@@ -450,14 +473,6 @@ public class VulkanCaps extends Caps {
                 return sampleCount <= mColorSampleCounts[mColorSampleCounts.length - 1];
             }
             return false;
-        }
-
-        boolean isStorage(int imageTiling) {
-            return switch (imageTiling) {
-                case VK_IMAGE_TILING_OPTIMAL -> (mOptimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
-                case VK_IMAGE_TILING_LINEAR -> (mLinearTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0;
-                default -> false;
-            };
         }
 
         boolean isTransferSrc(int imageTiling) {

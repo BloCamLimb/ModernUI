@@ -275,21 +275,14 @@ public class TestVulkanInit implements AutoCloseable {
             mPhysicalDeviceVersion = properties.apiVersion();
             mDriverVersion = driverVersion;
             mLogger.info("Choose device ID {}, vendor ID: {}, driver version: {}",
-                    properties.deviceID(), switch (vendorID) {
-                        case 0x1002 -> "AMD";
-                        case 0x1010 -> "ImgTec";
-                        case 0x10DE -> "NVIDIA";
-                        case 0x13B5 -> "ARM";
-                        case 0x5143 -> "Qualcomm";
-                        case 0x8086 -> "INTEL";
-                        default -> "0x" + Integer.toHexString(vendorID);
-                    }, switch (vendorID) {
-                        case 0x10DE -> String.format("%d.%d.%d.%d", // NVIDIA
+                    properties.deviceID(), VKUtil.getVendorIDName(vendorID),
+                    switch (vendorID) {
+                        case VKUtil.kNVIDIA_VendorID -> String.format("%d.%d.%d.%d",
                                 driverVersion >>> 22,
                                 (driverVersion >>> 14) & 0xFF,
                                 (driverVersion >> 6) & 0xFF,
                                 driverVersion & 0x3F);
-                        default -> "0x" + Integer.toHexString(vendorID);
+                        default -> "0x" + Integer.toHexString(driverVersion);
                     });
             return true;
         }

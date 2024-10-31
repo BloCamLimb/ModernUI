@@ -72,6 +72,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         if (caps.OpenGL45 || caps.GL_ARB_texture_barrier) {
             mTextureBarrierSupport = true;
             mTextureBarrierNV = false;
+            options.mLogger.debug("Use ARB_texture_barrier");
         } else if (caps.GL_NV_texture_barrier) {
             // macOS supports this
             mTextureBarrierSupport = true;
@@ -123,6 +124,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_INVALIDATE;
             mInvalidateFramebufferSupport = true;
+            options.mLogger.debug("Use ARB_invalidate_subdata");
         } else {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
             mInvalidateFramebufferSupport = false;
@@ -135,7 +137,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
             // many issues on Intel GPU, for example, using DSA method to create vertex array
             // may or may not work, but running program with RenderDoc goes well
             mDSASupport = false;
-            options.mLogger.debug("Intel GPU detected, disabling DSA");
+            options.mLogger.info("Intel GPU detected, disabling DSA");
         }
 
         mTransferPixelsToRowBytesSupport = true;
@@ -161,20 +163,28 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         final int glslVersion;
         if (caps.OpenGL46) {
             glslVersion = 460;
+            options.mLogger.info("Using OpenGL 4.6 and GLSL 4.50");
         } else if (caps.OpenGL45) {
             glslVersion = 450;
+            options.mLogger.info("Using OpenGL 4.5 and GLSL 4.50");
         } else if (caps.OpenGL44) {
             glslVersion = 440;
+            options.mLogger.info("Using OpenGL 4.4 and GLSL 4.40");
         } else if (caps.OpenGL43) {
             glslVersion = 430;
+            options.mLogger.info("Using OpenGL 4.3 and GLSL 4.30");
         } else if (caps.OpenGL42) {
             glslVersion = 420;
+            options.mLogger.info("Using OpenGL 4.2 and GLSL 4.20");
         } else if (caps.OpenGL41) {
             glslVersion = 410;
+            options.mLogger.info("Using OpenGL 4.1 and GLSL 4.00");
         } else if (caps.OpenGL40) {
             glslVersion = 400;
+            options.mLogger.info("Using OpenGL 4.0 and GLSL 4.00");
         } else {
             glslVersion = 330;
+            options.mLogger.info("Using OpenGL 3.3 and GLSL 3.30");
         }
         mGLSLVersion = glslVersion;
         // round down the version
