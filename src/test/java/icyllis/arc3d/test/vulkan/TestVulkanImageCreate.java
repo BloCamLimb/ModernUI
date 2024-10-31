@@ -23,6 +23,8 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Image;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWVulkan;
+import org.lwjgl.vulkan.VK;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +35,7 @@ public class TestVulkanImageCreate {
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         GLFW.glfwInit();
-        LOGGER.info(Long.toString(ProcessHandle.current().pid()));
+        //GLFWVulkan.setPath(VK.getFunctionProvider());
         try (var init = new TestVulkanInit(LOGGER)) {
             init.initialize();
             ContextOptions options = new ContextOptions();
