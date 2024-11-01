@@ -121,11 +121,11 @@ public final class ColorInfo {
     @ApiStatus.Internal
     @MagicConstant(intValues = {
             CT_UNKNOWN,
-            CT_RGB_565,
+            CT_BGR_565,
             CT_R_8,
             CT_RG_88,
             CT_RGB_888,
-            CT_RGB_888x,
+            CT_RGBX_8888,
             CT_RGBA_8888,
             CT_BGRA_8888,
             CT_RGBA_8888_SRGB,
@@ -144,6 +144,8 @@ public final class ColorInfo {
             CT_ALPHA_F16,
             CT_GRAY_8,
             CT_GRAY_ALPHA_88,
+            CT_ABGR_8888,
+            CT_ARGB_8888,
             CT_R5G6B5_UNORM,
             CT_R8G8_UNORM,
             CT_A16_UNORM,
@@ -151,10 +153,6 @@ public final class ColorInfo {
             CT_A16G16_UNORM,
             CT_R16G16_FLOAT,
             CT_R16G16B16A16_UNORM,
-            CT_R_8xxx,
-            CT_ALPHA_8xxx,
-            CT_ALPHA_F32xxx,
-            CT_GRAY_8xxx
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface ColorType {
@@ -166,24 +164,29 @@ public final class ColorInfo {
      * Describes a layout of pixel data in CPU or GPU memory. A pixel may be an alpha mask, a grayscale,
      * RGB, or RGBA. It specifies the channels, their type, and width. It does not refer to a texture
      * format and the mapping to texture formats may be many-to-many. It does not specify the sRGB
-     * encoding of the stored values. The components are listed in order of where they appear in
-     * memory, except for packed formats {@link #CT_RGB_565}, {@link #CT_RGBA_1010102} and
-     * {@link #CT_BGRA_1010102}, the first component appear in most-significant bits.
+     * encoding of the stored values.
      * <p>
-     * Note: Skia doesn't support big-endian machines, because SkColorType doesn't match GrColorType.
-     * We support that because we don't use bit shifts for most operations. When needed, we check
-     * {@link PixelUtils#NATIVE_BIG_ENDIAN} and do conversion.
+     * Color types are divided into two classes: array and packed.<br>
+     * For array types, the components are listed in order of where they appear in memory. For example,
+     * {@link #CT_RGBA_8888} means that the pixel memory should be interpreted as an array of uint8 values,
+     * and the R channel appears at the first uint8 value. This is the same naming convention as Vulkan.<br>
+     * For packed types, the first component appear in the least-significant bits. For example,
+     * {@link #CT_BGR_565} means that each pixel is packed as {@code (b << 0) | (g << 5) | (r << 11)},
+     * an uint16 value. This is in the reverse order of Vulkan's naming convention.
+     * <p>
+     * Note that if bytes-per-pixel of a color type is 1, 2, 4, or 8, then Arc3D requires pixel memory
+     * to be aligned to bytes-per-pixel, otherwise it should be aligned to the size of data type as normal.
      */
     public static final int
             CT_UNKNOWN          = 0, // uninitialized
-            CT_RGB_565          = 1, // pixel with 5 bits blue, 6 bits green, 5 bits red; in 16-bit word
+            CT_BGR_565          = 1, // pixel with 5 bits blue, 6 bits green, 5 bits red; in 16-bit word
             CT_R_8              = 2, // pixel with 8 bits for red
             CT_RG_88            = 3; // pixel with 8 bits for red, green; in 16-bit word
     @ApiStatus.Internal
     public static final int
-            CT_RGB_888          = 4; // pixel with 8 bits for red, green, blue; in 24-bit word
+            CT_RGB_888          = 4; // pixel with 8 bits for red, green, blue
     public static final int
-            CT_RGB_888x         = 5, // pixel with 8 bits for red, green, blue; in 32-bit word
+            CT_RGBX_8888        = 5, // pixel with 8 bits for red, green, blue; in 32-bit word
             CT_RGBA_8888        = 6, // pixel with 8 bits for red, green, blue, alpha; in 32-bit word
             CT_BGRA_8888        = 7; // pixel with 8 bits for blue, green, red, alpha; in 32-bit word
     @ApiStatus.Internal
@@ -209,34 +212,56 @@ public final class ColorInfo {
             CT_GRAY_8           = 22; // pixel with uint8_t for grayscale level (rrr1)
     @ApiStatus.Internal
     public static final int
-            CT_GRAY_ALPHA_88    = 23; // for PNG
+            CT_GRAY_ALPHA_88    = 23; // pixel with uint8_t for grayscale level and alpha (rrrg)
+    /**
+     * Special format for big-endian CPU; GPU does not support this.
+     */
+    @ApiStatus.Internal
+    public static final int
+            CT_ABGR_8888        = 24, // pixel with 8 bits for alpha, blue, green, red; in 32-bit word
+            CT_ARGB_8888        = 25; // pixel with 8 bits for alpha, red, green, blue; in 32-bit word
+    /**
+     * A runtime alias based on host endianness, packed as
+     * {@code (r << 0) | (g << 8) | (b << 16) | (a << 24)} an uint32 value.
+     * <p>
+     * This is not a standalone packed format, it just depends on CPU:
+     * on big-endian machine this is {@link #CT_ABGR_8888};
+     * on little-endian machine this is {@link #CT_RGBA_8888}.
+     */
+    public static final int
+            CT_RGBA_8888_NATIVE = PixelUtils.NATIVE_BIG_ENDIAN ? CT_ABGR_8888 : CT_RGBA_8888;
+    /**
+     * A runtime alias based on host endianness, packed as
+     * {@code (b << 0) | (g << 8) | (r << 16) | (a << 24)} an uint32 value.
+     * <p>
+     * This is not a standalone packed format, it just depends on CPU:
+     * on big-endian machine this is {@link #CT_ARGB_8888};
+     * on little-endian machine this is {@link #CT_BGRA_8888}.
+     */
+    public static final int
+            CT_BGRA_8888_NATIVE = PixelUtils.NATIVE_BIG_ENDIAN ? CT_ARGB_8888 : CT_BGRA_8888;
     /**
      * Aliases.
      */
     public static final int
-            CT_R5G6B5_UNORM       = CT_RGB_565,
+            CT_R5G6B5_UNORM       = CT_BGR_565,
             CT_R8G8_UNORM         = CT_RG_88,
             CT_A16_UNORM          = CT_ALPHA_16,
             CT_A16_FLOAT          = CT_ALPHA_F16,
             CT_A16G16_UNORM       = CT_RG_1616,
             CT_R16G16_FLOAT       = CT_RG_F16,
             CT_R16G16B16A16_UNORM = CT_RGBA_16161616;
-    /**
-     * Unusual types that come up after reading back in cases where we are reassigning the meaning
-     * of a texture format's channels to use for a particular color format but have to read back the
-     * data to a full RGBA quadruple. (e.g. using a R8 texture format as A8 color type but the API
-     * only supports reading to RGBA8.)
-     */
     @ApiStatus.Internal
     public static final int
-            CT_R_8xxx       = 24,
-            CT_ALPHA_8xxx   = 25,
-            CT_ALPHA_F32xxx = 26,
-            CT_GRAY_8xxx    = 27;
-    @ApiStatus.Internal
-    public static final int
-            CT_COUNT        = 28;
+            CT_COUNT        = 26;
     //@formatter:on
+
+    /**
+     * Returns the number of color types but avoids inlining at compile-time.
+     */
+    public static int colorTypeCount() {
+        return CT_COUNT;
+    }
 
     /**
      * Returns the number of bytes required to store a pixel.
@@ -247,32 +272,30 @@ public final class ColorInfo {
         return switch (ct) {
             case CT_UNKNOWN -> 0;
             case CT_R_8,
-                    CT_ALPHA_8,
-                    CT_GRAY_8 -> 1;
-            case CT_RGB_565,
-                    CT_RG_88,
-                    CT_R_16,
-                    CT_R_F16,
-                    CT_ALPHA_16,
-                    CT_ALPHA_F16,
-                    CT_GRAY_ALPHA_88 -> 2;
+                 CT_ALPHA_8,
+                 CT_GRAY_8 -> 1;
+            case CT_BGR_565,
+                 CT_RG_88,
+                 CT_R_16,
+                 CT_R_F16,
+                 CT_ALPHA_16,
+                 CT_ALPHA_F16,
+                 CT_GRAY_ALPHA_88 -> 2;
             case CT_RGB_888 -> 3;
-            case CT_RGB_888x,
-                    CT_RGBA_8888,
-                    CT_BGRA_8888,
-                    CT_BGRA_1010102,
-                    CT_RGBA_1010102,
-                    CT_RG_1616,
-                    CT_RG_F16,
-                    CT_R_8xxx,
-                    CT_ALPHA_8xxx,
-                    CT_GRAY_8xxx,
-                    CT_RGBA_8888_SRGB -> 4;
+            case CT_RGBX_8888,
+                 CT_RGBA_8888,
+                 CT_BGRA_8888,
+                 CT_ABGR_8888,
+                 CT_ARGB_8888,
+                 CT_BGRA_1010102,
+                 CT_RGBA_1010102,
+                 CT_RG_1616,
+                 CT_RG_F16,
+                 CT_RGBA_8888_SRGB -> 4;
             case CT_RGBA_16161616,
-                    CT_RGBA_F16,
-                    CT_RGBA_F16_CLAMPED -> 8;
-            case CT_RGBA_F32,
-                    CT_ALPHA_F32xxx -> 16;
+                 CT_RGBA_F16,
+                 CT_RGBA_F16_CLAMPED -> 8;
+            case CT_RGBA_F32 -> 16;
             default -> throw new AssertionError(ct);
         };
     }
@@ -301,6 +324,8 @@ public final class ColorInfo {
             case CT_GRAY_ALPHA_88:
             case CT_RGBA_8888:
             case CT_BGRA_8888:
+            case CT_ABGR_8888:
+            case CT_ARGB_8888:
             case CT_RGBA_8888_SRGB:
             case CT_RGBA_1010102:
             case CT_BGRA_1010102:
@@ -315,9 +340,9 @@ public final class ColorInfo {
             case CT_GRAY_8:
             case CT_R_8:
             case CT_RG_88:
-            case CT_RGB_565:
+            case CT_BGR_565:
             case CT_RGB_888:
-            case CT_RGB_888x:
+            case CT_RGBX_8888:
             case CT_R_16:
             case CT_R_F16:
             case CT_RG_1616:
@@ -335,31 +360,29 @@ public final class ColorInfo {
         return switch (ct) {
             case CT_UNKNOWN -> 0;
             case CT_ALPHA_8,
-                    CT_ALPHA_16,
-                    CT_ALPHA_F16,
-                    CT_ALPHA_8xxx,
-                    CT_ALPHA_F32xxx -> Color.COLOR_CHANNEL_FLAG_ALPHA;
-            case CT_RGB_565,
-                    CT_RGB_888,
-                    CT_RGB_888x -> Color.COLOR_CHANNEL_FLAGS_RGB;
+                 CT_ALPHA_16,
+                 CT_ALPHA_F16 -> Color.COLOR_CHANNEL_FLAG_ALPHA;
+            case CT_BGR_565,
+                 CT_RGB_888,
+                 CT_RGBX_8888 -> Color.COLOR_CHANNEL_FLAGS_RGB;
             case CT_RGBA_16161616,
-                    CT_RGBA_F32,
-                    CT_RGBA_F16_CLAMPED,
-                    CT_RGBA_F16,
-                    CT_BGRA_1010102,
-                    CT_RGBA_1010102,
-                    CT_BGRA_8888,
-                    CT_RGBA_8888_SRGB,
-                    CT_RGBA_8888 -> Color.COLOR_CHANNEL_FLAGS_RGBA;
+                 CT_RGBA_F32,
+                 CT_RGBA_F16_CLAMPED,
+                 CT_RGBA_F16,
+                 CT_BGRA_1010102,
+                 CT_RGBA_1010102,
+                 CT_RGBA_8888,
+                 CT_BGRA_8888,
+                 CT_ABGR_8888,
+                 CT_ARGB_8888,
+                 CT_RGBA_8888_SRGB -> Color.COLOR_CHANNEL_FLAGS_RGBA;
             case CT_RG_88,
-                    CT_RG_1616,
-                    CT_RG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
-            case CT_GRAY_8,
-                    CT_GRAY_8xxx -> Color.COLOR_CHANNEL_FLAG_GRAY;
+                 CT_RG_1616,
+                 CT_RG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
+            case CT_GRAY_8 -> Color.COLOR_CHANNEL_FLAG_GRAY;
             case CT_R_8,
-                    CT_R_16,
-                    CT_R_F16,
-                    CT_R_8xxx -> Color.COLOR_CHANNEL_FLAG_RED;
+                 CT_R_16,
+                 CT_R_F16 -> Color.COLOR_CHANNEL_FLAG_RED;
             case CT_GRAY_ALPHA_88 -> Color.COLOR_CHANNEL_FLAG_GRAY | Color.COLOR_CHANNEL_FLAG_ALPHA;
             default -> throw new AssertionError(ct);
         };
@@ -376,7 +399,7 @@ public final class ColorInfo {
             case CT_R_8                 -> "R_8";
             case CT_ALPHA_8             -> "ALPHA_8";
             case CT_GRAY_8              -> "GRAY_8";
-            case CT_RGB_565             -> "RGB_565";
+            case CT_BGR_565             -> "BGR_565";
             case CT_RG_88               -> "RG_88";
             case CT_R_16                -> "R_16";
             case CT_R_F16               -> "R_F16";
@@ -384,22 +407,20 @@ public final class ColorInfo {
             case CT_ALPHA_F16           -> "ALPHA_F16";
             case CT_GRAY_ALPHA_88       -> "GRAY_ALPHA_88";
             case CT_RGB_888             -> "RGB_888";
-            case CT_RGB_888x            -> "RGB_888x";
+            case CT_RGBX_8888           -> "RGBX_8888";
             case CT_RGBA_8888           -> "RGBA_8888";
             case CT_BGRA_8888           -> "BGRA_8888";
+            case CT_ABGR_8888           -> "ABGR_8888";
+            case CT_ARGB_8888           -> "ARGB_8888";
             case CT_BGRA_1010102        -> "BGRA_1010102";
             case CT_RGBA_1010102        -> "RGBA_1010102";
             case CT_RG_1616             -> "RG_1616";
             case CT_RG_F16              -> "RG_F16";
-            case CT_R_8xxx              -> "R_8xxx";
-            case CT_ALPHA_8xxx          -> "ALPHA_8xxx";
-            case CT_GRAY_8xxx           -> "GRAY_8xxx";
             case CT_RGBA_8888_SRGB      -> "RGBA_8888_SRGB";
             case CT_RGBA_16161616       -> "RGBA_16161616";
             case CT_RGBA_F16            -> "RGBA_F16";
             case CT_RGBA_F16_CLAMPED    -> "RGBA_F16_CLAMPED";
             case CT_RGBA_F32            -> "RGBA_F32";
-            case CT_ALPHA_F32xxx        -> "ALPHA_F32xxx";
             default -> throw new AssertionError(ct);
         };
     }

@@ -91,13 +91,13 @@ public class TestGraniteRenderer {
         System.setProperty("java.awt.headless", "true");
         GLFW.glfwInit();
         LOGGER.info(Long.toString(ProcessHandle.current().pid()));
-        TinyFileDialogs.tinyfd_messageBox(
+        /*TinyFileDialogs.tinyfd_messageBox(
                 "Arc3D Test",
                 "Arc3D starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true
-        );
+        );*/
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         if (TEST_OPENGL_ES) {
@@ -319,7 +319,7 @@ public class TestGraniteRenderer {
             {
                 int[] x = {0}, y = {0}, channels = {0};
                 var imgData = STBImage.stbi_load(
-                        "F:/119937433_p0.jpg",
+                        "F:/123459857_p0.png",
                         x, y, channels, 4
                 );
                 if (imgData != null) {
@@ -329,6 +329,13 @@ public class TestGraniteRenderer {
                             MemoryUtil.memAddress(imgData),
                             4 * x[0]
                     );
+                    /*var newInfo = ImageInfo.make(x[0], y[0], ColorInfo.CT_BGR_565, ColorInfo.AT_UNPREMUL, null);
+                    long newPixels = MemoryUtil.nmemAlloc(newInfo.computeMinByteSize());
+                    Pixmap convertedPixmap = new Pixmap(
+                            newInfo, null, newPixels, (int) newInfo.minRowBytes()
+                    );
+                    boolean res = testPixmap.readPixels(convertedPixmap, 0, 0);
+                    assert res;*/
                     mTestImage = ImageUtils.makeFromPixmap(mRC,
                             testPixmap,
                             false,
@@ -336,6 +343,7 @@ public class TestGraniteRenderer {
                             "TestLocalImage");
                     LOGGER.info("Loaded texture image {}", mTestImage);
                     STBImage.stbi_image_free(imgData);
+                    //MemoryUtil.nmemFree(newPixels);
                 }
             }
 

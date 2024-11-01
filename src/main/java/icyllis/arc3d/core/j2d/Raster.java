@@ -122,7 +122,7 @@ public class Raster implements AutoCloseable {
                 yield BufferedImage.TYPE_USHORT_GRAY;
             }
             case FORMAT_RGB_565 -> {
-                ct = ColorInfo.CT_RGB_565;
+                ct = ColorInfo.CT_BGR_565;
                 at = ColorInfo.AT_OPAQUE;
                 rowBytes = width << 1;
                 yield BufferedImage.TYPE_USHORT_565_RGB;

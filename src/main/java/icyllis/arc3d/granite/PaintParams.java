@@ -212,7 +212,7 @@ public final class PaintParams implements AutoCloseable {
             return false;
         }
 
-        if (dstCT == ColorInfo.CT_RGB_565) {
+        if (dstCT == ColorInfo.CT_BGR_565) {
             // always dither bits per channel < 8
             return true;
         }
@@ -224,17 +224,19 @@ public final class PaintParams implements AutoCloseable {
     private static float getDitherRange(int dstCT) {
         // We use 1 / (2^bitdepth-1) as the range since each channel can hold 2^bitdepth values
         return switch (dstCT) {
-            case ColorInfo.CT_RGB_565 -> 1 / 31.f; // 5-bit
+            case ColorInfo.CT_BGR_565 -> 1 / 31.f; // 5-bit
             case ColorInfo.CT_ALPHA_8,
                  ColorInfo.CT_GRAY_8,
                  ColorInfo.CT_GRAY_ALPHA_88,
                  ColorInfo.CT_R_8,
                  ColorInfo.CT_RG_88,
                  ColorInfo.CT_RGB_888,
-                 ColorInfo.CT_RGB_888x,
+                 ColorInfo.CT_RGBX_8888,
                  ColorInfo.CT_RGBA_8888,
+                 ColorInfo.CT_ABGR_8888,
                  ColorInfo.CT_RGBA_8888_SRGB,
-                 ColorInfo.CT_BGRA_8888 -> 1 / 255.f; // 8-bit
+                 ColorInfo.CT_BGRA_8888,
+                 ColorInfo.CT_ARGB_8888 -> 1 / 255.f; // 8-bit
             case ColorInfo.CT_RGBA_1010102,
                  ColorInfo.CT_BGRA_1010102 -> 1 / 1023.f; // 10-bit
             case ColorInfo.CT_ALPHA_16,

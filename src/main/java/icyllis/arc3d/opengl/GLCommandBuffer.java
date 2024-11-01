@@ -436,7 +436,7 @@ public final class GLCommandBuffer extends CommandBuffer {
 
         gl.glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
         gl.glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
-        gl.glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        gl.glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
         int bpp = ColorInfo.bytesPerPixel(srcColorType);
         assert (glBuffer.getUsage() & Engine.BufferUsageFlags.kUpload) != 0;
