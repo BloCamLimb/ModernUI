@@ -2042,41 +2042,41 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
 
     //@formatter:off
     private void mapPoints1(float[] src, int srcPos, float[] dst, int dstPos, int count) {
-        float m41 = this.m41;
-        float m42 = this.m42;
-        while (count-- != 0) {
-            dst[dstPos    ] = src[srcPos    ] + m41;
-            dst[dstPos + 1] = src[srcPos + 1] + m42;
+        float tx = m41;
+        float ty = m42;
+        for (int i = 0; i < count; ++i) {
+            dst[dstPos    ] = src[srcPos    ] + tx;
+            dst[dstPos + 1] = src[srcPos + 1] + ty;
             srcPos += 2;
             dstPos += 2;
         }
     }
 
     private void mapPoints2(float[] src, int srcPos, float[] dst, int dstPos, int count) {
-        float m11 = this.m11;
-        float m22 = this.m22;
-        float m41 = this.m41;
-        float m42 = this.m42;
-        while (count-- != 0) {
-            dst[dstPos    ] = m11 * src[srcPos    ] + m41;
-            dst[dstPos + 1] = m22 * src[srcPos + 1] + m42;
+        float sx = m11;
+        float sy = m22;
+        float tx = m41;
+        float ty = m42;
+        for (int i = 0; i < count; ++i) {
+            dst[dstPos    ] = sx * src[srcPos    ] + tx;
+            dst[dstPos + 1] = sy * src[srcPos + 1] + ty;
             srcPos += 2;
             dstPos += 2;
         }
     }
 
     private void mapPoints4(float[] src, int srcPos, float[] dst, int dstPos, int count) {
-        float m11 = this.m11;
-        float m12 = this.m12;
-        float m21 = this.m21;
-        float m22 = this.m22;
-        float m41 = this.m41;
-        float m42 = this.m42;
-        while (count-- != 0) {
+        float sx = m11;
+        float sy = m22;
+        float kx = m21;
+        float ky = m12;
+        float tx = m41;
+        float ty = m42;
+        for (int i = 0; i < count; ++i) {
             float p0 = src[srcPos    ];
             float p1 = src[srcPos + 1];
-            float x = m11 * p0 + m21 * p1 + m41;
-            float y = m12 * p0 + m22 * p1 + m42;
+            float x = sx * p0 + kx * p1 + tx;
+            float y = ky * p0 + sy * p1 + ty;
             dst[dstPos    ] = x;
             dst[dstPos + 1] = y;
             srcPos += 2;
@@ -2094,7 +2094,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         float m41 = this.m41;
         float m42 = this.m42;
         float m44 = this.m44;
-        while (count-- != 0) {
+        for (int i = 0; i < count; ++i) {
             float p0 = src[srcPos    ];
             float p1 = src[srcPos + 1];
             float x = m11 * p0 + m21 * p1 + m41;
