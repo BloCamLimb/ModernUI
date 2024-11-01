@@ -21,6 +21,8 @@ package icyllis.arc3d.core;
 
 import org.lwjgl.system.MemoryUtil;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.ByteOrder;
 
 /**
@@ -245,78 +247,278 @@ public class PixelUtils {
         }
     }
 
+    /**
+     * Load a pixel value in high precision.
+     */
     @SuppressWarnings("PointlessArithmeticExpression")
     //@formatter:off
     public static void load(@ColorInfo.ColorType int ct, Object base, long addr, float[] dst) {
         switch (ct) {
-            case ColorInfo.CT_RGB_565 -> {
-                short val = UNSAFE.getShort(base, addr);
-                dst[0] = ((val >>> 11)     ) * (1.0f / 31);
-                dst[1] = ((val >>>  5) & 63) * (1.0f / 63);
-                dst[2] = ((val       ) & 31) * (1.0f / 31);
+            case ColorInfo.CT_BGR_565 -> {
+                int val = UNSAFE.getShort(base, addr);
+                dst[0] = (val & (31<<11)) * (1.0f / (31<<11));
+                dst[1] = (val & (63<< 5)) * (1.0f / (63<< 5));
+                dst[2] = (val & (31    )) * (1.0f / (31    ));
                 dst[3] = 1.0f;
             }
-            case ColorInfo.CT_RGB_888, ColorInfo.CT_RGB_888x -> {
-                dst[0] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+0)) * (1.0f / 255);
-                dst[1] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+1)) * (1.0f / 255);
-                dst[2] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+2)) * (1.0f / 255);
+            case ColorInfo.CT_RGBA_1010102 -> {
+                int val = UNSAFE.getInt(base, addr);
+                dst[0] = ((val       ) & 0x3ff) * (1.0f/1023);
+                dst[1] = ((val >>> 10) & 0x3ff) * (1.0f/1023);
+                dst[2] = ((val >>> 20) & 0x3ff) * (1.0f/1023);
+                dst[3] = ((val >>> 30)        ) * (1.0f/   3);
+            }
+            case ColorInfo.CT_BGRA_1010102 -> {
+                int val = UNSAFE.getInt(base, addr);
+                dst[0] = ((val >>> 20) & 0x3ff) * (1.0f/1023);
+                dst[1] = ((val >>> 10) & 0x3ff) * (1.0f/1023);
+                dst[2] = ((val       ) & 0x3ff) * (1.0f/1023);
+                dst[3] = ((val >>> 30)        ) * (1.0f/   3);
+            }
+            case ColorInfo.CT_R_8 -> {
+                dst[0] = (UNSAFE.getByte(base, addr) & 0xff) * (1/255.0f);
+                dst[1] = dst[2] = 0.0f;
+                dst[3] = 1.0f;
+            }
+            case ColorInfo.CT_RG_88 -> {
+                int val = UNSAFE.getShort(base, addr);
+                if (NATIVE_BIG_ENDIAN) {
+                    dst[0] = ((val >>> 8) & 0xff) * (1/255.0f);
+                    dst[1] = ((val      ) & 0xff) * (1/255.0f);
+                } else {
+                    dst[0] = ((val      ) & 0xff) * (1/255.0f);
+                    dst[1] = ((val >>> 8) & 0xff) * (1/255.0f);
+                }
+                dst[2] = 0.0f;
+                dst[3] = 1.0f;
+            }
+            case ColorInfo.CT_RGB_888 -> {
+                for (int i = 0; i < 3; i++) {
+                    dst[i] = (UNSAFE.getByte(base, addr+i) & 0xff) * (1/255.0f);
+                }
+                dst[3] = 1.0f;
+            }
+            case ColorInfo.CT_RGBX_8888 -> {
+                int val = UNSAFE.getInt(base, addr);
+                if (NATIVE_BIG_ENDIAN) {
+                    dst[0] = ((val >>> 24)       ) * (1/255.0f);
+                    dst[1] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[2] = ((val >>>  8) & 0xff) * (1/255.0f);
+                } else {
+                    dst[0] = ((val       ) & 0xff) * (1/255.0f);
+                    dst[1] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[2] = ((val >>> 16) & 0xff) * (1/255.0f);
+                }
                 dst[3] = 1.0f;
             }
             case ColorInfo.CT_RGBA_8888 -> {
-                dst[0] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+0)) * (1.0f / 255);
-                dst[1] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+1)) * (1.0f / 255);
-                dst[2] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+2)) * (1.0f / 255);
-                dst[3] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+3)) * (1.0f / 255);
+                int val = UNSAFE.getInt(base, addr);
+                if (NATIVE_BIG_ENDIAN) {
+                    dst[0] = ((val >>> 24)       ) * (1/255.0f);
+                    dst[1] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[2] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[3] = ((val       ) & 0xff) * (1/255.0f);
+                } else {
+                    dst[0] = ((val       ) & 0xff) * (1/255.0f);
+                    dst[1] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[2] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[3] = ((val >>> 24)       ) * (1/255.0f);
+                }
+            }
+            case ColorInfo.CT_BGRA_8888 -> {
+                int val = UNSAFE.getInt(base, addr);
+                if (NATIVE_BIG_ENDIAN) {
+                    dst[0] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[1] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[2] = ((val >>> 24)       ) * (1/255.0f);
+                    dst[3] = ((val       ) & 0xff) * (1/255.0f);
+                } else {
+                    dst[0] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[1] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[2] = ((val       ) & 0xff) * (1/255.0f);
+                    dst[3] = ((val >>> 24)       ) * (1/255.0f);
+                }
+            }
+            case ColorInfo.CT_ABGR_8888 -> {
+                int val = UNSAFE.getInt(base, addr);
+                if (NATIVE_BIG_ENDIAN) {
+                    dst[0] = ((val       ) & 0xff) * (1/255.0f);
+                    dst[1] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[2] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[3] = ((val >>> 24)       ) * (1/255.0f);
+                } else {
+                    dst[0] = ((val >>> 24)       ) * (1/255.0f);
+                    dst[1] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[2] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[3] = ((val       ) & 0xff) * (1/255.0f);
+                }
+            }
+            case ColorInfo.CT_ARGB_8888 -> {
+                int val = UNSAFE.getInt(base, addr);
+                if (NATIVE_BIG_ENDIAN) {
+                    dst[0] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[1] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[2] = ((val       ) & 0xff) * (1/255.0f);
+                    dst[3] = ((val >>> 24)       ) * (1/255.0f);
+                } else {
+                    dst[0] = ((val >>>  8) & 0xff) * (1/255.0f);
+                    dst[1] = ((val >>> 16) & 0xff) * (1/255.0f);
+                    dst[2] = ((val >>> 24)       ) * (1/255.0f);
+                    dst[3] = ((val       ) & 0xff) * (1/255.0f);
+                }
             }
             case ColorInfo.CT_GRAY_8 -> {
-                float y = Byte.toUnsignedInt(UNSAFE.getByte(base, addr)) * (1.0f / 255);
+                float y = (UNSAFE.getByte(base, addr) & 0xff) * (1/255.0f);
                 dst[0] = dst[1] = dst[2] = y;
                 dst[3] = 1.0f;
             }
             case ColorInfo.CT_GRAY_ALPHA_88 -> {
-                float y = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+0)) * (1.0f / 255);
-                dst[0] = dst[1] = dst[2] = y;
-                dst[3] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr+1)) * (1.0f / 255);
+                int val = UNSAFE.getShort(base, addr);
+                if (NATIVE_BIG_ENDIAN) {
+                    float y = ((val >>> 8) & 0xff) * (1/255.0f);
+                    dst[0] = dst[1] = dst[2] = y;
+                    dst[3] = ((val      ) & 0xff) * (1/255.0f);
+                } else {
+                    float y = ((val      ) & 0xff) * (1/255.0f);
+                    dst[0] = dst[1] = dst[2] = y;
+                    dst[3] = ((val >>> 8) & 0xff) * (1/255.0f);
+                }
             }
             case ColorInfo.CT_ALPHA_8 -> {
                 dst[0] = dst[1] = dst[2] = 0.0f;
-                dst[3] = Byte.toUnsignedInt(UNSAFE.getByte(base, addr)) * (1.0f / 255);
+                dst[3] = (UNSAFE.getByte(base, addr) & 0xff) * (1/255.0f);
             }
             case ColorInfo.CT_RGBA_F32 -> {
-                dst[0] = UNSAFE.getFloat(base, addr+0 );
-                dst[1] = UNSAFE.getFloat(base, addr+4 );
-                dst[2] = UNSAFE.getFloat(base, addr+8 );
-                dst[3] = UNSAFE.getFloat(base, addr+12);
+                dst[0] = UNSAFE.getFloat(base, addr +  0);
+                dst[1] = UNSAFE.getFloat(base, addr +  4);
+                dst[2] = UNSAFE.getFloat(base, addr +  8);
+                dst[3] = UNSAFE.getFloat(base, addr + 12);
             }
         }
     }
     //@formatter:on
 
+    /**
+     * Store a pixel value in high precision.
+     */
     @SuppressWarnings("PointlessArithmeticExpression")
     //@formatter:off
     public static void store(@ColorInfo.ColorType int ct, Object base, long addr, float[] src) {
         switch (ct) {
-            case ColorInfo.CT_RGB_565 -> {
-                short val = (short) ((int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 31 + .5f) << 11 |
-                                     (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 63 + .5f) << 5  |
-                                     (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 31 + .5f)       );
-                UNSAFE.putShort(base, addr, val);
+            case ColorInfo.CT_BGR_565 -> {
+                int val = (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 31 + .5f)      |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 63 + .5f) << 5 |
+                          (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 31 + .5f) << 11;
+                UNSAFE.putShort(base, addr, (short) val);
+            }
+            case ColorInfo.CT_RGBA_1010102 -> {
+                int val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 1023 + .5f)       |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 1023 + .5f) << 10 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 1023 + .5f) << 20 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) *    3 + .5f) << 30;
+                UNSAFE.putInt(base, addr, val);
+            }
+            case ColorInfo.CT_BGRA_1010102 -> {
+                int val = (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 1023 + .5f)       |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 1023 + .5f) << 10 |
+                          (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 1023 + .5f) << 20 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) *    3 + .5f) << 30;
+                UNSAFE.putInt(base, addr, val);
+            }
+            case ColorInfo.CT_R_8 -> {
+                int val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f);
+                UNSAFE.putByte(base, addr, (byte) val);
+            }
+            case ColorInfo.CT_RG_88 -> {
+                int val;
+                if (NATIVE_BIG_ENDIAN) {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f) << 8 |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f)      ;
+                } else {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f)      |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) << 8 ;
+                }
+                UNSAFE.putShort(base, addr, (short) val);
             }
             case ColorInfo.CT_RGB_888 -> {
                 for (int i = 0; i < 3; i++) {
                     UNSAFE.putByte(base, addr+i, (byte) (MathUtil.clamp(src[i], 0.0f, 1.0f) * 255 + .5f));
                 }
             }
-            case ColorInfo.CT_RGB_888x -> {
-                for (int i = 0; i < 3; i++) {
-                    UNSAFE.putByte(base, addr+i, (byte) (MathUtil.clamp(src[i], 0.0f, 1.0f) * 255 + .5f));
+            case ColorInfo.CT_RGBX_8888 -> {
+                int val;
+                if (NATIVE_BIG_ENDIAN) {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f) << 24 |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          255;
+                } else {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f)       |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          255 << 24;
                 }
-                UNSAFE.putByte(base, addr+3, (byte) 255);
+                UNSAFE.putInt(base, addr, val);
             }
             case ColorInfo.CT_RGBA_8888 -> {
-                for (int i = 0; i < 4; i++) {
-                    UNSAFE.putByte(base, addr+i, (byte) (MathUtil.clamp(src[i], 0.0f, 1.0f) * 255 + .5f));
+                int val;
+                if (NATIVE_BIG_ENDIAN) {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f) << 24 |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f)       ;
+                } else {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f)       |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f) << 24 ;
                 }
+                UNSAFE.putInt(base, addr, val);
+            }
+            case ColorInfo.CT_BGRA_8888 -> {
+                int val;
+                if (NATIVE_BIG_ENDIAN) {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f) << 24 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f)       ;
+                } else {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f)       |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f) << 24 ;
+                }
+                UNSAFE.putInt(base, addr, val);
+            }
+            case ColorInfo.CT_ABGR_8888 -> {
+                int val;
+                if (NATIVE_BIG_ENDIAN) {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f)       |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f) << 24 ;
+                } else {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f) << 24 |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f)       ;
+                }
+                UNSAFE.putInt(base, addr, val);
+            }
+            case ColorInfo.CT_ARGB_8888 -> {
+                int val;
+                if (NATIVE_BIG_ENDIAN) {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f)       |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f) << 24 ;
+                } else {
+                    val = (int) (MathUtil.clamp(src[0], 0.0f, 1.0f) * 255 + .5f) <<  8 |
+                          (int) (MathUtil.clamp(src[1], 0.0f, 1.0f) * 255 + .5f) << 16 |
+                          (int) (MathUtil.clamp(src[2], 0.0f, 1.0f) * 255 + .5f) << 24 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f)       ;
+                }
+                UNSAFE.putInt(base, addr, val);
             }
             case ColorInfo.CT_GRAY_8 -> {
                 float y = MathUtil.clamp(src[0], 0.0f, 1.0f) * 0.2126f +
@@ -328,17 +530,25 @@ public class PixelUtils {
                 float y = MathUtil.clamp(src[0], 0.0f, 1.0f) * 0.2126f +
                           MathUtil.clamp(src[1], 0.0f, 1.0f) * 0.7152f +
                           MathUtil.clamp(src[2], 0.0f, 1.0f) * 0.0722f;
-                UNSAFE.putByte(base, addr+0, (byte) (y * 255 + .5f));
-                UNSAFE.putByte(base, addr+1, (byte) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f));
+                int val;
+                if (NATIVE_BIG_ENDIAN) {
+                    val = (int) (y * 255 + .5f) << 8 |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f)     ;
+                } else {
+                    val = (int) (y * 255 + .5f)      |
+                          (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f) << 8;
+                }
+                UNSAFE.putShort(base, addr, (short) val);
             }
             case ColorInfo.CT_ALPHA_8 -> {
-                UNSAFE.putByte(base, addr, (byte) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f));
+                int val = (int) (MathUtil.clamp(src[3], 0.0f, 1.0f) * 255 + .5f);
+                UNSAFE.putByte(base, addr, (byte) val);
             }
             case ColorInfo.CT_RGBA_F32 -> {
-                UNSAFE.putFloat(base, addr+0 , src[0]);
-                UNSAFE.putFloat(base, addr+4 , src[1]);
-                UNSAFE.putFloat(base, addr+8 , src[2]);
-                UNSAFE.putFloat(base, addr+12, src[3]);
+                UNSAFE.putFloat(base, addr +  0, src[0]);
+                UNSAFE.putFloat(base, addr +  4, src[1]);
+                UNSAFE.putFloat(base, addr +  8, src[2]);
+                UNSAFE.putFloat(base, addr + 12, src[3]);
             }
         }
     }
@@ -485,5 +695,22 @@ public class PixelUtils {
         }
 
         return true;
+    }
+
+    public static void getPixelOrigin(@Nonnull Pixmap pixmap,
+                                      @Nullable Pixels pixels,
+                                      @Nonnull int[] origin) {
+        long addr = pixmap.getAddress();
+        long pix = pixels != null ? pixels.getAddress() : MemoryUtil.NULL;
+        long rb = pixmap.getRowBytes();
+        if (pix == MemoryUtil.NULL || rb == 0) {
+            origin[0] = 0;
+            origin[1] = 0;
+        } else {
+            assert addr >= pix;
+            long off = addr - pix;
+            origin[0] = (int) ((off % rb) / pixmap.getInfo().bytesPerPixel());
+            origin[1] = (int) (off / rb);
+        }
     }
 }

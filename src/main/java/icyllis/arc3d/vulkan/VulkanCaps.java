@@ -112,11 +112,11 @@ public class VulkanCaps extends Caps {
                     ctInfo.mTransferColorType = ColorInfo.CT_RGBA_8888;
                     ctInfo.mFlags = ColorTypeInfo.kUploadData_Flag | ColorTypeInfo.kRenderable_Flag;
                 }
-                // Format: VK_FORMAT_R8G8B8A8_UNORM, Surface: kRGB_888x
+                // Format: VK_FORMAT_R8G8B8A8_UNORM, Surface: kRGBX_8888
                 {
                     ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
-                    ctInfo.mColorType = ColorInfo.CT_RGB_888x;
-                    ctInfo.mTransferColorType = ColorInfo.CT_RGB_888x;
+                    ctInfo.mColorType = ColorInfo.CT_RGBX_8888;
+                    ctInfo.mTransferColorType = ColorInfo.CT_RGBX_8888;
                     ctInfo.mFlags = ColorTypeInfo.kUploadData_Flag;
                     ctInfo.mReadSwizzle = Swizzle.RGB1;
                 }
@@ -371,8 +371,9 @@ public class VulkanCaps extends Caps {
     }
 
     static class ColorTypeInfo {
-
+        @ColorInfo.ColorType
         int mColorType = ColorInfo.CT_UNKNOWN;
+        @ColorInfo.ColorType
         int mTransferColorType = ColorInfo.CT_UNKNOWN;
 
         static final int
