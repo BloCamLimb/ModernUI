@@ -132,10 +132,23 @@ public final class OutlineFont implements Font {
             throw new IllegalArgumentException();
         }
         var font = chooseFont(paint.getFontSize());
-        var metrics = getGraphics(paint).getFontMetrics(font);
-        int ascent = metrics.getAscent(); // positive
-        int descent = metrics.getDescent(); // positive
-        int leading = metrics.getLeading(); // positive
+        var g = getGraphics(paint);
+        int ascent; // positive
+        int descent; // positive
+        int leading; // positive
+        try {
+            var metrics = g.getFontMetrics(font);
+            ascent = metrics.getAscent();
+            descent = metrics.getDescent();
+            leading = metrics.getLeading();
+        } catch (HeadlessException e) {
+            // this is used in some scenarios, the results of the two methods are the same
+            // at least, in OpenJDK 21
+            var metrics = font.getLineMetrics("M", g.getFontRenderContext());
+            ascent = (int) (0.95f + metrics.getAscent());
+            descent = (int) (0.95f + metrics.getDescent());
+            leading = (int) (0.95f + metrics.getDescent() + metrics.getLeading()) - descent;
+        }
         if (fm != null) {
             fm.extendBy(-ascent, descent, leading);
         }
