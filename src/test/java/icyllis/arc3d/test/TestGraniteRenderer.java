@@ -330,21 +330,21 @@ public class TestGraniteRenderer {
                             MemoryUtil.memAddress(imgData),
                             4 * x[0]
                     );
-                    /*var newInfo = ImageInfo.make(x[0], y[0], ColorInfo.CT_BGR_565, ColorInfo.AT_UNPREMUL, null);
+                    var newInfo = ImageInfo.make(x[0], y[0], ColorInfo.CT_RGBA_F16, ColorInfo.AT_UNPREMUL, null);
                     long newPixels = MemoryUtil.nmemAlloc(newInfo.computeMinByteSize());
                     Pixmap convertedPixmap = new Pixmap(
                             newInfo, null, newPixels, (int) newInfo.minRowBytes()
                     );
                     boolean res = testPixmap.readPixels(convertedPixmap, 0, 0);
-                    assert res;*/
+                    assert res;
                     mTestImage = ImageUtils.makeFromPixmap(mRC,
-                            testPixmap,
+                            convertedPixmap,
                             false,
                             true,
                             "TestLocalImage");
                     LOGGER.info("Loaded texture image {}", mTestImage);
                     STBImage.stbi_image_free(imgData);
-                    //MemoryUtil.nmemFree(newPixels);
+                    MemoryUtil.nmemFree(newPixels);
                 }
             }
 

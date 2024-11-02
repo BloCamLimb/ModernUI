@@ -443,6 +443,31 @@ public class PixelUtils {
         dst[3] = (UNSAFE.getShort(base, addr) & 0xffff) * (1/65535.0f);
     }
 
+    public static void load_R_F16(Object base, long addr, float[] dst) {
+        dst[0] = MathUtil.halfToFloat(UNSAFE.getShort(base, addr));
+        dst[1] = dst[2] = 0.0f;
+        dst[3] = 1.0f;
+    }
+
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static void load_RG_F16(Object base, long addr, float[] dst) {
+        dst[0] = MathUtil.halfToFloat(UNSAFE.getShort(base, addr+0));
+        dst[1] = MathUtil.halfToFloat(UNSAFE.getShort(base, addr+2));
+        dst[2] = 0.0f;
+        dst[3] = 1.0f;
+    }
+
+    public static void load_RGBA_F16(Object base, long addr, float[] dst) {
+        for (int i = 0; i < 4; i++) {
+            dst[i] = MathUtil.halfToFloat(UNSAFE.getShort(base, addr + (i<<1)));
+        }
+    }
+
+    public static void load_ALPHA_F16(Object base, long addr, float[] dst) {
+        dst[0] = dst[1] = dst[2] = 0.0f;
+        dst[3] = MathUtil.halfToFloat(UNSAFE.getShort(base, addr));
+    }
+
     @SuppressWarnings("PointlessArithmeticExpression")
     public static void load_RGBA_F32(Object base, long addr, float[] dst) {
         dst[0] = UNSAFE.getFloat(base, addr +  0);
@@ -476,6 +501,10 @@ public class PixelUtils {
             case ColorInfo.CT_RG_1616       -> PixelUtils::load_RG_1616;
             case ColorInfo.CT_RGBA_16161616 -> PixelUtils::load_RGBA_16161616;
             case ColorInfo.CT_ALPHA_16      -> PixelUtils::load_ALPHA_16;
+            case ColorInfo.CT_R_F16         -> PixelUtils::load_R_F16;
+            case ColorInfo.CT_RG_F16        -> PixelUtils::load_RG_F16;
+            case ColorInfo.CT_RGBA_F16      -> PixelUtils::load_RGBA_F16;
+            case ColorInfo.CT_ALPHA_F16     -> PixelUtils::load_ALPHA_F16;
             case ColorInfo.CT_RGBA_F32      -> PixelUtils::load_RGBA_F32;
             default -> throw new AssertionError(ct);
         };
@@ -674,6 +703,26 @@ public class PixelUtils {
         UNSAFE.putShort(base, addr, val);
     }
 
+    public static void store_R_F16(Object base, long addr, float[] src) {
+        UNSAFE.putShort(base, addr, MathUtil.floatToHalf(src[0]));
+    }
+
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static void store_RG_F16(Object base, long addr, float[] src) {
+        UNSAFE.putShort(base, addr+0, MathUtil.floatToHalf(src[0]));
+        UNSAFE.putShort(base, addr+2, MathUtil.floatToHalf(src[1]));
+    }
+
+    public static void store_RGBA_F16(Object base, long addr, float[] src) {
+        for (int i = 0; i < 4; i++) {
+            UNSAFE.putShort(base, addr + (i<<1), MathUtil.floatToHalf(src[i]));
+        }
+    }
+
+    public static void store_ALPHA_F16(Object base, long addr, float[] src) {
+        UNSAFE.putShort(base, addr, MathUtil.floatToHalf(src[3]));
+    }
+
     @SuppressWarnings("PointlessArithmeticExpression")
     public static void store_RGBA_F32(Object base, long addr, float[] src) {
         UNSAFE.putFloat(base, addr +  0, src[0]);
@@ -707,6 +756,10 @@ public class PixelUtils {
             case ColorInfo.CT_RG_1616       -> PixelUtils::store_RG_1616;
             case ColorInfo.CT_RGBA_16161616 -> PixelUtils::store_RGBA_16161616;
             case ColorInfo.CT_ALPHA_16      -> PixelUtils::store_ALPHA_16;
+            case ColorInfo.CT_R_F16         -> PixelUtils::store_R_F16;
+            case ColorInfo.CT_RG_F16        -> PixelUtils::store_RG_F16;
+            case ColorInfo.CT_RGBA_F16      -> PixelUtils::store_RGBA_F16;
+            case ColorInfo.CT_ALPHA_F16     -> PixelUtils::store_ALPHA_F16;
             case ColorInfo.CT_RGBA_F32      -> PixelUtils::store_RGBA_F32;
             default -> throw new AssertionError(ct);
         };
