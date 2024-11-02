@@ -1543,43 +1543,69 @@ public abstract class GLCaps extends Caps {
 
     @Override
     public String toString() {
-        return toString(true);
+        StringBuilder b = new StringBuilder("GLCaps:\n");
+        dump(b, true);
+        return b.toString();
     }
 
-    public String toString(boolean includeFormatTable) {
-        return "GLCaps{" +
-                "mProgramBinaryFormats=" + Arrays.toString(mProgramBinaryFormats) +
-                ", mMaxFragmentUniformVectors=" + mMaxFragmentUniformVectors +
-                ", mMaxTextureMaxAnisotropy=" + mMaxTextureMaxAnisotropy +
-                ", mSupportsProtected=" + mSupportsProtected +
-                ", mSkipErrorChecks=" + mSkipErrorChecks +
-                ", mMaxLabelLength=" + mMaxLabelLength +
-                ", mDebugSupport=" + mDebugSupport +
-                ", mBufferStorageSupport=" + mBufferStorageSupport +
-                ", mDrawElementsBaseVertexSupport=" + mDrawElementsBaseVertexSupport +
-                ", mBaseInstanceSupport=" + mBaseInstanceSupport +
-                ", mDSASupport=" + mDSASupport +
-                ", mInvalidateBufferType=" + mInvalidateBufferType +
-                (includeFormatTable ? ", mFormatTable=" + Arrays.toString(mFormatTable) : "") +
-                ", mColorTypeToBackendFormat=" + Arrays.toString(mColorTypeToBackendFormat) +
-                ", mCompressionTypeToBackendFormat=" + Arrays.toString(mCompressionTypeToBackendFormat) +
-                ", mShaderCaps=" + mShaderCaps +
-                ", mAnisotropySupport=" + mAnisotropySupport +
-                ", mGpuTracingSupport=" + mGpuTracingSupport +
-                ", mConservativeRasterSupport=" + mConservativeRasterSupport +
-                ", mTransferPixelsToRowBytesSupport=" + mTransferPixelsToRowBytesSupport +
-                ", mMustSyncGpuDuringDiscard=" + mMustSyncGpuDuringDiscard +
-                ", mTextureBarrierSupport=" + mTextureBarrierSupport +
-                ", mDynamicStateArrayGeometryProcessorTextureSupport=" + mDynamicStateArrayGeometryProcessorTextureSupport +
-                ", mBlendEquationSupport=" + mBlendEquationSupport +
-                ", mMapBufferFlags=" + mMapBufferFlags +
-                ", mMaxRenderTargetSize=" + mMaxRenderTargetSize +
-                ", mMaxPreferredRenderTargetSize=" + mMaxPreferredRenderTargetSize +
-                ", mMaxVertexAttributes=" + mMaxVertexAttributes +
-                ", mMaxTextureSize=" + mMaxTextureSize +
-                ", mInternalMultisampleCount=" + mInternalMultisampleCount +
-                ", mMaxPushConstantsSize=" + mMaxPushConstantsSize +
-                '}';
+    public void dump(StringBuilder out, boolean includeFormatTable) {
+        out.append("AnisotropySupport: ").append(mAnisotropySupport).append('\n');
+        out.append("GpuTracingSupport: ").append(mGpuTracingSupport).append('\n');
+        out.append("ConservativeRasterSupport: ").append(mConservativeRasterSupport).append('\n');
+        out.append("TextureBarrierSupport: ").append(mTextureBarrierSupport).append('\n');
+        out.append("DepthClipNegativeOneToOne: ").append(mDepthClipNegativeOneToOne).append('\n');
+        out.append("BlendEquationSupport: ").append(mBlendEquationSupport).append('\n');
+        out.append("MaxRenderTargetSize: ").append(mMaxRenderTargetSize).append('\n');
+        out.append("MaxPreferredRenderTargetSize: ").append(mMaxPreferredRenderTargetSize).append('\n');
+        out.append("MaxVertexAttributes: ").append(mMaxVertexAttributes).append('\n');
+        out.append("MaxVertexBindings: ").append(mMaxVertexBindings).append('\n');
+        out.append("MaxTextureSize: ").append(mMaxTextureSize).append('\n');
+        out.append("MaxPushConstantsSize: ").append(mMaxPushConstantsSize).append('\n');
+        out.append("MaxColorAttachments: ").append(mMaxColorAttachments).append('\n');
+        out.append("MinUniformBufferOffsetAlignment: ").append(mMinUniformBufferOffsetAlignment).append('\n');
+        out.append("MinStorageBufferOffsetAlignment: ").append(mMinStorageBufferOffsetAlignment).append('\n');
+
+        out.append("ShaderCaps:\n");
+        mShaderCaps.dump("\t", out);
+
+        out.append("Vendor: ").append(mVendor).append('\n');
+        out.append("Driver: ").append(mDriver).append('\n');
+        out.append("MaxFragmentUniformVectors: ").append(mMaxFragmentUniformVectors).append('\n');
+        out.append("MaxTextureMaxAnisotropy: ").append(mMaxTextureMaxAnisotropy).append('\n');
+        out.append("SupportsProtected: ").append(mSupportsProtected).append('\n');
+        out.append("SkipErrorChecks: ").append(mSkipErrorChecks).append('\n');
+        out.append("MaxLabelLength: ").append(mMaxLabelLength).append('\n');
+        out.append("DebugSupport: ").append(mDebugSupport).append('\n');
+        out.append("BufferStorageSupport: ").append(mBufferStorageSupport).append('\n');
+        out.append("DrawElementsBaseVertexSupport: ").append(mDrawElementsBaseVertexSupport).append('\n');
+        out.append("BaseInstanceSupport: ").append(mBaseInstanceSupport).append('\n');
+        out.append("DSASupport: ").append(mDSASupport).append('\n');
+        out.append("InvalidateBufferType: ").append(mInvalidateBufferType).append('\n');
+        out.append("VertexAttribBindingSupport: ").append(mVertexAttribBindingSupport).append('\n');
+        out.append("CopyImageSupport: ").append(mCopyImageSupport).append('\n');
+        out.append("SPIRVSupport: ").append(mSPIRVSupport).append('\n');
+        out.append("ViewCompatibilityClassSupport: ").append(mViewCompatibilityClassSupport).append('\n');
+        out.append("TexStorageSupport: ").append(mTexStorageSupport).append('\n');
+        out.append("ProgramBinarySupport: ").append(mProgramBinarySupport).append('\n');
+        out.append("ProgramBinaryFormats: ").append(Arrays.toString(mProgramBinaryFormats)).append('\n');
+        out.append("GLSLVersion: ").append(mGLSLVersion).append('\n');
+
+        out.append("ColorTypeToBackendFormat:\n");
+        for (int i = 0; i < mColorTypeToBackendFormat.length; i++) {
+            out.append('\t').append(ColorInfo.colorTypeToString(i))
+                    .append("=>").append(GLUtil.glFormatName(mColorTypeToBackendFormat[i])).append('\n');
+        }
+
+        out.append("CompressionTypeToBackendFormat: ").append(Arrays.toString(mCompressionTypeToBackendFormat)).append('\n');
+
+        if (includeFormatTable) {
+            out.append("FormatTable:\n");
+            for (int i = 1; i < mFormatTable.length; i++) {
+                out.append('\t').append(GLUtil.glFormatName(GLUtil.glIndexToFormat(i)))
+                        .append("=>\n");
+                mFormatTable[i].dump("\t\t", out);
+            }
+        }
     }
 
     static class ExternalIOFormat {
@@ -1600,12 +1626,20 @@ public abstract class GLCaps extends Caps {
 
         @Override
         public String toString() {
-            return "ExternalIOFormat{" +
-                    "colorType=" + ColorInfo.colorTypeToString(mColorType) +
-                    ", externalType=0x" + Integer.toHexString(mExternalType) +
-                    ", externalTexImageFormat=0x" + Integer.toHexString(mExternalTexImageFormat) +
-                    ", externalReadFormat=0x" + Integer.toHexString(mExternalReadFormat) +
-                    '}';
+            StringBuilder b = new StringBuilder("ExternalIOFormat:\n");
+            dump("", b);
+            return b.toString();
+        }
+
+        void dump(String prefix, StringBuilder out) {
+            out.append(prefix).append("ColorType: ")
+                    .append(ColorInfo.colorTypeToString(mColorType)).append('\n');
+            out.append(prefix).append("ExternalType: 0x")
+                    .append(Integer.toHexString(mExternalType)).append('\n');
+            out.append(prefix).append("ExternalTexImageFormat: 0x")
+                    .append(Integer.toHexString(mExternalTexImageFormat)).append('\n');
+            out.append(prefix).append("ExternalReadFormat: 0x")
+                    .append(Integer.toHexString(mExternalReadFormat)).append('\n');
         }
     }
 
@@ -1647,13 +1681,24 @@ public abstract class GLCaps extends Caps {
 
         @Override
         public String toString() {
-            return "ColorTypeInfo{" +
-                    "colorType=" + ColorInfo.colorTypeToString(mColorType) +
-                    ", flags=0x" + Integer.toHexString(mFlags) +
-                    ", readSwizzle=" + Swizzle.toString(mReadSwizzle) +
-                    ", writeSwizzle=" + Swizzle.toString(mWriteSwizzle) +
-                    ", externalIOFormats=" + Arrays.toString(mExternalIOFormats) +
-                    '}';
+            StringBuilder b = new StringBuilder("ColorTypeInfo:\n");
+            dump("", b);
+            return b.toString();
+        }
+
+        void dump(String prefix, StringBuilder out) {
+            out.append(prefix).append("ColorType: ")
+                    .append(ColorInfo.colorTypeToString(mColorType)).append('\n');
+            out.append(prefix).append("Flags: 0x")
+                    .append(Integer.toHexString(mFlags)).append('\n');
+            out.append(prefix).append("ReadSwizzle: ")
+                    .append(Swizzle.toString(mReadSwizzle)).append('\n');
+            out.append(prefix).append("WriteSwizzle: ")
+                    .append(Swizzle.toString(mWriteSwizzle)).append('\n');
+            for (int i = 0; i < mExternalIOFormats.length; i++) {
+                out.append(prefix).append("ExternalIOFormat[").append(i).append("]:\n");
+                mExternalIOFormats[i].dump(prefix + "\t", out);
+            }
         }
     }
 
@@ -1738,17 +1783,24 @@ public abstract class GLCaps extends Caps {
 
         @Override
         public String toString() {
-            return "FormatInfo{" +
-                    "flags=0x" + Integer.toHexString(mFlags) +
-                    ", formatType=" + mFormatType +
-                    ", internalFormatForTexture=" + mInternalFormatForTexture +
-                    ", internalFormatForRenderbuffer=" + mInternalFormatForRenderbuffer +
-                    ", defaultExternalFormat=" + mDefaultExternalFormat +
-                    ", defaultExternalType=" + mDefaultExternalType +
-                    ", defaultColorType=" + ColorInfo.colorTypeToString(mDefaultColorType) +
-                    ", colorSampleCounts=" + Arrays.toString(mColorSampleCounts) +
-                    ", colorTypeInfos=" + Arrays.toString(mColorTypeInfos) +
-                    '}';
+            StringBuilder b = new StringBuilder("FormatInfo:\n");
+            dump("", b);
+            return b.toString();
+        }
+
+        void dump(String prefix, StringBuilder out) {
+            out.append(prefix).append("Flags: 0x").append(Integer.toHexString(mFlags)).append('\n');
+            out.append(prefix).append("FormatType: ").append(mFormatType).append('\n');
+            out.append(prefix).append("InternalFormatForTexture: ").append(mInternalFormatForTexture).append('\n');
+            out.append(prefix).append("InternalFormatForRenderbuffer: ").append(mInternalFormatForRenderbuffer).append('\n');
+            out.append(prefix).append("DefaultExternalFormat: ").append(mDefaultExternalFormat).append('\n');
+            out.append(prefix).append("DefaultExternalType: ").append(mDefaultExternalType).append('\n');
+            out.append(prefix).append("DefaultColorType: ").append(ColorInfo.colorTypeToString(mDefaultColorType)).append('\n');
+            out.append(prefix).append("ColorSampleCounts: ").append(Arrays.toString(mColorSampleCounts)).append('\n');
+            for (int i = 0; i < mColorTypeInfos.length; i++) {
+                out.append(prefix).append("ColorTypeInfo[").append(i).append("]:\n");
+                mColorTypeInfos[i].dump(prefix + "\t", out);
+            }
         }
     }
 }

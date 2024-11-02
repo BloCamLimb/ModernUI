@@ -115,32 +115,28 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
     }
 
     @Override
-    public String toString() {
-        return "ShaderCaps{" +
-                "mDualSourceBlendingSupport=" + mDualSourceBlendingSupport +
-                ", mPreferFlatInterpolation=" + mPreferFlatInterpolation +
-                ", mVertexIDSupport=" + mVertexIDSupport +
-                ", mInfinitySupport=" + mInfinitySupport +
-                ", mNonConstantArrayIndexSupport=" + mNonConstantArrayIndexSupport +
-                ", mBitManipulationSupport=" + mBitManipulationSupport +
-                ", mNoPerspectiveInterpolationSupport=" + mNoPerspectiveInterpolationSupport +
-                ", mReducedShaderMode=" + mReducedShaderMode +
-                ", mTextureQueryLod=" + mTextureQueryLod +
-                ", mUseUniformBinding=" + mUseUniformBinding +
-                ", mUseVaryingLocation=" + mUseVaryingLocation +
-                ", mUseBlockMemberOffset=" + mUseBlockMemberOffset +
-                ", mRequiresLocalOutputColorForFBFetch=" + mRequiresLocalOutputColorForFBFetch +
-                ", mMustObfuscateUniformColor=" + mMustObfuscateUniformColor +
-                ", mMustWriteToFragColor=" + mMustWriteToFragColor +
-                ", mColorSpaceMathNeedsFloat=" + mColorSpaceMathNeedsFloat +
-                ", mAvoidDfDxForGradientsWhenPossible=" + mAvoidDfDxForGradientsWhenPossible +
-                ", mSecondaryOutputExtension='" + mSecondaryOutputExtension + '\'' +
-                ", mAdvBlendEqInteraction=" + mAdvBlendEqInteraction +
-                ", mMaxFragmentSamplers=" + mMaxFragmentSamplers +
-                ", mTargetApi=" + mTargetApi +
-                ", mGLSLVersion=" + mGLSLVersion +
-                ", mSPIRVVersion=" + mSPIRVVersion +
-                ", mFMASupport=" + mFMASupport +
-                '}';
+    public void dump(String prefix, StringBuilder out) {
+        super.dump(prefix, out);
+        out.append(prefix).append("DualSourceBlendingSupport: ").append(mDualSourceBlendingSupport).append('\n');
+        out.append(prefix).append("PreferFlatInterpolation: ").append(mPreferFlatInterpolation).append('\n');
+        out.append(prefix).append("VertexIDSupport: ").append(mVertexIDSupport).append('\n');
+        out.append(prefix).append("InfinitySupport: ").append(mInfinitySupport).append('\n');
+        out.append(prefix).append("NonConstantArrayIndexSupport: ").append(mNonConstantArrayIndexSupport).append('\n');
+        out.append(prefix).append("BitManipulationSupport: ").append(mBitManipulationSupport).append('\n');
+        out.append(prefix).append("NoPerspectiveInterpolationSupport: ").append(mNoPerspectiveInterpolationSupport).append('\n');
+        out.append(prefix).append("ReducedShaderMode: ").append(mReducedShaderMode).append('\n');
+        out.append(prefix).append("TextureQueryLod: ").append(mTextureQueryLod).append('\n');
+        out.append(prefix).append("UseUniformBinding: ").append(mUseUniformBinding).append('\n');
+        out.append(prefix).append("UseVaryingLocation: ").append(mUseVaryingLocation).append('\n');
+        out.append(prefix).append("UseBlockMemberOffset: ").append(mUseBlockMemberOffset).append('\n');
+        out.append(prefix).append("UsePrecisionModifiers: ").append(mUsePrecisionModifiers).append('\n');
+        out.append(prefix).append("RequiresLocalOutputColorForFBFetch: ").append(mRequiresLocalOutputColorForFBFetch).append('\n');
+        out.append(prefix).append("MustObfuscateUniformColor: ").append(mMustObfuscateUniformColor).append('\n');
+        out.append(prefix).append("MustWriteToFragColor: ").append(mMustWriteToFragColor).append('\n');
+        out.append(prefix).append("ColorSpaceMathNeedsFloat: ").append(mColorSpaceMathNeedsFloat).append('\n');
+        out.append(prefix).append("AvoidDfDxForGradientsWhenPossible: ").append(mAvoidDfDxForGradientsWhenPossible).append('\n');
+        out.append(prefix).append("SecondaryOutputExtension: ").append(mSecondaryOutputExtension).append('\n');
+        out.append(prefix).append("AdvBlendEqInteraction: ").append(mAdvBlendEqInteraction).append('\n');
+        out.append(prefix).append("MaxFragmentSamplers: ").append(mMaxFragmentSamplers).append('\n');
     }
 }

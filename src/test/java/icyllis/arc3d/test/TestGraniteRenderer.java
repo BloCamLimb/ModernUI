@@ -132,6 +132,7 @@ public class TestGraniteRenderer {
         if (!TEST_OPENGL_ES) {
             TestDrawPass.glSetupDebugCallback();
         }
+        LOGGER.info(immediateContext.getCaps().toString());
         Painter painter = CompletableFuture.supplyAsync(
                 () -> new Painter(immediateContext),
                 RECORDING_THREAD
