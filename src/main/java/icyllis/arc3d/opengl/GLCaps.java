@@ -104,7 +104,7 @@ public abstract class GLCaps extends Caps {
         mDepthClipNegativeOneToOne = true;
     }
 
-    void initFormatTable(boolean textureStorageSupported,
+    void initFormatTable(boolean texStorageSupported,
                          boolean EXT_texture_compression_s3tc) {
         final int nonMSAARenderFlags = FormatInfo.COLOR_ATTACHMENT_FLAG;
         final int msaaRenderFlags = nonMSAARenderFlags | FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG;
@@ -124,7 +124,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_RGBA_8888;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = format;
@@ -216,7 +216,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_R_8;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_R8;
@@ -291,7 +291,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RGB;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT_5_6_5;
             info.mDefaultColorType = ColorInfo.CT_BGR_565;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_RGB565;
@@ -336,7 +336,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_RGBA_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_RGBA16F;
@@ -409,7 +409,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_R_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_R16F;
@@ -446,7 +446,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
             info.mDefaultColorType = ColorInfo.CT_RGB_888;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_RGB8;
@@ -491,7 +491,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_RG_88;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_RG8;
@@ -557,7 +557,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_RGBA_1010102;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_RGB10_A2;
@@ -630,7 +630,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_RGBA_8888_SRGB;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_SRGB8_ALPHA8;
@@ -710,7 +710,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_R_16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_R16;
@@ -748,7 +748,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_RG_1616;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_RG16;
@@ -793,7 +793,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_RGBA_16161616;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_RGBA16;
@@ -838,7 +838,7 @@ public abstract class GLCaps extends Caps {
             info.mDefaultColorType = ColorInfo.CT_RG_F16;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            if (textureStorageSupported) {
+            if (texStorageSupported) {
                 info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             }
             info.mInternalFormatForTexture = GL_RG16F;
@@ -1581,6 +1581,7 @@ public abstract class GLCaps extends Caps {
         out.append("BaseInstanceSupport: ").append(mBaseInstanceSupport).append('\n');
         out.append("DSASupport: ").append(mDSASupport).append('\n');
         out.append("InvalidateBufferType: ").append(mInvalidateBufferType).append('\n');
+        out.append("InvalidateFramebufferSupport: ").append(mInvalidateFramebufferSupport).append('\n');
         out.append("VertexAttribBindingSupport: ").append(mVertexAttribBindingSupport).append('\n');
         out.append("CopyImageSupport: ").append(mCopyImageSupport).append('\n');
         out.append("SPIRVSupport: ").append(mSPIRVSupport).append('\n');

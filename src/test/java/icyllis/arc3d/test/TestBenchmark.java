@@ -67,13 +67,15 @@ public class TestBenchmark {
         );
         var newInfo = ImageInfo.make(x[0], y[0], ColorInfo.CT_BGR_565, ColorInfo.AT_UNPREMUL, null);
         long newPixels = MemoryUtil.nmemAlloc(newInfo.computeMinByteSize());
+        assert newPixels != 0;
         DST_PIXMAP = new Pixmap(
-                newInfo, null, newPixels, (int) newInfo.minRowBytes()
+                newInfo, null, newPixels, newInfo.minRowBytes()
         );
     }
 
     @Benchmark
     public void uploadMethod1() {
-        SRC_PIXMAP.readPixels(DST_PIXMAP, 0, 0);
+        boolean res = SRC_PIXMAP.readPixels(DST_PIXMAP, 0, 0);
+        assert res;
     }
 }

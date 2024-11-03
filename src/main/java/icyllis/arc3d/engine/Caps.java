@@ -318,12 +318,17 @@ public abstract class Caps {
     }
 
     /**
-     * Maximum number of attribute values per vertex input
+     * Maximum number of attribute values (i.e. locations) per vertex input.
+     * Matrix types and double types can take up multiple consecutive locations.
      */
     public final int maxVertexAttributes() {
         return mMaxVertexAttributes;
     }
 
+    /**
+     * Maximum number of vertex binding points (i.e. vertex buffers) per vertex input.
+     * The <var>binding</var> passed to {@code bindVertexBuffer} must be in {@code [0,maxVertexBindings)}.
+     */
     public final int maxVertexBindings() {
         return mMaxVertexBindings;
     }

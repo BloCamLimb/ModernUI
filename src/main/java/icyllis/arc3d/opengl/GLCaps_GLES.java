@@ -25,9 +25,12 @@ import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengles.*;
 import org.lwjgl.system.MemoryStack;
+import org.slf4j.Logger;
+import org.slf4j.helpers.NOPLogger;
 
 import javax.annotation.Nullable;
 import java.nio.*;
+import java.util.Objects;
 
 import static org.lwjgl.opengles.GLES20.*;
 import static org.lwjgl.opengles.GLES30.*;
@@ -47,10 +50,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         if (!caps.GLES30) {
             throw new UnsupportedOperationException("OpenGL ES 3.0 is unavailable");
         }
+        Logger logger = Objects.requireNonNullElse(options.mLogger, NOPLogger.NOP_LOGGER);
 
         if (caps.GL_NV_texture_barrier) {
             mTextureBarrierSupport = true;
-            options.mLogger.info("Use NV_texture_barrier");
+            logger.info("Use NV_texture_barrier");
         } else {
             mTextureBarrierSupport = false;
         }
@@ -63,16 +67,21 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         } else if (caps.GL_EXT_draw_elements_base_vertex) {
             mDrawElementsBaseVertexSupport = true;
             mDrawElementsBaseVertexEXT = true;
+            logger.info("Use EXT_draw_elements_base_vertex");
         } else {
             mDrawElementsBaseVertexSupport = false;
         }
         mBaseInstanceSupport = caps.GL_EXT_base_instance;
+        if (mBaseInstanceSupport) {
+            logger.info("Use EXT_base_instance");
+        }
         if (caps.GLES32) {
             mCopyImageSupport = true;
             mCopyImageSubDataEXT = false;
         } else if (caps.GL_EXT_copy_image) {
             mCopyImageSupport = true;
             mCopyImageSubDataEXT = true;
+            logger.info("Use EXT_copy_image");
         } else {
             mCopyImageSupport = false;
         }
@@ -84,6 +93,9 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         mProgramParameterSupport = true;
         mVertexAttribBindingSupport = caps.GLES31;
         mBufferStorageSupport = caps.GL_EXT_buffer_storage;
+        if (mBufferStorageSupport) {
+            logger.info("Use EXT_buffer_storage");
+        }
         // our attachment points are consistent with draw buffers
         mMaxColorAttachments = Math.min(Math.min(
                         glGetInteger(GL_MAX_DRAW_BUFFERS),
@@ -96,11 +108,11 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         String vendorString = GLES20.glGetString(GL_VENDOR);
         mVendor = GLUtil.findVendor(vendorString);
         mDriver = GLUtil.findDriver(mVendor, vendorString, versionString);
-        options.mLogger.info("Identified OpenGL vendor: {}", mVendor);
-        options.mLogger.info("Identified OpenGL driver: {}", mDriver);
+        logger.info("Identified OpenGL vendor: {}", mVendor);
+        logger.info("Identified OpenGL driver: {}", mDriver);
 
         mMaxFragmentUniformVectors = GLES20.glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
-        mMaxVertexAttributes = Math.min(32, GLES20.glGetInteger(GL_MAX_VERTEX_ATTRIBS));
+        mMaxVertexAttributes = Math.min(MAX_VERTEX_ATTRIBUTES, GLES20.glGetInteger(GL_MAX_VERTEX_ATTRIBS));
 
         mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
         mInvalidateFramebufferSupport = true;
@@ -126,13 +138,13 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         final int glslVersion;
         if (caps.GLES32) {
             glslVersion = 320;
-            options.mLogger.info("Using OpenGL ES 3.2 and GLSL 3.20");
+            logger.info("Using OpenGL ES 3.2 and GLSL 3.20");
         } else if (caps.GLES31) {
             glslVersion = 310;
-            options.mLogger.info("Using OpenGL ES 3.1 and GLSL 3.10");
+            logger.info("Using OpenGL ES 3.1 and GLSL 3.10");
         } else {
             glslVersion = 300;
-            options.mLogger.info("Using OpenGL ES 3.0 and GLSL 3.00");
+            logger.info("Using OpenGL ES 3.0 and GLSL 3.00");
         }
         mGLSLVersion = glslVersion;
         if (glslVersion == 320) {
@@ -145,9 +157,13 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         initGLSL(caps, shaderCaps.mGLSLVersion);
 
         shaderCaps.mDualSourceBlendingSupport = caps.GL_EXT_blend_func_extended;
+        if (shaderCaps.mDualSourceBlendingSupport) {
+            logger.info("Use EXT_blend_func_extended");
+        }
 
         if (caps.GL_NV_conservative_raster) {
             mConservativeRasterSupport = true;
+            logger.info("Use NV_conservative_raster");
         }
 
         // Protect ourselves against tracking huge amounts of texture state.
@@ -156,20 +172,25 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         if (caps.GL_NV_blend_equation_advanced_coherent) {
             mBlendEquationSupport = Caps.BlendEquationSupport.ADVANCED_COHERENT;
             shaderCaps.mAdvBlendEqInteraction = ShaderCaps.Automatic_AdvBlendEqInteraction;
+            logger.info("Use NV_blend_equation_advanced_coherent");
         } else if (caps.GL_KHR_blend_equation_advanced_coherent) {
             mBlendEquationSupport = Caps.BlendEquationSupport.ADVANCED_COHERENT;
             mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.GeneralEnable_AdvBlendEqInteraction;
+            logger.info("Use KHR_blend_equation_advanced_coherent");
         } else if (caps.GL_NV_blend_equation_advanced) {
             mBlendEquationSupport = Caps.BlendEquationSupport.ADVANCED;
             mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.Automatic_AdvBlendEqInteraction;
+            logger.info("Use NV_blend_equation_advanced");
         } else if (caps.GL_KHR_blend_equation_advanced) {
             mBlendEquationSupport = Caps.BlendEquationSupport.ADVANCED;
             mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.GeneralEnable_AdvBlendEqInteraction;
+            logger.info("Use KHR_blend_equation_advanced");
         }
 
         mAnisotropySupport = caps.GL_EXT_texture_filter_anisotropic;
         if (mAnisotropySupport) {
             mMaxTextureMaxAnisotropy = glGetFloat(EXTTextureFilterAnisotropic.GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+            logger.info("Use EXT_texture_filter_anisotropic");
         }
 
         mMaxTextureSize = GLES20.glGetInteger(GL_MAX_TEXTURE_SIZE);
@@ -177,6 +198,9 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         mMaxPreferredRenderTargetSize = mMaxRenderTargetSize;
 
         mGpuTracingSupport = caps.GL_EXT_debug_marker;
+        if (mGpuTracingSupport) {
+            logger.info("Use EXT_debug_marker");
+        }
 
         mDynamicStateArrayGeometryProcessorTextureSupport = true;
 
