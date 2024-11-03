@@ -36,7 +36,6 @@ import org.slf4j.helpers.NOPLogger;
 import java.io.*;
 import java.lang.ref.Cleaner;
 import java.net.URI;
-import java.net.URL;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
@@ -202,7 +201,6 @@ public final class Core {
         if (options.mLogger == null || options.mLogger == NOPLogger.NOP_LOGGER) {
             options.mLogger = LoggerFactory.getLogger("Arc3D");
         }
-        options.mSkipGLErrorChecks = Boolean.TRUE;
         return options;
     }
 
@@ -249,7 +247,7 @@ public final class Core {
         LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
         LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
 
-        LOGGER.debug(MARKER, "OpenGL caps: {}", dc.getCaps());
+        LOGGER.info(MARKER, "OpenGL caps: {}", dc.getCaps());
         return true;
     }
 
@@ -702,17 +700,17 @@ public final class Core {
     }
 
     /**
-     * Launches the associated application to open the URL.
+     * Launches the associated application to open the URI.
      *
      * @return true on success, false on failure
      */
-    public static boolean openURL(@NonNull URL url) {
+    public static boolean openURI(@NonNull URI uri) {
         try {
-            String s = url.toString();
+            String s = uri.toString();
             String[] cmd = switch (Platform.get()) {
                 case WINDOWS -> new String[]{"rundll32", "url.dll,FileProtocolHandler", s};
                 case MACOSX -> new String[]{"open", s};
-                default -> new String[]{"xdg-open", url.getProtocol().equals("file")
+                default -> new String[]{"xdg-open", "file".equals(uri.getScheme())
                         ? s.replace("file:", "file://")
                         : s};
             };
@@ -721,20 +719,6 @@ public final class Core {
                 reader.lines().forEach(line -> LOGGER.error(MARKER, line));
             }
             return true;
-        } catch (IOException e) {
-            LOGGER.error(MARKER, "Failed to open URL: {}", url, e);
-            return false;
-        }
-    }
-
-    /**
-     * Launches the associated application to open the URL.
-     *
-     * @return true on success, false on failure
-     */
-    public static boolean openURI(@NonNull URI uri) {
-        try {
-            return openURL(uri.toURL());
         } catch (Exception e) {
             LOGGER.error(MARKER, "Failed to open URI: {}", uri, e);
             return false;
@@ -742,7 +726,7 @@ public final class Core {
     }
 
     /**
-     * Launches the associated application to open the URL.
+     * Launches the associated application to open the URI.
      *
      * @return true on success, false on failure
      */
