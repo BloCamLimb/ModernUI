@@ -25,9 +25,12 @@ import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
+import org.slf4j.Logger;
+import org.slf4j.helpers.NOPLogger;
 
 import javax.annotation.Nullable;
 import java.nio.*;
+import java.util.Objects;
 
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL20C.*;
@@ -53,6 +56,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         if (!caps.OpenGL33) {
             throw new UnsupportedOperationException("OpenGL 3.3 is unavailable");
         }
+        Logger logger = Objects.requireNonNullElse(options.mLogger, NOPLogger.NOP_LOGGER);
 
         /*if (!caps.GL_ARB_draw_elements_base_vertex) {
                     missingExtensions.add("ARB_draw_elements_base_vertex");
@@ -72,12 +76,11 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         if (caps.OpenGL45 || caps.GL_ARB_texture_barrier) {
             mTextureBarrierSupport = true;
             mTextureBarrierNV = false;
-            options.mLogger.debug("Use ARB_texture_barrier");
         } else if (caps.GL_NV_texture_barrier) {
             // macOS supports this
             mTextureBarrierSupport = true;
             mTextureBarrierNV = true;
-            options.mLogger.info("Use NV_texture_barrier");
+            logger.info("Use NV_texture_barrier");
         } else {
             mTextureBarrierSupport = false;
         }
@@ -107,8 +110,8 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         String vendorString = glGetString(GL_VENDOR);
         mVendor = GLUtil.findVendor(vendorString);
         mDriver = GLUtil.findDriver(mVendor, vendorString, versionString);
-        options.mLogger.info("Identified OpenGL vendor: {}", mVendor);
-        options.mLogger.info("Identified OpenGL driver: {}", mDriver);
+        logger.info("Identified OpenGL vendor: {}", mVendor);
+        logger.info("Identified OpenGL driver: {}", mDriver);
 
         // macOS supports this
         if (caps.OpenGL41 || caps.GL_ARB_ES2_compatibility) {
@@ -124,7 +127,6 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         if (caps.OpenGL43 || caps.GL_ARB_invalidate_subdata) {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_INVALIDATE;
             mInvalidateFramebufferSupport = true;
-            options.mLogger.debug("Use ARB_invalidate_subdata");
         } else {
             mInvalidateBufferType = INVALIDATE_BUFFER_TYPE_NULL_DATA;
             mInvalidateFramebufferSupport = false;
@@ -137,7 +139,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
             // many issues on Intel GPU, for example, using DSA method to create vertex array
             // may or may not work, but running program with RenderDoc goes well
             mDSASupport = false;
-            options.mLogger.info("Intel GPU detected, disabling DSA");
+            logger.info("Intel GPU detected, disabling DSA");
         }
 
         mTransferPixelsToRowBytesSupport = true;
@@ -163,28 +165,28 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         final int glslVersion;
         if (caps.OpenGL46) {
             glslVersion = 460;
-            options.mLogger.info("Using OpenGL 4.6 and GLSL 4.50");
+            logger.info("Using OpenGL 4.6 and GLSL 4.50");
         } else if (caps.OpenGL45) {
             glslVersion = 450;
-            options.mLogger.info("Using OpenGL 4.5 and GLSL 4.50");
+            logger.info("Using OpenGL 4.5 and GLSL 4.50");
         } else if (caps.OpenGL44) {
             glslVersion = 440;
-            options.mLogger.info("Using OpenGL 4.4 and GLSL 4.40");
+            logger.info("Using OpenGL 4.4 and GLSL 4.40");
         } else if (caps.OpenGL43) {
             glslVersion = 430;
-            options.mLogger.info("Using OpenGL 4.3 and GLSL 4.30");
+            logger.info("Using OpenGL 4.3 and GLSL 4.30");
         } else if (caps.OpenGL42) {
             glslVersion = 420;
-            options.mLogger.info("Using OpenGL 4.2 and GLSL 4.20");
+            logger.info("Using OpenGL 4.2 and GLSL 4.20");
         } else if (caps.OpenGL41) {
             glslVersion = 410;
-            options.mLogger.info("Using OpenGL 4.1 and GLSL 4.00");
+            logger.info("Using OpenGL 4.1 and GLSL 4.00");
         } else if (caps.OpenGL40) {
             glslVersion = 400;
-            options.mLogger.info("Using OpenGL 4.0 and GLSL 4.00");
+            logger.info("Using OpenGL 4.0 and GLSL 4.00");
         } else {
             glslVersion = 330;
-            options.mLogger.info("Using OpenGL 3.3 and GLSL 3.30");
+            logger.info("Using OpenGL 3.3 and GLSL 3.30");
         }
         mGLSLVersion = glslVersion;
         // round down the version
@@ -208,6 +210,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
 
         if (caps.GL_NV_conservative_raster) {
             mConservativeRasterSupport = true;
+            logger.info("Use NV_conservative_raster");
         }
 
         // Protect ourselves against tracking huge amounts of texture state.
@@ -216,20 +219,29 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         if (caps.GL_NV_blend_equation_advanced_coherent) {
             mBlendEquationSupport = Caps.BlendEquationSupport.ADVANCED_COHERENT;
             shaderCaps.mAdvBlendEqInteraction = ShaderCaps.Automatic_AdvBlendEqInteraction;
+            logger.info("Use NV_blend_equation_advanced_coherent");
         } else if (caps.GL_KHR_blend_equation_advanced_coherent) {
             mBlendEquationSupport = Caps.BlendEquationSupport.ADVANCED_COHERENT;
             mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.GeneralEnable_AdvBlendEqInteraction;
+            logger.info("Use KHR_blend_equation_advanced_coherent");
         } else if (caps.GL_NV_blend_equation_advanced) {
             mBlendEquationSupport = Caps.BlendEquationSupport.ADVANCED;
             mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.Automatic_AdvBlendEqInteraction;
+            logger.info("Use NV_blend_equation_advanced");
         } else if (caps.GL_KHR_blend_equation_advanced) {
             mBlendEquationSupport = Caps.BlendEquationSupport.ADVANCED;
             mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.GeneralEnable_AdvBlendEqInteraction;
+            logger.info("Use KHR_blend_equation_advanced");
         }
 
-        mAnisotropySupport = caps.OpenGL46 ||
-                caps.GL_ARB_texture_filter_anisotropic ||
-                caps.GL_EXT_texture_filter_anisotropic;
+        if (caps.OpenGL46 || caps.GL_ARB_texture_filter_anisotropic) {
+            mAnisotropySupport = true;
+        } else if (caps.GL_EXT_texture_filter_anisotropic) {
+            mAnisotropySupport = true;
+            logger.info("Use EXT_texture_filter_anisotropic");
+        } else {
+            mAnisotropySupport = false;
+        }
         if (mAnisotropySupport) {
             mMaxTextureMaxAnisotropy = GL11C.glGetFloat(GL_MAX_TEXTURE_MAX_ANISOTROPY);
         }
@@ -239,6 +251,9 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
         mMaxPreferredRenderTargetSize = mMaxRenderTargetSize;
 
         mGpuTracingSupport = caps.GL_EXT_debug_marker;
+        if (mGpuTracingSupport) {
+            logger.info("Use EXT_debug_marker");
+        }
 
         mDynamicStateArrayGeometryProcessorTextureSupport = true;
 

@@ -778,9 +778,28 @@ public class PixelUtils {
      * Performs color type, alpha type, and color space conversion.
      * Addresses (offsets) must be aligned to bytes-per-pixel, scaling is not allowed.
      */
-    public static boolean convertPixels(ImageInfo srcInfo, Object srcBase,
+    public static boolean convertPixels(@Nonnull Pixmap src, @Nonnull Pixmap dst) {
+        return convertPixels(src.getInfo(), src.getBase(), src.getAddress(), src.getRowBytes(),
+                dst.getInfo(), dst.getBase(), dst.getAddress(), dst.getRowBytes(), false);
+    }
+
+    /**
+     * Performs color type, alpha type, color space, and origin conversion.
+     * Addresses (offsets) must be aligned to bytes-per-pixel (except for non-power-of-two),
+     * scaling is not allowed.
+     */
+    public static boolean convertPixels(@Nonnull Pixmap src, @Nonnull Pixmap dst, boolean flipY) {
+        return convertPixels(src.getInfo(), src.getBase(), src.getAddress(), src.getRowBytes(),
+                dst.getInfo(), dst.getBase(), dst.getAddress(), dst.getRowBytes(), flipY);
+    }
+
+    /**
+     * Performs color type, alpha type, and color space conversion.
+     * Addresses (offsets) must be aligned to bytes-per-pixel, scaling is not allowed.
+     */
+    public static boolean convertPixels(@Nonnull ImageInfo srcInfo, Object srcBase,
                                         long srcAddr, long srcRowBytes,
-                                        ImageInfo dstInfo, Object dstBase,
+                                        @Nonnull ImageInfo dstInfo, Object dstBase,
                                         long dstAddr, long dstRowBytes) {
         return convertPixels(srcInfo, srcBase, srcAddr, srcRowBytes,
                 dstInfo, dstBase, dstAddr, dstRowBytes, false);
@@ -791,9 +810,9 @@ public class PixelUtils {
      * Addresses (offsets) must be aligned to bytes-per-pixel (except for non-power-of-two),
      * scaling is not allowed.
      */
-    public static boolean convertPixels(ImageInfo srcInfo, Object srcBase,
+    public static boolean convertPixels(@Nonnull ImageInfo srcInfo, Object srcBase,
                                         long srcAddr, long srcRowBytes,
-                                        ImageInfo dstInfo, Object dstBase,
+                                        @Nonnull ImageInfo dstInfo, Object dstBase,
                                         long dstAddr, long dstRowBytes,
                                         boolean flipY) {
         if (!srcInfo.isValid() || !dstInfo.isValid()) {

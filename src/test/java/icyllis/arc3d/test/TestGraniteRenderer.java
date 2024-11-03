@@ -333,9 +333,9 @@ public class TestGraniteRenderer {
                     var newInfo = ImageInfo.make(x[0], y[0], ColorInfo.CT_RGBA_F16, ColorInfo.AT_UNPREMUL, null);
                     long newPixels = MemoryUtil.nmemAlloc(newInfo.computeMinByteSize());
                     Pixmap convertedPixmap = new Pixmap(
-                            newInfo, null, newPixels, (int) newInfo.minRowBytes()
+                            newInfo, null, newPixels, newInfo.minRowBytes()
                     );
-                    boolean res = testPixmap.readPixels(convertedPixmap, 0, 0);
+                    boolean res = PixelUtils.convertPixels(testPixmap, convertedPixmap);
                     assert res;
                     mTestImage = ImageUtils.makeFromPixmap(mRC,
                             convertedPixmap,
