@@ -329,7 +329,7 @@ public class PixelUtils {
     public static int load_RGBA_8888(Object base, long addr) {
         int val = UNSAFE.getInt(base, addr);
         if (NATIVE_BIG_ENDIAN) {
-            return val >>> 8 | (val & 0xff) << 24;
+            return val >>> 8 | val << 24;
         } else {
             return (val & 0xff00ff00) | (val & 0xff) << 16 | ((val >>> 16) & 0xff);
         }
@@ -444,7 +444,7 @@ public class PixelUtils {
     }
 
     /**
-     * Load a pixel value in high precision.
+     * Load a pixel value in low precision.
      */
     @Nonnull
     @Contract(pure = true)
@@ -499,8 +499,107 @@ public class PixelUtils {
         b = (b *  9 + 36) / 74;
         UNSAFE.putShort(base, addr, (short) (b | g << 5 | r << 11));
     }
+    public static void store_R_8(Object base, long addr, int src) {
+        UNSAFE.putByte(base, addr, (byte) (src >>> 16));
+    }
+    public static void store_RG_88(Object base, long addr, int src) {
+        if (NATIVE_BIG_ENDIAN) {
+            // ARGB -> RG
+            UNSAFE.putShort(base, addr, (short) (src >>> 8));
+        } else {
+            // ARGB -> GR
+            UNSAFE.putShort(base, addr, (short) (((src >>> 16) & 0xff) | (src & 0xff00)));
+        }
+    }
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static void store_RGB_888(Object base, long addr, int src) {
+        UNSAFE.putByte(base, addr+0, (byte) (src >>> 16));
+        UNSAFE.putByte(base, addr+1, (byte) (src >>>  8));
+        UNSAFE.putByte(base, addr+2, (byte) (src       ));
+    }
+    public static void store_RGBX_8888(Object base, long addr, int src) {
+        if (NATIVE_BIG_ENDIAN) {
+            // ARGB -> RGBX
+            UNSAFE.putInt(base, addr, src << 8 | 0xff);
+        } else {
+            // ARGB -> XBGR
+            UNSAFE.putInt(base, addr, (src & 0xff00) | (src & 0xff) << 16 | ((src >>> 16) & 0xff) | 0xff000000);
+        }
+    }
+    public static void store_RGBA_8888(Object base, long addr, int src) {
+        if (NATIVE_BIG_ENDIAN) {
+            // ARGB -> RGBA
+            UNSAFE.putInt(base, addr, src << 8 | src >>> 24);
+        } else {
+            // ARGB -> ABGR
+            UNSAFE.putInt(base, addr, (src & 0xff00ff00) | (src & 0xff) << 16 | ((src >>> 16) & 0xff));
+        }
+    }
+    public static void store_BGRA_8888(Object base, long addr, int src) {
+        if (NATIVE_BIG_ENDIAN) {
+            UNSAFE.putInt(base, addr, Integer.reverseBytes(src));
+        } else {
+            UNSAFE.putInt(base, addr, src);
+        }
+    }
+    public static void store_ABGR_8888(Object base, long addr, int src) {
+        if (NATIVE_BIG_ENDIAN) {
+            // ARGB -> ABGR
+            UNSAFE.putInt(base, addr, (src & 0xff00ff00) | (src & 0xff) << 16 | ((src >>> 16) & 0xff));
+        } else {
+            // ARGB -> RGBA
+            UNSAFE.putInt(base, addr, src << 8 | src >>> 24);
+        }
+    }
+    public static void store_ARGB_8888(Object base, long addr, int src) {
+        if (NATIVE_BIG_ENDIAN) {
+            UNSAFE.putInt(base, addr, src);
+        } else {
+            UNSAFE.putInt(base, addr, Integer.reverseBytes(src));
+        }
+    }
+    public static void store_GRAY_8(Object base, long addr, int src) {
+        float y = ((src >>> 16) & 0xff) * 0.2126f +
+                  ((src >>>  8) & 0xff) * 0.7152f +
+                  ((src       ) & 0xff) * 0.0722f;
+        UNSAFE.putByte(base, addr, (byte) (y + .5f));
+    }
+    public static void store_GRAY_ALPHA_88(Object base, long addr, int src) {
+        float y = ((src >>> 16) & 0xff) * 0.2126f +
+                  ((src >>>  8) & 0xff) * 0.7152f +
+                  ((src       ) & 0xff) * 0.0722f;
+        if (NATIVE_BIG_ENDIAN) {
+            UNSAFE.putShort(base, addr, (short) ((int) (y + .5f) << 8 | src >>> 24));
+        } else {
+            UNSAFE.putShort(base, addr, (short) ((int) (y + .5f) | ((src >>> 16) & 0xff00)));
+        }
+    }
+    public static void store_ALPHA_8(Object base, long addr, int src) {
+        UNSAFE.putByte(base, addr, (byte) (src >>> 24));
+    }
 
-
+    /**
+     * Store a pixel value in low precision.
+     */
+    @Nonnull
+    @Contract(pure = true)
+    public static PixelStore store(@ColorInfo.ColorType int ct) {
+        return switch (ct) {
+            case ColorInfo.CT_BGR_565       -> PixelUtils::store_BGR_565;
+            case ColorInfo.CT_R_8           -> PixelUtils::store_R_8;
+            case ColorInfo.CT_RG_88         -> PixelUtils::store_RG_88;
+            case ColorInfo.CT_RGB_888       -> PixelUtils::store_RGB_888;
+            case ColorInfo.CT_RGBX_8888     -> PixelUtils::store_RGBX_8888;
+            case ColorInfo.CT_RGBA_8888     -> PixelUtils::store_RGBA_8888;
+            case ColorInfo.CT_BGRA_8888     -> PixelUtils::store_BGRA_8888;
+            case ColorInfo.CT_ABGR_8888     -> PixelUtils::store_ABGR_8888;
+            case ColorInfo.CT_ARGB_8888     -> PixelUtils::store_ARGB_8888;
+            case ColorInfo.CT_GRAY_8        -> PixelUtils::store_GRAY_8;
+            case ColorInfo.CT_GRAY_ALPHA_88 -> PixelUtils::store_GRAY_ALPHA_88;
+            case ColorInfo.CT_ALPHA_8       -> PixelUtils::store_ALPHA_8;
+            default -> throw new AssertionError(ct);
+        };
+    }
     //@formatter:on
 
     /**
@@ -1147,9 +1246,12 @@ public class PixelUtils {
             dstRowBytes = -dstRowBytes;
         }
 
-        if (flags == 0 && !csXform && srcBpp <= 8 && dstBpp <= 8) {
+        if (flags == 0 && !csXform &&
+                ColorInfo.maxBitsPerChannel(srcCT) <= 8 &&
+                ColorInfo.maxBitsPerChannel(dstCT) <= 8) {
+            // low precision pipeline
             final PixelLoad load = load(srcCT);
-            final PixelStore store = PixelUtils::store_BGR_565;
+            final PixelStore store = store(dstCT);
 
             for (int i = 0; i < height; i++) {
                 long nextSrcAddr = srcAddr + srcRowBytes;
@@ -1163,6 +1265,7 @@ public class PixelUtils {
                 dstAddr = nextDstAddr;
             }
         } else {
+            // high precision pipeline
             final PixelOp load = loadOp(srcCT);
             final boolean unpremul = (flags & kColorSpaceXformFlagUnpremul) != 0;
             final ColorSpace.Connector connector = csXform ? ColorSpace.connect(srcCS, dstCS) : null;
@@ -1203,22 +1306,5 @@ public class PixelUtils {
         }
 
         return true;
-    }
-
-    public static void getPixelOrigin(@Nonnull Pixmap pixmap,
-                                      @Nullable Pixels pixels,
-                                      @Nonnull int[] origin) {
-        long addr = pixmap.getAddress();
-        long pix = pixels != null ? pixels.getAddress() : MemoryUtil.NULL;
-        long rb = pixmap.getRowBytes();
-        if (pix == MemoryUtil.NULL || rb == 0) {
-            origin[0] = 0;
-            origin[1] = 0;
-        } else {
-            assert addr >= pix;
-            long off = addr - pix;
-            origin[0] = (int) ((off % rb) / pixmap.getInfo().bytesPerPixel());
-            origin[1] = (int) (off / rb);
-        }
     }
 }

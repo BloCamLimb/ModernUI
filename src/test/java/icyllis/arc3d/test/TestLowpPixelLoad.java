@@ -56,8 +56,6 @@ public class TestLowpPixelLoad {
             int b = (i * 21 + 42) / 85;
             if (a != b) {
                 throw new IllegalStateException();
-            } else {
-                System.out.println("OK");
             }
         }
     }

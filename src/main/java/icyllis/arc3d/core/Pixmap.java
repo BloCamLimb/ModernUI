@@ -25,20 +25,20 @@ import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.ref.WeakReference;
 import java.util.Objects;
 
 /**
  * Immutable structure that pairs ImageInfo with pixels and row bytes.
  * <p>
- * This class does not try to manage the lifetime of pixels, see {@link Pixels}.
+ * This class does not try to manage the lifetime of pixels, unless it's backed
+ * by a heap array, use {@link Pixels} to manage the native pixel memory.
  */
 public class Pixmap {
 
     @Nonnull
     protected final ImageInfo mInfo;
     @Nullable
-    protected final WeakReference<Object> mBase;
+    protected final Object mBase;
     protected final long mAddress;
     protected final int mRowBytes;
 
@@ -60,7 +60,10 @@ public class Pixmap {
                   @Nullable Object base,
                   @NativeType("const void *") long address,
                   int rowBytes) {
-        this(info, base != null ? new WeakReference<>(base) : null, address, rowBytes);
+        mInfo = Objects.requireNonNull(info);
+        mBase = base;
+        mAddress = address;
+        mRowBytes = rowBytes;
     }
 
     /**
@@ -69,16 +72,6 @@ public class Pixmap {
     public Pixmap(@Nonnull ImageInfo newInfo,
                   @Nonnull Pixmap oldPixmap) {
         this(newInfo, oldPixmap.mBase, oldPixmap.mAddress, oldPixmap.mRowBytes);
-    }
-
-    Pixmap(@Nonnull ImageInfo info,
-           @Nullable WeakReference<Object> base,
-           @NativeType("const void *") long address,
-           int rowBytes) {
-        mInfo = Objects.requireNonNull(info);
-        mBase = base;
-        mAddress = address;
-        mRowBytes = rowBytes;
     }
 
     /**
@@ -131,7 +124,7 @@ public class Pixmap {
      */
     @Nullable
     public Object getBase() {
-        return mBase != null ? mBase.get() : null;
+        return mBase;
     }
 
     /**
@@ -155,7 +148,7 @@ public class Pixmap {
     }
 
     /**
-     * Returns address at (x, y). Returns NULL if {@link #getAddress()} is NULL.
+     * Returns address/offset at (x, y). Returns NULL if {@link #getAddress()} is NULL.
      * <p>
      * Input is not validated, and return value is undefined if ColorType is unknown.
      *
@@ -173,6 +166,13 @@ public class Pixmap {
         return addr;
     }
 
+    /**
+     * Make a pixmap width, height, pixel address to intersection of this with subset,
+     * if intersection is not empty; and return the new pixmap. Otherwise, return null.
+     *
+     * @param subset bounds to intersect with SkPixmap
+     * @return a pixmap if intersection of this and subset is not empty
+     */
     @Nullable
     public Pixmap makeSubset(@Nonnull Rect2ic subset) {
         var r = new Rect2i(0, 0, getWidth(), getHeight());
@@ -184,11 +184,53 @@ public class Pixmap {
         assert (r.y() < getHeight());
 
         return new Pixmap(
-                getInfo().makeWH(r.width(), r.height()), mBase,
-                getAddress(r.x(), r.y()), mRowBytes
+                getInfo().makeWH(r.width(), r.height()), getBase(),
+                getAddress(r.x(), r.y()), getRowBytes()
         );
     }
 
+    /**
+     * Returns origin of pixels within Pixels pix. Pixmap bounds is always contained
+     * by Pixels bounds, which may be the same size or larger. Multiple Pixmap
+     * can share the same Pixels instance, where each Pixmap has different bounds.
+     * <p>
+     * The returned origin added to Pixmap dimensions equals or is smaller than the
+     * Pixels dimensions.
+     * <p>
+     * Returns (0, 0) if pixels is NULL.
+     */
+    public void getPixelOrigin(long pix,
+                               @Nonnull @Size(2) int[] origin) {
+        long addr = getAddress();
+        long rb = getRowBytes();
+        if (pix == MemoryUtil.NULL || rb == 0) {
+            origin[0] = 0;
+            origin[1] = 0;
+        } else {
+            assert addr >= pix;
+            long off = addr - pix;
+            origin[0] = (int) ((off % rb) / getInfo().bytesPerPixel());
+            origin[1] = (int) (off / rb);
+        }
+    }
+
+    /**
+     * Gets the pixel value at (x, y), and converts it to {@link ColorInfo#CT_BGRA_8888_NATIVE},
+     * {@link ColorInfo#AT_UNPREMUL}, and {@link ColorSpace.Named#SRGB}.
+     * <p>
+     * Input is not validated: out of bounds values of x or y trigger an assertion error;
+     * and returns undefined values or may crash. Fails if color type is unknown or
+     * pixel data is NULL.
+     * <p>
+     * If the max bits per channel for the color type is greater than 8, or colors are premultiplied,
+     * then color precision may be lost in the conversion. Otherwise, precision will not be lost.
+     * If the color space is not sRGB, then this method will perform color space transformation,
+     * which can be slow.
+     *
+     * @param x column index, zero or greater, and less than width()
+     * @param y row index, zero or greater, and less than height()
+     * @return pixel converted to unpremultiplied color
+     */
     @ColorInt
     public int getColor(int x, int y) {
         assert getAddress() != MemoryUtil.NULL;
@@ -196,14 +238,15 @@ public class Pixmap {
         assert y < getHeight();
         Object base = getBase();
         long addr = getAddress(x, y);
+        var ct = getColorType();
         var at = getAlphaType();
         var cs = getColorSpace();
         if (at == ColorInfo.AT_PREMUL || (cs != null && !cs.isSrgb())) {
-            int[] col = new int[1];
-            var srcInfo = new ImageInfo(1, 1, getColorType(), at, cs);
+            var srcInfo = new ImageInfo(1, 1, ct, at, cs);
             var dstInfo = new ImageInfo(1, 1, ColorInfo.CT_BGRA_8888_NATIVE,
                     ColorInfo.AT_UNPREMUL, ColorSpace.get(ColorSpace.Named.SRGB));
-            var res = PixelUtils.convertPixels(
+            int[] col = new int[1];
+            boolean res = PixelUtils.convertPixels(
                     srcInfo, base, addr, getRowBytes(),
                     dstInfo, col, Unsafe.ARRAY_INT_BASE_OFFSET, getRowBytes()
             );
@@ -211,9 +254,30 @@ public class Pixmap {
             return col[0];
         } else {
             // no alpha type and color space conversion
-            return PixelUtils.load(getColorType())
+            return PixelUtils.load(ct)
                     .load(base, addr);
         }
+    }
+
+    /**
+     * Gets the pixel at (x, y), and converts it to {@link ColorInfo#CT_RGBA_F32}.
+     * This method will not perform alpha type or color space transformation,
+     * the resulting color has {@link #getAlphaType()} and in {@link #getColorSpace()}.
+     * <p>
+     * Input is not validated: out of bounds values of x or y trigger an assertion error;
+     * and returns undefined values or may crash. Fails if color type is unknown or
+     * pixel data is NULL.
+     *
+     * @param x   column index, zero or greater, and less than width()
+     * @param y   row index, zero or greater, and less than height()
+     * @param dst pixel converted to float color
+     */
+    public void getColor4f(int x, int y, @Nonnull @Size(4) float[] dst) {
+        assert getAddress() != MemoryUtil.NULL;
+        assert x < getWidth();
+        assert y < getHeight();
+        PixelUtils.loadOp(getColorType())
+                .op(getBase(), getAddress(x, y), dst);
     }
 
     /**
@@ -340,7 +404,7 @@ public class Pixmap {
     public String toString() {
         return "Pixmap{" +
                 "mInfo=" + mInfo +
-                ", mBase=" + getBase() +
+                ", mBase=" + mBase +
                 ", mAddress=0x" + Long.toHexString(mAddress) +
                 ", mRowBytes=" + mRowBytes +
                 '}';

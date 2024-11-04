@@ -300,6 +300,38 @@ public final class ColorInfo {
         };
     }
 
+    public static int maxBitsPerChannel(@ColorType int ct) {
+        return switch (ct) {
+            case CT_UNKNOWN -> 0;
+            case CT_BGR_565 -> 6;
+            case CT_R_8,
+                 CT_ALPHA_8,
+                 CT_GRAY_8,
+                 CT_RG_88,
+                 CT_GRAY_ALPHA_88,
+                 CT_RGB_888,
+                 CT_RGBX_8888,
+                 CT_RGBA_8888,
+                 CT_BGRA_8888,
+                 CT_ABGR_8888,
+                 CT_ARGB_8888,
+                 CT_RGBA_8888_SRGB -> 8;
+            case CT_BGRA_1010102,
+                 CT_RGBA_1010102 -> 10;
+            case CT_R_16,
+                 CT_R_F16,
+                 CT_ALPHA_16,
+                 CT_ALPHA_F16,
+                 CT_RG_1616,
+                 CT_RG_F16,
+                 CT_RGBA_16161616,
+                 CT_RGBA_F16,
+                 CT_RGBA_F16_CLAMPED -> 16;
+            case CT_RGBA_F32 -> 32;
+            default -> throw new AssertionError(ct);
+        };
+    }
+
     /**
      * Returns a valid AlphaType for <var>ct</var>. If there is more than one valid
      * AlphaType, returns <var>at</var>, if valid.
