@@ -21,6 +21,7 @@ package icyllis.arc3d.core;
 
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.NativeType;
+import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -186,6 +187,33 @@ public class Pixmap {
                 getInfo().makeWH(r.width(), r.height()), mBase,
                 getAddress(r.x(), r.y()), mRowBytes
         );
+    }
+
+    @ColorInt
+    public int getColor(int x, int y) {
+        assert getAddress() != MemoryUtil.NULL;
+        assert x < getWidth();
+        assert y < getHeight();
+        Object base = getBase();
+        long addr = getAddress(x, y);
+        var at = getAlphaType();
+        var cs = getColorSpace();
+        if (at == ColorInfo.AT_PREMUL || (cs != null && !cs.isSrgb())) {
+            int[] col = new int[1];
+            var srcInfo = new ImageInfo(1, 1, getColorType(), at, cs);
+            var dstInfo = new ImageInfo(1, 1, ColorInfo.CT_BGRA_8888_NATIVE,
+                    ColorInfo.AT_UNPREMUL, ColorSpace.get(ColorSpace.Named.SRGB));
+            var res = PixelUtils.convertPixels(
+                    srcInfo, base, addr, getRowBytes(),
+                    dstInfo, col, Unsafe.ARRAY_INT_BASE_OFFSET, getRowBytes()
+            );
+            assert res;
+            return col[0];
+        } else {
+            // no alpha type and color space conversion
+            return PixelUtils.load(getColorType())
+                    .load(base, addr);
+        }
     }
 
     /**
