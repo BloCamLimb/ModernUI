@@ -250,9 +250,265 @@ public class PixelUtils {
         }
     }
 
+    /**
+     * Load pixel value in low precision.
+     */
+    @FunctionalInterface
+    public interface PixelLoad {
+        @ColorInt
+        int load(Object base, long addr);
+    }
+
+    private static final int[] lut5;
+    private static final int[] lut6;
+
+    static {
+        int[] lu5 = new int[1 << 5];
+        int[] lu6 = new int[1 << 6];
+        for (int i = 0; i < 1 << 5; i++) {
+            lu5[i] = (int) (i * (255/31.0f) + .5f);
+        }
+        for (int i = 0; i < 1 << 6; i++) {
+            lu6[i] = (int) (i * (255/63.0f) + .5f);
+        }
+        lut5 = lu5;
+        lut6 = lu6;
+    }
+
+    //@formatter:off
+    public static int load_BGR_565(Object base, long addr) {
+        int val = UNSAFE.getShort(base, addr);
+        int b = lut5[(val       ) & 31];
+        int g = lut6[(val >>>  5) & 63];
+        int r = lut5[(val >>> 11) & 31];
+        return b | g << 8 | r << 16 | 0xff000000;
+    }
+    public static int load_RGBA_1010102(Object base, long addr) {
+        int val = UNSAFE.getInt(base, addr);
+        int r = (int) (((val       ) & 0x3ff) * (255.0f/1023) + .5f);
+        int g = (int) (((val >>> 10) & 0x3ff) * (255.0f/1023) + .5f);
+        int b = (int) (((val >>> 20) & 0x3ff) * (255.0f/1023) + .5f);
+        int a = (int) (((val >>> 30)        ) * (255.0f/   3) + .5f);
+        return b | g << 8 | r << 16 | a << 24;
+    }
+    public static int load_BGRA_1010102(Object base, long addr) {
+        int val = UNSAFE.getInt(base, addr);
+        int r = (int) (((val >>> 20) & 0x3ff) * (255.0f/1023) + .5f);
+        int g = (int) (((val >>> 10) & 0x3ff) * (255.0f/1023) + .5f);
+        int b = (int) (((val       ) & 0x3ff) * (255.0f/1023) + .5f);
+        int a = (int) (((val >>> 30)        ) * (255.0f/   3) + .5f);
+        return b | g << 8 | r << 16 | a << 24;
+    }
+    public static int load_R_8(Object base, long addr) {
+        int val = UNSAFE.getByte(base, addr);
+        return val << 16 | 0xff000000;
+    }
+    public static int load_RG_88(Object base, long addr) {
+        int val = UNSAFE.getShort(base, addr);
+        if (NATIVE_BIG_ENDIAN) {
+            return val << 8 | 0xff000000;
+        } else {
+            return (val & 0xff00) | (val & 0xff) << 16 | 0xff000000;
+        }
+    }
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static int load_RGB_888(Object base, long addr) {
+        int r = UNSAFE.getByte(base, addr+0) & 0xff;
+        int g = UNSAFE.getByte(base, addr+1) & 0xff;
+        int b = UNSAFE.getByte(base, addr+2) & 0xff;
+        return b | g << 8 | r << 16 | 0xff000000;
+    }
+    public static int load_RGBX_8888(Object base, long addr) {
+        int val = UNSAFE.getInt(base, addr);
+        if (NATIVE_BIG_ENDIAN) {
+            return val >>> 8 | 0xff000000;
+        } else {
+            return (val & 0xff00) | (val & 0xff) << 16 | ((val >>> 16) & 0xff) | 0xff000000;
+        }
+    }
+    public static int load_RGBA_8888(Object base, long addr) {
+        int val = UNSAFE.getInt(base, addr);
+        if (NATIVE_BIG_ENDIAN) {
+            return val >>> 8 | (val & 0xff) << 24;
+        } else {
+            return (val & 0xff00ff00) | (val & 0xff) << 16 | ((val >>> 16) & 0xff);
+        }
+    }
+    public static int load_BGRA_8888(Object base, long addr) {
+        int val = UNSAFE.getInt(base, addr);
+        if (NATIVE_BIG_ENDIAN) {
+            return Integer.reverseBytes(val);
+        } else {
+            return val;
+        }
+    }
+    public static int load_ABGR_8888(Object base, long addr) {
+        int val = UNSAFE.getInt(base, addr);
+        if (NATIVE_BIG_ENDIAN) {
+            return (val & 0xff00ff00) | (val & 0xff) << 16 | ((val >>> 16) & 0xff);
+        } else {
+            return val >>> 8 | (val & 0xff) << 24;
+        }
+    }
+    public static int load_ARGB_8888(Object base, long addr) {
+        int val = UNSAFE.getInt(base, addr);
+        if (NATIVE_BIG_ENDIAN) {
+            return val;
+        } else {
+            return Integer.reverseBytes(val);
+        }
+    }
+    public static int load_GRAY_8(Object base, long addr) {
+        int val = UNSAFE.getByte(base, addr) & 0xff;
+        return val | val << 8 | val << 16 | 0xff000000;
+    }
+    public static int load_GRAY_ALPHA_88(Object base, long addr) {
+        int val = UNSAFE.getShort(base, addr);
+        if (NATIVE_BIG_ENDIAN) {
+            int lum = val & 0xff00;
+            return lum << 8 | lum | lum >>> 8 | (val & 0xff) << 24;
+        } else {
+            int lum = val & 0xff;
+            return (val << 16) | (lum << 8) | lum;
+        }
+    }
+    public static int load_ALPHA_8(Object base, long addr) {
+        int val = UNSAFE.getByte(base, addr);
+        return val << 24;
+    }
+    public static int load_R_16(Object base, long addr) {
+        int val = (int) ((UNSAFE.getShort(base, addr) & 0xffff) * (255/65535.0f) + .5f);
+        return val << 16 | 0xff000000;
+    }
+    public static int load_RG_1616(Object base, long addr) {
+        int val = UNSAFE.getInt(base, addr);
+        int r, g;
+        if (NATIVE_BIG_ENDIAN) {
+            r = (int) (((val >>> 16)         ) * (255/65535.0f) + .5f);
+            g = (int) (((val       ) & 0xffff) * (255/65535.0f) + .5f);
+        } else {
+            r = (int) (((val       ) & 0xffff) * (255/65535.0f) + .5f);
+            g = (int) (((val >>> 16)         ) * (255/65535.0f) + .5f);
+        }
+        return g << 8 | r << 16 | 0xff000000;
+    }
+    public static int load_RGBA_16161616(Object base, long addr) {
+        long val = UNSAFE.getLong(base, addr);
+        int r, g, b, a;
+        if (NATIVE_BIG_ENDIAN) {
+            r = (int) (((val >>> 48)         ) * (255/65535.0f) + .5f);
+            g = (int) (((val >>> 32) & 0xffff) * (255/65535.0f) + .5f);
+            b = (int) (((val >>> 16) & 0xffff) * (255/65535.0f) + .5f);
+            a = (int) (((val       ) & 0xffff) * (255/65535.0f) + .5f);
+        } else {
+            r = (int) (((val       ) & 0xffff) * (255/65535.0f) + .5f);
+            g = (int) (((val >>> 16) & 0xffff) * (255/65535.0f) + .5f);
+            b = (int) (((val >>> 32) & 0xffff) * (255/65535.0f) + .5f);
+            a = (int) (((val >>> 48)         ) * (255/65535.0f) + .5f);
+        }
+        return b | g << 8 | r << 16 | a << 24;
+    }
+    public static int load_ALPHA_16(Object base, long addr) {
+        int val = (int) ((UNSAFE.getShort(base, addr) & 0xffff) * (255/65535.0f) + .5f);
+        return val << 24;
+    }
+    public static int load_R_F16(Object base, long addr) {
+        int val = (int) (MathUtil.halfToFloat(UNSAFE.getShort(base, addr)) * 255 + .5f);
+        return val << 16 | 0xff000000;
+    }
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static int load_RG_F16(Object base, long addr) {
+        int r = (int) (MathUtil.halfToFloat(UNSAFE.getShort(base, addr+0)) * 255 + .5f);
+        int g = (int) (MathUtil.halfToFloat(UNSAFE.getShort(base, addr+2)) * 255 + .5f);
+        return g << 8 | r << 16 | 0xff000000;
+    }
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static int load_RGBA_F16(Object base, long addr) {
+        int r = (int) (MathUtil.halfToFloat(UNSAFE.getShort(base, addr+0)) * 255 + .5f);
+        int g = (int) (MathUtil.halfToFloat(UNSAFE.getShort(base, addr+2)) * 255 + .5f);
+        int b = (int) (MathUtil.halfToFloat(UNSAFE.getShort(base, addr+4)) * 255 + .5f);
+        int a = (int) (MathUtil.halfToFloat(UNSAFE.getShort(base, addr+6)) * 255 + .5f);
+        return b | g << 8 | r << 16 | a << 24;
+    }
+    public static int load_ALPHA_F16(Object base, long addr) {
+        int val = (int) (MathUtil.halfToFloat(UNSAFE.getShort(base, addr)) * 255 + .5f);
+        return val << 24;
+    }
+    @SuppressWarnings("PointlessArithmeticExpression")
+    public static int load_RGBA_F32(Object base, long addr) {
+        int r = (int) (UNSAFE.getFloat(base, addr +  0) * 255 + .5f);
+        int g = (int) (UNSAFE.getFloat(base, addr +  4) * 255 + .5f);
+        int b = (int) (UNSAFE.getFloat(base, addr +  8) * 255 + .5f);
+        int a = (int) (UNSAFE.getFloat(base, addr + 12) * 255 + .5f);
+        return b | g << 8 | r << 16 | a << 24;
+    }
+
+    /**
+     * Load a pixel value in high precision.
+     */
+    @Nonnull
+    @Contract(pure = true)
+    public static PixelLoad load(@ColorInfo.ColorType int ct) {
+        return switch (ct) {
+            case ColorInfo.CT_BGR_565       -> PixelUtils::load_BGR_565;
+            case ColorInfo.CT_RGBA_1010102  -> PixelUtils::load_RGBA_1010102;
+            case ColorInfo.CT_BGRA_1010102  -> PixelUtils::load_BGRA_1010102;
+            case ColorInfo.CT_R_8           -> PixelUtils::load_R_8;
+            case ColorInfo.CT_RG_88         -> PixelUtils::load_RG_88;
+            case ColorInfo.CT_RGB_888       -> PixelUtils::load_RGB_888;
+            case ColorInfo.CT_RGBX_8888     -> PixelUtils::load_RGBX_8888;
+            case ColorInfo.CT_RGBA_8888     -> PixelUtils::load_RGBA_8888;
+            case ColorInfo.CT_BGRA_8888     -> PixelUtils::load_BGRA_8888;
+            case ColorInfo.CT_ABGR_8888     -> PixelUtils::load_ABGR_8888;
+            case ColorInfo.CT_ARGB_8888     -> PixelUtils::load_ARGB_8888;
+            case ColorInfo.CT_GRAY_8        -> PixelUtils::load_GRAY_8;
+            case ColorInfo.CT_GRAY_ALPHA_88 -> PixelUtils::load_GRAY_ALPHA_88;
+            case ColorInfo.CT_ALPHA_8       -> PixelUtils::load_ALPHA_8;
+            case ColorInfo.CT_R_16          -> PixelUtils::load_R_16;
+            case ColorInfo.CT_RG_1616       -> PixelUtils::load_RG_1616;
+            case ColorInfo.CT_RGBA_16161616 -> PixelUtils::load_RGBA_16161616;
+            case ColorInfo.CT_ALPHA_16      -> PixelUtils::load_ALPHA_16;
+            case ColorInfo.CT_R_F16         -> PixelUtils::load_R_F16;
+            case ColorInfo.CT_RG_F16        -> PixelUtils::load_RG_F16;
+            case ColorInfo.CT_RGBA_F16      -> PixelUtils::load_RGBA_F16;
+            case ColorInfo.CT_ALPHA_F16     -> PixelUtils::load_ALPHA_F16;
+            case ColorInfo.CT_RGBA_F32      -> PixelUtils::load_RGBA_F32;
+            default -> throw new AssertionError(ct);
+        };
+    }
+    //@formatter:on
+
+    /**
+     * Store pixel value in low precision.
+     */
+    @FunctionalInterface
+    public interface PixelStore {
+        void store(Object base, long addr, @ColorInt int src);
+    }
+
+    //@formatter:off
+    public static void store_BGR_565(Object base, long addr, int src) {
+        int r = (src >>> 16) & 0xff;
+        int g = (src >>>  8) & 0xff;
+        int b = (src       ) & 0xff;
+        // Round from [0,255] to [0,31] or [0,63], as if x * (31/255.0f) + 0.5f.
+        // (Don't feel like you need to find some fundamental truth in these...
+        // they were brute-force searched.)
+        r = (r *  9 + 36) / 74; //  9/74 ≈ 31/255, plus 36/74, about half.
+        g = (g * 21 + 42) / 85; // 21/85 = 63/255 exactly.
+        b = (b *  9 + 36) / 74;
+        UNSAFE.putShort(base, addr, (short) (b | g << 5 | r << 11));
+    }
+
+
+    //@formatter:on
+
+    /**
+     * Load or store pixel value in high precision.
+     */
     @FunctionalInterface
     public interface PixelOp {
-        void op(Object base, long addr, float[] col);
+        void op(Object base, long addr, /*Color4f*/ float[] col);
     }
 
     //@formatter:off
@@ -886,47 +1142,64 @@ public class PixelUtils {
             return true;
         }
 
-        float[] col = new float[4];
-
-        final PixelOp load = loadOp(srcCT);
-        final boolean unpremul = (flags & kColorSpaceXformFlagUnpremul) != 0;
-        final ColorSpace.Connector connector = csXform ? ColorSpace.connect(srcCS, dstCS) : null;
-        final boolean premul = (flags & kColorSpaceXformFlagPremul) != 0;
-        final PixelOp store = storeOp(dstCT);
-
         if (flipY) {
             dstAddr += dstRowBytes * (height - 1);
             dstRowBytes = -dstRowBytes;
         }
-        for (int i = 0; i < height; i++) {
-            long nextSrcAddr = srcAddr + srcRowBytes;
-            long nextDstAddr = dstAddr + dstRowBytes;
-            for (int j = 0; j < width; j++) {
-                load.op(srcBase, srcAddr, col);
-                if (unpremul) {
-                    float scale = 1.0f / col[3];
-                    if (!Float.isFinite(scale)) { // NaN or Inf
-                        scale = 0;
-                    }
-                    col[0] *= scale;
-                    col[1] *= scale;
-                    col[2] *= scale;
+
+        if (flags == 0 && !csXform && srcBpp <= 8 && dstBpp <= 8) {
+            final PixelLoad load = load(srcCT);
+            final PixelStore store = PixelUtils::store_BGR_565;
+
+            for (int i = 0; i < height; i++) {
+                long nextSrcAddr = srcAddr + srcRowBytes;
+                long nextDstAddr = dstAddr + dstRowBytes;
+                for (int j = 0; j < width; j++) {
+                    store.store(dstBase, dstAddr, load.load(srcBase, srcAddr));
+                    srcAddr += srcBpp;
+                    dstAddr += dstBpp;
                 }
-                if (connector != null) {
-                    connector.transform(col);
-                }
-                if (premul) {
-                    float scale = col[3];
-                    col[0] *= scale;
-                    col[1] *= scale;
-                    col[2] *= scale;
-                }
-                store.op(dstBase, dstAddr, col);
-                srcAddr += srcBpp;
-                dstAddr += dstBpp;
+                srcAddr = nextSrcAddr;
+                dstAddr = nextDstAddr;
             }
-            srcAddr = nextSrcAddr;
-            dstAddr = nextDstAddr;
+        } else {
+            final PixelOp load = loadOp(srcCT);
+            final boolean unpremul = (flags & kColorSpaceXformFlagUnpremul) != 0;
+            final ColorSpace.Connector connector = csXform ? ColorSpace.connect(srcCS, dstCS) : null;
+            final boolean premul = (flags & kColorSpaceXformFlagPremul) != 0;
+            final PixelOp store = storeOp(dstCT);
+
+            float[] col = new float[4];
+            for (int i = 0; i < height; i++) {
+                long nextSrcAddr = srcAddr + srcRowBytes;
+                long nextDstAddr = dstAddr + dstRowBytes;
+                for (int j = 0; j < width; j++) {
+                    load.op(srcBase, srcAddr, col);
+                    if (unpremul) {
+                        float scale = 1.0f / col[3];
+                        if (!Float.isFinite(scale)) { // NaN or Inf
+                            scale = 0;
+                        }
+                        col[0] *= scale;
+                        col[1] *= scale;
+                        col[2] *= scale;
+                    }
+                    if (connector != null) {
+                        connector.transform(col);
+                    }
+                    if (premul) {
+                        float scale = col[3];
+                        col[0] *= scale;
+                        col[1] *= scale;
+                        col[2] *= scale;
+                    }
+                    store.op(dstBase, dstAddr, col);
+                    srcAddr += srcBpp;
+                    dstAddr += dstBpp;
+                }
+                srcAddr = nextSrcAddr;
+                dstAddr = nextDstAddr;
+            }
         }
 
         return true;

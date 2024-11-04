@@ -25,8 +25,8 @@ import java.lang.annotation.*;
  * Denotes that the annotated element represents a packed 32-bit ARGB color value,
  * un-premultiplied, {@code AARRGGBB}. If applied to an int array, every element
  * in the array represents a color integer. This matches the format of
- * {@link ImageInfo#CT_BGRA_8888}. Color ints are used to specify colors in paint
- * and in gradients.
+ * {@link ColorInfo#CT_BGRA_8888_NATIVE}. Color ints are used to specify colors
+ * in paint and in gradients.
  * <p>
  * Color that is premultiplied has the same component values as color that is
  * un-premultiplied if alpha is 255, fully opaque, although it may have the
