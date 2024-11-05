@@ -28,11 +28,11 @@ public class TestLowpPixelLoad {
 
     public static void main(String[] args) {
         int width = 64, height = 64;
-        var info = ImageInfo.make(width, height, ColorInfo.CT_BGR_565, ColorInfo.AT_UNPREMUL, null);
+        var info = ImageInfo.make(width, height, ColorInfo.CT_RGBA_F32, ColorInfo.AT_UNPREMUL, null);
         var pixels = MemoryUtil.nmemAlloc(info.computeMinByteSize());
         var random = new Random();
-        for (int i = 0, e = (int) info.computeMinByteSize(); i < e; i += 2) {
-            MemoryUtil.memPutShort(pixels + i, (short)random.nextInt(65536));
+        for (int i = 0, e = (int) info.computeMinByteSize(); i < e; i += 4) {
+            MemoryUtil.memPutFloat(pixels + i, random.nextFloat(1));
         }
         Pixmap originalPixmap = new Pixmap(
                 info,
@@ -48,6 +48,12 @@ public class TestLowpPixelLoad {
                 ColorInfo.CT_RGBA_F32, ColorInfo.CT_BGR_565, ColorInfo.CT_RGBA_1010102, ColorInfo.CT_BGRA_1010102};
         for (int ct : colorTypes) {
             testForColorType(ct, originalPixmap);
+        }
+        for (int ct : colorTypes) {
+            Pixmap pixmap = new Pixmap(info.makeColorType(ct), originalPixmap);
+            pixmap.clear(new float[]{0, 0, 0, 0}, null);
+            pixmap.clear(new float[]{1, 1, 1, 1}, new Rect2i(4, 6, 50, 30));
+            pixmap.clear(new float[]{0.2f, 0.4f, 0.6f, 0.7f}, null);
         }
         MemoryUtil.nmemFree(pixels);
 

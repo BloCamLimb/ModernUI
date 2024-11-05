@@ -47,6 +47,36 @@ public class TestMemCpy {
         }
     }
 
+    //                                                              lower is better
+    // Benchmark                                (length)  Mode  Cnt   Score    Error  Units
+    // TestMemCpy.array_baseline                      32  avgt    3   3.320 ±  0.179  ns/op
+    // TestMemCpy.array_baseline                     160  avgt    3   3.796 ±  0.296  ns/op
+    // TestMemCpy.array_baseline                     256  avgt    3   5.236 ±  8.546  ns/op
+    // TestMemCpy.array_baseline                    1024  avgt    3  19.374 ± 61.547  ns/op
+    // TestMemCpy.array_to_offheap_base_region        32  avgt    3  23.368 ±  2.762  ns/op
+    // TestMemCpy.array_to_offheap_base_region       160  avgt    3  27.423 ±  2.958  ns/op
+    // TestMemCpy.array_to_offheap_base_region       256  avgt    3  28.233 ±  2.385  ns/op
+    // TestMemCpy.array_to_offheap_base_region      1024  avgt    3  30.137 ± 12.089  ns/op
+    // TestMemCpy.array_to_offheap_baseline           32  avgt    3   9.017 ±  0.445  ns/op
+    // TestMemCpy.array_to_offheap_baseline          160  avgt    3  10.124 ±  0.582  ns/op
+    // TestMemCpy.array_to_offheap_baseline          256  avgt    3  11.016 ±  0.364  ns/op
+    // TestMemCpy.array_to_offheap_baseline         1024  avgt    3  15.842 ±  8.593  ns/op
+    // TestMemCpy.offheap_LWJGL                       32  avgt    3   2.667 ±  0.088  ns/op
+    // TestMemCpy.offheap_LWJGL                      160  avgt    3  10.137 ±  0.747  ns/op
+    // TestMemCpy.offheap_LWJGL                      256  avgt    3  10.948 ±  0.608  ns/op
+    // TestMemCpy.offheap_LWJGL                     1024  avgt    3  16.164 ±  1.226  ns/op
+    // TestMemCpy.offheap_baseline                    32  avgt    3   9.304 ±  0.934  ns/op
+    // TestMemCpy.offheap_baseline                   160  avgt    3  10.039 ±  0.859  ns/op
+    // TestMemCpy.offheap_baseline                   256  avgt    3  11.081 ±  0.517  ns/op
+    // TestMemCpy.offheap_baseline                  1024  avgt    3  16.533 ±  1.473  ns/op
+    // TestMemCpy.offheap_java                        32  avgt    3   1.935 ±  0.067  ns/op
+    // TestMemCpy.offheap_java                       160  avgt    3   6.704 ±  0.366  ns/op
+    // TestMemCpy.offheap_java                       256  avgt    3   9.278 ±  0.023  ns/op
+    // TestMemCpy.offheap_java                      1024  avgt    3  31.557 ± 33.803  ns/op
+    // TestMemCpy.offheap_libc                        32  avgt    3   7.455 ±  0.613  ns/op
+    // TestMemCpy.offheap_libc                       160  avgt    3   8.135 ±  0.481  ns/op
+    // TestMemCpy.offheap_libc                       256  avgt    3   8.861 ±  1.035  ns/op
+    // TestMemCpy.offheap_libc                      1024  avgt    3  13.589 ±  1.059  ns/op
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(TestMemCpy.class.getSimpleName())
