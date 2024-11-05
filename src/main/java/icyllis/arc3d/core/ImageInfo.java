@@ -352,7 +352,7 @@ public final class ImageInfo {
     public String toString() {
         return '{' +
                 "dimensions=" + width + "x" + height +
-                ", colorType=" + colorType +
+                ", colorType=" + ColorInfo.colorTypeToString(colorType) +
                 ", alphaType=" + alphaType +
                 ", colorSpace=" + colorSpace +
                 '}';

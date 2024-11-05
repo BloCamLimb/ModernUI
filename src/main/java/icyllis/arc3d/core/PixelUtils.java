@@ -24,7 +24,6 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteOrder;
 
 /**
@@ -188,7 +187,7 @@ public class PixelUtils {
         }
     }
 
-    public static void setPixel8(Object base, long addr,
+    /*public static void setPixel8(Object base, long addr,
                                  byte value, int count) {
         long wideValue = (long) value << 8 | value;
         wideValue |= wideValue << 16;
@@ -202,13 +201,10 @@ public class PixelUtils {
             UNSAFE.putByte(base, addr, value);
             addr += 1;
         }
-    }
+    }*/
 
     public static void setPixel16(Object base, long addr,
                                   short value, int count) {
-        if (NATIVE_BIG_ENDIAN) {
-            value = Short.reverseBytes(value);
-        }
         long wideValue = (long) value << 16 | value;
         wideValue |= wideValue << 32;
         while (count >= 4) {
@@ -224,9 +220,6 @@ public class PixelUtils {
 
     public static void setPixel32(Object base, long addr,
                                   int value, int count) {
-        if (NATIVE_BIG_ENDIAN) {
-            value = Integer.reverseBytes(value);
-        }
         long wideValue = (long) value << 32 | value;
         while (count >= 2) {
             UNSAFE.putLong(base, addr, wideValue);
@@ -241,10 +234,7 @@ public class PixelUtils {
 
     public static void setPixel64(Object base, long addr,
                                   long value, int count) {
-        if (NATIVE_BIG_ENDIAN) {
-            value = Long.reverseBytes(value);
-        }
-        while (count-- != 0) {
+        for (int i = 0; i < count; i++) {
             UNSAFE.putLong(base, addr, value);
             addr += 8;
         }

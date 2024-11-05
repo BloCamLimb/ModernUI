@@ -19,13 +19,14 @@
 
 package icyllis.arc3d.core;
 
-import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.NativeType;
+import org.lwjgl.system.*;
 import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
+
+import static icyllis.arc3d.core.PixelUtils.UNSAFE;
 
 /**
  * Immutable structure that pairs ImageInfo with pixels and row bytes.
@@ -230,6 +231,7 @@ public class Pixmap {
      * @param x column index, zero or greater, and less than width()
      * @param y row index, zero or greater, and less than height()
      * @return pixel converted to unpremultiplied color
+     * @see #getColor4f(int, int, float[])
      */
     @ColorInt
     public int getColor(int x, int y) {
@@ -262,7 +264,7 @@ public class Pixmap {
     /**
      * Gets the pixel at (x, y), and converts it to {@link ColorInfo#CT_RGBA_F32}.
      * This method will not perform alpha type or color space transformation,
-     * the resulting color has {@link #getAlphaType()} and in {@link #getColorSpace()}.
+     * the resulting color has {@link #getAlphaType()} and is in {@link #getColorSpace()}.
      * <p>
      * Input is not validated: out of bounds values of x or y trigger an assertion error;
      * and returns undefined values or may crash. Fails if color type is unknown or
@@ -278,6 +280,27 @@ public class Pixmap {
         assert y < getHeight();
         PixelUtils.loadOp(getColorType())
                 .op(getBase(), getAddress(x, y), dst);
+    }
+
+    /**
+     * Sets the pixel at (x, y), from {@link ColorInfo#CT_RGBA_F32} to {@link #getColorType()}.
+     * This method will not perform alpha type or color space transformation,
+     * the given color should have {@link #getAlphaType()} and be in {@link #getColorSpace()}.
+     * <p>
+     * Input is not validated: out of bounds values of x or y trigger an assertion error;
+     * and returns undefined values or may crash. Fails if color type is unknown or
+     * pixel data is NULL.
+     *
+     * @param x   column index, zero or greater, and less than width()
+     * @param y   row index, zero or greater, and less than height()
+     * @param src float color to set
+     */
+    public void setColor4f(int x, int y, @Nonnull @Size(4) float[] src) {
+        assert getAddress() != MemoryUtil.NULL;
+        assert x < getWidth();
+        assert y < getHeight();
+        PixelUtils.storeOp(getColorType())
+                .op(getBase(), getAddress(x, y), src);
     }
 
     /**
@@ -371,33 +394,135 @@ public class Pixmap {
         );
     }
 
-    public boolean clear(float red, float green, float blue, float alpha,
+    /**
+     * Writes color to pixels bounded by subset; returns true on success.
+     * if subset is null, writes colors pixels inside bounds(). Returns false if
+     * {@link #getColorType()} is unknown, if subset is not null and does
+     * not intersect bounds(), or if subset is null and bounds() is empty.
+     * <p>
+     * This method will not perform alpha type or color space transformation,
+     * the given color should have {@link #getAlphaType()} and be in {@link #getColorSpace()}.
+     *
+     * @param color  float color to write
+     * @param subset bounding box of pixels to write; may be null
+     * @return true if pixels are changed
+     */
+    public boolean clear(@Nonnull @Size(4) float[] color,
                          @Nullable Rect2ic subset) {
-        if (getColorType() == ColorInfo.CT_UNKNOWN) {
+        var ct = getColorType();
+        if (ct == ColorInfo.CT_UNKNOWN) {
             return false;
         }
 
         var clip = new Rect2i(0, 0, getWidth(), getHeight());
         if (subset != null && !clip.intersect(subset)) {
+            return false;
+        }
+
+        Object base = getBase();
+        int bpp = ColorInfo.bytesPerPixel(ct);
+
+        // RGBA_F32 is the only type with a bpp of 16
+        if (ct == ColorInfo.CT_RGBA_F32) {
+            assert bpp == 16;
+            if (Float.floatToRawIntBits(color[0]) == 0 &&
+                    Float.floatToRawIntBits(color[1]) == 0 &&
+                    Float.floatToRawIntBits(color[2]) == 0 &&
+                    Float.floatToRawIntBits(color[3]) == 0) {
+                // fill with zeros
+                long rowBytes = (long) clip.width() * 16;
+                if (base != null) {
+                    for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                        UNSAFE.setMemory(base,
+                                getAddress(clip.x(), y), rowBytes, (byte) 0);
+                    }
+                } else {
+                    for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                        MemoryUtil.memSet(
+                                getAddress(clip.x(), y), 0, rowBytes);
+                    }
+                }
+            } else {
+                for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                    long addr = getAddress(clip.x(), y);
+                    for (int i = 0, e = clip.width(); i < e; ++i) {
+                        PixelUtils.store_RGBA_F32(base, addr, color);
+                        addr += 16;
+                    }
+                }
+            }
             return true;
         }
 
-        if (getColorType() == ColorInfo.CT_RGBA_8888) {
-            int c = ((int) (alpha * 255.0f + 0.5f) << 24) |
-                    ((int) (blue * 255.0f + 0.5f) << 16) |
-                    ((int) (green * 255.0f + 0.5f) << 8) |
-                    (int) (red * 255.0f + 0.5f);
+        assert bpp >= 1 && bpp <= 8;
 
-            Object base = getBase();
-            for (int y = clip.mTop; y < clip.mBottom; ++y) {
-                long addr = getAddress() + (long) y * getRowBytes() + (long) clip.x() << 2;
-                PixelUtils.setPixel32(base, addr, c, clip.width());
+        try (var stack = MemoryStack.stackPush()) {
+            // convert to ct
+            long dst = stack.nmalloc(8, 8);
+            PixelUtils.storeOp(ct)
+                    .op(null, dst, color);
+
+            boolean fast = true;
+            byte v0 = UNSAFE.getByte(dst);
+            for (int i = 1; i < bpp; ++i) {
+                byte v = UNSAFE.getByte(dst+i);
+                if (v != v0) {
+                    fast = false;
+                    break;
+                }
+            }
+            if (fast) {
+                // fill with value
+                long rowBytes = (long) clip.width() * bpp;
+                if (base != null) {
+                    for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                        UNSAFE.setMemory(base,
+                                getAddress(clip.x(), y), rowBytes, v0);
+                    }
+                } else {
+                    for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                        MemoryUtil.memSet(
+                                getAddress(clip.x(), y), v0 & 0xff, rowBytes);
+                    }
+                }
+            } else if (ct == ColorInfo.CT_RGB_888) {
+                // RGB_888 is the only type where bpp is not a power of 2
+                assert bpp == 3;
+                byte v1 = UNSAFE.getByte(dst+1);
+                byte v2 = UNSAFE.getByte(dst+2);
+                for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                    long addr = getAddress(clip.x(), y);
+                    for (int i = 0, e = clip.width(); i < e; ++i) {
+                        UNSAFE.putByte(base, addr, v0);
+                        UNSAFE.putByte(base, addr+1, v1);
+                        UNSAFE.putByte(base, addr+2, v2);
+                        addr += 3;
+                    }
+                }
+            } else if (bpp == 2) {
+                short value = UNSAFE.getShort(dst);
+                for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                    long addr = getAddress(clip.x(), y);
+                    PixelUtils.setPixel16(base, addr, value, clip.width());
+                }
+            } else if (bpp == 4) {
+                int value = UNSAFE.getInt(dst);
+                for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                    long addr = getAddress(clip.x(), y);
+                    PixelUtils.setPixel32(base, addr, value, clip.width());
+                }
+            } else if (bpp == 8) {
+                long value = UNSAFE.getLong(dst);
+                for (int y = clip.mTop; y < clip.mBottom; ++y) {
+                    long addr = getAddress(clip.x(), y);
+                    PixelUtils.setPixel64(base, addr, value, clip.width());
+                }
+            } else {
+                assert false;
             }
 
             return true;
         }
-
-        return false;
     }
 
     @Override
