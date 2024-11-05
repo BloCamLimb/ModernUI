@@ -638,7 +638,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         mOverscrollDistance = configuration.getScaledOverscrollDistance();
         mOverflingDistance = configuration.getScaledOverflingDistance();
 
-        setVerticalScrollBarEnabled(true);
+        /*setVerticalScrollBarEnabled(true);
         ShapeDrawable thumb = new ShapeDrawable();
         thumb.setShape(ShapeDrawable.VLINE);
         thumb.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.COLOR_FOREGROUND, 0.25f));
@@ -649,7 +649,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         track.setStroke(dp(4), 0x40808080);
         track.setSize(dp(4), -1);
         track.setCornerRadius(1);
-        setVerticalScrollbarTrackDrawable(track);
+        setVerticalScrollbarTrackDrawable(track);*/
     }
 
     /**
@@ -2558,6 +2558,15 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
                 }
             }
         }
+    }
+
+    /**
+     * @hidden
+     */
+    @Override
+    protected boolean handleScrollBarDragging(MotionEvent event) {
+        // Doesn't support normal scroll bar dragging. Use FastScroller.
+        return false;
     }
 
     @Override
