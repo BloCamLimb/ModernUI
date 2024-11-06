@@ -197,6 +197,13 @@ public final class GLCaps_GLES extends GLCaps implements GLInterface {
         mMaxRenderTargetSize = GLES20.glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
         mMaxPreferredRenderTargetSize = mMaxRenderTargetSize;
 
+        if (!caps.GLES32 &&
+                !caps.GL_EXT_texture_border_clamp &&
+                !caps.GL_NV_texture_border_clamp &&
+                !caps.GL_OES_texture_border_clamp) {
+            mClampToBorderSupport = false;
+        }
+
         mGpuTracingSupport = caps.GL_EXT_debug_marker;
         if (mGpuTracingSupport) {
             logger.info("Use EXT_debug_marker");

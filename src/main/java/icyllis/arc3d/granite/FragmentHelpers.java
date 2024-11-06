@@ -33,7 +33,7 @@ import javax.annotation.Nullable;
  * @see ShaderCodeSource
  * @see FragmentStage
  */
-public class FragmentUtils {
+public class FragmentHelpers {
 
     public static final ColorSpace.Rgb.TransferParameters LINEAR_TRANSFER_PARAMETERS =
             new ColorSpace.Rgb.TransferParameters(1.0, 0.0, 0.0, 0.0, 1.0);
@@ -195,7 +195,9 @@ public class FragmentUtils {
             @SharedPtr ImageViewProxy view
     ) {
         boolean useHwTiling = !sampling.mUseCubic &&
-                subset.contains(0, 0, imageWidth, imageHeight);
+                subset.contains(0, 0, imageWidth, imageHeight) &&
+                (keyContext.getCaps().clampToBorderSupport() ||
+                        (tileModeX != Shader.TILE_MODE_DECAL && tileModeY != Shader.TILE_MODE_DECAL));
         int filterMode = SamplingOptions.FILTER_MODE_NEAREST; // for subset
 
         if (useHwTiling || !sampling.mUseCubic) {
@@ -207,7 +209,8 @@ public class FragmentUtils {
             keyBuilder.addInt(FragmentStage.kHWImageShader_BuiltinStageID);
         } else {
             // strict subset
-            assert sampling.mMipmapMode == SamplingOptions.MIPMAP_MODE_NONE;
+            assert sampling.mMipmapMode == SamplingOptions.MIPMAP_MODE_NONE ||
+                    !keyContext.getCaps().clampToBorderSupport();
             uniformDataGatherer.write4f(subset.left(), subset.top(),
                     subset.right(), subset.bottom());
             if (sampling.mUseCubic) {

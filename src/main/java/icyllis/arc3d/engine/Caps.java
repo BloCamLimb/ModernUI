@@ -79,6 +79,7 @@ public abstract class Caps {
     protected boolean mTextureBarrierSupport = false;
     protected boolean mUseCpuStagingBuffers = false;
     protected boolean mDepthClipNegativeOneToOne = false;
+    protected boolean mClampToBorderSupport = true;
 
     // Not (yet) implemented in VK backend.
     protected boolean mDynamicStateArrayGeometryProcessorTextureSupport = false;
@@ -562,17 +563,12 @@ public abstract class Caps {
         return false;
     }
 
-    // Should we disable TessellationPathRenderer due to a faulty driver?
-    public final boolean disableTessellationPathRenderer() {
-        return false;
-    }
-
     /**
      * The CLAMP_TO_BORDER wrap mode for texture coordinates was added to desktop GL in 1.3, and
      * GLES 3.2, but is also available in extensions. Vulkan and Metal always have support.
      */
     public final boolean clampToBorderSupport() {
-        return true;
+        return mClampToBorderSupport;
     }
 
     /**
