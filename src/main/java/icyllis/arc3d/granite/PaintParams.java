@@ -259,7 +259,7 @@ public final class PaintParams implements AutoCloseable {
                                        UniformDataGatherer uniformDataGatherer,
                                        TextureDataGatherer textureDataGatherer) {
         if (mShader != null) {
-            FragmentUtils.appendToKey(
+            FragmentHelpers.appendToKey(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -267,7 +267,7 @@ public final class PaintParams implements AutoCloseable {
                     mShader
             );
         } else {
-            FragmentUtils.appendRGBOpaquePaintColorBlock(
+            FragmentHelpers.appendRGBOpaquePaintColorBlock(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -292,7 +292,7 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // dst
-            FragmentUtils.appendPrimitiveColorBlock(
+            FragmentHelpers.appendPrimitiveColorBlock(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -300,7 +300,7 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // blend
-            FragmentUtils.appendToKey(
+            FragmentHelpers.appendToKey(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -324,7 +324,7 @@ public final class PaintParams implements AutoCloseable {
         if (mShader == null && mPrimitiveBlender == null) {
             // If there is no shader and no primitive blending the input to the colorFilter stage
             // is just the premultiplied paint color.
-            FragmentUtils.appendSolidColorShaderBlock(
+            FragmentHelpers.appendSolidColorShaderBlock(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -346,7 +346,7 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // dst
-            FragmentUtils.appendAlphaOnlyPaintColorBlock(
+            FragmentHelpers.appendAlphaOnlyPaintColorBlock(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -354,7 +354,7 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // blend
-            FragmentUtils.appendFixedBlendMode(
+            FragmentHelpers.appendFixedBlendMode(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -385,7 +385,7 @@ public final class PaintParams implements AutoCloseable {
                     textureDataGatherer
             );
 
-            FragmentUtils.appendToKey(
+            FragmentHelpers.appendToKey(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -419,7 +419,7 @@ public final class PaintParams implements AutoCloseable {
                         textureDataGatherer
                 );
 
-                FragmentUtils.appendDitherShaderBlock(
+                FragmentHelpers.appendDitherShaderBlock(
                         keyContext,
                         keyBuilder,
                         uniformDataGatherer,

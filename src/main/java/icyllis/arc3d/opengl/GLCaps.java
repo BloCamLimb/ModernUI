@@ -1555,6 +1555,7 @@ public abstract class GLCaps extends Caps {
         out.append("TextureBarrierSupport: ").append(mTextureBarrierSupport).append('\n');
         out.append("DepthClipNegativeOneToOne: ").append(mDepthClipNegativeOneToOne).append('\n');
         out.append("BlendEquationSupport: ").append(mBlendEquationSupport).append('\n');
+        out.append("ClampToBorderSupport: ").append(mClampToBorderSupport).append('\n');
         out.append("MaxRenderTargetSize: ").append(mMaxRenderTargetSize).append('\n');
         out.append("MaxPreferredRenderTargetSize: ").append(mMaxPreferredRenderTargetSize).append('\n');
         out.append("MaxVertexAttributes: ").append(mMaxVertexAttributes).append('\n');

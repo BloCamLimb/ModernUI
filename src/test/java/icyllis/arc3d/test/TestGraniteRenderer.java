@@ -35,7 +35,6 @@ import org.lwjgl.opengles.*;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -337,7 +336,7 @@ public class TestGraniteRenderer {
                     );
                     boolean res = PixelUtils.convertPixels(testPixmap, convertedPixmap);
                     assert res;
-                    mTestImage = ImageUtils.makeFromPixmap(mRC,
+                    mTestImage = TextureUtils.makeFromPixmap(mRC,
                             convertedPixmap,
                             false,
                             true,
