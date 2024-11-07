@@ -309,7 +309,7 @@ public non-sealed class Rect2f implements Rect2fc {
         prodY = 0 * minY;
 
         // auto vectorization
-        while (count != 0) {
+        for (int i = 0; i < count; ++i) {
             float x = pts[offset++];
             float y = pts[offset++];
             prodX *= x;
@@ -318,7 +318,6 @@ public non-sealed class Rect2f implements Rect2fc {
             minY = Math.min(minY, y);
             maxX = Math.max(maxX, x);
             maxY = Math.max(maxY, y);
-            count--;
         }
 
         if (prodX == 0 && prodY == 0) {

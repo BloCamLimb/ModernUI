@@ -45,9 +45,9 @@ public final class IndexExpression extends Expression {
         mIndex = index;
     }
 
-    private static boolean indexOutOfBounds(@Nonnull Context context,
-                                            int pos, long index,
-                                            @Nonnull Expression base) {
+    private static boolean index_out_of_bounds(@Nonnull Context context,
+                                               int pos, long index,
+                                               @Nonnull Expression base) {
         Type baseType = base.getType();
         if (index >= 0) {
             if (baseType.isArray()) {
@@ -109,14 +109,16 @@ public final class IndexExpression extends Expression {
                 return null;
             }
         }
-        base = ConstantFolder.getConstantValueForVariable(base);
-        index = ConstantFolder.getConstantValueForVariable(index);
-        if (index.isIntLiteral()) {
-            long indexValue = ((Literal) index).getIntegerValue();
-            if (indexOutOfBounds(context, index.mPosition, indexValue, base)) {
+        Expression indexExpr = ConstantFolder.getConstantValueForVariable(index);
+        if (indexExpr.isIntLiteral()) {
+            long indexValue = ((Literal) indexExpr).getIntegerValue();
+            if (index_out_of_bounds(context, index.mPosition, indexValue, base)) {
                 return null;
             }
-            //TODO constant folding
+            Expression baseExpr = ConstantFolder.getConstantValueOrNullForVariable(base);
+            if (baseExpr != null) {
+                //TODO constant folding
+            }
         }
         return IndexExpression.make(context, pos, base, index);
     }

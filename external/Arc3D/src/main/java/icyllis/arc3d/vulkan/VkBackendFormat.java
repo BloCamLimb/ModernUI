@@ -24,11 +24,10 @@ import icyllis.arc3d.engine.Engine;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
+import org.lwjgl.vulkan.VK10;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
-
-import static icyllis.arc3d.vulkan.VKCore.*;
 
 @Immutable
 public final class VkBackendFormat extends BackendFormat {
@@ -67,7 +66,7 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelFlags() {
-        return vkFormatChannels(mFormat);
+        return VKUtil.vkFormatChannels(mFormat);
     }
 
     @Override
@@ -77,27 +76,27 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public boolean isSRGB() {
-        return mFormat == VK_FORMAT_R8G8B8A8_SRGB;
+        return mFormat == VK10.VK_FORMAT_R8G8B8A8_SRGB;
     }
 
     @Override
     public int getCompressionType() {
-        return vkFormatCompressionType(mFormat);
+        return VKUtil.vkFormatCompressionType(mFormat);
     }
 
     @Override
     public int getBytesPerBlock() {
-        return vkFormatBytesPerBlock(mFormat);
+        return VKUtil.vkFormatBytesPerBlock(mFormat);
     }
 
     @Override
     public int getDepthBits() {
-        return vkFormatDepthBits(mFormat);
+        return VKUtil.vkFormatDepthBits(mFormat);
     }
 
     @Override
     public int getStencilBits() {
-        return vkFormatStencilBits(mFormat);
+        return VKUtil.vkFormatStencilBits(mFormat);
     }
 
     @Override
@@ -120,7 +119,7 @@ public final class VkBackendFormat extends BackendFormat {
     @Override
     public String toString() {
         return "{backend=Vulkan" +
-                ", format=" + vkFormatName(mFormat) +
+                ", format=" + VKUtil.vkFormatName(mFormat) +
                 '}';
     }
 }

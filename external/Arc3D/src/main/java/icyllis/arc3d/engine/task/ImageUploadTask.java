@@ -77,13 +77,13 @@ public class ImageUploadTask extends Task {
         public MipLevel(Pixmap pixmap) {
             mBase = pixmap.getBase();
             mAddress = pixmap.getAddress();
-            mRowBytes = pixmap.getRowStride();
+            mRowBytes = pixmap.getRowBytes();
         }
 
         public MipLevel(Pixels pixels) {
             mBase = pixels.getBase();
             mAddress = pixels.getAddress();
-            mRowBytes = pixels.getRowStride();
+            mRowBytes = pixels.getRowBytes();
         }
     }
 

@@ -24,8 +24,8 @@ import icyllis.arc3d.engine.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
-import static icyllis.arc3d.vulkan.VKCore.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.vulkan.VK11.*;
 
 public abstract class VulkanCommandBuffer extends CommandBuffer {
 
@@ -124,12 +124,14 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
     }
 
     @Override
-    protected boolean onCopyBufferToImage(Buffer srcBuffer, Image dstImage, int srcColorType, int dstColorType, BufferImageCopyData[] copyData) {
+    protected boolean onCopyBufferToImage(Buffer srcBuffer, Image dstImage, int srcColorType, int dstColorType,
+                                          BufferImageCopyData[] copyData) {
         return false;
     }
 
     @Override
-    protected boolean onCopyImage(Image srcImage, int srcL, int srcT, int srcR, int srcB, Image dstImage, int dstX, int dstY, int mipLevel) {
+    protected boolean onCopyImage(Image srcImage, int srcL, int srcT, int srcR, int srcB, Image dstImage, int dstX,
+                                  int dstY, int mipLevel) {
         return false;
     }
 
@@ -141,7 +143,7 @@ public abstract class VulkanCommandBuffer extends CommandBuffer {
                     .pNext(NULL)
                     .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
                     .pInheritanceInfo(null);
-            _CHECK_ERROR_(vkBeginCommandBuffer(mCommandBuffer, beginInfo));
+            VKUtil._CHECK_ERROR_(vkBeginCommandBuffer(mCommandBuffer, beginInfo));
         }
     }
 

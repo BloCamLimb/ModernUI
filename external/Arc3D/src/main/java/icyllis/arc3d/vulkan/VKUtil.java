@@ -19,19 +19,62 @@
 
 package icyllis.arc3d.vulkan;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Color;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.engine.ContextOptions;
+import icyllis.arc3d.engine.ImmediateContext;
+import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.NativeType;
-import org.lwjgl.vulkan.VK11;
+
+import javax.annotation.Nullable;
 
 import static org.lwjgl.vulkan.EXTDebugReport.VK_ERROR_VALIDATION_FAILED_EXT;
 import static org.lwjgl.vulkan.KHRDisplaySwapchain.VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
+import static org.lwjgl.vulkan.VK11.*;
 
 /**
- * Provides native interfaces of Vulkan 1.1 core and user-defined utilities.
+ * Provides user-defined Vulkan utilities.
  */
-public final class VKCore extends VK11 {
+public final class VKUtil {
+
+    /**
+     * Creates a DirectContext for a backend context, using default context options.
+     *
+     * @return context or null if failed to create
+     * @see #makeVulkan(VulkanBackendContext, ContextOptions)
+     */
+    @Nullable
+    public static ImmediateContext makeVulkan(VulkanBackendContext backendContext) {
+        return makeVulkan(backendContext, new ContextOptions());
+    }
+
+    /**
+     * Creates a ImmediateContext for a backend context, using specified context options.
+     * <p>
+     * The Vulkan context (VkQueue, VkDevice, VkInstance) must be kept alive until the returned
+     * ImmediateContext is destroyed. This also means that any objects created with this
+     * ImmediateContext (e.g. Surfaces, Images, etc.) must also be released as they may hold
+     * refs on the ImmediateContext. Once all these objects and the ImmediateContext are released,
+     * then it is safe to delete the Vulkan objects.
+     *
+     * @return context or null if failed to create
+     */
+    @Nullable
+    public static ImmediateContext makeVulkan(VulkanBackendContext backendContext, ContextOptions options) {
+        var device = VulkanDevice.make(backendContext, options);
+        if (device == null) {
+            return null;
+        }
+        var queueManager = new VulkanQueueManager(device);
+        ImmediateContext context = new ImmediateContext(device, queueManager);
+        if (context.init()) {
+            return context;
+        }
+        context.unref();
+        return null;
+    }
 
     /**
      * Runtime assertion against a {@code VkResult} value, throws an exception
@@ -101,6 +144,38 @@ public final class VKCore extends VK11 {
         };
     }
 
+    /**
+     * Known vendor IDs.
+     */
+    public static final int
+            kAMD_VendorID = 0x1002,
+            kImgTec_VendorID = 0x1010,
+            kApple_VendorID = 0x106B,
+            kNVIDIA_VendorID = 0x10DE,
+            kARM_VendorID = 0x13B5,
+            kBroadcom_VendorID = 0x14E4,
+            kGoogle_VendorID = 0x1AE0,
+            kMooreThreads_VendorID = 0x1ED5,
+            kQualcomm_VendorID = 0x5143,
+            kIntel_VendorID = 0x8086;
+
+    public static String getVendorIDName(int vkVendorID) {
+        return switch (vkVendorID) {
+            case kAMD_VendorID -> "AMD";
+            case kImgTec_VendorID -> "ImgTec";
+            case kApple_VendorID -> "Apple";
+            case kNVIDIA_VendorID -> "NVIDIA";
+            case kARM_VendorID -> "ARM";
+            case kBroadcom_VendorID -> "Broadcom";
+            case kGoogle_VendorID -> "Google";
+            case kMooreThreads_VendorID -> "Moore Threads";
+            case kQualcomm_VendorID -> "Qualcomm";
+            case kIntel_VendorID -> "Intel";
+            case VK_VENDOR_ID_MESA -> "Mesa";
+            default -> APIUtil.apiUnknownToken(vkVendorID);
+        };
+    }
+
     public static String getPhysicalDeviceTypeName(@NativeType("VkPhysicalDeviceType") int vkPhysicalDeviceType) {
         return switch (vkPhysicalDeviceType) {
             case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU -> "Integrated GPU";
@@ -112,30 +187,63 @@ public final class VKCore extends VK11 {
     }
 
     /**
+     * @see #vkFormatToIndex(int)
+     */
+    //@formatter:off
+    public static final int
+            LAST_COLOR_FORMAT_INDEX = 3;
+
+    /**
+     * Lists all supported Vulkan image formats and converts to table index.
+     * 0 is reserved for unsupported formats.
+     */
+    public static int vkFormatToIndex(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_R8G8B8A8_UNORM                       -> 1;
+            case VK_FORMAT_R8_UNORM                             -> 2;
+            case VK_FORMAT_R5G6B5_UNORM_PACK16                  -> 3;
+            default -> 0;
+        };
+    }
+    //@formatter:on
+
+    /**
+     * Consistent with {@link #vkFormatToIndex(int)}
+     */
+    public static boolean vkFormatIsSupported(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
+            case VK_FORMAT_R8G8B8A8_UNORM,
+                 VK_FORMAT_R8_UNORM,
+                 VK_FORMAT_R5G6B5_UNORM_PACK16 -> true;
+            default -> false;
+        };
+    }
+
+    /**
      * @return see Color
      */
     public static int vkFormatChannels(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_FORMAT_R16G16B16A16_UNORM,
-                    VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
-                    VK_FORMAT_R8G8B8A8_SRGB,
-                    VK_FORMAT_R4G4B4A4_UNORM_PACK16,
-                    VK_FORMAT_B4G4R4A4_UNORM_PACK16,
-                    VK_FORMAT_A2R10G10B10_UNORM_PACK32,
-                    VK_FORMAT_A2B10G10R10_UNORM_PACK32,
-                    VK_FORMAT_R16G16B16A16_SFLOAT,
-                    VK_FORMAT_B8G8R8A8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGBA;
+                 VK_FORMAT_R16G16B16A16_UNORM,
+                 VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+                 VK_FORMAT_R8G8B8A8_SRGB,
+                 VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+                 VK_FORMAT_B4G4R4A4_UNORM_PACK16,
+                 VK_FORMAT_A2R10G10B10_UNORM_PACK32,
+                 VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+                 VK_FORMAT_R16G16B16A16_SFLOAT,
+                 VK_FORMAT_B8G8R8A8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGBA;
             case VK_FORMAT_R8_UNORM,
-                    VK_FORMAT_R16_UNORM,
-                    VK_FORMAT_R16_SFLOAT -> Color.COLOR_CHANNEL_FLAG_RED;
+                 VK_FORMAT_R16_UNORM,
+                 VK_FORMAT_R16_SFLOAT -> Color.COLOR_CHANNEL_FLAG_RED;
             case VK_FORMAT_R5G6B5_UNORM_PACK16,
-                    VK_FORMAT_BC1_RGB_UNORM_BLOCK,
-                    VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK,
-                    VK_FORMAT_R8G8B8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGB;
+                 VK_FORMAT_BC1_RGB_UNORM_BLOCK,
+                 VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK,
+                 VK_FORMAT_R8G8B8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGB;
             case VK_FORMAT_R8G8_UNORM,
-                    VK_FORMAT_R16G16_SFLOAT,
-                    VK_FORMAT_R16G16_UNORM -> Color.COLOR_CHANNEL_FLAGS_RG;
+                 VK_FORMAT_R16G16_SFLOAT,
+                 VK_FORMAT_R16G16_UNORM -> Color.COLOR_CHANNEL_FLAGS_RG;
             // either depth/stencil format or unsupported yet
             default -> 0;
         };
@@ -166,30 +274,30 @@ public final class VKCore extends VK11 {
     public static int vkFormatBytesPerBlock(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_R8G8B8A8_UNORM,
-                    VK_FORMAT_D24_UNORM_S8_UINT,
-                    VK_FORMAT_R16G16_SFLOAT,
-                    VK_FORMAT_R16G16_UNORM,
-                    VK_FORMAT_R8G8B8A8_SRGB,
-                    VK_FORMAT_A2R10G10B10_UNORM_PACK32,
-                    VK_FORMAT_A2B10G10R10_UNORM_PACK32,
-                    VK_FORMAT_B8G8R8A8_UNORM -> 4;
+                 VK_FORMAT_D24_UNORM_S8_UINT,
+                 VK_FORMAT_R16G16_SFLOAT,
+                 VK_FORMAT_R16G16_UNORM,
+                 VK_FORMAT_R8G8B8A8_SRGB,
+                 VK_FORMAT_A2R10G10B10_UNORM_PACK32,
+                 VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+                 VK_FORMAT_B8G8R8A8_UNORM -> 4;
             case VK_FORMAT_R8_UNORM,
-                    VK_FORMAT_S8_UINT -> 1;
+                 VK_FORMAT_S8_UINT -> 1;
             case VK_FORMAT_R5G6B5_UNORM_PACK16,
-                    VK_FORMAT_R16_UNORM,
-                    VK_FORMAT_R4G4B4A4_UNORM_PACK16,
-                    VK_FORMAT_B4G4R4A4_UNORM_PACK16,
-                    VK_FORMAT_R8G8_UNORM,
-                    VK_FORMAT_R16_SFLOAT -> 2;
+                 VK_FORMAT_R16_UNORM,
+                 VK_FORMAT_R4G4B4A4_UNORM_PACK16,
+                 VK_FORMAT_B4G4R4A4_UNORM_PACK16,
+                 VK_FORMAT_R8G8_UNORM,
+                 VK_FORMAT_R16_SFLOAT -> 2;
             case VK_FORMAT_R16G16B16A16_SFLOAT,
-                    VK_FORMAT_D32_SFLOAT_S8_UINT,
-                    VK_FORMAT_R16G16B16A16_UNORM,
-                    VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
-                    VK_FORMAT_BC1_RGB_UNORM_BLOCK,
-                    VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> 8;
+                 VK_FORMAT_D32_SFLOAT_S8_UINT,
+                 VK_FORMAT_R16G16B16A16_UNORM,
+                 VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+                 VK_FORMAT_BC1_RGB_UNORM_BLOCK,
+                 VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> 8;
             case VK_FORMAT_R8G8B8_UNORM,
-                    VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
-                    VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM -> 3;
+                 VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
+                 VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM -> 3;
             default -> 0;
         };
     }
@@ -197,11 +305,11 @@ public final class VKCore extends VK11 {
     public static int vkFormatDepthBits(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_D16_UNORM,
-                    VK_FORMAT_D16_UNORM_S8_UINT -> 16;
+                 VK_FORMAT_D16_UNORM_S8_UINT -> 16;
             case VK_FORMAT_D24_UNORM_S8_UINT,
-                    VK_FORMAT_X8_D24_UNORM_PACK32 -> 24;
+                 VK_FORMAT_X8_D24_UNORM_PACK32 -> 24;
             case VK_FORMAT_D32_SFLOAT,
-                    VK_FORMAT_D32_SFLOAT_S8_UINT -> 32;
+                 VK_FORMAT_D32_SFLOAT_S8_UINT -> 32;
             default -> 0;
         };
     }
@@ -209,9 +317,9 @@ public final class VKCore extends VK11 {
     public static int vkFormatStencilBits(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_S8_UINT,
-                    VK_FORMAT_D16_UNORM_S8_UINT,
-                    VK_FORMAT_D24_UNORM_S8_UINT,
-                    VK_FORMAT_D32_SFLOAT_S8_UINT -> 8;
+                 VK_FORMAT_D16_UNORM_S8_UINT,
+                 VK_FORMAT_D24_UNORM_S8_UINT,
+                 VK_FORMAT_D32_SFLOAT_S8_UINT -> 8;
             default -> 0;
         };
     }
@@ -243,6 +351,20 @@ public final class VKCore extends VK11 {
             case VK_FORMAT_D24_UNORM_S8_UINT -> "D24_UNORM_S8_UINT";
             case VK_FORMAT_D32_SFLOAT_S8_UINT -> "D32_SFLOAT_S8_UINT";
             default -> "Unknown";
+        };
+    }
+
+    public static int toVkSampleCount(int sampleCount) {
+        assert sampleCount >= 1;
+        return switch (sampleCount) {
+            case 1 -> VK_SAMPLE_COUNT_1_BIT;
+            case 2 -> VK_SAMPLE_COUNT_2_BIT;
+            case 4 -> VK_SAMPLE_COUNT_4_BIT;
+            case 8 -> VK_SAMPLE_COUNT_8_BIT;
+            case 16 -> VK_SAMPLE_COUNT_16_BIT;
+            case 32 -> VK_SAMPLE_COUNT_32_BIT;
+            case 64 -> VK_SAMPLE_COUNT_64_BIT;
+            default -> 0;
         };
     }
 }

@@ -34,7 +34,8 @@ import java.util.BitSet;
  * <pre>grad_layout(x,y) -> float</pre>
  * Such as linear gradient, radial gradient, angular gradient.
  */
-public abstract class Gradient1DShader extends GradientShader {
+public abstract sealed class Gradient1DShader extends GradientShader
+        permits LinearGradient, RadialGradient, AngularGradient {
 
     protected final Matrix mPtsToUnit;
     protected final int mTileMode;

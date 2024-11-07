@@ -34,9 +34,9 @@ public abstract class Node {
         FUNCTION_DEFINITION(FunctionDefinition.class),
         FUNCTION_PROTOTYPE(FunctionPrototype.class),
         GLOBAL_VARIABLE(GlobalVariableDecl.class),
-        INTERFACE_BLOCK(TopLevelElement.class),
+        INTERFACE_BLOCK(InterfaceBlock.class),
         MODIFIERS(TopLevelElement.class),
-        STRUCT_DEFINITION(TopLevelElement.class);
+        STRUCT_DEFINITION(StructDefinition.class);
 
         private final Class<? extends TopLevelElement> mType;
 
@@ -77,8 +77,8 @@ public abstract class Node {
         FOR_LOOP(ForLoop.class),
         IF(IfStatement.class),
         RETURN(ReturnStatement.class),
-        SWITCH(Statement.class),
-        SWITCH_CASE(Statement.class),
+        SWITCH(SwitchStatement.class),
+        SWITCH_CASE(SwitchCase.class),
         VARIABLE_DECL(VariableDecl.class);
 
         private final Class<? extends Statement> mType;
@@ -99,11 +99,11 @@ public abstract class Node {
         CONSTRUCTOR_ARRAY_CAST(ConstructorArrayCast.class),
         CONSTRUCTOR_COMPOUND(ConstructorCompound.class),
         CONSTRUCTOR_COMPOUND_CAST(ConstructorCompoundCast.class),
-        CONSTRUCTOR_MATRIX_TO_MATRIX(ConstructorMatrix2Matrix.class),
+        CONSTRUCTOR_DIAGONAL_MATRIX(ConstructorDiagonalMatrix.class),
+        CONSTRUCTOR_MATRIX_RESIZE(ConstructorMatrixResize.class),
         CONSTRUCTOR_SCALAR_CAST(ConstructorScalarCast.class),
-        CONSTRUCTOR_SCALAR_TO_MATRIX(ConstructorScalar2Matrix.class),
-        CONSTRUCTOR_SCALAR_TO_VECTOR(ConstructorScalar2Vector.class),
         CONSTRUCTOR_STRUCT(ConstructorStruct.class),
+        CONSTRUCTOR_VECTOR_SPLAT(ConstructorVectorSplat.class),
         FIELD_ACCESS(FieldAccess.class),
         FUNCTION_CALL(FunctionCall.class),
         FUNCTION_REFERENCE(FunctionReference.class),

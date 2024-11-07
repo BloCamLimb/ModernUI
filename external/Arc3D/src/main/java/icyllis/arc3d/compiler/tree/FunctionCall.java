@@ -22,6 +22,7 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.Analysis;
+import org.jetbrains.annotations.Unmodifiable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -202,6 +203,7 @@ public final class FunctionCall extends Expression {
         return mFunction;
     }
 
+    @Unmodifiable
     public Expression[] getArguments() {
         return mArguments;
     }

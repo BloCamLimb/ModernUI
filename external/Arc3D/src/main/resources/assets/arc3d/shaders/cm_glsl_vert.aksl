@@ -1,0 +1,4 @@
+#extension GL_EXT_arc3d_shading_language : require
+out gl_PerVertex {
+  layout(builtin=position) vec4 gl_Position;
+};

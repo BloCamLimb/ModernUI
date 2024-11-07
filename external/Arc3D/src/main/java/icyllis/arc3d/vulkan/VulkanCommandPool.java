@@ -26,7 +26,7 @@ import org.lwjgl.vulkan.VkFenceCreateInfo;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arc3d.vulkan.VKCore.*;
+import static org.lwjgl.vulkan.VK11.*;
 
 /**
  * VkCommandPool is created with a single primary command buffer and (optional)
@@ -60,7 +60,7 @@ public class VulkanCommandPool extends ManagedResource {
         try (var stack = MemoryStack.stackPush()) {
             var pCommandPool = stack.mallocLong(1);
             var result = vkCreateCommandPool(
-                    device.device(),
+                    device.vkDevice(),
                     VkCommandPoolCreateInfo
                             .malloc(stack)
                             .sType$Default()
@@ -79,7 +79,7 @@ public class VulkanCommandPool extends ManagedResource {
                 VulkanPrimaryCommandBuffer.create(device, commandPool);
         if (primaryCommandBuffer == null) {
             vkDestroyCommandPool(
-                    device.device(),
+                    device.vkDevice(),
                     commandPool,
                     null
             );
@@ -91,7 +91,7 @@ public class VulkanCommandPool extends ManagedResource {
     @Override
     protected void deallocate() {
         vkDestroyCommandPool(
-                getDevice().device(),
+                getDevice().vkDevice(),
                 mCommandPool,
                 null
         );
@@ -103,7 +103,7 @@ public class VulkanCommandPool extends ManagedResource {
         if (mSubmitFence[0] == VK_NULL_HANDLE) {
             try (var stack = MemoryStack.stackPush()) {
                 var result = vkCreateFence(
-                        getDevice().device(),
+                        getDevice().vkDevice(),
                         VkFenceCreateInfo
                                 .calloc(stack)
                                 .sType$Default(),
@@ -116,8 +116,8 @@ public class VulkanCommandPool extends ManagedResource {
                 mSubmitFence[0] = VK_NULL_HANDLE;
             }
         } else {
-            _CHECK_ERROR_(vkResetFences(
-                    getDevice().device(),
+            VKUtil._CHECK_ERROR_(vkResetFences(
+                    getDevice().vkDevice(),
                     mSubmitFence
             ));
         }
@@ -133,7 +133,7 @@ public class VulkanCommandPool extends ManagedResource {
             return true;
         }
         var result = vkGetFenceStatus(
-                getDevice().device(),
+                getDevice().vkDevice(),
                 mSubmitFence[0]
         );
         if (result == VK_SUCCESS ||
@@ -143,14 +143,14 @@ public class VulkanCommandPool extends ManagedResource {
         if (result == VK_NOT_READY) {
             return false;
         }
-        throw new RuntimeException(VKCore.getResultMessage(result));
+        throw new RuntimeException(VKUtil.getResultMessage(result));
     }
 
     public void reset() {
         assert isSubmitted();
 
         vkResetCommandPool(
-                getDevice().device(),
+                getDevice().vkDevice(),
                 mCommandPool,
                 0
         );

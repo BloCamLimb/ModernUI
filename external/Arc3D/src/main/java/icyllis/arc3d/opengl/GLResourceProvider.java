@@ -33,8 +33,9 @@ public final class GLResourceProvider extends ResourceProvider {
 
     private final GLDevice mDevice;
 
-    GLResourceProvider(GLDevice device, Context context) {
-        super(device, context);
+    GLResourceProvider(GLDevice device, Context context,
+                       long maxResourceBudget) {
+        super(device, context, maxResourceBudget);
         mDevice = device;
     }
 

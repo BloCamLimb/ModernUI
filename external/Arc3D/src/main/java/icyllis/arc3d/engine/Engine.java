@@ -29,15 +29,16 @@ public interface Engine {
     /**
      * Block engine-private values.
      */
+    //TODO delete this
     @ColorInfo.ColorType
     static int colorTypeToPublic(int ct) {
         return switch (ct) {
             case ColorInfo.CT_UNKNOWN,
                     ColorInfo.CT_ALPHA_8,
-                    ColorInfo.CT_RGB_565,
+                    ColorInfo.CT_BGR_565,
                     ColorInfo.CT_RGBA_8888,
                     ColorInfo.CT_RGBA_8888_SRGB,
-                    ColorInfo.CT_RGB_888x,
+                    ColorInfo.CT_RGBX_8888,
                     ColorInfo.CT_RG_88,
                     ColorInfo.CT_BGRA_8888,
                     ColorInfo.CT_RGBA_1010102,
@@ -52,11 +53,7 @@ public interface Engine {
                     ColorInfo.CT_RG_F16,
                     ColorInfo.CT_RGBA_16161616,
                     ColorInfo.CT_R_8 -> ct;
-            case ColorInfo.CT_ALPHA_8xxx,
-                    ColorInfo.CT_ALPHA_F32xxx,
-                    ColorInfo.CT_GRAY_8xxx,
-                    ColorInfo.CT_R_8xxx,
-                    ColorInfo.CT_RGB_888,
+            case ColorInfo.CT_RGB_888,
                     ColorInfo.CT_R_16,
                     ColorInfo.CT_R_F16,
                     ColorInfo.CT_GRAY_ALPHA_88 -> ColorInfo.CT_UNKNOWN;
@@ -288,33 +285,31 @@ public interface Engine {
     static int colorTypeEncoding(int ct) {
         return switch (ct) {
             case ColorInfo.CT_UNKNOWN,
-                    ColorInfo.CT_ALPHA_8,
-                    ColorInfo.CT_RGBA_8888,
-                    ColorInfo.CT_RGB_888x,
-                    ColorInfo.CT_RG_88,
-                    ColorInfo.CT_BGRA_8888,
-                    ColorInfo.CT_GRAY_8,
-                    ColorInfo.CT_ALPHA_8xxx,
-                    ColorInfo.CT_GRAY_8xxx,
-                    ColorInfo.CT_R_8xxx,
-                    ColorInfo.CT_ALPHA_16,
-                    ColorInfo.CT_RG_1616,
-                    ColorInfo.CT_RGBA_16161616,
-                    ColorInfo.CT_RGB_888,
-                    ColorInfo.CT_R_8,
-                    ColorInfo.CT_R_16,
-                    ColorInfo.CT_GRAY_ALPHA_88 -> COLOR_ENCODING_UNORM;
-            case ColorInfo.CT_RGB_565 -> COLOR_ENCODING_UNORM_PACK16;
+                 ColorInfo.CT_ALPHA_8,
+                 ColorInfo.CT_RGBA_8888,
+                 ColorInfo.CT_RGBX_8888,
+                 ColorInfo.CT_RG_88,
+                 ColorInfo.CT_BGRA_8888,
+                 ColorInfo.CT_ABGR_8888,
+                 ColorInfo.CT_ARGB_8888,
+                 ColorInfo.CT_GRAY_8,
+                 ColorInfo.CT_ALPHA_16,
+                 ColorInfo.CT_RG_1616,
+                 ColorInfo.CT_RGBA_16161616,
+                 ColorInfo.CT_RGB_888,
+                 ColorInfo.CT_R_8,
+                 ColorInfo.CT_R_16,
+                 ColorInfo.CT_GRAY_ALPHA_88 -> COLOR_ENCODING_UNORM;
+            case ColorInfo.CT_BGR_565 -> COLOR_ENCODING_UNORM_PACK16;
             case ColorInfo.CT_RGBA_1010102,
-                    ColorInfo.CT_BGRA_1010102 -> COLOR_ENCODING_UNORM_PACK32;
+                 ColorInfo.CT_BGRA_1010102 -> COLOR_ENCODING_UNORM_PACK32;
             case ColorInfo.CT_RGBA_8888_SRGB -> COLOR_ENCODING_UNORM_SRGB;
             case ColorInfo.CT_ALPHA_F16,
-                    ColorInfo.CT_RGBA_F16,
-                    ColorInfo.CT_RGBA_F16_CLAMPED,
-                    ColorInfo.CT_RGBA_F32,
-                    ColorInfo.CT_ALPHA_F32xxx,
-                    ColorInfo.CT_RG_F16,
-                    ColorInfo.CT_R_F16 -> COLOR_ENCODING_FLOAT;
+                 ColorInfo.CT_RGBA_F16,
+                 ColorInfo.CT_RGBA_F16_CLAMPED,
+                 ColorInfo.CT_RGBA_F32,
+                 ColorInfo.CT_RG_F16,
+                 ColorInfo.CT_R_F16 -> COLOR_ENCODING_FLOAT;
             default -> throw new AssertionError(ct);
         };
     }
@@ -333,33 +328,31 @@ public interface Engine {
     static int colorTypeClampType(int ct) {
         return switch (ct) {
             case ColorInfo.CT_UNKNOWN,
-                    ColorInfo.CT_ALPHA_8,
-                    ColorInfo.CT_RGB_565,
-                    ColorInfo.CT_RGBA_8888,
-                    ColorInfo.CT_RGBA_8888_SRGB,
-                    ColorInfo.CT_RGB_888x,
-                    ColorInfo.CT_RG_88,
-                    ColorInfo.CT_BGRA_8888,
-                    ColorInfo.CT_RGBA_1010102,
-                    ColorInfo.CT_BGRA_1010102,
-                    ColorInfo.CT_GRAY_8,
-                    ColorInfo.CT_ALPHA_8xxx,
-                    ColorInfo.CT_GRAY_8xxx,
-                    ColorInfo.CT_R_8xxx,
-                    ColorInfo.CT_ALPHA_16,
-                    ColorInfo.CT_RG_1616,
-                    ColorInfo.CT_RGBA_16161616,
-                    ColorInfo.CT_RGB_888,
-                    ColorInfo.CT_R_8,
-                    ColorInfo.CT_R_16,
-                    ColorInfo.CT_GRAY_ALPHA_88 -> CLAMP_TYPE_AUTO;
+                 ColorInfo.CT_ALPHA_8,
+                 ColorInfo.CT_BGR_565,
+                 ColorInfo.CT_RGBA_8888,
+                 ColorInfo.CT_RGBA_8888_SRGB,
+                 ColorInfo.CT_RGBX_8888,
+                 ColorInfo.CT_RG_88,
+                 ColorInfo.CT_BGRA_8888,
+                 ColorInfo.CT_ABGR_8888,
+                 ColorInfo.CT_ARGB_8888,
+                 ColorInfo.CT_RGBA_1010102,
+                 ColorInfo.CT_BGRA_1010102,
+                 ColorInfo.CT_GRAY_8,
+                 ColorInfo.CT_ALPHA_16,
+                 ColorInfo.CT_RG_1616,
+                 ColorInfo.CT_RGBA_16161616,
+                 ColorInfo.CT_RGB_888,
+                 ColorInfo.CT_R_8,
+                 ColorInfo.CT_R_16,
+                 ColorInfo.CT_GRAY_ALPHA_88 -> CLAMP_TYPE_AUTO;
             case ColorInfo.CT_RGBA_F16_CLAMPED -> CLAMP_TYPE_MANUAL;
             case ColorInfo.CT_ALPHA_F16,
-                    ColorInfo.CT_RGBA_F16,
-                    ColorInfo.CT_RGBA_F32,
-                    ColorInfo.CT_ALPHA_F32xxx,
-                    ColorInfo.CT_RG_F16,
-                    ColorInfo.CT_R_F16 -> CLAMP_TYPE_NONE;
+                 ColorInfo.CT_RGBA_F16,
+                 ColorInfo.CT_RGBA_F32,
+                 ColorInfo.CT_RG_F16,
+                 ColorInfo.CT_R_F16 -> CLAMP_TYPE_NONE;
             default -> throw new AssertionError(ct);
         };
     }
@@ -410,7 +403,7 @@ public interface Engine {
     static int maskFormatToColorType(int maskFormat) {
         int ct = switch (maskFormat) {
             case MASK_FORMAT_A8 -> ColorInfo.CT_ALPHA_8;
-            case MASK_FORMAT_A565 -> ColorInfo.CT_RGB_565;
+            case MASK_FORMAT_A565 -> ColorInfo.CT_BGR_565;
             case MASK_FORMAT_ARGB -> ColorInfo.CT_RGBA_8888;
             default -> throw new AssertionError();
         };

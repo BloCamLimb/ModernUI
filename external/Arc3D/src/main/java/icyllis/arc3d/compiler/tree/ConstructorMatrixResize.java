@@ -28,9 +28,9 @@ import java.util.OptionalDouble;
  * These always contain exactly 1 matrix of non-matching size. Cells that aren't present in the
  * input matrix are populated with the identity matrix.
  */
-public final class ConstructorMatrix2Matrix extends ConstructorCall {
+public final class ConstructorMatrixResize extends ConstructorCall {
 
-    private ConstructorMatrix2Matrix(int position, Type type, Expression... arguments) {
+    private ConstructorMatrixResize(int position, Type type, Expression... arguments) {
         super(position, type, arguments);
         assert arguments.length == 1;
     }
@@ -45,12 +45,12 @@ public final class ConstructorMatrix2Matrix extends ConstructorCall {
             return arg;
         }
 
-        return new ConstructorMatrix2Matrix(position, type, arg);
+        return new ConstructorMatrixResize(position, type, arg);
     }
 
     @Override
     public ExpressionKind getKind() {
-        return ExpressionKind.CONSTRUCTOR_MATRIX_TO_MATRIX;
+        return ExpressionKind.CONSTRUCTOR_MATRIX_RESIZE;
     }
 
     @Override
@@ -71,11 +71,11 @@ public final class ConstructorMatrix2Matrix extends ConstructorCall {
         // Where `m` is the matrix being wrapped, and other cells contain the identity matrix.
 
         // Forward `getConstantValue` to the wrapped matrix if the position is in its bounds.
-        Type argType = getArguments()[0].getType();
+        Type argType = getArgument().getType();
         if (col < argType.getCols() && row < argType.getRows()) {
             // Recalculate `i` in terms of the inner matrix's dimensions.
             i = row + (col * argType.getRows());
-            return getArguments()[0].getConstantValue(i);
+            return getArgument().getConstantValue(i);
         }
 
         // Synthesize an identity matrix for out-of-bounds positions.
@@ -85,6 +85,6 @@ public final class ConstructorMatrix2Matrix extends ConstructorCall {
     @Nonnull
     @Override
     public Expression clone(int position) {
-        return new ConstructorMatrix2Matrix(position, getType(), cloneArguments());
+        return new ConstructorMatrixResize(position, getType(), cloneArguments());
     }
 }

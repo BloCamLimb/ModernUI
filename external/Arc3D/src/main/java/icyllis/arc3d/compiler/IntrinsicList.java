@@ -246,6 +246,8 @@ public final class IntrinsicList {
      */
     public static final int
             kSubpassLoad = 153;
+    public static final int
+            kCount = 154;
 
     private static final Object2IntOpenHashMap<String> sIntrinsicMap;
 
@@ -348,6 +350,9 @@ public final class IntrinsicList {
         map.put("dFdxCoarse"            , kDPdxCoarse               );
         map.put("dFdyCoarse"            , kDPdyCoarse               );
         map.put("fwidthCoarse"          , kFwidthCoarse             );
+
+        map.put("texture"               , kTexture                  );
+        map.put("texelFetch"            , kTextureFetch             );
 
         sIntrinsicMap = map;
     }

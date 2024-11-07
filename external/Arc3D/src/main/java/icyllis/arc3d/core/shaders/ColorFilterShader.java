@@ -20,5 +20,5 @@
 package icyllis.arc3d.core.shaders;
 
 //TODO
-public class ColorFilterShader extends Shader {
+public class ColorFilterShader /*extends Shader*/ {
 }

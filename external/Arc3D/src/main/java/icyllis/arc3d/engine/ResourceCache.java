@@ -116,6 +116,7 @@ public final class ResourceCache {
      * A {@link #purgeAsNeeded()} is followed by this method call.
      * The passed value can be retrieved by {@link #getMaxBudget()}.
      */
+    @VisibleForTesting
     public void setMaxBudget(long maxBytes) {
         mMaxBytes = maxBytes;
         processReturnedResources();

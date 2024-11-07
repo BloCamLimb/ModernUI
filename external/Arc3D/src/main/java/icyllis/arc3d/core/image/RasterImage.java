@@ -65,14 +65,14 @@ public class RasterImage extends Image {
         if (pixels == null) {
             return null;
         }
-        if (!pixmap.getInfo().isValid() || pixmap.getRowStride() < pixmap.getInfo().minRowBytes()) {
+        if (!pixmap.getInfo().isValid() || pixmap.getRowBytes() < pixmap.getInfo().minRowBytes()) {
             return null;
         }
         if (pixels.getAddress() == MemoryUtil.NULL && pixels.getBase() == null) {
             return null;
         }
         if (copyMode == COPY_MODE_ALWAYS || (!pixels.isImmutable() && copyMode != COPY_MODE_NEVER)) {
-            long size = pixmap.getInfo().computeByteSize(pixmap.getRowStride());
+            long size = pixmap.getInfo().computeByteSize(pixmap.getRowBytes());
             if (size < 0) {
                 return null;
             }
@@ -83,17 +83,17 @@ public class RasterImage extends Image {
             PixelUtils.copyImage(
                     pixels.getBase(),
                     pixels.getAddress(),
-                    pixmap.getRowStride(),
+                    pixmap.getRowBytes(),
                     null,
                     addr,
-                    pixmap.getRowStride(),
-                    pixmap.getRowStride(),
+                    pixmap.getRowBytes(),
+                    pixmap.getRowBytes(),
                     pixmap.getHeight()
             );
             Pixmap newPixmap = new Pixmap(pixmap.getInfo(),
-                    null, addr, pixmap.getRowStride());
+                    null, addr, pixmap.getRowBytes());
             Pixels newPixels = new Pixels(pixmap.getWidth(), pixmap.getHeight(),
-                    null, addr, pixmap.getRowStride(), MemoryUtil::nmemFree);
+                    null, addr, pixmap.getRowBytes(), MemoryUtil::nmemFree);
             newPixels.setImmutable();
             Image result = new RasterImage(newPixmap, newPixels, false);
             newPixels.unref();

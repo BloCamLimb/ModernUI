@@ -212,7 +212,7 @@ public final class PaintParams implements AutoCloseable {
             return false;
         }
 
-        if (dstCT == ColorInfo.CT_RGB_565) {
+        if (dstCT == ColorInfo.CT_BGR_565) {
             // always dither bits per channel < 8
             return true;
         }
@@ -224,30 +224,32 @@ public final class PaintParams implements AutoCloseable {
     private static float getDitherRange(int dstCT) {
         // We use 1 / (2^bitdepth-1) as the range since each channel can hold 2^bitdepth values
         return switch (dstCT) {
-            case ColorInfo.CT_RGB_565 -> 1 / 31.f; // 5-bit
+            case ColorInfo.CT_BGR_565 -> 1 / 31.f; // 5-bit
             case ColorInfo.CT_ALPHA_8,
-                    ColorInfo.CT_GRAY_8,
-                    ColorInfo.CT_GRAY_ALPHA_88,
-                    ColorInfo.CT_R_8,
-                    ColorInfo.CT_RG_88,
-                    ColorInfo.CT_RGB_888,
-                    ColorInfo.CT_RGB_888x,
-                    ColorInfo.CT_RGBA_8888,
-                    ColorInfo.CT_RGBA_8888_SRGB,
-                    ColorInfo.CT_BGRA_8888 -> 1 / 255.f; // 8-bit
+                 ColorInfo.CT_GRAY_8,
+                 ColorInfo.CT_GRAY_ALPHA_88,
+                 ColorInfo.CT_R_8,
+                 ColorInfo.CT_RG_88,
+                 ColorInfo.CT_RGB_888,
+                 ColorInfo.CT_RGBX_8888,
+                 ColorInfo.CT_RGBA_8888,
+                 ColorInfo.CT_ABGR_8888,
+                 ColorInfo.CT_RGBA_8888_SRGB,
+                 ColorInfo.CT_BGRA_8888,
+                 ColorInfo.CT_ARGB_8888 -> 1 / 255.f; // 8-bit
             case ColorInfo.CT_RGBA_1010102,
-                    ColorInfo.CT_BGRA_1010102 -> 1 / 1023.f; // 10-bit
+                 ColorInfo.CT_BGRA_1010102 -> 1 / 1023.f; // 10-bit
             case ColorInfo.CT_ALPHA_16,
-                    ColorInfo.CT_R_16,
-                    ColorInfo.CT_RG_1616,
-                    ColorInfo.CT_RGBA_16161616 -> 1 / 32767.f; // 16-bit
+                 ColorInfo.CT_R_16,
+                 ColorInfo.CT_RG_1616,
+                 ColorInfo.CT_RGBA_16161616 -> 1 / 32767.f; // 16-bit
             case ColorInfo.CT_UNKNOWN,
-                    ColorInfo.CT_ALPHA_F16,
-                    ColorInfo.CT_R_F16,
-                    ColorInfo.CT_RG_F16,
-                    ColorInfo.CT_RGBA_F16,
-                    ColorInfo.CT_RGBA_F16_CLAMPED,
-                    ColorInfo.CT_RGBA_F32 -> 0.f; // no dithering
+                 ColorInfo.CT_ALPHA_F16,
+                 ColorInfo.CT_R_F16,
+                 ColorInfo.CT_RG_F16,
+                 ColorInfo.CT_RGBA_F16,
+                 ColorInfo.CT_RGBA_F16_CLAMPED,
+                 ColorInfo.CT_RGBA_F32 -> 0.f; // no dithering
             default -> throw new AssertionError(dstCT);
         };
     }
@@ -257,7 +259,7 @@ public final class PaintParams implements AutoCloseable {
                                        UniformDataGatherer uniformDataGatherer,
                                        TextureDataGatherer textureDataGatherer) {
         if (mShader != null) {
-            FragmentUtils.appendToKey(
+            FragmentHelpers.appendToKey(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -265,7 +267,7 @@ public final class PaintParams implements AutoCloseable {
                     mShader
             );
         } else {
-            FragmentUtils.appendRGBOpaquePaintColorBlock(
+            FragmentHelpers.appendRGBOpaquePaintColorBlock(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -290,7 +292,7 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // dst
-            FragmentUtils.appendPrimitiveColorBlock(
+            FragmentHelpers.appendPrimitiveColorBlock(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -298,7 +300,7 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // blend
-            FragmentUtils.appendToKey(
+            FragmentHelpers.appendToKey(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -322,7 +324,7 @@ public final class PaintParams implements AutoCloseable {
         if (mShader == null && mPrimitiveBlender == null) {
             // If there is no shader and no primitive blending the input to the colorFilter stage
             // is just the premultiplied paint color.
-            FragmentUtils.appendSolidColorShaderBlock(
+            FragmentHelpers.appendSolidColorShaderBlock(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -344,7 +346,7 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // dst
-            FragmentUtils.appendAlphaOnlyPaintColorBlock(
+            FragmentHelpers.appendAlphaOnlyPaintColorBlock(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -352,7 +354,13 @@ public final class PaintParams implements AutoCloseable {
             );
 
             // blend
-            keyBuilder.addInt(FragmentStage.kInlineSrcInBlend_BuiltinStageID);
+            FragmentHelpers.appendFixedBlendMode(
+                    keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    BlendMode.SRC_IN
+            );
         } else {
             handlePrimitiveColor(
                     keyContext,
@@ -377,7 +385,7 @@ public final class PaintParams implements AutoCloseable {
                     textureDataGatherer
             );
 
-            FragmentUtils.appendToKey(
+            FragmentHelpers.appendToKey(
                     keyContext,
                     keyBuilder,
                     uniformDataGatherer,
@@ -411,7 +419,7 @@ public final class PaintParams implements AutoCloseable {
                         textureDataGatherer
                 );
 
-                FragmentUtils.appendDitherShaderBlock(
+                FragmentHelpers.appendDitherShaderBlock(
                         keyContext,
                         keyBuilder,
                         uniformDataGatherer,

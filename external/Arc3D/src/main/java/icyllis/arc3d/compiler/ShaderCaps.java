@@ -35,10 +35,15 @@ public class ShaderCaps {
 
     @Override
     public String toString() {
-        return "ShaderCaps{" +
-                "mTargetApi=" + mTargetApi +
-                ", mGLSLVersion=" + mGLSLVersion +
-                ", mSPIRVVersion=" + mSPIRVVersion +
-                '}';
+        StringBuilder b = new StringBuilder("ShaderCaps:\n");
+        dump("", b);
+        return b.toString();
+    }
+
+    public void dump(String prefix, StringBuilder out) {
+        out.append(prefix).append("TargetAPI: ").append(mTargetApi).append('\n');
+        out.append(prefix).append("GLSLVersion: ").append(mGLSLVersion).append('\n');
+        out.append(prefix).append("SPIRVVersion: ").append(mSPIRVVersion).append('\n');
+        out.append(prefix).append("FMASupport: ").append(mFMASupport).append('\n');
     }
 }

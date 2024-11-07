@@ -49,16 +49,24 @@ public final class Swizzle {
         assert concat(make('1', '1', '1', 'r'), AAAA) == make('r', 'r', 'r', 'r');
     }
 
+    // r...a must map to 0...3 because other methods use them as indices into mSwiz.
+    public static final int
+            COMPONENT_R    = 0,
+            COMPONENT_G    = 1,
+            COMPONENT_B    = 2,
+            COMPONENT_A    = 3,
+            COMPONENT_ZERO = 4,
+            COMPONENT_ONE  = 5;
+
     @Contract(pure = true)
     public static int charToIndex(char c) {
         return switch (c) {
-            // r...a must map to 0...3 because other methods use them as indices into mSwiz.
-            case 'r' -> 0;
-            case 'g' -> 1;
-            case 'b' -> 2;
-            case 'a' -> 3;
-            case '0' -> 4;
-            case '1' -> 5;
+            case 'r' -> COMPONENT_R;
+            case 'g' -> COMPONENT_G;
+            case 'b' -> COMPONENT_B;
+            case 'a' -> COMPONENT_A;
+            case '0' -> COMPONENT_ZERO;
+            case '1' -> COMPONENT_ONE;
             default -> throw new AssertionError(c);
         };
     }
@@ -66,12 +74,12 @@ public final class Swizzle {
     @Contract(pure = true)
     public static char indexToChar(int idx) {
         return switch (idx) {
-            case 0 -> 'r';
-            case 1 -> 'g';
-            case 2 -> 'b';
-            case 3 -> 'a';
-            case 4 -> '0';
-            case 5 -> '1';
+            case COMPONENT_R    -> 'r';
+            case COMPONENT_G    -> 'g';
+            case COMPONENT_B    -> 'b';
+            case COMPONENT_A    -> 'a';
+            case COMPONENT_ZERO -> '0';
+            case COMPONENT_ONE  -> '1';
             default -> throw new AssertionError(idx);
         };
     }
@@ -80,7 +88,7 @@ public final class Swizzle {
      * Compact representation of the swizzle suitable for a key. Letters must be lowercase.
      */
     @Contract(pure = true)
-    public static short make(String s) {
+    public static short make(CharSequence s) {
         return make(s.charAt(0), s.charAt(1), s.charAt(2), s.charAt(3));
     }
 
@@ -89,7 +97,32 @@ public final class Swizzle {
      */
     @Contract(pure = true)
     public static short make(char r, char g, char b, char a) {
-        return (short) (charToIndex(r) | (charToIndex(g) << 4) | (charToIndex(b) << 8) | (charToIndex(a) << 12));
+        return make(charToIndex(r), charToIndex(g), charToIndex(b), charToIndex(a));
+    }
+
+    @Contract(pure = true)
+    public static short make(int r, int g, int b, int a) {
+        return (short) (r | (g << 4) | (b << 8) | (a << 12));
+    }
+
+    @Contract(pure = true)
+    public static int getR(short swizzle) {
+        return swizzle & 0xF;
+    }
+
+    @Contract(pure = true)
+    public static int getG(short swizzle) {
+        return (swizzle >> 4) & 0xF;
+    }
+
+    @Contract(pure = true)
+    public static int getB(short swizzle) {
+        return (swizzle >> 8) & 0xF;
+    }
+
+    @Contract(pure = true)
+    public static int getA(short swizzle) {
+        return swizzle >>> 12;
     }
 
     /**
@@ -99,7 +132,7 @@ public final class Swizzle {
         int swizzle = 0;
         for (int i = 0; i < 4; ++i) {
             int idx = (b >> (4 * i)) & 0xF;
-            if (idx != 4 && idx != 5) {
+            if (idx != COMPONENT_ZERO && idx != COMPONENT_ONE) {
                 assert idx < 4;
                 // Get the index value stored in 'a' at location 'idx'.
                 idx = (a >> (4 * idx)) & 0xF;
@@ -112,31 +145,29 @@ public final class Swizzle {
     /**
      * Applies this swizzle to the input color and returns the swizzled color.
      */
-    public static float[] apply(short swizzle, @Size(min = 4) float[] v) {
-        final float
-                r = v[0],
-                g = v[1],
-                b = v[2],
-                a = v[3];
+    public static void apply(short swizzle,
+                             @Size(4) float[] inColor,
+                             @Size(4) float[] outColor) {
+        final float r = inColor[0], g = inColor[1], b = inColor[2], a = inColor[3];
         for (int i = 0; i < 4; ++i) {
-            v[i] = switch (swizzle & 0xF) {
-                case 0 -> r;
-                case 1 -> g;
-                case 2 -> b;
-                case 3 -> a;
-                case 4 -> 0.0f;
-                case 5 -> 1.0f;
-                default -> throw new IllegalStateException();
+            outColor[i] = switch (swizzle & 0xF) {
+                case COMPONENT_R    -> r;
+                case COMPONENT_G    -> g;
+                case COMPONENT_B    -> b;
+                case COMPONENT_A    -> a;
+                case COMPONENT_ZERO -> 0.0f;
+                case COMPONENT_ONE  -> 1.0f;
+                default -> throw new AssertionError();
             };
             swizzle >>= 4;
         }
-        return v;
     }
 
     public static String toString(short swizzle) {
-        return "" + indexToChar(swizzle & 0xF) +
-                indexToChar((swizzle >> 4) & 0xF) +
-                indexToChar((swizzle >> 8) & 0xF) +
-                indexToChar(swizzle >>> 12);
+        return ""
+                + indexToChar(getR(swizzle))
+                + indexToChar(getG(swizzle))
+                + indexToChar(getB(swizzle))
+                + indexToChar(getA(swizzle));
     }
 }

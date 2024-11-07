@@ -19,5 +19,6 @@
 
 package icyllis.arc3d.core.shaders;
 
-public class BilinearGradient extends Gradient2DShader {
+//TODO
+public final class BilinearGradient extends Gradient2DShader {
 }

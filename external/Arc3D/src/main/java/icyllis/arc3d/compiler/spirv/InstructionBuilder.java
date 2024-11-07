@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.compiler.spirv;
 
+import icyllis.arc3d.compiler.tree.Type;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
@@ -55,6 +56,15 @@ final class InstructionBuilder extends Instruction {
         return this;
     }
 
+    // add SpvId or literal
+    InstructionBuilder addWords(int[] words, int offset, int count) {
+        mValues.addElements(mValues.size(), words, offset, count);
+        for (int i = 0; i < count; i++) {
+            mKinds.add(kWord);
+        }
+        return this;
+    }
+
     InstructionBuilder addResult() {
         assert mResultKind == kNoResult;
         mValues.add(SPIRVCodeGenerator.NONE_ID);
@@ -69,6 +79,10 @@ final class InstructionBuilder extends Instruction {
         mKinds.add(kRelaxedPrecisionResult);
         mResultKind = kRelaxedPrecisionResult;
         return this;
+    }
+
+    InstructionBuilder addResult(@Nonnull Type type) {
+        return type.isRelaxedPrecision() ? addRelaxedResult() : addResult();
     }
 
     InstructionBuilder addUniqueResult() {

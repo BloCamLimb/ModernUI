@@ -20,6 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.engine.Caps;
 import icyllis.arc3d.engine.RecordingContext;
 
 import javax.annotation.Nullable;
@@ -27,7 +28,8 @@ import javax.annotation.Nullable;
 public class KeyContext {
 
     @RawPtr
-    private final RecordingContext mRC;
+    private final RecordingContext mRecordingContext;
+    private final Caps mCaps;
     private final ImageInfo mTargetInfo;
     // color components using non-premultiplied alpha
     private float mR; // 0..1
@@ -35,9 +37,10 @@ public class KeyContext {
     private float mB; // 0..1
     private float mA; // 0..1
 
-    public KeyContext(@RawPtr RecordingContext rc,
+    public KeyContext(@RawPtr RecordingContext recordingContext,
                       ImageInfo targetInfo) {
-        mRC = rc;
+        mRecordingContext = recordingContext;
+        mCaps = recordingContext.getCaps();
         mTargetInfo = targetInfo;
     }
 
@@ -63,8 +66,12 @@ public class KeyContext {
      */
     @RawPtr
     @Nullable
-    public RecordingContext getRC() {
-        return mRC;
+    public RecordingContext getRecordingContext() {
+        return mRecordingContext;
+    }
+
+    public Caps getCaps() {
+        return mCaps;
     }
 
     /**

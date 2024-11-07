@@ -23,7 +23,7 @@ import icyllis.arc3d.core.*;
 
 import javax.annotation.Nullable;
 
-public class ColorMatrixColorFilter extends ColorFilter {
+public final class ColorMatrixColorFilter implements ColorFilter {
 
     private final float[] mMatrix = new float[20];
     private final boolean mAlphaUnchanged;
@@ -79,5 +79,13 @@ public class ColorMatrixColorFilter extends ColorFilter {
         out[1] = y * w;
         out[2] = z * w;
         out[3] = w;
+    }
+
+    @Override
+    public void ref() {
+    }
+
+    @Override
+    public void unref() {
     }
 }

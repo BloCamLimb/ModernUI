@@ -25,5 +25,6 @@ package icyllis.arc3d.core.shaders;
  * <pre>grad_layout(x,y) -> vec2</pre>
  * Such as bilinear gradient (rectangular), polar gradient.
  */
-public abstract class Gradient2DShader extends GradientShader {
+public abstract sealed class Gradient2DShader extends GradientShader
+        permits BilinearGradient {
 }

@@ -25,8 +25,9 @@ import icyllis.arc3d.engine.BackendRenderTarget;
 import javax.annotation.Nonnull;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
-import static icyllis.arc3d.vulkan.VKCore.*;
+import static org.lwjgl.vulkan.VK11.*;
 
+@Deprecated
 public final class VkBackendRenderTarget extends BackendRenderTarget {
 
     private static final int DEFAULT_USAGE_FLAGS = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -40,17 +41,14 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
 
     // The VkImageInfo can NOT be modified anymore.
     public VkBackendRenderTarget(int width, int height, VulkanImageDesc info) {
-        this(width, height, info, new VulkanImageMutableState(info.mImageLayout, info.mCurrentQueueFamily));
+        this(width, height, info, null);
     }
 
     VkBackendRenderTarget(int width, int height, VulkanImageDesc info, VulkanImageMutableState state) {
         super(width, height);
-        if (info.mImageUsageFlags == 0) {
-            info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
-        }
+
         mInfo = info;
         mState = state;
-        assert info.mSampleCount >= 1;
     }
 
     @Override
@@ -60,7 +58,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public int getSampleCount() {
-        return mInfo.mSampleCount;
+        return 1;
     }
 
     @Override
@@ -76,9 +74,6 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public boolean getVkImageInfo(VulkanImageDesc info) {
-        info.set(mInfo);
-        info.mImageLayout = mState.getImageLayout();
-        info.mCurrentQueueFamily = mState.getQueueFamilyIndex();
         return true;
     }
 
@@ -103,6 +98,6 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public boolean isProtected() {
-        return mInfo.mProtected;
+        return mInfo.isProtected();
     }
 }

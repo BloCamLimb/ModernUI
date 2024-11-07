@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core.shaders;
 
-public final class ColorShader extends Shader {
+public final class ColorShader implements Shader {
 
     private final int mColor;
 
@@ -39,5 +39,13 @@ public final class ColorShader extends Shader {
 
     public int getColor() {
         return mColor;
+    }
+
+    @Override
+    public void ref() {
+    }
+
+    @Override
+    public void unref() {
     }
 }

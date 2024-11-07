@@ -250,9 +250,8 @@ public final class RecordingContext extends Context {
         }
     }
 
-    @Override
-    public boolean init() {
-        if (!super.init()) {
+    public boolean init(RecordingContextOptions options) {
+        if (!super.init(options)) {
             return false;
         }
         if (mRenderTaskManager != null) {

@@ -319,7 +319,7 @@ public class ConstantFolder {
                 assert (!type.isArray());
                 assert (type.getComponentType().isInteger());
                 switch (value.getKind()) {
-                    case LITERAL, CONSTRUCTOR_SCALAR_TO_VECTOR, CONSTRUCTOR_COMPOUND -> {
+                    case LITERAL, CONSTRUCTOR_VECTOR_SPLAT, CONSTRUCTOR_COMPOUND -> {
                         // Convert ~vecN(1, 2, ...) to vecN(~1, ~2, ...).
                         Expression expr = apply_to_components(context, pos, value, v -> ~(long) v);
                         if (expr != null) {
@@ -350,7 +350,7 @@ public class ConstantFolder {
                                             Expression base) {
         Expression value = getConstantValueForVariable(base);
         switch (value.getKind()) {
-            case LITERAL, CONSTRUCTOR_SCALAR_TO_VECTOR, CONSTRUCTOR_COMPOUND -> {
+            case LITERAL, CONSTRUCTOR_VECTOR_SPLAT, CONSTRUCTOR_COMPOUND -> {
                 // Convert `-vecN(literal, ...)` into `vecN(-literal, ...)`.
                 Expression expr = apply_to_components(context, pos, value, v -> -v);
                 if (expr != null) {
@@ -381,13 +381,13 @@ public class ConstantFolder {
                     return ConstructorArray.make(pos, ctor.getType(), newArgs);
                 }
             }
-            case CONSTRUCTOR_SCALAR_TO_MATRIX ->  {
+            case CONSTRUCTOR_DIAGONAL_MATRIX ->  {
                 // Convert `-matrix(literal)` into `matrix(-literal)`.
                 if (Analysis.isCompileTimeConstant(value)) {
-                    ConstructorScalar2Matrix ctor = (ConstructorScalar2Matrix) value;
-                    Expression folded = fold_negation(context, pos, ctor.getArguments()[0]);
+                    ConstructorDiagonalMatrix ctor = (ConstructorDiagonalMatrix) value;
+                    Expression folded = fold_negation(context, pos, ctor.getArgument());
                     if (folded != null) {
-                        return ConstructorScalar2Matrix.make(pos, ctor.getType(),
+                        return ConstructorDiagonalMatrix.make(pos, ctor.getType(),
                                 folded);
                     }
                 }

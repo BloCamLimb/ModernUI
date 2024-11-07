@@ -24,7 +24,7 @@ import icyllis.arc3d.core.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public final class ImageShader extends Shader {
+public final class ImageShader extends RefCnt implements Shader {
 
     @SharedPtr
     public final Image mImage;

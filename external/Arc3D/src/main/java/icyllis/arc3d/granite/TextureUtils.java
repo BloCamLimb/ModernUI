@@ -26,7 +26,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIntPair;
 
 import javax.annotation.Nullable;
 
-public class ImageUtils {
+public class TextureUtils {
 
     @Nullable
     public static ObjectIntPair<@SharedPtr ImageViewProxy> makePixmapViewProxy(

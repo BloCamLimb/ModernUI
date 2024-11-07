@@ -35,7 +35,6 @@ import org.lwjgl.opengles.*;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,13 +90,13 @@ public class TestGraniteRenderer {
         System.setProperty("java.awt.headless", "true");
         GLFW.glfwInit();
         LOGGER.info(Long.toString(ProcessHandle.current().pid()));
-        TinyFileDialogs.tinyfd_messageBox(
+        /*TinyFileDialogs.tinyfd_messageBox(
                 "Arc3D Test",
                 "Arc3D starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true
-        );
+        );*/
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         if (TEST_OPENGL_ES) {
@@ -114,7 +113,7 @@ public class TestGraniteRenderer {
         //GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Test Window", 0, 0);
         if (window == 0) {
-            throw new RuntimeException();
+            throw new RuntimeException("0x" + Integer.toHexString(GLFW.nglfwGetError(MemoryUtil.NULL)));
         }
         GLFW.glfwMakeContextCurrent(window);
         GLFW.glfwSwapInterval(1);
@@ -132,6 +131,7 @@ public class TestGraniteRenderer {
         if (!TEST_OPENGL_ES) {
             TestDrawPass.glSetupDebugCallback();
         }
+        LOGGER.info(immediateContext.getCaps().toString());
         Painter painter = CompletableFuture.supplyAsync(
                 () -> new Painter(immediateContext),
                 RECORDING_THREAD
@@ -220,9 +220,9 @@ public class TestGraniteRenderer {
             e.printStackTrace();
         }
         {
-            long rowStride = (long) CANVAS_WIDTH * 4;
-            long srcPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
-            long dstPixels = MemoryUtil.nmemAlloc(rowStride * CANVAS_HEIGHT);
+            long rowBytes = (long) CANVAS_WIDTH * 4;
+            long srcPixels = MemoryUtil.nmemAlloc(rowBytes * CANVAS_HEIGHT);
+            long dstPixels = MemoryUtil.nmemAlloc(rowBytes * CANVAS_HEIGHT);
             if (TEST_OPENGL_ES) {
                 GLES20.glReadPixels(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT,
                         GL33C.GL_RGBA, GL33C.GL_UNSIGNED_BYTE, srcPixels);
@@ -235,15 +235,15 @@ public class TestGraniteRenderer {
                     ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL, null);
             ImageInfo dstInfo = srcInfo.makeAlphaType(ColorInfo.AT_UNPREMUL);
             boolean res = PixelUtils.convertPixels(
-                    srcInfo, null, srcPixels, rowStride,
-                    dstInfo, null, dstPixels, rowStride,
+                    srcInfo, null, srcPixels, rowBytes,
+                    dstInfo, null, dstPixels, rowBytes,
                     true
             );
             assert res;
             MemoryUtil.nmemFree(srcPixels);
             STBImageWrite.stbi_write_png_compression_level.put(0, 15);
             STBImageWrite.stbi_write_png("test_granite.png", CANVAS_WIDTH, CANVAS_HEIGHT, 4,
-                    MemoryUtil.memByteBuffer(dstPixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), (int) rowStride);
+                    MemoryUtil.memByteBuffer(dstPixels, CANVAS_WIDTH * CANVAS_HEIGHT * 4), (int) rowBytes);
             MemoryUtil.nmemFree(dstPixels);
         }
         immediateContext.unref();
@@ -319,7 +319,7 @@ public class TestGraniteRenderer {
             {
                 int[] x = {0}, y = {0}, channels = {0};
                 var imgData = STBImage.stbi_load(
-                        "F:/119937433_p0.jpg",
+                        "F:/123459857_p0.png",
                         x, y, channels, 4
                 );
                 if (imgData != null) {
@@ -329,13 +329,21 @@ public class TestGraniteRenderer {
                             MemoryUtil.memAddress(imgData),
                             4 * x[0]
                     );
-                    mTestImage = ImageUtils.makeFromPixmap(mRC,
-                            testPixmap,
+                    var newInfo = ImageInfo.make(x[0], y[0], ColorInfo.CT_RGBA_F16, ColorInfo.AT_UNPREMUL, null);
+                    long newPixels = MemoryUtil.nmemAlloc(newInfo.computeMinByteSize());
+                    Pixmap convertedPixmap = new Pixmap(
+                            newInfo, null, newPixels, newInfo.minRowBytes()
+                    );
+                    boolean res = PixelUtils.convertPixels(testPixmap, convertedPixmap);
+                    assert res;
+                    mTestImage = TextureUtils.makeFromPixmap(mRC,
+                            convertedPixmap,
                             false,
                             true,
                             "TestLocalImage");
                     LOGGER.info("Loaded texture image {}", mTestImage);
                     STBImage.stbi_image_free(imgData);
+                    MemoryUtil.nmemFree(newPixels);
                 }
             }
 
@@ -676,8 +684,8 @@ public class TestGraniteRenderer {
                 paint.setShader(null);
                 canvas.translate(-1000, 0);
                 if (!TEST_OPENGL_ES) {
-                    canvas.drawVertices(mVertices1, BlendMode.MULTIPLY, paint);
-                    canvas.drawVertices(mVertices2, BlendMode.MULTIPLY, paint);
+                    canvas.drawVertices(mVertices1, BlendMode.MODULATE, paint);
+                    canvas.drawVertices(mVertices2, BlendMode.MODULATE, paint);
                 }
 
                 paint.setARGB(255, 233, 30, 99);
