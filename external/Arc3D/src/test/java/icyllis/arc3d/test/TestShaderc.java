@@ -19,11 +19,20 @@
 
 package icyllis.arc3d.test;
 
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
-import java.nio.ByteBuffer;
+import java.io.IOException;
+import java.nio.*;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import static org.lwjgl.util.shaderc.Shaderc.*;
+import static org.lwjgl.util.spvc.Spvc.*;
 
 /**
  * Test glslang compile result.
@@ -41,30 +50,24 @@ public class TestShaderc {
         // SPIRV-Tools optimization LOWER the performance on NVIDIA GPU
         shaderc_compile_options_set_optimization_level(options, shaderc_optimization_level_zero);
 
+        String file = TinyFileDialogs.tinyfd_openFileDialog("Open shader source",
+                null, null, null, false);
+        if (file == null) {
+            return;
+        }
+        CharBuffer source;
+        try (FileChannel fc = FileChannel.open(Path.of(file), StandardOpenOption.READ)) {
+            MappedByteBuffer mb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
+            source = StandardCharsets.UTF_8.decode(mb);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
         long result = shaderc_compile_into_spv_assembly(
                 compiler,
-                """
-                       #version 450    core
-                            # pragma deep dark # line 2
-                                  
-                                  \s
-                            # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
-                                  \s
-                        const int blockSize = -4 + 6;
-                        layout(binding = 0, set = 0) uniform UniformBlock {
-                            mat4 u_Projection;
-                            mat4 u_ModelView;
-                            vec4 u_Color;
-                        } u_Buffer0;
-                        layout(location = 0) smooth in vec2 f_Position;
-                        layout(location = 1) smooth in vec4 f_Color;
-                        layout(location = 0, index = 0) out vec4 FragColor0;
-                        layout(location = 0, index = 1) out vec4 FragColor1;
-                        void main(void) {
-                            // M4 m = "what?";
-                            FragColor0 = u_Buffer0.u_Color;
-                        }""",
-                shaderc_fragment_shader,
+                source,
+                shaderc_vertex_shader,
                 "test_shader",
                 "main",
                 options
@@ -85,6 +88,7 @@ public class TestShaderc {
             if (bytes != null) {
                 String s = MemoryUtil.memASCII(bytes);
                 System.out.println(s);
+                //testCompileToGLSL(bytes);
             } else {
                 System.out.println("No bytes");
             }
@@ -94,5 +98,34 @@ public class TestShaderc {
         shaderc_result_release(result);
         shaderc_compile_options_release(options);
         shaderc_compiler_release(compiler);
+    }
+
+    public static void testCompileToGLSL(ByteBuffer spirv) {
+        try(var stack = MemoryStack.stackPush()) {
+            PointerBuffer pointer = stack.mallocPointer(1);
+
+            spvc_context_create(pointer);
+            long context = pointer.get(0);
+
+            // the spirv is in host endianness, just reinterpret
+            spvc_context_parse_spirv(context, spirv.asIntBuffer(), spirv.remaining() / 4, pointer);
+            long parsed_ir = pointer.get(0);
+
+            spvc_context_create_compiler(context, SPVC_BACKEND_GLSL, parsed_ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP,
+                    pointer);
+            long compiler_glsl = pointer.get(0);
+
+            spvc_compiler_create_compiler_options(compiler_glsl, pointer);
+            long options = pointer.get(0);
+            spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_GLSL_VERSION, 450);
+            spvc_compiler_options_set_bool(options, SPVC_COMPILER_OPTION_GLSL_ES, false);
+            spvc_compiler_install_compiler_options(compiler_glsl, options);
+
+            spvc_compiler_compile(compiler_glsl, pointer);
+            System.out.print("Cross-compiled source: ");
+            System.out.println(MemoryUtil.memUTF8(pointer.get(0)));
+
+            spvc_context_destroy(context);
+        }
     }
 }

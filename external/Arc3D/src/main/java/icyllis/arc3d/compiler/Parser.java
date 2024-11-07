@@ -424,6 +424,10 @@ public class Parser {
                 long profile = nextPpToken();
                 if (Token.kind(profile) == Token.TK_NEWLINE ||
                         Token.kind(profile) == Token.TK_END_OF_FILE) {
+                    if (validProfile.equals("es")) {
+                        error(profile, "expected the es profile");
+                        return false;
+                    }
                     return true;
                 }
                 if (Token.kind(profile) != Token.TK_IDENTIFIER) {
@@ -623,7 +627,15 @@ public class Parser {
         }
 
         if (Token.kind(peek) == Token.TK_STRUCT) {
-            StructDeclaration();
+            Type type = StructDeclaration();
+            if (type != null) {
+                long name = checkIdentifier();
+                if (name != Token.NO_TOKEN) {
+                    GlobalVarDeclarationRest(rangeFrom(name), modifiers, type, name);
+                } else {
+                    expect(Token.TK_SEMICOLON, "';' to complete structure definition");
+                }
+            }
             return true;
         }
 
@@ -642,6 +654,93 @@ public class Parser {
         }
     }
 
+    @Nullable
+    private Expression Initializer(Type type) {
+        if (peek(Token.TK_LBRACE)) {
+            long start = nextToken();
+            if (type.isStruct()) {
+                Type.Field[] fields = type.getFields();
+                ArrayList<Expression> args = new ArrayList<>(fields.length);
+                for (Type.Field field : fields) {
+                    Expression expr = Initializer(field.type());
+                    if (expr == null) {
+                        return null;
+                    }
+                    args.add(expr);
+                    if (!checkNext(Token.TK_COMMA)) {
+                        break;
+                    }
+                }
+                expect(Token.TK_RBRACE, "'}' to complete initializer list");
+                int pos = rangeFrom(start);
+                if (fields.length != args.size() || args.isEmpty()) {
+                    mCompiler.getContext().error(pos,
+                            String.format("invalid arguments to '%s' constructor " +
+                                    "(expected %d elements, but found %d)", type, fields.length,
+                            args.size()));
+                }
+                return ConstructorStruct.convert(mCompiler.getContext(),
+                        pos, type, args);
+            } else if (type.isVector() || type.isMatrix() || type.isArray()) {
+                if (type.isUnsizedArray()) {
+                    ArrayList<Expression> args = new ArrayList<>();
+                    for (;;) {
+                        Expression expr = Initializer(type.getElementType());
+                        if (expr == null) {
+                            return null;
+                        }
+                        args.add(expr);
+                        if (!checkNext(Token.TK_COMMA)) {
+                            break;
+                        }
+                        if (peek(Token.TK_RBRACE)) {
+                            break;
+                        }
+                    }
+                    expect(Token.TK_RBRACE, "'}' to complete initializer list");
+                    int pos = rangeFrom(start);
+                    return ConstructorArray.convert(mCompiler.getContext(),
+                            pos, type, args);
+                } else {
+                    int elements;
+                    if (type.isVector()) {
+                        elements = type.getRows();
+                    } else if (type.isMatrix()) {
+                        elements = type.getCols();
+                    } else {
+                        elements = type.getArraySize();
+                    }
+                    ArrayList<Expression> args = new ArrayList<>(elements);
+                    for (int i = 0; i < elements; i++) {
+                        Expression expr = Initializer(type.getElementType());
+                        if (expr == null) {
+                            return null;
+                        }
+                        args.add(expr);
+                        if (!checkNext(Token.TK_COMMA)) {
+                            break;
+                        }
+                    }
+                    expect(Token.TK_RBRACE, "'}' to complete initializer list");
+                    int pos = rangeFrom(start);
+                    if (elements != args.size() || args.isEmpty()) {
+                        mCompiler.getContext().error(pos,
+                                String.format("invalid arguments to '%s' constructor " +
+                                        "(expected %d elements, but found %d)", type, elements,
+                                args.size()));
+                    }
+                    return ConstructorCall.convert(mCompiler.getContext(),
+                            pos, type, args);
+                }
+            } else {
+                error(start, "cannot construct non-composite type '" + type + "'");
+                return null;
+            }
+        } else {
+            return AssignmentExpression();
+        }
+    }
+
     private boolean InterfaceBlock(@Nonnull Modifiers modifiers) {
         long name = expectIdentifier();
         String blockName = text(name);
@@ -652,7 +751,7 @@ public class Parser {
         }
         nextToken();
         Context context = mCompiler.getContext();
-        List<Type.Field> fields = new ArrayList<>();
+        ArrayList<Type.Field> fields = new ArrayList<>();
         do {
             int startPos = position(peek());
             Modifiers fieldModifiers = Modifiers();
@@ -667,7 +766,7 @@ public class Parser {
                     return false;
                 }
                 if (checkNext(Token.TK_EQ)) {
-                    Expression init = AssignmentExpression();
+                    Expression init = Initializer(fieldType);
                     if (init == null) {
                         return false;
                     }
@@ -715,7 +814,7 @@ public class Parser {
                                             Modifiers modifiers,
                                             Type returnType,
                                             long name) {
-        List<Variable> parameters = new ArrayList<>();
+        ArrayList<Variable> parameters = new ArrayList<>();
         if (!peek(Token.TK_RPAREN)) {
             if (peek(Token.TK_IDENTIFIER) && "void".equals(text(peek()))) {
                 // '(void)' means no parameters.
@@ -752,8 +851,8 @@ public class Parser {
             );
             return true;
         } else {
-            mCompiler.getContext().
-                    enterScope();
+            mCompiler.getContext()
+                    .enterScope();
             try {
                 if (decl != null) {
                     for (Variable param : decl.getParameters()) {
@@ -822,11 +921,14 @@ public class Parser {
 
     private BlockStatement ScopedBlock() {
         long start = expect(Token.TK_LBRACE, "'{'");
-        List<Statement> statements = new ArrayList<>();
+        ArrayList<Statement> statements = new ArrayList<>();
         for (;;) {
             if (checkNext(Token.TK_RBRACE)) {
                 int pos = rangeFrom(start);
                 return BlockStatement.makeBlock(pos, statements);
+            } else if (peek(Token.TK_END_OF_FILE)) {
+                error(peek(), "expected '}', but found end of file");
+                return null;
             } else {
                 Statement statement = Statement();
                 if (statement != null) {
@@ -853,7 +955,7 @@ public class Parser {
             }
             Expression init = null;
             if (checkNext(Token.TK_EQ)) {
-                init = AssignmentExpression();
+                init = Initializer(type);
                 if (init == null) {
                     return;
                 }
@@ -1400,7 +1502,7 @@ public class Parser {
                 case Token.TK_LPAREN -> {
                     nextToken();
                     // constructor call, function call, method call
-                    List<Expression> args = new ArrayList<>();
+                    ArrayList<Expression> args = new ArrayList<>();
                     if (!peek(Token.TK_RPAREN)) {
                         if (peek(Token.TK_IDENTIFIER) && "void".equals(text(peek()))) {
                             // '(void)' means no arguments.
@@ -1705,6 +1807,8 @@ public class Parser {
     private static int findBuiltinValue(@Nonnull String text) {
         return switch (text) {
             case "position" -> Spv.SpvBuiltInPosition;
+            case "vertex_id" -> Spv.SpvBuiltInVertexId;
+            case "instance_id" -> Spv.SpvBuiltInInstanceId;
             case "vertex_index" -> Spv.SpvBuiltInVertexIndex;
             case "instance_index" -> Spv.SpvBuiltInInstanceIndex;
             case "frag_coord" -> Spv.SpvBuiltInFragCoord;
@@ -1796,7 +1900,7 @@ public class Parser {
         }
         Expression init = null;
         if (checkNext(Token.TK_EQ)) {
-            init = AssignmentExpression();
+            init = Initializer(type);
             if (init == null) {
                 return null;
             }
@@ -1819,7 +1923,7 @@ public class Parser {
             }
             init = null;
             if (checkNext(Token.TK_EQ)) {
-                init = AssignmentExpression();
+                init = Initializer(type);
                 if (init == null) {
                     break;
                 }
@@ -1899,7 +2003,47 @@ public class Parser {
         expect(Token.TK_STRUCT, "'struct'");
         long typeName = expectIdentifier();
         expect(Token.TK_LBRACE, "'{'");
-        return null;
+        Context context = mCompiler.getContext();
+        ArrayList<Type.Field> fields = new ArrayList<>();
+        do {
+            int startPos = position(peek());
+            Modifiers fieldModifiers = Modifiers();
+            Type baseType = TypeSpecifier(fieldModifiers);
+            if (baseType == null) {
+                return null;
+            }
+            do {
+                long fieldName = expectIdentifier();
+                Type fieldType = ArraySpecifier(startPos, baseType);
+                if (fieldType == null) {
+                    return null;
+                }
+                if (checkNext(Token.TK_EQ)) {
+                    Expression init = Initializer(fieldType);
+                    if (init == null) {
+                        return null;
+                    }
+                    context.error(init.mPosition, "initializers are not permitted in structures");
+                }
+                fields.add(new Type.Field(
+                        rangeFrom(startPos),
+                        fieldModifiers,
+                        fieldType,
+                        text(fieldName)
+                ));
+            } while (checkNext(Token.TK_COMMA));
+
+            expect(Token.TK_SEMICOLON, "';' to complete member declaration");
+        } while (!checkNext(Token.TK_RBRACE));
+        StructDefinition definition = StructDefinition.convert(context,
+                rangeFrom(start),
+                text(typeName),
+                fields);
+        if (definition == null) {
+            return null;
+        }
+        mUniqueElements.add(definition);
+        return definition.getType();
     }
 
     @Nonnull
@@ -1944,6 +2088,16 @@ public class Parser {
             case Token.TK_IF -> IfStatement();
             case Token.TK_FOR -> ForStatement();
             case Token.TK_SWITCH -> SwitchStatement();
+            case Token.TK_LBRACE -> {
+                mCompiler.getContext()
+                        .enterScope();
+                try {
+                    yield ScopedBlock();
+                } finally {
+                    mCompiler.getContext()
+                            .leaveScope();
+                }
+            }
             case Token.TK_SEMICOLON -> {
                 long t = nextToken();
                 yield new EmptyStatement(position(t));
@@ -1986,12 +2140,76 @@ public class Parser {
 
     /**
      * <pre>{@literal
+     * SwitchCaseBody
+     *     : COLON Statement*
+     * }</pre>
+     */
+    private boolean SwitchCaseBody(List<Expression> values,
+                                   List<Statement> caseBlocks,
+                                   Expression caseValue) {
+        expect(Token.TK_COLON, "':'");
+        ArrayList<Statement> statements = new ArrayList<>();
+        while (!peek(Token.TK_RBRACE) &&
+                !peek(Token.TK_CASE) &&
+                !peek(Token.TK_DEFAULT)) {
+            Statement s = Statement();
+            if (s == null) {
+                return false;
+            }
+            statements.add(s);
+        }
+        values.add(caseValue);
+        caseBlocks.add(BlockStatement.make(Position.NO_POS,
+                statements, false));
+        return true;
+    }
+
+    /**
+     * <pre>{@literal
      * SwitchStatement
      *     : SWITCH LPAREN Expression RPAREN LBRACE Statement* RBRACE
      * }</pre>
      */
     private Statement SwitchStatement() {
-        return null;
+        long start = expect(Token.TK_SWITCH, "'switch'");
+        expect(Token.TK_LPAREN, "'('");
+        Expression init = Expression();
+        if (init == null) {
+            return null;
+        }
+        expect(Token.TK_RPAREN, "')'");
+        expect(Token.TK_LBRACE, "'{'");
+
+        ArrayList<Expression> values = new ArrayList<>();
+        ArrayList<Statement> caseBlocks = new ArrayList<>();
+
+        //TODO symbol table inside switch block
+
+        while (checkNext(Token.TK_CASE)) {
+            Expression caseValue = Expression();
+            if (caseValue == null) {
+                return null;
+            }
+            if (!SwitchCaseBody(values, caseBlocks, caseValue)) {
+                return null;
+            }
+        }
+        //TODO allow default label to be other than last, need to update the rest part of compiler
+        if (peek(Token.TK_DEFAULT)) {
+            long defaultToken = nextToken();
+            if (!SwitchCaseBody(values, caseBlocks, null)) {
+                return null;
+            }
+            if (peek(Token.TK_CASE)) {
+                error(defaultToken, "'default' should be the last case");
+                return null;
+            }
+        }
+        expect(Token.TK_RBRACE, "'}'");
+
+        int pos = rangeFrom(start);
+        return statementOrEmpty(pos, SwitchStatement.convert(mCompiler.getContext(),
+                pos, init, values, caseBlocks));
     }
 
     /**

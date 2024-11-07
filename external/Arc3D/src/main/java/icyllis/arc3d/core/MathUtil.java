@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.core;
 
+import java.lang.invoke.*;
+
 /**
  * Utility class that provides auxiliary operations.
  */
@@ -55,6 +57,31 @@ public class MathUtil {
      */
     // PATH_TOLERANCE == Math.ulp(2500.0f) == 1f / 4096
     public static final float PATH_TOLERANCE = 1f / (1 << 12);
+
+    //TODO remove MethodHandle when Java 20 becomes the minimum requirement
+    private static final MethodHandle FLOAT16_TO_FLOAT = getFloat16ToFloat();
+
+    // VCVTPH2PS, convert packed half to packed single
+    private static MethodHandle getFloat16ToFloat() {
+        try {
+            return MethodHandles.lookup().findStatic(
+                    Float.class, "float16ToFloat", MethodType.methodType(float.class, short.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            return null;
+        }
+    }
+
+    private static final MethodHandle FLOAT_TO_FLOAT16 = getFloatToFloat16();
+
+    // VCVTPS2PH, convert packed single to packed half
+    private static MethodHandle getFloatToFloat16() {
+        try {
+            return MethodHandles.lookup().findStatic(
+                    Float.class, "floatToFloat16", MethodType.methodType(short.class, float.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            return null;
+        }
+    }
 
     static {
         if (USE_SIN_TABLE) {
@@ -751,6 +778,69 @@ public class MathUtil {
      */
     public static int ceilLog16(float v) {
         return (ceilLog2(v) + 3) >> 2;
+    }
+
+    /**
+     * <p>Converts the specified half-precision float value into a
+     * single-precision float value. The following special cases are handled:</p>
+     * <ul>
+     * <li>If the input is {@link FP16#NaN}, the returned value is {@link Float#NaN}</li>
+     * <li>If the input is {@link FP16#POSITIVE_INFINITY} or
+     * {@link FP16#NEGATIVE_INFINITY}, the returned value is respectively
+     * {@link Float#POSITIVE_INFINITY} or {@link Float#NEGATIVE_INFINITY}</li>
+     * <li>If the input is 0 (positive or negative), the returned value is +/-0.0f</li>
+     * <li>Otherwise, the returned value is a normalized single-precision float value</li>
+     * </ul>
+     *
+     * @param h The half-precision float value to convert to single-precision
+     * @return A normalized single-precision float value
+     */
+    public static float halfToFloat(short h) {
+        // C2-compiler output is VCVTPH2PS
+        if (FLOAT16_TO_FLOAT != null) {
+            try {
+                return (float) FLOAT16_TO_FLOAT.invokeExact(h);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // portable version
+        return FP16.toFloat(h);
+    }
+
+    /**
+     * <p>Converts the specified single-precision float value into a
+     * half-precision float value. The following special cases are handled:</p>
+     * <ul>
+     * <li>If the input is NaN (see {@link Float#isNaN(float)}), the returned
+     * value is {@link FP16#NaN}</li>
+     * <li>If the input is {@link Float#POSITIVE_INFINITY} or
+     * {@link Float#NEGATIVE_INFINITY}, the returned value is respectively
+     * {@link FP16#POSITIVE_INFINITY} or {@link FP16#NEGATIVE_INFINITY}</li>
+     * <li>If the input is 0 (positive or negative), the returned value is
+     * {@link FP16#POSITIVE_ZERO} or {@link FP16#NEGATIVE_ZERO}</li>
+     * <li>If the input is a less than {@link FP16#MIN_VALUE}, the returned value
+     * is flushed to {@link FP16#POSITIVE_ZERO} or {@link FP16#NEGATIVE_ZERO}</li>
+     * <li>If the input is a less than {@link FP16#MIN_NORMAL}, the returned value
+     * is a denorm half-precision float</li>
+     * <li>Otherwise, the returned value is rounded to the nearest
+     * representable half-precision float value</li>
+     * </ul>
+     *
+     * @param f The single-precision float value to convert to half-precision
+     * @return A half-precision float value
+     */
+    public static short floatToHalf(float f) {
+        // C2-compiler output is VCVTPS2PH
+        if (FLOAT_TO_FLOAT16 != null) {
+            try {
+                return (short) FLOAT_TO_FLOAT16.invokeExact(f);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // portable version
+        return FP16.toHalf(f);
     }
 
     protected MathUtil() {

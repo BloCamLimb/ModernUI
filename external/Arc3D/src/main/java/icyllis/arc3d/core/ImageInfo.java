@@ -204,12 +204,16 @@ public final class ImageInfo {
 
     /**
      * Returns minimum bytes per row, computed from pixel width() and ColorType, which
-     * specifies bytesPerPixel().
+     * specifies bytesPerPixel(). If rowBytes is greater than IntMax then return 0.
      *
      * @return width() times bytesPerPixel() as integer
      */
-    public long minRowBytes() {
-        return width() * (long) bytesPerPixel();
+    public int minRowBytes() {
+        long minRowBytes = width * (long) bytesPerPixel();
+        if (minRowBytes > Integer.MAX_VALUE) {
+            return 0;
+        }
+        return (int) minRowBytes;
     }
 
     /**
@@ -250,12 +254,26 @@ public final class ImageInfo {
                 alphaType != ColorInfo.AT_UNKNOWN;
     }
 
-    public long computeByteSize(long rowBytes) {
+    /**
+     * Returns storage required by pixel array, given ImageInfo dimensions, ColorType,
+     * and rowBytes. rowBytes is assumed to be at least as large as minRowBytes().
+     * <p>
+     * Returns zero if height is zero. Returns LongMax if minRowBytes() is greater than
+     * IntMax.
+     *
+     * @param rowBytes size of pixel row or larger
+     * @return memory required by pixel buffer
+     */
+    public long computeByteSize(int rowBytes) {
         if (height == 0) {
             return 0;
         }
-        //TODO possible need to check for 64-bit signed overflow?
-        return (height - 1) * rowBytes + minRowBytes();
+        long minRowBytes = width * (long) bytesPerPixel();
+        if (minRowBytes > Integer.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        assert rowBytes >= minRowBytes;
+        return (height - 1) * (long) rowBytes + minRowBytes;
     }
 
     public long computeMinByteSize() {
@@ -334,7 +352,7 @@ public final class ImageInfo {
     public String toString() {
         return '{' +
                 "dimensions=" + width + "x" + height +
-                ", colorType=" + colorType +
+                ", colorType=" + ColorInfo.colorTypeToString(colorType) +
                 ", alphaType=" + alphaType +
                 ", colorSpace=" + colorSpace +
                 '}';

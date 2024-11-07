@@ -24,7 +24,7 @@ import icyllis.arc3d.core.*;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-public final class BlendModeColorFilter extends ColorFilter {
+public final class BlendModeColorFilter implements ColorFilter {
 
     // non-premultiplied blend color in sRGB space
     private final float[] mColor;
@@ -124,5 +124,13 @@ public final class BlendModeColorFilter extends ColorFilter {
             blendColor[i] *= blendColor[3];
         }
         mMode.apply(blendColor, col, out);
+    }
+
+    @Override
+    public void ref() {
+    }
+
+    @Override
+    public void unref() {
     }
 }

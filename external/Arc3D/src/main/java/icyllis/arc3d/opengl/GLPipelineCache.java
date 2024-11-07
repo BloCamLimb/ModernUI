@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Deprecated
-public class GLPipelineCache extends SharedResourceCache {
+public class GLPipelineCache {
 
     private final GLDevice mDevice;
 

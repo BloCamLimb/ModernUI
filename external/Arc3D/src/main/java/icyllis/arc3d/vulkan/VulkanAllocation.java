@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.vulkan;
 
+import org.lwjgl.system.MemoryUtil;
+
 import static org.lwjgl.vulkan.VK10.VK_NULL_HANDLE;
 
 /**
@@ -30,23 +32,34 @@ public class VulkanAllocation {
      * Memory flags.
      */
     public static final int
-            VISIBLE_FLAG = 0x1,             // memory is host visible (mappable)
-            COHERENT_FLAG = 0x2,            // memory is host coherent (flushed to device after mapping)
-            LAZILY_ALLOCATED_FLAG = 0x4;    // memory is created with lazy allocation
+            kHostVisible_Flag = 0x1,            // memory is host visible (mappable)
+            kHostCoherent_Flag = 0x2,           // memory is host coherent (flushed to device after mapping)
+            kLazilyAllocated_Flag = 0x4;        // memory is created with lazy allocation
 
     // device memory block
-    public long mMemory = VK_NULL_HANDLE;       // can be VK_NULL_HANDLE if is an RT and is borrowed
-    public long mOffset = 0;
-    public long mSize = 0;                      // can be indeterminate if texture uses borrow semantics
-    public int mMemoryFlags = 0;                // property flags for memory allocation
-    public long mAllocation = VK_NULL_HANDLE;   // handle to memory allocated via VulkanMemoryAllocator
+    public /*VkDeviceMemory*/ long mMemory = VK_NULL_HANDLE;
+    public /*VkDeviceSize*/ long mOffset = 0;
+    public /*VkDeviceSize*/ long mSize = 0;
+    public long mMappedPointer = MemoryUtil.NULL;   // pointer to persistently mapped data
+    public int mMemoryFlags = 0;                    // property flags for memory allocation
+    public long mAllocation = VK_NULL_HANDLE;       // handle to memory allocated via VulkanMemoryAllocator
 
     public void set(VulkanAllocation alloc) {
         mMemory = alloc.mMemory;
         mOffset = alloc.mOffset;
         mSize = alloc.mSize;
+        mMappedPointer = alloc.mMappedPointer;
         mMemoryFlags = alloc.mMemoryFlags;
         mAllocation = alloc.mAllocation;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Long.hashCode(mMemory);
+        result = 31 * result + Long.hashCode(mOffset);
+        result = 31 * result + Long.hashCode(mSize);
+        result = 31 * result + mMemoryFlags;
+        return result;
     }
 
     @Override
@@ -61,11 +74,14 @@ public class VulkanAllocation {
     }
 
     @Override
-    public int hashCode() {
-        int result = (int) (mMemory ^ (mMemory >>> 32));
-        result = 31 * result + (int) (mOffset ^ (mOffset >>> 32));
-        result = 31 * result + (int) (mSize ^ (mSize >>> 32));
-        result = 31 * result + mMemoryFlags;
-        return result;
+    public String toString() {
+        return "VulkanAllocation{" +
+                "mMemory=0x" + Long.toHexString(mMemory) +
+                ", mOffset=" + mOffset +
+                ", mSize=" + mSize +
+                ", mMappedPointer=0x" + Long.toHexString(mMappedPointer) +
+                ", mMemoryFlags=0x" + Integer.toHexString(mMemoryFlags) +
+                ", mAllocation=0x" + Long.toHexString(mAllocation) +
+                '}';
     }
 }

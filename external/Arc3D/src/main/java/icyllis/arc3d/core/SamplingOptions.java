@@ -45,12 +45,12 @@ public final class SamplingOptions {
     /**
      * Single sample point (nearest neighbor).
      */
-    public static final int FILTER_MODE_NEAREST = 0;
+    public static final int FILTER_MODE_NEAREST = 0;    // this must be 0
 
     /**
      * Interpolate between 2x2 sample points (bilinear interpolation).
      */
-    public static final int FILTER_MODE_LINEAR = 1;
+    public static final int FILTER_MODE_LINEAR = 1;     // this must be 1
 
     /**
      * The {@code MipmapMode} specifies the interpolation method for MIP image levels when

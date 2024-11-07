@@ -28,9 +28,9 @@ import javax.annotation.Nonnull;
  * <p>
  * These always contain exactly 1 scalar.
  */
-public final class ConstructorScalar2Vector extends ConstructorCall {
+public final class ConstructorVectorSplat extends ConstructorCall {
 
-    private ConstructorScalar2Vector(int position, Type type, Expression... arguments) {
+    private ConstructorVectorSplat(int position, Type type, Expression... arguments) {
         super(position, type, arguments);
         assert arguments.length == 1;
     }
@@ -53,17 +53,17 @@ public final class ConstructorScalar2Vector extends ConstructorCall {
         arg = ConstantFolder.makeConstantValueForVariable(position, arg);
 
         assert (type.isVector());
-        return new ConstructorScalar2Vector(position, type, arg);
+        return new ConstructorVectorSplat(position, type, arg);
     }
 
     @Override
     public ExpressionKind getKind() {
-        return ExpressionKind.CONSTRUCTOR_SCALAR_TO_VECTOR;
+        return ExpressionKind.CONSTRUCTOR_VECTOR_SPLAT;
     }
 
     @Nonnull
     @Override
     public Expression clone(int position) {
-        return new ConstructorScalar2Vector(position, getType(), cloneArguments());
+        return new ConstructorVectorSplat(position, getType(), cloneArguments());
     }
 }

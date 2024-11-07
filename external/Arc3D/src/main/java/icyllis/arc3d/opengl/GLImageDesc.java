@@ -24,13 +24,16 @@ import icyllis.arc3d.engine.ImageDesc;
 import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL40C;
 
+import javax.annotation.concurrent.Immutable;
+
 /**
- * Types for interacting with GL resources created externally to pipeline. BackendObjects for GL
- * textures are really const GLTexture*. The {@link #mFormat} here should be a sized, internal format
- * for the texture. We use the sized format since the base internal formats are deprecated.
+ * Descriptor to create OpenGL images (textures and renderbuffers). The {@link #mFormat} here
+ * should be a sized, internal format for the texture. We use the sized format since the
+ * base internal formats are deprecated.
  * <p>
  * Note the target can be {@link GL30C#GL_RENDERBUFFER}.
  */
+@Immutable
 public final class GLImageDesc extends ImageDesc {
 
     /**
@@ -47,7 +50,14 @@ public final class GLImageDesc extends ImageDesc {
                        int depth, int arraySize,
                        int mipLevelCount, int sampleCount,
                        int flags) {
-        super(width, height, depth, arraySize, mipLevelCount, sampleCount, flags);
+        super(switch (target) {
+            case GL30C.GL_TEXTURE_2D -> Engine.ImageType.k2D;
+            case GL30C.GL_TEXTURE_2D_ARRAY -> Engine.ImageType.k2DArray;
+            case GL30C.GL_TEXTURE_3D -> Engine.ImageType.k3D;
+            case GL30C.GL_TEXTURE_CUBE_MAP -> Engine.ImageType.kCube;
+            case GL40C.GL_TEXTURE_CUBE_MAP_ARRAY -> Engine.ImageType.kCubeArray;
+            default -> Engine.ImageType.kNone;  // renderbuffer
+        }, width, height, depth, arraySize, mipLevelCount, sampleCount, flags);
         mTarget = target;
         mFormat = format;
     }
@@ -55,23 +65,6 @@ public final class GLImageDesc extends ImageDesc {
     @Override
     public int getBackend() {
         return Engine.BackendApi.kOpenGL;
-    }
-
-    @Override
-    public int getImageType() {
-        return switch (mTarget) {
-            case GL30C.GL_TEXTURE_2D -> Engine.ImageType.k2D;
-            case GL30C.GL_TEXTURE_2D_ARRAY -> Engine.ImageType.k2DArray;
-            case GL30C.GL_TEXTURE_3D -> Engine.ImageType.k3D;
-            case GL30C.GL_TEXTURE_CUBE_MAP -> Engine.ImageType.kCube;
-            case GL40C.GL_TEXTURE_CUBE_MAP_ARRAY -> Engine.ImageType.kCubeArray;
-            default -> Engine.ImageType.kNone;
-        };
-    }
-
-    @Override
-    public boolean isProtected() {
-        return false;
     }
 
     @Override

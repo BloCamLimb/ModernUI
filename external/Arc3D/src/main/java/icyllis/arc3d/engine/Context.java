@@ -209,8 +209,8 @@ public abstract sealed class Context extends RefCnt
         return mDevice.getLogger();
     }
 
-    public boolean init() {
-        mResourceProvider = mDevice.makeResourceProvider(this);
+    protected boolean init(BaseContextOptions options) {
+        mResourceProvider = mDevice.makeResourceProvider(this, options.mMaxResourceBudget);
         return mDevice.isValid();
     }
 

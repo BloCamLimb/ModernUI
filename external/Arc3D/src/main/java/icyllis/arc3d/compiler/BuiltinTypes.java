@@ -478,88 +478,88 @@ public final class BuiltinTypes {
 
         // opaque types (image, texture, sampler, combined sampler)
 
-        mImage1D = Type.makeImageType("image1D", "M1", mHalf,
+        mImage1D = Type.makeImageType("image1D", "M1", mFloat,
                 Spv.SpvDim1D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImage2D = Type.makeImageType("image2D", "M2", mHalf,
+        mImage2D = Type.makeImageType("image2D", "M2", mFloat,
                 Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImage3D = Type.makeImageType("image3D", "M3", mHalf,
+        mImage3D = Type.makeImageType("image3D", "M3", mFloat,
                 Spv.SpvDim3D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImageCube = Type.makeImageType("imageCube", "MC", mHalf,
+        mImageCube = Type.makeImageType("imageCube", "MC", mFloat,
                 Spv.SpvDimCube, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImageBuffer = Type.makeImageType("imageBuffer", "MB", mHalf,
+        mImageBuffer = Type.makeImageType("imageBuffer", "MB", mFloat,
                 Spv.SpvDimBuffer, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImage1DArray = Type.makeImageType("image1DArray", "M1A", mHalf,
+        mImage1DArray = Type.makeImageType("image1DArray", "M1A", mFloat,
                 Spv.SpvDim1D, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mImage2DArray = Type.makeImageType("image2DArray", "M2A", mHalf,
+        mImage2DArray = Type.makeImageType("image2DArray", "M2A", mFloat,
                 Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mImageCubeArray = Type.makeImageType("imageCubeArray", "MCA", mHalf,
+        mImageCubeArray = Type.makeImageType("imageCubeArray", "MCA", mFloat,
                 Spv.SpvDimCube, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mImage2DMS = Type.makeImageType("image2DMS", "MM", mHalf,
+        mImage2DMS = Type.makeImageType("image2DMS", "MM", mFloat,
                 Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/true);
-        mImage2DMSArray = Type.makeImageType("image2DMSArray", "MMA", mHalf,
+        mImage2DMSArray = Type.makeImageType("image2DMSArray", "MMA", mFloat,
                 Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
-        mSubpassInput = Type.makeImageType("subpassInput", "MP", mHalf,
+        mSubpassInput = Type.makeImageType("subpassInput", "MP", mFloat,
                 Spv.SpvDimSubpassData, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSubpassInputMS = Type.makeImageType("subpassInputMS", "MPM", mHalf,
+        mSubpassInputMS = Type.makeImageType("subpassInputMS", "MPM", mFloat,
                 Spv.SpvDimSubpassData, /*isArrayed=*/false, /*isMultiSampled=*/true);
 
-        mTexture1D = Type.makeTextureType("texture1D", "T1", mHalf,
+        mTexture1D = Type.makeTextureType("texture1D", "T1", mFloat,
                 Spv.SpvDim1D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTexture2D = Type.makeTextureType("texture2D", "T2", mHalf,
+        mTexture2D = Type.makeTextureType("texture2D", "T2", mFloat,
                 Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTexture3D = Type.makeTextureType("texture3D", "T3", mHalf,
+        mTexture3D = Type.makeTextureType("texture3D", "T3", mFloat,
                 Spv.SpvDim3D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTextureCube = Type.makeTextureType("textureCube", "TC", mHalf,
+        mTextureCube = Type.makeTextureType("textureCube", "TC", mFloat,
                 Spv.SpvDimCube, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTextureBuffer = Type.makeTextureType("textureBuffer", "TB", mHalf,
+        mTextureBuffer = Type.makeTextureType("textureBuffer", "TB", mFloat,
                 Spv.SpvDimBuffer, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTexture1DArray = Type.makeTextureType("texture1DArray", "T1A", mHalf,
+        mTexture1DArray = Type.makeTextureType("texture1DArray", "T1A", mFloat,
                 Spv.SpvDim1D, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mTexture2DArray = Type.makeTextureType("texture2DArray", "T2A", mHalf,
+        mTexture2DArray = Type.makeTextureType("texture2DArray", "T2A", mFloat,
                 Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mTextureCubeArray = Type.makeTextureType("textureCubeArray", "TCA", mHalf,
+        mTextureCubeArray = Type.makeTextureType("textureCubeArray", "TCA", mFloat,
                 Spv.SpvDimCube, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mTexture2DMS = Type.makeTextureType("texture2DMS", "TM", mHalf,
+        mTexture2DMS = Type.makeTextureType("texture2DMS", "TM", mFloat,
                 Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/true);
-        mTexture2DMSArray = Type.makeTextureType("texture2DMSArray", "TMA", mHalf,
+        mTexture2DMSArray = Type.makeTextureType("texture2DMSArray", "TMA", mFloat,
                 Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
         mSampler = Type.makeSeparateType("sampler", "ss", mVoid, /*isShadow*/false);
         mSamplerShadow = Type.makeSeparateType("samplerShadow", "sss", mVoid, /*isShadow*/true);
 
-        mSampler1D = Type.makeCombinedType("sampler1D", "Z1", mHalf,
+        mSampler1D = Type.makeCombinedType("sampler1D", "Z1", mFloat,
                 Spv.SpvDim1D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler2D = Type.makeCombinedType("sampler2D", "Z2", mHalf,
+        mSampler2D = Type.makeCombinedType("sampler2D", "Z2", mFloat,
                 Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler3D = Type.makeCombinedType("sampler3D", "Z3", mHalf,
+        mSampler3D = Type.makeCombinedType("sampler3D", "Z3", mFloat,
                 Spv.SpvDim3D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSamplerCube = Type.makeCombinedType("samplerCube", "ZC", mHalf,
+        mSamplerCube = Type.makeCombinedType("samplerCube", "ZC", mFloat,
                 Spv.SpvDimCube, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSamplerBuffer = Type.makeCombinedType("samplerBuffer", "ZB", mHalf,
+        mSamplerBuffer = Type.makeCombinedType("samplerBuffer", "ZB", mFloat,
                 Spv.SpvDimBuffer, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler1DArray = Type.makeCombinedType("sampler1DArray", "Z1A", mHalf,
+        mSampler1DArray = Type.makeCombinedType("sampler1DArray", "Z1A", mFloat,
                 Spv.SpvDim1D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSampler2DArray = Type.makeCombinedType("sampler2DArray", "Z2A", mHalf,
+        mSampler2DArray = Type.makeCombinedType("sampler2DArray", "Z2A", mFloat,
                 Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSamplerCubeArray = Type.makeCombinedType("samplerCubeArray", "ZCA", mHalf,
+        mSamplerCubeArray = Type.makeCombinedType("samplerCubeArray", "ZCA", mFloat,
                 Spv.SpvDimCube, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSampler2DMS = Type.makeCombinedType("sampler2DMS", "ZM", mHalf,
+        mSampler2DMS = Type.makeCombinedType("sampler2DMS", "ZM", mFloat,
                 Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/true);
-        mSampler2DMSArray = Type.makeCombinedType("sampler2DMSArray", "ZMA", mHalf,
+        mSampler2DMSArray = Type.makeCombinedType("sampler2DMSArray", "ZMA", mFloat,
                 Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
-        mSampler1DShadow = Type.makeCombinedType("sampler1DShadow", "Z4", mHalf,
+        mSampler1DShadow = Type.makeCombinedType("sampler1DShadow", "Z4", mFloat,
                 Spv.SpvDim1D, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler2DShadow = Type.makeCombinedType("sampler2DShadow", "Z5", mHalf,
+        mSampler2DShadow = Type.makeCombinedType("sampler2DShadow", "Z5", mFloat,
                 Spv.SpvDim2D, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSamplerCubeShadow = Type.makeCombinedType("samplerCubeShadow", "ZX", mHalf,
+        mSamplerCubeShadow = Type.makeCombinedType("samplerCubeShadow", "ZX", mFloat,
                 Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler1DArrayShadow = Type.makeCombinedType("sampler1DArrayShadow", "Z4A", mHalf,
+        mSampler1DArrayShadow = Type.makeCombinedType("sampler1DArrayShadow", "Z4A", mFloat,
                 Spv.SpvDim1D, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSampler2DArrayShadow = Type.makeCombinedType("sampler2DArrayShadow", "Z5A", mHalf,
+        mSampler2DArrayShadow = Type.makeCombinedType("sampler2DArrayShadow", "Z5A", mFloat,
                 Spv.SpvDim2D, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSamplerCubeArrayShadow = Type.makeCombinedType("samplerCubeArrayShadow", "ZXA", mHalf,
+        mSamplerCubeArrayShadow = Type.makeCombinedType("samplerCubeArrayShadow", "ZXA", mFloat,
                 Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
 
         mInvalid = Type.makeSpecialType(ShaderCompiler.INVALID_TAG, "O", Type.kOther_TypeKind);

@@ -79,6 +79,7 @@ public abstract class Caps {
     protected boolean mTextureBarrierSupport = false;
     protected boolean mUseCpuStagingBuffers = false;
     protected boolean mDepthClipNegativeOneToOne = false;
+    protected boolean mClampToBorderSupport = true;
 
     // Not (yet) implemented in VK backend.
     protected boolean mDynamicStateArrayGeometryProcessorTextureSupport = false;
@@ -318,12 +319,17 @@ public abstract class Caps {
     }
 
     /**
-     * Maximum number of attribute values per vertex input
+     * Maximum number of attribute values (i.e. locations) per vertex input.
+     * Matrix types and double types can take up multiple consecutive locations.
      */
     public final int maxVertexAttributes() {
         return mMaxVertexAttributes;
     }
 
+    /**
+     * Maximum number of vertex binding points (i.e. vertex buffers) per vertex input.
+     * The <var>binding</var> passed to {@code bindVertexBuffer} must be in {@code [0,maxVertexBindings)}.
+     */
     public final int maxVertexBindings() {
         return mMaxVertexBindings;
     }
@@ -439,7 +445,7 @@ public abstract class Caps {
 
         // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
         // using a transfer buffer.
-        if (colorType == ColorInfo.CT_RGB_888x) {
+        if (colorType == ColorInfo.CT_RGBX_8888) {
             transferOffsetAlignment = 0;
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
@@ -557,17 +563,12 @@ public abstract class Caps {
         return false;
     }
 
-    // Should we disable TessellationPathRenderer due to a faulty driver?
-    public final boolean disableTessellationPathRenderer() {
-        return false;
-    }
-
     /**
      * The CLAMP_TO_BORDER wrap mode for texture coordinates was added to desktop GL in 1.3, and
      * GLES 3.2, but is also available in extensions. Vulkan and Metal always have support.
      */
     public final boolean clampToBorderSupport() {
-        return true;
+        return mClampToBorderSupport;
     }
 
     /**
@@ -630,7 +631,7 @@ public abstract class Caps {
         int compression = format.getCompressionType();
         if (compression != ColorInfo.COMPRESSION_NONE) {
             return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ColorInfo.CT_RGB_888x :
+                    ColorInfo.CT_RGBX_8888 :
                     ColorInfo.CT_RGBA_8888);
         }
         return onFormatCompatible(colorType, format);
@@ -758,7 +759,7 @@ public abstract class Caps {
     public final short getReadSwizzle(ImageDesc desc, int colorType) {
         int compression = desc.getCompressionType();
         if (compression != ColorInfo.COMPRESSION_NONE) {
-            if (colorType == ColorInfo.CT_RGB_888x || colorType == ColorInfo.CT_RGBA_8888) {
+            if (colorType == ColorInfo.CT_RGBX_8888 || colorType == ColorInfo.CT_RGBA_8888) {
                 return Swizzle.RGBA;
             }
             assert false;

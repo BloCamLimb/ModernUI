@@ -270,6 +270,10 @@ public class ShaderCompiler {
                     source,
                     offset,
                     length);
+            List<Map.Entry<String, Boolean>> includes = parser.preprocess();
+            if (includes == null) {
+                return null;
+            }
             return parser.parseModule(parent);
         } finally {
             endContext();

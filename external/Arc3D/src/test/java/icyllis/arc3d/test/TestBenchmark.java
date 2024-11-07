@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.*;
+import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
@@ -43,14 +43,39 @@ public class TestBenchmark {
                 .run();
     }
 
-    private final Matrix4 mMatrix = new Matrix4();
+    /*private final Matrix4 mMatrix = new Matrix4();
     {
         mMatrix.preRotate(MathUtil.PI_O_3, MathUtil.PI_O_6, MathUtil.PI_O_4);
     }
-    private final long mData = MemoryUtil.nmemAlignedAllocChecked(8, 64);
+    private final long mData = MemoryUtil.nmemAlignedAllocChecked(8, 64);*/
 
-    /*@Benchmark
+    public static final Pixmap SRC_PIXMAP;
+    public static final Pixmap DST_PIXMAP;
+
+    static {
+        int[] x = {0}, y = {0}, channels = {0};
+        var imgData = STBImage.stbi_load(
+                "F:/123459857_p0.png",
+                x, y, channels, 4
+        );
+        assert imgData != null;
+        SRC_PIXMAP = new Pixmap(
+                ImageInfo.make(x[0], y[0], ColorInfo.CT_RGBA_8888, ColorInfo.AT_UNPREMUL, null),
+                null,
+                MemoryUtil.memAddress(imgData),
+                4 * x[0]
+        );
+        var newInfo = ImageInfo.make(x[0], y[0], ColorInfo.CT_BGR_565, ColorInfo.AT_UNPREMUL, null);
+        long newPixels = MemoryUtil.nmemAlloc(newInfo.computeMinByteSize());
+        assert newPixels != 0;
+        DST_PIXMAP = new Pixmap(
+                newInfo, null, newPixels, newInfo.minRowBytes()
+        );
+    }
+
+    @Benchmark
     public void uploadMethod1() {
-        mMatrix.store(mData);
-    }*/
+        boolean res = SRC_PIXMAP.readPixels(DST_PIXMAP, 0, 0);
+        assert res;
+    }
 }

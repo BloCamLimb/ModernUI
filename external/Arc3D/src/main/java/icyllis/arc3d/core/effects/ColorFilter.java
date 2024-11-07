@@ -32,19 +32,13 @@ import javax.annotation.Nullable;
  * All subclasses are required to be reentrant-safe : it must be legal to share
  * the same instance between several threads.
  */
-public abstract class ColorFilter extends RefCnt {
-
-    protected ColorFilter() {
-    }
-
-    @Override
-    protected void deallocate() {
-    }
+public sealed interface ColorFilter extends RefCounted
+        permits BlendModeColorFilter, ColorMatrixColorFilter, ComposeColorFilter {
 
     /**
      * Returns the flags for this filter. Override in subclasses to return custom flags.
      */
-    public boolean isAlphaUnchanged() {
+    default boolean isAlphaUnchanged() {
         return false;
     }
 
@@ -55,7 +49,7 @@ public abstract class ColorFilter extends RefCnt {
      * @return resulting color
      */
     @ColorInt
-    public int filterColor(@ColorInt int col) {
+    default int filterColor(@ColorInt int col) {
         float[] dst4 = Color.load_and_premul(col);
         filterColor4f(dst4, dst4, null);
         float a = MathUtil.clamp(dst4[3], 0, 1);
@@ -80,7 +74,7 @@ public abstract class ColorFilter extends RefCnt {
      * @param out   resulting color
      * @param dstCS destination color space
      */
-    public abstract void filterColor4f(@Size(4) float[] col, @Size(4) float[] out, ColorSpace dstCS);
+    void filterColor4f(@Size(4) float[] col, @Size(4) float[] out, ColorSpace dstCS);
 
     /**
      * Returns a composed color filter that first applies the <var>before</var> filter
@@ -91,7 +85,7 @@ public abstract class ColorFilter extends RefCnt {
      */
     @Nonnull
     @SharedPtr
-    public ColorFilter compose(@Nullable @SharedPtr ColorFilter before) {
+    default ColorFilter compose(@Nullable @SharedPtr ColorFilter before) {
         ref();
         if (before == null) {
             return this;
@@ -108,7 +102,7 @@ public abstract class ColorFilter extends RefCnt {
      */
     @Nonnull
     @SharedPtr
-    public ColorFilter andThen(@Nullable @SharedPtr ColorFilter after) {
+    default ColorFilter andThen(@Nullable @SharedPtr ColorFilter after) {
         ref();
         if (after == null) {
             return this;

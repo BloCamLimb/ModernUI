@@ -23,7 +23,7 @@ import icyllis.arc3d.core.*;
 
 import javax.annotation.Nullable;
 
-public final class BlendShader extends Shader {
+public final class BlendShader extends RefCnt implements Shader {
 
     private final BlendMode mMode;
     @SharedPtr
@@ -65,8 +65,8 @@ public final class BlendShader extends Shader {
 
     @Override
     protected void deallocate() {
-        RefCnt.move(mSrc);
-        RefCnt.move(mDst);
+        mSrc.unref();
+        mDst.unref();
     }
 
     public BlendMode getMode() {

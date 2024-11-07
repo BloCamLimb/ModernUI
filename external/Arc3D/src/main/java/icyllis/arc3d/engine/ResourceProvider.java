@@ -50,11 +50,11 @@ public abstract class ResourceProvider {
 
     private final Buffer.ResourceKey mBufferKey = new Buffer.ResourceKey();
 
-    protected ResourceProvider(Device device, Context context) {
+    protected ResourceProvider(Device device, Context context,
+                               long maxResourceBudget) {
         mDevice = device;
         mContext = context;
-        //TODO configurable
-        mResourceCache = new ResourceCache(context, 1 << 28);
+        mResourceCache = new ResourceCache(context, maxResourceBudget);
     }
 
     protected void destroy() {
