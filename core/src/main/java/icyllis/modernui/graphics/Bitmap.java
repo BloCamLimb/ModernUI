@@ -433,11 +433,20 @@ public final class Bitmap implements AutoCloseable {
      * @return the scanline size in bytes
      */
     public int getRowStride() {
-        // XXX: row stride is always (width * bpp) in Modern UI
+        return getRowBytes();
+    }
+
+    /**
+     * Return the distance, in bytes, between the start of one pixel row and the next,
+     * including any unused space between them.
+     *
+     * @return number of bytes between rows of the native bitmap pixels
+     */
+    public int getRowBytes() {
         if (mPixels == null) {
-            throw new IllegalStateException("Can't call getRowStride() on a recycled bitmap");
+            LOGGER.warn(MARKER, "Called getRowBytes() on a recycle()'d bitmap! This is undefined behavior!");
         }
-        return mPixmap.getRowStride();
+        return mPixmap.getRowBytes();
     }
 
     /**
