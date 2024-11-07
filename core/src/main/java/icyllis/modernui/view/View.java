@@ -2733,7 +2733,7 @@ public class View implements Drawable.Callback {
 
             ListenerInfo li = mListenerInfo;
             if (li != null && li.mOnLayoutChangeListeners != null) {
-                for (var listener : (ArrayList<OnLayoutChangeListener>) li.mOnLayoutChangeListeners.clone()) {
+                for (var listener : li.mOnLayoutChangeListeners) {
                     listener.onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);
                 }
             }
@@ -7375,7 +7375,7 @@ public class View implements Drawable.Callback {
         ListenerInfo li = mListenerInfo;
         final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
                 li != null ? li.mOnAttachStateChangeListeners : null;
-        if (listeners != null && listeners.size() > 0) {
+        if (listeners != null && !listeners.isEmpty()) {
             // NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to
             // perform the dispatching. The iterator is a safeguard against listeners that
             // could mutate the list by calling the various add/remove methods. This prevents
@@ -7443,7 +7443,7 @@ public class View implements Drawable.Callback {
         ListenerInfo li = mListenerInfo;
         final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
                 li != null ? li.mOnAttachStateChangeListeners : null;
-        if (listeners != null && listeners.size() > 0) {
+        if (listeners != null && !listeners.isEmpty()) {
             // NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to
             // perform the dispatching. The iterator is a safe-guard against listeners that
             // could mutate the list by calling the various add/remove methods. This prevents
@@ -10491,11 +10491,9 @@ public class View implements Drawable.Callback {
     public void addOnLayoutChangeListener(@NonNull OnLayoutChangeListener listener) {
         ListenerInfo li = getListenerInfo();
         if (li.mOnLayoutChangeListeners == null) {
-            li.mOnLayoutChangeListeners = new ArrayList<>();
+            li.mOnLayoutChangeListeners = new CopyOnWriteArrayList<>();
         }
-        if (!li.mOnLayoutChangeListeners.contains(listener)) {
-            li.mOnLayoutChangeListeners.add(listener);
-        }
+        li.mOnLayoutChangeListeners.addIfAbsent(listener);
     }
 
     /**
@@ -12733,7 +12731,7 @@ public class View implements Drawable.Callback {
         /**
          * Listeners for layout change events.
          */
-        private ArrayList<OnLayoutChangeListener> mOnLayoutChangeListeners;
+        private CopyOnWriteArrayList<OnLayoutChangeListener> mOnLayoutChangeListeners;
 
         /**
          * Listeners for attach events.
