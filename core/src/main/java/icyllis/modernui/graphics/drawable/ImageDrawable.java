@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,16 +18,16 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.LayoutDirection;
+import icyllis.modernui.util.*;
 import icyllis.modernui.view.Gravity;
+import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -43,16 +43,30 @@ public class ImageDrawable extends Drawable {
     private ImageState mImageState;
     private BlendModeColorFilter mBlendModeFilter;
 
+    private int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
+
     private boolean mFullImage = true;
     private boolean mDstRectAndInsetsDirty = true;
     private boolean mMutated;
 
     /**
+     * Create drawable from an image, setting target density to
+     * {@link DisplayMetrics#DENSITY_DEFAULT}.
+     *
+     * @deprecated use {@link #ImageDrawable(Resources, Image)} instead
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    @Deprecated
+    public ImageDrawable(Image image) {
+        init(new ImageState(image), null);
+    }
+
+    /**
      * Create drawable from an image, setting initial target density based on
      * the display metrics of the resources.
      */
-    public ImageDrawable(@Nullable Image image) {
-        init(new ImageState(image));
+    public ImageDrawable(Resources res, Image image) {
+        init(new ImageState(image), res);
     }
 
     /**
@@ -62,7 +76,17 @@ public class ImageDrawable extends Drawable {
      */
     public ImageDrawable(@NonNull String namespace, @NonNull String path) {
         Image image = Image.create(namespace, path);
-        init(new ImageState(image));
+        init(new ImageState(image), null);
+    }
+
+    /**
+     * Create a drawable by decoding an image from the given input stream.
+     *
+     * @deprecated use {@link #ImageDrawable(Resources, InputStream)} instead
+     */
+    @Deprecated
+    public ImageDrawable(@NonNull InputStream stream) {
+        this(null, stream);
     }
 
     /**
@@ -74,13 +98,16 @@ public class ImageDrawable extends Drawable {
      * <p>
      * This method may only be called from UI thread.
      */
-    public ImageDrawable(@NonNull InputStream stream) {
+    public ImageDrawable(Resources res, @NonNull InputStream stream) {
         Image image = null;
         try (var bitmap = BitmapFactory.decodeStream(stream)) {
             image = Image.createTextureFromBitmap(bitmap);
-        } catch (IOException ignored) {
+        } catch (Exception e) {
+            ModernUI.LOGGER.warn(MarkerManager.getMarker("ImageDrawable"),
+                    "Cannot create ImageDrawable from {}", stream, e);
+        } finally {
+            init(new ImageState(image), res);
         }
-        init(new ImageState(image));
     }
 
     /**
@@ -105,10 +132,32 @@ public class ImageDrawable extends Drawable {
     public void setImage(@Nullable Image image) {
         if (mImageState.mImage != image) {
             mImageState.mImage = image;
+            // Added by Modern UI
             if (mSrcRect != null && image != null) {
                 mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
             }
             mFullImage = true;
+            // Added by Modern UI
+            mDstRectAndInsetsDirty = true;
+            invalidateSelf();
+        }
+    }
+
+    /**
+     * Set the density at which this drawable will be rendered.
+     *
+     * @param density The density scale for this drawable.
+     * @see Image#setDensity(int)
+     * @see Image#getDensity()
+     */
+    public void setTargetDensity(int density) {
+        if (density == 0) {
+            density = DisplayMetrics.DENSITY_DEFAULT;
+        }
+        if (mTargetDensity != density) {
+            mTargetDensity = density;
+            // Added by Modern UI
+            mDstRectAndInsetsDirty = true;
             invalidateSelf();
         }
     }
@@ -472,7 +521,7 @@ public class ImageDrawable extends Drawable {
                         tileModeX == null ? Shader.TileMode.CLAMP : tileModeX,
                         tileModeY == null ? Shader.TileMode.CLAMP : tileModeY,
                         paint.getFilterMode(),
-                        updateShaderMatrix(needMirroring)
+                        updateShaderMatrix(image, needMirroring)
                 ));
             }
             canvas.drawRect(mDstRect, paint);
@@ -488,12 +537,22 @@ public class ImageDrawable extends Drawable {
     }
 
     @Nullable
-    private Matrix updateShaderMatrix(boolean needMirroring) {
-        if (needMirroring) {
+    private Matrix updateShaderMatrix(@NonNull Image image, boolean needMirroring) {
+        final int sourceDensity = image.getDensity();
+        final int targetDensity = mTargetDensity;
+        final boolean needScaling = sourceDensity != 0 && sourceDensity != targetDensity;
+        if (needScaling || needMirroring) {
             Matrix matrix = new Matrix();
 
-            // fixed by Modern UI
-            matrix.setScaleTranslate(-1.0f, 1.0f, mDstRect.width(), 0);
+            if (needMirroring) {
+                // fixed by Modern UI
+                matrix.setScaleTranslate(-1.0f, 1.0f, mDstRect.width(), 0);
+            }
+
+            if (needScaling) {
+                final float densityScale = targetDensity / (float) sourceDensity;
+                matrix.postScale(densityScale, densityScale);
+            }
 
             return matrix;
         } else {
@@ -608,24 +667,32 @@ public class ImageDrawable extends Drawable {
 
     @Override
     public int getIntrinsicWidth() {
-        if (mImageState.mImage == null) {
+        Image image = mImageState.mImage;
+        if (image == null) {
             return super.getIntrinsicWidth();
         }
+        int width;
         if (mFullImage) {
-            return mImageState.mImage.getWidth();
+            width = image.getWidth();
+        } else {
+            width = Math.min(mSrcRect.width(), image.getWidth());
         }
-        return Math.min(mSrcRect.width(), mImageState.mImage.getWidth());
+        return Image.scaleFromDensity(width, image.getDensity(), mTargetDensity);
     }
 
     @Override
     public int getIntrinsicHeight() {
-        if (mImageState.mImage == null) {
+        Image image = mImageState.mImage;
+        if (image == null) {
             return super.getIntrinsicHeight();
         }
+        int height;
         if (mFullImage) {
-            return mImageState.mImage.getHeight();
+            height = image.getHeight();
+        } else {
+            height = Math.min(mSrcRect.height(), image.getHeight());
         }
-        return Math.min(mSrcRect.height(), mImageState.mImage.getHeight());
+        return Image.scaleFromDensity(height, image.getDensity(), mTargetDensity);
     }
 
     @Override
@@ -646,6 +713,8 @@ public class ImageDrawable extends Drawable {
         Shader.TileMode mTileModeX = null;
         Shader.TileMode mTileModeY = null;
 
+        int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
+
         boolean mAutoMirrored = false;
 
         boolean mRebuildShader;
@@ -663,6 +732,7 @@ public class ImageDrawable extends Drawable {
             mGravity = imageState.mGravity;
             mTileModeX = imageState.mTileModeX;
             mTileModeY = imageState.mTileModeY;
+            mTargetDensity = imageState.mTargetDensity;
             mBaseAlpha = imageState.mBaseAlpha;
             mPaint = new Paint(imageState.mPaint);
             mRebuildShader = imageState.mRebuildShader;
@@ -672,27 +742,31 @@ public class ImageDrawable extends Drawable {
         @NonNull
         @Override
         public Drawable newDrawable() {
-            return new ImageDrawable(this);
+            return new ImageDrawable(this, null);
         }
 
         @NonNull
         @Override
         public Drawable newDrawable(Resources res) {
-            return new ImageDrawable(this);
+            return new ImageDrawable(this, res);
         }
     }
 
-    private ImageDrawable(ImageState state) {
-        init(state);
+    private ImageDrawable(@NonNull ImageState state, Resources res) {
+        init(state, res);
     }
 
     /**
      * The one helper to rule them all. This is called by all public & private
      * constructors to set the state and initialize local properties.
      */
-    private void init(ImageState state) {
+    private void init(@NonNull ImageState state, Resources res) {
         mImageState = state;
-        updateLocalState();
+        updateLocalState(res);
+
+        if (res != null) {
+            mImageState.mTargetDensity = mTargetDensity;
+        }
     }
 
     /**
@@ -700,7 +774,8 @@ public class ImageDrawable extends Drawable {
      * after significant state changes, e.g. from the One True Constructor and
      * after inflating or applying a theme.
      */
-    private void updateLocalState() {
+    private void updateLocalState(Resources res) {
+        mTargetDensity = resolveDensity(res, mImageState.mTargetDensity);
         mBlendModeFilter = updateBlendModeFilter(mBlendModeFilter, mImageState.mTint,
                 mImageState.mBlendMode);
     }

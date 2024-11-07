@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -295,7 +295,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             try (bitmap) {
                 Image image = Image.createTextureFromBitmap(bitmap);
                 if (image != null) {
-                    Drawable drawable = new ImageDrawable(image);
+                    Drawable drawable = new ImageDrawable(getResources(), image);
                     drawable.setTintBlendMode(BlendMode.MODULATE);
                     drawable.setTint(0xFF808080);
                     mDecor.setBackground(drawable);

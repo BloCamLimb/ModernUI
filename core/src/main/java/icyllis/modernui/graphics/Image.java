@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,10 +20,11 @@ package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.granite.ImageUtils;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.util.DisplayMetrics;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.ref.Cleaner;
@@ -34,7 +35,7 @@ import java.util.Objects;
  * {@code Image} describes a two-dimensional array of pixels to sample from. The pixels
  * may be located in CPU memory, in GPU memory as a GPU texture, or be lazily-generated.
  * <ul>
- * <li>{@code Image} cannot be modified by CPU after it is created.</li>
+ * <li>{@code Image} cannot be modified by CPU or GPU after it is created.</li>
  * <li>{@code Image} width and height are greater than zero.</li>
  * <li>{@code Image} may be created from {@link Bitmap}, Surface, Picture
  * and GPU texture.</li>
@@ -43,9 +44,20 @@ import java.util.Objects;
 //TODO add more usages, now image can only create from Bitmap, only used for drawImage()
 public class Image implements AutoCloseable {
 
+    /**
+     * Indicates that the image was created for an unknown pixel density
+     * and will not be scaled.
+     *
+     * @see Image#getDensity()
+     * @see Image#setDensity(int)
+     */
+    public static final int DENSITY_NONE = 0;
+
     // managed by cleaner
     private volatile icyllis.arc3d.core.Image mImage;
     private final Cleaner.Cleanable mCleanup;
+
+    int mDensity = DisplayMetrics.DENSITY_DEFAULT;
 
     private Image(@SharedPtr icyllis.arc3d.core.Image image) {
         mImage = Objects.requireNonNull(image);
@@ -58,13 +70,22 @@ public class Image implements AutoCloseable {
      * after the call.
      * <p>
      * Must be called after render system and UI system are initialized successfully,
+     * must be called from UI thread.
      * <p>
-     * Must be called from UI thread
+     * This method may fail if:
+     * <ul>
+     * <li>Bitmap is null or closed</li>
+     * <li>GPU device is lost (disconnected)</li>
+     * <li>The width or height of the bitmap exceeds the maximum dimension supported by the GPU</li>
+     * <li>The format of bitmap is not directly or indirectly supported by the GPU</li>
+     * <li>Unable to allocate sufficient GPU-only memory for the GPU texture</li>
+     * <li>Unable to allocate sufficient host memory for the staging buffer</li>
+     * </ul>
      *
      * @param bitmap the source bitmap
      * @return image, or null if failed
-     * @throws NullPointerException bitmap is null or released
-     * @throws IllegalStateException not call from UI thread, or no context
+     * @throws NullPointerException  no GPU context
+     * @throws IllegalStateException not call from UI thread
      */
     @Nullable
     public static Image createTextureFromBitmap(Bitmap bitmap) {
@@ -82,23 +103,25 @@ public class Image implements AutoCloseable {
      * Whether the bitmap is immutable or not, the bitmap can be safely closed
      * after the call.
      *
-     * @param rc     the recording graphics context on the current thread
-     * @param bitmap the source bitmap
+     * @param recordingContext the recording graphics context on the current thread
+     * @param bitmap           the source bitmap
      * @return image, or null if failed
-     * @throws NullPointerException bitmap is null or released
+     * @throws NullPointerException  bitmap is null or released
      * @throws IllegalStateException not call from context thread, or no context
      */
+    @ApiStatus.Experimental
     @Nullable
-    public static Image createTextureFromBitmap(@NonNull RecordingContext rc,
+    public static Image createTextureFromBitmap(@NonNull RecordingContext recordingContext,
                                                 @NonNull Bitmap bitmap) {
-        rc.checkOwnerThread();
+        recordingContext.checkOwnerThread();
+        assert !bitmap.isClosed();
         @SharedPtr
-        icyllis.arc3d.core.Image image;
+        icyllis.arc3d.core.Image nativeImage;
         try {
             //TODO we previously make all images Mipmapped, but Arc3D currently does not support
             // Mipmapping correctly
-            image = ImageUtils.makeFromPixmap(
-                    rc,
+            nativeImage = icyllis.arc3d.granite.ImageUtils.makeFromPixmap(
+                    recordingContext,
                     bitmap.getPixmap(),
                     /*mipmapped*/ false,
                     /*budgeted*/ true,
@@ -108,10 +131,10 @@ public class Image implements AutoCloseable {
             // Pixels container must be alive!
             Reference.reachabilityFence(bitmap);
         }
-        if (image == null) {
+        if (nativeImage == null) {
             return null;
         }
-        return new Image(image); // move
+        return new Image(nativeImage); // move
     }
 
     /**
@@ -141,7 +164,7 @@ public class Image implements AutoCloseable {
     }
 
     /**
-     * Returns the view width of this image (as its texture).
+     * Returns the intrinsic width of this image.
      *
      * @return image width in pixels
      */
@@ -150,7 +173,7 @@ public class Image implements AutoCloseable {
     }
 
     /**
-     * Returns the view height of this image (as its texture).
+     * Returns the intrinsic height of this image.
      *
      * @return image height in pixels
      */
@@ -159,8 +182,92 @@ public class Image implements AutoCloseable {
     }
 
     /**
+     * Convenience method that returns the width of this image divided
+     * by the density scale factor.
+     * <p>
+     * Returns the image's width multiplied by the ratio of the target density to the image's
+     * source density
+     *
+     * @param targetDensity The density of the target canvas of the image.
+     * @return The scaled width of this image, according to the density scale factor.
+     */
+    public int getScaledWidth(int targetDensity) {
+        return scaleFromDensity(getWidth(), mDensity, targetDensity);
+    }
+
+    /**
+     * Convenience method that returns the height of this image divided
+     * by the density scale factor.
+     * <p>
+     * Returns the image's height multiplied by the ratio of the target density to the image's
+     * source density
+     *
+     * @param targetDensity The density of the target canvas of the image.
+     * @return The scaled height of this image, according to the density scale factor.
+     */
+    public int getScaledHeight(int targetDensity) {
+        return scaleFromDensity(getHeight(), mDensity, targetDensity);
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static int scaleFromDensity(int size, int sourceDensity, int targetDensity) {
+        if (sourceDensity == DENSITY_NONE || targetDensity == DENSITY_NONE || sourceDensity == targetDensity) {
+            return size;
+        }
+
+        // Scale by targetDensity / sourceDensity, rounding up.
+        return ((size * targetDensity) + (sourceDensity >> 1)) / sourceDensity;
+    }
+
+    /**
+     * <p>Returns the density for this image.</p>
+     *
+     * <p>The default density is {@link DisplayMetrics#DENSITY_DEFAULT}..</p>
+     *
+     * @return A scaling factor of the default density or {@link #DENSITY_NONE}
+     * if the scaling factor is unknown.
+     * @see #setDensity(int)
+     * @see DisplayMetrics#DENSITY_DEFAULT
+     * @see DisplayMetrics#densityDpi
+     * @see #DENSITY_NONE
+     */
+    public int getDensity() {
+        return mDensity;
+    }
+
+    /**
+     * <p>Specifies the density for this image.  When the image is
+     * drawn to a {@link Canvas} or with a {@link ImageDrawable}
+     * that also has a density, it will be scaled appropriately.</p>
+     *
+     * @param density The density scaling factor to use with this image or
+     *                {@link #DENSITY_NONE} if the density is unknown.
+     * @see #getDensity()
+     * @see DisplayMetrics#DENSITY_DEFAULT
+     * @see DisplayMetrics#densityDpi
+     * @see #DENSITY_NONE
+     */
+    public void setDensity(int density) {
+        mDensity = density;
+    }
+
+    /**
+     * Returns the color space associated with this image. If the color
+     * space is unknown, this method returns null.
+     */
+    @Nullable
+    public ColorSpace getColorSpace() {
+        return mImage.getColorSpace();
+    }
+
+    /**
+     * Perform a deferred cleanup if the underlying resource is not released.
      * Manually mark the underlying resources closed, if needed. After this, you
-     * will not be able to operate this object.
+     * will not be able to operate this object, and its GPU resource will be reclaimed
+     * as soon as possible after use.
      * <p>
      * When this object becomes phantom-reachable, the system will automatically
      * do this cleanup operation.
