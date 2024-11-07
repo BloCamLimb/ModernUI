@@ -26,6 +26,7 @@ import icyllis.modernui.view.ViewTreeObserver;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This class enables automatic animations on layout changes in ViewGroup objects. To enable
@@ -237,7 +238,7 @@ public class LayoutTransition {
      * The set of listeners that should be notified when APPEARING/DISAPPEARING transitions
      * start and end.
      */
-    private ArrayList<TransitionListener> mListeners;
+    private CopyOnWriteArrayList<TransitionListener> mListeners;
 
     /**
      * Controls whether changing animations automatically animate the parent hierarchy as well.
@@ -834,14 +835,10 @@ public class LayoutTransition {
         };
         // Remove the animation from the cache when it ends
         anim.addListener(new AnimatorListener() {
-
-            @SuppressWarnings("unchecked")
             @Override
             public void onAnimationStart(@Nonnull Animator animator) {
                 if (hasListeners()) {
-                    ArrayList<TransitionListener> listeners =
-                            (ArrayList<TransitionListener>) mListeners.clone();
-                    for (TransitionListener listener : listeners) {
+                    for (TransitionListener listener : mListeners) {
                         listener.startTransition(LayoutTransition.this, parent, child,
                                 changeReason == APPEARING ?
                                         CHANGE_APPEARING : changeReason == DISAPPEARING ?
@@ -850,14 +847,11 @@ public class LayoutTransition {
                 }
             }
 
-            @SuppressWarnings("unchecked")
             @Override
             public void onAnimationEnd(@Nonnull Animator animator) {
                 currentChangingAnimations.remove(child);
                 if (hasListeners()) {
-                    ArrayList<TransitionListener> listeners =
-                            (ArrayList<TransitionListener>) mListeners.clone();
-                    for (TransitionListener listener : listeners) {
+                    for (TransitionListener listener : mListeners) {
                         listener.endTransition(LayoutTransition.this, parent, child,
                                 changeReason == APPEARING ?
                                         CHANGE_APPEARING : changeReason == DISAPPEARING ?
@@ -886,7 +880,7 @@ public class LayoutTransition {
      * starts the transition after the current layout/measurement phase, just prior to drawing
      * the view hierarchy.
      *
-     * @hide
+     * @hidden
      */
     @SuppressWarnings("unchecked")
     public void startChangingAnimations() {
@@ -906,7 +900,7 @@ public class LayoutTransition {
      * is not visible. We need to make sure the animations put their targets in their end states
      * and that the transition finishes to remove any mid-process state (such as isRunning()).
      *
-     * @hide
+     * @hidden
      */
     @SuppressWarnings("unchecked")
     public void endChangingAnimations() {
@@ -929,7 +923,7 @@ public class LayoutTransition {
      * running.
      */
     public boolean isChangingLayout() {
-        return (currentChangingAnimations.size() > 0);
+        return (!currentChangingAnimations.isEmpty());
     }
 
     /**
@@ -938,8 +932,8 @@ public class LayoutTransition {
      * @return true if any animations in the transition are running.
      */
     public boolean isRunning() {
-        return (currentChangingAnimations.size() > 0 || currentAppearingAnimations.size() > 0 ||
-                currentDisappearingAnimations.size() > 0);
+        return (!currentChangingAnimations.isEmpty() || !currentAppearingAnimations.isEmpty() ||
+                !currentDisappearingAnimations.isEmpty());
     }
 
     /**
@@ -948,11 +942,11 @@ public class LayoutTransition {
      * in the context of starting a new transition, so we want to move things from their mid-
      * transition positions, but we want them to have their end-transition visibility.
      *
-     * @hide
+     * @hidden
      */
     @SuppressWarnings("unchecked")
     public void cancel() {
-        if (currentChangingAnimations.size() > 0) {
+        if (!currentChangingAnimations.isEmpty()) {
             LinkedHashMap<View, Animator> currentAnimCopy =
                     (LinkedHashMap<View, Animator>) currentChangingAnimations.clone();
             for (Animator anim : currentAnimCopy.values()) {
@@ -960,7 +954,7 @@ public class LayoutTransition {
             }
             currentChangingAnimations.clear();
         }
-        if (currentAppearingAnimations.size() > 0) {
+        if (!currentAppearingAnimations.isEmpty()) {
             LinkedHashMap<View, Animator> currentAnimCopy =
                     (LinkedHashMap<View, Animator>) currentAppearingAnimations.clone();
             for (Animator anim : currentAnimCopy.values()) {
@@ -968,7 +962,7 @@ public class LayoutTransition {
             }
             currentAppearingAnimations.clear();
         }
-        if (currentDisappearingAnimations.size() > 0) {
+        if (!currentDisappearingAnimations.isEmpty()) {
             LinkedHashMap<View, Animator> currentAnimCopy =
                     (LinkedHashMap<View, Animator>) currentDisappearingAnimations.clone();
             for (Animator anim : currentAnimCopy.values()) {
@@ -984,7 +978,7 @@ public class LayoutTransition {
      * in the context of starting a new transition, so we want to move things from their mid-
      * transition positions, but we want them to have their end-transition visibility.
      *
-     * @hide
+     * @hidden
      */
     @SuppressWarnings("unchecked")
     public void cancel(int transitionType) {
@@ -992,7 +986,7 @@ public class LayoutTransition {
             case CHANGE_APPEARING:
             case CHANGE_DISAPPEARING:
             case CHANGING:
-                if (currentChangingAnimations.size() > 0) {
+                if (!currentChangingAnimations.isEmpty()) {
                     LinkedHashMap<View, Animator> currentAnimCopy =
                             (LinkedHashMap<View, Animator>) currentChangingAnimations.clone();
                     for (Animator anim : currentAnimCopy.values()) {
@@ -1002,7 +996,7 @@ public class LayoutTransition {
                 }
                 break;
             case APPEARING:
-                if (currentAppearingAnimations.size() > 0) {
+                if (!currentAppearingAnimations.isEmpty()) {
                     LinkedHashMap<View, Animator> currentAnimCopy =
                             (LinkedHashMap<View, Animator>) currentAppearingAnimations.clone();
                     for (Animator anim : currentAnimCopy.values()) {
@@ -1012,7 +1006,7 @@ public class LayoutTransition {
                 }
                 break;
             case DISAPPEARING:
-                if (currentDisappearingAnimations.size() > 0) {
+                if (!currentDisappearingAnimations.isEmpty()) {
                     LinkedHashMap<View, Animator> currentAnimCopy =
                             (LinkedHashMap<View, Animator>) currentDisappearingAnimations.clone();
                     for (Animator anim : currentAnimCopy.values()) {
@@ -1030,7 +1024,6 @@ public class LayoutTransition {
      * @param parent The ViewGroup to which the View is being added.
      * @param child  The View being added to the ViewGroup.
      */
-    @SuppressWarnings("unchecked")
     private void runAppearingTransition(final ViewGroup parent, final View child) {
         Animator currentAnimation = currentDisappearingAnimations.get(child);
         if (currentAnimation != null) {
@@ -1038,9 +1031,7 @@ public class LayoutTransition {
         }
         if (mAppearingAnim == null) {
             if (hasListeners()) {
-                ArrayList<TransitionListener> listeners =
-                        (ArrayList<TransitionListener>) mListeners.clone();
-                for (TransitionListener listener : listeners) {
+                for (TransitionListener listener : mListeners) {
                     listener.endTransition(this, parent, child, APPEARING);
                 }
             }
@@ -1057,14 +1048,11 @@ public class LayoutTransition {
             ((ObjectAnimator) anim).setCurrentPlayTime(0);
         }
         anim.addListener(new AnimatorListener() {
-            @SuppressWarnings("unchecked")
             @Override
             public void onAnimationEnd(@Nonnull Animator anim) {
                 currentAppearingAnimations.remove(child);
                 if (hasListeners()) {
-                    ArrayList<TransitionListener> listeners =
-                            (ArrayList<TransitionListener>) mListeners.clone();
-                    for (TransitionListener listener : listeners) {
+                    for (TransitionListener listener : mListeners) {
                         listener.endTransition(LayoutTransition.this, parent, child, APPEARING);
                     }
                 }
@@ -1080,7 +1068,6 @@ public class LayoutTransition {
      * @param parent The ViewGroup from which the View is being removed.
      * @param child  The View being removed from the ViewGroup.
      */
-    @SuppressWarnings("unchecked")
     private void runDisappearingTransition(final ViewGroup parent, final View child) {
         Animator currentAnimation = currentAppearingAnimations.get(child);
         if (currentAnimation != null) {
@@ -1088,9 +1075,7 @@ public class LayoutTransition {
         }
         if (mDisappearingAnim == null) {
             if (hasListeners()) {
-                ArrayList<TransitionListener> listeners =
-                        (ArrayList<TransitionListener>) mListeners.clone();
-                for (TransitionListener listener : listeners) {
+                for (TransitionListener listener : mListeners) {
                     listener.endTransition(this, parent, child, DISAPPEARING);
                 }
             }
@@ -1105,15 +1090,12 @@ public class LayoutTransition {
         anim.setTarget(child);
         final float preAnimAlpha = child.getTransitionAlpha();
         anim.addListener(new AnimatorListener() {
-            @SuppressWarnings("unchecked")
             @Override
             public void onAnimationEnd(@Nonnull Animator anim) {
                 currentDisappearingAnimations.remove(child);
                 child.setTransitionAlpha(preAnimAlpha);
                 if (hasListeners()) {
-                    ArrayList<TransitionListener> listeners =
-                            (ArrayList<TransitionListener>) mListeners.clone();
-                    for (TransitionListener listener : listeners) {
+                    for (TransitionListener listener : mListeners) {
                         listener.endTransition(LayoutTransition.this, parent, child, DISAPPEARING);
                     }
                 }
@@ -1153,9 +1135,7 @@ public class LayoutTransition {
             cancel(CHANGING);
         }
         if (hasListeners() && (mTransitionTypes & FLAG_APPEARING) == FLAG_APPEARING) {
-            ArrayList<TransitionListener> listeners =
-                    (ArrayList<TransitionListener>) mListeners.clone();
-            for (TransitionListener listener : listeners) {
+            for (TransitionListener listener : mListeners) {
                 listener.startTransition(this, parent, child, APPEARING);
             }
         }
@@ -1168,7 +1148,7 @@ public class LayoutTransition {
     }
 
     private boolean hasListeners() {
-        return mListeners != null && mListeners.size() > 0;
+        return mListeners != null && !mListeners.isEmpty();
     }
 
     /**
@@ -1180,7 +1160,7 @@ public class LayoutTransition {
      * the CHANGE_APPEARING and CHANGE_DISAPPEARING transitions).
      *
      * @param parent The ViewGroup whose layout() method has been called.
-     * @hide
+     * @hidden
      */
     public void layoutChange(@Nonnull ViewGroup parent) {
         if (parent.getWindowVisibility() != View.VISIBLE) {
@@ -1251,9 +1231,7 @@ public class LayoutTransition {
             cancel(CHANGING);
         }
         if (hasListeners() && (mTransitionTypes & FLAG_DISAPPEARING) == FLAG_DISAPPEARING) {
-            ArrayList<TransitionListener> listeners =
-                    (ArrayList<TransitionListener>) mListeners.clone();
-            for (TransitionListener listener : listeners) {
+            for (TransitionListener listener : mListeners) {
                 listener.startTransition(this, parent, child, DISAPPEARING);
             }
         }
@@ -1302,7 +1280,7 @@ public class LayoutTransition {
      */
     public void addTransitionListener(TransitionListener listener) {
         if (mListeners == null) {
-            mListeners = new ArrayList<>();
+            mListeners = new CopyOnWriteArrayList<>();
         }
         mListeners.add(listener);
     }
