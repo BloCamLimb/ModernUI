@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,11 +18,11 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
-
-import javax.annotation.Nonnull;
 
 /**
  * Span that replaces the text it's attached to with a {@link Drawable} that can be aligned with
@@ -49,30 +49,63 @@ import javax.annotation.Nonnull;
  */
 public class ImageSpan extends DynamicDrawableSpan {
 
-    @Nonnull
+    @NonNull
     private final Drawable mDrawable;
 
     /**
-     * Constructs an {@link ImageSpan} from a {@link Image} with the default
+     * Constructs an {@link ImageSpan} from an {@link Image} with the default
      * alignment {@link DynamicDrawableSpan#ALIGN_BOTTOM}
      *
      * @param image image to be rendered
      */
-    public ImageSpan(@Nonnull Image image) {
-        this(image, ALIGN_BOTTOM);
+    @Deprecated
+    @SuppressWarnings("DataFlowIssue")
+    public ImageSpan(@NonNull Image image) {
+        this(null, image, ALIGN_BOTTOM);
     }
 
     /**
-     * Constructs an {@link ImageSpan} from a {@link Image} and a vertical
+     * Constructs an {@link ImageSpan} from an {@link Image} and a vertical
      * alignment.
      *
      * @param image             image to be rendered
      * @param verticalAlignment one of {@link DynamicDrawableSpan#ALIGN_BOTTOM} or
      *                          {@link DynamicDrawableSpan#ALIGN_BASELINE}
      */
-    public ImageSpan(@Nonnull Image image, int verticalAlignment) {
+    @Deprecated
+    @SuppressWarnings("DataFlowIssue")
+    public ImageSpan(@NonNull Image image, int verticalAlignment) {
+        this(null, image, verticalAlignment);
+    }
+
+    /**
+     * Constructs an {@link ImageSpan} from a {@link Context} and an {@link Image} with the default
+     * alignment {@link DynamicDrawableSpan#ALIGN_BOTTOM}
+     *
+     * @param context context used to create a drawable from {@param image} based on the display
+     *                metrics of the resources
+     * @param image   image to be rendered
+     */
+    public ImageSpan(@NonNull Context context, @NonNull Image image) {
+        this(context, image, ALIGN_BOTTOM);
+    }
+
+    /**
+     * Constructs an {@link ImageSpan} from a {@link Context}, an {@link Image} and a vertical
+     * alignment.
+     *
+     * @param context           context used to create a drawable from image based on
+     *                          the display metrics of the resources
+     * @param image             image to be rendered
+     * @param verticalAlignment one of {@link DynamicDrawableSpan#ALIGN_BOTTOM} or
+     *                          {@link DynamicDrawableSpan#ALIGN_BASELINE}
+     */
+    @SuppressWarnings({"ConstantValue", "deprecation"})
+    public ImageSpan(@NonNull Context context, @NonNull Image image, int verticalAlignment) {
         super(verticalAlignment);
-        mDrawable = new ImageDrawable(image);
+        mDrawable = context != null
+                ? new ImageDrawable(context.getResources(), image)
+                : new ImageDrawable(image);
         int width = mDrawable.getIntrinsicWidth();
         int height = mDrawable.getIntrinsicHeight();
         mDrawable.setBounds(0, 0, Math.max(width, 0), Math.max(height, 0));
@@ -84,7 +117,7 @@ public class ImageSpan extends DynamicDrawableSpan {
      *
      * @param drawable drawable to be rendered
      */
-    public ImageSpan(@Nonnull Drawable drawable) {
+    public ImageSpan(@NonNull Drawable drawable) {
         this(drawable, ALIGN_BOTTOM);
     }
 
@@ -95,12 +128,12 @@ public class ImageSpan extends DynamicDrawableSpan {
      * @param verticalAlignment one of {@link DynamicDrawableSpan#ALIGN_BOTTOM} or
      *                          {@link DynamicDrawableSpan#ALIGN_BASELINE}
      */
-    public ImageSpan(@Nonnull Drawable drawable, int verticalAlignment) {
+    public ImageSpan(@NonNull Drawable drawable, int verticalAlignment) {
         super(verticalAlignment);
         mDrawable = drawable;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Drawable getDrawable() {
         return mDrawable;

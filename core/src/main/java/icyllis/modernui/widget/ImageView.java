@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -335,7 +335,7 @@ public class ImageView extends View {
         // instead of doing an object reference comparison
         mDrawable = null;
         if (mRecycleImageDrawable == null) {
-            mRecycleImageDrawable = new ImageDrawable(image);
+            mRecycleImageDrawable = new ImageDrawable(getContext().getResources(), image);
         } else {
             mRecycleImageDrawable.setImage(image);
         }
