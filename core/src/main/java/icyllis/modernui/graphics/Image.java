@@ -120,7 +120,7 @@ public class Image implements AutoCloseable {
         try {
             //TODO we previously make all images Mipmapped, but Arc3D currently does not support
             // Mipmapping correctly
-            nativeImage = icyllis.arc3d.granite.ImageUtils.makeFromPixmap(
+            nativeImage = icyllis.arc3d.granite.TextureUtils.makeFromPixmap(
                     recordingContext,
                     bitmap.getPixmap(),
                     /*mipmapped*/ false,

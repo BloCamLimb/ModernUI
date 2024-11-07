@@ -21,7 +21,8 @@ package icyllis.modernui.core;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ContextOptions;
 import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.vulkan.VkBackendContext;
+import icyllis.arc3d.vulkan.VKUtil;
+import icyllis.arc3d.vulkan.VulkanBackendContext;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -34,7 +35,8 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-import static icyllis.arc3d.vulkan.VKCore.*;
+import static org.lwjgl.vulkan.VK11.*;
+import static icyllis.arc3d.vulkan.VKUtil.*;
 import static icyllis.modernui.ModernUI.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
@@ -309,14 +311,14 @@ public final class VulkanManager implements AutoCloseable {
     @Nullable
     @SharedPtr
     public ImmediateContext createContext(@NonNull ContextOptions options) {
-        VkBackendContext backendContext = new VkBackendContext();
+        VulkanBackendContext backendContext = new VulkanBackendContext();
         backendContext.mInstance = mInstance;
         backendContext.mPhysicalDevice = mPhysicalDevice;
         backendContext.mDevice = mDevice;
         //TODO
         backendContext.mGraphicsQueueIndex = mGraphicsQueueIndex;
         backendContext.mDeviceFeatures2 = mPhysicalDeviceFeatures2;
-        return ImmediateContext.makeVulkan(backendContext, options);
+        return VKUtil.makeVulkan(backendContext, options);
     }
 
     @Override
