@@ -22,7 +22,7 @@ package icyllis.arc3d.core.shaders;
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.MathUtil;
 
-public final class Color4fShader extends Shader {
+public final class Color4fShader implements Shader {
 
     // color components using non-premultiplied alpha
     private final float mR;
@@ -68,5 +68,13 @@ public final class Color4fShader extends Shader {
 
     public ColorSpace getColorSpace() {
         return mColorSpace;
+    }
+
+    @Override
+    public void ref() {
+    }
+
+    @Override
+    public void unref() {
     }
 }

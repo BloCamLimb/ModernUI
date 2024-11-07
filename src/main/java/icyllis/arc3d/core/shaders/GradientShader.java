@@ -22,11 +22,20 @@ package icyllis.arc3d.core.shaders;
 /**
  * Base class for shaders that generate gradient colors.
  */
-public abstract class GradientShader extends Shader {
+public abstract sealed class GradientShader implements Shader
+        permits Gradient1DShader, Gradient2DShader {
 
     //TODO currently only 1D gradients are implemented
 
     public static final float kDegenerateTolerance = 1F / (1 << 16);
+
+    @Override
+    public void ref() {
+    }
+
+    @Override
+    public void unref() {
+    }
 
     /**
      * Color interpolation method, is packed into an int.
