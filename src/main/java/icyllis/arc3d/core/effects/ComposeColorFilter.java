@@ -26,7 +26,7 @@ import java.util.Objects;
 /**
  * @see ColorFilter#compose(ColorFilter)
  */
-public final class ComposeColorFilter extends ColorFilter {
+public final class ComposeColorFilter extends RefCnt implements ColorFilter {
 
     @SharedPtr
     private final ColorFilter mAfter;

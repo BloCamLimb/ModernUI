@@ -19,5 +19,12 @@
 
 package icyllis.arc3d.core.shaders;
 
-public final class EmptyShader extends Shader {
+public final class EmptyShader implements Shader {
+    @Override
+    public void ref() {
+    }
+
+    @Override
+    public void unref() {
+    }
 }

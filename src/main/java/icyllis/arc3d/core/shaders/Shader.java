@@ -33,55 +33,71 @@ import javax.annotation.Nonnull;
  * w/o having to modify the original shader... only the paint's alpha needs
  * to be modified.
  */
-public abstract class Shader extends RefCnt {
+public sealed interface Shader extends RefCounted
+        permits EmptyShader, ColorShader, Color4fShader, BlendShader,
+        GradientShader, ImageShader, LocalMatrixShader {
 
     // TileModes sync with SamplerDesc::AddressMode
     /**
      * Repeat the shader's image horizontally and vertically.
      */
-    public static final int TILE_MODE_REPEAT = 0;
+    int TILE_MODE_REPEAT = 0;
     /**
      * Repeat the shader's image horizontally and vertically, alternating
      * mirror images so that adjacent images always seam.
      */
-    public static final int TILE_MODE_MIRROR = 1;
+    int TILE_MODE_MIRROR = 1;
     /**
      * Replicate the edge color if the shader draws outside of its
      * original bounds.
      */
-    public static final int TILE_MODE_CLAMP = 2;
+    int TILE_MODE_CLAMP = 2;
     /**
      * Only draw within the original domain, return transparent-black everywhere else.
      */
-    public static final int TILE_MODE_DECAL = 3;
+    int TILE_MODE_DECAL = 3;
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
-    public static final int LAST_TILE_MODE = TILE_MODE_DECAL;
+    int LAST_TILE_MODE = TILE_MODE_DECAL;
 
-    public static final int GRADIENT_TYPE_NONE = 0;
-    public static final int GRADIENT_TYPE_LINEAR = 1;
-    public static final int GRADIENT_TYPE_RADIAL = 2;
-    public static final int GRADIENT_TYPE_ANGULAR = 3;
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    int
+            GRADIENT_TYPE_NONE = 0,
+            GRADIENT_TYPE_LINEAR = 1,
+            GRADIENT_TYPE_RADIAL = 2,
+            GRADIENT_TYPE_ANGULAR = 3;
 
-    protected Shader() {
-    }
-
-    @Override
-    protected void deallocate() {
-    }
-
-    public boolean isOpaque() {
+    /**
+     * Returns true if the shader is guaranteed to produce only opaque
+     * colors, subject to the Paint using the shader to apply an opaque
+     * alpha value. Subclasses should override this to allow some
+     * optimizations.
+     */
+    default boolean isOpaque() {
         return false;
     }
 
     /**
      * Returns true if the shader is guaranteed to produce only a single color.
      * Subclasses can override this to allow loop-hoisting optimization.
+     *
+     * @hidden
      */
-    public boolean isConstant() {
+    @ApiStatus.Internal
+    default boolean isConstant() {
         return false;
     }
 
-    public int asGradient() {
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    default int asGradient() {
         return GRADIENT_TYPE_NONE;
     }
 
@@ -94,7 +110,7 @@ public abstract class Shader extends RefCnt {
      */
     @Nonnull
     @SharedPtr
-    public Shader makeWithLocalMatrix(@Nonnull Matrixc localMatrix) {
+    default Shader makeWithLocalMatrix(@Nonnull Matrixc localMatrix) {
         var lm = new Matrix(localMatrix);
         Shader base; // raw ptr
         if (this instanceof LocalMatrixShader lms) {
@@ -103,6 +119,7 @@ public abstract class Shader extends RefCnt {
         } else {
             base = this;
         }
-        return new LocalMatrixShader(RefCnt.create(base), lm);
+        base.ref();
+        return new LocalMatrixShader(base, lm); // move
     }
 }

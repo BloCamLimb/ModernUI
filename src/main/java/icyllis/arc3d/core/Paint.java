@@ -24,6 +24,7 @@ import icyllis.arc3d.core.shaders.Shader;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -317,6 +318,7 @@ public class Paint implements AutoCloseable {
      *
      * @return the paint's color (and alpha).
      */
+    @ColorInt
     public int getColor() {
         return ((int) (mA * 255.0f + 0.5f) << 24) |
                 ((int) (mR * 255.0f + 0.5f) << 16) |
@@ -331,7 +333,7 @@ public class Paint implements AutoCloseable {
      *
      * @param color the new color (including alpha) to set in the paint.
      */
-    public void setColor(int color) {
+    public void setColor(@ColorInt int color) {
         mA = (color >>> 24) * (1 / 255.0f);
         mR = ((color >> 16) & 0xff) * (1 / 255.0f);
         mG = ((color >> 8) & 0xff) * (1 / 255.0f);
@@ -380,6 +382,19 @@ public class Paint implements AutoCloseable {
      */
     public final float a() {
         return mA;
+    }
+
+    /**
+     * Returns the color used when stroking and filling.
+     * Color is stored in <var>dst</var> array in sRGB space, un-premultiplied form.
+     *
+     * @param dst an array that receives R,G,B,A color components
+     */
+    public final void getColor4f(@Nonnull @Size(4) float[] dst) {
+        dst[0] = mR;
+        dst[1] = mG;
+        dst[2] = mB;
+        dst[3] = mA;
     }
 
     /**
