@@ -1401,7 +1401,7 @@ public class ShaderCodeSource {
     // - DstATop: (1-dstA)*src +     srcA*dst = (1 + -1*dstA)*src + (0 +  1*srcA)*dst = (1,  0, -1,  1)
     // - Xor:     (1-dstA)*src + (1-srcA)*dst = (1 + -1*dstA)*src + (1 + -1*srcA)*dst = (1,  1, -1, -1)
     public static final String ARC_PORTER_DUFF_BLEND = """
-            vec4 arc_porter_duff_blend(vec4 blendOp, vec4 src, vec4 dst) {
+            vec4 arc_porter_duff_blend(vec4 src, vec4 dst, vec4 blendOp) {
                 // The supported blend modes all have coefficients that are of the form (C + S*alpha), where
                 // alpha is the other color's alpha channel. C can be 0 or 1, S can be -1, 0, or 1.
                 vec2 coeff = blendOp.xy + blendOp.zw * vec2(dst.a, src.a);
@@ -1764,7 +1764,7 @@ public class ShaderCodeSource {
                 "arc_porter_duff_blend",
                 new String[]{ARC_PORTER_DUFF_BLEND},
                 new Uniform[]{
-                        new Uniform(SLDataType.kFloat4, "U_Coeffs")
+                        new Uniform(SLDataType.kFloat4, "u_Coeffs")
                 },
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
