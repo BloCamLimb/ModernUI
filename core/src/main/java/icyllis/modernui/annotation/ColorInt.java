@@ -22,7 +22,7 @@ import java.lang.annotation.*;
 
 /**
  * Denotes that the annotated element represents a packed color
- * int, {@code AARRGGBB}. If applied to an int array, every element
+ * int, {@code 0xAARRGGBB}. If applied to an int array, every element
  * in the array represents a color integer.
  * <p>
  * Example:
