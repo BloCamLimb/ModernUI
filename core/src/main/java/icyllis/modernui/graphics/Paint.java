@@ -479,10 +479,7 @@ public class Paint {
     @NonNull
     @Size(4)
     public float[] getColor4f(@NonNull @Size(4) float[] dst) {
-        dst[0] = mPaint.r();
-        dst[1] = mPaint.g();
-        dst[2] = mPaint.b();
-        dst[3] = mPaint.a();
+        mPaint.getColor4f(dst);
         return dst;
     }
 
