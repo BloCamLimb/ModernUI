@@ -32,9 +32,11 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.*;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
+import sun.misc.Unsafe;
 
 import java.io.*;
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -328,11 +330,13 @@ public final class Bitmap implements AutoCloseable {
     }
 
     @ApiStatus.Internal
+    @ColorInfo.ColorType
     public int getColorType() {
         return mPixmap.getColorType();
     }
 
     @ApiStatus.Internal
+    @ColorInfo.AlphaType
     public int getAlphaType() {
         return mPixmap.getAlphaType();
     }
@@ -584,12 +588,53 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
+    private void checkOutOfBounds(int x, int y, int width, int height) {
+        if (x < 0) {
+            throw new IllegalArgumentException("x " + x + " must be >= 0");
+        }
+        if (y < 0) {
+            throw new IllegalArgumentException("y " + y + " must be >= 0");
+        }
+        if (width < 0) {
+            throw new IllegalArgumentException("width " + width + " must be >= 0");
+        }
+        if (height < 0) {
+            throw new IllegalArgumentException("height " + height + " must be >= 0");
+        }
+        if (x + width > getWidth()) {
+            throw new IllegalArgumentException(
+                    String.format("x %d + width %d must be <= bitmap.width() %d",
+                            x, width, getWidth()));
+        }
+        if (y + height > getHeight()) {
+            throw new IllegalArgumentException(
+                    String.format("y %d + height %d must be <= bitmap.height() %d",
+                            y, height, getHeight()));
+        }
+    }
+
+    private void checkOutOfBounds(int x, int y, int width, int height,
+                                  int offset, int stride, int length) {
+        checkOutOfBounds(x, y, width, height);
+        if (stride < width) {
+            throw new IllegalArgumentException("stride " + stride + " must be >= width" + width);
+        }
+        int lastScanline = offset + (height - 1) * stride;
+        if (offset < 0 || (offset + width > length)
+                || lastScanline < 0
+                || (lastScanline + width > length)) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+    }
+
     /**
      * Returns the {@link Color} at the specified location. Throws an exception
      * if x or y are out of bounds (negative or >= to the width or height
      * respectively). The returned color is a non-premultiplied ARGB value in
      * the {@link ColorSpace.Named#SRGB sRGB} color space, the format is the
      * same as {@link Format#BGRA_8888_PACK32}.
+     * <p>
+     * Batch version of this operation: {@link #getPixels(int[], int, int, int, int, int, int)}.
      *
      * @param x The x coordinate (0...width-1) of the pixel to return
      * @param y The y coordinate (0...height-1) of the pixel to return
@@ -613,6 +658,8 @@ public final class Bitmap implements AutoCloseable {
      * then the result color is converted to RGBA float color in
      * the source color space {@link #getColorSpace()}, its alpha type is
      * left unchanged (the same as {@link #isPremultiplied()}).
+     * <p>
+     * Batch version of this operation: {@link #getPixels(float[], int, int, int, int, int, int)}.
      *
      * @param x   The x coordinate (0...width-1) of the pixel to return
      * @param y   The y coordinate (0...height-1) of the pixel to return
@@ -627,7 +674,9 @@ public final class Bitmap implements AutoCloseable {
         checkReleased();
         checkOutOfBounds(x, y);
         if (getColorType() == ColorInfo.CT_UNKNOWN) {
-            Arrays.fill(dst, 0.0f);
+            for (int i = 0; i < 4; ++i) {
+                dst[i] = 0.0f;
+            }
         } else {
             mPixmap.getColor4f(x, y, dst);
         }
@@ -641,6 +690,8 @@ public final class Bitmap implements AutoCloseable {
      * bitmap's color space {@link #getColorSpace()}, its alpha type must be the
      * same as {@link #isPremultiplied()}). This bitmap must be mutable,
      * {@link #isImmutable()} must return false.
+     * <p>
+     * Batch version of this operation: {@link #setPixels(float[], int, int, int, int, int, int)}.
      *
      * @param x   The x coordinate of the pixel to replace (0...width-1)
      * @param y   The y coordinate of the pixel to replace (0...height-1)
@@ -656,6 +707,242 @@ public final class Bitmap implements AutoCloseable {
         checkOutOfBounds(x, y);
         if (getColorType() != ColorInfo.CT_UNKNOWN) {
             mPixmap.setColor4f(x, y, src);
+        }
+    }
+
+    /**
+     * Copies a Rect of pixels to dst. Copy starts at (srcX, srcY), and does not
+     * exceed (width, height). Each value is a packed int representing a {@link Color}.
+     * The stride parameter allows the caller to allow for gaps in the returned pixels
+     * array between rows. For normal packed results, just pass width for the stride value.
+     * The returned colors are non-premultiplied ARGB values in the
+     * {@link ColorSpace.Named#SRGB sRGB} color space, i.e. it has
+     * {@link Format#BGRA_8888_PACK32} pixel format.
+     * <p>
+     * If the max bits per channel of {@link #getFormat()} is greater than 8, or colors are
+     * premultiplied, then color precision may be lost in the conversion. See
+     * {@link #getPixels(float[], int, int, int, int, int, int)}.
+     *
+     * @param dst    The destination array to receive the bitmap's colors
+     * @param offset The first index to write into dst
+     * @param stride The number of entries in dst to skip between
+     *               rows (must be >= width)
+     * @param srcX   The srcX coordinate of the first pixel to read from
+     *               the bitmap
+     * @param srcY   The srcY coordinate of the first pixel to read from
+     *               the bitmap
+     * @param width  The number of pixels to read from each row
+     * @param height The number of rows to read
+     * @throws IllegalStateException          the bitmap is released
+     * @throws IllegalArgumentException       if srcX, srcY, width, height exceed the
+     *                                        bounds of the bitmap, or if stride < width
+     * @throws ArrayIndexOutOfBoundsException if the pixels array is too small
+     *                                        to receive the specified number of pixels
+     */
+    public void getPixels(@NonNull @ColorInt int[] dst, int offset, int stride,
+                          int srcX, int srcY, int width, int height) {
+        checkReleased();
+        if (width == 0 || height == 0) {
+            return; // nothing to do
+        }
+        checkOutOfBounds(srcX, srcY, width, height, offset, stride, dst.length);
+        if (getColorType() == ColorInfo.CT_UNKNOWN) {
+            for (int j = 0; j < height; ++j) {
+                int index = offset + stride * j;
+                Arrays.fill(dst, index, index + width, 0);
+            }
+        } else {
+            var dstInfo = new ImageInfo(width, height,
+                    ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
+                    ColorSpace.get(ColorSpace.Named.SRGB));
+            var dstPixmap = new Pixmap(dstInfo, dst,
+                    Unsafe.ARRAY_INT_BASE_OFFSET + (long) offset << 2,
+                    stride << 2);
+            boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+            assert res;
+        }
+    }
+
+    /**
+     * Copies a Rect of pixels from src. Copy starts at (dstX, dstY), and does not exceed
+     * (width, height). Each element in the array is a packed int representing a non-premultiplied
+     * ARGB {@link Color} in the {@link ColorSpace.Named#SRGB sRGB} color space, i.e. it has
+     * {@link Format#BGRA_8888_PACK32} pixel format. The stride parameter allows the caller
+     * to allow for gaps in the source pixels array between rows. For normal packed pixels,
+     * just pass width for the stride value.
+     * <p>
+     * See {@link #setPixels(float[], int, int, int, int, int, int)}.
+     *
+     * @param src    The source colors to write to the bitmap
+     * @param offset The index of the first color to read from src
+     * @param stride The number of colors in src to skip between rows
+     *               Normally this value will be the same as the width of
+     *               the bitmap, but it can be larger
+     * @param dstX   The x coordinate of the first pixel to write to in
+     *               the bitmap.
+     * @param dstY   The y coordinate of the first pixel to write to in
+     *               the bitmap.
+     * @param width  The number of colors to copy from src per row
+     * @param height The number of rows to write to the bitmap
+     */
+    public void setPixels(@NonNull @ColorInt int[] src, int offset, int stride,
+                          int dstX, int dstY, int width, int height) {
+        checkReleased();
+        if (isImmutable()) {
+            throw new IllegalStateException("Cannot write to immutable bitmap");
+        }
+        if (width == 0 || height == 0) {
+            return; // nothing to do
+        }
+        checkOutOfBounds(dstX, dstY, width, height, offset, stride, src.length);
+        if (getColorType() != ColorInfo.CT_UNKNOWN) {
+            var srcInfo = new ImageInfo(width, height,
+                    ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
+                    ColorSpace.get(ColorSpace.Named.SRGB));
+            var srcPixmap = new Pixmap(srcInfo, src,
+                    Unsafe.ARRAY_INT_BASE_OFFSET + (long) offset << 2,
+                    stride << 2);
+            boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+            assert res;
+        }
+    }
+
+    /**
+     * Copies a Rect of pixels to dst. Copy starts at (srcX, srcY), and does not
+     * exceed (width, height).
+     * The returned colors are (R,G,B,A) float color quadruples in the
+     * source color space {@link #getColorSpace()}, in the source alpha type {@link #isPremultiplied()},
+     * in {@link Format#RGBA_F32} pixel format.
+     * The stride parameter allows the caller to allow for gaps in the returned pixels
+     * array between rows. For normal packed results, just pass width for the stride value.
+     * <p>
+     * Throws {@link ArrayIndexOutOfBoundsException} if
+     * {@code (offset + (height - 1) * stride + width) * 4 > dst.length}.
+     *
+     * @param dst    The destination array to receive the bitmap's colors
+     * @param offset The first color to write into dst
+     * @param stride The number of colors in dst to skip between
+     *               rows (must be >= width)
+     * @param srcX   The srcX coordinate of the first pixel to read from
+     *               the bitmap
+     * @param srcY   The srcY coordinate of the first pixel to read from
+     *               the bitmap
+     * @param width  The number of pixels to read from each row
+     * @param height The number of rows to read
+     * @throws IllegalStateException          the bitmap is released
+     * @throws IllegalArgumentException       if srcX, srcY, width, height exceed the
+     *                                        bounds of the bitmap, or if stride < width
+     * @throws ArrayIndexOutOfBoundsException if the pixels array is too small
+     *                                        to receive the specified number of pixels
+     */
+    public void getPixels(@NonNull @Size(multiple = 4) float[] dst, int offset, int stride,
+                          int srcX, int srcY, int width, int height) {
+        checkReleased();
+        if (width == 0 || height == 0) {
+            return; // nothing to do
+        }
+        checkOutOfBounds(srcX, srcY, width, height, offset, stride, dst.length >> 2);
+        if (getColorType() == ColorInfo.CT_UNKNOWN) {
+            for (int j = 0; j < height; ++j) {
+                int index = (offset + stride * j) << 2;
+                Arrays.fill(dst, index, index + (width << 2), 0.0f);
+            }
+        } else {
+            var dstInfo = new ImageInfo(width, height,
+                    ColorInfo.CT_RGBA_F32, getAlphaType(),
+                    getColorSpace());
+            var dstPixmap = new Pixmap(dstInfo, dst,
+                    Unsafe.ARRAY_FLOAT_BASE_OFFSET + (long) offset << 4,
+                    stride << 4);
+            boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+            assert res;
+        }
+    }
+
+    /**
+     * Copies a Rect of pixels from src. Copy starts at (dstX, dstY), and does not exceed
+     * (width, height). Each element in the array is a quadruple that contains (R,G,B,A)
+     * float color components source color space {@link #getColorSpace()}, in the source
+     * alpha type {@link #isPremultiplied()}, in {@link Format#RGBA_F32} pixel format.
+     * The stride parameter allows the caller
+     * to allow for gaps in the source pixels array between rows. For normal packed pixels,
+     * just pass width for the stride value.
+     * <p>
+     * Throws {@link ArrayIndexOutOfBoundsException} if
+     * {@code (offset + (height - 1) * stride + width) * 4 > dst.length}.
+     *
+     * @param src    The source colors to write to the bitmap
+     * @param offset The index of the first color to read from src
+     * @param stride The number of colors in src to skip between rows
+     *               Normally this value will be the same as the width of
+     *               the bitmap, but it can be larger
+     * @param dstX   The x coordinate of the first pixel to write to in
+     *               the bitmap.
+     * @param dstY   The y coordinate of the first pixel to write to in
+     *               the bitmap.
+     * @param width  The number of colors to copy from src per row
+     * @param height The number of rows to write to the bitmap
+     */
+    public void setPixels(@NonNull @Size(multiple = 4) float[] src, int offset, int stride,
+                          int dstX, int dstY, int width, int height) {
+        checkReleased();
+        if (isImmutable()) {
+            throw new IllegalStateException("Cannot write to immutable bitmap");
+        }
+        if (width == 0 || height == 0) {
+            return; // nothing to do
+        }
+        checkOutOfBounds(dstX, dstY, width, height, offset, stride, src.length >> 2);
+        if (getColorType() != ColorInfo.CT_UNKNOWN) {
+            var srcInfo = new ImageInfo(width, height,
+                    ColorInfo.CT_RGBA_F32, getAlphaType(),
+                    getColorSpace());
+            var srcPixmap = new Pixmap(srcInfo, src,
+                    Unsafe.ARRAY_FLOAT_BASE_OFFSET + (long) offset << 4,
+                    stride << 4);
+            boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+            assert res;
+        }
+    }
+
+    public boolean copyPixelsToBuffer(@NonNull java.nio.Buffer dst, int rowBytes,
+                                      int srcX, int srcY, int width, int height) {
+        checkReleased();
+        if (width == 0 || height == 0) {
+            return false; // nothing to do
+        }
+        checkOutOfBounds(srcX, srcY, width, height);
+        try {
+            var dstInfo = getInfo().makeWH(width, height);
+            var dstPixmap = new Pixmap(dstInfo,
+                    dst.hasArray() ? dst.array() : null,
+                    MemoryUtil.memAddress(dst),
+                    rowBytes);
+            return mPixmap.readPixels(dstPixmap, srcX, srcY);
+        } finally {
+            Reference.reachabilityFence(dst);
+        }
+    }
+
+    public boolean copyPixelsFromBuffer(@NonNull java.nio.Buffer src, int rowBytes,
+                                        int dstX, int dstY, int width, int height) {
+        checkReleased();
+        if (isImmutable()) {
+            throw new IllegalStateException("Cannot write to immutable bitmap");
+        }
+        if (width == 0 || height == 0) {
+            return false; // nothing to do
+        }
+        checkOutOfBounds(dstX, dstY, width, height);
+        try {
+            var srcInfo = getInfo().makeWH(width, height);
+            var srcPixmap = new Pixmap(srcInfo,
+                    src.hasArray() ? src.array() : null,
+                    MemoryUtil.memAddress(src),
+                    rowBytes);
+            return mPixmap.writePixels(srcPixmap, dstX, dstY);
+        } finally {
+            Reference.reachabilityFence(src);
         }
     }
 
@@ -1492,11 +1779,17 @@ public final class Bitmap implements AutoCloseable {
         }
 
         @NonNull
+        public String getDefaultExtension() {
+            // remove the asterisk
+            return filters[0].substring(1);
+        }
+
+        @NonNull
         public static String getFileName(@Nullable SaveFormat format,
                                          @Nullable String name) {
             String s = name != null ? name : "image-" + DATE_FORMAT.format(new Date());
             if (format != null) {
-                return s + format.filters[0].substring(1);
+                return s + format.getDefaultExtension();
             }
             return s;
         }
