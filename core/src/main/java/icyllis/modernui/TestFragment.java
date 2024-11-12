@@ -772,6 +772,15 @@ public class TestFragment extends Fragment {
         };
 
         @Override
+        protected void onDetachedFromWindow() {
+            super.onDetachedFromWindow();
+            if (mTestImageShader != null) {
+                mTestImageShader.release();
+                mTestImageShader = null;
+            }
+        }
+
+        @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             super.onDraw(canvas);
             /*canvas.moveTo(this);

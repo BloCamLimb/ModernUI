@@ -19,7 +19,9 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.*;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.Size;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
@@ -35,6 +37,7 @@ import java.util.Objects;
 public final class BlendModeColorFilter extends ColorFilter {
 
     // non-premultiplied blend color in sRGB space
+    @Size(4)
     private final float[] mColor;
     private final BlendMode mMode;
 
@@ -52,10 +55,20 @@ public final class BlendModeColorFilter extends ColorFilter {
         );
     }
 
+    public BlendModeColorFilter(@NonNull @Size(4) float[] color,
+                                @Nullable ColorSpace colorSpace, @NonNull BlendMode mode) {
+        this(color[0], color[1], color[2], color[3], colorSpace, mode);
+    }
+
     /**
      * Blend color is non-premultiplied and in sRGB space.
      */
     public BlendModeColorFilter(float r, float g, float b, float a, @NonNull BlendMode mode) {
+        this(r, g, b, a, null, mode);
+    }
+
+    public BlendModeColorFilter(float r, float g, float b, float a,
+                                @Nullable ColorSpace colorSpace, @NonNull BlendMode mode) {
         Objects.requireNonNull(mode);
         mColor = new float[]{
                 MathUtil.pin(r, 0.0f, 1.0f),
@@ -66,7 +79,7 @@ public final class BlendModeColorFilter extends ColorFilter {
         mMode = mode;
 
         mColorFilter = icyllis.arc3d.core.effects.BlendModeColorFilter.make(
-                mColor, null, mode.getNativeBlendMode()
+                mColor, colorSpace, mode.getNativeBlendMode()
         );
         if (mColorFilter != null) {
             Core.registerNativeResource(this, mColorFilter);
@@ -83,6 +96,12 @@ public final class BlendModeColorFilter extends ColorFilter {
     @NonNull
     public float[] getColor4f() {
         return mColor.clone();
+    }
+
+    @NonNull
+    public float[] getColor4f(@NonNull @Size(4) float[] dst) {
+        System.arraycopy(mColor, 0, dst, 0, 4);
+        return dst;
     }
 
     @NonNull

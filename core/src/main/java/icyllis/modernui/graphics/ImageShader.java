@@ -18,12 +18,12 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SamplingOptions;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import org.intellij.lang.annotations.MagicConstant;
-import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -111,10 +111,6 @@ public class ImageShader extends Shader {
 
     private final Matrix mLocalMatrix;
 
-    // closed by cleaner
-    @Nullable
-    private final icyllis.arc3d.core.shaders.Shader mShader;
-
     /**
      * Create a new shader for the given image.
      * <p>
@@ -179,19 +175,21 @@ public class ImageShader extends Shader {
                        @NonNull TileMode tileModeY, @NonNull Object filter,
                        @Nullable Matrix localMatrix) {
         this(image, tileModeX, tileModeY,
-                (SamplingOptions) filter,
+                filter instanceof Integer
+                        ? SamplingOptions.make((Integer) filter)
+                        : (SamplingOptions) filter,
                 localMatrix);
     }
 
     private ImageShader(@NonNull Image image, @NonNull TileMode tileModeX,
                         @NonNull TileMode tileModeY, @NonNull SamplingOptions sampling,
                         @Nullable Matrix localMatrix) {
-        mShader = icyllis.arc3d.core.shaders.ImageShader.make(
+        var shader = icyllis.arc3d.core.shaders.ImageShader.make(
                 RefCnt.create(image.getNativeImage()),
                 tileModeX.nativeInt, tileModeY.nativeInt,
                 sampling, localMatrix
         );
-        if (mShader == null) {
+        if (shader == null) {
             throw new IllegalArgumentException();
         }
         if (localMatrix != null && !localMatrix.isIdentity()) {
@@ -199,7 +197,8 @@ public class ImageShader extends Shader {
         } else {
             mLocalMatrix = null;
         }
-        Core.registerNativeResource(this, mShader);
+        mCleanup = Core.registerNativeResource(this, shader);
+        mShader = shader;
     }
 
     /**
@@ -232,13 +231,5 @@ public class ImageShader extends Shader {
         }
     }
 
-    /**
-     * @hidden
-     */
-    @ApiStatus.Internal
-    @RawPtr
-    @Override
-    public icyllis.arc3d.core.shaders.Shader getNativeShader() {
-        return mShader;
-    }
+    //TODO add a builder to customize bicubic parameters
 }

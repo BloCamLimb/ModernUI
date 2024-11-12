@@ -18,15 +18,17 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.RawPtr;
+import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+
+import java.lang.ref.Cleaner;
 
 /**
  * Shaders specify the source color(s) for what is being drawn. If a paint
  * has no shader, then the paint's color is used. If the paint has a
  * shader, then the shader's color(s) are use instead, but they are
  * modulated by the paint's alpha. This makes it easy to create a shader
- * once (e.g. bitmap tiling or gradient) and then change its transparency
+ * once (e.g. image tiling or gradient) and then change its transparency
  * w/o having to modify the original shader... only the paint's alpha needs
  * to be modified.
  *
@@ -66,12 +68,34 @@ public abstract class Shader {
         }
     }
 
+    // closed by cleaner
+    @Nullable
+    volatile icyllis.arc3d.core.shaders.Shader mShader;
+    Cleaner.Cleanable mCleanup;
+
+    /**
+     * Perform a deferred cleanup if the underlying resource is not released.
+     * Manually mark the underlying resources closed, if needed. After this operation,
+     * this shader represents a no-op, and its GPU resource will be reclaimed
+     * as soon as possible after use.
+     * <p>
+     * When this object becomes phantom-reachable, the system will automatically
+     * do this cleanup operation.
+     */
+    public void release() {
+        mShader = null;
+        // cleaner is thread safe
+        mCleanup.clean();
+    }
+
     /**
      * Returns null if this shader is no-op.
      *
      * @hidden
      */
     @ApiStatus.Internal
-    @RawPtr
-    public abstract icyllis.arc3d.core.shaders.Shader getNativeShader();
+    @icyllis.arc3d.core.RawPtr
+    public icyllis.arc3d.core.shaders.Shader getNativeShader() {
+        return mShader;
+    }
 }
