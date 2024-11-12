@@ -19,11 +19,9 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorSpace;
-import icyllis.arc3d.core.RawPtr;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;
 
@@ -34,10 +32,6 @@ import java.util.Objects;
 public class RadialGradient extends GradientShader {
 
     private final Matrix mLocalMatrix;
-
-    // closed by cleaner
-    @Nullable
-    private final icyllis.arc3d.core.shaders.Shader mShader;
 
     /**
      * Simplified constructor that takes two 0xAARRGGBB colors in sRGB color space.
@@ -130,7 +124,7 @@ public class RadialGradient extends GradientShader {
         if (colorCount < 1) {
             throw new IllegalArgumentException("needs >= 1 number of colors");
         }
-        mShader = icyllis.arc3d.core.shaders.RadialGradient.make(
+        var shader = icyllis.arc3d.core.shaders.RadialGradient.make(
                 centerX, centerY,
                 radius,
                 colors,
@@ -141,7 +135,7 @@ public class RadialGradient extends GradientShader {
                 interpolation,
                 localMatrix
         );
-        if (mShader == null) {
+        if (shader == null) {
             throw new IllegalArgumentException("incomplete arrays, points are NaN, infinity, or matrix is singular");
         }
         if (localMatrix != null && !localMatrix.isIdentity()) {
@@ -149,7 +143,8 @@ public class RadialGradient extends GradientShader {
         } else {
             mLocalMatrix = null;
         }
-        Core.registerNativeResource(this, mShader);
+        mCleanup = Core.registerNativeResource(this, shader);
+        mShader = shader;
     }
 
     /**
@@ -356,15 +351,5 @@ public class RadialGradient extends GradientShader {
                     mLocalMatrix
             );
         }
-    }
-
-    /**
-     * @hidden
-     */
-    @ApiStatus.Internal
-    @RawPtr
-    @Override
-    public icyllis.arc3d.core.shaders.Shader getNativeShader() {
-        return mShader;
     }
 }

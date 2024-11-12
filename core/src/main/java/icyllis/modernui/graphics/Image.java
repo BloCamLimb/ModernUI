@@ -60,8 +60,8 @@ public class Image implements AutoCloseable {
     int mDensity = DisplayMetrics.DENSITY_DEFAULT;
 
     private Image(@SharedPtr icyllis.arc3d.core.Image image) {
-        mImage = Objects.requireNonNull(image);
         mCleanup = Core.registerNativeResource(this, image);
+        mImage = Objects.requireNonNull(image);
     }
 
     /**
