@@ -946,6 +946,50 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
+    // this approach is slow
+    /*public boolean clear(@ColorInt int color, @Nullable Rect area) {
+        checkReleased();
+        if (isImmutable()) {
+            throw new IllegalStateException("Cannot clear immutable bitmaps");
+        }
+        var srcInfo = new ImageInfo(1, 1, ColorInfo.CT_BGRA_8888_NATIVE,
+                ColorInfo.AT_UNPREMUL, ColorSpace.get(ColorSpace.Named.SRGB));
+        var dstInfo = new ImageInfo(1, 1, ColorInfo.CT_RGBA_F32,
+                getAlphaType(), getColorSpace());
+        int[] src = {color};
+        float[] dst = new float[4];
+        boolean res = PixelUtils.convertPixels(
+                srcInfo, src, Unsafe.ARRAY_INT_BASE_OFFSET, getRowBytes(),
+                dstInfo, dst, Unsafe.ARRAY_FLOAT_BASE_OFFSET, getRowBytes()
+        );
+        assert res;
+        return mPixmap.clear(dst, area == null ? null : new Rect2i(
+                area.left, area.top, area.right, area.bottom
+        ));
+    }*/
+
+    /**
+     * Fills the bitmap's pixels with the specified color and rectangular area.
+     * The given float color is in the source color space {@link #getColorSpace()}, in the
+     * source alpha type {@link #isPremultiplied()}, in {@link Format#RGBA_F32} pixel format.
+     * That is, this method will only perform pixel format conversion, and will not perform
+     * alpha type or color space transformation.
+     *
+     * @param color the (R,G,B,A) color to fill
+     * @param area  bounding box of pixels to fill; null means full bitmap
+     * @return true if pixels are changed
+     * @throws IllegalStateException the bitmap is released or immutable
+     */
+    public boolean clear(@NonNull @Size(4) float[] color, @Nullable Rect area) {
+        checkReleased();
+        if (isImmutable()) {
+            throw new IllegalStateException("Cannot clear immutable bitmaps");
+        }
+        return mPixmap.clear(color, area == null ? null : new Rect2i(
+                area.left, area.top, area.right, area.bottom
+        ));
+    }
+
     /**
      * The current pixel map, which is usually paired with {@link Pixels}.
      * This method is <b>UNSAFE</b>, use with caution!
