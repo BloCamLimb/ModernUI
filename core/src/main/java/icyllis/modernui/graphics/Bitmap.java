@@ -634,12 +634,18 @@ public final class Bitmap implements AutoCloseable {
      * the {@link ColorSpace.Named#SRGB sRGB} color space, the format is the
      * same as {@link Format#BGRA_8888_PACK32}.
      * <p>
+     * If the max bits per channel for the color type is greater than 8, or colors are premultiplied,
+     * then color precision may be lost in the conversion. Otherwise, precision will not be lost.
+     * If the color space is not sRGB, then this method will perform color space transformation,
+     * which can be slow.
+     * <p>
      * Batch version of this operation: {@link #getPixels(int[], int, int, int, int, int, int)}.
      *
      * @param x The x coordinate (0...width-1) of the pixel to return
      * @param y The y coordinate (0...height-1) of the pixel to return
      * @return The argb {@link Color} at the specified coordinate
      * @throws IllegalArgumentException if x, y exceed the bitmap's bounds
+     * @see #getColor4f(int, int, float[])
      */
     @ColorInt
     public int getPixelARGB(int x, int y) {
@@ -655,9 +661,9 @@ public final class Bitmap implements AutoCloseable {
      * Gets the pixel value at the specified location. Throws an exception
      * if x or y are out of bounds (negative or >= to the width or height
      * respectively). This method won't perform alpha type or color space conversion,
-     * then the result color is converted to RGBA float color in
-     * the source color space {@link #getColorSpace()}, its alpha type is
-     * left unchanged (the same as {@link #isPremultiplied()}).
+     * then the result color is converted to RGBA float color, and
+     * its color space and alpha type remain unchanged (see {@link #getColorSpace()}
+     * and {@link #isPremultiplied()}).
      * <p>
      * Batch version of this operation: {@link #getPixels(float[], int, int, int, int, int, int)}.
      *
@@ -667,6 +673,7 @@ public final class Bitmap implements AutoCloseable {
      * @return the passed float array that contains r,g,b,a values
      * @throws IllegalStateException    the bitmap is released
      * @throws IllegalArgumentException if x, y exceed the bitmap's bounds
+     * @see #setColor4f(int, int, float[])
      */
     @NonNull
     @Size(4)
@@ -689,7 +696,7 @@ public final class Bitmap implements AutoCloseable {
      * or color space conversion, then the given color must be in the
      * bitmap's color space {@link #getColorSpace()}, its alpha type must be the
      * same as {@link #isPremultiplied()}). This bitmap must be mutable,
-     * {@link #isImmutable()} must return false.
+     * that is, {@link #isImmutable()} must return false.
      * <p>
      * Batch version of this operation: {@link #setPixels(float[], int, int, int, int, int, int)}.
      *
@@ -698,6 +705,7 @@ public final class Bitmap implements AutoCloseable {
      * @param src The RGBA float color to write into the bitmap
      * @throws IllegalStateException    the bitmap is released or immutable
      * @throws IllegalArgumentException if x, y exceed the bitmap's bounds
+     * @see #getColor4f(int, int, float[])
      */
     public void setColor4f(int x, int y, @NonNull @Size(4) float[] src) {
         checkReleased();
@@ -738,6 +746,7 @@ public final class Bitmap implements AutoCloseable {
      *                                        bounds of the bitmap, or if stride < width
      * @throws ArrayIndexOutOfBoundsException if the pixels array is too small
      *                                        to receive the specified number of pixels
+     * @see #setPixels(int[], int, int, int, int, int, int)
      */
     public void getPixels(@NonNull @ColorInt int[] dst, int offset, int stride,
                           int srcX, int srcY, int width, int height) {
@@ -784,6 +793,7 @@ public final class Bitmap implements AutoCloseable {
      *               the bitmap.
      * @param width  The number of colors to copy from src per row
      * @param height The number of rows to write to the bitmap
+     * @see #getPixels(int[], int, int, int, int, int, int)
      */
     public void setPixels(@NonNull @ColorInt int[] src, int offset, int stride,
                           int dstX, int dstY, int width, int height) {
@@ -834,6 +844,7 @@ public final class Bitmap implements AutoCloseable {
      *                                        bounds of the bitmap, or if stride < width
      * @throws ArrayIndexOutOfBoundsException if the pixels array is too small
      *                                        to receive the specified number of pixels
+     * @see #setPixels(float[], int, int, int, int, int, int)
      */
     public void getPixels(@NonNull @Size(multiple = 4) float[] dst, int offset, int stride,
                           int srcX, int srcY, int width, int height) {
@@ -882,6 +893,7 @@ public final class Bitmap implements AutoCloseable {
      *               the bitmap.
      * @param width  The number of colors to copy from src per row
      * @param height The number of rows to write to the bitmap
+     * @see #getPixels(float[], int, int, int, int, int, int)
      */
     public void setPixels(@NonNull @Size(multiple = 4) float[] src, int offset, int stride,
                           int dstX, int dstY, int width, int height) {
@@ -905,9 +917,140 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
+    /**
+     * Copies a Rect of pixels from this bitmap to dst bitmap at (dstX, dstY).
+     * Copy starts at (srcX, srcY), and does not exceed (width, height).
+     * This method will perform pixel format and alpha type conversion (see
+     * {@link #getFormat()} and {@link #isPremultiplied()}), and color space transformation
+     * (see {@link #getColorSpace()}).
+     * <p>
+     * The behavior is undefined if there is memory overlap between this bitmap and the
+     * destination bitmap.
+     *
+     * @param dst    The destination bitmap to receive this bitmap's colors
+     * @param dstX   The dstX coordinate of the first pixel to write to
+     *               the bitmap
+     * @param dstY   The dstY coordinate of the first pixel to write to
+     *               the bitmap
+     * @param srcX   The srcX coordinate of the first pixel to read from
+     *               the bitmap
+     * @param srcY   The srcY coordinate of the first pixel to read from
+     *               the bitmap
+     * @param width  The number of pixels to read from each row
+     * @param height The number of rows to read
+     * @throws IllegalStateException    the bitmap is released or immutable
+     * @throws IllegalArgumentException if srcX, srcY, dstX, dstY, width, height exceed the
+     *                                  bounds of the bitmap
+     * @see #setPixels(Bitmap, int, int, int, int, int, int)
+     */
+    public void getPixels(@NonNull Bitmap dst, int dstX, int dstY,
+                          int srcX, int srcY, int width, int height) {
+        checkReleased();
+        dst.checkReleased();
+        if (dst.isImmutable()) {
+            throw new IllegalStateException("Cannot write to immutable bitmap");
+        }
+        if (width == 0 || height == 0) {
+            return; // nothing to do
+        }
+        checkOutOfBounds(srcX, srcY, width, height);
+        dst.checkOutOfBounds(dstX, dstY, width, height);
+        var dstRect = new Rect2i(dstX, dstY, dstX + width, dstY + height);
+        if (getColorType() == ColorInfo.CT_UNKNOWN) {
+            dst.getPixmap().clear(new float[]{0, 0, 0, 0}, dstRect);
+        } else {
+            var dstPixmap = dst.getPixmap().makeSubset(dstRect);
+            assert dstPixmap != null;
+            boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+            assert res;
+        }
+    }
+
+    /**
+     * Copies a Rect of pixels from src bitmap at (srcX, srcY) to this bitmap.
+     * Copy starts at (dstX, dstY), and does not exceed (width, height).
+     * This method will perform pixel format and alpha type conversion (see
+     * {@link #getFormat()} and {@link #isPremultiplied()}), and color space transformation
+     * (see {@link #getColorSpace()}).
+     * <p>
+     * The behavior is undefined if there is memory overlap between this bitmap and the
+     * source bitmap.
+     *
+     * @param src    The source bitmap to write to this bitmap
+     * @param srcX   The srcX coordinate of the first pixel to read from
+     *               the bitmap
+     * @param srcY   The srcY coordinate of the first pixel to read from
+     *               the bitmap
+     * @param dstX   The dstX coordinate of the first pixel to write to
+     *               the bitmap
+     * @param dstY   The dstY coordinate of the first pixel to write to
+     *               the bitmap
+     * @param width  The number of pixels to read from each row
+     * @param height The number of rows to read
+     * @throws IllegalStateException    the bitmap is released or immutable
+     * @throws IllegalArgumentException if srcX, srcY, dstX, dstY, width, height exceed the
+     *                                  bounds of the bitmap
+     * @see #getPixels(Bitmap, int, int, int, int, int, int)
+     */
+    public void setPixels(@NonNull Bitmap src, int srcX, int srcY,
+                          int dstX, int dstY, int width, int height) {
+        checkReleased();
+        src.checkReleased();
+        if (isImmutable()) {
+            throw new IllegalStateException("Cannot write to immutable bitmap");
+        }
+        if (width == 0 || height == 0) {
+            return; // nothing to do
+        }
+        checkOutOfBounds(srcX, srcY, width, height);
+        src.checkOutOfBounds(dstX, dstY, width, height);
+        var srcRect = new Rect2i(srcX, srcY, srcX + width, srcY + height);
+        if (getColorType() == ColorInfo.CT_UNKNOWN) {
+            mPixmap.clear(new float[]{0, 0, 0, 0}, srcRect);
+        } else {
+            var srcPixmap = src.getPixmap().makeSubset(srcRect);
+            assert srcPixmap != null;
+            boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+            assert res;
+        }
+    }
+
+    /**
+     * Copy the bitmap's pixels into the specified buffer. The buffer can be a
+     * heap buffer, a direct buffer, or a native buffer (by wrapping an address).
+     * Buffer's base array, address and position will be used, other properties like
+     * {@link java.nio.Buffer#limit()} are ignored, this method always assumes
+     * the byte order is the host endianness, i.e. {@link java.nio.ByteOrder#nativeOrder()},
+     * and reinterpret the data to buffer's basic type.
+     * <p>
+     * This method does <em>not</em> check for invalid, out of bounds, or misaligned
+     * addresses. If the memory is managed by Buffer (non-wrapped direct buffer),
+     * it will be guaranteed to be alive. Note {@link java.nio.Buffer#isReadOnly()}
+     * must return false.
+     * <p>
+     * The content of the bitmap is copied into the buffer as-is. This means
+     * that if this bitmap has premultiplied colors (see {@link #isPremultiplied()}),
+     * the values in the buffer will also be premultiplied. The pixels remain in the
+     * {@link Format} and color space of the bitmap.
+     * <p>
+     * After this method returns, the current position of the buffer remains unchanged.
+     * <p>
+     * This method may return false if dst is nullptr or address it not aligned to the
+     * bytes-per-pixel or the size of basic data type (according to {@link Format}).
+     * May return false if rowBytes is less than the minRowBytes (width * bpp).
+     *
+     * @return true if pixels are copied to dst
+     * @throws IllegalStateException    the bitmap is released
+     * @throws IllegalArgumentException if srcX, srcY, width, height exceed the
+     *                                  bounds of the bitmap
+     * @see #copyPixelsFromBuffer(java.nio.Buffer, int, int, int, int, int)
+     */
     public boolean copyPixelsToBuffer(@NonNull java.nio.Buffer dst, int rowBytes,
                                       int srcX, int srcY, int width, int height) {
         checkReleased();
+        if (dst.isReadOnly()) {
+            throw new IllegalArgumentException("Cannot copy to read-only buffer");
+        }
         if (width == 0 || height == 0) {
             return false; // nothing to do
         }
@@ -924,11 +1067,45 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
+    /**
+     * Copy the pixels from the specified buffer into bitmap. The buffer can be a
+     * heap buffer, a direct buffer, or a native buffer (by wrapping an address).
+     * Buffer's base array, address and position will be used, other properties like
+     * {@link java.nio.Buffer#limit()} are ignored, this method always assumes
+     * the byte order is the host endianness, i.e. {@link java.nio.ByteOrder#nativeOrder()},
+     * and reinterpret the data from buffer's basic type.
+     * <p>
+     * This method does <em>not</em> check for invalid, out of bounds, or misaligned
+     * addresses. If the memory is managed by Buffer (non-wrapped direct buffer),
+     * it will be guaranteed to be alive. Note {@link java.nio.Buffer#isReadOnly()}
+     * must return false.
+     * <p>
+     * The content of the buffer is copied into the bitmap as-is. This means
+     * that if this bitmap has premultiplied colors (see {@link #isPremultiplied()}),
+     * the values in the buffer should also be premultiplied. The pixels remain in the
+     * {@link Format} and color space of the bitmap.
+     * <p>
+     * After this method returns, the current position of the buffer remains unchanged.
+     * <p>
+     * This method may return false if dst is nullptr or address it not aligned to the
+     * bytes-per-pixel or the size of basic data type (according to {@link Format}).
+     * May return false if rowBytes is less than the minRowBytes (width * bpp).
+     *
+     * @return true if src pixels are copied to bitmap
+     * @throws IllegalStateException    the bitmap is released
+     * @throws IllegalArgumentException if dstX, dstY, width, height exceed the
+     *                                  bounds of the bitmap
+     * @see #copyPixelsToBuffer(java.nio.Buffer, int, int, int, int, int)
+     */
     public boolean copyPixelsFromBuffer(@NonNull java.nio.Buffer src, int rowBytes,
                                         int dstX, int dstY, int width, int height) {
         checkReleased();
         if (isImmutable()) {
             throw new IllegalStateException("Cannot write to immutable bitmap");
+        }
+        if (src.isReadOnly()) {
+            // if we want to peek the underlying src.array(), it must not be read-only
+            throw new IllegalArgumentException("Cannot copy from read-only buffer");
         }
         if (width == 0 || height == 0) {
             return false; // nothing to do

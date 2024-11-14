@@ -59,11 +59,18 @@ public final class BitmapFactory {
     public static class Options {
 
         /**
+         * If false, decode methods will always return a mutable Bitmap instead of
+         * an immutable one. This can be used for instance to programmatically apply
+         * effects to a Bitmap loaded through BitmapFactory.
+         */
+        public boolean inImmutable = true;
+
+        /**
          * If set to true, the decoder will populate the mimetype of the decoded image.
          *
          * @see #outMimeType
          */
-        public boolean inDecodeMimeType;
+        public boolean inDecodeMimeType = false;
 
         /**
          * If this is non-null, the decoder will try to decode into this
@@ -709,7 +716,9 @@ public final class BitmapFactory {
             Bitmap bitmap = new Bitmap(format,
                     ImageInfo.make(width, height, format.getColorType(), at, cs),
                     address, width * format.getBytesPerPixel(), STBImage::nstbi_image_free);
-            bitmap.setImmutable();
+            if (opts == null || opts.inImmutable) {
+                bitmap.setImmutable();
+            }
             return bitmap;
         }
     }
