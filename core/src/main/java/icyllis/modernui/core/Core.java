@@ -246,13 +246,9 @@ public final class Core {
         LOGGER.info(MARKER, "OpenGL vendor: {}", glVendor);
         LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
         LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
-        if (LOGGER.isDebugEnabled(MARKER)) {
-            LOGGER.debug(MARKER, "OpenGL caps: {}", dc.getCaps());
-        } else {
-            StringBuilder b = new StringBuilder("\n");
-            ((icyllis.arc3d.opengl.GLCaps) dc.getCaps()).dump(b, false);
-            LOGGER.info(MARKER, "OpenGL caps: {}", b);
-        }
+        StringBuilder sb = new StringBuilder("\n");
+        ((icyllis.arc3d.opengl.GLCaps) dc.getCaps()).dump(sb, false);
+        LOGGER.info(MARKER, "OpenGL caps: {}", sb);
         return true;
     }
 
