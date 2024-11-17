@@ -309,11 +309,17 @@ public class Editor {
     }
 
     void onCreateContextMenu(ContextMenu menu) {
-        if (mIsBeingLongClicked || Float.isNaN(mContextMenuAnchorX)
-                || Float.isNaN(mContextMenuAnchorY)) {
+        if (mIsBeingLongClicked) {
             return;
         }
-        final int offset = mTextView.getOffsetForPosition(mContextMenuAnchorX, mContextMenuAnchorY);
+        // Added by Modern UI
+        final int offset;
+        if (Float.isNaN(mContextMenuAnchorX)
+                || Float.isNaN(mContextMenuAnchorY)) {
+            offset = mTextView.getSelectionEnd();
+        } else {
+            offset = mTextView.getOffsetForPosition(mContextMenuAnchorX, mContextMenuAnchorY);
+        }
         if (offset == -1) {
             return;
         }

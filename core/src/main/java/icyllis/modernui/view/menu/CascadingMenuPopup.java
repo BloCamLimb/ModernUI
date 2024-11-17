@@ -299,10 +299,10 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
 
     @Override
     public boolean onKey(View v, int keyCode, KeyEvent event) {
-        /*if (event.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_MENU) {
+        if (event.getAction() == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEY_MENU) {
             dismiss();
             return true;
-        }*/
+        }
         return false;
     }
 

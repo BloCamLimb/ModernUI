@@ -11609,6 +11609,16 @@ public class View implements Drawable.Callback {
                 }
             }
         }
+        // Modern UI added: context menu
+        if (keyCode == KeyEvent.KEY_MENU) {
+            if ((mViewFlags & ENABLED_MASK) == DISABLED) {
+                return true;
+            }
+            if (isLongClickable()) {
+                showContextMenu();
+                return true;
+            }
+        }
         return false;
     }
 
