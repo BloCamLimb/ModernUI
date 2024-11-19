@@ -18,7 +18,6 @@
 
 package icyllis.modernui.core;
 
-import icyllis.arc3d.core.RefCounted;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.modernui.annotation.*;
@@ -102,7 +101,7 @@ public final class Core {
      */
     @ApiStatus.Internal
     @NonNull
-    public static Cleaner.Cleanable registerNativeResource(@NonNull Object target, @NonNull RefCounted resource) {
+    public static Cleaner.Cleanable registerNativeResource(@NonNull Object target, @NonNull icyllis.arc3d.core.RefCounted resource) {
         return sCleaner.register(target, resource::unref);
     }
 
