@@ -654,7 +654,11 @@ public final class Bitmap implements AutoCloseable {
         if (getColorType() == ColorInfo.CT_UNKNOWN) {
             return 0;
         }
-        return mPixmap.getColor(x, y);
+        try {
+            return mPixmap.getColor(x, y);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -685,7 +689,11 @@ public final class Bitmap implements AutoCloseable {
                 dst[i] = 0.0f;
             }
         } else {
-            mPixmap.getColor4f(x, y, dst);
+            try {
+                mPixmap.getColor4f(x, y, dst);
+            } finally {
+                Reference.reachabilityFence(this);
+            }
         }
         return dst;
     }
@@ -714,7 +722,11 @@ public final class Bitmap implements AutoCloseable {
         }
         checkOutOfBounds(x, y);
         if (getColorType() != ColorInfo.CT_UNKNOWN) {
-            mPixmap.setColor4f(x, y, src);
+            try {
+                mPixmap.setColor4f(x, y, src);
+            } finally {
+                Reference.reachabilityFence(this);
+            }
         }
     }
 
@@ -761,14 +773,18 @@ public final class Bitmap implements AutoCloseable {
                 Arrays.fill(dst, index, index + width, 0);
             }
         } else {
-            var dstInfo = new ImageInfo(width, height,
-                    ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
-                    ColorSpace.get(ColorSpace.Named.SRGB));
-            var dstPixmap = new Pixmap(dstInfo, dst,
-                    Unsafe.ARRAY_INT_BASE_OFFSET + (long) offset << 2,
-                    stride << 2);
-            boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
-            assert res;
+            try {
+                var dstInfo = new ImageInfo(width, height,
+                        ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
+                        ColorSpace.get(ColorSpace.Named.SRGB));
+                var dstPixmap = new Pixmap(dstInfo, dst,
+                        Unsafe.ARRAY_INT_BASE_OFFSET + (long) offset << 2,
+                        stride << 2);
+                boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+                assert res;
+            } finally {
+                Reference.reachabilityFence(this);
+            }
         }
     }
 
@@ -806,14 +822,18 @@ public final class Bitmap implements AutoCloseable {
         }
         checkOutOfBounds(dstX, dstY, width, height, offset, stride, src.length);
         if (getColorType() != ColorInfo.CT_UNKNOWN) {
-            var srcInfo = new ImageInfo(width, height,
-                    ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
-                    ColorSpace.get(ColorSpace.Named.SRGB));
-            var srcPixmap = new Pixmap(srcInfo, src,
-                    Unsafe.ARRAY_INT_BASE_OFFSET + (long) offset << 2,
-                    stride << 2);
-            boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
-            assert res;
+            try {
+                var srcInfo = new ImageInfo(width, height,
+                        ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
+                        ColorSpace.get(ColorSpace.Named.SRGB));
+                var srcPixmap = new Pixmap(srcInfo, src,
+                        Unsafe.ARRAY_INT_BASE_OFFSET + (long) offset << 2,
+                        stride << 2);
+                boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+                assert res;
+            } finally {
+                Reference.reachabilityFence(this);
+            }
         }
     }
 
@@ -859,14 +879,18 @@ public final class Bitmap implements AutoCloseable {
                 Arrays.fill(dst, index, index + (width << 2), 0.0f);
             }
         } else {
-            var dstInfo = new ImageInfo(width, height,
-                    ColorInfo.CT_RGBA_F32, getAlphaType(),
-                    getColorSpace());
-            var dstPixmap = new Pixmap(dstInfo, dst,
-                    Unsafe.ARRAY_FLOAT_BASE_OFFSET + (long) offset << 4,
-                    stride << 4);
-            boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
-            assert res;
+            try {
+                var dstInfo = new ImageInfo(width, height,
+                        ColorInfo.CT_RGBA_F32, getAlphaType(),
+                        getColorSpace());
+                var dstPixmap = new Pixmap(dstInfo, dst,
+                        Unsafe.ARRAY_FLOAT_BASE_OFFSET + (long) offset << 4,
+                        stride << 4);
+                boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+                assert res;
+            } finally {
+                Reference.reachabilityFence(this);
+            }
         }
     }
 
@@ -906,14 +930,18 @@ public final class Bitmap implements AutoCloseable {
         }
         checkOutOfBounds(dstX, dstY, width, height, offset, stride, src.length >> 2);
         if (getColorType() != ColorInfo.CT_UNKNOWN) {
-            var srcInfo = new ImageInfo(width, height,
-                    ColorInfo.CT_RGBA_F32, getAlphaType(),
-                    getColorSpace());
-            var srcPixmap = new Pixmap(srcInfo, src,
-                    Unsafe.ARRAY_FLOAT_BASE_OFFSET + (long) offset << 4,
-                    stride << 4);
-            boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
-            assert res;
+            try {
+                var srcInfo = new ImageInfo(width, height,
+                        ColorInfo.CT_RGBA_F32, getAlphaType(),
+                        getColorSpace());
+                var srcPixmap = new Pixmap(srcInfo, src,
+                        Unsafe.ARRAY_FLOAT_BASE_OFFSET + (long) offset << 4,
+                        stride << 4);
+                boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+                assert res;
+            } finally {
+                Reference.reachabilityFence(this);
+            }
         }
     }
 
@@ -956,13 +984,17 @@ public final class Bitmap implements AutoCloseable {
         checkOutOfBounds(srcX, srcY, width, height);
         dst.checkOutOfBounds(dstX, dstY, width, height);
         var dstRect = new Rect2i(dstX, dstY, dstX + width, dstY + height);
-        if (getColorType() == ColorInfo.CT_UNKNOWN) {
-            dst.getPixmap().clear(new float[]{0, 0, 0, 0}, dstRect);
-        } else {
-            var dstPixmap = dst.getPixmap().makeSubset(dstRect);
-            assert dstPixmap != null;
-            boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
-            assert res;
+        try {
+            if (getColorType() == ColorInfo.CT_UNKNOWN) {
+                dst.getPixmap().clear(new float[]{0, 0, 0, 0}, dstRect);
+            } else {
+                var dstPixmap = dst.getPixmap().makeSubset(dstRect);
+                assert dstPixmap != null;
+                boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+                assert res;
+            }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -1005,13 +1037,17 @@ public final class Bitmap implements AutoCloseable {
         checkOutOfBounds(srcX, srcY, width, height);
         src.checkOutOfBounds(dstX, dstY, width, height);
         var srcRect = new Rect2i(srcX, srcY, srcX + width, srcY + height);
-        if (getColorType() == ColorInfo.CT_UNKNOWN) {
-            mPixmap.clear(new float[]{0, 0, 0, 0}, srcRect);
-        } else {
-            var srcPixmap = src.getPixmap().makeSubset(srcRect);
-            assert srcPixmap != null;
-            boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
-            assert res;
+        try {
+            if (getColorType() == ColorInfo.CT_UNKNOWN) {
+                mPixmap.clear(new float[]{0, 0, 0, 0}, srcRect);
+            } else {
+                var srcPixmap = src.getPixmap().makeSubset(srcRect);
+                assert srcPixmap != null;
+                boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+                assert res;
+            }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -1064,6 +1100,7 @@ public final class Bitmap implements AutoCloseable {
             return mPixmap.readPixels(dstPixmap, srcX, srcY);
         } finally {
             Reference.reachabilityFence(dst);
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -1120,6 +1157,7 @@ public final class Bitmap implements AutoCloseable {
             return mPixmap.writePixels(srcPixmap, dstX, dstY);
         } finally {
             Reference.reachabilityFence(src);
+            Reference.reachabilityFence(this);
         }
     }
 
@@ -1162,9 +1200,13 @@ public final class Bitmap implements AutoCloseable {
         if (isImmutable()) {
             throw new IllegalStateException("Cannot clear immutable bitmaps");
         }
-        return mPixmap.clear(color, area == null ? null : new Rect2i(
-                area.left, area.top, area.right, area.bottom
-        ));
+        try {
+            return mPixmap.clear(color, area == null ? null : new Rect2i(
+                    area.left, area.top, area.right, area.bottom
+            ));
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
