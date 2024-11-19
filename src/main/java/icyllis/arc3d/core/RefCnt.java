@@ -23,9 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.Comparator;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base class for objects that may be shared by multiple objects. When an
@@ -39,7 +37,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public abstract class RefCnt implements RefCounted {
 
     private static final VarHandle REF_CNT;
-    private static final ConcurrentMap<RefCnt, Boolean> TRACKER;
+    private static final ConcurrentHashMap<RefCnt, Boolean> TRACKER;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -48,8 +46,7 @@ public abstract class RefCnt implements RefCounted {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        // tree structure will not create large arrays and we don't care about the CPU overhead
-        TRACKER = new ConcurrentSkipListMap<>(Comparator.comparingInt(System::identityHashCode));
+        TRACKER = new ConcurrentHashMap<>();
         try {
             assert false;
         } catch (AssertionError e) {

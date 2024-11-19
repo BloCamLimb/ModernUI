@@ -28,9 +28,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.Comparator;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.*;
 
 /**
  * Base class for operating GPU resources that can be kept in the {@link ResourceCache}.
@@ -68,7 +66,7 @@ public abstract class Resource implements RefCounted {
     private static final VarHandle USAGE_REF_CNT;
     private static final VarHandle COMMAND_BUFFER_REF_CNT;
     private static final VarHandle CACHE_REF_CNT;
-    private static final ConcurrentMap<Resource, Boolean> TRACKER;
+    private static final ConcurrentHashMap<Resource, Boolean> TRACKER;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -79,8 +77,7 @@ public abstract class Resource implements RefCounted {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        // tree structure will not create large arrays and we don't care about the CPU overhead
-        TRACKER = new ConcurrentSkipListMap<>(Comparator.comparingInt(System::identityHashCode));
+        TRACKER = new ConcurrentHashMap<>();
         try {
             assert false;
         } catch (AssertionError e) {
