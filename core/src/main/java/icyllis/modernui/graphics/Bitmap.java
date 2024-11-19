@@ -52,20 +52,37 @@ import static org.lwjgl.system.MemoryUtil.*;
 /**
  * Describes a 2D raster image (pixel map), with its pixels in native memory.
  * This class can be used for CPU-side encoding, decoding and resampling;
- * pixel transfer between CPU and GPU. You cannot draw content to Bitmap.
+ * pixel transfer between CPU and GPU. You cannot use Canvas to draw content onto a Bitmap.
  * <p>
- * Bitmap is created with immutable width, height and memory allocation
- * (memory address), its contents may be changed. You can obtain Bitmap from
- * encoded data (PNG, TGA, BMP, JPEG, HDR, PSD, PBM, PGM, and PPM) via
+ * Bitmap is created with immutable width, height, row bytes, and memory allocation
+ * (memory address), its contents may be changed. You can allocate zero-initialized
+ * Bitmap via the static factory methods in this class, i.e. {@link #createBitmap(int, int, Format)}.
+ * You can also obtain Bitmap from encoded data (PNG, TGA, BMP, JPEG, HDR, PSD, PBM, PGM, and PPM) via
  * {@link BitmapFactory}.
  * <p>
- * The color space of Bitmap defaults to sRGB and can only be in RGB space.
- * The alpha defaults to non-premultiplied (independent of RGB channels).
+ * The color space of Bitmap defaults to sRGB and can only be in RGB model space
+ * or null, color space may be changed via {@link #setColorSpace(ColorSpace)}.
+ * The alpha defaults to non-premultiplied (independent of RGB channels),
+ * alpha type may be changed via {@link #setPremultiplied(boolean)}.
+ * The Bitmap's format may also be changed via {@link #setFormat(Format)},
+ * as long as the bytes-per-pixel of the old and new formats are the same.
+ * For example, when using BitmapFactory to read a single channel image,
+ * the default format is GRAY_8. You can re-interpret it as ALPHA_8 type via
+ * {@link #setFormat(Format)}, and the image data remains unchanged.
+ * <p>
+ * The Bitmap provides several methods for manipulating the pixel data,
+ * there are single pixel and bulk access methods, which may perform zero or more
+ * of the following transformations: pixel format (i.e. Format), alpha type
+ * (i.e. premultiplied or not), and color space.<br>
+ * The pixel data of a bitmap can be marked as immutable through {@link #setImmutable()}.
+ * This way, only read-only operations are allowed in the future, avoiding the
+ * memory copy in some operations.
  * <p>
  * This class is not thread safe, but memory safe. Its internal state may
- * be shared by multiple threads. Nevertheless, it's recommended to call
+ * be shared by multiple threads/owners. Nevertheless, it's recommended to call
  * {@link #close()} explicitly, or within a try-with-resource block.
  *
+ * @see Image
  * @see BitmapFactory
  */
 @SuppressWarnings("unused")
@@ -78,10 +95,13 @@ public final class Bitmap implements AutoCloseable {
     private Format mFormat;
     @NonNull
     private Pixmap mPixmap;
-    @Nullable
-    private SafePixels mPixels;
+    // managed by cleaner
+    private volatile Pixels mPixels;
+    // this ensures unref being called when Bitmap become phantom-reachable
+    // but never called to close
+    private final Cleaner.Cleanable mCleanup;
 
-    /**
+    /*
      * Represents whether the Bitmap's content is requested to be premultiplied.
      * Note that isPremultiplied() does not directly return this value, because
      * isPremultiplied() may never return true for a 565 Bitmap or a bitmap
@@ -99,8 +119,10 @@ public final class Bitmap implements AutoCloseable {
            @Nullable LongConsumer freeFn) {
         mFormat = format;
         mPixmap = new Pixmap(info, null, addr, rowBytes);
-        mPixels = new SafePixels(this, info, addr, rowBytes, freeFn);
         mRequestPremultiplied = isPremultiplied();
+        var pixels = new Pixels(info.width(), info.height(), null, addr, rowBytes, freeFn);
+        mCleanup = Core.registerNativeResource(this, pixels);
+        mPixels = pixels;
     }
 
     /**
@@ -1395,11 +1417,9 @@ public final class Bitmap implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (mPixels != null) {
-            // Cleaner is synchronized
-            mPixels.mCleanup.clean();
-            mPixels = null;
-        }
+        mPixels = null;
+        // cleaner is thread safe
+        mCleanup.clean();
     }
 
     /**
@@ -1936,6 +1956,8 @@ public final class Bitmap implements AutoCloseable {
 
         public boolean write(@NonNull STBIWriteCallbackI func, int width, int height,
                              @NonNull Format format, long data, int quality) throws IOException {
+            //TODO allow saving an bitmap whose rowBytes > minRowBytes
+            //  also add TIFF support via ImageIO
             switch (this) {
                 case PNG -> {
                     if (!format.isChannelU8()) {
@@ -2055,27 +2077,6 @@ public final class Bitmap implements AutoCloseable {
                 return s + format.getDefaultExtension();
             }
             return s;
-        }
-    }
-
-    // this ensures unref being called when Bitmap become phantom-reachable
-    // but never called to close
-    private static final class SafePixels extends Pixels implements Runnable {
-
-        final Cleaner.Cleanable mCleanup;
-
-        private SafePixels(@NonNull Bitmap owner,
-                           @NonNull ImageInfo info,
-                           long address,
-                           int rowBytes,
-                           @Nullable LongConsumer freeFn) {
-            super(info.width(), info.height(), null, address, rowBytes, freeFn);
-            mCleanup = Core.registerCleanup(owner, this);
-        }
-
-        @Override
-        public void run() {
-            unref();
         }
     }
 }
