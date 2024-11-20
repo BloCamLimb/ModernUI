@@ -22,9 +22,11 @@ import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.jni.JNINativeInterface;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageInputStream;
@@ -523,12 +525,12 @@ public final class BitmapFactory {
         return bm;
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     @NonNull
     public static Bitmap decodeBuffer(@NonNull ByteBuffer buffer,
                                       @Nullable Options opts) throws IOException {
         validate(opts);
-        assert buffer.isDirect();
+        assert buffer.isDirect() && !buffer.isReadOnly();
         if (opts != null && opts.inDecodeMimeType) {
             // scan header for setting MIME type, 96 bytes is enough
             byte[] seek = new byte[Math.min(buffer.limit(), 96)];
@@ -538,116 +540,147 @@ public final class BitmapFactory {
         return decodeBuffer0(buffer, opts);
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     public static void decodeBufferInfo(@NonNull ByteBuffer buffer,
                                         @NonNull Options opts) throws IOException {
-        assert buffer.isDirect();
+        assert buffer.isDirect() && !buffer.isReadOnly();
+        final long buf = memAddress(buffer);
+        final int len = buffer.remaining();
         if (opts.inDecodeMimeType) {
             // scan header for setting MIME type, 96 bytes is enough
-            byte[] seek = new byte[Math.min(buffer.limit(), 96)];
-            buffer.get(0, seek, 0, seek.length);
+            byte[] seek = new byte[Math.min(len, 96)];
+            buffer.get(buffer.position(), seek, 0, seek.length);
             decodeMimeType(opts, new ByteArrayInputStream(seek)); // no need to close (nop)
         }
         final boolean isU16, isHDR;
-        isHDR = STBImage.nstbi_is_hdr_from_memory(memAddress(buffer), buffer.remaining()) != 0;
-        isU16 = !isHDR && STBImage.nstbi_is_16_bit_from_memory(memAddress(buffer), buffer.remaining()) != 0;
-        decodeInfo0(null, buffer, opts, null, isU16, isHDR);
+        isHDR = STBImage.nstbi_is_hdr_from_memory(buf, len) != 0;
+        isU16 = !isHDR && STBImage.nstbi_is_16_bit_from_memory(buf, len) != 0;
+        decodeInfo0(NULL, NULL, buf, len, opts, isU16, isHDR);
     }
 
     @NonNull
     private static Bitmap decodeBuffer0(@NonNull ByteBuffer buffer,
                                         @Nullable Options opts) throws IOException {
+        final long buf = memAddress(buffer);
+        final int len = buffer.remaining();
         final boolean isU16, isHDR;
         if (opts != null && opts.inPreferredFormat != null) {
             isU16 = opts.inPreferredFormat.isChannelU16();
             isHDR = opts.inPreferredFormat.isChannelHDR();
         } else {
-            isHDR = STBImage.nstbi_is_hdr_from_memory(memAddress(buffer), buffer.remaining()) != 0;
-            isU16 = !isHDR && STBImage.nstbi_is_16_bit_from_memory(memAddress(buffer), buffer.remaining()) != 0;
+            isHDR = STBImage.nstbi_is_hdr_from_memory(buf, len) != 0;
+            isU16 = !isHDR && STBImage.nstbi_is_16_bit_from_memory(buf, len) != 0;
         }
-        return decode0(null, buffer, opts, null, isU16, isHDR);
+        return decode0(NULL, NULL, buf, len, opts, isU16, isHDR);
+    }
+
+    static class SeekableContext {
+        boolean eof = false;
+        IOException ioe = null;
+        final SeekableByteChannel channel;
+
+        SeekableContext(SeekableByteChannel channel) {
+            this.channel = channel;
+        }
+    }
+
+    //TODO provide a method to free this, or just untrack?
+    private static volatile STBIIOCallbacks g_io_callbacks;
+
+    private static long get_io_callbacks() {
+        if (g_io_callbacks == null) {
+            synchronized (BitmapFactory.class) {
+                if (g_io_callbacks == null) {
+                    final var readcb = new STBIReadCallback() {
+                        @Override
+                        public int invoke(long user, long data, int size) {
+                            SeekableContext ctx = memGlobalRefToObject(user);
+                            if (ctx.eof) {
+                                return 0;
+                            }
+                            int n;
+                            try {
+                                n = ctx.channel.read(STBIReadCallback.getData(data, size));
+                            } catch (IOException e) {
+                                ctx.ioe = e;
+                                ctx.eof = true;
+                                return 0;
+                            }
+                            if (n < 0) {
+                                ctx.eof = true;
+                                return 0;
+                            }
+                            return n;
+                        }
+                    };
+                    final var skipcb = new STBISkipCallback() {
+                        @Override
+                        public void invoke(long user, int n) {
+                            SeekableContext ctx = memGlobalRefToObject(user);
+                            if (ctx.eof) {
+                                return;
+                            }
+                            try {
+                                ctx.channel.position(ctx.channel.position() + n);
+                            } catch (IOException e) {
+                                ctx.ioe = e;
+                                ctx.eof = true;
+                            }
+                        }
+                    };
+                    final var eofcb = new STBIEOFCallback() {
+                        @Override
+                        public int invoke(long user) {
+                            SeekableContext ctx = memGlobalRefToObject(user);
+                            return ctx.eof ? 1 : 0;
+                        }
+                    };
+                    g_io_callbacks = STBIIOCallbacks.malloc()
+                            .set(readcb, skipcb, eofcb);
+                }
+            }
+        }
+        return g_io_callbacks.address();
     }
 
     @Nullable
     private static Bitmap decodeSeekableChannel(@NonNull SeekableByteChannel channel,
                                                 @Nullable Options opts, boolean info) throws IOException {
-        final boolean[] eof = {false};
-        final IOException[] ioe = {null};
-        final var readcb = new STBIReadCallback() {
-            @Override
-            public int invoke(long user, long data, int size) {
-                if (eof[0]) {
-                    return 0;
-                }
-                int n;
-                try {
-                    n = channel.read(STBIReadCallback.getData(data, size));
-                } catch (IOException e) {
-                    ioe[0] = e;
-                    eof[0] = true;
-                    return 0;
-                }
-                if (n < 0) {
-                    eof[0] |= true;
-                    return 0;
-                }
-                return n;
-            }
-        };
-        final var skipcb = new STBISkipCallback() {
-            @Override
-            public void invoke(long user, int n) {
-                if (eof[0]) {
-                    return;
-                }
-                try {
-                    channel.position(channel.position() + n);
-                } catch (IOException e) {
-                    ioe[0] = e;
-                    eof[0] = true;
-                }
-            }
-        };
-        final var eofcb = new STBIEOFCallback() {
-            @Override
-            public int invoke(long user) {
-                return eof[0] ? 1 : 0;
-            }
-        };
-        try (MemoryStack stack = MemoryStack.stackPush();
-             readcb; skipcb; eofcb) {
-            //TODO use malloc(stack) once we update to LWJGL 3.4.0 and drop LWJGL 3.2.0 support
-            STBIIOCallbacks callbacks = STBIIOCallbacks.mallocStack(stack)
-                    .set(readcb, skipcb, eofcb);
+        var callbacks = get_io_callbacks();
+        var context = new SeekableContext(channel);
+        var user = JNINativeInterface.NewGlobalRef(context);
+        try {
             final boolean isU16, isHDR;
             if (!info && opts != null && opts.inPreferredFormat != null) {
                 isU16 = opts.inPreferredFormat.isChannelU16();
                 isHDR = opts.inPreferredFormat.isChannelHDR();
             } else {
                 final long start = channel.position();
-                isHDR = STBImage.nstbi_is_hdr_from_callbacks(callbacks.address(), NULL) != 0;
+                isHDR = STBImage.nstbi_is_hdr_from_callbacks(callbacks, user) != 0;
                 channel.position(start);
                 if (isHDR) {
                     isU16 = false;
                 } else {
-                    isU16 = STBImage.nstbi_is_16_bit_from_callbacks(callbacks.address(), NULL) != 0;
+                    isU16 = STBImage.nstbi_is_16_bit_from_callbacks(callbacks, user) != 0;
                     channel.position(start);
                 }
             }
             if (info) {
                 assert opts != null;
-                decodeInfo0(callbacks, null, opts, ioe, isU16, isHDR);
+                decodeInfo0(callbacks, user, NULL, 0, opts, isU16, isHDR);
                 return null;
             }
-            return decode0(callbacks, null, opts, ioe, isU16, isHDR);
+            return decode0(callbacks, user, NULL, 0, opts, isU16, isHDR);
+        } finally {
+            JNINativeInterface.DeleteGlobalRef(user);
         }
     }
 
     @NonNull
-    private static Bitmap decode0(@Nullable STBIIOCallbacks callbacks, @Nullable ByteBuffer buffer, // either
-                                  @Nullable Options opts, @Nullable IOException[] ioe,
-                                  boolean isU16, boolean isHDR) throws IOException {
-        assert callbacks != null || buffer != null;
+    private static Bitmap decode0(long callbacks, long context,
+                                  long buffer, int length, // either
+                                  @Nullable Options opts, boolean isU16, boolean isHDR) throws IOException {
+        assert callbacks != NULL || buffer != NULL;
         Bitmap.Format requiredFormat = null;
         if (opts != null) {
             if (opts.inPreferredFormat != null) {
@@ -660,37 +693,37 @@ public final class BitmapFactory {
             final int requiredChannels = requiredFormat != null
                     ? requiredFormat.getChannels()
                     : STBImage.STBI_default;
-            if (callbacks != null) {
-                long cbk = callbacks.address();
+            if (callbacks != NULL) {
                 if (isHDR) {
-                    address = STBImage.nstbi_loadf_from_callbacks(cbk, NULL,
+                    address = STBImage.nstbi_loadf_from_callbacks(callbacks, context,
                             pOuts, pOuts + 4, pOuts + 8, requiredChannels);
                 } else if (isU16) {
-                    address = STBImage.nstbi_load_16_from_callbacks(cbk, NULL,
+                    address = STBImage.nstbi_load_16_from_callbacks(callbacks, context,
                             pOuts, pOuts + 4, pOuts + 8, requiredChannels);
                 } else {
-                    address = STBImage.nstbi_load_from_callbacks(cbk, NULL,
+                    address = STBImage.nstbi_load_from_callbacks(callbacks, context,
                             pOuts, pOuts + 4, pOuts + 8, requiredChannels);
                 }
             } else {
-                long buf = memAddress(buffer);
-                int len = buffer.remaining();
                 if (isHDR) {
-                    address = STBImage.nstbi_loadf_from_memory(buf, len,
+                    address = STBImage.nstbi_loadf_from_memory(buffer, length,
                             pOuts, pOuts + 4, pOuts + 8, requiredChannels);
                 } else if (isU16) {
-                    address = STBImage.nstbi_load_16_from_memory(buf, len,
+                    address = STBImage.nstbi_load_16_from_memory(buffer, length,
                             pOuts, pOuts + 4, pOuts + 8, requiredChannels);
                 } else {
-                    address = STBImage.nstbi_load_from_memory(buf, len,
+                    address = STBImage.nstbi_load_from_memory(buffer, length,
                             pOuts, pOuts + 4, pOuts + 8, requiredChannels);
                 }
             }
             if (address == NULL) {
                 throw new IOException("Failed to decode image: " + STBImage.stbi_failure_reason());
             }
-            if (ioe != null && ioe[0] != null) {
-                throw new IOException("Failed to read image", ioe[0]);
+            if (callbacks != NULL && context != NULL) {
+                SeekableContext ctx = memGlobalRefToObject(context);
+                if (ctx.ioe != null) {
+                    throw new IOException("Failed to read image", ctx.ioe);
+                }
             }
             int width = memGetInt(pOuts),
                     height = memGetInt(pOuts + 4),
@@ -723,25 +756,30 @@ public final class BitmapFactory {
         }
     }
 
-    private static void decodeInfo0(@Nullable STBIIOCallbacks callbacks, @Nullable ByteBuffer buffer, // either
-                                    @NonNull Options opts, @Nullable IOException[] ioe,
-                                    boolean isU16, boolean isHDR) throws IOException {
-        assert callbacks != null || buffer != null;
+    private static void decodeInfo0(long callbacks, long context,
+                                    long buffer, int length, // either
+                                    @NonNull Options opts, boolean isU16, boolean isHDR) throws IOException {
+        assert callbacks != NULL || buffer != NULL;
         try (MemoryStack stack = MemoryStack.stackPush()) {
             long pOuts = stack.nmalloc(4, 12);
             final boolean success;
-            if (callbacks != null) {
+            if (callbacks != NULL) {
                 success = STBImage.nstbi_info_from_callbacks(
-                        callbacks.address(), NULL, pOuts, pOuts + 4, pOuts + 8) != 0;
+                        callbacks, context,
+                        pOuts, pOuts + 4, pOuts + 8) != 0;
             } else {
                 success = STBImage.nstbi_info_from_memory(
-                        memAddress(buffer), buffer.remaining(), pOuts, pOuts + 4, pOuts + 8) != 0;
+                        buffer, length,
+                        pOuts, pOuts + 4, pOuts + 8) != 0;
             }
             if (!success) {
                 throw new IOException("Failed to decode image: " + STBImage.stbi_failure_reason());
             }
-            if (ioe != null && ioe[0] != null) {
-                throw new IOException("Failed to read image", ioe[0]);
+            if (callbacks != NULL && context != NULL) {
+                SeekableContext ctx = memGlobalRefToObject(context);
+                if (ctx.ioe != null) {
+                    throw new IOException("Failed to read image", ctx.ioe);
+                }
             }
             int width = memGetInt(pOuts),
                     height = memGetInt(pOuts + 4),
@@ -757,7 +795,7 @@ public final class BitmapFactory {
         }
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     public static void decodeMimeType(@NonNull Options opts, @NonNull Object input) {
         try (var stream = ImageIO.createImageInputStream(input)) {
             if (stream != null) {
@@ -788,7 +826,7 @@ public final class BitmapFactory {
         }
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     public static boolean test(@NonNull ImageInputStream stream,
                                @NonNull Predicate<ImageInputStream> filter) {
         try {
@@ -803,7 +841,7 @@ public final class BitmapFactory {
         }
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     public static boolean filterPSD(@NonNull ImageInputStream stream) {
         try {
             return stream.read() == '8' &&
@@ -832,7 +870,7 @@ public final class BitmapFactory {
         }
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     public static boolean filterPGM(@NonNull ImageInputStream stream) {
         try {
             return stream.read() == 'P' && stream.read() == '5';
@@ -841,7 +879,7 @@ public final class BitmapFactory {
         }
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     public static boolean filterPPM(@NonNull ImageInputStream stream) {
         try {
             return stream.read() == 'P' && stream.read() == '6';
@@ -850,7 +888,7 @@ public final class BitmapFactory {
         }
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     public static boolean filterHDR(@NonNull ImageInputStream stream) {
         try {
             return stream.read() == '#' &&
@@ -869,7 +907,7 @@ public final class BitmapFactory {
         }
     }
 
-    // INTERNAL
+    @ApiStatus.Internal
     public static boolean filterTGA(@NonNull ImageInputStream stream) {
         // TGA has no magic number, it must be the last
         try {
