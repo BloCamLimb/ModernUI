@@ -119,7 +119,7 @@ public final class Bitmap implements AutoCloseable {
            @Nullable LongConsumer freeFn) {
         mFormat = format;
         mPixmap = new Pixmap(info, null, addr, rowBytes);
-        mRequestPremultiplied = isPremultiplied();
+        mRequestPremultiplied = info.alphaType() == ColorInfo.AT_PREMUL;
         var pixels = new Pixels(info.width(), info.height(), null, addr, rowBytes, freeFn);
         mCleanup = Core.registerNativeResource(this, pixels);
         mPixels = pixels;

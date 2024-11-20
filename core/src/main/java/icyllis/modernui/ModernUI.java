@@ -339,6 +339,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
         mFragmentController.dispatchStart();
 
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+        mFragmentController.dispatchResume();
+
         mFragmentController.getFragmentManager().beginTransaction()
                 .add(fragment_container, fragment, "main")
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
