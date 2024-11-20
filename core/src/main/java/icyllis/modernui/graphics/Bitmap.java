@@ -143,6 +143,31 @@ public final class Bitmap implements AutoCloseable {
     public static Bitmap createBitmap(@Size(min = 1) int width,
                                       @Size(min = 1) int height,
                                       @NonNull Format format) {
+        var colorSpace = format.isChannelHDR()
+                ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
+                : ColorSpace.get(ColorSpace.Named.SRGB);
+        return createBitmap(width, height, format, false, colorSpace);
+    }
+
+    /**
+     * Creates a mutable bitmap and its allocation, the content are initialized to zeros.
+     * <p>
+     * You may change the format, alpha type, and color space after creating the bitmap.
+     *
+     * @param width           width in pixels, must be > 0
+     * @param height          height in pixels, must be > 0
+     * @param format          a color interpretation
+     * @param isPremultiplied an alpha interpretation
+     * @param colorSpace      a color space describing the pixels
+     * @throws IllegalArgumentException width or height out of range
+     * @throws OutOfMemoryError         out of native memory
+     */
+    @NonNull
+    public static Bitmap createBitmap(@Size(min = 1) int width,
+                                      @Size(min = 1) int height,
+                                      @NonNull Format format,
+                                      boolean isPremultiplied,
+                                      @Nullable ColorSpace colorSpace) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Image dimensions " + width + "x" + height
                     + " must be positive");
@@ -167,18 +192,18 @@ public final class Bitmap implements AutoCloseable {
             }
             address = nmemCalloc(size, 1);
             if (address == NULL) {
-                throw new OutOfMemoryError("Failed to allocate " + size + " bytes");
+                throw new OutOfMemoryError("Failed to allocate " + size + " bytes for bitmap");
             }
         }
-        var cs = format.isChannelHDR()
-                ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
-                : ColorSpace.get(ColorSpace.Named.SRGB);
-        var at = format.hasAlpha() && !format.isChannelHDR()
-                ? ColorInfo.AT_UNPREMUL
+        int alphaType = format.hasAlpha()
+                ? isPremultiplied
+                ? ColorInfo.AT_PREMUL
+                : ColorInfo.AT_UNPREMUL
                 : ColorInfo.AT_OPAQUE;
-        return new Bitmap(format,
-                ImageInfo.make(width, height, format.getColorType(), at, cs),
-                address, rowBytes, MemoryUtil::nmemFree);
+        alphaType = ColorInfo.validateAlphaType(format.getColorType(), alphaType);
+        ImageInfo info = ImageInfo.make(width, height,
+                format.getColorType(), alphaType, colorSpace);
+        return new Bitmap(format, info, address, rowBytes, MemoryUtil::nmemFree);
     }
 
     /**
@@ -288,7 +313,7 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
-    @ApiStatus.Internal
+    /*@ApiStatus.Internal
     public static void flipVertically(@NonNull Bitmap bitmap) {
         assert !bitmap.isImmutable();
         final int height = bitmap.getHeight();
@@ -312,7 +337,7 @@ public final class Bitmap implements AutoCloseable {
         } finally {
             nmemFree(temp);
         }
-    }
+    }*/
 
     @ApiStatus.Internal
     @NonNull
@@ -1371,7 +1396,7 @@ public final class Bitmap implements AutoCloseable {
         }
         if (getRowBytes() != getWidth() * getFormat().getBytesPerPixel()) {
             // not implemented yet
-            throw new IllegalStateException("Pixel data is not tightly packed");
+            throw new IOException("Pixel data is not tightly packed");
         }
         final var callback = new STBIWriteCallback() {
             private IOException exception;
@@ -1398,6 +1423,8 @@ public final class Bitmap implements AutoCloseable {
             } else {
                 throw new IOException("Failed to encode image: " + STBImage.stbi_failure_reason());
             }
+        } finally {
+            Reference.reachabilityFence(this);
         }
     }
 
