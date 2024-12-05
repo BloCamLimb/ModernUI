@@ -28,6 +28,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import java.lang.ref.Reference;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -126,6 +127,8 @@ public class Window implements AutoCloseable {
             }
             images.flip();
             glfwSetWindowIcon(mHandle, images);
+        } finally {
+            Reference.reachabilityFence(icons);
         }
     }
 
