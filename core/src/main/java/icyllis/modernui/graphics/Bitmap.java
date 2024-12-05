@@ -1042,6 +1042,7 @@ public final class Bitmap implements AutoCloseable {
             }
         } finally {
             Reference.reachabilityFence(this);
+            Reference.reachabilityFence(dst);
         }
     }
 
@@ -1095,6 +1096,7 @@ public final class Bitmap implements AutoCloseable {
             }
         } finally {
             Reference.reachabilityFence(this);
+            Reference.reachabilityFence(src);
         }
     }
 
