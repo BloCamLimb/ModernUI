@@ -20,9 +20,9 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,15 +55,15 @@ public final class StrikeCache {
     public StrikeCache() {
     }
 
-    @Nonnull
+    @NonNull
     public static StrikeCache getGlobalStrikeCache() {
         return gCache;
     }
 
     // this method excludes lock
     // this method will not modify 'desc'
-    @Nonnull
-    public Strike findOrCreateStrike(@Nonnull StrikeDesc desc) {
+    @NonNull
+    public Strike findOrCreateStrike(@NonNull StrikeDesc desc) {
         mLock.lock();
         try {
             Strike strike = internalFindStrike(desc);
@@ -143,7 +143,7 @@ public final class StrikeCache {
     }
 
     @Nullable
-    private Strike internalFindStrike(@Nonnull StrikeDesc desc) {
+    private Strike internalFindStrike(@NonNull StrikeDesc desc) {
         // Check head because it is likely the strike we are looking for.
         if (mHead != null && mHead.getStrikeDesc().equals(desc)) {
             return mHead;
@@ -170,8 +170,8 @@ public final class StrikeCache {
         return strike;
     }
 
-    @Nonnull
-    private Strike internalCreateStrike(@Nonnull StrikeDesc desc) {
+    @NonNull
+    private Strike internalCreateStrike(@NonNull StrikeDesc desc) {
         var scalerContext = desc.createScalerContext();
         var strike = new Strike(this, desc, scalerContext);
 

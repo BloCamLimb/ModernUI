@@ -22,8 +22,8 @@ package icyllis.arc3d.granite.geom;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Rect2fc;
 import icyllis.arc3d.granite.DrawOrder;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 /**
@@ -49,7 +49,7 @@ public final class GridBoundsManager extends BoundsManager {
         mNodes = new short[gridWidth * gridHeight];
     }
 
-    @Nonnull
+    @NonNull
     public static GridBoundsManager makeRes(int deviceWidth, int deviceHeight,
                                             int gridCellSize, int maxGridSize) {
         assert (deviceWidth > 0 && deviceHeight > 0);

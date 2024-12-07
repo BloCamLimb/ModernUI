@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.compiler;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
@@ -262,7 +263,7 @@ public class ModuleLoader {
         return mRootModule;
     }
 
-    @Nonnull
+    @NonNull
     private ModuleUnit loadModule(ShaderCompiler compiler,
                                   CharSequence source,
                                   ShaderKind kind,
@@ -292,7 +293,7 @@ public class ModuleLoader {
         return module;
     }
 
-    @Nonnull
+    @NonNull
     public String loadModuleSource(String name) {
         final InputStream in = ModuleLoader.class
                 .getResourceAsStream("/assets/arc3d/shaders/" + name);
@@ -306,7 +307,7 @@ public class ModuleLoader {
         }
     }
 
-    @Nonnull
+    @NonNull
     public ModuleUnit loadCommonModule(ShaderCompiler compiler) {
         if (mCommonModule != null) {
             return mCommonModule;
@@ -323,7 +324,7 @@ public class ModuleLoader {
         return mCommonModule;
     }
 
-    @Nonnull
+    @NonNull
     public ModuleUnit loadGLSLVertModule(ShaderCompiler compiler) {
         if (mGLSLVertModule != null) {
             return mGLSLVertModule;
@@ -341,7 +342,7 @@ public class ModuleLoader {
         return mGLSLVertModule;
     }
 
-    @Nonnull
+    @NonNull
     public ModuleUnit loadGLSLFragModule(ShaderCompiler compiler) {
         if (mGLSLFragModule != null) {
             return mGLSLFragModule;

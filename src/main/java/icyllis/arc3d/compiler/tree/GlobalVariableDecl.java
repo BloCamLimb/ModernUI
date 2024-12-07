@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A variable declaration appearing at global scope. A global declaration like 'int x, y;' produces
@@ -29,7 +29,7 @@ public final class GlobalVariableDecl extends TopLevelElement {
 
     private final VariableDecl mVariableDecl;
 
-    public GlobalVariableDecl(@Nonnull VariableDecl decl) {
+    public GlobalVariableDecl(@NonNull VariableDecl decl) {
         super(decl.mPosition);
         mVariableDecl = decl;
     }
@@ -44,14 +44,14 @@ public final class GlobalVariableDecl extends TopLevelElement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitGlobalVariableDecl(this)) {
             return true;
         }
         return mVariableDecl.accept(visitor);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mVariableDecl.toString();

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Blend modes, all the blend equations apply to premultiplied colors.
@@ -677,7 +677,7 @@ public enum BlendMode implements Blender {
      * @param index the {@link BlendMode#ordinal()}
      * @return the blend mode
      */
-    @Nonnull
+    @NonNull
     public static BlendMode modeAt(int index) {
         return VALUES[index];
     }

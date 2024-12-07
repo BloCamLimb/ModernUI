@@ -21,12 +21,11 @@ package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.*;
 import org.lwjgl.vulkan.VkImageCreateInfo;
 import icyllis.arc3d.engine.Engine.ImageType;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -170,8 +169,8 @@ public final class VulkanImage extends Image {
 
     @Nullable
     @SharedPtr
-    public static VulkanImage make(@Nonnull Context context,
-                                   @Nonnull VulkanImageDesc desc,
+    public static VulkanImage make(@NonNull Context context,
+                                   @NonNull VulkanImageDesc desc,
                                    boolean budgeted) {
         VulkanDevice device = (VulkanDevice) context.getDevice();
         CreatedImageInfo imageInfo = create(device, desc);

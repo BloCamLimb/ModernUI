@@ -21,8 +21,7 @@ package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 @Deprecated
 public final class ClearOp extends Op {
@@ -51,13 +50,13 @@ public final class ClearOp extends Op {
         setBoundsFlags(false, false);
     }
 
-    @Nonnull
+    @NonNull
     public static Op makeColor(int left, int top, int right, int bottom,
                                float red, float green, float blue, float alpha) {
         return new ClearOp(COLOR_BUFFER, left, top, right, bottom, red, green, blue, alpha, false);
     }
 
-    @Nonnull
+    @NonNull
     public static Op makeStencil(int left, int top, int right, int bottom,
                                  boolean insideMask) {
         return new ClearOp(STENCIL_BUFFER, left, top, right, bottom, 0, 0, 0, 0, insideMask);

@@ -19,22 +19,22 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Represents a symbol table entry.
  */
 public abstract class Symbol extends Node {
 
-    private String mName;
+    private @NonNull String mName;
 
-    protected Symbol(int position, String name) {
+    protected Symbol(int position, @NonNull String name) {
         super(position);
         mName = name;
     }
 
     @Override
-    public final boolean accept(@Nonnull TreeVisitor visitor) {
+    public final boolean accept(@NonNull TreeVisitor visitor) {
         // symbols will not be visited
         throw new AssertionError();
     }
@@ -42,10 +42,10 @@ public abstract class Symbol extends Node {
     /**
      * @see Node.SymbolKind
      */
-    @Nonnull
+    @NonNull
     public abstract SymbolKind getKind();
 
-    @Nonnull
+    @NonNull
     public final String getName() {
         return mName;
     }
@@ -53,10 +53,10 @@ public abstract class Symbol extends Node {
     /**
      * Changes the symbol's name.
      */
-    public final void setName(@Nonnull String name) {
+    public final void setName(@NonNull String name) {
         mName = name;
     }
 
-    @Nonnull
+    @NonNull
     public abstract Type getType();
 }

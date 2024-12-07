@@ -23,8 +23,8 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
@@ -171,7 +171,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
     /**
      * @param clearColor premultiplied RGBA color, null means (0,0,0,0)
      */
-    public void clear(@Nullable float[] clearColor) {
+    public void clear(float @Nullable[] clearColor) {
         discard();
 
         mPendingLoadOp = Engine.LoadOp.kClear;

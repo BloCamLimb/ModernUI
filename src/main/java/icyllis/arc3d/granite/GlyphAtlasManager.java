@@ -21,9 +21,8 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nonnull;
 
 /**
  * Manages all baked glyphs and their texture atlases for raster text rendering.
@@ -105,7 +104,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         return getAtlas(maskFormat).getTexture(0);
     }
 
-    public boolean hasGlyph(int maskFormat, @Nonnull BakedGlyph glyph) {
+    public boolean hasGlyph(int maskFormat, @NonNull BakedGlyph glyph) {
         return getAtlas(maskFormat).contains(glyph);
     }
 
@@ -135,8 +134,8 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         }
     }
 
-    public int addGlyphToAtlas(@Nonnull Glyph glyph,
-                               @Nonnull BakedGlyph bakedGlyph) {
+    public int addGlyphToAtlas(@NonNull Glyph glyph,
+                               @NonNull BakedGlyph bakedGlyph) {
         if (glyph.getImageBase() == null) {
             return DrawAtlas.RESULT_FAILURE;
         }
@@ -171,8 +170,8 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         return res;
     }
 
-    public void addGlyphAndSetLastUseToken(@Nonnull DrawAtlas.PlotBulkUseUpdater updater,
-                                           @Nonnull BakedGlyph glyph,
+    public void addGlyphAndSetLastUseToken(DrawAtlas.@NonNull PlotBulkUseUpdater updater,
+                                           @NonNull BakedGlyph glyph,
                                            int maskFormat,
                                            long token) {
         if (updater.add(glyph)) {

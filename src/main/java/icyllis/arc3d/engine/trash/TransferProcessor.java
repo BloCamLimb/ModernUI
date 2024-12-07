@@ -23,8 +23,8 @@ import icyllis.arc3d.engine.BlendInfo;
 import icyllis.arc3d.engine.KeyBuilder;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.XPFragmentBuilder;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 @Deprecated
@@ -52,11 +52,11 @@ public abstract class TransferProcessor extends Processor {
      * Returns a new instance of the appropriate implementation class
      * for the given TransferProcessor.
      */
-    @Nonnull
+    @NonNull
     public abstract ProgramImpl makeProgramImpl();
 
     // must override by subclass if XP will not read dst color
-    @Nonnull
+    @NonNull
     public BlendInfo getBlendInfo() {
         assert readsDstColor();
         return BlendInfo.BLEND_SRC;

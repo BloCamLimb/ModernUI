@@ -19,9 +19,8 @@
 
 package icyllis.arc3d.core;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
 import sun.misc.Unsafe;
-
-import javax.annotation.Nonnull;
 
 /**
  * Represents a CPU glyph + digest information for GPU drawing,
@@ -140,7 +139,7 @@ public final class Glyph {
      * This may an exact bounding box or just a bounds of all control points,
      * also known as pixel bounds.
      */
-    public void getBounds(@Nonnull Rect2i dst) {
+    public void getBounds(@NonNull Rect2i dst) {
         dst.set(mLeft, mTop, mLeft + getWidth(), mTop + getHeight());
     }
 
@@ -150,7 +149,7 @@ public final class Glyph {
      * This may an exact bounding box or just a bounds of all control points,
      * also known as pixel bounds.
      */
-    public void getBounds(@Nonnull Rect2f dst) {
+    public void getBounds(@NonNull Rect2f dst) {
         dst.set(mLeft, mTop, mLeft + getWidth(), mTop + getHeight());
     }
 

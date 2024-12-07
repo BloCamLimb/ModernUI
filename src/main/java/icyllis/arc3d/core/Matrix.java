@@ -19,9 +19,11 @@
 
 package icyllis.arc3d.core;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.*;
+import javax.annotation.CheckReturnValue;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -87,7 +89,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     /**
      * Create a new matrix copied from the given matrix.
      */
-    public Matrix(@Nonnull Matrixc m) {
+    public Matrix(@NonNull Matrixc m) {
         m.store(this);
     }
 
@@ -116,8 +118,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @return an identity matrix
      */
-    @Nonnull
-    public static Matrixc identity() {
+    public static @NonNull Matrixc identity() {
         return IDENTITY;
     }
 
@@ -126,8 +127,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @return a translation matrix
      */
-    @Nonnull
-    public static Matrix makeTranslate(float dx, float dy) {
+    public static @NonNull Matrix makeTranslate(float dx, float dy) {
         var matrix = new Matrix();
         matrix.setTranslate(dx, dy);
         return matrix;
@@ -138,8 +138,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @return a scaling matrix
      */
-    @Nonnull
-    public static Matrix makeScale(float sx, float sy) {
+    public static @NonNull Matrix makeScale(float sx, float sy) {
         var matrix = new Matrix();
         matrix.setScale(sx, sy);
         return matrix;
@@ -452,7 +451,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat(@Nonnull Matrixc lhs) {
+    public void preConcat(@NonNull Matrixc lhs) {
         int bMask = getType();
         if (bMask == kIdentity_Mask) {
             set(lhs);
@@ -526,7 +525,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat(@Nonnull Matrixc rhs) {
+    public void postConcat(@NonNull Matrixc rhs) {
         int aMask = getType();
         if (aMask == kIdentity_Mask) {
             set(rhs);
@@ -778,7 +777,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrixc m) {
+    public void set(@NonNull Matrixc m) {
         m.store(this);
     }
 
@@ -816,7 +815,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param a the array to copy from
      */
-    public void set(@Nonnull float[] a) {
+    public void set(float @NonNull [] a) {
         m11 = a[0];
         m12 = a[1];
         m14 = a[2];
@@ -836,7 +835,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @param a      the array to copy from
      * @param offset the element offset
      */
-    public void set(@Nonnull float[] a, int offset) {
+    public void set(float @NonNull [] a, int offset) {
         m11 = a[offset];
         m12 = a[offset + 1];
         m14 = a[offset + 2];
@@ -855,7 +854,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param a the array to copy from
      */
-    public void set(@Nonnull ByteBuffer a) {
+    public void set(@NonNull ByteBuffer a) {
         int offset = a.position();
         m11 = a.getFloat(offset);
         m12 = a.getFloat(offset + 4);
@@ -875,7 +874,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param a the array to copy from
      */
-    public void set(@Nonnull FloatBuffer a) {
+    public void set(@NonNull FloatBuffer a) {
         int offset = a.position();
         m11 = a.get(offset);
         m12 = a.get(offset + 1);
@@ -913,7 +912,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param dst the matrix to store
      */
-    public void store(@Nonnull Matrix dst) {
+    public void store(@NonNull Matrix dst) {
         dst.m11 = m11;
         dst.m12 = m12;
         dst.m14 = m14;
@@ -931,7 +930,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param a the array to store into
      */
-    public void store(@Nonnull float[] a) {
+    public void store(float @NonNull [] a) {
         a[0] = m11;
         a[1] = m12;
         a[2] = m14;
@@ -949,7 +948,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @param a      the array to store into
      * @param offset the element offset
      */
-    public void store(@Nonnull float[] a, int offset) {
+    public void store(float @NonNull [] a, int offset) {
         a[offset] = m11;
         a[offset + 1] = m12;
         a[offset + 2] = m14;
@@ -966,7 +965,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void store(@Nonnull ByteBuffer a) {
+    public void store(@NonNull ByteBuffer a) {
         int offset = a.position();
         a.putFloat(offset, m11);
         a.putFloat(offset + 4, m12);
@@ -985,7 +984,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void storeAligned(@Nonnull ByteBuffer a) {
+    public void storeAligned(@NonNull ByteBuffer a) {
         int offset = a.position();
         a.putFloat(offset, m11);
         a.putFloat(offset + 4, m12);
@@ -1003,7 +1002,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void store(@Nonnull FloatBuffer a) {
+    public void store(@NonNull FloatBuffer a) {
         int offset = a.position();
         a.put(offset, m11);
         a.put(offset + 1, m12);
@@ -1022,7 +1021,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void storeAligned(@Nonnull FloatBuffer a) {
+    public void storeAligned(@NonNull FloatBuffer a) {
         int offset = a.position();
         a.put(offset, m11);
         a.put(offset + 1, m12);
@@ -1081,7 +1080,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *                [ g h 0 i ]
      * }</pre>
      */
-    public void toMatrix4(@Nonnull Matrix4 dest) {
+    public void toMatrix4(@NonNull Matrix4 dest) {
         dest.m11 = m11;
         dest.m12 = m12;
         dest.m13 = 0;
@@ -1109,8 +1108,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      *                [ g h 0 i ]
      * }</pre>
      */
-    @Nonnull
-    public Matrix4 toMatrix4() {
+    public @NonNull Matrix4 toMatrix4() {
         Matrix4 m = new Matrix4();
         toMatrix4(m);
         return m;
@@ -1834,7 +1832,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * Returns true if mapped corners are dst corners.
      */
     //@formatter:off
-    public boolean mapRect(@Nonnull Rect2fc src, @Nonnull Rect2f dst) {
+    public boolean mapRect(@NonNull Rect2fc src, @NonNull Rect2f dst) {
         int typeMask = getType();
         final float left   = src.left();
         final float top    = src.top();
@@ -1895,7 +1893,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @param dst the round values
      */
     //@formatter:off
-    public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2i dst) {
+    public void mapRect(float left, float top, float right, float bottom, @NonNull Rect2i dst) {
         int typeMask = getType();
         if (typeMask <= kTranslate_Mask) {
             dst.mLeft   = Math.round(left   + m41);
@@ -1948,7 +1946,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @param dst the round out values
      */
     //@formatter:off
-    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect2i dst) {
+    public void mapRectOut(float left, float top, float right, float bottom, @NonNull Rect2i dst) {
         int typeMask = getType();
         if (typeMask <= kTranslate_Mask) {
             dst.mLeft   = (int) Math.floor(left   + m41);
@@ -2569,7 +2567,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean isApproxEqual(@Nonnull Matrix m) {
+    public boolean isApproxEqual(@NonNull Matrix m) {
         return MathUtil.isApproxEqual(m11, m.m11) &&
                 MathUtil.isApproxEqual(m12, m.m12) &&
                 MathUtil.isApproxEqual(m14, m.m14) &&
@@ -2588,7 +2586,7 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
      * <p>
      * Keep consistent with {@link #equals(Object)}.
      */
-    public static boolean equals(@Nonnull Matrixc a, @Nonnull Matrixc b) {
+    public static boolean equals(@NonNull Matrixc a, @NonNull Matrixc b) {
         return a.m11() == b.m11() &&
                 a.m12() == b.m12() &&
                 a.m14() == b.m14() &&
@@ -2645,9 +2643,8 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
     /**
      * @return a copy of this matrix
      */
-    @Nonnull
     @Override
-    public Matrix clone() {
+    public @NonNull Matrix clone() {
         try {
             return (Matrix) super.clone();
         } catch (CloneNotSupportedException e) {

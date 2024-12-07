@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A return statement.
@@ -54,14 +54,14 @@ public final class ReturnStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitReturn(this)) {
             return true;
         }
         return mExpression != null && mExpression.accept(visitor);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         if (mExpression != null) {

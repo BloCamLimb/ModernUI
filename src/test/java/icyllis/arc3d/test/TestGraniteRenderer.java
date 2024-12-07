@@ -35,6 +35,7 @@ import org.lwjgl.opengles.*;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +64,7 @@ public class TestGraniteRenderer {
 
     public static final boolean TEST_OPENGL_ES = false;
 
-    public static final int TEST_SCENE = 1;
+    public static final int TEST_SCENE = 0;
     public static final boolean POST_PROCESS = false;
 
     public static final ExecutorService RECORDING_THREAD = Executors.newSingleThreadExecutor();
@@ -90,13 +91,13 @@ public class TestGraniteRenderer {
         System.setProperty("java.awt.headless", "true");
         GLFW.glfwInit();
         LOGGER.info(Long.toString(ProcessHandle.current().pid()));
-        /*TinyFileDialogs.tinyfd_messageBox(
+        TinyFileDialogs.tinyfd_messageBox(
                 "Arc3D Test",
                 "Arc3D starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true
-        );*/
+        );
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         if (TEST_OPENGL_ES) {
@@ -116,7 +117,7 @@ public class TestGraniteRenderer {
             throw new RuntimeException("0x" + Integer.toHexString(GLFW.nglfwGetError(MemoryUtil.NULL)));
         }
         GLFW.glfwMakeContextCurrent(window);
-        GLFW.glfwSwapInterval(1);
+        GLFW.glfwSwapInterval(0);
 
         ContextOptions contextOptions = new ContextOptions();
         contextOptions.mLogger = LOGGER;
@@ -516,12 +517,18 @@ public class TestGraniteRenderer {
         }
 
         private void drawScene(Canvas canvas) {
-            final int nRects = 4000;
+            final int nRects = 10000;
             canvas.clear(0x00000000);
             canvas.save();
             Paint paint = new Paint();
             if (TEST_SCENE == 0) {
-                RoundRect rrect = new RoundRect();
+                Matrix4 mat = new Matrix4();
+                mat.m34 = -1 / 1920f;
+                mat.preRotateX(MathUtil.PI_O_6);
+                canvas.concat(mat);
+                Rect2f rrect = new Rect2f();
+                paint.setStroke(true);
+                paint.setStrokeWidth(10);
                 for (int i = 0; i < nRects; i++) {
                     int cx = mRandom.nextInt(MAX_RECT_WIDTH / 2, CANVAS_WIDTH - MAX_RECT_WIDTH / 2);
                     int cy = mRandom.nextInt(MAX_RECT_HEIGHT / 2, CANVAS_HEIGHT - MAX_RECT_HEIGHT / 2);
@@ -530,19 +537,25 @@ public class TestGraniteRenderer {
                     int h = (int) (mRandom.nextDouble() * mRandom.nextDouble() * mRandom.nextDouble() * mRandom.nextDouble() *
                             (MAX_RECT_HEIGHT - MIN_RECT_HEIGHT)) + MIN_RECT_HEIGHT;
                     int rad = Math.min(mRandom.nextInt(MAX_CORNER_RADIUS), Math.min(w, h) / 2);
-                    rrect.setRectXY(
+                    rrect.set(
                             cx - (int) Math.ceil(w / 2d),
                             cy - (int) Math.ceil(h / 2d),
                             cx + (int) Math.floor(w / 2d),
-                            cy + (int) Math.floor(h / 2d),
-                            rad, rad
+                            cy + (int) Math.floor(h / 2d)/*,
+                            rad, rad*/
                     );
                     int stroke = mRandom.nextInt(50);
-                    paint.setStyle(stroke < 25 ? Paint.FILL : Paint.STROKE);
-                    paint.setStrokeWidth((stroke - 20) * 2);
+                    //paint.setStyle(stroke < 25 ? Paint.FILL : Paint.STROKE);
+                    //paint.setStrokeWidth((stroke - 20) * 2);
                     paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256),
                             mRandom.nextInt(128));
-                    canvas.drawRoundRect(rrect, paint);
+                    canvas.drawRect(rrect, paint);
+                    canvas.drawArc(cx, cy, rad, 20, 130, paint);
+                    if ((i & 15) == 0) {
+                        canvas.translate(CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                        canvas.rotate(1);
+                        canvas.translate(-CANVAS_WIDTH/2, -CANVAS_HEIGHT/2);
+                    }
                 }
             } else if (TEST_SCENE == 1) {
                 RoundRect rrect = new RoundRect();

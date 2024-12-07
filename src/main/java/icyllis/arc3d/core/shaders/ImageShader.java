@@ -20,9 +20,8 @@
 package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public final class ImageShader extends RefCnt implements Shader {
 
@@ -131,7 +130,7 @@ public final class ImageShader extends RefCnt implements Shader {
     }
     //@formatter:on
 
-    @Nonnull
+    @NonNull
     public static Rect2f preparePaintForDrawImageRect(@RawPtr Image image,
                                                       SamplingOptions sampling,
                                                       Rect2fc src, Rect2fc dst,

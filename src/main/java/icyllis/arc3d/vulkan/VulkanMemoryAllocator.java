@@ -20,11 +20,10 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.Engine.BufferUsageFlags;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.*;
 import org.lwjgl.util.vma.*;
 import org.lwjgl.vulkan.*;
-
-import javax.annotation.Nullable;
 
 import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.util.vma.Vma.*;

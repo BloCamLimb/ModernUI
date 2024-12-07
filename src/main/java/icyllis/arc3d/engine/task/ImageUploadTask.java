@@ -21,9 +21,8 @@ package icyllis.arc3d.engine.task;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nullable;
 
 public class ImageUploadTask extends Task {
 

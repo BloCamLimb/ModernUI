@@ -19,9 +19,8 @@
 
 package icyllis.arc3d.core;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nonnull;
 
 public class Matrix3 {
 
@@ -43,7 +42,7 @@ public class Matrix3 {
      *
      * @return an identity matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix3 identity() {
         final Matrix3 m = new Matrix3();
         m.m11 = m.m22 = m.m33 = 1.0f;

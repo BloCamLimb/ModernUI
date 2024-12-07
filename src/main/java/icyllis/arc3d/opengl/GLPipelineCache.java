@@ -23,9 +23,9 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.engine.trash.PipelineKey_old;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Deprecated
@@ -65,7 +65,7 @@ public class GLPipelineCache {
         return findOrCreateGraphicsPipelineImpl(desc, graphicsPipelineDesc);
     }
 
-    @Nonnull
+    @NonNull
     private GLGraphicsPipeline findOrCreateGraphicsPipelineImpl(
             PipelineKey_old desc,
             final GraphicsPipelineDesc_Old graphicsPipelineDesc) {

@@ -20,9 +20,8 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * The {@link GpuRenderTarget} manages all objects used by a rendering pipeline,
@@ -94,14 +93,14 @@ public abstract class GpuRenderTarget extends GpuSurface {
     /**
      * Describes the backend format of color buffers.
      */
-    @Nonnull
+    @NonNull
     @Override
     public abstract BackendFormat getBackendFormat();
 
     /**
      * Describes the backend render target of this render target.
      */
-    @Nonnull
+    @NonNull
     public abstract BackendRenderTarget getBackendRenderTarget();
 
     @Override
@@ -136,8 +135,7 @@ public abstract class GpuRenderTarget extends GpuSurface {
     public abstract Image getColorAttachment(int index);
 
     @RawPtr
-    @Nullable
-    protected abstract Image[] getColorAttachments();
+    protected abstract Image @Nullable[] getColorAttachments();
 
     @RawPtr
     @Nullable
@@ -148,8 +146,7 @@ public abstract class GpuRenderTarget extends GpuSurface {
     public abstract Image getResolveAttachment(int index);
 
     @RawPtr
-    @Nullable
-    protected abstract Image[] getResolveAttachments();
+    protected abstract Image @Nullable[] getResolveAttachments();
 
     /**
      * Get the dynamic or implicit stencil buffer, or null if no stencil.
@@ -225,7 +222,7 @@ public abstract class GpuRenderTarget extends GpuSurface {
          *
          * @return this
          */
-        @Nonnull
+        @NonNull
         public ResourceKey compute(int width, int height,
                                    BackendFormat colorFormat,
                                    int colorSurfaceFlags,

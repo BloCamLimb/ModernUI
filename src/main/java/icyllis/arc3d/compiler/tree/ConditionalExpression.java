@@ -20,9 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A conditional expression (condition ? true-expression : false-expression).
@@ -45,7 +44,7 @@ public final class ConditionalExpression extends Expression {
     // Creates a potentially-simplified form of the ternary. Typechecks and coerces input
     // expressions; reports errors via ErrorReporter.
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int position, Expression condition,
                                      Expression whenTrue, Expression whenFalse) {
         condition = context.getTypes().mBool.coerceExpression(context, condition);
@@ -85,7 +84,7 @@ public final class ConditionalExpression extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitConditional(this)) {
             return true;
         }
@@ -118,7 +117,7 @@ public final class ConditionalExpression extends Expression {
         mWhenFalse = whenFalse;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new ConditionalExpression(position,
@@ -127,7 +126,7 @@ public final class ConditionalExpression extends Expression {
                 mWhenFalse.clone());
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         boolean needsParens = (Operator.PRECEDENCE_CONDITIONAL >= parentPrecedence);

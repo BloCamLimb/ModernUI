@@ -19,13 +19,15 @@
 
 package icyllis.arc3d.opengl;
 
+import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.ShaderCaps;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -40,6 +42,8 @@ public class GLGraphicsPipelineBuilder {
 
     private ByteBuffer mFinalizedVertSource;
     private ByteBuffer mFinalizedFragSource;
+    private ByteBuffer mFinalizedVertSPIRV;
+    private ByteBuffer mFinalizedFragSPIRV;
 
     private byte mPrimitiveType;
     private VertexInputLayout mInputLayout;
@@ -56,7 +60,7 @@ public class GLGraphicsPipelineBuilder {
         mPipelineDesc = pipelineDesc;
     }
 
-    @Nonnull
+    @NonNull
     @SharedPtr
     public static GLGraphicsPipeline createGraphicsPipeline(
             final GLDevice device,
@@ -83,9 +87,19 @@ public class GLGraphicsPipelineBuilder {
         mPipelineLabel = info.mPipelineLabel;
         /*System.out.printf("-------------------\nVertex GLSL\n%s\nFragment GLSL\n%s\n-------------------\n",
                 info.mVertSource, info.mFragSource);*/
+        /*ShaderCompiler compiler = new ShaderCompiler();
+        CompileOptions options = new CompileOptions();
+        mFinalizedVertSPIRV = compiler.compileIntoSPIRV(info.mVertSource, ShaderKind.VERTEX,
+                mDevice.getCaps().shaderCaps(), options,
+                ModuleLoader.getInstance().loadCommonModule(compiler));
+        System.out.println(compiler.getErrorMessage());
+        mFinalizedFragSPIRV = compiler.compileIntoSPIRV(info.mFragSource, ShaderKind.FRAGMENT,
+                mDevice.getCaps().shaderCaps(), options,
+                ModuleLoader.getInstance().loadCommonModule(compiler));
+        System.out.println(compiler.getErrorMessage());*/
     }
 
-    @Nonnull
+    @NonNull
     public static ByteBuffer toUTF8(StringBuilder shaderString) {
         // we assume ASCII only, so 1 byte per char
         int len = shaderString.length();
@@ -107,15 +121,27 @@ public class GLGraphicsPipelineBuilder {
             return false;
         }
 
-        int frag = GLUtil.glCompileShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSource,
-                mDevice.getSharedResourceCache().getStats());
+        int frag;
+        if (mFinalizedFragSPIRV != null) {
+            frag = GLUtil.glSpecializeShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSPIRV,
+                    "main", mDevice.getSharedResourceCache().getStats());
+        } else {
+            frag = GLUtil.glCompileShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSource,
+                    mDevice.getSharedResourceCache().getStats());
+        }
         if (frag == 0) {
             gl.glDeleteProgram(program);
             return false;
         }
 
-        int vert = GLUtil.glCompileShader(mDevice, GL_VERTEX_SHADER, mFinalizedVertSource,
-                mDevice.getSharedResourceCache().getStats());
+        int vert;
+        if (mFinalizedVertSPIRV != null) {
+            vert = GLUtil.glSpecializeShader(mDevice, GL_VERTEX_SHADER, mFinalizedVertSPIRV,
+                    "main", mDevice.getSharedResourceCache().getStats());
+        } else {
+            vert = GLUtil.glCompileShader(mDevice, GL_VERTEX_SHADER, mFinalizedVertSource,
+                    mDevice.getSharedResourceCache().getStats());
+        }
         if (vert == 0) {
             gl.glDeleteProgram(program);
             gl.glDeleteShader(frag);

@@ -21,9 +21,9 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.ShaderKind;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
@@ -39,16 +39,16 @@ public final class InterfaceBlock extends TopLevelElement {
 
     private final WeakReference<Variable> mVariable;
 
-    public InterfaceBlock(int position, @Nonnull Variable variable) {
+    public InterfaceBlock(int position, @NonNull Variable variable) {
         super(position);
         mVariable = new WeakReference<>(variable);
         variable.setInterfaceBlock(this);
     }
 
-    private static boolean checkBlock(@Nonnull Context context,
+    private static boolean checkBlock(@NonNull Context context,
                                       int pos,
-                                      @Nonnull Modifiers modifiers,
-                                      @Nonnull Type blockType,
+                                      @NonNull Modifiers modifiers,
+                                      @NonNull Type blockType,
                                       int blockStorage) {
         boolean success = true;
         if (blockType.isUnsizedArray()) {
@@ -80,8 +80,8 @@ public final class InterfaceBlock extends TopLevelElement {
         return success;
     }
 
-    private static boolean checkFields(@Nonnull Context context,
-                                       @Nonnull Type.Field[] fields,
+    private static boolean checkFields(@NonNull Context context,
+            Type.Field @NonNull[] fields,
                                        int blockStorage) {
         boolean success = true;
         for (int i = 0; i < fields.length; i++) {
@@ -132,11 +132,11 @@ public final class InterfaceBlock extends TopLevelElement {
     }
 
     @Nullable
-    public static InterfaceBlock convert(@Nonnull Context context,
+    public static InterfaceBlock convert(@NonNull Context context,
                                          int pos,
-                                         @Nonnull Modifiers modifiers,
-                                         @Nonnull Type blockType,
-                                         @Nonnull String instanceName) {
+                                         @NonNull Modifiers modifiers,
+                                         @NonNull Type blockType,
+                                         @NonNull String instanceName) {
         if (!blockType.getElementType().isInterfaceBlock()) {
             context.error(pos, "type '" + blockType + "' is not an interface block");
             return null;
@@ -186,10 +186,10 @@ public final class InterfaceBlock extends TopLevelElement {
         return InterfaceBlock.make(context, pos, variable);
     }
 
-    @Nonnull
-    public static InterfaceBlock make(@Nonnull Context context,
+    @NonNull
+    public static InterfaceBlock make(@NonNull Context context,
                                       int pos,
-                                      @Nonnull Variable variable) {
+                                      @NonNull Variable variable) {
         assert variable.getType().getElementType().isInterfaceBlock();
 
         if (variable.getName().isEmpty()) {
@@ -209,17 +209,17 @@ public final class InterfaceBlock extends TopLevelElement {
         return new InterfaceBlock(pos, variable);
     }
 
-    @Nonnull
+    @NonNull
     public Variable getVariable() {
         return Objects.requireNonNull(mVariable.get(), "your symbol table is gone");
     }
 
-    @Nonnull
+    @NonNull
     public String getBlockName() {
         return getVariable().getType().getElementType().getName();
     }
 
-    @Nonnull
+    @NonNull
     public String getInstanceName() {
         return getVariable().getName();
     }
@@ -230,11 +230,11 @@ public final class InterfaceBlock extends TopLevelElement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return visitor.visitInterfaceBlock(this);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         Variable variable = getVariable();

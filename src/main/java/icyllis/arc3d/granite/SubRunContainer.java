@@ -22,9 +22,9 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
 import icyllis.arc3d.engine.SamplerDesc;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 /**
@@ -317,7 +317,7 @@ public class SubRunContainer {
         }
 
         // let source points to glyph run buffer
-        void setSource(@Nonnull GlyphRun glyphRun) {
+        void setSource(@NonNull GlyphRun glyphRun) {
             mSourceGlyphs = glyphRun.mGlyphs;
             mSourceGlyphOffset = glyphRun.mGlyphOffset;
             mSourcePositions = glyphRun.mPositions;
@@ -527,12 +527,12 @@ public class SubRunContainer {
         }
     }
 
-    @Nonnull
+    @NonNull
     public static SubRunContainer make(
-            @Nonnull GlyphRunList glyphRunList,
-            @Nonnull Matrixc positionMatrix,
-            @Nonnull Paint runPaint,
-            @Nonnull StrikeCache strikeCache
+            @NonNull GlyphRunList glyphRunList,
+            @NonNull Matrixc positionMatrix,
+            @NonNull Paint runPaint,
+            @NonNull StrikeCache strikeCache
     ) {
         SubRunContainer container = new SubRunContainer(positionMatrix);
 

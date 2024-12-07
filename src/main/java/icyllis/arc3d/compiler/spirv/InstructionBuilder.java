@@ -21,8 +21,8 @@ package icyllis.arc3d.compiler.spirv;
 
 import icyllis.arc3d.compiler.tree.Type;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 /**
@@ -81,7 +81,7 @@ final class InstructionBuilder extends Instruction {
         return this;
     }
 
-    InstructionBuilder addResult(@Nonnull Type type) {
+    InstructionBuilder addResult(@NonNull Type type) {
         return type.isRelaxedPrecision() ? addRelaxedResult() : addResult();
     }
 
@@ -105,7 +105,7 @@ final class InstructionBuilder extends Instruction {
         return this;
     }
 
-    @Nonnull
+    @NonNull
     Instruction copy() {
         return new Instruction(
                 mOpcode,

@@ -20,9 +20,8 @@
 package icyllis.arc3d.core.effects;
 
 import icyllis.arc3d.core.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * ColorFilters are optional objects in the drawing pipeline. When present in
@@ -83,7 +82,7 @@ public sealed interface ColorFilter extends RefCounted
      * @param before the filter to apply before this filter is applied, can be null
      * @return a composed color filter
      */
-    @Nonnull
+    @NonNull
     @SharedPtr
     default ColorFilter compose(@Nullable @SharedPtr ColorFilter before) {
         ref();
@@ -100,7 +99,7 @@ public sealed interface ColorFilter extends RefCounted
      * @param after the filter to apply after this filter is applied, can be null
      * @return a composed color filter
      */
-    @Nonnull
+    @NonNull
     @SharedPtr
     default ColorFilter andThen(@Nullable @SharedPtr ColorFilter after) {
         ref();

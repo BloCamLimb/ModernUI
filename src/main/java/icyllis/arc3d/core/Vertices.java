@@ -20,9 +20,9 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.*;
 import java.util.Arrays;
 
@@ -72,11 +72,11 @@ public class Vertices {
         mBounds = bounds;
     }
 
-    @Nonnull
+    @NonNull
     public static Vertices makeCopy(int vertexMode, int vertexCount,
-                                    @Nonnull float[] positions, int positionOffset,
-                                    @Nullable float[] texCoords, int texCoordOffset,
-                                    @Nullable int[] colors, int colorOffset) {
+            float @NonNull[] positions, int positionOffset,
+            float @Nullable[] texCoords, int texCoordOffset,
+            int @Nullable[] colors, int colorOffset) {
         return makeCopy(vertexMode, vertexCount,
                 positions, positionOffset,
                 texCoords, texCoordOffset,
@@ -84,12 +84,12 @@ public class Vertices {
                 null, 0, 0);
     }
 
-    @Nonnull
+    @NonNull
     public static Vertices makeCopy(int vertexMode, int vertexCount,
-                                    @Nonnull float[] positions, int positionOffset,
-                                    @Nullable float[] texCoords, int texCoordOffset,
-                                    @Nullable int[] colors, int colorOffset,
-                                    @Nullable short[] indices, int indexOffset, int indexCount) {
+            float @NonNull[] positions, int positionOffset,
+            float @Nullable[] texCoords, int texCoordOffset,
+            int @Nullable[] colors, int colorOffset,
+            short @Nullable[] indices, int indexOffset, int indexCount) {
         float[] newPositions = Arrays.copyOfRange(positions, positionOffset, positionOffset + vertexCount * 2);
         float[] newTexCoords = null;
         if (texCoords != null) {
@@ -114,9 +114,9 @@ public class Vertices {
                 vertexCount, indexCount);
     }
 
-    @Nonnull
+    @NonNull
     public static Vertices makeCopy(int vertexMode,
-                                    @Nonnull FloatBuffer positions,
+                                    @NonNull FloatBuffer positions,
                                     @Nullable FloatBuffer texCoords,
                                     @Nullable IntBuffer colors,
                                     @Nullable ShortBuffer indices) {
@@ -150,7 +150,7 @@ public class Vertices {
                 vertexCount, indexCount);
     }
 
-    @Nonnull
+    @NonNull
     public Rect2fc getBounds() {
         return mBounds;
     }

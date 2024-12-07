@@ -22,8 +22,8 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.trash.ops.OpsTask;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,17 +72,17 @@ public abstract class RenderTask extends RefCnt {
 
     static final TopologicalSort.Access<RenderTask> SORT_ACCESS = new TopologicalSort.Access<>() {
         @Override
-        public void setIndex(@Nonnull RenderTask node, int index) {
+        public void setIndex(@NonNull RenderTask node, int index) {
             node.setIndex(index);
         }
 
         @Override
-        public int getIndex(@Nonnull RenderTask node) {
+        public int getIndex(@NonNull RenderTask node) {
             return node.getIndex();
         }
 
         @Override
-        public void setTempMarked(@Nonnull RenderTask node, boolean marked) {
+        public void setTempMarked(@NonNull RenderTask node, boolean marked) {
             if (marked) {
                 node.mFlags |= TEMP_MARK_FLAG;
             } else {
@@ -91,12 +91,12 @@ public abstract class RenderTask extends RefCnt {
         }
 
         @Override
-        public boolean isTempMarked(@Nonnull RenderTask node) {
+        public boolean isTempMarked(@NonNull RenderTask node) {
             return (node.mFlags & TEMP_MARK_FLAG) != 0;
         }
 
         @Override
-        public Collection<RenderTask> getIncomingEdges(@Nonnull RenderTask node) {
+        public Collection<RenderTask> getIncomingEdges(@NonNull RenderTask node) {
             return node.mDependencies;
         }
     };
@@ -119,7 +119,7 @@ public abstract class RenderTask extends RefCnt {
     /**
      * @param taskManager the creating drawing manager
      */
-    protected RenderTask(@Nonnull RenderTaskManager taskManager) {
+    protected RenderTask(@NonNull RenderTaskManager taskManager) {
         mTaskManager = taskManager;
         mUniqueID = createUniqueID();
     }

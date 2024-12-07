@@ -20,8 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
-
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Struct that can be passed into bind buffer calls on the {@link CommandBuffer}.

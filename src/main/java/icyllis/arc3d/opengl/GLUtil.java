@@ -23,13 +23,13 @@ import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.*;
 import org.slf4j.Logger;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -60,7 +60,7 @@ public final class GLUtil {
 
     @ApiStatus.Internal
     @Nullable
-    public static ImmediateContext makeOpenGL(@Nonnull ContextOptions options) {
+    public static ImmediateContext makeOpenGL(@NonNull ContextOptions options) {
         GLCapabilities capabilities;
         try {
             capabilities = Objects.requireNonNullElseGet(
@@ -114,7 +114,7 @@ public final class GLUtil {
      * @return context or null if failed to create
      */
     @Nullable
-    public static ImmediateContext makeOpenGL(@Nonnull Object capabilities, @Nonnull ContextOptions options) {
+    public static ImmediateContext makeOpenGL(@NonNull Object capabilities, @NonNull ContextOptions options) {
         var device = GLDevice.make(options, capabilities);
         if (device == null) {
             return null;
@@ -440,7 +440,7 @@ public final class GLUtil {
         };
     }
 
-    @Nonnull
+    @NonNull
     public static String getDebugSource(int source) {
         return switch (source) {
             case GL_DEBUG_SOURCE_API -> "API";
@@ -453,7 +453,7 @@ public final class GLUtil {
         };
     }
 
-    @Nonnull
+    @NonNull
     public static String getDebugType(int type) {
         return switch (type) {
             case GL_DEBUG_TYPE_ERROR -> "Error";
@@ -467,7 +467,7 @@ public final class GLUtil {
         };
     }
 
-    @Nonnull
+    @NonNull
     public static String getDebugSeverity(int severity) {
         return switch (severity) {
             case GL_DEBUG_SEVERITY_HIGH -> "High";
@@ -478,7 +478,7 @@ public final class GLUtil {
         };
     }
 
-    @Nonnull
+    @NonNull
     public static String getSourceARB(int source) {
         return switch (source) {
             case GL_DEBUG_SOURCE_API_ARB -> "API";
@@ -491,7 +491,7 @@ public final class GLUtil {
         };
     }
 
-    @Nonnull
+    @NonNull
     public static String getTypeARB(int type) {
         return switch (type) {
             case GL_DEBUG_TYPE_ERROR_ARB -> "Error";
@@ -504,7 +504,7 @@ public final class GLUtil {
         };
     }
 
-    @Nonnull
+    @NonNull
     public static String getSeverityARB(int severity) {
         return switch (severity) {
             case GL_DEBUG_SEVERITY_HIGH_ARB -> "High";
@@ -514,7 +514,7 @@ public final class GLUtil {
         };
     }
 
-    @Nonnull
+    @NonNull
     public static String getCategoryAMD(int category) {
         return switch (category) {
             case GL_DEBUG_CATEGORY_API_ERROR_AMD -> "API Error";
@@ -529,7 +529,7 @@ public final class GLUtil {
         };
     }
 
-    @Nonnull
+    @NonNull
     public static String getSeverityAMD(int severity) {
         return switch (severity) {
             case GL_DEBUG_SEVERITY_HIGH_AMD -> "High";

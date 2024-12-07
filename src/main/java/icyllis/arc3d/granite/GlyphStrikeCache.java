@@ -20,8 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.StrikeDesc;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 
 /**
@@ -35,7 +35,7 @@ public class GlyphStrikeCache {
     /**
      * <var>desc</var> must be immutable, no copy will be made.
      */
-    @Nonnull
+    @NonNull
     public GlyphStrike findOrCreateStrike(StrikeDesc desc) {
         return mCache.computeIfAbsent(desc, GlyphStrike::new);
     }

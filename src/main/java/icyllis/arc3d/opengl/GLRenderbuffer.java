@@ -21,10 +21,9 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static org.lwjgl.opengl.GL11C.GL_NO_ERROR;
 import static org.lwjgl.opengl.GL30C.GL_RENDERBUFFER;
@@ -131,7 +130,7 @@ public final class GLRenderbuffer extends GLImage {
         return null;
     }
 
-    @Nonnull
+    @NonNull
     @SharedPtr
     public static GLRenderbuffer makeWrapped(GLDevice device,
                                              int width, int height,
@@ -143,7 +142,7 @@ public final class GLRenderbuffer extends GLImage {
         return null;
     }
 
-    @Nonnull
+    @NonNull
     @SharedPtr
     public static GLRenderbuffer makeWrappedRenderbuffer(Context context,
                                                          int width, int height,
@@ -219,7 +218,7 @@ public final class GLRenderbuffer extends GLImage {
         return renderbuffer;
     }
 
-    @Nonnull
+    @NonNull
     public BackendFormat getBackendFormat() {
         return mBackendFormat;
     }

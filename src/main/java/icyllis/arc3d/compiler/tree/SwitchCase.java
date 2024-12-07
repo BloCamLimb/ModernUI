@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A single case of a 'switch' statement.
@@ -37,14 +37,14 @@ public final class SwitchCase extends Statement {
         mStatement = statement;
     }
 
-    @Nonnull
+    @NonNull
     public static SwitchCase make(int position,
                                   long value,
                                   Statement statement) {
         return new SwitchCase(position, false, value, statement);
     }
 
-    @Nonnull
+    @NonNull
     public static SwitchCase makeDefault(int position,
                                          Statement statement) {
         return new SwitchCase(position, true, -1, statement);
@@ -72,14 +72,14 @@ public final class SwitchCase extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitSwitchCase(this)) {
             return true;
         }
         return mStatement.accept(visitor);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mIsDefault

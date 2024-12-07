@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Objects;
 
 /**
@@ -42,12 +43,12 @@ public abstract class Typeface {
         return mUniqueID;
     }
 
-    @Nonnull
+    @NonNull
     public final ScalerContext createScalerContext(StrikeDesc desc) {
         return Objects.requireNonNull(onCreateScalerContext(desc));
     }
 
-    @Nonnull
+    @NonNull
     protected abstract ScalerContext onCreateScalerContext(StrikeDesc desc);
 
     protected abstract void onFilterStrikeDesc(StrikeDesc desc);

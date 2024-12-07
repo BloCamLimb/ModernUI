@@ -20,9 +20,9 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 
 /**
@@ -54,12 +54,12 @@ public final class Variable extends Symbol {
         mBuiltin = builtin;
     }
 
-    @Nonnull
-    public static Variable convert(@Nonnull Context context,
+    @NonNull
+    public static Variable convert(@NonNull Context context,
                                    int pos,
-                                   @Nonnull Modifiers modifiers,
-                                   @Nonnull Type type,
-                                   @Nonnull String name,
+                                   @NonNull Modifiers modifiers,
+                                   @NonNull Type type,
+                                   @NonNull String name,
                                    byte storage) {
         if (context.getKind().isCompute() && (modifiers.layoutFlags() & Layout.kBuiltin_LayoutFlag) == 0) {
             if (storage == Variable.kGlobal_Storage) {
@@ -80,23 +80,23 @@ public final class Variable extends Symbol {
         return make(pos, modifiers, type, name, storage, context.isBuiltin());
     }
 
-    @Nonnull
+    @NonNull
     public static Variable make(int pos,
-                                @Nonnull Modifiers modifiers,
-                                @Nonnull Type type,
-                                @Nonnull String name,
+                                @NonNull Modifiers modifiers,
+                                @NonNull Type type,
+                                @NonNull String name,
                                 byte storage,
                                 boolean builtin) {
         return new Variable(pos, modifiers, type, name, storage, builtin);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public SymbolKind getKind() {
         return SymbolKind.VARIABLE;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Type getType() {
         return mType;
@@ -164,7 +164,7 @@ public final class Variable extends Symbol {
         mInterfaceBlock = new WeakReference<>(interfaceBlock);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mModifiers.toString() + mType.getName() + " " + getName();

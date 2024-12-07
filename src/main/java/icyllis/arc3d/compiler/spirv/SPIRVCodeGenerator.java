@@ -26,9 +26,9 @@ import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -388,9 +388,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
      */
     private boolean mEmitNames;
 
-    public SPIRVCodeGenerator(@Nonnull ShaderCompiler compiler,
-                              @Nonnull TranslationUnit translationUnit,
-                              @Nonnull ShaderCaps shaderCaps) {
+    public SPIRVCodeGenerator(@NonNull ShaderCompiler compiler,
+                              @NonNull TranslationUnit translationUnit,
+                              @NonNull ShaderCaps shaderCaps) {
         super(compiler, translationUnit);
         mOutputTarget = Objects.requireNonNullElse(shaderCaps.mTargetApi, TargetApi.VULKAN_1_0);
         mOutputVersion = Objects.requireNonNullElse(shaderCaps.mSPIRVVersion, SPIRVVersion.SPIRV_1_0);
@@ -487,7 +487,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return writer.detach();
     }
 
-    private int getStorageClass(@Nonnull Variable variable) {
+    private int getStorageClass(@NonNull Variable variable) {
         Type type = variable.getType();
         if (type.isArray()) {
             type = type.getElementType();
@@ -529,7 +529,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 : SpvStorageClassFunction;
     }
 
-    private int getStorageClass(@Nonnull Expression expr) {
+    private int getStorageClass(@NonNull Expression expr) {
         switch (expr.getKind()) {
             case VARIABLE_REFERENCE -> {
                 return getStorageClass(((VariableReference) expr).getVariable());
@@ -546,7 +546,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    int getUniqueId(@Nonnull Type type) {
+    int getUniqueId(@NonNull Type type) {
         return getUniqueId(type.isRelaxedPrecision());
     }
 
@@ -564,7 +564,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     @Nullable
-    private Instruction resultTypeForInstruction(@Nonnull Instruction inst) {
+    private Instruction resultTypeForInstruction(@NonNull Instruction inst) {
         // This list should contain every op that we cache that has a result and result-type.
         // (If one is missing, we will not find some optimization opportunities.)
         // Generally, the result type of an op is in the 0th word, but I'm not sure if this is
@@ -708,7 +708,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     /**
      * Make type with cache, for types other than opaque types and interface blocks.
      */
-    int writeType(@Nonnull Type type) {
+    int writeType(@NonNull Type type) {
         return writeType(type, null, null);
     }
 
@@ -718,7 +718,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
      * @param modifiers    non-null for opaque types, otherwise null
      * @param memoryLayout non-null for uniform and shader storage blocks, and their members, otherwise null
      */
-    private int writeType(@Nonnull Type type,
+    private int writeType(@NonNull Type type,
                           @Nullable Modifiers modifiers,
                           @Nullable MemoryLayout memoryLayout) {
         return switch (type.getTypeKind()) {
@@ -890,7 +890,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
      * @param memoryLayout non-null for uniform and shader storage blocks, null for others
      * @return structure type id
      */
-    private int writeStruct(@Nonnull Type type,
+    private int writeStruct(@NonNull Type type,
                             @Nullable MemoryLayout memoryLayout) {
         assert type.isStruct();
         int[] cached = mStructTable.computeIfAbsent(type,
@@ -1014,7 +1014,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private int writeFunction(@Nonnull FunctionDefinition func, Writer writer) {
+    private int writeFunction(@NonNull FunctionDefinition func, Writer writer) {
         int numReachableOps = mReachableOps.size();
         int numStoreOps = mStoreOps.size();
 
@@ -1042,7 +1042,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return result;
     }
 
-    private int writeFunctionDecl(@Nonnull FunctionDecl decl, Writer writer) {
+    private int writeFunctionDecl(@NonNull FunctionDecl decl, Writer writer) {
         int result = mFunctionTable.getInt(decl);
         int returnTypeId = writeType(decl.getReturnType());
         int functionTypeId = writeFunctionType(decl);
@@ -1067,7 +1067,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return result;
     }
 
-    private int writeFunctionType(@Nonnull FunctionDecl function) {
+    private int writeFunctionType(@NonNull FunctionDecl function) {
         int returnTypeId = writeType(function.getReturnType());
         var builder = getInstBuilder(SpvOpTypeFunction)
                 .addResult()
@@ -1081,7 +1081,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return writeInstructionWithCache(builder, mConstantBuffer);
     }
 
-    private int writeFunctionParameterType(@Nonnull Type paramType,
+    private int writeFunctionParameterType(@NonNull Type paramType,
                                            @Nullable Modifiers paramMods) {
         //TODO rvalue, block pointer
         int storageClass;
@@ -1096,12 +1096,12 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 storageClass);
     }
 
-    private int writePointerType(@Nonnull Type type,
+    private int writePointerType(@NonNull Type type,
                                  int storageClass) {
         return writePointerType(type, null, null, storageClass);
     }
 
-    private int writePointerType(@Nonnull Type type,
+    private int writePointerType(@NonNull Type type,
                                  @Nullable Modifiers modifiers,
                                  @Nullable MemoryLayout memoryLayout,
                                  int storageClass) {
@@ -1115,7 +1115,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         );
     }
 
-    private int writeOpCompositeExtract(@Nonnull Type type,
+    private int writeOpCompositeExtract(@NonNull Type type,
                                         int base,
                                         int index,
                                         Writer writer) {
@@ -1135,7 +1135,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         );
     }
 
-    private int writeOpCompositeExtract(@Nonnull Type type,
+    private int writeOpCompositeExtract(@NonNull Type type,
                                         int base,
                                         int index1,
                                         int index2,
@@ -1157,7 +1157,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         );
     }
 
-    private int writeOpCompositeConstruct(@Nonnull Type type,
+    private int writeOpCompositeConstruct(@NonNull Type type,
                                           IntArrayList values,
                                           Writer writer) {
         // If this is a vector/matrix composed entirely of literals, write a constant-composite instead.
@@ -1199,7 +1199,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         );
     }
 
-    private int writeOpConstantTrue(@Nonnull Type type) {
+    private int writeOpConstantTrue(@NonNull Type type) {
         assert type.isBoolean();
         int typeId = writeType(type);
         return writeInstructionWithCache(
@@ -1210,7 +1210,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         );
     }
 
-    private int writeOpConstantFalse(@Nonnull Type type) {
+    private int writeOpConstantFalse(@NonNull Type type) {
         assert type.isBoolean();
         int typeId = writeType(type);
         return writeInstructionWithCache(
@@ -1221,7 +1221,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         );
     }
 
-    private int writeOpConstant(@Nonnull Type type, int valueBits) {
+    private int writeOpConstant(@NonNull Type type, int valueBits) {
         assert type.isInteger() || type.isFloat();
         assert type.getWidth() == 32;
         int typeId = writeType(type);
@@ -1234,7 +1234,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         );
     }
 
-    private int writeOpConstantComposite(@Nonnull Type type,
+    private int writeOpConstantComposite(@NonNull Type type,
                                          int[] values, int offset, int count) {
         assert !type.isVector() || count == type.getRows();
         assert !type.isMatrix() || count == type.getCols();
@@ -1277,14 +1277,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return writeOpConstant(type, valueBits);
     }
 
-    private int writeLiteral(@Nonnull Literal literal) {
+    private int writeLiteral(@NonNull Literal literal) {
         return writeScalarConstant(literal.getValue(), literal.getType());
     }
 
     /**
      * Write decorations.
      */
-    private void writeModifiers(@Nonnull Modifiers modifiers, int targetId) {
+    private void writeModifiers(@NonNull Modifiers modifiers, int targetId) {
         Layout layout = modifiers.layout();
         boolean hasLocation = false;
         boolean hasBinding = false;
@@ -1391,7 +1391,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     /**
      * Write member decorations, excluding offset.
      */
-    private void writeFieldModifiers(@Nonnull Modifiers modifiers, int targetId, int member) {
+    private void writeFieldModifiers(@NonNull Modifiers modifiers, int targetId, int member) {
         Layout layout = modifiers.layout();
         if (layout != null) {
             assert (layout.mIndex == -1);
@@ -1448,7 +1448,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    private int writeInterfaceBlock(@Nonnull InterfaceBlock block) {
+    private int writeInterfaceBlock(@NonNull InterfaceBlock block) {
         //TODO resource array is not allowed in OpenGL,
         // but allowed in Vulkan (VkDescriptorSetLayoutBinding.descriptorCount)
         // the resource array type doesn't have ArrayStride
@@ -1575,7 +1575,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    private int writeExpression(@Nonnull Expression expr, Writer writer) {
+    private int writeExpression(@NonNull Expression expr, Writer writer) {
         return switch (expr.getKind()) {
             case LITERAL -> writeLiteral((Literal) expr);
             case PREFIX -> writePrefixExpression((PrefixExpression) expr, writer);
@@ -1602,7 +1602,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         };
     }
 
-    private int broadcast(@Nonnull Type type, int id, Writer writer) {
+    private int broadcast(@NonNull Type type, int id, Writer writer) {
         // Scalars require no additional work; we can return the passed-in ID as is.
         if (!type.isScalar()) {
             assert type.isVector();
@@ -1671,7 +1671,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    private int writePrefixExpression(@Nonnull PrefixExpression expr, Writer writer) {
+    private int writePrefixExpression(@NonNull PrefixExpression expr, Writer writer) {
         Type type = expr.getType();
         return switch (expr.getOperator()) {
             case ADD -> writeExpression(expr.getOperand(), writer); // positive
@@ -1738,7 +1738,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         };
     }
 
-    private int writePostfixExpression(@Nonnull PostfixExpression expr, Writer writer) {
+    private int writePostfixExpression(@NonNull PostfixExpression expr, Writer writer) {
         Type type = expr.getType();
         LValue lv = writeLValue(expr.getOperand(), writer);
         int oneId = vectorize(1, type.getComponentType(), type.getRows(), writer);
@@ -1804,7 +1804,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     // negate matrix
-    private int writeUnaryMatrixOperation(@Nonnull Type operandType,
+    private int writeUnaryMatrixOperation(@NonNull Type operandType,
                                           int operand,
                                           int op,
                                           Writer writer) {
@@ -1825,7 +1825,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private int writeBinaryExpression(@Nonnull BinaryExpression expr, Writer writer) {
+    private int writeBinaryExpression(@NonNull BinaryExpression expr, Writer writer) {
         Expression left = expr.getLeft();
         Expression right = expr.getRight();
         Operator op = expr.getOperator();
@@ -1875,7 +1875,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     // short-circuit version '&&'
-    private int writeLogicalAndSC(@Nonnull Expression left, @Nonnull Expression right,
+    private int writeLogicalAndSC(@NonNull Expression left, @NonNull Expression right,
                                   Writer writer) {
         int falseConstant = writeScalarConstant(0, getContext().getTypes().mBool);
         int lhs = writeExpression(left, writer);
@@ -1902,7 +1902,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     // short-circuit version '||'
-    private int writeLogicalOrSC(@Nonnull Expression left, @Nonnull Expression right,
+    private int writeLogicalOrSC(@NonNull Expression left, @NonNull Expression right,
                                  Writer writer) {
         int trueConstant = writeScalarConstant(1, getContext().getTypes().mBool);
         int lhs = writeExpression(left, writer);
@@ -2217,8 +2217,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // matrix op matrix,    op in {+, -, /}
     // matrix op scalar,    op in {+, -, /}
     // scalar op matrix,    op in {+, -, /}
-    private int writeBinaryMatrixOperation(@Nonnull Type resultType,
-                                           @Nonnull Type leftType, @Nonnull Type rightType,
+    private int writeBinaryMatrixOperation(@NonNull Type resultType,
+                                           @NonNull Type leftType, @NonNull Type rightType,
                                            int lhs, int rhs, // SpvId
                                            int op, // SpvOp
                                            Writer writer) {
@@ -2467,7 +2467,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    private void writeStatement(@Nonnull Statement stmt, Writer writer) {
+    private void writeStatement(@NonNull Statement stmt, Writer writer) {
         switch (stmt.getKind()) {
             case BLOCK -> writeBlockStatement((BlockStatement) stmt, writer);
             case RETURN -> writeReturnStatement((ReturnStatement) stmt, writer);
@@ -2489,7 +2489,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    private static int select_by_component_type(@Nonnull Type type,
+    private static int select_by_component_type(@NonNull Type type,
                                                 int whenFloat,
                                                 int whenSigned,
                                                 int whenUnsigned,
@@ -2704,7 +2704,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         writeLabel(label, writer);
     }
 
-    private void writeAccessChain(@Nonnull Expression expr, Writer writer, IntList chain) {
+    private void writeAccessChain(@NonNull Expression expr, Writer writer, IntList chain) {
         switch (expr.getKind()) {
             case INDEX -> {
                 IndexExpression indexExpr = (IndexExpression) expr;
@@ -2730,8 +2730,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    @Nonnull
-    private LValue writeLValue(@Nonnull Expression expr, Writer writer) {
+    @NonNull
+    private LValue writeLValue(@NonNull Expression expr, Writer writer) {
         Type type = expr.getType();
         boolean relaxedPrecision = type.isRelaxedPrecision();
         switch (expr.getKind()) {
@@ -3478,7 +3478,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private void buildInstructions(@Nonnull TranslationUnit translationUnit) {
+    private void buildInstructions(@NonNull TranslationUnit translationUnit) {
         mGLSLExtendedInstructions = getUniqueId();
         // always enable Shader capability, this implicitly declares Matrix capability
         mCapabilities.add(SpvCapabilityShader);
@@ -3706,8 +3706,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     /**
      * With bidirectional map.
      */
-    private int writeInstructionWithCache(@Nonnull InstructionBuilder key,
-                                          @Nonnull Writer writer) {
+    private int writeInstructionWithCache(@NonNull InstructionBuilder key,
+                                          @NonNull Writer writer) {
         assert (key.mOpcode != SpvOpLoad);
         assert (key.mOpcode != SpvOpStore);
         int cachedId = mOpCache.getInt(key);
@@ -3763,14 +3763,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private void releaseInstBuilder(@Nonnull InstructionBuilder key) {
+    private void releaseInstBuilder(@NonNull InstructionBuilder key) {
         if (mInstBuilderPoolSize == mInstBuilderPool.length) {
             return;
         }
         mInstBuilderPool[mInstBuilderPoolSize++] = key;
     }
 
-    @Nonnull
+    @NonNull
     private IntArrayList obtainIdList() {
         if (mIdListPoolSize == 0) {
             return new IntArrayList();
@@ -3780,7 +3780,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return r;
     }
 
-    private void releaseIdList(@Nonnull IntArrayList idList) {
+    private void releaseIdList(@NonNull IntArrayList idList) {
         if (mIdListPoolSize == mIdListPool.length) {
             return;
         }

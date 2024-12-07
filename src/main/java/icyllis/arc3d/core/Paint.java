@@ -23,9 +23,9 @@ import icyllis.arc3d.core.effects.ColorFilter;
 import icyllis.arc3d.core.shaders.Shader;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
@@ -390,7 +390,7 @@ public class Paint implements AutoCloseable {
      *
      * @param dst an array that receives R,G,B,A color components
      */
-    public final void getColor4f(@Nonnull @Size(4) float[] dst) {
+    public final void getColor4f( @Size(4) float @NonNull[] dst) {
         dst[0] = mR;
         dst[1] = mG;
         dst[2] = mB;

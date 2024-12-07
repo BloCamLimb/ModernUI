@@ -21,8 +21,8 @@ package icyllis.arc3d.compiler.lex;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class NFA {
     /**
      * Adds a new regular expression to the set of expressions matched by this automaton.
      */
-    public void add(@Nonnull RegexNode node) {
+    public void add(@NonNull RegexNode node) {
         // we reserve token 0 for END_OF_FILE, so this starts at 1
         int token = ++mTokenIndex;
         int state = add(NFAState.Accept(token));
@@ -78,7 +78,7 @@ public class NFA {
      * (in addRegex order) matching expression, or -1 if no match. This is relatively slow and used
      * only for debugging purposes; the NFA should be converted to a DFA before actual use.
      */
-    public int match(@Nonnull String s) {
+    public int match(@NonNull String s) {
         IntList states = mStartStates;
         for (int p = 0; p < s.length(); ++p) {
             var n = new IntArrayList();

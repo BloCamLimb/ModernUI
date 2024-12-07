@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * The {@link Rect2f} holds four float coordinates describing the upper and
@@ -71,7 +71,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param r the rectangle whose coordinates are copied into the new
      *          rectangle
      */
-    public Rect2f(@Nonnull Rect2fc r) {
+    public Rect2f(@NonNull Rect2fc r) {
         r.store(this);
     }
 
@@ -82,7 +82,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param r the rectangle whose coordinates are copied into the new
      *          rectangle
      */
-    public Rect2f(@Nonnull Rect2ic r) {
+    public Rect2f(@NonNull Rect2ic r) {
         r.store(this);
     }
 
@@ -91,7 +91,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @return an empty rect
      */
-    @Nonnull
+    @NonNull
     public static Rect2fc empty() {
         return EMPTY;
     }
@@ -229,7 +229,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param dst the rectangle to store
      */
     @Override
-    public void store(@Nonnull Rect2f dst) {
+    public void store(@NonNull Rect2f dst) {
         dst.mLeft = mLeft;
         dst.mTop = mTop;
         dst.mRight = mRight;
@@ -237,7 +237,7 @@ public non-sealed class Rect2f implements Rect2fc {
     }
 
     @Override
-    public void store(@Nonnull Rect2i dst) {
+    public void store(@NonNull Rect2i dst) {
         dst.mLeft = (int) mLeft;
         dst.mTop = (int) mTop;
         dst.mRight = (int) mRight;
@@ -523,7 +523,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public final boolean contains(@Nonnull Rect2fc r) {
+    public final boolean contains(@NonNull Rect2fc r) {
         // check for empty first
         return mLeft < mRight && mTop < mBottom
                 // now check for containment
@@ -538,7 +538,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public final boolean contains(@Nonnull Rect2ic r) {
+    public final boolean contains(@NonNull Rect2ic r) {
         // check for empty first
         return mLeft < mRight && mTop < mBottom
                 // now check for containment
@@ -777,7 +777,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public final boolean intersects(@Nonnull Rect2fc r) {
+    public final boolean intersects(@NonNull Rect2fc r) {
         return intersects(r.left(), r.top(), r.right(), r.bottom());
     }
 
@@ -790,7 +790,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public final boolean intersects(@Nonnull Rect2ic r) {
+    public final boolean intersects(@NonNull Rect2ic r) {
         return intersects(r.left(), r.top(), r.right(), r.bottom());
     }
 
@@ -836,7 +836,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst integer Rect by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public final void round(@Nonnull Rect2i dst) {
+    public final void round(@NonNull Rect2i dst) {
         dst.set(Math.round(mLeft), Math.round(mTop),
                 Math.round(mRight), Math.round(mBottom));
     }
@@ -845,7 +845,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst integer Rect by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    public final void roundIn(@Nonnull Rect2i dst) {
+    public final void roundIn(@NonNull Rect2i dst) {
         dst.set((int) Math.ceil(mLeft), (int) Math.ceil(mTop),
                 (int) Math.floor(mRight), (int) Math.floor(mBottom));
     }
@@ -854,7 +854,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst integer Rect by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public final void roundOut(@Nonnull Rect2i dst) {
+    public final void roundOut(@NonNull Rect2i dst) {
         dst.set((int) Math.floor(mLeft), (int) Math.floor(mTop),
                 (int) Math.ceil(mRight), (int) Math.ceil(mBottom));
     }
@@ -863,7 +863,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst rectangle by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public final void round(@Nonnull Rect2f dst) {
+    public final void round(@NonNull Rect2f dst) {
         dst.set(Math.round(mLeft), Math.round(mTop),
                 Math.round(mRight), Math.round(mBottom));
     }
@@ -872,7 +872,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst rectangle by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    public final void roundIn(@Nonnull Rect2f dst) {
+    public final void roundIn(@NonNull Rect2f dst) {
         dst.set((float) Math.ceil(mLeft), (float) Math.ceil(mTop),
                 (float) Math.floor(mRight), (float) Math.floor(mBottom));
     }
@@ -881,7 +881,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst rectangle by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public final void roundOut(@Nonnull Rect2f dst) {
+    public final void roundOut(@NonNull Rect2f dst) {
         dst.set((float) Math.floor(mLeft), (float) Math.floor(mTop),
                 (float) Math.ceil(mRight), (float) Math.ceil(mBottom));
     }

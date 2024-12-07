@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A reference to a variable, through which it can be read or written.
@@ -44,7 +44,7 @@ public final class VariableReference extends Expression {
         mReferenceKind = referenceKind;
     }
 
-    @Nonnull
+    @NonNull
     public static Expression make(int position, Variable variable, int referenceKind) {
         return new VariableReference(position, variable, referenceKind);
     }
@@ -55,7 +55,7 @@ public final class VariableReference extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return visitor.visitVariableReference(this);
     }
 
@@ -75,13 +75,13 @@ public final class VariableReference extends Expression {
         mReferenceKind = referenceKind;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new VariableReference(position, mVariable, mReferenceKind);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         return mVariable.getName();

@@ -20,8 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Interface representing GPU surfaces.
@@ -59,7 +58,7 @@ public abstract class GpuSurface extends Resource {
      * <p>
      * If this is RT, returns the backend format of color attachment 0.
      */
-    @Nonnull
+    @NonNull
     public BackendFormat getBackendFormat() {
         return null;
     }

@@ -20,8 +20,7 @@
 package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
-
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public final class BlendShader extends RefCnt implements Shader {
 

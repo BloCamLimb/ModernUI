@@ -20,9 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ShaderCompiler;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
 
 /**
  * Represents an ill-formed expression. This is needed so that parser can go further.
@@ -33,8 +32,8 @@ public final class Poison extends Expression {
         super(position, type);
     }
 
-    @Nonnull
-    public static Expression make(@Nonnull Context context, int position) {
+    @NonNull
+    public static Expression make(@NonNull Context context, int position) {
         return new Poison(position, context.getTypes().mPoison);
     }
 
@@ -44,17 +43,17 @@ public final class Poison extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return false;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new Poison(position, getType());
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         return ShaderCompiler.POISON_TAG;

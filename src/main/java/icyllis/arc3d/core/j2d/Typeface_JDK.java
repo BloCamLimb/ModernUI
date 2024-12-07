@@ -20,8 +20,8 @@
 package icyllis.arc3d.core.j2d;
 
 import icyllis.arc3d.core.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.awt.Font;
 
 /**
@@ -44,7 +44,7 @@ public class Typeface_JDK extends Typeface {
         return mFont;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected ScalerContext onCreateScalerContext(StrikeDesc desc) {
         return new ScalerContext_JDK(this, desc);

@@ -22,9 +22,9 @@ package icyllis.arc3d.core.shaders;
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -50,10 +50,10 @@ public abstract sealed class Gradient1DShader extends GradientShader
 
     final boolean mColorsAreOpaque;
 
-    protected Gradient1DShader(@Nonnull float[] inColors, @Nullable ColorSpace colorSpace,
-                               @Nullable float[] inPositions, int inColorCount,
+    protected Gradient1DShader(float @NonNull[] inColors, @Nullable ColorSpace colorSpace,
+            float @Nullable[] inPositions, int inColorCount,
                                int tileMode, int interpolation,
-                               @Nonnull Matrix ptsToUnit) {
+                               @NonNull Matrix ptsToUnit) {
         ptsToUnit.getType(); // Precache so reads are threadsafe.
         mPtsToUnit = ptsToUnit;
 
@@ -203,7 +203,7 @@ public abstract sealed class Gradient1DShader extends GradientShader
         return mPositions != null ? mPositions[i] : (float) i / (mColorCount - 1);
     }
 
-    @Nonnull
+    @NonNull
     public ColorSpace getColorSpace() {
         return mColorSpace;
     }
@@ -220,7 +220,7 @@ public abstract sealed class Gradient1DShader extends GradientShader
         return mTileMode;
     }
 
-    @Nonnull
+    @NonNull
     public Matrixc getGradientMatrix() {
         return mPtsToUnit;
     }
@@ -330,11 +330,10 @@ public abstract sealed class Gradient1DShader extends GradientShader
         // only first 'count' entries are meaningful
         public int mColorCount;
         @Size(multiple = 4)
-        @Nonnull
-        public float[] mColors; // unmodifiable view
-        @Nullable
-        public float[] mPositions; // unmodifiable view, COW ARRAY for constructor
-        @Nonnull
+        public float @NonNull[] mColors;
+        // unmodifiable view
+        public float @Nullable[] mPositions; // unmodifiable view, COW ARRAY for constructor
+        @NonNull
         public ColorSpace mIntermediateColorSpace;
 
         public ColorTransformer(Gradient1DShader shader,

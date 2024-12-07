@@ -20,9 +20,9 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 /**
@@ -287,7 +287,7 @@ public class RoundRect {
     /**
      * Copy the values from src into this object.
      */
-    public void set(@Nonnull RoundRect src) {
+    public void set(@NonNull RoundRect src) {
         mLeft = src.mLeft;
         mTop = src.mTop;
         mRight = src.mRight;

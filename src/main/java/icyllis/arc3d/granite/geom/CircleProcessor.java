@@ -22,8 +22,7 @@ package icyllis.arc3d.granite.geom;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.GeometryStep;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import static icyllis.arc3d.engine.Engine.*;
 
@@ -95,11 +94,11 @@ public class CircleProcessor extends GeometryStep {
     }
 
     @Override
-    public void appendToKey(@Nonnull KeyBuilder b) {
+    public void appendToKey(@NonNull KeyBuilder b) {
         b.addBits(5, mFlags, "stroke|clipPlane|isectPlane|unionPlane|roundCaps");
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return null;

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * An object with identity. This can be used to track content changes through
@@ -33,7 +33,7 @@ public final class GenerationID {
     public GenerationID() {
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "GenerationID@" + Integer.toHexString(hashCode());

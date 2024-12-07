@@ -21,8 +21,7 @@ package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Shaders specify the source color(s) for what is being drawn. If a paint
@@ -108,9 +107,9 @@ public sealed interface Shader extends RefCounted
      * Return a shader that will apply the specified localMatrix to this shader.
      * The specified matrix will be applied AFTER any matrix associated with this shader.
      */
-    @Nonnull
+    @NonNull
     @SharedPtr
-    default Shader makeWithLocalMatrix(@Nonnull Matrixc localMatrix) {
+    default Shader makeWithLocalMatrix(@NonNull Matrixc localMatrix) {
         var lm = new Matrix(localMatrix);
         Shader base; // raw ptr
         if (this instanceof LocalMatrixShader lms) {

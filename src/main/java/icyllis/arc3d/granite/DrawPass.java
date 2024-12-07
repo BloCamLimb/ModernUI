@@ -22,9 +22,9 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.function.Function;
@@ -581,7 +581,7 @@ public class DrawPass implements AutoCloseable {
         }
 
         @Override
-        public int compareTo(@Nonnull SortKey o) {
+        public int compareTo(@NonNull SortKey o) {
             int res = Integer.compareUnsigned(mOrderKey, o.mOrderKey);
             if (res != 0) return res;
             res = Long.compareUnsigned(mPipelineKey, o.mPipelineKey);

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 public interface PathIterable {
 
@@ -33,10 +33,10 @@ public interface PathIterable {
      */
     int getFillRule();
 
-    @Nonnull
+    @NonNull
     PathIterator getPathIterator();
 
-    default void forEach(@Nonnull PathConsumer action) {
+    default void forEach(@NonNull PathConsumer action) {
         var it = getPathIterator();
         int verb;
         float[] coords = new float[6];

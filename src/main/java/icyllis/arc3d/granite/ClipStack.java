@@ -22,9 +22,9 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.granite.geom.BoundsManager;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -98,7 +98,7 @@ public final class ClipStack {
     private final ClipElement mTmpElement = new ClipElement();
 
     public void clipRect(@Nullable Matrixc viewMatrix,
-                         @Nonnull Rect2fc localRect,
+                         @NonNull Rect2fc localRect,
                          int clipOp) {
         clip(mTmpElement.init(
                 mDeviceBounds,

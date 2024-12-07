@@ -19,10 +19,16 @@
 
 package icyllis.arc3d.core.shaders;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.Matrix;
+import icyllis.arc3d.core.Matrixc;
+import icyllis.arc3d.core.Point;
+import icyllis.arc3d.core.SharedPtr;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.*;
+import javax.annotation.CheckReturnValue;
 
 /**
  * LinearGradient generates gradient colors linearly interpolated between two points.
@@ -37,9 +43,9 @@ public final class LinearGradient extends Gradient1DShader {
     @VisibleForTesting
     public LinearGradient(float startX, float startY,
                           float endX, float endY,
-                          @Nonnull float[] colors,
+                          float @NonNull [] colors,
                           @Nullable ColorSpace colorSpace,
-                          @Nullable float[] positions,
+                          float @Nullable [] positions,
                           int colorCount,
                           int tileMode,
                           int interpolation) {
@@ -51,8 +57,8 @@ public final class LinearGradient extends Gradient1DShader {
         mEndY = endY;
     }
 
-    private static Matrix pts_to_unit_matrix(float startX, float startY,
-                                             float endX, float endY) {
+    private static @NonNull Matrix pts_to_unit_matrix(float startX, float startY,
+                                                      float endX, float endY) {
         float dx = endX - startX;
         float dy = endY - startY;
         float mag = Point.length(dx, dy);
@@ -113,9 +119,9 @@ public final class LinearGradient extends Gradient1DShader {
     @SharedPtr
     public static Shader make(float startX, float startY,
                               float endX, float endY,
-                              @Nonnull float[] colors,
+                              float @NonNull [] colors,
                               @Nullable ColorSpace colorSpace,
-                              @Nullable float[] positions,
+                              float @Nullable [] positions,
                               int colorCount,
                               int tileMode,
                               int interpolation,

@@ -25,8 +25,7 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.granite.GeometryStep;
 import icyllis.arc3d.granite.shading.*;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import static icyllis.arc3d.engine.Engine.VertexAttribType;
 
@@ -37,7 +36,7 @@ public final class CircularRRectOp extends MeshDrawOp {
         super();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView,
                                                             int pipelineFlags) {
@@ -63,11 +62,11 @@ public final class CircularRRectOp extends MeshDrawOp {
         }
 
         @Override
-        public void appendToKey(@Nonnull KeyBuilder b) {
+        public void appendToKey(@NonNull KeyBuilder b) {
 
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public ProgramImpl makeProgramImpl(ShaderCaps caps) {
             return new Impl();

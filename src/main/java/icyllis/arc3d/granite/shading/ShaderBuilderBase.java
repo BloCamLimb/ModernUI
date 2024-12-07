@@ -21,11 +21,11 @@ package icyllis.arc3d.granite.shading;
 
 import icyllis.arc3d.engine.ShaderVar;
 import org.intellij.lang.annotations.PrintFormat;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -190,7 +190,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         return mExtensions;
     }
 
-    @Nonnull
+    @NonNull
     public final ByteBuffer toUTF8() {
         finish();
         int len = 0;

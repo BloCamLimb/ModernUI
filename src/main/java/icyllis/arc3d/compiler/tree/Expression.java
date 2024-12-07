@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.OptionalDouble;
 
 /**
@@ -42,8 +42,7 @@ public abstract class Expression extends Node {
      */
     public abstract ExpressionKind getKind();
 
-    @Nonnull
-    public Type getType() {
+    public @NonNull Type getType() {
         assert (mType != null);
         return mType;
     }
@@ -83,7 +82,7 @@ public abstract class Expression extends Node {
      * references that were never invoked, or type references that were never constructed, are
      * considered incomplete expressions and should result in an error.
      */
-    public final boolean isIncomplete(@Nonnull Context context) {
+    public final boolean isIncomplete(@NonNull Context context) {
         return switch (getKind()) {
             case FUNCTION_REFERENCE -> {
                 int pos = getEndOffset();
@@ -114,24 +113,24 @@ public abstract class Expression extends Node {
     /**
      * Returns a deep copy at the same position.
      */
-    @Nonnull
+    @NonNull
     @Override
     public final Expression clone() {
         return clone(mPosition);
     }
 
-    @Nonnull
+    @NonNull
     public abstract Expression clone(int position);
 
     /**
      * Returns a description of the expression.
      */
-    @Nonnull
+    @NonNull
     @Override
     public final String toString() {
         return toString(Operator.PRECEDENCE_EXPRESSION);
     }
 
-    @Nonnull
+    @NonNull
     public abstract String toString(int parentPrecedence);
 }

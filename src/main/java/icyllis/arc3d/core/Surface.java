@@ -21,9 +21,8 @@ package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Surface is responsible for managing the pixels that a canvas draws into.
@@ -211,7 +210,7 @@ public abstract class Surface extends RefCnt {
     /**
      * Returns an ImageInfo describing the Surface.
      */
-    @Nonnull
+    @NonNull
     public abstract ImageInfo getImageInfo();
 
     /**
@@ -288,7 +287,7 @@ public abstract class Surface extends RefCnt {
      */
     @Nullable
     @SharedPtr
-    public final Image makeImageSnapshot(@Nonnull Rect2ic subset) {
+    public final Image makeImageSnapshot(@NonNull Rect2ic subset) {
         var bounds = new Rect2i(subset);
         if (!bounds.intersect(0, 0, mWidth, mHeight)) {
             return null;

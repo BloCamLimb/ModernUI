@@ -23,9 +23,9 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.ImageUploadTask;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 /**
@@ -186,7 +186,7 @@ public class DrawAtlas implements AutoCloseable {
             return loc != 0;
         }
 
-        public void setLocation(@Nonnull PlotLocator plotLocator) {
+        public void setLocation(@NonNull PlotLocator plotLocator) {
             loc = plotLocator.loc;
         }
 
@@ -634,7 +634,7 @@ public class DrawAtlas implements AutoCloseable {
     public DrawAtlas(@ColorInfo.ColorType int ct,
                      int width, int height,
                      int plotWidth, int plotHeight,
-                     @Nonnull AtlasGenerationCounter generationCounter,
+                     @NonNull AtlasGenerationCounter generationCounter,
                      boolean useMultiPages,
                      boolean useStorageTextures,
                      String label) {
@@ -703,11 +703,11 @@ public class DrawAtlas implements AutoCloseable {
      * @param evictor            A pointer to an eviction callback class.
      * @param label              Label for texture resources.
      */
-    @Nonnull
+    @NonNull
     public static DrawAtlas make(@ColorInfo.ColorType int ct,
                                  int width, int height,
                                  int plotWidth, int plotHeight,
-                                 @Nonnull AtlasGenerationCounter generationCounter,
+                                 @NonNull AtlasGenerationCounter generationCounter,
                                  boolean useMultiPages,
                                  boolean useStorageTextures,
                                  PlotEvictionCallback evictor,
@@ -761,9 +761,9 @@ public class DrawAtlas implements AutoCloseable {
      * otherwise the next call to addToAtlas might cause the previous data to be overwritten before
      * it has been read.
      */
-    public int addRect(@Nonnull RecordingContext context,
+    public int addRect(@NonNull RecordingContext context,
                        int width, int height,
-                       @Nonnull AtlasLocator atlasLocator) {
+                       @NonNull AtlasLocator atlasLocator) {
         if (width > mPlotWidth || height > mPlotHeight || width < 0 || height < 0) {
             return RESULT_FAILURE;
         }
@@ -845,7 +845,7 @@ public class DrawAtlas implements AutoCloseable {
      * This must be called and can only be called once after
      * {@link #addRect(RecordingContext, int, int, AtlasLocator)} to update the data.
      */
-    public long getDataAt(@Nonnull AtlasLocator atlasLocator) {
+    public long getDataAt(@NonNull AtlasLocator atlasLocator) {
         Plot plot = getPlot(atlasLocator);
         return plot.dataAt(atlasLocator);
     }
@@ -854,10 +854,10 @@ public class DrawAtlas implements AutoCloseable {
      * This is a combination of {@link #addRect(RecordingContext, int, int, AtlasLocator)},
      * and copy the existing data to {@link #getDataAt(AtlasLocator)} if success.
      */
-    public int addToAtlas(@Nonnull RecordingContext context,
+    public int addToAtlas(@NonNull RecordingContext context,
                           int width, int height,
                           Object imageBase, long imageAddr,
-                          @Nonnull AtlasLocator atlasLocator) {
+                          @NonNull AtlasLocator atlasLocator) {
         int res = addRect(context, width, height, atlasLocator);
         if (res == RESULT_SUCCESS) {
             Plot plot = getPlot(atlasLocator);
@@ -935,7 +935,7 @@ public class DrawAtlas implements AutoCloseable {
         return mPlotHeight;
     }
 
-    public boolean contains(@Nonnull PlotLocator plotLocator) {
+    public boolean contains(@NonNull PlotLocator plotLocator) {
         if (!plotLocator.isValid()) {
             return false;
         }
@@ -947,7 +947,7 @@ public class DrawAtlas implements AutoCloseable {
                 plotGeneration == locatorGeneration;
     }
 
-    public void setLastUseToken(@Nonnull AtlasLocator atlasLocator, long token) {
+    public void setLastUseToken(@NonNull AtlasLocator atlasLocator, long token) {
         assert contains(atlasLocator);
         int plotIndex = atlasLocator.getPlotIndex();
         int pageIndex = atlasLocator.getPageIndex();
@@ -960,7 +960,7 @@ public class DrawAtlas implements AutoCloseable {
         plot.setLastUseToken(token);
     }
 
-    public void setLastUseTokenBulk(@Nonnull PlotBulkUseUpdater updater, long token) {
+    public void setLastUseTokenBulk(@NonNull PlotBulkUseUpdater updater, long token) {
         int count = updater.count();
         for (int i = 0; i < count; i++) {
             int data = updater.dataAt(i);
@@ -1145,14 +1145,14 @@ public class DrawAtlas implements AutoCloseable {
         }
     }
 
-    private Plot getPlot(@Nonnull AtlasLocator atlasLocator) {
+    private Plot getPlot(@NonNull AtlasLocator atlasLocator) {
         assert contains(atlasLocator);
         int plotIndex = atlasLocator.getPlotIndex();
         int pageIndex = atlasLocator.getPageIndex();
         return mPages[pageIndex].mPlots[plotIndex];
     }
 
-    private boolean activateNextPage(@Nonnull RecordingContext context) {
+    private boolean activateNextPage(@NonNull RecordingContext context) {
         assert mNumActivePages < getMaxPages();
         assert mPages[mNumActivePages].mTexture == null;
 

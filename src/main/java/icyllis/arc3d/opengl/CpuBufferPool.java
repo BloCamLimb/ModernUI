@@ -23,8 +23,7 @@ import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.CpuBuffer;
 import icyllis.arc3d.engine.GpuBufferPool;
-
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A cache object that can be shared by multiple {@link GpuBufferPool} instances. It caches

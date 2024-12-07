@@ -23,10 +23,10 @@ import icyllis.arc3d.compiler.lex.Lexer;
 import icyllis.arc3d.compiler.lex.Token;
 import icyllis.arc3d.compiler.tree.*;
 import it.unimi.dsi.fastutil.longs.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.util.spvc.Spv;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -240,14 +240,14 @@ public class Parser {
         return Token.kind(peek()) == kind;
     }
 
-    @Nonnull
+    @NonNull
     private String text(long token) {
         int offset = Token.offset(token);
         int length = Token.length(token);
         return text(offset, length);
     }
 
-    @Nonnull
+    @NonNull
     private String text(int offset, int length) {
         if (length == 0) {
             return "EOF";
@@ -741,7 +741,7 @@ public class Parser {
         }
     }
 
-    private boolean InterfaceBlock(@Nonnull Modifiers modifiers) {
+    private boolean InterfaceBlock(@NonNull Modifiers modifiers) {
         long name = expectIdentifier();
         String blockName = text(name);
         int pos = rangeFrom(modifiers.mPosition);
@@ -981,7 +981,7 @@ public class Parser {
 
     @Nullable
     private Expression operatorRight(Expression left, Operator op,
-                                     @Nonnull java.util.function.Function<Parser, Expression> rightFn) {
+            java.util.function.@NonNull Function<Parser, Expression> rightFn) {
         nextToken();
         Expression right = rightFn.apply(this);
         if (right == null) {
@@ -1071,7 +1071,7 @@ public class Parser {
     }
     // @formatter:on
 
-    @Nonnull
+    @NonNull
     private Expression expressionOrPoison(int pos, @Nullable Expression expr) {
         if (expr == null) {
             expr = Poison.make(mCompiler.getContext(), pos);
@@ -1664,7 +1664,7 @@ public class Parser {
      *        READONLY | WRITEONLY | BUFFER | WORKGROUP)*
      * }</pre>
      */
-    @Nonnull
+    @NonNull
     private Modifiers Modifiers() {
         long start = peek();
         Modifiers modifiers = new Modifiers(Position.NO_POS);
@@ -1804,7 +1804,7 @@ public class Parser {
         }
     }
 
-    private static int findBuiltinValue(@Nonnull String text) {
+    private static int findBuiltinValue(@NonNull String text) {
         return switch (text) {
             case "position" -> Spv.SpvBuiltInPosition;
             case "vertex_id" -> Spv.SpvBuiltInVertexId;
@@ -2046,7 +2046,7 @@ public class Parser {
         return definition.getType();
     }
 
-    @Nonnull
+    @NonNull
     private Statement statementOrEmpty(int pos, @Nullable Statement stmt) {
         if (stmt == null) {
             stmt = new EmptyStatement(pos);

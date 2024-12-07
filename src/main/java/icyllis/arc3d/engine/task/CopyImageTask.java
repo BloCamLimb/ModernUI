@@ -21,8 +21,7 @@ package icyllis.arc3d.engine.task;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 public class CopyImageTask extends Task {
 
@@ -51,7 +50,7 @@ public class CopyImageTask extends Task {
 
     @SharedPtr
     public static CopyImageTask make(@SharedPtr ImageViewProxy srcProxy,
-                                     @Nonnull Rect2ic subset,
+                                     @NonNull Rect2ic subset,
                                      @SharedPtr ImageViewProxy dstProxy,
                                      int dstX, int dstY, int dstLevel) {
         if (srcProxy == null || dstProxy == null) {

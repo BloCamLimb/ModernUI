@@ -23,9 +23,9 @@ import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.Analysis;
 import org.jetbrains.annotations.Unmodifiable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -54,8 +54,8 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    private static FunctionDecl findBestCandidate(@Nonnull FunctionDecl chain,
-                                                  @Nonnull List<Expression> arguments) {
+    private static FunctionDecl findBestCandidate(@NonNull FunctionDecl chain,
+                                                  @NonNull List<Expression> arguments) {
         if (chain.getNextOverload() == null) {
             return chain;
         }
@@ -91,9 +91,9 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int pos, @Nonnull Expression identifier,
-                                     @Nonnull List<Expression> arguments) {
+    public static Expression convert(@NonNull Context context,
+                                     int pos, @NonNull Expression identifier,
+                                     @NonNull List<Expression> arguments) {
         return switch (identifier.getKind()) {
             case TYPE_REFERENCE -> {
                 TypeReference ref = (TypeReference) identifier;
@@ -122,9 +122,9 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int pos, @Nonnull FunctionDecl function,
-                                     @Nonnull List<Expression> arguments) {
+    public static Expression convert(@NonNull Context context,
+                                     int pos, @NonNull FunctionDecl function,
+                                     @NonNull List<Expression> arguments) {
         if (function.getParameters().size() != arguments.size()) {
             String msg = "call to '" + function.getName() + "' expected " +
                     function.getParameters().size() + " argument";
@@ -187,7 +187,7 @@ public final class FunctionCall extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitFunctionCall(this)) {
             return true;
         }
@@ -208,7 +208,7 @@ public final class FunctionCall extends Expression {
         return mArguments;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         Expression[] arguments = mArguments.clone();
@@ -218,7 +218,7 @@ public final class FunctionCall extends Expression {
         return new FunctionCall(position, getType(), mFunction, arguments);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         StringJoiner joiner = new StringJoiner(", ");

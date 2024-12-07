@@ -19,8 +19,9 @@
 
 package icyllis.arc3d.core.image;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
@@ -43,12 +44,12 @@ public class GIFDecoder {
 
     private final int mScreenWidth;
     private final int mScreenHeight;
-    @Nullable
-    private final byte[] mGlobalPalette; // rgba0 rgba1 ...
-    private final byte[] mImage; // rgba0 rgba1 ...
 
-    @Nullable
-    private byte[] mTmpPalette; // rgba0 rgba1 ...
+    private final byte @Nullable[] mGlobalPalette; // rgba0 rgba1 ...
+    private final byte[] mImage;
+    // rgba0 rgba1 ...
+
+    private byte @Nullable[] mTmpPalette; // rgba0 rgba1 ...
     private final byte[] mTmpImage; // index0 index1 ...
 
     private final int[] mTmpInterlace;
@@ -79,7 +80,7 @@ public class GIFDecoder {
         mHeaderPos = mBuf.position();
     }
 
-    public static boolean checkMagic(@Nonnull byte[] buf) {
+    public static boolean checkMagic(byte @NonNull[] buf) {
         return buf.length >= 6 &&
                 buf[0] == 'G' && buf[1] == 'I' && buf[2] == 'F' &&
                 buf[3] == '8' && (buf[4] == '7' || buf[4] == '9') && buf[5] == 'a';
@@ -138,8 +139,8 @@ public class GIFDecoder {
         return delayTime != 0 ? delayTime * 10 : sDefaultDelayMillis;
     }
 
-    @Nonnull
-    private byte[] readPalette(int size, int transparentIndex, @Nullable byte[] palette) throws IOException {
+
+    private byte @NonNull[] readPalette(int size, int transparentIndex, byte @Nullable[] palette) throws IOException {
         // max size is 256, flatten the array [r0 g0 b0 a0 r1 g1 b1 a1 ...]
         if (palette == null) {
             palette = new byte[size * 4];
@@ -210,7 +211,7 @@ public class GIFDecoder {
     }
 
     // Decode the one frame of GIF form the input stream using internal LZWDecoder class
-    private void decodeImage(byte[] image, int width, int height, @Nullable int[] interlace) throws IOException {
+    private void decodeImage(byte[] image, int width, int height, int @Nullable[] interlace) throws IOException {
         final LZWDecoder dec = LZWDecoder.getInstance();
         byte[] data = dec.setData(mBuf, readByte());
         int y = 0, iPos = 0, xr = width;
@@ -240,9 +241,9 @@ public class GIFDecoder {
         }
     }
 
+
     // computes row re-index for interlaced case
-    @Nonnull
-    private int[] computeInterlaceReIndex(int height, int[] data) {
+    private int @NonNull[] computeInterlaceReIndex(int height, int[] data) {
         int pos = 0;
         for (int i = 0; i < height; i += 8) data[pos++] = i;
         for (int i = 4; i < height; i += 8) data[pos++] = i;

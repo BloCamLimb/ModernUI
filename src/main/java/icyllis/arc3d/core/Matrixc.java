@@ -19,10 +19,10 @@
 
 package icyllis.arc3d.core;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -241,14 +241,14 @@ public sealed interface Matrixc permits Matrix {
      *
      * @param dst the matrix to store
      */
-    void store(@Nonnull Matrix dst);
+    void store(@NonNull Matrix dst);
 
     /**
      * Store this matrix into the give float array in row-major order.
      *
      * @param a the array to store into
      */
-    void store(@Nonnull float[] a);
+    void store(float @NonNull[] a);
 
     /**
      * Store this matrix into the give float array in row-major order.
@@ -256,29 +256,14 @@ public sealed interface Matrixc permits Matrix {
      * @param a      the array to store into
      * @param offset the element offset
      */
-    void store(@Nonnull float[] a, int offset);
+    void store(float @NonNull[] a, int offset);
 
     /**
      * Store this matrix into the give float array in row-major order.
      *
      * @param a the pointer of the array to store
      */
-    void store(@Nonnull ByteBuffer a);
-
-    /**
-     * Store this matrix into the give float array in row-major order.
-     * The data matches std140 layout so it is not tightly packed.
-     *
-     * @param a the pointer of the array to store
-     */
-    void storeAligned(@Nonnull ByteBuffer a);
-
-    /**
-     * Store this matrix into the give float array in row-major order.
-     *
-     * @param a the pointer of the array to store
-     */
-    void store(@Nonnull FloatBuffer a);
+    void store(@NonNull ByteBuffer a);
 
     /**
      * Store this matrix into the give float array in row-major order.
@@ -286,7 +271,22 @@ public sealed interface Matrixc permits Matrix {
      *
      * @param a the pointer of the array to store
      */
-    void storeAligned(@Nonnull FloatBuffer a);
+    void storeAligned(@NonNull ByteBuffer a);
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a the pointer of the array to store
+     */
+    void store(@NonNull FloatBuffer a);
+
+    /**
+     * Store this matrix into the give float array in row-major order.
+     * The data matches std140 layout so it is not tightly packed.
+     *
+     * @param a the pointer of the array to store
+     */
+    void storeAligned(@NonNull FloatBuffer a);
 
     /**
      * Get this matrix data, store them into an address (UNSAFE).
@@ -314,7 +314,7 @@ public sealed interface Matrixc permits Matrix {
      *                [ g h 0 i ]
      * }</pre>
      */
-    void toMatrix4(@Nonnull Matrix4 dest);
+    void toMatrix4(@NonNull Matrix4 dest);
 
     /**
      * Converts this 3x3 matrix to 4x4 matrix, the third row and column are identity.
@@ -325,8 +325,7 @@ public sealed interface Matrixc permits Matrix {
      *                [ g h 0 i ]
      * }</pre>
      */
-    @Nonnull
-    Matrix4 toMatrix4();
+    @NonNull Matrix4 toMatrix4();
 
     /**
      * Compute the inverse of this matrix. The <var>dest</var> matrix will be
@@ -342,7 +341,7 @@ public sealed interface Matrixc permits Matrix {
      * Sets rect to bounds of rect corners mapped by this matrix.
      * Returns true if mapped corners are dst corners.
      */
-    default boolean mapRect(@Nonnull Rect2f rect) {
+    default boolean mapRect(@NonNull Rect2f rect) {
         return mapRect(rect, rect);
     }
 
@@ -350,12 +349,12 @@ public sealed interface Matrixc permits Matrix {
      * Sets dst to bounds of src corners mapped by this matrix.
      * Returns true if mapped corners are dst corners.
      */
-    boolean mapRect(@Nonnull Rect2fc src, @Nonnull Rect2f dst);
+    boolean mapRect(@NonNull Rect2fc src, @NonNull Rect2f dst);
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      */
-    default void mapRect(@Nonnull Rect2i r) {
+    default void mapRect(@NonNull Rect2i r) {
         mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, r);
     }
 
@@ -364,7 +363,7 @@ public sealed interface Matrixc permits Matrix {
      *
      * @param out the round values
      */
-    default void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2i out) {
+    default void mapRect(@NonNull Rect2fc r, @NonNull Rect2i out) {
         mapRect(r.left(), r.top(), r.right(), r.bottom(), out);
     }
 
@@ -373,7 +372,7 @@ public sealed interface Matrixc permits Matrix {
      *
      * @param out the round values
      */
-    default void mapRect(@Nonnull Rect2ic r, @Nonnull Rect2i out) {
+    default void mapRect(@NonNull Rect2ic r, @NonNull Rect2i out) {
         mapRect(r.left(), r.top(), r.right(), r.bottom(), out);
     }
 
@@ -382,12 +381,12 @@ public sealed interface Matrixc permits Matrix {
      *
      * @param dst the round values
      */
-    void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2i dst);
+    void mapRect(float left, float top, float right, float bottom, @NonNull Rect2i dst);
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      */
-    default void mapRectOut(@Nonnull Rect2i r) {
+    default void mapRectOut(@NonNull Rect2i r) {
         mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, r);
     }
 
@@ -396,7 +395,7 @@ public sealed interface Matrixc permits Matrix {
      *
      * @param dst the round out values
      */
-    default void mapRectOut(@Nonnull Rect2ic r, @Nonnull Rect2i dst) {
+    default void mapRectOut(@NonNull Rect2ic r, @NonNull Rect2i dst) {
         mapRectOut(r.left(), r.top(), r.right(), r.bottom(), dst);
     }
 
@@ -405,7 +404,7 @@ public sealed interface Matrixc permits Matrix {
      *
      * @param dst the round out values
      */
-    default void mapRectOut(@Nonnull Rect2fc r, @Nonnull Rect2i dst) {
+    default void mapRectOut(@NonNull Rect2fc r, @NonNull Rect2i dst) {
         mapRectOut(r.left(), r.top(), r.right(), r.bottom(), dst);
     }
 
@@ -414,7 +413,7 @@ public sealed interface Matrixc permits Matrix {
      *
      * @param dst the round out values
      */
-    void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect2i dst);
+    void mapRectOut(float left, float top, float right, float bottom, @NonNull Rect2i dst);
 
     /**
      * @see #mapPoints(float[], int, float[], int, int)
@@ -579,6 +578,6 @@ public sealed interface Matrixc permits Matrix {
     @Override
     String toString();
 
-    @Nonnull
+    @NonNull
     Matrix clone();
 }

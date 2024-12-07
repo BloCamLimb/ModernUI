@@ -20,9 +20,8 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.RecordingContext;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Base class for drawing devices.
@@ -59,7 +58,7 @@ public abstract class Device extends RefCnt {
     /**
      * Return image info for this device.
      */
-    @Nonnull
+    @NonNull
     public final ImageInfo getImageInfo() {
         return mInfo;
     }
@@ -82,7 +81,7 @@ public abstract class Device extends RefCnt {
     /**
      * Return the bounds of the device in the coordinate space of this device.
      */
-    public final void getBounds(@Nonnull Rect2i bounds) {
+    public final void getBounds(@NonNull Rect2i bounds) {
         bounds.set(mBounds);
     }
 
@@ -91,14 +90,14 @@ public abstract class Device extends RefCnt {
      * canvas. The root device will have its top-left at 0,0, but other devices
      * such as those associated with saveLayer may have a non-zero origin.
      */
-    public final void getGlobalBounds(@Nonnull Rect2i bounds) {
+    public final void getGlobalBounds(@NonNull Rect2i bounds) {
         mDeviceToGlobal.mapRectOut(mBounds, bounds);
     }
 
     /**
      * Returns the transformation that maps from the local space to the device's coordinate space.
      */
-    @Nonnull
+    @NonNull
     public final Matrix4c getLocalToDevice() {
         return mLocalToDevice;
     }
@@ -106,7 +105,7 @@ public abstract class Device extends RefCnt {
     /**
      * Returns the transformation that maps from the local space to the device's coordinate space.
      */
-    @Nonnull
+    @NonNull
     public final Matrixc getLocalToDevice33() {
         return mLocalToDevice33;
     }
@@ -116,7 +115,7 @@ public abstract class Device extends RefCnt {
      * into the global canvas' space (or root device space). This includes the translation
      * necessary to account for the device's origin.
      */
-    @Nonnull
+    @NonNull
     public final Matrix4c getDeviceToGlobal() {
         return mDeviceToGlobal;
     }
@@ -125,7 +124,7 @@ public abstract class Device extends RefCnt {
      * Return the inverse of getDeviceToGlobal(), mapping from the global canvas' space (or root
      * device space) into this device's coordinate space.
      */
-    @Nonnull
+    @NonNull
     public final Matrix4c getGlobalToDevice() {
         return mGlobalToDevice;
     }
@@ -148,14 +147,14 @@ public abstract class Device extends RefCnt {
      * that device is drawn to the root device, the net effect will be that this device's contents
      * have been transformed by the global transform.
      */
-    public final void getRelativeTransform(@Nonnull Device device, @Nonnull Matrix4 dest) {
+    public final void getRelativeTransform(@NonNull Device device, @NonNull Matrix4 dest) {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
         dest.set(mDeviceToGlobal);
         dest.postConcat(device.mGlobalToDevice);
     }
 
-    public final void setGlobalCTM(@Nonnull Matrix4c ctm) {
+    public final void setGlobalCTM(@NonNull Matrix4c ctm) {
         mLocalToDevice.set(ctm);
         mLocalToDevice.normalizePerspective();
         // Map from the global CTM state to this device's coordinate system.
@@ -163,7 +162,7 @@ public abstract class Device extends RefCnt {
         mLocalToDevice.toMatrix(mLocalToDevice33);
     }
 
-    public final void setLocalToDevice(@Nonnull Matrix4c localToDevice) {
+    public final void setLocalToDevice(@NonNull Matrix4c localToDevice) {
         mLocalToDevice.set(localToDevice);
         mLocalToDevice.toMatrix(mLocalToDevice33);
     }
@@ -230,7 +229,7 @@ public abstract class Device extends RefCnt {
      * draws unless the clip is further modified (at which point this will
      * return the updated bounds).
      */
-    public abstract void getClipBounds(@Nonnull Rect2i bounds);
+    public abstract void getClipBounds(@NonNull Rect2i bounds);
 
     protected abstract Rect2ic getClipBounds();
 

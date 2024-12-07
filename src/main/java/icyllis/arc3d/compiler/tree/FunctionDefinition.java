@@ -20,8 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A function definition (a function declaration plus an associated block of code).
@@ -39,7 +38,7 @@ public final class FunctionDefinition extends TopLevelElement {
         mBody = body;
     }
 
-    public static FunctionDefinition convert(@Nonnull Context context,
+    public static FunctionDefinition convert(@NonNull Context context,
                                              int pos,
                                              FunctionDecl functionDecl,
                                              boolean builtin,
@@ -95,14 +94,14 @@ public final class FunctionDefinition extends TopLevelElement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitFunctionDefinition(this)) {
             return true;
         }
         return mBody.accept(visitor);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mFunctionDecl.toString() + " " + mBody.toString();

@@ -20,8 +20,8 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
@@ -48,11 +48,11 @@ public class Font {
     public Font() {
     }
 
-    public Font(@Nonnull Font other) {
+    public Font(@NonNull Font other) {
         set(other);
     }
 
-    public void set(@Nonnull Font other) {
+    public void set(@NonNull Font other) {
         mTypeface = other.mTypeface;
         mSize = other.mSize;
         mFlags = other.mFlags;

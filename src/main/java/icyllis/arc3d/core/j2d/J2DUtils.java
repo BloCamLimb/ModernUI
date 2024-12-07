@@ -20,9 +20,9 @@
 package icyllis.arc3d.core.j2d;
 
 import icyllis.arc3d.core.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 
@@ -70,8 +70,8 @@ public class J2DUtils {
     }
 
     //TODO add a PathAdapter that implements Shape interface
-    @Nonnull
-    public static Path2D toPath2D(@Nonnull Path src, @Nullable Path2D dst) {
+    @NonNull
+    public static Path2D toPath2D(@NonNull Path src, @Nullable Path2D dst) {
         int winding = toWindingRule(src.getFillRule());
         if (dst == null) {
             dst = new Path2D.Float(winding, src.countVerbs());
@@ -82,7 +82,7 @@ public class J2DUtils {
         return new J2DPathConverter().convert(src, dst);
     }
 
-    public static Path toPath(@Nonnull PathIterator pi, @Nullable Path dst) {
+    public static Path toPath(@NonNull PathIterator pi, @Nullable Path dst) {
         if (dst == null) {
             dst = new Path();
         }

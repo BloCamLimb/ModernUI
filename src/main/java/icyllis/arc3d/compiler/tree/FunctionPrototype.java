@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A function prototype (a function declaration as a top-level element)
@@ -49,11 +49,11 @@ public final class FunctionPrototype extends TopLevelElement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return visitor.visitFunctionPrototype(this);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mFunctionDecl.toString() + ";";

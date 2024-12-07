@@ -20,9 +20,8 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nullable;
 
 /**
  * A client-side buffer represents an immutable block of native CPU memory.

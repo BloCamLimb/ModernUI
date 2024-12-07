@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Descriptor to create a render pass.

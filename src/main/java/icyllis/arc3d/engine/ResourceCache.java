@@ -20,9 +20,9 @@
 package icyllis.arc3d.engine;
 
 import org.jetbrains.annotations.VisibleForTesting;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
@@ -194,7 +194,7 @@ public final class ResourceCache {
      * Find a resource that matches a key.
      */
     @Nullable
-    public Resource findAndRefResource(@Nonnull IResourceKey key,
+    public Resource findAndRefResource(@NonNull IResourceKey key,
                                        boolean budgeted) {
         assert mContext.isOwnerThread();
         Resource resource = mResourceMap.peekFirstEntry(key);
@@ -355,7 +355,7 @@ public final class ResourceCache {
 
     // This is a thread safe call. If it fails the ResourceCache is no longer valid and the
     // Resource should clean itself up if it is the last ref.
-    boolean returnResource(@Nonnull Resource resource, int refType) {
+    boolean returnResource(@NonNull Resource resource, int refType) {
         // We should never be trying to return a LastRemovedRef of kCache.
         assert refType != Resource.REF_TYPE_CACHE;
         synchronized (mReturnLock) {
@@ -447,7 +447,7 @@ public final class ResourceCache {
         return true;
     }
 
-    private void returnResourceToCache(@Nonnull Resource resource, int refType) {
+    private void returnResourceToCache(@NonNull Resource resource, int refType) {
         // A resource should not have been destroyed when placed into the return queue. Also before
         // purging any resources from the cache itself, it should always empty the queue first. When the
         // cache releases/abandons all of its resources, it first invalidates the return queue so no new
@@ -501,7 +501,7 @@ public final class ResourceCache {
         }
     }
 
-    public void insertResource(@Nonnull Resource resource) {
+    public void insertResource(@NonNull Resource resource) {
         assert mContext.isOwnerThread();
         assert !isInCache(resource);
         assert !resource.isDestroyed();
@@ -543,7 +543,7 @@ public final class ResourceCache {
         purgeAsNeeded();
     }
 
-    private void purgeResource(@Nonnull Resource resource) {
+    private void purgeResource(@NonNull Resource resource) {
         assert resource.isPurgeable();
 
         mResourceMap.removeFirstEntry(resource.getKey(), resource);
@@ -560,7 +560,7 @@ public final class ResourceCache {
         resource.unrefCache();
     }
 
-    private void refAndMakeResourceMRU(@Nonnull Resource resource) {
+    private void refAndMakeResourceMRU(@NonNull Resource resource) {
         assert isInCache(resource);
 
         if (isInPurgeableQueue(resource)) {
@@ -574,7 +574,7 @@ public final class ResourceCache {
         setResourceTimestamp(resource, getNextTimestamp());
     }
 
-    private void addToNonPurgeableArray(@Nonnull Resource resource) {
+    private void addToNonPurgeableArray(@NonNull Resource resource) {
         Resource[] es = mNonPurgeableList;
         final int s = mNonPurgeableSize;
         if (s == es.length) {
@@ -586,7 +586,7 @@ public final class ResourceCache {
         mNonPurgeableSize = s + 1;
     }
 
-    private void removeFromNonPurgeableArray(@Nonnull Resource resource) {
+    private void removeFromNonPurgeableArray(@NonNull Resource resource) {
         final Resource[] es = mNonPurgeableList;
         // Fill the hole we will create in the array with the tail object, adjust its index, and
         // then pop the array
@@ -600,7 +600,7 @@ public final class ResourceCache {
         resource.mCacheIndex = -1;
     }
 
-    private void removeFromPurgeableQueue(@Nonnull Resource resource) {
+    private void removeFromPurgeableQueue(@NonNull Resource resource) {
         mPurgeableQueue.removeAt(resource.mCacheIndex);
         mPurgeableBytes -= resource.getMemorySize();
         // we are using the index as a
@@ -667,7 +667,7 @@ public final class ResourceCache {
         return mTimestamp++;
     }
 
-    private void setResourceTimestamp(@Nonnull Resource resource, int timestamp) {
+    private void setResourceTimestamp(@NonNull Resource resource, int timestamp) {
         // We always set the timestamp for zero sized resources to be kMaxTimestamp
         if (resource.getMemorySize() == 0) {
             timestamp = MAX_TIMESTAMP;
@@ -675,13 +675,13 @@ public final class ResourceCache {
         resource.mTimestamp = timestamp;
     }
 
-    private boolean isInPurgeableQueue(@Nonnull Resource resource) {
+    private boolean isInPurgeableQueue(@NonNull Resource resource) {
         assert isInCache(resource);
         int index = resource.mCacheIndex;
         return index < mPurgeableQueue.size() && mPurgeableQueue.elementAt(index) == resource;
     }
 
-    private boolean isInCache(@Nonnull Resource resource) {
+    private boolean isInCache(@NonNull Resource resource) {
         int index = resource.mCacheIndex;
         if (index < 0) {
             return false;

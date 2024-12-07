@@ -19,9 +19,9 @@
 
 package icyllis.arc3d.core;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nullable;
 import java.util.function.LongConsumer;
 
 /**

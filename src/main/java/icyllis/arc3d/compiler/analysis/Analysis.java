@@ -21,8 +21,8 @@ package icyllis.arc3d.compiler.analysis;
 
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.tree.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 public final class Analysis {
@@ -67,7 +67,7 @@ public final class Analysis {
         return true;
     }
 
-    public static boolean isTrivialExpression(@Nonnull Expression expr) {
+    public static boolean isTrivialExpression(@NonNull Expression expr) {
         switch (expr.getKind()) {
             case LITERAL, VARIABLE_REFERENCE -> {
                 return true;

@@ -21,11 +21,11 @@ package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.engine.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Set;
 
 import static org.lwjgl.vulkan.VK11.*;
@@ -49,7 +49,7 @@ public class VulkanDevice extends Device {
     }
 
     @Nullable
-    public static VulkanDevice make(@Nonnull VulkanBackendContext context,
+    public static VulkanDevice make(@NonNull VulkanBackendContext context,
                                     ContextOptions options) {
         if (context.mInstance == null ||
                 context.mPhysicalDevice == null ||
@@ -121,7 +121,7 @@ public class VulkanDevice extends Device {
 
     @Nullable
     @Override
-    protected GpuRenderTarget onCreateRenderTarget(int width, int height, int sampleCount, int numColorTargets, @Nullable Image[] colorTargets, @Nullable Image[] resolveTargets, @Nullable int[] mipLevels, @Nullable Image depthStencilTarget, int surfaceFlags) {
+    protected GpuRenderTarget onCreateRenderTarget(int width, int height, int sampleCount, int numColorTargets, Image @Nullable[] colorTargets, Image @Nullable[] resolveTargets, int @Nullable[] mipLevels, @Nullable Image depthStencilTarget, int surfaceFlags) {
         return null;
     }
 

@@ -20,9 +20,8 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * GlyphRunList provides a buffer view to GlyphRuns and additional drawing info.
@@ -59,12 +58,12 @@ public class GlyphRunList {
         mOriginY = originY;
     }
 
-    @Nonnull
+    @NonNull
     public Rect2fc getSourceBounds() {
         return mSourceBounds;
     }
 
-    public void getSourceBoundsWithOrigin(@Nonnull Rect2f bounds) {
+    public void getSourceBoundsWithOrigin(@NonNull Rect2f bounds) {
         mSourceBounds.store(bounds);
         bounds.offset(mOriginX, mOriginY);
     }

@@ -23,10 +23,9 @@ import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.engine.ContextOptions;
 import icyllis.arc3d.engine.ImmediateContext;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.NativeType;
-
-import javax.annotation.Nullable;
 
 import static org.lwjgl.vulkan.EXTDebugReport.VK_ERROR_VALIDATION_FAILED_EXT;
 import static org.lwjgl.vulkan.KHRDisplaySwapchain.VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;

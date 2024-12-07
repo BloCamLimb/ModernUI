@@ -24,10 +24,10 @@ import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.engine.trash.PipelineKey_old;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
@@ -1022,8 +1022,8 @@ public abstract class GLCaps extends Caps {
         return mInvalidateFramebufferSupport;
     }
 
-    @Nullable
-    public int[] getProgramBinaryFormats() {
+
+    public int @Nullable[] getProgramBinaryFormats() {
         return mProgramBinarySupport ? mProgramBinaryFormats.clone() : null;
     }
 
@@ -1282,7 +1282,7 @@ public abstract class GLCaps extends Caps {
         return mCompressionTypeToBackendFormat[compressionType];
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public PipelineKey_old makeDesc(PipelineKey_old desc,
                                     GpuRenderTarget renderTarget,
@@ -1290,7 +1290,7 @@ public abstract class GLCaps extends Caps {
         return PipelineKey_old.build(desc, graphicsPipelineDesc, this);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public PipelineKey makeGraphicsPipelineKey(PipelineKey old,
                                                PipelineDesc pipelineDesc,

@@ -22,9 +22,8 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Factory class used to obtain GPU resources with cache. A subclass can
@@ -474,7 +473,7 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final Sampler findOrCreateCompatibleSampler(@Nonnull SamplerDesc desc) {
+    public final Sampler findOrCreateCompatibleSampler(@NonNull SamplerDesc desc) {
         @SharedPtr
         Sampler sampler = (Sampler) mResourceCache.findAndRefResource(
                 desc, /*budgeted*/true
@@ -671,9 +670,9 @@ public abstract class ResourceProvider {
     @Nullable
     @SharedPtr
     public final GpuRenderTarget createRenderTarget(int numColorTargets,
-                                                    @Nullable Image[] colorTargets,
-                                                    @Nullable Image[] resolveTargets,
-                                                    @Nullable int[] mipLevels,
+            Image @Nullable[] colorTargets,
+            Image @Nullable[] resolveTargets,
+            int @Nullable[] mipLevels,
                                                     @Nullable Image depthStencilTarget,
                                                     int surfaceFlags) {
         return mDevice.createRenderTarget(numColorTargets,

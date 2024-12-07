@@ -20,9 +20,9 @@
 package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.tree.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -58,7 +58,7 @@ public final class SymbolTable {
     /**
      * Enters a scope level.
      */
-    @Nonnull
+    @NonNull
     SymbolTable enterScope() {
         return new SymbolTable(this, mIsBuiltin, /*isModuleLevel*/false);
     }
@@ -66,7 +66,7 @@ public final class SymbolTable {
     /**
      * Enters a module level.
      */
-    @Nonnull
+    @NonNull
     SymbolTable enterModule(boolean isBuiltin) {
         if ((isBuiltin && !mIsBuiltin) ||
                 (!mIsModuleLevel && mParent != null)) {
@@ -133,7 +133,7 @@ public final class SymbolTable {
         return mParent != null && mParent.isBuiltinType(name);
     }
 
-    <T extends Symbol> T insert(@Nonnull T symbol) {
+    <T extends Symbol> T insert(@NonNull T symbol) {
         return Objects.requireNonNull(insert(null, symbol));
     }
 
@@ -143,7 +143,7 @@ public final class SymbolTable {
      * @return the given symbol if successful, or null if there was a name collision
      */
     @Nullable
-    public <T extends Symbol> T insert(Context context, @Nonnull T symbol) {
+    public <T extends Symbol> T insert(Context context, @NonNull T symbol) {
         String key = symbol.getName();
         if (key.isEmpty()) {
             // We have legitimate use cases of nameless symbols, such as anonymous function parameters.

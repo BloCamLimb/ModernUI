@@ -22,10 +22,10 @@ package icyllis.arc3d.core.j2d;
 import icyllis.arc3d.core.*;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import sun.misc.Unsafe;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.awt.image.*;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -87,14 +87,14 @@ public class Raster implements AutoCloseable {
     protected Pixmap mPixmap;
     protected Pixels mPixels;
 
-    public Raster(@Nullable BufferedImage bufImg, @Nonnull ImageInfo info,
+    public Raster(@Nullable BufferedImage bufImg, @NonNull ImageInfo info,
                   @Nullable Object data, int baseOffset, int rowBytes) {
         mBufImg = bufImg;
         mPixmap = new Pixmap(info, data, baseOffset, rowBytes);
         mPixels = new Pixels(info.width(), info.height(), data, baseOffset, rowBytes, /*freeFn*/ null);
     }
 
-    @Nonnull
+    @NonNull
     public static Raster createRaster(@Size(min = 1) int width,
                                       @Size(min = 1) int height,
                                       @Format int format) {
@@ -198,7 +198,7 @@ public class Raster implements AutoCloseable {
         };
     }
 
-    @Nonnull
+    @NonNull
     public ImageInfo getInfo() {
         return mPixmap.getInfo();
     }

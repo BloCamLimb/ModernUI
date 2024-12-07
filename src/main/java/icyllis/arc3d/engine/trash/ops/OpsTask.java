@@ -25,9 +25,9 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.granite.ClipResult_old;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -58,8 +58,8 @@ public class OpsTask extends RenderTask {
     /**
      * @param writeView the reference to the owner's write view
      */
-    public OpsTask(@Nonnull RenderTaskManager drawingMgr,
-                   @Nonnull ImageProxyView writeView) {
+    public OpsTask(@NonNull RenderTaskManager drawingMgr,
+                   @NonNull ImageProxyView writeView) {
         super(drawingMgr);
         mWriteView = writeView;             // move
         //addTarget(writeView.refProxy());    // inc
@@ -179,11 +179,11 @@ public class OpsTask extends RenderTask {
         }
     }
 
-    public void addOp(@Nonnull Op op) {
+    public void addOp(@NonNull Op op) {
         recordOp(op, null, ProcessorAnalyzer.EMPTY_ANALYSIS);
     }
 
-    public void addDrawOp(@Nonnull DrawOp op, @Nullable ClipResult_old clip, int processorAnalysis) {
+    public void addDrawOp(@NonNull DrawOp op, @Nullable ClipResult_old clip, int processorAnalysis) {
         SurfaceVisitor addDependency = (p, ss) -> {
             mSampledTextures.add(p);
             addDependency(p, ss);
@@ -198,7 +198,7 @@ public class OpsTask extends RenderTask {
         recordOp(op, clip != null && clip.hasClip() ? clip : null, processorAnalysis);
     }
 
-    void recordOp(@Nonnull Op op, @Nullable ClipResult_old clip, int processorAnalysis) {
+    void recordOp(@NonNull Op op, @Nullable ClipResult_old clip, int processorAnalysis) {
         // A closed OpsTask should never receive new/more ops
         assert (!isClosed());
 
@@ -243,7 +243,7 @@ public class OpsTask extends RenderTask {
         private final ClipResult_old mClipResult;
         private final int mProcessorAnalysis;
 
-        public OpChain(@Nonnull Op op, @Nullable ClipResult_old clipResult, int processorAnalysis) {
+        public OpChain(@NonNull Op op, @Nullable ClipResult_old clipResult, int processorAnalysis) {
             mHead = op;
             mTail = op;
 
@@ -284,7 +284,7 @@ public class OpsTask extends RenderTask {
             return temp;
         }
 
-        public Op appendOp(@Nonnull Op op, @Nullable ClipResult_old clipResult, int processorAnalysis) {
+        public Op appendOp(@NonNull Op op, @Nullable ClipResult_old clipResult, int processorAnalysis) {
             assert (op.isChainHead() && op.isChainTail());
             assert (op.validateChain(op));
             assert (mHead != null);

@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Arrays;
 
 /**
@@ -34,7 +35,7 @@ public class NoPixelsDevice extends Device {
     private ConservativeClip[] mClipStack = new ConservativeClip[CLIP_POOL_SIZE];
     private int mClipIndex = 0;
 
-    public NoPixelsDevice(@Nonnull Rect2ic bounds) {
+    public NoPixelsDevice(@NonNull Rect2ic bounds) {
         this(bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
     }
 
@@ -58,7 +59,7 @@ public class NoPixelsDevice extends Device {
         clip.mDeferredSaveCount = 0;
     }
 
-    @Nonnull
+    @NonNull
     private ConservativeClip push() {
         final int i = ++mClipIndex;
         ConservativeClip[] stack = mClipStack;
@@ -79,12 +80,12 @@ public class NoPixelsDevice extends Device {
         }
     }
 
-    @Nonnull
+    @NonNull
     private ConservativeClip getClip() {
         return mClipStack[mClipIndex];
     }
 
-    @Nonnull
+    @NonNull
     private ConservativeClip getWritableClip() {
         var current = mClipStack[mClipIndex];
         if (current.mDeferredSaveCount > 0) {
@@ -150,7 +151,7 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void getClipBounds(@Nonnull Rect2i bounds) {
+    public void getClipBounds(@NonNull Rect2i bounds) {
         bounds.set(getClipBounds());
     }
 

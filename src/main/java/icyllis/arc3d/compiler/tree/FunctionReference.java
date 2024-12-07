@@ -20,8 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * An identifier referring to a function name. This is an intermediate value: FunctionReferences are
@@ -36,8 +35,8 @@ public final class FunctionReference extends Expression {
         mOverloadChain = overloadChain;
     }
 
-    @Nonnull
-    public static Expression make(@Nonnull Context context,
+    @NonNull
+    public static Expression make(@NonNull Context context,
                                   int position, FunctionDecl overloadChain) {
         return new FunctionReference(position, overloadChain, context.getTypes().mInvalid);
     }
@@ -48,7 +47,7 @@ public final class FunctionReference extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return visitor.visitFunctionReference(this);
     }
 
@@ -56,13 +55,13 @@ public final class FunctionReference extends Expression {
         return mOverloadChain;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new FunctionReference(position, mOverloadChain, getType());
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         return "<function>";

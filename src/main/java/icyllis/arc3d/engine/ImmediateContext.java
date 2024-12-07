@@ -26,8 +26,7 @@ import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.StaticBufferManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
-
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Immediate context is used for command list execution and queue submission.

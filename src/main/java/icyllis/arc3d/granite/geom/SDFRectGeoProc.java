@@ -24,8 +24,7 @@ import icyllis.arc3d.engine.Engine.PrimitiveType;
 import icyllis.arc3d.engine.Engine.VertexAttribType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.GeometryStep;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Generates rectangle geometric primitive, uses instanced rendering.
@@ -95,11 +94,11 @@ public class SDFRectGeoProc extends GeometryStep {
     }
 
     @Override
-    public void appendToKey(@Nonnull KeyBuilder b) {
+    public void appendToKey(@NonNull KeyBuilder b) {
         b.addBits(3, mFlags, "gpFlags");
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return null;

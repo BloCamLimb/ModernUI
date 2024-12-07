@@ -21,8 +21,7 @@ package icyllis.arc3d.core;
 
 import org.intellij.lang.annotations.PrintFormat;
 import org.jetbrains.annotations.Contract;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * PathStroker is a {@link PathConsumer} that converts paths by stroking paths.
@@ -78,7 +77,7 @@ public class PathStroker implements PathConsumer {
 
     private boolean mPrevIsLine;
 
-    public void init(@Nonnull PathConsumer out,
+    public void init(@NonNull PathConsumer out,
                      float radius,
                      @Paint.Cap int cap,
                      @Paint.Join int join,

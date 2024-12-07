@@ -19,8 +19,9 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.util.Objects;
 
 /**
@@ -80,9 +81,9 @@ public final class StrikeDesc {
         return Math.round(x * 1024) / 1024.0f;
     }
 
-    @Nonnull
-    public StrikeDesc update(@Nonnull Font font, @Nullable Paint paint,
-                             @Nonnull Matrixc deviceMatrix) {
+    @NonNull
+    public StrikeDesc update(@NonNull Font font, @Nullable Paint paint,
+                             @NonNull Matrixc deviceMatrix) {
         if (deviceMatrix.hasPerspective()) {
             throw new IllegalArgumentException();
         }
@@ -162,9 +163,9 @@ public final class StrikeDesc {
     }
 
     // Create a strike spec for mask style cache entries.
-    @Nonnull
-    public StrikeDesc updateForMask(@Nonnull Font font, @Nonnull Paint paint,
-                                    @Nonnull Matrixc deviceMatrix) {
+    @NonNull
+    public StrikeDesc updateForMask(@NonNull Font font, @NonNull Paint paint,
+                                    @NonNull Matrixc deviceMatrix) {
         return update(font, paint, deviceMatrix);
     }
 
@@ -229,17 +230,17 @@ public final class StrikeDesc {
         return mPathEffect;
     }
 
-    @Nonnull
+    @NonNull
     public Strike findOrCreateStrike() {
         return StrikeCache.getGlobalStrikeCache().findOrCreateStrike(this);
     }
 
-    @Nonnull
-    public Strike findOrCreateStrike(@Nonnull StrikeCache cache) {
+    @NonNull
+    public Strike findOrCreateStrike(@NonNull StrikeCache cache) {
         return cache.findOrCreateStrike(this);
     }
 
-    @Nonnull
+    @NonNull
     public ScalerContext createScalerContext() {
         return mTypeface.createScalerContext(this);
     }
@@ -269,7 +270,7 @@ public final class StrikeDesc {
         return false;
     }
 
-    @Nonnull
+    @NonNull
     public StrikeDesc copy() {
         return new StrikeDesc(this);
     }

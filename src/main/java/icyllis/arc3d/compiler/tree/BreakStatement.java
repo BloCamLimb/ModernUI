@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A break statement.
@@ -40,11 +40,11 @@ public final class BreakStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return visitor.visitBreak(this);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "break;";

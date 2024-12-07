@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Interface to a read-only view of a rectangle in float coordinates.
@@ -118,14 +118,14 @@ public sealed interface Rect2fc permits Rect2f {
      *
      * @param dst the rectangle to store
      */
-    void store(@Nonnull Rect2f dst);
+    void store(@NonNull Rect2f dst);
 
     /**
      * Stores the coordinates from this into dst.
      *
      * @param dst the rectangle to store
      */
-    void store(@Nonnull Rect2i dst);
+    void store(@NonNull Rect2i dst);
 
     /**
      * Returns true if this rectangle intersects the specified rectangle.
@@ -150,7 +150,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    boolean intersects(@Nonnull Rect2fc r);
+    boolean intersects(@NonNull Rect2fc r);
 
     /**
      * Returns true if this rectangle intersects the specified rectangle.
@@ -161,7 +161,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    boolean intersects(@Nonnull Rect2ic r);
+    boolean intersects(@NonNull Rect2ic r);
 
     /**
      * Returns true if (x,y) is inside the rectangle. The left and top are
@@ -198,7 +198,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    boolean contains(@Nonnull Rect2fc r);
+    boolean contains(@NonNull Rect2fc r);
 
     /**
      * Returns true if the specified rectangle r is inside or equal to this
@@ -208,41 +208,41 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    boolean contains(@Nonnull Rect2ic r);
+    boolean contains(@NonNull Rect2ic r);
 
     /**
      * Set the dst integer Rect by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    void round(@Nonnull Rect2i dst);
+    void round(@NonNull Rect2i dst);
 
     /**
      * Set the dst integer Rect by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    void roundIn(@Nonnull Rect2i dst);
+    void roundIn(@NonNull Rect2i dst);
 
     /**
      * Set the dst integer Rect by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    void roundOut(@Nonnull Rect2i dst);
+    void roundOut(@NonNull Rect2i dst);
 
     /**
      * Set the dst rectangle by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    void round(@Nonnull Rect2f dst);
+    void round(@NonNull Rect2f dst);
 
     /**
      * Set the dst rectangle by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    void roundIn(@Nonnull Rect2f dst);
+    void roundIn(@NonNull Rect2f dst);
 
     /**
      * Set the dst rectangle by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    void roundOut(@Nonnull Rect2f dst);
+    void roundOut(@NonNull Rect2f dst);
 }

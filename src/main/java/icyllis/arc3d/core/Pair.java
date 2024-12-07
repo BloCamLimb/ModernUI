@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.Map;
 import java.util.Objects;
 
@@ -49,12 +50,12 @@ public class Pair<L, R> implements Map.Entry<L, R> {
         this.right = right;
     }
 
-    @Nonnull
+    @NonNull
     public static <L, R> Pair<L, R> of(L left, R right) {
         return new Pair<>(left, right);
     }
 
-    @Nonnull
+    @NonNull
     public static <L, R> Pair<L, R> of(Map.Entry<L, R> entry) {
         if (entry == null) {
             return new Pair<>();

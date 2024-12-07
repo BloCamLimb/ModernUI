@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Descriptor of 3D API image/texture that can be shared between
@@ -92,7 +92,7 @@ public abstract class BackendImage {
     /**
      * Get the backend info for this image/texture.
      */
-    @Nonnull
+    @NonNull
     public final ImageDesc getDesc() {
         return mDesc;
     }
@@ -100,7 +100,7 @@ public abstract class BackendImage {
     /**
      * Get the backend mutable state for this image/texture.
      */
-    @Nonnull
+    @NonNull
     public final ImageMutableState getMutableState() {
         return mMutableState;
     }
@@ -133,7 +133,7 @@ public abstract class BackendImage {
     /**
      * Get the BackendFormat for this image/texture.
      */
-    @Nonnull
+    @NonNull
     public abstract BackendFormat getBackendFormat();
 
     /**

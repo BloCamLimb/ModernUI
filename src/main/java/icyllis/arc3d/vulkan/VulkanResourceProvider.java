@@ -20,8 +20,7 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class VulkanResourceProvider extends ResourceProvider {
 

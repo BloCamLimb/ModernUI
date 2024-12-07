@@ -20,9 +20,9 @@
 package icyllis.arc3d.compiler.glsl;
 
 import icyllis.arc3d.compiler.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
@@ -36,9 +36,9 @@ public final class GLSLCodeGenerator extends CodeGenerator {
     public final TargetApi mOutputTarget;
     public final GLSLVersion mOutputVersion;
 
-    public GLSLCodeGenerator(@Nonnull ShaderCompiler compiler,
-                             @Nonnull TranslationUnit translationUnit,
-                             @Nonnull ShaderCaps shaderCaps) {
+    public GLSLCodeGenerator(@NonNull ShaderCompiler compiler,
+                             @NonNull TranslationUnit translationUnit,
+                             @NonNull ShaderCaps shaderCaps) {
         super(compiler, translationUnit);
         mOutputTarget = Objects.requireNonNullElse(shaderCaps.mTargetApi, TargetApi.OPENGL_4_5);
         mOutputVersion = Objects.requireNonNullElse(shaderCaps.mGLSLVersion, GLSLVersion.GLSL_450);

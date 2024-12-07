@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.StringJoiner;
 
 /**
@@ -119,7 +119,7 @@ public final class Layout {
         return mLayoutFlags;
     }
 
-    public void setLayoutFlag(@Nonnull Context context,
+    public void setLayoutFlag(@NonNull Context context,
                               int mask, String name, int pos) {
         if ((mLayoutFlags & mask) != 0) {
             context.error(pos, "layout qualifier '" + name +
@@ -132,7 +132,7 @@ public final class Layout {
         mLayoutFlags &= ~mask;
     }
 
-    public boolean checkLayoutFlags(@Nonnull Context context,
+    public boolean checkLayoutFlags(@NonNull Context context,
                                     int pos, int permittedLayoutFlags) {
         boolean success = true;
 
@@ -180,7 +180,7 @@ public final class Layout {
         return mBuiltin == layout.mBuiltin;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringJoiner joiner = new StringJoiner(", ", "layout(", ") ");

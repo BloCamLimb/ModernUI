@@ -20,10 +20,9 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * An expression modified by a unary operator appearing after it.
@@ -44,7 +43,7 @@ public final class PostfixExpression extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int position, Expression base, Operator op) {
         Type baseType = base.getType();
         if (!baseType.isNumeric()) {
@@ -55,7 +54,7 @@ public final class PostfixExpression extends Expression {
         return make(position, base, op);
     }
 
-    @Nonnull
+    @NonNull
     public static Expression make(int position, Expression base, Operator op) {
         assert base.getType().isNumeric();
         return new PostfixExpression(position, base, op);
@@ -67,7 +66,7 @@ public final class PostfixExpression extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitPostfix(this)) {
             return true;
         }
@@ -82,13 +81,13 @@ public final class PostfixExpression extends Expression {
         return mOperator;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new PostfixExpression(position, mOperand.clone(), mOperator);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         boolean needsParens = (Operator.PRECEDENCE_POSTFIX >= parentPrecedence);

@@ -21,9 +21,8 @@ package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public final class VulkanRenderTarget extends GpuRenderTarget {
 
@@ -43,7 +42,7 @@ public final class VulkanRenderTarget extends GpuRenderTarget {
         super(context, width, height, sampleCount, numColorAttachments);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public BackendFormat getBackendFormat() {
         return null;
@@ -54,7 +53,7 @@ public final class VulkanRenderTarget extends GpuRenderTarget {
         return false;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public BackendRenderTarget getBackendRenderTarget() {
         return null;
@@ -72,9 +71,9 @@ public final class VulkanRenderTarget extends GpuRenderTarget {
         return null;
     }
 
-    @Nullable
+
     @Override
-    protected Image[] getColorAttachments() {
+    protected Image @Nullable[] getColorAttachments() {
         return new Image[0];
     }
 
@@ -90,9 +89,9 @@ public final class VulkanRenderTarget extends GpuRenderTarget {
         return null;
     }
 
-    @Nullable
+
     @Override
-    protected Image[] getResolveAttachments() {
+    protected Image @Nullable[] getResolveAttachments() {
         return new Image[0];
     }
 

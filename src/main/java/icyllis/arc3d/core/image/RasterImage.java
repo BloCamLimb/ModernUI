@@ -20,10 +20,9 @@
 package icyllis.arc3d.core.image;
 
 import icyllis.arc3d.core.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class RasterImage extends Image {
 
@@ -39,8 +38,8 @@ public class RasterImage extends Image {
      * @param pixmap pixel map
      * @param pixels raw ptr to pixel ref
      */
-    public RasterImage(@Nonnull Pixmap pixmap,
-                       @Nonnull @RawPtr Pixels pixels,
+    public RasterImage(@NonNull Pixmap pixmap,
+                       @NonNull @RawPtr Pixels pixels,
                        boolean mayBeMutable) {
         super(pixmap.getInfo());
         if (!(mayBeMutable || pixels.isImmutable())) {
@@ -52,14 +51,14 @@ public class RasterImage extends Image {
 
     @Nullable
     @SharedPtr
-    public static Image makeFromBitmap(@Nonnull Pixmap pixmap,
+    public static Image makeFromBitmap(@NonNull Pixmap pixmap,
                                        @RawPtr Pixels pixels) {
         return makeFromRasterBitmap(pixmap, pixels, COPY_MODE_IF_MUTABLE);
     }
 
     @Nullable
     @SharedPtr
-    public static Image makeFromRasterBitmap(@Nonnull Pixmap pixmap,
+    public static Image makeFromRasterBitmap(@NonNull Pixmap pixmap,
                                              @RawPtr Pixels pixels,
                                              int copyMode) {
         if (pixels == null) {

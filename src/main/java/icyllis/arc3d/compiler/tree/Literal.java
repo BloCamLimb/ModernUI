@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.OptionalDouble;
 
 /**
@@ -36,12 +36,12 @@ public final class Literal extends Expression {
         mValue = value;
     }
 
-    @Nonnull
-    public static Literal makeFloat(@Nonnull Context context, int position, float value) {
+    @NonNull
+    public static Literal makeFloat(@NonNull Context context, int position, float value) {
         return new Literal(position, value, context.getTypes().mFloat);
     }
 
-    @Nonnull
+    @NonNull
     public static Literal makeFloat(int position, float value, Type type) {
         if (type.isFloat() && Float.isFinite(value)) {
             return new Literal(position, value, type);
@@ -49,12 +49,12 @@ public final class Literal extends Expression {
         throw new IllegalArgumentException();
     }
 
-    @Nonnull
-    public static Literal makeInteger(@Nonnull Context context, int position, long value) {
+    @NonNull
+    public static Literal makeInteger(@NonNull Context context, int position, long value) {
         return new Literal(position, value, context.getTypes().mInt);
     }
 
-    @Nonnull
+    @NonNull
     public static Literal makeInteger(int position, long value, Type type) {
         if (type.isInteger() && value >= type.getMinValue() && value <= type.getMaxValue()) {
             return new Literal(position, value, type);
@@ -62,12 +62,12 @@ public final class Literal extends Expression {
         throw new IllegalArgumentException();
     }
 
-    @Nonnull
-    public static Literal makeBoolean(@Nonnull Context context, int position, boolean value) {
+    @NonNull
+    public static Literal makeBoolean(@NonNull Context context, int position, boolean value) {
         return new Literal(position, value ? 1 : 0, context.getTypes().mBool);
     }
 
-    @Nonnull
+    @NonNull
     public static Literal makeBoolean(int position, boolean value, Type type) {
         if (type.isBoolean()) {
             return new Literal(position, value ? 1 : 0, type);
@@ -75,7 +75,7 @@ public final class Literal extends Expression {
         throw new IllegalArgumentException();
     }
 
-    @Nonnull
+    @NonNull
     public static Literal make(int position, double value, Type type) {
         if (type.isFloat()) {
             return makeFloat(position, (float) value, type);
@@ -95,7 +95,7 @@ public final class Literal extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return visitor.visitLiteral(this);
     }
 
@@ -129,13 +129,13 @@ public final class Literal extends Expression {
         return OptionalDouble.of(mValue);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new Literal(position, mValue, getType());
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         if (getType().isFloat()) {

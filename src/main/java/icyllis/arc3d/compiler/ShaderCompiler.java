@@ -22,9 +22,9 @@ package icyllis.arc3d.compiler;
 import icyllis.arc3d.compiler.spirv.SPIRVCodeGenerator;
 import icyllis.arc3d.compiler.tree.Node;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.*;
@@ -152,10 +152,10 @@ public class ShaderCompiler {
      * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public TranslationUnit parse(@Nonnull CharSequence source,
-                                 @Nonnull ShaderKind kind,
-                                 @Nonnull CompileOptions options,
-                                 @Nonnull ModuleUnit parent) {
+    public TranslationUnit parse(@NonNull CharSequence source,
+                                 @NonNull ShaderKind kind,
+                                 @NonNull CompileOptions options,
+                                 @NonNull ModuleUnit parent) {
         final char[] chars;
         final int offset, length;
         if (source instanceof CharBuffer buffer &&
@@ -183,11 +183,11 @@ public class ShaderCompiler {
      * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public TranslationUnit parse(@Nonnull char[] source,
+    public TranslationUnit parse(char @NonNull[] source,
                                  int offset, int length,
-                                 @Nonnull ShaderKind kind,
-                                 @Nonnull CompileOptions options,
-                                 @Nonnull ModuleUnit parent) {
+                                 @NonNull ShaderKind kind,
+                                 @NonNull CompileOptions options,
+                                 @NonNull ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         Objects.checkFromIndexSize(offset, length, source.length);
@@ -223,9 +223,9 @@ public class ShaderCompiler {
      * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public ModuleUnit parseModule(@Nonnull CharSequence source,
-                                  @Nonnull ShaderKind kind,
-                                  @Nonnull ModuleUnit parent,
+    public ModuleUnit parseModule(@NonNull CharSequence source,
+                                  @NonNull ShaderKind kind,
+                                  @NonNull ModuleUnit parent,
                                   boolean builtin) {
         final char[] chars;
         final int offset, length;
@@ -254,10 +254,10 @@ public class ShaderCompiler {
      * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public ModuleUnit parseModule(@Nonnull char[] source,
+    public ModuleUnit parseModule(char @NonNull[] source,
                                   int offset, int length,
-                                  @Nonnull ShaderKind kind,
-                                  @Nonnull ModuleUnit parent,
+                                  @NonNull ShaderKind kind,
+                                  @NonNull ModuleUnit parent,
                                   boolean builtin) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
@@ -295,8 +295,8 @@ public class ShaderCompiler {
      * @return the translated shader code (uint32_t *), or null if there's an error
      */
     @Nullable
-    public ByteBuffer generateSPIRV(@Nonnull TranslationUnit translationUnit,
-                                    @Nonnull ShaderCaps shaderCaps) {
+    public ByteBuffer generateSPIRV(@NonNull TranslationUnit translationUnit,
+                                    @NonNull ShaderCaps shaderCaps) {
         startContext(translationUnit.getKind(),
                 translationUnit.getOptions(),
                 null,
@@ -324,11 +324,11 @@ public class ShaderCompiler {
      * @see #generateSPIRV(TranslationUnit, ShaderCaps)
      */
     @Nullable
-    public ByteBuffer compileIntoSPIRV(@Nonnull CharSequence source,
-                                       @Nonnull ShaderKind kind,
-                                       @Nonnull ShaderCaps shaderCaps,
-                                       @Nonnull CompileOptions options,
-                                       @Nonnull ModuleUnit parent) {
+    public ByteBuffer compileIntoSPIRV(@NonNull CharSequence source,
+                                       @NonNull ShaderKind kind,
+                                       @NonNull ShaderCaps shaderCaps,
+                                       @NonNull CompileOptions options,
+                                       @NonNull ModuleUnit parent) {
         final char[] chars;
         final int offset, length;
         if (source instanceof CharBuffer buffer &&
@@ -354,12 +354,12 @@ public class ShaderCompiler {
      * @see #generateSPIRV(TranslationUnit, ShaderCaps)
      */
     @Nullable
-    public ByteBuffer compileIntoSPIRV(@Nonnull char[] source,
+    public ByteBuffer compileIntoSPIRV(char @NonNull[] source,
                                        int offset, int length,
-                                       @Nonnull ShaderKind kind,
-                                       @Nonnull ShaderCaps shaderCaps,
-                                       @Nonnull CompileOptions options,
-                                       @Nonnull ModuleUnit parent) {
+                                       @NonNull ShaderKind kind,
+                                       @NonNull ShaderCaps shaderCaps,
+                                       @NonNull CompileOptions options,
+                                       @NonNull ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
         Objects.checkFromIndexSize(offset, length, source.length);
@@ -410,13 +410,13 @@ public class ShaderCompiler {
         mContext.getErrorHandler().setSource(null, 0, 0);
     }
 
+
     /**
      * Helper method to copy a char sequence.
      *
      * @return a new char buffer copied from the given element
      */
-    @Nonnull
-    public static char[] toChars(@Nonnull CharSequence s) {
+    public static char @NonNull[] toChars(@NonNull CharSequence s) {
         if (s instanceof String) {
             return ((String) s).toCharArray();
         }
@@ -426,16 +426,17 @@ public class ShaderCompiler {
         return chars;
     }
 
+
     /**
      * Helper method to copy a char sequence array. Character sequences will
      * be concatenated together.
      *
      * @return a new char buffer copied from the given elements
      */
-    @Nonnull
-    public static char[] toChars(@Nonnull CharSequence... elements) {
+    public static char @NonNull[] toChars(@NonNull CharSequence... elements) {
         return toChars(elements, 0, elements.length);
     }
+
 
     /**
      * Helper method to copy a sub-range of char sequences. Character sequences will
@@ -445,8 +446,7 @@ public class ShaderCompiler {
      * @param end   end index (exclusive) in elements
      * @return a new char buffer copied from the given elements
      */
-    @Nonnull
-    public static char[] toChars(@Nonnull CharSequence[] elements, int start, int end) {
+    public static char @NonNull[] toChars(CharSequence @NonNull[] elements, int start, int end) {
         Objects.checkFromToIndex(start, end, elements.length);
         if (start == end) {
             return new char[0];
@@ -474,14 +474,14 @@ public class ShaderCompiler {
         return chars;
     }
 
+
     /**
      * Helper method to copy a sequence of char sequences. Character sequences will
      * be concatenated together. Empty sequences will be ignored.
      *
      * @return a new char buffer copied from the given elements
      */
-    @Nonnull
-    public static char[] toChars(@Nonnull List<CharSequence> elements) {
+    public static char @NonNull[] toChars(@NonNull List<CharSequence> elements) {
         int size = elements.size();
         if (size == 0) {
             return new char[0];
@@ -509,8 +509,8 @@ public class ShaderCompiler {
         return chars;
     }
 
-    private static int getChars(@Nonnull CharSequence s,
-                                @Nonnull char[] dst, int offset, int n) {
+    private static int getChars(@NonNull CharSequence s,
+            char @NonNull[] dst, int offset, int n) {
         if (s instanceof String)
             ((String) s).getChars(0, n, dst, offset);
         else if (s instanceof StringBuffer)
@@ -530,7 +530,7 @@ public class ShaderCompiler {
      * Returns the concatenated error (and warning) message during the last parsing
      * or code generation. This may be empty or contain multiple lines.
      */
-    @Nonnull
+    @NonNull
     public String getErrorMessage() {
         return getErrorMessage(true);
     }
@@ -541,7 +541,7 @@ public class ShaderCompiler {
      *
      * @param showCount show the number of errors and warnings, if there are any
      */
-    @Nonnull
+    @NonNull
     public String getErrorMessage(boolean showCount) {
         if (!showCount) {
             return mErrorBuilder.toString();

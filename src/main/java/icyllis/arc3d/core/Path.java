@@ -21,9 +21,9 @@ package icyllis.arc3d.core;
 
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.invoke.MethodHandles;
@@ -146,7 +146,7 @@ public class Path implements PathIterable, PathConsumer {
      * verb array, coordinate array and weights are copied when modified.
      */
     @SuppressWarnings("IncompleteCopyConstructor")
-    public Path(@Nonnull Path other) {
+    public Path(@NonNull Path other) {
         mPathRef = RefCnt.create(other.mPathRef);
         copyFields(other);
     }
@@ -161,7 +161,7 @@ public class Path implements PathIterable, PathConsumer {
         mFirstDirection = FIRST_DIRECTION_UNKNOWN;
     }
 
-    private void copyFields(@Nonnull Path other) {
+    private void copyFields(@NonNull Path other) {
         mLastMoveToIndex = other.mLastMoveToIndex;
         mConvexity = other.mConvexity;
         mFirstDirection = other.mFirstDirection;
@@ -196,7 +196,7 @@ public class Path implements PathIterable, PathConsumer {
      * Internally, the two paths share reference values. The underlying
      * verb array, coordinate array and weights are copied when modified.
      */
-    public void set(@Nonnull Path other) {
+    public void set(@NonNull Path other) {
         if (other != this) {
             mPathRef = RefCnt.create(mPathRef, other.mPathRef);
             copyFields(other);
@@ -207,7 +207,7 @@ public class Path implements PathIterable, PathConsumer {
      * Moves contents from other path into this path. This is equivalent to call
      * {@code this.set(other)} and then {@code other.recycle()}.
      */
-    public void move(@Nonnull Path other) {
+    public void move(@NonNull Path other) {
         if (other != this) {
             mPathRef = RefCnt.move(mPathRef, other.mPathRef);
             other.mPathRef = RefCnt.create(PathRef.EMPTY);
@@ -506,7 +506,7 @@ public class Path implements PathIterable, PathConsumer {
      *
      * @param matrix Matrix to apply to Path
      */
-    public void transform(@Nonnull Matrixc matrix) {
+    public void transform(@NonNull Matrixc matrix) {
         transform(matrix, this);
     }
 
@@ -519,7 +519,7 @@ public class Path implements PathIterable, PathConsumer {
      * @param matrix Matrix to apply to Path
      * @param dst    overwritten, transformed copy of Path; may be null
      */
-    public void transform(@Nonnull Matrixc matrix, @Nullable Path dst) {
+    public void transform(@NonNull Matrixc matrix, @Nullable Path dst) {
         if (matrix.isIdentity()) {
             if (dst != null && dst != this) {
                 dst.set(this);
@@ -575,7 +575,7 @@ public class Path implements PathIterable, PathConsumer {
      * @return bounds of all points, read-only
      * @see #isFinite()
      */
-    @Nonnull
+    @NonNull
     public Rect2fc getBounds() {
         return mPathRef.getBounds();
     }
@@ -583,7 +583,7 @@ public class Path implements PathIterable, PathConsumer {
     /**
      * Helper method to {@link #getBounds()}, stores the result to dst.
      */
-    public void getBounds(@Nonnull Rect2f dst) {
+    public void getBounds(@NonNull Rect2f dst) {
         getBounds().store(dst);
     }
 
@@ -615,7 +615,7 @@ public class Path implements PathIterable, PathConsumer {
         return mPathRef.mSegmentMask;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public PathIterator getPathIterator() {
         return this.new Iterator();
@@ -683,7 +683,7 @@ public class Path implements PathIterable, PathConsumer {
      * Iterates the Path and feeds the given consumer.
      */
     @Override
-    public void forEach(@Nonnull PathConsumer action) {
+    public void forEach(@NonNull PathConsumer action) {
         int n = countVerbs();
         if (n != 0) {
             byte[] vs = mPathRef.mVerbs;
@@ -816,7 +816,7 @@ public class Path implements PathIterable, PathConsumer {
 
     // ignore the last point of the contour
     // there must be moveTo() for the contour
-    void reversePop(@Nonnull PathConsumer out, boolean addMoveTo) {
+    void reversePop(@NonNull PathConsumer out, boolean addMoveTo) {
         assert mPathRef != null;
         byte[] vs = mPathRef.mVerbs;
         float[] cs = mPathRef.mCoords;
@@ -885,8 +885,8 @@ public class Path implements PathIterable, PathConsumer {
         return 0;
     }
 
-    @Nonnull
-    private static byte[] growVerbs(@Nonnull byte[] old, int minGrow) {
+
+    private static byte @NonNull[] growVerbs(byte @NonNull[] old, int minGrow) {
         final int oldCap = old.length, grow;
         if (oldCap < 10) {
             grow = 10 - oldCap;
@@ -906,8 +906,8 @@ public class Path implements PathIterable, PathConsumer {
         return Arrays.copyOf(old, newCap);
     }
 
-    @Nonnull
-    private static float[] growCoords(@Nonnull float[] old, int minGrow) {
+
+    private static float @NonNull[] growCoords(float @NonNull[] old, int minGrow) {
         final int oldCap = old.length, grow;
         if (oldCap < 20) {
             grow = 20 - oldCap;
@@ -1001,7 +1001,7 @@ public class Path implements PathIterable, PathConsumer {
         }
 
         @SuppressWarnings("IncompleteCopyConstructor")
-        PathRef(@Nonnull PathRef other) {
+        PathRef(@NonNull PathRef other) {
             mBounds.set(other.mBounds);
             // trim
             if (other.mVerbSize > 0) {
@@ -1017,7 +1017,7 @@ public class Path implements PathIterable, PathConsumer {
             mSegmentMask = other.mSegmentMask;
         }
 
-        PathRef(@Nonnull PathRef other, int incVerbs, int incCoords) {
+        PathRef(@NonNull PathRef other, int incVerbs, int incCoords) {
             assert incVerbs >= 0 && incCoords >= 0;
             assert incCoords % 2 == 0;
             mVerbs = new byte[other.mVerbSize + incVerbs];

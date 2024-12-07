@@ -20,8 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Represents the construction of a vector/matrix typecast, such as `half3(myInt3)` or
@@ -36,8 +35,8 @@ public final class ConstructorCompoundCast extends ConstructorCall {
         assert arguments.length == 1;
     }
 
-    @Nonnull
-    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
+    @NonNull
+    public static Expression make(int position, @NonNull Type type, @NonNull Expression arg) {
         // Only vectors or matrices of the same dimensions are allowed.
         assert (type.isVector() || type.isMatrix());
         assert (arg.getType().isVector() == type.isVector());
@@ -62,7 +61,7 @@ public final class ConstructorCompoundCast extends ConstructorCall {
         return ExpressionKind.CONSTRUCTOR_COMPOUND_CAST;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new ConstructorCompoundCast(position, getType(), cloneArguments());

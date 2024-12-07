@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.OptionalDouble;
 
 /**
@@ -36,8 +36,8 @@ public final class ConstructorDiagonalMatrix extends ConstructorCall {
         assert arguments.length == 1;
     }
 
-    @Nonnull
-    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
+    @NonNull
+    public static Expression make(int position, @NonNull Type type, @NonNull Expression arg) {
         assert (type.isMatrix());
         assert (arg.getType().isScalar());
         assert (arg.getType().matches(type.getComponentType()));
@@ -68,7 +68,7 @@ public final class ConstructorDiagonalMatrix extends ConstructorCall {
         return (col == row) ? getArgument().getConstantValue(0) : OptionalDouble.of(0.0);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new ConstructorDiagonalMatrix(position, getType(), cloneArguments());

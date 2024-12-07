@@ -21,9 +21,9 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -149,8 +149,8 @@ public final class ImageProxyCache {
     @Deprecated
     @Nullable
     @SharedPtr
-    public ImageViewProxy createTextureFromPixels(@Nonnull Pixmap pixmap,
-                                                  @Nonnull @RawPtr Pixels pixels,
+    public ImageViewProxy createTextureFromPixels(@NonNull Pixmap pixmap,
+                                                  @NonNull @RawPtr Pixels pixels,
                                                   int dstColorType,
                                                   int surfaceFlags) {
         mContext.checkOwnerThread();

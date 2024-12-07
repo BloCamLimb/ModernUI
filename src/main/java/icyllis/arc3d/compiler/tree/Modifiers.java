@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.StringJoiner;
 
@@ -122,7 +122,7 @@ public final class Modifiers extends Node {
         return mLayout != null ? mLayout.layoutFlags() : 0;
     }
 
-    public void setLayoutFlag(@Nonnull Context context,
+    public void setLayoutFlag(@NonNull Context context,
                               int mask, String name, int pos) {
         Layout layout = mLayout;
         if (layout == null) {
@@ -137,7 +137,7 @@ public final class Modifiers extends Node {
         }
     }
 
-    public boolean checkLayoutFlags(@Nonnull Context context,
+    public boolean checkLayoutFlags(@NonNull Context context,
                                     int permittedLayoutFlags) {
         if (mLayout != null) {
             return mLayout.checkLayoutFlags(context, mPosition, permittedLayoutFlags);
@@ -149,7 +149,7 @@ public final class Modifiers extends Node {
         return mFlags;
     }
 
-    public void setFlag(@Nonnull Context context,
+    public void setFlag(@NonNull Context context,
                         int mask, int pos) {
         if ((mFlags & mask) != 0) {
             context.error(pos, "qualifier '" + describeFlags(mFlags & mask) +
@@ -162,7 +162,7 @@ public final class Modifiers extends Node {
         mFlags &= ~mask;
     }
 
-    public boolean checkFlags(@Nonnull Context context,
+    public boolean checkFlags(@NonNull Context context,
                               int permittedFlags) {
         boolean success = true;
 
@@ -204,7 +204,7 @@ public final class Modifiers extends Node {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return false;
     }
 
@@ -226,7 +226,7 @@ public final class Modifiers extends Node {
                 Objects.equals(mLayout, modifiers.mLayout);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         if (mLayout == null) {

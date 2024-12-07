@@ -20,9 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * <pre>
@@ -46,7 +45,7 @@ public final class IfStatement extends Statement {
     }
 
     @Nullable
-    public static Statement convert(@Nonnull Context context,
+    public static Statement convert(@NonNull Context context,
                                     int position, Expression condition, Statement whenTrue, Statement whenFalse) {
         condition = context.getTypes().mBool.coerceExpression(context, condition);
         if (condition == null) {
@@ -66,7 +65,7 @@ public final class IfStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitIf(this)) {
             return true;
         }
@@ -99,7 +98,7 @@ public final class IfStatement extends Statement {
         mWhenFalse = whenFalse;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         String result = "if (" + mCondition.toString() + ") " + mWhenTrue.toString();

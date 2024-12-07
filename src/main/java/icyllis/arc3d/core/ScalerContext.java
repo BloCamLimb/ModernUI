@@ -20,9 +20,9 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.core.j2d.DrawBase;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import sun.misc.Unsafe;
 
-import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 
@@ -79,7 +79,7 @@ public abstract class ScalerContext {
         glyph.mHeight = (short) MathUtil.clamp(b - t, 0, 0xFFFF);
     }
 
-    @Nonnull
+    @NonNull
     public final Glyph makeGlyph(int glyphID) {
         Glyph glyph = new Glyph(glyphID);
         // subclass may return a different value
@@ -189,11 +189,11 @@ public abstract class ScalerContext {
         paint.close();
     }
 
-    public final void getPath(@Nonnull Glyph glyph) {
+    public final void getPath(@NonNull Glyph glyph) {
         internalGetPath(glyph);
     }
 
-    private void internalGetPath(@Nonnull Glyph glyph) {
+    private void internalGetPath(@NonNull Glyph glyph) {
         if (glyph.setPathHasBeenCalled()) {
             return;
         }
