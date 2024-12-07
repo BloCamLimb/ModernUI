@@ -50,8 +50,8 @@ public final class Literal extends Expression {
     }
 
     @NonNull
-    public static Literal makeInteger(@NonNull Context context, int position, long value) {
-        return new Literal(position, value, context.getTypes().mInt);
+    public static Literal makeInteger(@NonNull Context context, int position, long value, boolean signed) {
+        return new Literal(position, value, signed ? context.getTypes().mInt : context.getTypes().mUInt);
     }
 
     @NonNull

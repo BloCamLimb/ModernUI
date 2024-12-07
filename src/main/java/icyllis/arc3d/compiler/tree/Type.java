@@ -20,7 +20,6 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -42,7 +41,7 @@ public class Type extends Symbol {
      *
      * @param position see {@link Position}
      */
-    public record Field(int position, Modifiers modifiers, Type type, String name) {
+    public record Field(int position, @NonNull Modifiers modifiers, @NonNull Type type, @NonNull String name) {
 
         @NonNull
         @Override
@@ -75,14 +74,14 @@ public class Type extends Symbol {
             kBoolean_ScalarKind = 3,
             kNonScalar_ScalarKind = 4;
 
-    private final String mDesc;
+    private final @NonNull String mDesc;
     private final byte mTypeKind;
 
-    Type(String name, String desc, byte kind) {
+    Type(@NonNull String name, @NonNull String desc, byte kind) {
         this(name, desc, kind, Position.NO_POS);
     }
 
-    Type(String name, String desc, byte kind, int position) {
+    Type(@NonNull String name, @NonNull String desc, byte kind, int position) {
         super(position, name);
         mDesc = desc;
         mTypeKind = kind;
@@ -282,26 +281,23 @@ public class Type extends Symbol {
                 nestingDepth + 1, interfaceBlock);
     }
 
-    @NonNull
     @Override
-    public SymbolKind getKind() {
+    public @NonNull SymbolKind getKind() {
         return SymbolKind.TYPE;
     }
 
     /**
      * Returns this.
      */
-    @NonNull
     @Override
-    public final Type getType() {
+    public final @NonNull Type getType() {
         return this;
     }
 
     /**
      * If this is an alias, returns the underlying type, otherwise returns this.
      */
-    @NonNull
-    public Type resolve() {
+    public @NonNull Type resolve() {
         return this;
     }
 
@@ -319,8 +315,7 @@ public class Type extends Symbol {
      * of Float). For arrays, returns the component type of their base type. For all other types,
      * returns the type itself.
      */
-    @NonNull
-    public Type getComponentType() {
+    public @NonNull Type getComponentType() {
         return this;
     }
 
@@ -334,8 +329,7 @@ public class Type extends Symbol {
     /**
      * Returns a descriptor of the type, meant for name-mangling. (e.g. float4x4 -> f44)
      */
-    @NonNull
-    public final String getDesc() {
+    public final @NonNull String getDesc() {
         return mDesc;
     }
 
@@ -353,9 +347,8 @@ public class Type extends Symbol {
         return kNonScalar_ScalarKind;
     }
 
-    @NonNull
     @Override
-    public final String toString() {
+    public final @NonNull String toString() {
         return getName();
     }
 
@@ -382,8 +375,8 @@ public class Type extends Symbol {
     public final boolean isNumeric() {
         return switch (getScalarKind()) {
             case kFloat_ScalarKind,
-                    kSigned_ScalarKind,
-                    kUnsigned_ScalarKind -> true;
+                 kSigned_ScalarKind,
+                 kUnsigned_ScalarKind -> true;
             default -> false;
         };
     }
@@ -415,7 +408,7 @@ public class Type extends Symbol {
     public final boolean isInteger() {
         return switch (getScalarKind()) {
             case kSigned_ScalarKind,
-                    kUnsigned_ScalarKind -> true;
+                 kUnsigned_ScalarKind -> true;
             default -> false;
         };
     }
@@ -865,13 +858,19 @@ public class Type extends Symbol {
     /**
      * Converts an element type and a size (float, 10) into an array name ("float[10]").
      */
-    @NonNull
-    public String getArrayName(int size) {
+    public @NonNull String getArrayName(int size) {
+        return getArrayName(getName(), size);
+    }
+
+    /**
+     * Converts an element type and a size (float, 10) into an array name ("float[10]").
+     */
+    public static @NonNull String getArrayName(@NonNull String baseName, int size) {
         if (size == kUnsizedArray) {
-            return getName() + "[]";
+            return baseName + "[]";
         }
         assert (size > 0);
-        return getName() + "[" + size + "]";
+        return baseName + "[" + size + "]";
     }
 
     /**

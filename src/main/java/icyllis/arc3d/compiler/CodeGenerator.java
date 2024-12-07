@@ -39,19 +39,20 @@ public abstract class CodeGenerator {
     }
 
     /**
-     * Generates the code and returns the pointer value. The code size in bytes is
-     * {@link ByteBuffer#remaining()}. Check errors via {@link Context#getErrorHandler()}.
+     * Generates the code and returns a buffer slice. The code size in bytes is
+     * {@link ByteBuffer#remaining()}.
      * <p>
-     * The return value is a direct buffer, see {@link ByteBuffer#allocateDirect(int)}.
-     * A direct buffer wraps an address that points to off-heap memory, i.e. a native
-     * pointer. The byte order is {@link java.nio.ByteOrder#nativeOrder()} and it's
-     * safe to pass the result to OpenGL and Vulkan API. There is no way to free this
-     * buffer explicitly, as it is subject to GC.
+     * The return value is a direct buffer allocated via {@link ByteBuffer#allocateDirect(int)}.
+     * The byte order is {@link java.nio.ByteOrder#nativeOrder()} (i.e. host endianness) and it's
+     * safe to pass the result to OpenGL and Vulkan. There is no way to free this
+     * buffer explicitly, as it is subject to GC. Use {@link java.lang.ref.Reference#reachabilityFence(Object)}
+     * to keep it alive.
+     * <p>
+     * Check errors via {@link Context#getErrorHandler()}.
      *
      * @return the generated code, or null if there's an error
      */
-    @Nullable
-    public abstract ByteBuffer generateCode();
+    public abstract @Nullable ByteBuffer generateCode();
 
     protected Context getContext() {
         return mCompiler.getContext();

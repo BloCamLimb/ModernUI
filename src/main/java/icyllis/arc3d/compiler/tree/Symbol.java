@@ -42,11 +42,9 @@ public abstract class Symbol extends Node {
     /**
      * @see Node.SymbolKind
      */
-    @NonNull
-    public abstract SymbolKind getKind();
+    public abstract @NonNull SymbolKind getKind();
 
-    @NonNull
-    public final String getName() {
+    public final @NonNull String getName() {
         return mName;
     }
 
@@ -57,6 +55,5 @@ public abstract class Symbol extends Node {
         mName = name;
     }
 
-    @NonNull
-    public abstract Type getType();
+    public abstract @NonNull Type getType();
 }

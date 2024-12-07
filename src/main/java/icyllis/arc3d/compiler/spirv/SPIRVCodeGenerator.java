@@ -440,32 +440,32 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         // 2 - generator magic
         // 3 - bound
         // 4 - schema (reserved)
-        BufferWriter writer = new BufferWriter(estimatedSize);
-        writer.writeWord(SpvMagicNumber);
-        writer.writeWord(mOutputVersion.mVersionNumber);
-        writer.writeWord(GENERATOR_MAGIC_NUMBER);
-        writer.writeWord(mIdCount);
-        writer.writeWord(0);
+        NativeOutput output = new NativeOutput(estimatedSize);
+        output.writeWord(SpvMagicNumber);
+        output.writeWord(mOutputVersion.mVersionNumber);
+        output.writeWord(GENERATOR_MAGIC_NUMBER);
+        output.writeWord(mIdCount);
+        output.writeWord(0);
 
         for (var it = mCapabilities.iterator(); it.hasNext(); ) {
-            writeInstruction(SpvOpCapability, it.nextInt(), writer);
+            writeInstruction(SpvOpCapability, it.nextInt(), output);
         }
-        writeInstruction(SpvOpExtInstImport, mGLSLExtendedInstructions, "GLSL.std.450", writer);
-        writeInstruction(SpvOpMemoryModel, SpvAddressingModelLogical, SpvMemoryModelGLSL450, writer);
-        writeOpcode(SpvOpEntryPoint, entryPointWordCount, writer);
+        writeInstruction(SpvOpExtInstImport, mGLSLExtendedInstructions, "GLSL.std.450", output);
+        writeInstruction(SpvOpMemoryModel, SpvAddressingModelLogical, SpvMemoryModelGLSL450, output);
+        writeOpcode(SpvOpEntryPoint, entryPointWordCount, output);
         if (kind.isVertex()) {
-            writer.writeWord(SpvExecutionModelVertex);
+            output.writeWord(SpvExecutionModelVertex);
         } else if (kind.isFragment()) {
-            writer.writeWord(SpvExecutionModelFragment);
+            output.writeWord(SpvExecutionModelFragment);
         } else if (kind.isCompute()) {
-            writer.writeWord(SpvExecutionModelGLCompute);
+            output.writeWord(SpvExecutionModelGLCompute);
         }
 
         int entryPoint = mFunctionTable.getInt(mEntryPointFunction);
-        writer.writeWord(entryPoint);
-        writer.writeString8(getContext(), entryPointName);
+        output.writeWord(entryPoint);
+        output.writeString8(getContext(), entryPointName);
         for (int id : mInterfaceVariables) {
-            writer.writeWord(id);
+            output.writeWord(id);
         }
 
         if (kind.isFragment()) {
@@ -474,17 +474,17 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     mOutputTarget.isOpenGL()
                             ? SpvExecutionModeOriginLowerLeft
                             : SpvExecutionModeOriginUpperLeft,
-                    writer);
+                    output);
         }
-        writer.writeWords(mNameBuffer.elements(), mNameBuffer.size());
-        writer.writeWords(mDecorationBuffer.elements(), mDecorationBuffer.size());
-        writer.writeWords(mConstantBuffer.elements(), mConstantBuffer.size());
-        writer.writeWords(mFunctionBuffer.elements(), mFunctionBuffer.size());
+        output.writeWords(mNameBuffer.elements(), mNameBuffer.size());
+        output.writeWords(mDecorationBuffer.elements(), mDecorationBuffer.size());
+        output.writeWords(mConstantBuffer.elements(), mConstantBuffer.size());
+        output.writeWords(mFunctionBuffer.elements(), mFunctionBuffer.size());
 
         if (getContext().getErrorHandler().errorCount() != 0) {
             return null;
         }
-        return writer.detach();
+        return output.detach();
     }
 
     private int getStorageClass(@NonNull Variable variable) {
@@ -695,7 +695,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     /**
-     * For {@link #writeInstructionWithCache(InstructionBuilder, Writer)}.
+     * For {@link #writeInstructionWithCache(InstructionBuilder, Output)}.
      */
     private InstructionBuilder getInstBuilder(int opcode) {
         if (mInstBuilderPoolSize == 0) {
@@ -1014,40 +1014,40 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private int writeFunction(@NonNull FunctionDefinition func, Writer writer) {
+    private int writeFunction(@NonNull FunctionDefinition func, Output output) {
         int numReachableOps = mReachableOps.size();
         int numStoreOps = mStoreOps.size();
 
         mVariableBuffer.clear();
-        int result = writeFunctionDecl(func.getFunctionDecl(), writer);
+        int result = writeFunctionDecl(func.getFunctionDecl(), output);
         mCurrentBlock = 0;
-        writeLabel(getUniqueId(), writer);
+        writeLabel(getUniqueId(), output);
         mBodyBuffer.clear();
         writeBlockStatement(func.getBody(), mBodyBuffer);
-        writer.writeWords(mVariableBuffer.elements(), mVariableBuffer.size());
+        output.writeWords(mVariableBuffer.elements(), mVariableBuffer.size());
         if (func.getFunctionDecl().isEntryPoint()) {
-            writer.writeWords(mGlobalInitBuffer.elements(), mGlobalInitBuffer.size());
+            output.writeWords(mGlobalInitBuffer.elements(), mGlobalInitBuffer.size());
         }
-        writer.writeWords(mBodyBuffer.elements(), mBodyBuffer.size());
+        output.writeWords(mBodyBuffer.elements(), mBodyBuffer.size());
 
         if (mCurrentBlock != 0) {
             if (func.getFunctionDecl().getReturnType().isVoid()) {
-                writeInstruction(SpvOpReturn, writer);
+                writeInstruction(SpvOpReturn, output);
             } else {
-                writeInstruction(SpvOpUnreachable, writer);
+                writeInstruction(SpvOpUnreachable, output);
             }
         }
-        writeInstruction(SpvOpFunctionEnd, writer);
+        writeInstruction(SpvOpFunctionEnd, output);
         pruneConditionalOps(numReachableOps, numStoreOps);
         return result;
     }
 
-    private int writeFunctionDecl(@NonNull FunctionDecl decl, Writer writer) {
+    private int writeFunctionDecl(@NonNull FunctionDecl decl, Output output) {
         int result = mFunctionTable.getInt(decl);
         int returnTypeId = writeType(decl.getReturnType());
         int functionTypeId = writeFunctionType(decl);
         writeInstruction(SpvOpFunction, returnTypeId, result,
-                SpvFunctionControlMaskNone, functionTypeId, writer);
+                SpvFunctionControlMaskNone, functionTypeId, output);
         if (mEmitNames) {
             String mangledName = decl.getMangledName();
             if (mangledName.length() <= 5200) {
@@ -1062,7 +1062,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             mVariableTable.put(parameter, id);
 
             int type = writeFunctionParameterType(parameter.getType(), parameter.getModifiers());
-            writeInstruction(SpvOpFunctionParameter, type, id, writer);
+            writeInstruction(SpvOpFunctionParameter, type, id, output);
         }
         return result;
     }
@@ -1118,7 +1118,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private int writeOpCompositeExtract(@NonNull Type type,
                                         int base,
                                         int index,
-                                        Writer writer) {
+                                        Output output) {
         // If the base op is a composite, we can extract from it directly.
         int result = getComponent(base, index);
         if (result != NONE_ID) {
@@ -1131,7 +1131,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         .addResult()
                         .addWord(base)
                         .addWord(index),
-                writer
+                output
         );
     }
 
@@ -1139,11 +1139,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                         int base,
                                         int index1,
                                         int index2,
-                                        Writer writer) {
+                                        Output output) {
         // If the base op is a composite, we can extract from it directly.
         int result = getComponent(base, index1);
         if (result != NONE_ID) {
-            return writeOpCompositeExtract(type, result, index2, writer);
+            return writeOpCompositeExtract(type, result, index2, output);
         }
         int typeId = writeType(type);
         return writeInstructionWithCache(
@@ -1153,13 +1153,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         .addWord(base)
                         .addWord(index1)
                         .addWord(index2),
-                writer
+                output
         );
     }
 
     private int writeOpCompositeConstruct(@NonNull Type type,
                                           IntArrayList values,
-                                          Writer writer) {
+                                          Output output) {
         // If this is a vector/matrix composed entirely of literals, write a constant-composite instead.
         if (type.isVector() || type.isMatrix()) {
             IntArrayList constants = obtainIdList();
@@ -1195,7 +1195,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         .addWord(typeId)
                         .addResult()
                         .addWords(values.elements(), 0, values.size()),
-                writer
+                output
         );
     }
 
@@ -1554,7 +1554,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private void writeVariableDecl(VariableDecl variableDecl, Writer writer) {
+    private void writeVariableDecl(VariableDecl variableDecl, Output output) {
         // If this variable is a compile-time constant then we'll emit OpConstant or
         // OpConstantComposite later when the variable is referenced. Avoid declaring an OpVariable now.
         if (is_compile_time_constant(variableDecl)) {
@@ -1570,31 +1570,31 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             writeInstruction(SpvOpName, id, variable.getName(), mNameBuffer);
         }
         if (variableDecl.getInit() != null) {
-            int init = writeExpression(variableDecl.getInit(), writer);
-            writeOpStore(SpvStorageClassFunction, id, init, writer);
+            int init = writeExpression(variableDecl.getInit(), output);
+            writeOpStore(SpvStorageClassFunction, id, init, output);
         }
     }
 
-    private int writeExpression(@NonNull Expression expr, Writer writer) {
+    private int writeExpression(@NonNull Expression expr, Output output) {
         return switch (expr.getKind()) {
             case LITERAL -> writeLiteral((Literal) expr);
-            case PREFIX -> writePrefixExpression((PrefixExpression) expr, writer);
-            case POSTFIX -> writePostfixExpression((PostfixExpression) expr, writer);
-            case BINARY -> writeBinaryExpression((BinaryExpression) expr, writer);
-            case CONDITIONAL -> writeConditionalExpression((ConditionalExpression) expr, writer);
-            case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr, writer);
-            case INDEX -> writeIndexExpression((IndexExpression) expr, writer);
-            case FIELD_ACCESS -> writeFieldAccess((FieldAccess) expr, writer);
-            case SWIZZLE -> writeSwizzle((Swizzle) expr, writer);
-            case FUNCTION_CALL -> writeFunctionCall((FunctionCall) expr, writer);
-            case CONSTRUCTOR_COMPOUND -> writeConstructorCompound((ConstructorCompound) expr, writer);
-            case CONSTRUCTOR_VECTOR_SPLAT -> writeConstructorVectorSplat((ConstructorVectorSplat) expr, writer);
+            case PREFIX -> writePrefixExpression((PrefixExpression) expr, output);
+            case POSTFIX -> writePostfixExpression((PostfixExpression) expr, output);
+            case BINARY -> writeBinaryExpression((BinaryExpression) expr, output);
+            case CONDITIONAL -> writeConditionalExpression((ConditionalExpression) expr, output);
+            case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr, output);
+            case INDEX -> writeIndexExpression((IndexExpression) expr, output);
+            case FIELD_ACCESS -> writeFieldAccess((FieldAccess) expr, output);
+            case SWIZZLE -> writeSwizzle((Swizzle) expr, output);
+            case FUNCTION_CALL -> writeFunctionCall((FunctionCall) expr, output);
+            case CONSTRUCTOR_COMPOUND -> writeConstructorCompound((ConstructorCompound) expr, output);
+            case CONSTRUCTOR_VECTOR_SPLAT -> writeConstructorVectorSplat((ConstructorVectorSplat) expr, output);
             case CONSTRUCTOR_DIAGONAL_MATRIX ->
-                    writeConstructorDiagonalMatrix((ConstructorDiagonalMatrix) expr, writer);
-            case CONSTRUCTOR_SCALAR_CAST -> writeConstructorScalarCast((ConstructorScalarCast) expr, writer);
-            case CONSTRUCTOR_COMPOUND_CAST -> writeConstructorCompoundCast((ConstructorCompoundCast) expr, writer);
-            case CONSTRUCTOR_ARRAY, CONSTRUCTOR_STRUCT -> writeCompositeConstructor((ConstructorCall) expr, writer);
-            case CONSTRUCTOR_ARRAY_CAST -> writeExpression(((ConstructorArrayCast) expr).getArgument(), writer);
+                    writeConstructorDiagonalMatrix((ConstructorDiagonalMatrix) expr, output);
+            case CONSTRUCTOR_SCALAR_CAST -> writeConstructorScalarCast((ConstructorScalarCast) expr, output);
+            case CONSTRUCTOR_COMPOUND_CAST -> writeConstructorCompoundCast((ConstructorCompoundCast) expr, output);
+            case CONSTRUCTOR_ARRAY, CONSTRUCTOR_STRUCT -> writeCompositeConstructor((ConstructorCall) expr, output);
+            case CONSTRUCTOR_ARRAY_CAST -> writeExpression(((ConstructorArrayCast) expr).getArgument(), output);
             default -> {
                 getContext().error(expr.mPosition, "unsupported expression: " + expr.getKind());
                 yield NONE_ID;
@@ -1602,7 +1602,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         };
     }
 
-    private int broadcast(@NonNull Type type, int id, Writer writer) {
+    private int broadcast(@NonNull Type type, int id, Output output) {
         // Scalars require no additional work; we can return the passed-in ID as is.
         if (!type.isScalar()) {
             assert type.isVector();
@@ -1614,7 +1614,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             for (int i = 0; i < vectorSize; i++) {
                 values.add(id);
             }
-            id = writeOpCompositeConstruct(type, values, writer);
+            id = writeOpCompositeConstruct(type, values, output);
             releaseIdList(values);
         }
 
@@ -1622,11 +1622,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     // construct scalar constant or vector constant
-    private int vectorize(double value, Type type, int vectorSize, Writer writer) {
+    private int vectorize(double value, Type type, int vectorSize, Output output) {
         assert (vectorSize >= 1 && vectorSize <= 4);
         int id = writeScalarConstant(value, type);
         if (vectorSize > 1) {
-            return broadcast(type.toVector(getContext(), vectorSize), id, writer);
+            return broadcast(type.toVector(getContext(), vectorSize), id, output);
         }
         return id;
     }
@@ -1637,16 +1637,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
      * vector (if vectorSize > 1) or returns it unmodified (if vectorSize == 1). Asserts if the
      * expression is already a vector and it does not have vectorSize columns.
      */
-    private int vectorize(Expression arg, int vectorSize, Writer writer) {
+    private int vectorize(Expression arg, int vectorSize, Output output) {
         assert (vectorSize >= 1 && vectorSize <= 4);
         Type argType = arg.getType();
         if (argType.isScalar() && vectorSize > 1) {
-            int argId = writeExpression(arg, writer);
-            return broadcast(argType.toVector(getContext(), vectorSize), argId, writer);
+            int argId = writeExpression(arg, output);
+            return broadcast(argType.toVector(getContext(), vectorSize), argId, output);
         }
 
         assert (vectorSize == argType.getRows());
-        return writeExpression(arg, writer);
+        return writeExpression(arg, output);
     }
 
     /**
@@ -1655,7 +1655,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
      * returns (vec2(float), vec2). It is an error to use mismatched vector sizes, e.g. (float,
      * vec2, vec3).
      */
-    private void vectorize(Expression[] args, IntArrayList result, Writer writer) {
+    private void vectorize(Expression[] args, IntArrayList result, Output output) {
         int vectorSize = 1;
         for (Expression arg : args) {
             if (arg.getType().isVector()) {
@@ -1667,67 +1667,67 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
         }
         for (Expression arg : args) {
-            result.add(vectorize(arg, vectorSize, writer));
+            result.add(vectorize(arg, vectorSize, output));
         }
     }
 
-    private int writePrefixExpression(@NonNull PrefixExpression expr, Writer writer) {
+    private int writePrefixExpression(@NonNull PrefixExpression expr, Output output) {
         Type type = expr.getType();
         return switch (expr.getOperator()) {
-            case ADD -> writeExpression(expr.getOperand(), writer); // positive
+            case ADD -> writeExpression(expr.getOperand(), output); // positive
             case SUB -> {
                 // negative
                 int negateOp = select_by_component_type(type,
                         SpvOpFNegate, SpvOpSNegate, SpvOpSNegate, SpvOpUndef);
                 assert (negateOp != SpvOpUndef);
-                int id = writeExpression(expr.getOperand(), writer);
+                int id = writeExpression(expr.getOperand(), output);
                 if (type.isMatrix()) {
-                    yield writeUnaryMatrixOperation(type, id, negateOp, writer);
+                    yield writeUnaryMatrixOperation(type, id, negateOp, output);
                 }
                 int resultId = getUniqueId(type);
                 int typeId = writeType(type);
-                writeInstruction(negateOp, typeId, resultId, id, writer);
+                writeInstruction(negateOp, typeId, resultId, id, output);
                 yield resultId;
             }
             case INC -> {
-                LValue lv = writeLValue(expr.getOperand(), writer);
-                int oneId = vectorize(1, type.getComponentType(), type.getRows(), writer);
+                LValue lv = writeLValue(expr.getOperand(), output);
+                int oneId = vectorize(1, type.getComponentType(), type.getRows(), output);
                 int resultId = writeBinaryOperation(expr.mPosition,
                         type, type,
-                        lv.load(this, writer), oneId,
+                        lv.load(this, output), oneId,
                         /*matrixOpIsComponentWise*/true,
                         SpvOpFAdd, SpvOpIAdd,
                         SpvOpIAdd, SpvOpUndef,
-                        writer);
-                lv.store(this, resultId, writer);
+                        output);
+                lv.store(this, resultId, output);
                 yield resultId;
             }
             case DEC -> {
-                LValue lv = writeLValue(expr.getOperand(), writer);
-                int oneId = vectorize(1, type.getComponentType(), type.getRows(), writer);
+                LValue lv = writeLValue(expr.getOperand(), output);
+                int oneId = vectorize(1, type.getComponentType(), type.getRows(), output);
                 int resultId = writeBinaryOperation(expr.mPosition,
                         type, type,
-                        lv.load(this, writer), oneId,
+                        lv.load(this, output), oneId,
                         /*matrixOpIsComponentWise*/true,
                         SpvOpFSub, SpvOpISub,
                         SpvOpISub, SpvOpUndef,
-                        writer);
-                lv.store(this, resultId, writer);
+                        output);
+                lv.store(this, resultId, output);
                 yield resultId;
             }
             case LOGICAL_NOT -> {
                 assert expr.getOperand().getType().isBoolean();
-                int id = writeExpression(expr.getOperand(), writer);
+                int id = writeExpression(expr.getOperand(), output);
                 int resultId = getUniqueId();
                 int typeId = writeType(type);
-                writeInstruction(SpvOpLogicalNot, typeId, resultId, id, writer);
+                writeInstruction(SpvOpLogicalNot, typeId, resultId, id, output);
                 yield resultId;
             }
             case BITWISE_NOT -> {
-                int id = writeExpression(expr.getOperand(), writer);
+                int id = writeExpression(expr.getOperand(), output);
                 int resultId = getUniqueId();
                 int typeId = writeType(type);
-                writeInstruction(SpvOpNot, typeId, resultId, id, writer);
+                writeInstruction(SpvOpNot, typeId, resultId, id, output);
                 yield resultId;
             }
             default -> {
@@ -1738,11 +1738,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         };
     }
 
-    private int writePostfixExpression(@NonNull PostfixExpression expr, Writer writer) {
+    private int writePostfixExpression(@NonNull PostfixExpression expr, Output output) {
         Type type = expr.getType();
-        LValue lv = writeLValue(expr.getOperand(), writer);
-        int oneId = vectorize(1, type.getComponentType(), type.getRows(), writer);
-        int resultId = lv.load(this, writer);
+        LValue lv = writeLValue(expr.getOperand(), output);
+        int oneId = vectorize(1, type.getComponentType(), type.getRows(), output);
+        int resultId = lv.load(this, output);
         return switch (expr.getOperator()) {
             case INC -> {
                 int tmp = writeBinaryOperation(expr.mPosition,
@@ -1750,8 +1750,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         /*matrixOpIsComponentWise*/true,
                         SpvOpFAdd, SpvOpIAdd,
                         SpvOpIAdd, SpvOpUndef,
-                        writer);
-                lv.store(this, tmp, writer);
+                        output);
+                lv.store(this, tmp, output);
                 yield resultId;
             }
             case DEC -> {
@@ -1760,8 +1760,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         /*matrixOpIsComponentWise*/true,
                         SpvOpFSub, SpvOpISub,
                         SpvOpISub, SpvOpUndef,
-                        writer);
-                lv.store(this, tmp, writer);
+                        output);
+                lv.store(this, tmp, output);
                 yield resultId;
             }
             default -> {
@@ -1775,7 +1775,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private int writeMatrixComparison(Type operandType, int lhs, int rhs,
                                       int floatOp, int intOp,
                                       int vectorMergeOp, int mergeOp,
-                                      Writer writer) {
+                                      Output output) {
         int compareOp = operandType.isFloatOrCompound() ? floatOp : intOp;
         assert (operandType.isMatrix());
         Type columnType = operandType.getComponentType().toVector(
@@ -1786,15 +1786,15 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int bvecTypeId = writeType(bvecType);
         int result = 0;
         for (int i = 0; i < operandType.getCols(); i++) {
-            int columnL = writeOpCompositeExtract(columnType, lhs, i, writer);
-            int columnR = writeOpCompositeExtract(columnType, rhs, i, writer);
+            int columnL = writeOpCompositeExtract(columnType, lhs, i, output);
+            int columnR = writeOpCompositeExtract(columnType, rhs, i, output);
             int compare = getUniqueId(operandType);
-            writeInstruction(compareOp, bvecTypeId, compare, columnL, columnR, writer);
+            writeInstruction(compareOp, bvecTypeId, compare, columnL, columnR, output);
             int merge = getUniqueId();
-            writeInstruction(vectorMergeOp, boolTypeId, merge, compare, writer);
+            writeInstruction(vectorMergeOp, boolTypeId, merge, compare, output);
             if (result != 0) {
                 int next = getUniqueId();
-                writeInstruction(mergeOp, boolTypeId, next, result, merge, writer);
+                writeInstruction(mergeOp, boolTypeId, next, result, merge, output);
                 result = next;
             } else {
                 result = merge;
@@ -1807,25 +1807,25 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private int writeUnaryMatrixOperation(@NonNull Type operandType,
                                           int operand,
                                           int op,
-                                          Writer writer) {
+                                          Output output) {
         assert (operandType.isMatrix());
         Type columnType = operandType.getComponentType().toVector(getContext(), operandType.getRows());
         int columnTypeId = writeType(columnType);
 
         IntArrayList columns = obtainIdList();
         for (int i = 0; i < operandType.getCols(); i++) {
-            int srcColumn = writeOpCompositeExtract(columnType, operand, i, writer);
+            int srcColumn = writeOpCompositeExtract(columnType, operand, i, output);
             int dstColumn = getUniqueId(operandType);
-            writeInstruction(op, columnTypeId, dstColumn, srcColumn, writer);
+            writeInstruction(op, columnTypeId, dstColumn, srcColumn, output);
             columns.add(dstColumn);
         }
 
-        int resultId = writeOpCompositeConstruct(operandType, columns, writer);
+        int resultId = writeOpCompositeConstruct(operandType, columns, output);
         releaseIdList(columns);
         return resultId;
     }
 
-    private int writeBinaryExpression(@NonNull BinaryExpression expr, Writer writer) {
+    private int writeBinaryExpression(@NonNull BinaryExpression expr, Output output) {
         Expression left = expr.getLeft();
         Expression right = expr.getRight();
         Operator op = expr.getOperator();
@@ -1833,21 +1833,21 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         switch (op) {
             case ASSIGN:
                 // Handles assignment.
-                int rhs = writeExpression(right, writer);
-                writeLValue(left, writer).store(this, rhs, writer);
+                int rhs = writeExpression(right, output);
+                writeLValue(left, output).store(this, rhs, output);
                 return rhs;
 
             case LOGICAL_AND:
                 if (!getContext().getOptions().mNoShortCircuit) {
                     // Handles short-circuiting; we don't necessarily evaluate both LHS and RHS.
-                    return writeLogicalAndSC(left, right, writer);
+                    return writeLogicalAndSC(left, right, output);
                 }
                 break;
 
             case LOGICAL_OR:
                 if (!getContext().getOptions().mNoShortCircuit) {
                     // Handles short-circuiting; we don't necessarily evaluate both LHS and RHS.
-                    return writeLogicalOrSC(left, right, writer);
+                    return writeLogicalOrSC(left, right, output);
                 }
                 break;
 
@@ -1858,27 +1858,27 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         LValue lvalue;
         int lhs;
         if (op.isAssignment()) {
-            lvalue = writeLValue(left, writer);
-            lhs = lvalue.load(this, writer);
+            lvalue = writeLValue(left, output);
+            lhs = lvalue.load(this, output);
         } else {
             lvalue = null;
-            lhs = writeExpression(left, writer);
+            lhs = writeExpression(left, output);
         }
 
-        int rhs = writeExpression(right, writer);
+        int rhs = writeExpression(right, output);
         int result = writeBinaryExpression(expr.mPosition, left.getType(), lhs, op.removeAssignment(),
-                right.getType(), rhs, expr.getType(), writer);
+                right.getType(), rhs, expr.getType(), output);
         if (lvalue != null) {
-            lvalue.store(this, result, writer);
+            lvalue.store(this, result, output);
         }
         return result;
     }
 
     // short-circuit version '&&'
     private int writeLogicalAndSC(@NonNull Expression left, @NonNull Expression right,
-                                  Writer writer) {
+                                  Output output) {
         int falseConstant = writeScalarConstant(0, getContext().getTypes().mBool);
-        int lhs = writeExpression(left, writer);
+        int lhs = writeExpression(left, output);
 
         int numReachableOps = mReachableOps.size();
         int numStoreOps = mStoreOps.size();
@@ -1886,26 +1886,26 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int rhsLabel = getUniqueId();
         int end = getUniqueId();
         int lhsBlock = mCurrentBlock;
-        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
-        writeInstruction(SpvOpBranchConditional, lhs, rhsLabel, end, writer);
-        writeLabel(rhsLabel, writer);
-        int rhs = writeExpression(right, writer);
+        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, output);
+        writeInstruction(SpvOpBranchConditional, lhs, rhsLabel, end, output);
+        writeLabel(rhsLabel, output);
+        int rhs = writeExpression(right, output);
         int rhsBlock = mCurrentBlock;
-        writeInstruction(SpvOpBranch, end, writer);
-        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        writeInstruction(SpvOpBranch, end, output);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, output);
         int result = getUniqueId();
         int typeId = writeType(getContext().getTypes().mBool);
         writeInstruction(SpvOpPhi, typeId, result, falseConstant,
-                lhsBlock, rhs, rhsBlock, writer);
+                lhsBlock, rhs, rhsBlock, output);
 
         return result;
     }
 
     // short-circuit version '||'
     private int writeLogicalOrSC(@NonNull Expression left, @NonNull Expression right,
-                                 Writer writer) {
+                                 Output output) {
         int trueConstant = writeScalarConstant(1, getContext().getTypes().mBool);
-        int lhs = writeExpression(left, writer);
+        int lhs = writeExpression(left, output);
 
         int numReachableOps = mReachableOps.size();
         int numStoreOps = mStoreOps.size();
@@ -1913,17 +1913,17 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int rhsLabel = getUniqueId();
         int end = getUniqueId();
         int lhsBlock = mCurrentBlock;
-        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
-        writeInstruction(SpvOpBranchConditional, lhs, end, rhsLabel, writer);
-        writeLabel(rhsLabel, writer);
-        int rhs = writeExpression(right, writer);
+        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, output);
+        writeInstruction(SpvOpBranchConditional, lhs, end, rhsLabel, output);
+        writeLabel(rhsLabel, output);
+        int rhs = writeExpression(right, output);
         int rhsBlock = mCurrentBlock;
-        writeInstruction(SpvOpBranch, end, writer);
-        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        writeInstruction(SpvOpBranch, end, output);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, output);
         int result = getUniqueId();
         int typeId = writeType(getContext().getTypes().mBool);
         writeInstruction(SpvOpPhi, typeId, result, trueConstant,
-                lhsBlock, rhs, rhsBlock, writer);
+                lhsBlock, rhs, rhsBlock, output);
 
         return result;
     }
@@ -1931,7 +1931,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // non-assignment, no short-circuit
     private int writeBinaryExpression(int pos, Type leftType, int lhs, Operator op,
                                       Type rightType, int rhs,
-                                      Type resultType, Writer writer) {
+                                      Type resultType, Output output) {
         // The comma operator ignores the type of the left-hand side entirely.
         if (op == Operator.COMMA) {
             return rhs;
@@ -1959,12 +1959,12 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                             int resultId = getUniqueId(resultType);
                             int typeId = writeType(resultType);
                             writeInstruction(SpvOpVectorTimesScalar, typeId, resultId,
-                                    lhs, rhs, writer);
+                                    lhs, rhs, output);
                             return resultId;
                         }
                     }
                     // Vectorize the right-hand side.
-                    rhs = broadcast(leftType, rhs, writer);
+                    rhs = broadcast(leftType, rhs, output);
                     operandType = leftType;
                 } else if (leftType.isNumeric() && rightType.isVector()) {
                     if (resultType.getComponentType().isFloat()) {
@@ -1972,12 +1972,12 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                             int resultId = getUniqueId(resultType);
                             int typeId = writeType(resultType);
                             writeInstruction(SpvOpVectorTimesScalar, typeId, resultId,
-                                    rhs, lhs, writer);
+                                    rhs, lhs, output);
                             return resultId;
                         }
                     }
                     // Vectorize the left-hand side.
-                    lhs = broadcast(rightType, lhs, writer);
+                    lhs = broadcast(rightType, lhs, output);
                     operandType = rightType;
                 } else if (leftType.isMatrix() || rightType.isMatrix()) {
                     if (op == Operator.MUL) {
@@ -1997,10 +1997,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         int typeId = writeType(resultType);
                         if (leftType.isScalar()) {
                             writeInstruction(spvOp, typeId, resultId,
-                                    rhs, lhs, writer);
+                                    rhs, lhs, output);
                         } else {
                             writeInstruction(spvOp, typeId, resultId,
-                                    lhs, rhs, writer);
+                                    lhs, rhs, output);
                         }
                         return resultId;
                     } else {
@@ -2010,15 +2010,15 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                             case ADD -> writeBinaryMatrixOperation(pos,
                                     resultType, leftType, rightType, lhs, rhs,
                                     SpvOpFAdd, SpvOpIAdd, SpvOpIAdd,
-                                    writer);
+                                    output);
                             case SUB -> writeBinaryMatrixOperation(pos,
                                     resultType, leftType, rightType, lhs, rhs,
                                     SpvOpFSub, SpvOpISub, SpvOpISub,
-                                    writer);
+                                    output);
                             case DIV -> writeBinaryMatrixOperation(pos,
                                     resultType, leftType, rightType, lhs, rhs,
                                     SpvOpFDiv, SpvOpSDiv, SpvOpUDiv,
-                                    writer);
+                                    output);
                             default -> {
                                 getContext().error(pos, "unsupported mixed-type expression");
                                 yield NONE_ID;
@@ -2035,10 +2035,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case EQ:
                 if (operandType.isMatrix()) {
                     return writeMatrixComparison(operandType, lhs, rhs,
-                            SpvOpFOrdEqual, SpvOpIEqual, SpvOpAll, SpvOpLogicalAnd, writer);
+                            SpvOpFOrdEqual, SpvOpIEqual, SpvOpAll, SpvOpLogicalAnd, output);
                 }
                 if (operandType.isArray()) {
-                    return writeArrayComparison(operandType, lhs, op, rhs, writer);
+                    return writeArrayComparison(operandType, lhs, op, rhs, output);
                 }
             {
                 assert resultType.isBoolean();
@@ -2053,11 +2053,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFOrdEqual, SpvOpIEqual,
                         SpvOpIEqual, SpvOpLogicalEqual,
-                        writer);
+                        output);
                 if (operandType.isVector()) {
                     int resultId = getUniqueId();
                     int typeId = writeType(resultType);
-                    writeInstruction(SpvOpAll, typeId, resultId, id, writer);
+                    writeInstruction(SpvOpAll, typeId, resultId, id, output);
                     return resultId;
                 }
                 return id;
@@ -2065,10 +2065,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case NE:
                 if (operandType.isMatrix()) {
                     return writeMatrixComparison(operandType, lhs, rhs,
-                            SpvOpFUnordNotEqual, SpvOpINotEqual, SpvOpAny, SpvOpLogicalOr, writer);
+                            SpvOpFUnordNotEqual, SpvOpINotEqual, SpvOpAny, SpvOpLogicalOr, output);
                 }
                 if (operandType.isArray()) {
-                    return writeArrayComparison(operandType, lhs, op, rhs, writer);
+                    return writeArrayComparison(operandType, lhs, op, rhs, output);
                 }
                 // fallthrough
             case LOGICAL_XOR: {
@@ -2084,11 +2084,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFUnordNotEqual, SpvOpINotEqual,
                         SpvOpINotEqual, SpvOpLogicalNotEqual,
-                        writer);
+                        output);
                 if (operandType.isVector()) {
                     int resultId = getUniqueId();
                     int typeId = writeType(resultType);
-                    writeInstruction(SpvOpAny, typeId, resultId, id, writer);
+                    writeInstruction(SpvOpAny, typeId, resultId, id, output);
                     return resultId;
                 }
                 return id;
@@ -2099,14 +2099,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpLogicalAnd,
-                        writer);
+                        output);
             case LOGICAL_OR:
                 assert resultType.isBoolean();
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpLogicalOr,
-                        writer);
+                        output);
             case LT:
                 assert resultType.isBoolean();
                 return writeBinaryOperation(pos,
@@ -2114,7 +2114,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFOrdLessThan, SpvOpSLessThan,
                         SpvOpULessThan, SpvOpUndef,
-                        writer);
+                        output);
             case GT:
                 assert resultType.isBoolean();
                 return writeBinaryOperation(pos,
@@ -2122,7 +2122,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFOrdGreaterThan, SpvOpSGreaterThan,
                         SpvOpUGreaterThan, SpvOpUndef,
-                        writer);
+                        output);
             case LE:
                 assert resultType.isBoolean();
                 return writeBinaryOperation(pos,
@@ -2130,7 +2130,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFOrdLessThanEqual, SpvOpSLessThanEqual,
                         SpvOpULessThanEqual, SpvOpUndef,
-                        writer);
+                        output);
             case GE:
                 assert resultType.isBoolean();
                 return writeBinaryOperation(pos,
@@ -2138,74 +2138,74 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFOrdGreaterThanEqual, SpvOpSGreaterThanEqual,
                         SpvOpUGreaterThanEqual, SpvOpUndef,
-                        writer);
+                        output);
             case ADD:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/true,
                         SpvOpFAdd, SpvOpIAdd, SpvOpIAdd, SpvOpUndef,
-                        writer);
+                        output);
             case SUB:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/true,
                         SpvOpFSub, SpvOpISub, SpvOpISub, SpvOpUndef,
-                        writer);
+                        output);
             case MUL:
                 if (leftType.isMatrix() && rightType.isMatrix()) {
                     int resultId = getUniqueId(resultType);
                     int typeId = writeType(resultType);
                     writeInstruction(SpvOpMatrixTimesMatrix, typeId, resultId,
-                            lhs, rhs, writer);
+                            lhs, rhs, output);
                     return resultId;
                 }
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFMul, SpvOpIMul, SpvOpIMul, SpvOpUndef,
-                        writer);
+                        output);
             case DIV:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/true,
                         SpvOpFDiv, SpvOpSDiv, SpvOpUDiv, SpvOpUndef,
-                        writer);
+                        output);
             case MOD:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpFMod, SpvOpSMod, SpvOpUMod, SpvOpUndef,
-                        writer);
+                        output);
             case SHL:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpUndef, SpvOpShiftLeftLogical, SpvOpShiftLeftLogical, SpvOpUndef,
-                        writer);
+                        output);
             case SHR:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpUndef, SpvOpShiftRightArithmetic, SpvOpShiftRightLogical, SpvOpUndef,
-                        writer);
+                        output);
             case BITWISE_XOR:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpUndef, SpvOpBitwiseXor, SpvOpBitwiseXor, SpvOpUndef,
-                        writer);
+                        output);
             case BITWISE_AND:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpUndef, SpvOpBitwiseAnd, SpvOpBitwiseAnd, SpvOpUndef,
-                        writer);
+                        output);
             case BITWISE_OR:
                 return writeBinaryOperation(pos,
                         resultType, operandType, lhs, rhs,
                         /*matrixOpIsComponentWise*/false,
                         SpvOpUndef, SpvOpBitwiseOr, SpvOpBitwiseOr, SpvOpUndef,
-                        writer);
+                        output);
             default:
                 getContext().error(pos, "unsupported expression");
                 return NONE_ID;
@@ -2221,7 +2221,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                            @NonNull Type leftType, @NonNull Type rightType,
                                            int lhs, int rhs, // SpvId
                                            int op, // SpvOp
-                                           Writer writer) {
+                                           Output output) {
         assert resultType.isMatrix();
         boolean leftMat = leftType.isMatrix();
         boolean rightMat = rightType.isMatrix();
@@ -2230,22 +2230,22 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int columnTypeId = writeType(columnType);
 
         if (leftType.isScalar()) {
-            lhs = broadcast(columnType, lhs, writer);
+            lhs = broadcast(columnType, lhs, output);
         }
         if (rightType.isScalar()) {
-            rhs = broadcast(columnType, rhs, writer);
+            rhs = broadcast(columnType, rhs, output);
         }
 
         // do each vector op
         IntArrayList columns = obtainIdList();
         for (int i = 0; i < resultType.getCols(); i++) {
-            int leftColumn = leftMat ? writeOpCompositeExtract(columnType, lhs, i, writer) : lhs;
-            int rightColumn = rightMat ? writeOpCompositeExtract(columnType, rhs, i, writer) : rhs;
+            int leftColumn = leftMat ? writeOpCompositeExtract(columnType, lhs, i, output) : lhs;
+            int rightColumn = rightMat ? writeOpCompositeExtract(columnType, rhs, i, output) : rhs;
             int resultId = getUniqueId(resultType);
-            writeInstruction(op, columnTypeId, resultId, leftColumn, rightColumn, writer);
+            writeInstruction(op, columnTypeId, resultId, leftColumn, rightColumn, output);
             columns.add(resultId);
         }
-        int resultId = writeOpCompositeConstruct(resultType, columns, writer);
+        int resultId = writeOpCompositeConstruct(resultType, columns, output);
         releaseIdList(columns);
         return resultId;
     }
@@ -2255,7 +2255,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                            Type leftType, Type rightType,
                                            int lhs, int rhs, // SpvId
                                            int floatOp, int signedOp, int unsignedOp, // SpvOp
-                                           Writer writer) {
+                                           Output output) {
         int op = select_by_component_type(resultType, floatOp, signedOp, unsignedOp, SpvOpUndef);
         if (op == SpvOpUndef) {
             getContext().error(pos,
@@ -2263,7 +2263,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             return NONE_ID;
         }
         return writeBinaryMatrixOperation(resultType, leftType, rightType,
-                lhs, rhs, op, writer);
+                lhs, rhs, op, output);
     }
 
     // raw binary op
@@ -2271,7 +2271,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                      int lhs, int rhs, // SpvId
                                      boolean matrixOpIsComponentWise,
                                      int floatOp, int signedOp, int unsignedOp, int booleanOp, // SpvOp
-                                     Writer writer) {
+                                     Output output) {
         int op = select_by_component_type(operandType, floatOp, signedOp, unsignedOp, booleanOp);
         if (op == SpvOpUndef) {
             getContext().error(pos,
@@ -2280,16 +2280,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
         if (matrixOpIsComponentWise && operandType.isMatrix()) {
             return writeBinaryMatrixOperation(resultType, operandType, operandType,
-                    lhs, rhs, op, writer);
+                    lhs, rhs, op, output);
         }
         int resultId = getUniqueId(resultType);
         int typeId = writeType(resultType);
-        writeInstruction(op, typeId, resultId, lhs, rhs, writer);
+        writeInstruction(op, typeId, resultId, lhs, rhs, output);
         return resultId;
     }
 
     private int writeArrayComparison(Type arrayType, int lhs, Operator op,
-                                     int rhs, Writer writer) {
+                                     int rhs, Output output) {
         // The inputs must be arrays, and the op must be == or !=.
         assert (op == Operator.EQ || op == Operator.NE);
         assert (arrayType.isArray());
@@ -2302,19 +2302,19 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int result = 0;
         for (int index = 0; index < arraySize; ++index) {
             // Get the left and right item in the array.
-            int itemL = writeOpCompositeExtract(elementType, lhs, index, writer);
-            int itemR = writeOpCompositeExtract(elementType, rhs, index, writer);
+            int itemL = writeOpCompositeExtract(elementType, lhs, index, output);
+            int itemR = writeOpCompositeExtract(elementType, rhs, index, output);
             // Use `writeBinaryExpression` with the requested == or != operator on these items.
             int comparison = writeBinaryExpression(Position.NO_POS, elementType, itemL, op,
-                    elementType, itemR, boolType, writer);
+                    elementType, itemR, boolType, output);
             // Merge this comparison result with all the other comparisons we've done.
-            result = mergeComparisons(comparison, result, op, writer);
+            result = mergeComparisons(comparison, result, op, output);
         }
         return result;
     }
 
     private int mergeComparisons(int comparison, int result, Operator op,
-                                 Writer writer) {
+                                 Output output) {
         // If this is the first entry, we don't need to merge comparison results with anything.
         if (result == 0) {
             return comparison;
@@ -2326,11 +2326,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         switch (op) {
             case EQ:
                 writeInstruction(SpvOpLogicalAnd, boolTypeId, next,
-                        comparison, result, writer);
+                        comparison, result, output);
                 break;
             case NE:
                 writeInstruction(SpvOpLogicalOr, boolTypeId, next,
-                        comparison, result, writer);
+                        comparison, result, output);
                 break;
             default:
                 assert false : ("mergeComparisons only supports == and !=, not " + op);
@@ -2339,11 +2339,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return next;
     }
 
-    private int writeConditionalExpression(ConditionalExpression expr, Writer writer) {
+    private int writeConditionalExpression(ConditionalExpression expr, Output output) {
         Type type = expr.getType();
-        int cond = writeExpression(expr.getCondition(), writer);
-        int trueId = writeExpression(expr.getWhenTrue(), writer);
-        int falseId = writeExpression(expr.getWhenFalse(), writer);
+        int cond = writeExpression(expr.getCondition(), output);
+        int trueId = writeExpression(expr.getWhenTrue(), output);
+        int falseId = writeExpression(expr.getWhenFalse(), output);
         int resultId = getUniqueId();
         int typeId = writeType(type);
 
@@ -2359,11 +2359,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 if (mOutputVersion.isBefore(SPIRVVersion.SPIRV_1_4) && type.isVector()) {
                     Type condType = expr.getCondition().getType();
                     assert condType.isBoolean();
-                    cond = broadcast(condType.toVector(getContext(), type.getRows()), cond, writer);
+                    cond = broadcast(condType.toVector(getContext(), type.getRows()), cond, output);
                 }
 
                 writeInstruction(SpvOpSelect, typeId, resultId,
-                        cond, trueId, falseId, writer);
+                        cond, trueId, falseId, output);
                 return resultId;
             }
         }
@@ -2379,72 +2379,72 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int trueLabel = getUniqueId();
         int falseLabel = getUniqueId();
         int end = getUniqueId();
-        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
-        writeInstruction(SpvOpBranchConditional, cond, trueLabel, falseLabel, writer);
-        writeLabel(trueLabel, writer);
-        writeOpStore(SpvStorageClassFunction, variable, trueId, writer);
-        writeInstruction(SpvOpBranch, end, writer);
-        writeLabel(falseLabel, kBranchIsAbove, numReachableOps, numStoreOps, writer);
-        writeOpStore(SpvStorageClassFunction, variable, falseId, writer);
-        writeInstruction(SpvOpBranch, end, writer);
-        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, output);
+        writeInstruction(SpvOpBranchConditional, cond, trueLabel, falseLabel, output);
+        writeLabel(trueLabel, output);
+        writeOpStore(SpvStorageClassFunction, variable, trueId, output);
+        writeInstruction(SpvOpBranch, end, output);
+        writeLabel(falseLabel, kBranchIsAbove, numReachableOps, numStoreOps, output);
+        writeOpStore(SpvStorageClassFunction, variable, falseId, output);
+        writeInstruction(SpvOpBranch, end, output);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, output);
         writeInstruction(SpvOpLoad, typeId, resultId,
-                variable, writer);
+                variable, output);
 
         return resultId;
     }
 
-    private int writeVariableReference(VariableReference ref, Writer writer) {
+    private int writeVariableReference(VariableReference ref, Output output) {
         Expression constExpr = ConstantFolder.getConstantValueOrNullForVariable(ref);
         if (constExpr != null) {
-            return writeExpression(constExpr, writer);
+            return writeExpression(constExpr, output);
         }
-        return writeLValue(ref, writer).load(this, writer);
+        return writeLValue(ref, output).load(this, output);
     }
 
-    private int writeIndexExpression(IndexExpression expr, Writer writer) {
+    private int writeIndexExpression(IndexExpression expr, Output output) {
         if (expr.getBase().getType().isVector()) {
-            int base = writeExpression(expr.getBase(), writer);
-            int index = writeExpression(expr.getIndex(), writer);
+            int base = writeExpression(expr.getBase(), output);
+            int index = writeExpression(expr.getIndex(), output);
             int resultId = getUniqueId();
             int typeId = writeType(expr.getType());
             writeInstruction(SpvOpVectorExtractDynamic, typeId, resultId,
-                    base, index, writer);
+                    base, index, output);
             return resultId;
         }
-        return writeLValue(expr, writer).load(this, writer);
+        return writeLValue(expr, output).load(this, output);
     }
 
-    private int writeFieldAccess(FieldAccess f, Writer writer) {
-        return writeLValue(f, writer).load(this, writer);
+    private int writeFieldAccess(FieldAccess f, Output output) {
+        return writeLValue(f, output).load(this, output);
     }
 
     private int writeRValueSwizzle(Expression baseExpr,
-                                   byte[] components, Writer writer) {
+                                   byte[] components, Output output) {
         int count = components.length;
         assert count >= 1 && count <= 4;
         Type type = baseExpr.getType().getComponentType().toVector(getContext(), count);
-        int baseId = writeExpression(baseExpr, writer);
+        int baseId = writeExpression(baseExpr, output);
 
         if (count == 1) {
-            return writeOpCompositeExtract(type, baseId, components[0], writer);
+            return writeOpCompositeExtract(type, baseId, components[0], output);
         }
 
         int resultId = getUniqueId(type);
         int typeId = writeType(type);
-        writeOpcode(SpvOpVectorShuffle, 5 + count, writer);
-        writer.writeWord(typeId);
-        writer.writeWord(resultId);
-        writer.writeWord(baseId);
-        writer.writeWord(baseId);
+        writeOpcode(SpvOpVectorShuffle, 5 + count, output);
+        output.writeWord(typeId);
+        output.writeWord(resultId);
+        output.writeWord(baseId);
+        output.writeWord(baseId);
         for (int component : components) {
-            writer.writeWord(component); // 0...3
+            output.writeWord(component); // 0...3
         }
         return resultId;
     }
 
-    private int writeSwizzle(Swizzle swizzle, Writer writer) {
-        return writeRValueSwizzle(swizzle.getBase(), swizzle.getComponents(), writer);
+    private int writeSwizzle(Swizzle swizzle, Output output) {
+        return writeRValueSwizzle(swizzle.getBase(), swizzle.getComponents(), output);
     }
 
     private void pruneConditionalOps(int numReachableOps, int numStoreOps) {
@@ -2467,22 +2467,22 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    private void writeStatement(@NonNull Statement stmt, Writer writer) {
+    private void writeStatement(@NonNull Statement stmt, Output output) {
         switch (stmt.getKind()) {
-            case BLOCK -> writeBlockStatement((BlockStatement) stmt, writer);
-            case RETURN -> writeReturnStatement((ReturnStatement) stmt, writer);
-            case IF -> writeIfStatement((IfStatement) stmt, writer);
-            case FOR_LOOP -> writeForLoop((ForLoop) stmt, writer);
-            case SWITCH -> writeSwitchStatement((SwitchStatement) stmt, writer);
-            case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt, writer);
-            case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), writer);
-            case BREAK -> writeInstruction(SpvOpBranch, mBreakTarget.topInt(), writer);
-            case CONTINUE -> writeInstruction(SpvOpBranch, mContinueTarget.topInt(), writer);
+            case BLOCK -> writeBlockStatement((BlockStatement) stmt, output);
+            case RETURN -> writeReturnStatement((ReturnStatement) stmt, output);
+            case IF -> writeIfStatement((IfStatement) stmt, output);
+            case FOR_LOOP -> writeForLoop((ForLoop) stmt, output);
+            case SWITCH -> writeSwitchStatement((SwitchStatement) stmt, output);
+            case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt, output);
+            case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), output);
+            case BREAK -> writeInstruction(SpvOpBranch, mBreakTarget.topInt(), output);
+            case CONTINUE -> writeInstruction(SpvOpBranch, mContinueTarget.topInt(), output);
             case DISCARD -> {
                 if (mOutputVersion.isAtLeast(SPIRVVersion.SPIRV_1_6)) {
-                    writeInstruction(SpvOpTerminateInvocation, writer);
+                    writeInstruction(SpvOpTerminateInvocation, output);
                 } else {
-                    writeInstruction(SpvOpKill, writer);
+                    writeInstruction(SpvOpKill, output);
                 }
             }
             default -> getContext().error(stmt.mPosition, "unsupported statement: " + stmt.getKind());
@@ -2509,23 +2509,23 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         throw new AssertionError(type);
     }
 
-    private void writeBlockStatement(BlockStatement b, Writer writer) {
+    private void writeBlockStatement(BlockStatement b, Output output) {
         for (var stmt : b.getStatements()) {
-            writeStatement(stmt, writer);
+            writeStatement(stmt, output);
         }
     }
 
-    private void writeReturnStatement(ReturnStatement r, Writer writer) {
+    private void writeReturnStatement(ReturnStatement r, Output output) {
         if (r.getExpression() != null) {
-            int expr = writeExpression(r.getExpression(), writer);
-            writeInstruction(SpvOpReturnValue, expr, writer);
+            int expr = writeExpression(r.getExpression(), output);
+            writeInstruction(SpvOpReturnValue, expr, output);
         } else {
-            writeInstruction(SpvOpReturn, writer);
+            writeInstruction(SpvOpReturn, output);
         }
     }
 
-    private void writeIfStatement(IfStatement stmt, Writer writer) {
-        int cond = writeExpression(stmt.getCondition(), writer);
+    private void writeIfStatement(IfStatement stmt, Output output) {
+        int cond = writeExpression(stmt.getCondition(), output);
         int trueId = getUniqueId();
         int falseId = getUniqueId();
 
@@ -2534,34 +2534,34 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
         if (stmt.getWhenFalse() != null) {
             int end = getUniqueId();
-            writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
-            writeInstruction(SpvOpBranchConditional, cond, trueId, falseId, writer);
-            writeLabel(trueId, writer);
-            writeStatement(stmt.getWhenTrue(), writer);
+            writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, output);
+            writeInstruction(SpvOpBranchConditional, cond, trueId, falseId, output);
+            writeLabel(trueId, output);
+            writeStatement(stmt.getWhenTrue(), output);
             if (mCurrentBlock != 0) {
-                writeInstruction(SpvOpBranch, end, writer);
+                writeInstruction(SpvOpBranch, end, output);
             }
-            writeLabel(falseId, kBranchIsAbove, numReachableOps, numStoreOps, writer);
-            writeStatement(stmt.getWhenFalse(), writer);
+            writeLabel(falseId, kBranchIsAbove, numReachableOps, numStoreOps, output);
+            writeStatement(stmt.getWhenFalse(), output);
             if (mCurrentBlock != 0) {
-                writeInstruction(SpvOpBranch, end, writer);
+                writeInstruction(SpvOpBranch, end, output);
             }
-            writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+            writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, output);
         } else {
-            writeInstruction(SpvOpSelectionMerge, falseId, SpvSelectionControlMaskNone, writer);
-            writeInstruction(SpvOpBranchConditional, cond, trueId, falseId, writer);
-            writeLabel(trueId, writer);
-            writeStatement(stmt.getWhenTrue(), writer);
+            writeInstruction(SpvOpSelectionMerge, falseId, SpvSelectionControlMaskNone, output);
+            writeInstruction(SpvOpBranchConditional, cond, trueId, falseId, output);
+            writeLabel(trueId, output);
+            writeStatement(stmt.getWhenTrue(), output);
             if (mCurrentBlock != 0) {
-                writeInstruction(SpvOpBranch, falseId, writer);
+                writeInstruction(SpvOpBranch, falseId, output);
             }
-            writeLabel(falseId, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+            writeLabel(falseId, kBranchIsAbove, numReachableOps, numStoreOps, output);
         }
     }
 
-    private void writeForLoop(ForLoop f, Writer writer) {
+    private void writeForLoop(ForLoop f, Output output) {
         if (f.getInit() != null) {
-            writeStatement(f.getInit(), writer);
+            writeStatement(f.getInit(), output);
         }
 
         int numReachableOps = mReachableOps.size();
@@ -2578,34 +2578,34 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         mContinueTarget.push(next);
         int end = getUniqueId();
         mBreakTarget.push(end);
-        writeInstruction(SpvOpBranch, header, writer);
-        writeLabel(header, kBranchIsBelow, numReachableOps, numStoreOps, writer);
-        writeInstruction(SpvOpLoopMerge, end, next, SpvLoopControlMaskNone, writer);
-        writeInstruction(SpvOpBranch, start, writer);
-        writeLabel(start, writer);
+        writeInstruction(SpvOpBranch, header, output);
+        writeLabel(header, kBranchIsBelow, numReachableOps, numStoreOps, output);
+        writeInstruction(SpvOpLoopMerge, end, next, SpvLoopControlMaskNone, output);
+        writeInstruction(SpvOpBranch, start, output);
+        writeLabel(start, output);
         if (f.getCondition() != null) {
-            int cond = writeExpression(f.getCondition(), writer);
-            writeInstruction(SpvOpBranchConditional, cond, body, end, writer);
+            int cond = writeExpression(f.getCondition(), output);
+            writeInstruction(SpvOpBranchConditional, cond, body, end, output);
         } else {
-            writeInstruction(SpvOpBranch, body, writer);
+            writeInstruction(SpvOpBranch, body, output);
         }
-        writeLabel(body, writer);
-        writeStatement(f.getStatement(), writer);
+        writeLabel(body, output);
+        writeStatement(f.getStatement(), output);
         if (mCurrentBlock != 0) {
-            writeInstruction(SpvOpBranch, next, writer);
+            writeInstruction(SpvOpBranch, next, output);
         }
-        writeLabel(next, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        writeLabel(next, kBranchIsAbove, numReachableOps, numStoreOps, output);
         if (f.getStep() != null) {
-            writeExpression(f.getStep(), writer);
+            writeExpression(f.getStep(), output);
         }
-        writeInstruction(SpvOpBranch, header, writer);
-        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        writeInstruction(SpvOpBranch, header, output);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, output);
         mBreakTarget.popInt();
         mContinueTarget.popInt();
     }
 
-    private void writeSwitchStatement(SwitchStatement s, Writer writer) {
-        int init = writeExpression(s.getInit(), writer);
+    private void writeSwitchStatement(SwitchStatement s, Output output) {
+        int init = writeExpression(s.getInit(), output);
 
         int numReachableOps = mReachableOps.size();
         int numStoreOps = mStoreOps.size();
@@ -2644,18 +2644,18 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
         labels.add(end);
 
-        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, writer);
-        writeOpcode(SpvOpSwitch, size, writer);
-        writer.writeWord(init);
-        writer.writeWord(defaultLabel);
+        writeInstruction(SpvOpSelectionMerge, end, SpvSelectionControlMaskNone, output);
+        writeOpcode(SpvOpSwitch, size, output);
+        output.writeWord(init);
+        output.writeWord(defaultLabel);
 
         for (int i = 0; i < cases.size(); ++i) {
             SwitchCase sc = (SwitchCase) cases.get(i);
             if (sc.isDefault()) {
                 continue;
             }
-            writer.writeWord((int) sc.getValue());
-            writer.writeWord(labels.getInt(i));
+            output.writeWord((int) sc.getValue());
+            output.writeWord(labels.getInt(i));
         }
         for (int i = 0; i < cases.size(); ++i) {
             if (caseIsCollapsed.get(i)) {
@@ -2663,27 +2663,27 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             SwitchCase sc = (SwitchCase) cases.get(i);
             if (i == 0) {
-                writeLabel(labels.getInt(i), writer);
+                writeLabel(labels.getInt(i), output);
             } else {
-                writeLabel(labels.getInt(i), kBranchIsAbove, numReachableOps, numStoreOps, writer);
+                writeLabel(labels.getInt(i), kBranchIsAbove, numReachableOps, numStoreOps, output);
             }
-            writeStatement(sc.getStatement(), writer);
+            writeStatement(sc.getStatement(), output);
             if (mCurrentBlock != 0) {
-                writeInstruction(SpvOpBranch, labels.getInt(i + 1), writer);
+                writeInstruction(SpvOpBranch, labels.getInt(i + 1), output);
             }
         }
-        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, writer);
+        writeLabel(end, kBranchIsAbove, numReachableOps, numStoreOps, output);
         mBreakTarget.popInt();
     }
 
-    private void writeLabel(int label, Writer writer) {
+    private void writeLabel(int label, Output output) {
         assert mCurrentBlock == 0;
         mCurrentBlock = label;
-        writeInstruction(SpvOpLabel, label, writer);
+        writeInstruction(SpvOpLabel, label, output);
     }
 
     private void writeLabel(int label, int type, int numReachableOps,
-                            int numStoreOps, Writer writer) {
+                            int numStoreOps, Output output) {
         switch (type) {
             case kBranchIsBelow:
             case kBranchesOnBothSides:
@@ -2701,10 +2701,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
 
         // Emit the label.
-        writeLabel(label, writer);
+        writeLabel(label, output);
     }
 
-    private void writeAccessChain(@NonNull Expression expr, Writer writer, IntList chain) {
+    private void writeAccessChain(@NonNull Expression expr, Output output, IntList chain) {
         switch (expr.getKind()) {
             case INDEX -> {
                 IndexExpression indexExpr = (IndexExpression) expr;
@@ -2712,18 +2712,18 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     //TODO
                     getContext().error(indexExpr.mPosition, "indexing on swizzle is not allowed");
                 }
-                writeAccessChain(indexExpr.getBase(), writer, chain);
-                int id = writeExpression(indexExpr.getIndex(), writer);
+                writeAccessChain(indexExpr.getBase(), output, chain);
+                int id = writeExpression(indexExpr.getIndex(), output);
                 chain.add(id);
             }
             case FIELD_ACCESS -> {
                 FieldAccess fieldAccess = (FieldAccess) expr;
-                writeAccessChain(fieldAccess.getBase(), writer, chain);
+                writeAccessChain(fieldAccess.getBase(), output, chain);
                 int id = writeScalarConstant(fieldAccess.getFieldIndex(), getContext().getTypes().mInt);
                 chain.add(id);
             }
             default -> {
-                int id = writeLValue(expr, writer).getPointer();
+                int id = writeLValue(expr, output).getPointer();
                 assert id != NONE_ID;
                 chain.add(id);
             }
@@ -2731,20 +2731,20 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     @NonNull
-    private LValue writeLValue(@NonNull Expression expr, Writer writer) {
+    private LValue writeLValue(@NonNull Expression expr, Output output) {
         Type type = expr.getType();
         boolean relaxedPrecision = type.isRelaxedPrecision();
         switch (expr.getKind()) {
             case INDEX, FIELD_ACCESS -> {
                 IntArrayList chain = mAccessChain;
                 chain.clear();
-                writeAccessChain(expr, writer, chain);
+                writeAccessChain(expr, output, chain);
                 int member = getUniqueId();
                 int storageClass = getStorageClass(expr);
-                writeOpcode(SpvOpAccessChain, 3 + chain.size(), writer);
-                writer.writeWord(writePointerType(type, storageClass));
-                writer.writeWord(member);
-                writer.writeWords(chain.elements(), chain.size());
+                writeOpcode(SpvOpAccessChain, 3 + chain.size(), output);
+                output.writeWord(writePointerType(type, storageClass));
+                output.writeWord(member);
+                output.writeWords(chain.elements(), chain.size());
                 //TODO layout may be wrong
                 int typeId = writeType(type, null, null);
                 return new PointerLValue(member, false, typeId,
@@ -2763,7 +2763,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             }
             case SWIZZLE -> {
                 Swizzle swizzle = (Swizzle) expr;
-                LValue lvalue = writeLValue(swizzle.getBase(), writer);
+                LValue lvalue = writeLValue(swizzle.getBase(), output);
                 if (lvalue.applySwizzle(swizzle.getComponents(), type)) {
                     return lvalue;
                 }
@@ -2777,7 +2777,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     int member = getUniqueId();
                     int typeId = writePointerType(type, storageClass);
                     int indexId = writeScalarConstant(swizzle.getComponents()[0], getContext().getTypes().mInt);
-                    writeInstruction(SpvOpAccessChain, typeId, member, base, indexId, writer);
+                    writeInstruction(SpvOpAccessChain, typeId, member, base, indexId, output);
                     return new PointerLValue(member,
                             /*isMemoryObjectPointer=*/false,
                             writeType(type),
@@ -2799,7 +2799,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                            FunctionCall call,
                                            int argIndex,
                                            ArrayList<OutVar> tmpOutVars,
-                                           Writer writer) {
+                                           Output output) {
         FunctionDecl funcDecl = call.getFunction();
         Expression arg = call.getArguments()[argIndex];
         Variable param = funcDecl.getParameters().get(argIndex);
@@ -2828,25 +2828,25 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int tmpValueId = NONE_ID;
 
         if ((paramModifiers.flags() & Modifiers.kOut_Flag) != 0) {
-            LValue lValue = writeLValue(arg, writer);
+            LValue lValue = writeLValue(arg, output);
             // We handle out params with a temp var that we copy back to the original variable at the
             // end of the call. GLSL guarantees that the original variable will be unchanged until the
             // end of the call, and also that out params are written back to their original variables in
             // a specific order (left-to-right), so it's unsafe to pass a pointer to the original value.
             if ((paramModifiers.flags() & Modifiers.kIn_Flag) != 0) {
-                tmpValueId = lValue.load(this, writer);
+                tmpValueId = lValue.load(this, output);
             }
             tmpVar = getUniqueId(arg.getType());
             tmpOutVars.add(new OutVar(tmpVar, arg.getType(), lValue));
         } else if (funcDecl.isIntrinsic()) {
             // Unlike user function calls, non-out intrinsic arguments don't need pointer parameters.
-            tmpValueId = writeExpression(arg, writer);
+            tmpValueId = writeExpression(arg, output);
             argList.add(tmpValueId);
             return;
         } else {
             // We always use pointer parameters when calling user functions.
             // See getFunctionParameterType for further explanation.
-            tmpValueId = writeExpression(arg, writer);
+            tmpValueId = writeExpression(arg, output);
             tmpVar = getUniqueId();
         }
 
@@ -2857,33 +2857,33 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 SpvStorageClassFunction,
                 mVariableBuffer);
         if (tmpValueId != NONE_ID) {
-            writeOpStore(SpvStorageClassFunction, tmpVar, tmpValueId, writer);
+            writeOpStore(SpvStorageClassFunction, tmpVar, tmpValueId, output);
         }
         argList.add(tmpVar);
     }
 
-    private void copyBackOutArguments(ArrayList<OutVar> tmpOutVars, Writer writer) {
+    private void copyBackOutArguments(ArrayList<OutVar> tmpOutVars, Output output) {
         for (OutVar outVar : tmpOutVars) {
             int loadId = getUniqueId(outVar.mType);
             int typeId = writeType(outVar.mType);
-            writeInstruction(SpvOpLoad, typeId, loadId, outVar.mId, writer);
-            outVar.mLValue.store(this, loadId, writer);
+            writeInstruction(SpvOpLoad, typeId, loadId, outVar.mId, output);
+            outVar.mLValue.store(this, loadId, output);
         }
     }
 
     private void writeGLSLExtendedInstruction(Type type, int id,
                                               int floatInst, int signedInst, int unsignedInst,
-                                              IntArrayList args, Writer writer) {
-        writeOpcode(SpvOpExtInst, 5 + args.size(), writer);
+                                              IntArrayList args, Output output) {
+        writeOpcode(SpvOpExtInst, 5 + args.size(), output);
         int typeId = writeType(type);
-        writer.writeWord(typeId);
-        writer.writeWord(id);
-        writer.writeWord(mGLSLExtendedInstructions);
-        writer.writeWord(select_by_component_type(type, floatInst, signedInst, unsignedInst, GLSLstd450Bad));
-        writer.writeWords(args.elements(), args.size());
+        output.writeWord(typeId);
+        output.writeWord(id);
+        output.writeWord(mGLSLExtendedInstructions);
+        output.writeWord(select_by_component_type(type, floatInst, signedInst, unsignedInst, GLSLstd450Bad));
+        output.writeWords(args.elements(), args.size());
     }
 
-    private int writeSpecialIntrinsic(FunctionCall call, int kind, Writer writer) {
+    private int writeSpecialIntrinsic(FunctionCall call, int kind, Output output) {
         Expression[] arguments = call.getArguments();
         IntArrayList argumentIds = obtainIdList();
         int resultId = getUniqueId();
@@ -2891,21 +2891,21 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         switch (kind) {
             case kAtan_SpecialIntrinsic -> {
                 for (var arg : arguments) {
-                    argumentIds.add(writeExpression(arg, writer));
+                    argumentIds.add(writeExpression(arg, output));
                 }
                 if (argumentIds.size() == 2) {
                     writeGLSLExtendedInstruction(callType, resultId,
                             GLSLstd450Atan2, GLSLstd450Bad, GLSLstd450Bad,
-                            argumentIds, writer);
+                            argumentIds, output);
                 } else {
                     assert argumentIds.size() == 1;
                     writeGLSLExtendedInstruction(callType, resultId,
                             GLSLstd450Atan, GLSLstd450Bad, GLSLstd450Bad,
-                            argumentIds, writer);
+                            argumentIds, output);
                 }
             }
             case kMod_SpecialIntrinsic -> {
-                vectorize(arguments, argumentIds, writer);
+                vectorize(arguments, argumentIds, output);
                 assert argumentIds.size() == 2;
                 Type operandType = arguments[0].getType();
                 int op = select_by_component_type(operandType,
@@ -2915,41 +2915,41 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 writeInstruction(op, typeId, resultId,
                         argumentIds.getInt(0),
                         argumentIds.getInt(1),
-                        writer);
+                        output);
             }
             case kMin_SpecialIntrinsic -> {
-                vectorize(arguments, argumentIds, writer);
+                vectorize(arguments, argumentIds, output);
                 assert argumentIds.size() == 2;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FMin, GLSLstd450SMin, GLSLstd450UMin,
-                        argumentIds, writer);
+                        argumentIds, output);
             }
             case kMax_SpecialIntrinsic -> {
-                vectorize(arguments, argumentIds, writer);
+                vectorize(arguments, argumentIds, output);
                 assert argumentIds.size() == 2;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FMax, GLSLstd450SMax, GLSLstd450UMax,
-                        argumentIds, writer);
+                        argumentIds, output);
             }
             case kClamp_SpecialIntrinsic -> {
-                vectorize(arguments, argumentIds, writer);
+                vectorize(arguments, argumentIds, output);
                 assert argumentIds.size() == 3;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FClamp, GLSLstd450SClamp, GLSLstd450UClamp,
-                        argumentIds, writer);
+                        argumentIds, output);
             }
             case kSaturate_SpecialIntrinsic -> {
                 assert (arguments.length == 1);
                 int vectorSize = arguments[0].getType().getRows();
-                argumentIds.add(vectorize(arguments[0], vectorSize, writer));
-                argumentIds.add(vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, writer));
-                argumentIds.add(vectorize(1.0f, getContext().getTypes().mFloat, vectorSize, writer));
+                argumentIds.add(vectorize(arguments[0], vectorSize, output));
+                argumentIds.add(vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, output));
+                argumentIds.add(vectorize(1.0f, getContext().getTypes().mFloat, vectorSize, output));
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450FClamp, GLSLstd450SClamp, GLSLstd450UClamp,
-                        argumentIds, writer);
+                        argumentIds, output);
             }
             case kMix_SpecialIntrinsic -> {
-                vectorize(arguments, argumentIds, writer);
+                vectorize(arguments, argumentIds, output);
                 assert argumentIds.size() == 3;
                 if (arguments[2].getType().isBooleanOrCompound()) {
                     // Use OpSelect to implement Boolean mix().
@@ -2958,30 +2958,30 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                             argumentIds.getInt(2),
                             argumentIds.getInt(1),
                             argumentIds.getInt(0),
-                            writer);
+                            output);
                 } else {
                     writeGLSLExtendedInstruction(callType, resultId,
                             GLSLstd450FMix, SpvOpUndef, SpvOpUndef,
-                            argumentIds, writer);
+                            argumentIds, output);
                 }
             }
             case kStep_SpecialIntrinsic -> {
-                vectorize(arguments, argumentIds, writer);
+                vectorize(arguments, argumentIds, output);
                 assert argumentIds.size() == 2;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450Step, SpvOpUndef, SpvOpUndef,
-                        argumentIds, writer);
+                        argumentIds, output);
             }
             case kSmoothStep_SpecialIntrinsic -> {
-                vectorize(arguments, argumentIds, writer);
+                vectorize(arguments, argumentIds, output);
                 assert argumentIds.size() == 3;
                 writeGLSLExtendedInstruction(callType, resultId,
                         GLSLstd450SmoothStep, GLSLstd450Bad, GLSLstd450Bad,
-                        argumentIds, writer);
+                        argumentIds, output);
             }
             case kTexture_SpecialIntrinsic -> {
                 for (var arg : arguments) {
-                    argumentIds.add(writeExpression(arg, writer));
+                    argumentIds.add(writeExpression(arg, output));
                 }
                 int typeId = writeType(callType);
                 if (argumentIds.size() == 3) {
@@ -2991,19 +2991,19 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                             argumentIds.getInt(1),
                             SpvImageOperandsBiasMask,
                             argumentIds.getInt(2),
-                            writer);
+                            output);
                 } else {
                     assert argumentIds.size() == 2;
                     writeInstruction(SpvOpImageSampleImplicitLod,
                             typeId, resultId,
                             argumentIds.getInt(0),
                             argumentIds.getInt(1),
-                            writer);
+                            output);
                 }
             }
             case kTextureFetch_SpecialIntrinsic -> {
                 for (var arg : arguments) {
-                    argumentIds.add(writeExpression(arg, writer));
+                    argumentIds.add(writeExpression(arg, output));
                 }
                 //TODO for 1D, 2D (non-MS), 3D, there are three args; but not for others
                 assert argumentIds.size() == 3;
@@ -3016,7 +3016,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                     int imageTypeId = mSpvIdCache.get(samplerTypeId)
                             .mWords[1];
                     writeInstruction(SpvOpImage, imageTypeId, imageId,
-                            samplerId, writer);
+                            samplerId, output);
                     argumentIds.set(0, imageId);
                 }
                 int typeId = writeType(callType);
@@ -3026,7 +3026,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         argumentIds.getInt(1),
                         SpvImageOperandsLodMask,
                         argumentIds.getInt(2),
-                        writer);
+                        output);
             }
             default -> {
                 assert false;
@@ -3036,7 +3036,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private int writeIntrinsicCall(FunctionCall call, Writer writer) {
+    private int writeIntrinsicCall(FunctionCall call, Output output) {
         FunctionDecl funcDecl = call.getFunction();
         assert funcDecl.isIntrinsic();
         int dataIndex = funcDecl.getIntrinsicKind() * kIntrinsicDataColumn;
@@ -3065,15 +3065,15 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 ArrayList<OutVar> tmpOutVars = new ArrayList<>();
                 for (int i = 0; i < arguments.length; i++) {
                     writeFunctionCallArgument(argumentIds, call, i, tmpOutVars,
-                            writer);
+                            output);
                 }
-                writeOpcode(SpvOpExtInst, 5 + argumentIds.size(), writer);
-                writer.writeWord(typeId);
-                writer.writeWord(resultId);
-                writer.writeWord(mGLSLExtendedInstructions);
-                writer.writeWord(intrinsicId);
-                writer.writeWords(argumentIds.elements(), argumentIds.size());
-                copyBackOutArguments(tmpOutVars, writer);
+                writeOpcode(SpvOpExtInst, 5 + argumentIds.size(), output);
+                output.writeWord(typeId);
+                output.writeWord(resultId);
+                output.writeWord(mGLSLExtendedInstructions);
+                output.writeWord(intrinsicId);
+                output.writeWords(argumentIds.elements(), argumentIds.size());
+                copyBackOutArguments(tmpOutVars, output);
                 releaseIdList(argumentIds);
                 return resultId;
             }
@@ -3087,23 +3087,23 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 ArrayList<OutVar> tmpOutVars = new ArrayList<>();
                 for (int i = 0; i < arguments.length; i++) {
                     writeFunctionCallArgument(argumentIds, call, i, tmpOutVars,
-                            writer);
+                            output);
                 }
                 if (!call.getType().isVoid()) {
                     int typeId = writeType(call.getType());
-                    writeOpcode(intrinsicId, 3 + arguments.length, writer);
-                    writer.writeWord(typeId);
-                    writer.writeWord(resultId);
+                    writeOpcode(intrinsicId, 3 + arguments.length, output);
+                    output.writeWord(typeId);
+                    output.writeWord(resultId);
                 } else {
-                    writeOpcode(intrinsicId, 1 + arguments.length, writer);
+                    writeOpcode(intrinsicId, 1 + arguments.length, output);
                 }
-                writer.writeWords(argumentIds.elements(), argumentIds.size());
-                copyBackOutArguments(tmpOutVars, writer);
+                output.writeWords(argumentIds.elements(), argumentIds.size());
+                copyBackOutArguments(tmpOutVars, output);
                 releaseIdList(argumentIds);
                 return resultId;
             }
             case kSpecial_IntrinsicOpcodeKind -> {
-                return writeSpecialIntrinsic(call, intrinsicId, writer);
+                return writeSpecialIntrinsic(call, intrinsicId, output);
             }
             default -> {
                 getContext().error(call.mPosition, "unsupported intrinsic '" +
@@ -3113,11 +3113,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    private int writeFunctionCall(FunctionCall call, Writer writer) {
+    private int writeFunctionCall(FunctionCall call, Output output) {
         // Handle intrinsics.
         FunctionDecl funcDecl = call.getFunction();
         if (funcDecl.isIntrinsic() && funcDecl.getDefinition() == null) {
-            return writeIntrinsicCall(call, writer);
+            return writeIntrinsicCall(call, output);
         }
 
         int entry = mFunctionTable.getInt(funcDecl);
@@ -3133,17 +3133,17 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         ArrayList<OutVar> tmpOutVars = new ArrayList<>();
         for (int i = 0; i < arguments.length; i++) {
             writeFunctionCallArgument(argumentIds, call, i, tmpOutVars,
-                    writer);
+                    output);
         }
         int resultId = getUniqueId();
         int typeId = writeType(call.getType());
-        writeOpcode(SpvOpFunctionCall, 4 + argumentIds.size(), writer);
-        writer.writeWord(typeId);
-        writer.writeWord(resultId);
-        writer.writeWord(entry);
-        writer.writeWords(argumentIds.elements(), argumentIds.size());
+        writeOpcode(SpvOpFunctionCall, 4 + argumentIds.size(), output);
+        output.writeWord(typeId);
+        output.writeWord(resultId);
+        output.writeWord(entry);
+        output.writeWords(argumentIds.elements(), argumentIds.size());
         // Now that the call is complete, we copy temp out-variables back to their real lvalues.
-        copyBackOutArguments(tmpOutVars, writer);
+        copyBackOutArguments(tmpOutVars, output);
         releaseIdList(argumentIds);
         return resultId;
     }
@@ -3152,7 +3152,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     private int writeConversion(int inputId,
                                 Type inputType,
                                 Type outputType,
-                                Writer writer) {
+                                Output output) {
         assert inputType.isScalar() || inputType.isVector();
         assert inputType.getTypeKind() == outputType.getTypeKind();
         assert inputType.getRows() == outputType.getRows();
@@ -3170,16 +3170,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             int typeId = writeType(outputType);
             if (inputType.isBooleanOrCompound()) {
                 // Use OpSelect to convert the boolean argument to a literal 1.0 or 0.0.
-                int oneId = vectorize(1.0f, getContext().getTypes().mFloat, vectorSize, writer);
-                int zeroId = vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, writer);
+                int oneId = vectorize(1.0f, getContext().getTypes().mFloat, vectorSize, output);
+                int zeroId = vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, output);
                 writeInstruction(SpvOpSelect, typeId, resultId,
-                        inputId, oneId, zeroId, writer);
+                        inputId, oneId, zeroId, output);
             } else if (inputType.isSignedOrCompound()) {
                 writeInstruction(SpvOpConvertSToF, typeId, resultId,
-                        inputId, writer);
+                        inputId, output);
             } else if (inputType.isUnsignedOrCompound()) {
                 writeInstruction(SpvOpConvertUToF, typeId, resultId,
-                        inputId, writer);
+                        inputId, output);
             } else {
                 assert false : ("unsupported type for float typecast: " + inputType);
                 return NONE_ID;
@@ -3199,16 +3199,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             int typeId = writeType(outputType);
             if (inputType.isBooleanOrCompound()) {
                 // Use OpSelect to convert the boolean argument to a literal 1 or 0.
-                int oneId = vectorize(1, getContext().getTypes().mInt, vectorSize, writer);
-                int zeroId = vectorize(0, getContext().getTypes().mInt, vectorSize, writer);
+                int oneId = vectorize(1, getContext().getTypes().mInt, vectorSize, output);
+                int zeroId = vectorize(0, getContext().getTypes().mInt, vectorSize, output);
                 writeInstruction(SpvOpSelect, typeId, resultId,
-                        inputId, oneId, zeroId, writer);
+                        inputId, oneId, zeroId, output);
             } else if (inputType.isFloatOrCompound()) {
                 writeInstruction(SpvOpConvertFToS, typeId, resultId,
-                        inputId, writer);
+                        inputId, output);
             } else if (inputType.isUnsignedOrCompound()) {
                 writeInstruction(SpvOpBitcast, typeId, resultId,
-                        inputId, writer);
+                        inputId, output);
             } else {
                 assert false : ("unsupported type for signed int typecast: " + inputType);
                 return NONE_ID;
@@ -3228,16 +3228,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             int typeId = writeType(outputType);
             if (inputType.isBooleanOrCompound()) {
                 // Use OpSelect to convert the boolean argument to a literal 1u or 0u.
-                int oneId = vectorize(1, getContext().getTypes().mUInt, vectorSize, writer);
-                int zeroId = vectorize(0, getContext().getTypes().mUInt, vectorSize, writer);
+                int oneId = vectorize(1, getContext().getTypes().mUInt, vectorSize, output);
+                int zeroId = vectorize(0, getContext().getTypes().mUInt, vectorSize, output);
                 writeInstruction(SpvOpSelect, typeId, resultId,
-                        inputId, oneId, zeroId, writer);
+                        inputId, oneId, zeroId, output);
             } else if (inputType.isFloatOrCompound()) {
                 writeInstruction(SpvOpConvertFToU, typeId, resultId,
-                        inputId, writer);
+                        inputId, output);
             } else if (inputType.isSignedOrCompound()) {
                 writeInstruction(SpvOpBitcast, typeId, resultId,
-                        inputId, writer);
+                        inputId, output);
             } else {
                 assert false : ("unsupported type for unsigned int typecast: " + inputType);
                 return NONE_ID;
@@ -3256,19 +3256,19 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             int typeId = writeType(outputType);
             if (inputType.isSignedOrCompound()) {
                 // Synthesize a boolean result by comparing the input against a signed zero literal.
-                int zeroId = vectorize(0, getContext().getTypes().mInt, vectorSize, writer);
+                int zeroId = vectorize(0, getContext().getTypes().mInt, vectorSize, output);
                 writeInstruction(SpvOpINotEqual, typeId, resultId,
-                        inputId, zeroId, writer);
+                        inputId, zeroId, output);
             } else if (inputType.isUnsignedOrCompound()) {
                 // Synthesize a boolean result by comparing the input against an unsigned zero literal.
-                int zeroId = vectorize(0, getContext().getTypes().mUInt, vectorSize, writer);
+                int zeroId = vectorize(0, getContext().getTypes().mUInt, vectorSize, output);
                 writeInstruction(SpvOpINotEqual, typeId, resultId,
-                        inputId, zeroId, writer);
+                        inputId, zeroId, output);
             } else if (inputType.isFloatOrCompound()) {
                 // Synthesize a boolean result by comparing the input against a floating-point zero literal.
-                int zeroId = vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, writer);
+                int zeroId = vectorize(0.0f, getContext().getTypes().mFloat, vectorSize, output);
                 writeInstruction(SpvOpFUnordNotEqual, typeId, resultId,
-                        inputId, zeroId, writer);
+                        inputId, zeroId, output);
             } else {
                 assert false : ("unsupported type for boolean typecast: " + inputType);
                 return NONE_ID;
@@ -3281,19 +3281,19 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return inputId;
     }
 
-    private int writeConstructorScalarCast(ConstructorScalarCast ctor, Writer writer) {
+    private int writeConstructorScalarCast(ConstructorScalarCast ctor, Output output) {
         Expression argument = ctor.getArgument();
-        int argumentId = writeExpression(argument, writer);
-        return writeConversion(argumentId, argument.getType(), ctor.getType(), writer);
+        int argumentId = writeExpression(argument, output);
+        return writeConversion(argumentId, argument.getType(), ctor.getType(), output);
     }
 
-    private int writeConstructorCompoundCast(ConstructorCompoundCast ctor, Writer writer) {
+    private int writeConstructorCompoundCast(ConstructorCompoundCast ctor, Output output) {
         Type ctorType = ctor.getType();
         Type argType = ctor.getArgument().getType();
         assert (ctorType.isVector() || ctorType.isMatrix());
 
         // Write the composite that we are casting.
-        int compositeId = writeExpression(ctor.getArgument(), writer);
+        int compositeId = writeExpression(ctor.getArgument(), output);
 
         if (ctorType.isMatrix()) {
             // we have only float and min16float matrix, no conversion needed
@@ -3302,22 +3302,22 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             return compositeId;
         }
 
-        return writeConversion(compositeId, argType, ctorType, writer);
+        return writeConversion(compositeId, argType, ctorType, output);
     }
 
-    private int writeConstructorVectorSplat(ConstructorVectorSplat ctor, Writer writer) {
+    private int writeConstructorVectorSplat(ConstructorVectorSplat ctor, Output output) {
         // Write the splat argument as a scalar, then broadcast it.
-        int argument = writeExpression(ctor.getArgument(), writer);
-        return broadcast(ctor.getType(), argument, writer);
+        int argument = writeExpression(ctor.getArgument(), output);
+        return broadcast(ctor.getType(), argument, output);
     }
 
-    private int writeConstructorDiagonalMatrix(ConstructorDiagonalMatrix ctor, Writer writer) {
+    private int writeConstructorDiagonalMatrix(ConstructorDiagonalMatrix ctor, Output output) {
         Type type = ctor.getType();
         assert (type.isMatrix());
         assert (ctor.getArgument().getType().isScalar());
 
         // Write out the scalar argument.
-        int diagonal = writeExpression(ctor.getArgument(), writer);
+        int diagonal = writeExpression(ctor.getArgument(), output);
 
         // Build the diagonal matrix.
         int zeroId = writeScalarConstant(0.0f, getContext().getTypes().mFloat);
@@ -3329,16 +3329,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             for (int row = 0; row < type.getRows(); row++) {
                 arguments.add((row == column) ? diagonal : zeroId);
             }
-            columnIds.add(writeOpCompositeConstruct(columnType, arguments, writer));
+            columnIds.add(writeOpCompositeConstruct(columnType, arguments, output));
             arguments.clear();
         }
-        int resultId = writeOpCompositeConstruct(type, columnIds, writer);
+        int resultId = writeOpCompositeConstruct(type, columnIds, output);
         releaseIdList(columnIds);
         releaseIdList(arguments);
         return resultId;
     }
 
-    private int writeVectorConstructor(ConstructorCompound ctor, Writer writer) {
+    private int writeVectorConstructor(ConstructorCompound ctor, Output output) {
         Type type = ctor.getType();
         Type componentType = type.getComponentType();
         assert (type.isVector());
@@ -3348,7 +3348,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             Type argType = arg.getType();
             assert (componentType.getScalarKind() == argType.getComponentType().getScalarKind());
 
-            int argId = writeExpression(arg, writer);
+            int argId = writeExpression(arg, output);
             if (argType.isMatrix()) {
                 // CompositeConstruct cannot take a 2x2 matrix as an input, so we need to extract out
                 // each scalar separately.
@@ -3356,7 +3356,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 assert (argType.getCols() == 2);
                 for (int j = 0; j < 4; ++j) {
                     argumentIds.add(writeOpCompositeExtract(componentType, argId,
-                            j / 2, j % 2, writer));
+                            j / 2, j % 2, output));
                 }
             } else if (argType.isVector()) {
                 // There's a bug in the Intel Vulkan driver where OpCompositeConstruct doesn't handle
@@ -3364,14 +3364,14 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 // into OpCompositeConstruct individually.
                 for (int j = 0; j < argType.getRows(); j++) {
                     argumentIds.add(writeOpCompositeExtract(componentType, argId,
-                            j, writer));
+                            j, output));
                 }
             } else {
                 argumentIds.add(argId);
             }
         }
 
-        int resultId = writeOpCompositeConstruct(type, argumentIds, writer);
+        int resultId = writeOpCompositeConstruct(type, argumentIds, output);
         releaseIdList(argumentIds);
         return resultId;
     }
@@ -3382,18 +3382,18 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                 IntArrayList columnIds,
                                 int rows,
                                 int entry,
-                                Writer writer) {
+                                Output output) {
         assert (currentColumn.size() < rows);
         currentColumn.add(entry);
         if (currentColumn.size() == rows) {
             // Synthesize this column into a vector.
-            int columnId = writeOpCompositeConstruct(columnType, currentColumn, writer);
+            int columnId = writeOpCompositeConstruct(columnType, currentColumn, output);
             columnIds.add(columnId);
             currentColumn.clear();
         }
     }
 
-    private int writeMatrixConstructor(ConstructorCompound ctor, Writer writer) {
+    private int writeMatrixConstructor(ConstructorCompound ctor, Output output) {
         Type type = ctor.getType();
         Type componentType = type.getComponentType();
         assert (type.isMatrix());
@@ -3403,7 +3403,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         // an instruction
         IntArrayList arguments = obtainIdList();
         for (Expression arg : ctor.getArguments()) {
-            arguments.add(writeExpression(arg, writer));
+            arguments.add(writeExpression(arg, output));
         }
 
         int rows = type.getRows();
@@ -3416,18 +3416,18 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             int argId = arguments.getInt(0);
             arguments.clear();
             for (int i = 0; i < 2; i++) {
-                arguments.add(writeOpCompositeExtract(componentType, argId, i, writer));
+                arguments.add(writeOpCompositeExtract(componentType, argId, i, output));
             }
-            int v0v1 = writeOpCompositeConstruct(columnType, arguments, writer);
+            int v0v1 = writeOpCompositeConstruct(columnType, arguments, output);
             arguments.clear();
             for (int i = 2; i < 4; i++) {
-                arguments.add(writeOpCompositeExtract(componentType, argId, i, writer));
+                arguments.add(writeOpCompositeExtract(componentType, argId, i, output));
             }
-            int v2v3 = writeOpCompositeConstruct(columnType, arguments, writer);
+            int v2v3 = writeOpCompositeConstruct(columnType, arguments, output);
             arguments.clear();
             arguments.add(v0v1);
             arguments.add(v2v3);
-            int resultId = writeOpCompositeConstruct(type, arguments, writer);
+            int resultId = writeOpCompositeConstruct(type, arguments, output);
             releaseIdList(arguments);
             return resultId;
         }
@@ -3443,37 +3443,37 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                 columnIds.add(arguments.getInt(i));
             } else if (argType.getRows() == 1) {
                 // This argument is a lone scalar and can be added to the current column as-is.
-                addColumnEntry(columnType, currentColumn, columnIds, rows, arguments.getInt(i), writer);
+                addColumnEntry(columnType, currentColumn, columnIds, rows, arguments.getInt(i), output);
             } else {
                 // This argument needs to be decomposed into its constituent scalars.
                 for (int j = 0; j < argType.getRows(); ++j) {
                     int swizzle = writeOpCompositeExtract(argType.getComponentType(),
-                            arguments.getInt(i), j, writer);
-                    addColumnEntry(columnType, currentColumn, columnIds, rows, swizzle, writer);
+                            arguments.getInt(i), j, output);
+                    addColumnEntry(columnType, currentColumn, columnIds, rows, swizzle, output);
                 }
             }
         }
         assert (columnIds.size() == type.getCols());
-        int resultId = writeOpCompositeConstruct(type, columnIds, writer);
+        int resultId = writeOpCompositeConstruct(type, columnIds, output);
         releaseIdList(columnIds);
         releaseIdList(currentColumn);
         return resultId;
     }
 
-    private int writeConstructorCompound(ConstructorCompound ctor, Writer writer) {
+    private int writeConstructorCompound(ConstructorCompound ctor, Output output) {
         return ctor.getType().isMatrix()
-                ? writeMatrixConstructor(ctor, writer)
-                : writeVectorConstructor(ctor, writer);
+                ? writeMatrixConstructor(ctor, output)
+                : writeVectorConstructor(ctor, output);
     }
 
-    private int writeCompositeConstructor(ConstructorCall ctor, Writer writer) {
+    private int writeCompositeConstructor(ConstructorCall ctor, Output output) {
         assert (ctor.getType().isArray() || ctor.getType().isStruct());
 
         IntArrayList argumentIds = obtainIdList();
         for (Expression arg : ctor.getArguments()) {
-            argumentIds.add(writeExpression(arg, writer));
+            argumentIds.add(writeExpression(arg, output));
         }
-        int resultId = writeOpCompositeConstruct(ctor.getType(), argumentIds, writer);
+        int resultId = writeOpCompositeConstruct(ctor.getType(), argumentIds, output);
         releaseIdList(argumentIds);
         return resultId;
     }
@@ -3544,7 +3544,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     int writeOpLoad(int type,
                     boolean relaxedPrecision,
                     int pointer,
-                    Writer writer) {
+                    Output output) {
         // Look for this pointer in our load-cache.
         //TODO find a way to eliminate store ops if we are using store cache
         /*int cachedOp = mStoreCache.get(pointer);
@@ -3554,16 +3554,16 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
         // Write the requested OpLoad instruction.
         int resultId = getUniqueId(relaxedPrecision);
-        writeInstruction(SpvOpLoad, type, resultId, pointer, writer);
+        writeInstruction(SpvOpLoad, type, resultId, pointer, output);
         return resultId;
     }
 
     void writeOpStore(int storageClass,
                       int pointer,
                       int rvalue,
-                      Writer writer) {
+                      Output output) {
         // Write the uncached SpvOpStore directly.
-        writeInstruction(SpvOpStore, pointer, rvalue, writer);
+        writeInstruction(SpvOpStore, pointer, rvalue, output);
 
         if (storageClass == SpvStorageClassFunction) {
             // Insert a pointer-to-SpvId mapping into the load cache. A writeOpLoad to this pointer will
@@ -3573,11 +3573,11 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    void writeOpcode(int opcode, int count, Writer writer) {
+    void writeOpcode(int opcode, int count, Output output) {
         if ((count & 0xFFFF0000) != 0) {
             getContext().error(Position.NO_POS, "too many words");
         }
-        assert (opcode != SpvOpLoad || writer != mConstantBuffer);
+        assert (opcode != SpvOpLoad || output != mConstantBuffer);
         assert (opcode != SpvOpUndef);
         boolean foundDeadCode = false;
         switch (opcode) {
@@ -3598,116 +3598,116 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         if (foundDeadCode) {
             // We just encountered dead code--an instruction that don't have an associated block.
             // Synthesize a label if this happens; this is necessary to satisfy the validator.
-            writeLabel(getUniqueId(), writer);
+            writeLabel(getUniqueId(), output);
         }
 
-        writer.writeWord((count << 16) | opcode);
+        output.writeWord((count << 16) | opcode);
     }
 
-    void writeInstruction(int opcode, Writer writer) {
-        writeOpcode(opcode, 1, writer);
+    void writeInstruction(int opcode, Output output) {
+        writeOpcode(opcode, 1, output);
     }
 
-    void writeInstruction(int opcode, int word1, Writer writer) {
-        writeOpcode(opcode, 2, writer);
-        writer.writeWord(word1);
+    void writeInstruction(int opcode, int word1, Output output) {
+        writeOpcode(opcode, 2, output);
+        output.writeWord(word1);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
-                          Writer writer) {
-        writeOpcode(opcode, 3, writer);
-        writer.writeWord(word1);
-        writer.writeWord(word2);
+                          Output output) {
+        writeOpcode(opcode, 3, output);
+        output.writeWord(word1);
+        output.writeWord(word2);
     }
 
     private void writeInstruction(int opcode, int word1, String string,
-                                  Writer writer) {
-        writeOpcode(opcode, 2 + (string.length() + 4 >> 2), writer);
-        writer.writeWord(word1);
-        writer.writeString8(getContext(), string);
+                                  Output output) {
+        writeOpcode(opcode, 2 + (string.length() + 4 >> 2), output);
+        output.writeWord(word1);
+        output.writeString8(getContext(), string);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
-                          int word3, Writer writer) {
-        writeOpcode(opcode, 4, writer);
-        writer.writeWord(word1);
-        writer.writeWord(word2);
-        writer.writeWord(word3);
+                          int word3, Output output) {
+        writeOpcode(opcode, 4, output);
+        output.writeWord(word1);
+        output.writeWord(word2);
+        output.writeWord(word3);
     }
 
     private void writeInstruction(int opcode, int word1, int word2,
-                                  String string, Writer writer) {
-        writeOpcode(opcode, 3 + (string.length() + 4 >> 2), writer);
-        writer.writeWord(word1);
-        writer.writeWord(word2);
-        writer.writeString8(getContext(), string);
+                                  String string, Output output) {
+        writeOpcode(opcode, 3 + (string.length() + 4 >> 2), output);
+        output.writeWord(word1);
+        output.writeWord(word2);
+        output.writeString8(getContext(), string);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
-                          int word3, int word4, Writer writer) {
-        writeOpcode(opcode, 5, writer);
-        writer.writeWord(word1);
-        writer.writeWord(word2);
-        writer.writeWord(word3);
-        writer.writeWord(word4);
-    }
-
-    void writeInstruction(int opcode, int word1, int word2,
-                          int word3, int word4, int word5,
-                          Writer writer) {
-        writeOpcode(opcode, 6, writer);
-        writer.writeWord(word1);
-        writer.writeWord(word2);
-        writer.writeWord(word3);
-        writer.writeWord(word4);
-        writer.writeWord(word5);
+                          int word3, int word4, Output output) {
+        writeOpcode(opcode, 5, output);
+        output.writeWord(word1);
+        output.writeWord(word2);
+        output.writeWord(word3);
+        output.writeWord(word4);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
                           int word3, int word4, int word5,
-                          int word6, Writer writer) {
-        writeOpcode(opcode, 7, writer);
-        writer.writeWord(word1);
-        writer.writeWord(word2);
-        writer.writeWord(word3);
-        writer.writeWord(word4);
-        writer.writeWord(word5);
-        writer.writeWord(word6);
+                          Output output) {
+        writeOpcode(opcode, 6, output);
+        output.writeWord(word1);
+        output.writeWord(word2);
+        output.writeWord(word3);
+        output.writeWord(word4);
+        output.writeWord(word5);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
                           int word3, int word4, int word5,
-                          int word6, int word7, Writer writer) {
-        writeOpcode(opcode, 8, writer);
-        writer.writeWord(word1);
-        writer.writeWord(word2);
-        writer.writeWord(word3);
-        writer.writeWord(word4);
-        writer.writeWord(word5);
-        writer.writeWord(word6);
-        writer.writeWord(word7);
+                          int word6, Output output) {
+        writeOpcode(opcode, 7, output);
+        output.writeWord(word1);
+        output.writeWord(word2);
+        output.writeWord(word3);
+        output.writeWord(word4);
+        output.writeWord(word5);
+        output.writeWord(word6);
+    }
+
+    void writeInstruction(int opcode, int word1, int word2,
+                          int word3, int word4, int word5,
+                          int word6, int word7, Output output) {
+        writeOpcode(opcode, 8, output);
+        output.writeWord(word1);
+        output.writeWord(word2);
+        output.writeWord(word3);
+        output.writeWord(word4);
+        output.writeWord(word5);
+        output.writeWord(word6);
+        output.writeWord(word7);
     }
 
     void writeInstruction(int opcode, int word1, int word2,
                           int word3, int word4, int word5,
                           int word6, int word7, int word8,
-                          Writer writer) {
-        writeOpcode(opcode, 9, writer);
-        writer.writeWord(word1);
-        writer.writeWord(word2);
-        writer.writeWord(word3);
-        writer.writeWord(word4);
-        writer.writeWord(word5);
-        writer.writeWord(word6);
-        writer.writeWord(word7);
-        writer.writeWord(word8);
+                          Output output) {
+        writeOpcode(opcode, 9, output);
+        output.writeWord(word1);
+        output.writeWord(word2);
+        output.writeWord(word3);
+        output.writeWord(word4);
+        output.writeWord(word5);
+        output.writeWord(word6);
+        output.writeWord(word7);
+        output.writeWord(word8);
     }
 
     /**
      * With bidirectional map.
      */
     private int writeInstructionWithCache(@NonNull InstructionBuilder key,
-                                          @NonNull Writer writer) {
+                                          @NonNull Output output) {
         assert (key.mOpcode != SpvOpLoad);
         assert (key.mOpcode != SpvOpStore);
         int cachedId = mOpCache.getInt(key);
@@ -3748,13 +3748,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int[] values = key.mValues.elements();
         int[] kinds = key.mKinds.elements();
         int s = key.mValues.size();
-        writeOpcode(key.mOpcode, s + 1, writer);
+        writeOpcode(key.mOpcode, s + 1, output);
         for (int i = 0; i < s; i++) {
             if (Instruction.isResult(kinds[i])) {
                 assert resultId != NONE_ID;
-                writer.writeWord(resultId);
+                output.writeWord(resultId);
             } else {
-                writer.writeWord(values[i]);
+                output.writeWord(values[i]);
             }
         }
 
