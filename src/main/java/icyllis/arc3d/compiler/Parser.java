@@ -1590,8 +1590,12 @@ public class Parser {
     private Literal IntLiteral() {
         long token = expect(Token.TK_INTLITERAL, "integer literal");
         String s = text(token);
+        boolean signed;
         if (s.endsWith("u") || s.endsWith("U")) {
             s = s.substring(0, s.length() - 1);
+            signed = false;
+        } else {
+            signed = true;
         }
         try {
             long value = Long.decode(s);
@@ -1599,7 +1603,8 @@ public class Parser {
                 return Literal.makeInteger(
                         mCompiler.getContext(),
                         position(token),
-                        value);
+                        value,
+                        signed);
             }
             error(token, "integer value is too large: " + s);
             return null;

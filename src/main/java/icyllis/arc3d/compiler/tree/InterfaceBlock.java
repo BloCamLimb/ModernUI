@@ -31,9 +31,10 @@ import java.util.Objects;
  * An interface block declaration & definition, as in:
  * <pre>
  * out SV_PerVertex {
- *   layout(builtin = position) out float4 SV_Position;
+ *   layout(position) out float4 SV_Position;
  * };
  * </pre>
+ * At the AST level, this is represented by a single variable of struct type.
  */
 public final class InterfaceBlock extends TopLevelElement {
 
@@ -222,6 +223,11 @@ public final class InterfaceBlock extends TopLevelElement {
     @NonNull
     public String getInstanceName() {
         return getVariable().getName();
+    }
+
+    public int getArraySize() {
+        Type type = getVariable().getType();
+        return type.isArray() ? type.getArraySize() : 0;
     }
 
     @Override
