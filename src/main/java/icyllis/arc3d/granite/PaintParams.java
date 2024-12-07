@@ -23,9 +23,9 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.effects.ColorFilter;
 import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.KeyBuilder;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
@@ -53,7 +53,7 @@ public final class PaintParams implements AutoCloseable {
     private final Blender mFinalBlender;
     private final boolean mDither;
 
-    public PaintParams(@Nonnull Paint paint,
+    public PaintParams(@NonNull Paint paint,
                        @Nullable @SharedPtr Blender primitiveBlender) {
         mR = paint.r();
         mG = paint.g();
@@ -123,7 +123,7 @@ public final class PaintParams implements AutoCloseable {
         return mPrimitiveBlender;
     }
 
-    @Nonnull
+    @NonNull
     public BlendMode getFinalBlendMode() {
         BlendMode blendMode = mFinalBlender != null
                 ? mFinalBlender.asBlendMode()
@@ -159,7 +159,7 @@ public final class PaintParams implements AutoCloseable {
      * and stores the solid color. The color will be transformed to the
      * target's color space and premultiplied.
      */
-    public boolean getSolidColor(ImageInfo targetInfo, @Nullable float[] outColor) {
+    public boolean getSolidColor(ImageInfo targetInfo, float @Nullable[] outColor) {
         if (mShader == null && mPrimitiveBlender == null) {
             if (outColor != null) {
                 outColor[0] = mR;

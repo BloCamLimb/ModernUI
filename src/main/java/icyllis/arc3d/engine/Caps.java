@@ -23,9 +23,8 @@ import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.engine.trash.PipelineKey_old;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Represents the capabilities of a 3D API Context.
@@ -745,12 +744,12 @@ public abstract class Caps {
     @Nullable
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
 
-    @Nonnull
+    @NonNull
     public abstract PipelineKey_old makeDesc(PipelineKey_old desc,
                                              GpuRenderTarget renderTarget,
                                              final GraphicsPipelineDesc_Old graphicsPipelineDesc);
 
-    @Nonnull
+    @NonNull
     public abstract PipelineKey makeGraphicsPipelineKey(
             PipelineKey old,
             PipelineDesc pipelineDesc,

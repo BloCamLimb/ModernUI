@@ -23,12 +23,12 @@ import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.engine.ShaderCaps;
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 
-import javax.annotation.Nullable;
 import java.nio.*;
 import java.util.Objects;
 

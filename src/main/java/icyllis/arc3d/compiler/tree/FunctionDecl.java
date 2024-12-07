@@ -21,9 +21,9 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.IntrinsicList;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -56,8 +56,8 @@ public final class FunctionDecl extends Symbol {
         mIntrinsicKind = intrinsicKind;
     }
 
-    private static boolean checkModifiers(@Nonnull Context context,
-                                          @Nonnull Modifiers modifiers) {
+    private static boolean checkModifiers(@NonNull Context context,
+                                          @NonNull Modifiers modifiers) {
         // No layout flag is permissible on a function.
         boolean success = modifiers.checkLayoutFlags(context, 0);
         int permittedFlags = Modifiers.kInline_Flag |
@@ -73,8 +73,8 @@ public final class FunctionDecl extends Symbol {
         return success;
     }
 
-    private static boolean checkReturnType(@Nonnull Context context,
-                                           int pos, @Nonnull Type returnType) {
+    private static boolean checkReturnType(@NonNull Context context,
+                                           int pos, @NonNull Type returnType) {
         if (returnType.isOpaque()) {
             context.error(pos, "functions may not return opaque type '" +
                     returnType.getName() + "'");
@@ -88,9 +88,9 @@ public final class FunctionDecl extends Symbol {
         return true;
     }
 
-    private static boolean checkParameters(@Nonnull Context context,
-                                           @Nonnull List<Variable> parameters,
-                                           @Nonnull Modifiers modifiers) {
+    private static boolean checkParameters(@NonNull Context context,
+                                           @NonNull List<Variable> parameters,
+                                           @NonNull Modifiers modifiers) {
         boolean success = true;
         for (var param : parameters) {
             Type type = param.getType();
@@ -118,10 +118,10 @@ public final class FunctionDecl extends Symbol {
         return success;
     }
 
-    private static boolean checkEntryPointSignature(@Nonnull Context context,
+    private static boolean checkEntryPointSignature(@NonNull Context context,
                                                     int pos,
-                                                    @Nonnull Type returnType,
-                                                    @Nonnull List<Variable> parameters) {
+                                                    @NonNull Type returnType,
+                                                    @NonNull List<Variable> parameters) {
         switch (context.getKind()) {
             case VERTEX, FRAGMENT, COMPUTE -> {
                 if (!returnType.matches(context.getTypes().mVoid)) {
@@ -141,8 +141,8 @@ public final class FunctionDecl extends Symbol {
      * Given a concrete type (`float3`) and a generic type (`__genFType`), returns the index of the
      * concrete type within the generic type's typelist. Returns -1 if there is no match.
      */
-    private static int findGenericIndex(@Nonnull Type concreteType,
-                                        @Nonnull Type genericType,
+    private static int findGenericIndex(@NonNull Type concreteType,
+                                        @NonNull Type genericType,
                                         boolean allowNarrowing) {
         Type[] types = genericType.getCoercibleTypes();
         for (int index = 0; index < types.length; index++) {
@@ -156,8 +156,8 @@ public final class FunctionDecl extends Symbol {
     /**
      * Returns true if the types match, or if `concreteType` can be found in `maybeGenericType`.
      */
-    private static boolean typeMatches(@Nonnull Type concreteType,
-                                       @Nonnull Type maybeGenericType) {
+    private static boolean typeMatches(@NonNull Type concreteType,
+                                       @NonNull Type maybeGenericType) {
         return maybeGenericType.isGeneric()
                 ? findGenericIndex(concreteType, maybeGenericType, false) != -1
                 : concreteType.matches(maybeGenericType);
@@ -168,8 +168,8 @@ public final class FunctionDecl extends Symbol {
      * (otherParams). Returns true if they match, even if the parameters in `otherParams` contain
      * generic types.
      */
-    private static boolean parametersMatch(@Nonnull List<Variable> params,
-                                           @Nonnull List<Variable> otherParams) {
+    private static boolean parametersMatch(@NonNull List<Variable> params,
+                                           @NonNull List<Variable> otherParams) {
         // If the param lists are different lengths, they're definitely not a match.
         if (params.size() != otherParams.size()) {
             return false;
@@ -214,12 +214,12 @@ public final class FunctionDecl extends Symbol {
     }
 
     @Nullable
-    public static FunctionDecl convert(@Nonnull Context context,
+    public static FunctionDecl convert(@NonNull Context context,
                                        int pos,
-                                       @Nonnull Modifiers modifiers,
-                                       @Nonnull String name,
-                                       @Nonnull List<Variable> parameters,
-                                       @Nonnull Type returnType) {
+                                       @NonNull Modifiers modifiers,
+                                       @NonNull String name,
+                                       @NonNull List<Variable> parameters,
+                                       @NonNull Type returnType) {
         int intrinsicKind = context.isBuiltin()
                 ? IntrinsicList.findIntrinsicKind(name)
                 : IntrinsicList.kNotIntrinsic;
@@ -301,19 +301,19 @@ public final class FunctionDecl extends Symbol {
         );
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public SymbolKind getKind() {
         return SymbolKind.FUNCTION_DECL;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Type getType() {
         throw new AssertionError();
     }
 
-    @Nonnull
+    @NonNull
     public Type getReturnType() {
         return mReturnType;
     }
@@ -338,7 +338,7 @@ public final class FunctionDecl extends Symbol {
         return mParameters;
     }
 
-    @Nonnull
+    @NonNull
     public String getMangledName() {
         if (isIntrinsic() || isEntryPoint()) {
             return getName();
@@ -377,7 +377,7 @@ public final class FunctionDecl extends Symbol {
 
     // returns returnType
     @Nullable
-    public Type resolveParameterTypes(@Nonnull List<Expression> arguments,
+    public Type resolveParameterTypes(@NonNull List<Expression> arguments,
                                       List<Type> outParameterTypes) {
         List<Variable> parameters = mParameters;
         assert parameters.size() == arguments.size();
@@ -416,7 +416,7 @@ public final class FunctionDecl extends Symbol {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         String header = mModifiers.toString() +

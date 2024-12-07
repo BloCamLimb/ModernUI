@@ -22,11 +22,10 @@ package icyllis.arc3d.vulkan;
 import icyllis.arc3d.engine.Engine.ImageType;
 import icyllis.arc3d.engine.ManagedResource;
 import icyllis.arc3d.engine.Swizzle;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.*;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -101,7 +100,7 @@ public final class VulkanImageView extends ManagedResource {
      * @param swizzle   see {@link Swizzle}
      */
     @Nullable
-    public static VulkanImageView makeTexture(@Nonnull VulkanDevice device,
+    public static VulkanImageView makeTexture(@NonNull VulkanDevice device,
                                               long image,
                                               int imageType,
                                               @NativeType("VkFormat") int format,
@@ -160,7 +159,7 @@ public final class VulkanImageView extends ManagedResource {
      */
     // currently there's no multi view render target
     @Nullable
-    public static VulkanImageView makeAttachment(@Nonnull VulkanDevice device,
+    public static VulkanImageView makeAttachment(@NonNull VulkanDevice device,
                                                  long image,
                                                  int imageType,
                                                  @NativeType("VkFormat") int format,

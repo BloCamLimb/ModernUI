@@ -19,8 +19,9 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -74,14 +75,14 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      *
      * @param m the matrix to store
      */
-    void store(@Nonnull Matrix4 m);
+    void store(@NonNull Matrix4 m);
 
     /**
      * Store this matrix into the give float array in row-major order.
      *
      * @param a the array to store into
      */
-    void store(@Nonnull float[] a);
+    void store(float @NonNull [] a);
 
     /**
      * Store this matrix into the give float array in row-major order.
@@ -89,21 +90,21 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * @param a      the array to store into
      * @param offset the element offset
      */
-    void store(@Nonnull float[] a, int offset);
+    void store(float @NonNull [] a, int offset);
 
     /**
      * Store this matrix into the give float array in row-major order.
      *
      * @param a the pointer of the array to store
      */
-    void store(@Nonnull ByteBuffer a);
+    void store(@NonNull ByteBuffer a);
 
     /**
      * Store this matrix into the give float array in row-major order.
      *
      * @param a the pointer of the array to store
      */
-    void store(@Nonnull FloatBuffer a);
+    void store(@NonNull FloatBuffer a);
 
     /**
      * Store this matrix into the given address in GLSL column-major or
@@ -180,49 +181,49 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    void mapRect(@Nonnull Rect2f r);
+    void mapRect(@NonNull Rect2f r);
 
     /**
      * Map the four corners of 'r' and return the bounding box of those points. The four corners of
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2f dest);
+    void mapRect(@NonNull Rect2fc r, @NonNull Rect2f dest);
 
     /**
      * Map the four corners of 'r' and return the bounding box of those points. The four corners of
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2i dest);
+    void mapRect(@NonNull Rect2fc r, @NonNull Rect2i dest);
 
     /**
      * Map the four corners of 'r' and return the bounding box of those points. The four corners of
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    void mapRect(@Nonnull Rect2ic r, @Nonnull Rect2i dest);
+    void mapRect(@NonNull Rect2ic r, @NonNull Rect2i dest);
 
     /**
      * Map the four corners of 'r' and return the bounding box of those points. The four corners of
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    void mapRectOut(@Nonnull Rect2ic r, @Nonnull Rect2i dest);
+    void mapRectOut(@NonNull Rect2ic r, @NonNull Rect2i dest);
 
     /**
      * Map the four corners of 'r' and return the bounding box of those points. The four corners of
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    void mapRectOut(@Nonnull Rect2fc r, @Nonnull Rect2i dest);
+    void mapRectOut(@NonNull Rect2fc r, @NonNull Rect2i dest);
 
     /**
      * Map the four corners of 'r' and return the bounding box of those points. The four corners of
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    void mapRectIn(@Nonnull Rect2fc r, @Nonnull Rect2i dest);
+    void mapRectIn(@NonNull Rect2fc r, @NonNull Rect2i dest);
 
     boolean hasPerspective();
 
@@ -257,7 +258,7 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * [ g h x i ]
      * }</pre>
      */
-    void toMatrix(@Nonnull Matrix dest);
+    void toMatrix(@NonNull Matrix dest);
 
     /**
      * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
@@ -268,7 +269,7 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * [ g h x i ]
      * }</pre>
      */
-    @Nonnull
+    @NonNull
     Matrix toMatrix();
 
     /**
@@ -280,7 +281,7 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * [ x x x x ]
      * }</pre>
      */
-    void toMatrix3(@Nonnull Matrix3 dest);
+    void toMatrix3(@NonNull Matrix3 dest);
 
     /**
      * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are discarded.
@@ -291,7 +292,7 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * [ x x x x ]
      * }</pre>
      */
-    @Nonnull
+    @NonNull
     Matrix3 toMatrix3();
 
     /**
@@ -300,8 +301,8 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    boolean isApproxEqual(@Nonnull Matrix4 m);
+    boolean isApproxEqual(@NonNull Matrix4 m);
 
-    @Nonnull
+    @NonNull
     Matrix4 clone();
 }

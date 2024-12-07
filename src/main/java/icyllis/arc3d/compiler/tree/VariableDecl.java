@@ -20,9 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Variable declaration.
@@ -53,11 +52,11 @@ public final class VariableDecl extends Statement {
     // symbol table. Performs proper error checking and type coercion; reports errors via
     // ErrorReporter.
     @Nullable
-    public static VariableDecl convert(@Nonnull Context context,
+    public static VariableDecl convert(@NonNull Context context,
                                        int pos,
-                                       @Nonnull Modifiers modifiers,
-                                       @Nonnull Type type,
-                                       @Nonnull String name,
+                                       @NonNull Modifiers modifiers,
+                                       @NonNull Type type,
+                                       @NonNull String name,
                                        byte storage,
                                        @Nullable Expression init) {
         // Parameter declaration-statements do not exist in the grammar (unlike, say, K&R C).
@@ -78,8 +77,8 @@ public final class VariableDecl extends Statement {
     }
 
     @Nullable
-    public static VariableDecl convert(@Nonnull Context context,
-                                       @Nonnull Variable variable,
+    public static VariableDecl convert(@NonNull Context context,
+                                       @NonNull Variable variable,
                                        @Nullable Expression init) {
         Type baseType = variable.getType();
         if (baseType.isArray()) {
@@ -128,7 +127,7 @@ public final class VariableDecl extends Statement {
         return variableDecl;
     }
 
-    @Nonnull
+    @NonNull
     public static VariableDecl make(Variable variable,
                                     Expression init) {
         var result = new VariableDecl(variable, init);
@@ -158,14 +157,14 @@ public final class VariableDecl extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitVariableDecl(this)) {
             return true;
         }
         return mInit != null && mInit.accept(visitor);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         String result = mVariable.toString();

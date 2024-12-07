@@ -21,8 +21,8 @@ package icyllis.arc3d.compiler.lex;
 
 import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -141,7 +141,7 @@ public class LexerGenerator {
     public static final int DATA_PER_BYTE = Byte.SIZE / NUM_BITS;
     public static final int DATA_PER_BYTE_SHIFT = Integer.numberOfTrailingZeros(DATA_PER_BYTE);
 
-    @Nonnull
+    @NonNull
     public static DFA process(PrintWriter pw) {
         NFA nfa = new NFA();
         List<String> tokens = new ArrayList<>();

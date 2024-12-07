@@ -23,9 +23,9 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
 @Deprecated
@@ -58,7 +58,7 @@ public class RoundRectOp extends MeshDrawOp {
     }
 
     @Override
-    protected boolean onMayChain(@Nonnull Op __) {
+    protected boolean onMayChain(@NonNull Op __) {
         var op = (RoundRectOp) __;
         if (op.mStroke == mStroke) {
             mNumInstances++;
@@ -76,7 +76,7 @@ public class RoundRectOp extends MeshDrawOp {
         opsRenderPass.drawInstanced(getInstanceCount(), mBaseInstance, getVertexCount(), mBaseVertex);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView, int pipelineFlags) {
         return new GraphicsPipelineDesc_Old(writeView,

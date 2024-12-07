@@ -21,9 +21,9 @@ package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.analysis.Analysis;
 import icyllis.arc3d.compiler.tree.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.DoubleUnaryOperator;
 
@@ -96,7 +96,7 @@ public class ConstantFolder {
      * Simplifies the binary expression `left OP right`. Returns null if it can't be simplified.
      */
     @Nullable
-    public static Expression fold(@Nonnull Context context, int pos,
+    public static Expression fold(@NonNull Context context, int pos,
                                   Expression left, Operator op,
                                   Expression right, Type resultType) {
         // Replace constant variables with their literal values.
@@ -279,8 +279,8 @@ public class ConstantFolder {
      * Simplifies the unary expression `OP base`. Returns null if it can't be simplified.
      */
     @Nullable
-    public static Expression fold(@Nonnull Context context, int pos,
-                                  @Nonnull Operator op, Expression base) {
+    public static Expression fold(@NonNull Context context, int pos,
+                                  @NonNull Operator op, Expression base) {
         // Replace constant variables with their literal values.
         Expression value = getConstantValueForVariable(base);
         Type type = value.getType();

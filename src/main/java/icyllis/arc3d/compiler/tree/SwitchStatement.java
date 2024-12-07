@@ -22,8 +22,8 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.ConstantFolder;
 import icyllis.arc3d.compiler.Context;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public final class SwitchStatement extends Statement {
@@ -146,14 +146,14 @@ public final class SwitchStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitSwitch(this)) {
             return true;
         }
         return mInit.accept(visitor) || mCaseBlock.accept(visitor);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "switch (" + mInit + ") " + mCaseBlock;

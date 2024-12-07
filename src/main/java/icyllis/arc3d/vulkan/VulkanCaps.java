@@ -27,12 +27,12 @@ import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.engine.trash.PipelineKey_old;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.NativeType;
 import org.lwjgl.vulkan.*;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
 import static org.lwjgl.vulkan.VK11.*;
@@ -293,13 +293,13 @@ public class VulkanCaps extends Caps {
         return null;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public PipelineKey_old makeDesc(PipelineKey_old desc, GpuRenderTarget renderTarget, GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         return null;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public PipelineKey makeGraphicsPipelineKey(PipelineKey old, PipelineDesc pipelineDesc, RenderPassDesc renderPassDesc) {
         return null;

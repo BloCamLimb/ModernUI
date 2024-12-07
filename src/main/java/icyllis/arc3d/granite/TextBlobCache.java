@@ -21,9 +21,9 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.*;
 import java.util.Collection;
 import java.util.HashMap;
@@ -194,7 +194,7 @@ public final class TextBlobCache {
     private long mCurrentSize;
 
     @Nullable
-    public BakedTextBlob find(@Nonnull TextBlob blob, @Nonnull FeatureKey key) {
+    public BakedTextBlob find(@NonNull TextBlob blob, @NonNull FeatureKey key) {
         synchronized (mLock) {
             Bucket bucket = mMap.get(blob);
             if (bucket == null) {
@@ -208,15 +208,15 @@ public final class TextBlobCache {
         }
     }
 
-    @Nonnull
-    public BakedTextBlob insert(@Nonnull TextBlob blob, @Nonnull FeatureKey key,
-                                @Nonnull BakedTextBlob entry) {
+    @NonNull
+    public BakedTextBlob insert(@NonNull TextBlob blob, @NonNull FeatureKey key,
+                                @NonNull BakedTextBlob entry) {
         synchronized (mLock) {
             return internalInsert(blob, key, entry);
         }
     }
 
-    public void remove(@Nonnull BakedTextBlob entry) {
+    public void remove(@NonNull BakedTextBlob entry) {
         synchronized (mLock) {
             internalRemove(entry);
         }
@@ -228,9 +228,9 @@ public final class TextBlobCache {
         }
     }
 
-    @Nonnull
-    private BakedTextBlob internalInsert(@Nonnull TextBlob blob, @Nonnull FeatureKey key,
-                                         @Nonnull BakedTextBlob entry) {
+    @NonNull
+    private BakedTextBlob internalInsert(@NonNull TextBlob blob, @NonNull FeatureKey key,
+                                         @NonNull BakedTextBlob entry) {
         Bucket bucket = mMap.get(blob);
         if (bucket == null) {
             PrimaryKey primaryKey = new PrimaryKey(blob, mQueue);
@@ -255,7 +255,7 @@ public final class TextBlobCache {
         return entry;
     }
 
-    private void internalRemove(@Nonnull BakedTextBlob entry) {
+    private void internalRemove(@NonNull BakedTextBlob entry) {
         Bucket bucket = mMap.get(entry.mPrimaryKey);
 
         if (bucket != null) {
@@ -295,7 +295,7 @@ public final class TextBlobCache {
         }
     }
 
-    private void unlink(@Nonnull BakedTextBlob entry) {
+    private void unlink(@NonNull BakedTextBlob entry) {
         BakedTextBlob prev = entry.mPrev;
         BakedTextBlob next = entry.mNext;
 
@@ -314,7 +314,7 @@ public final class TextBlobCache {
         entry.mNext = null;
     }
 
-    private void addToHead(@Nonnull BakedTextBlob entry) {
+    private void addToHead(@NonNull BakedTextBlob entry) {
         entry.mPrev = null;
         entry.mNext = mHead;
         if (mHead != null) {
@@ -326,7 +326,7 @@ public final class TextBlobCache {
         }
     }
 
-    private void moveToHead(@Nonnull BakedTextBlob entry) {
+    private void moveToHead(@NonNull BakedTextBlob entry) {
         assert mHead != null && mTail != null;
         if (mHead == entry) {
             return;
@@ -370,7 +370,7 @@ public final class TextBlobCache {
         }
 
         @Nullable
-        BakedTextBlob find(@Nonnull FeatureKey key) {
+        BakedTextBlob find(@NonNull FeatureKey key) {
             if (mMap != null) {
                 return mMap.get(key);
             } else {
@@ -383,7 +383,7 @@ public final class TextBlobCache {
             }
         }
 
-        void insertEntry(@Nonnull BakedTextBlob entry) {
+        void insertEntry(@NonNull BakedTextBlob entry) {
             if (mMap != null) {
                 mMap.put(entry.mFeatureKey, entry);
             } else if (mList.size() >= 8) {
@@ -398,7 +398,7 @@ public final class TextBlobCache {
             }
         }
 
-        void removeEntry(@Nonnull BakedTextBlob entry) {
+        void removeEntry(@NonNull BakedTextBlob entry) {
             if (mMap != null) {
                 var old = mMap.remove(entry.mFeatureKey);
                 assert old == entry;

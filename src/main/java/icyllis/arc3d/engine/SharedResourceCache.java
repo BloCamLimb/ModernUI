@@ -22,9 +22,9 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.LinkedHashMap;
@@ -71,7 +71,7 @@ public class SharedResourceCache {
 
     @Nullable
     @SharedPtr
-    public GraphicsPipeline findGraphicsPipeline(@Nonnull IUniqueKey key) {
+    public GraphicsPipeline findGraphicsPipeline(@NonNull IUniqueKey key) {
         GraphicsPipeline existing;
         synchronized (mGraphicsPipelineCache) {
             existing = mGraphicsPipelineCache.get(key);
@@ -79,10 +79,10 @@ public class SharedResourceCache {
         return RefCnt.create(existing);
     }
 
-    @Nonnull
+    @NonNull
     @SharedPtr
-    public GraphicsPipeline insertGraphicsPipeline(@Nonnull IUniqueKey key,
-                                                   @Nonnull @SharedPtr GraphicsPipeline pipeline) {
+    public GraphicsPipeline insertGraphicsPipeline(@NonNull IUniqueKey key,
+                                                   @NonNull @SharedPtr GraphicsPipeline pipeline) {
         GraphicsPipeline existing;
         synchronized (mGraphicsPipelineCache) {
             existing = mGraphicsPipelineCache.putIfAbsent(key, pipeline);
@@ -97,7 +97,7 @@ public class SharedResourceCache {
 
     @Nullable
     @SharedPtr
-    public ComputePipeline findComputePipeline(@Nonnull IUniqueKey key) {
+    public ComputePipeline findComputePipeline(@NonNull IUniqueKey key) {
         ComputePipeline existing;
         synchronized (mComputePipelineCache) {
             existing = mComputePipelineCache.get(key);
@@ -105,10 +105,10 @@ public class SharedResourceCache {
         return RefCnt.create(existing);
     }
 
-    @Nonnull
+    @NonNull
     @SharedPtr
-    public ComputePipeline insertComputePipeline(@Nonnull IUniqueKey key,
-                                                 @Nonnull @SharedPtr ComputePipeline pipeline) {
+    public ComputePipeline insertComputePipeline(@NonNull IUniqueKey key,
+                                                 @NonNull @SharedPtr ComputePipeline pipeline) {
         ComputePipeline existing;
         synchronized (mComputePipelineCache) {
             existing = mComputePipelineCache.putIfAbsent(key, pipeline);
@@ -121,7 +121,7 @@ public class SharedResourceCache {
         }
     }
 
-    public void addStaticResource(@Nonnull @SharedPtr Resource resource) {
+    public void addStaticResource(@NonNull @SharedPtr Resource resource) {
         synchronized (mStaticResources) {
             mStaticResources.add(resource);
         }

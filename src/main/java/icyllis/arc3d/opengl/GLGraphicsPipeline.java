@@ -23,9 +23,9 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.granite.GeometryStep;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -193,7 +193,7 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
      *
      * @param buffer the element buffer object, raw ptr
      */
-    public void bindIndexBuffer(@Nonnull @RawPtr GLBuffer buffer) {
+    public void bindIndexBuffer(@NonNull @RawPtr GLBuffer buffer) {
         if (mVertexArray != null) {
             mVertexArray.bindIndexBuffer(buffer);
         }
@@ -210,7 +210,7 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
      * @param buffer  the vertex buffer object, raw ptr
      * @param offset  first vertex data to the head of the buffer, in bytes
      */
-    public void bindVertexBuffer(int binding, @Nonnull @RawPtr GLBuffer buffer, long offset) {
+    public void bindVertexBuffer(int binding, @NonNull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray != null) {
             mVertexArray.bindVertexBuffer(binding, buffer, offset);
         }

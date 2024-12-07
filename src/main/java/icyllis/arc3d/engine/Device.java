@@ -25,10 +25,10 @@ import icyllis.arc3d.engine.trash.ops.OpsTask;
 import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.ShaderCodeSource;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -400,9 +400,9 @@ public abstract class Device implements Engine {
     @Deprecated
     @Nullable
     public final @SharedPtr GpuRenderTarget createRenderTarget(int numColorTargets,
-                                                               @Nullable Image[] colorTargets,
-                                                               @Nullable Image[] resolveTargets,
-                                                               @Nullable int[] mipLevels,
+            Image @Nullable[] colorTargets,
+            Image @Nullable[] resolveTargets,
+            int @Nullable[] mipLevels,
                                                                @Nullable Image depthStencilTarget,
                                                                int surfaceFlags) {
         if (numColorTargets < 0 || numColorTargets > mCaps.maxColorAttachments()) {
@@ -494,9 +494,9 @@ public abstract class Device implements Engine {
     protected abstract GpuRenderTarget onCreateRenderTarget(int width, int height,
                                                             int sampleCount,
                                                             int numColorTargets,
-                                                            @Nullable Image[] colorTargets,
-                                                            @Nullable Image[] resolveTargets,
-                                                            @Nullable int[] mipLevels,
+            Image @Nullable[] colorTargets,
+            Image @Nullable[] resolveTargets,
+            int @Nullable[] mipLevels,
                                                             @Nullable Image depthStencilTarget,
                                                             int surfaceFlags);
 

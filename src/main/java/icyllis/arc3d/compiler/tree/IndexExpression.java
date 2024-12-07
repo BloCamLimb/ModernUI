@@ -20,9 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * An expression that accesses an element of an array, vector, or matrix,
@@ -45,9 +44,9 @@ public final class IndexExpression extends Expression {
         mIndex = index;
     }
 
-    private static boolean index_out_of_bounds(@Nonnull Context context,
+    private static boolean index_out_of_bounds(@NonNull Context context,
                                                int pos, long index,
-                                               @Nonnull Expression base) {
+                                               @NonNull Expression base) {
         Type baseType = base.getType();
         if (index >= 0) {
             if (baseType.isArray()) {
@@ -74,9 +73,9 @@ public final class IndexExpression extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int pos,
-                                     @Nonnull Expression base,
+                                     @NonNull Expression base,
                                      @Nullable Expression index) {
         // Convert an array type reference.
         if (base instanceof TypeReference) {
@@ -123,10 +122,10 @@ public final class IndexExpression extends Expression {
         return IndexExpression.make(context, pos, base, index);
     }
 
-    public static Expression make(@Nonnull Context context,
+    public static Expression make(@NonNull Context context,
                                   int pos,
-                                  @Nonnull Expression base,
-                                  @Nonnull Expression index) {
+                                  @NonNull Expression base,
+                                  @NonNull Expression index) {
         return new IndexExpression(pos, base, index);
     }
 
@@ -152,14 +151,14 @@ public final class IndexExpression extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitIndex(this)) {
             return true;
         }
         return mBase.accept(visitor) || mIndex.accept(visitor);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new IndexExpression(position,
@@ -169,7 +168,7 @@ public final class IndexExpression extends Expression {
         );
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         return mBase.toString(Operator.PRECEDENCE_POSTFIX) + "[" +

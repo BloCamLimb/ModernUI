@@ -21,8 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.opengl.GLFramebufferInfo;
 import icyllis.arc3d.vulkan.VulkanImageDesc;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A BackendRenderTarget instance is initialized once, and may be shared.
@@ -97,7 +96,7 @@ public abstract class BackendRenderTarget {
     /**
      * Get the BackendFormat for this texture.
      */
-    @Nonnull
+    @NonNull
     public abstract BackendFormat getBackendFormat();
 
     /**

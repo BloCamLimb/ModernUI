@@ -20,8 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.ManagedResource;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Represents OpenGL programs.
@@ -30,7 +29,7 @@ public final class GLProgram extends ManagedResource {
 
     private int mProgram;
 
-    public GLProgram(@Nonnull GLDevice device,
+    public GLProgram(@NonNull GLDevice device,
                      int program) {
         super(device);
         assert (program != 0);

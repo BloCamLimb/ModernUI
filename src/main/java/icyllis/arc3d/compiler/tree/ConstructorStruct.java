@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Represents the construction of a struct object, such as "Color(red, green, blue, 1)".
@@ -36,7 +36,7 @@ public final class ConstructorStruct extends ConstructorCall {
         return ExpressionKind.CONSTRUCTOR_STRUCT;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new ConstructorStruct(position, getType(), cloneArguments());

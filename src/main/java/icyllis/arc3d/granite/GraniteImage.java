@@ -22,9 +22,8 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.CopyImageTask;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * The image that is backed by GPU.
@@ -36,8 +35,8 @@ public final class GraniteImage extends icyllis.arc3d.core.Image {
     @SharedPtr
     ImageViewProxy mImageViewProxy;
 
-    public GraniteImage(@Nonnull @RawPtr RecordingContext context,
-                        @Nonnull @SharedPtr ImageViewProxy view,
+    public GraniteImage(@NonNull @RawPtr RecordingContext context,
+                        @NonNull @SharedPtr ImageViewProxy view,
                         int colorType, int alphaType,
                         @Nullable ColorSpace colorSpace) {
         super(ImageInfo.make(view.getWidth(), view.getHeight(),
@@ -50,8 +49,8 @@ public final class GraniteImage extends icyllis.arc3d.core.Image {
     @SharedPtr
     public static GraniteImage copy(@RawPtr RecordingContext rc,
                                     @RawPtr ImageViewProxy srcView,
-                                    @Nonnull ImageInfo srcInfo,
-                                    @Nonnull Rect2ic subset,
+                                    @NonNull ImageInfo srcInfo,
+                                    @NonNull Rect2ic subset,
                                     boolean budgeted,
                                     boolean mipmapped,
                                     boolean approxFit,

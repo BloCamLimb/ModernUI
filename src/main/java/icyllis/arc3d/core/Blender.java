@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * {@code Blender} represents a custom blend function in the pipeline. A blender

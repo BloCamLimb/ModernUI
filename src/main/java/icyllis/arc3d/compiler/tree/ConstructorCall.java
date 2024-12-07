@@ -22,9 +22,9 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Operator;
 import org.jetbrains.annotations.Unmodifiable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -45,8 +45,8 @@ public abstract class ConstructorCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int pos, @Nonnull Type type, @Nonnull List<Expression> args) {
+    public static Expression convert(@NonNull Context context,
+                                     int pos, @NonNull Type type, @NonNull List<Expression> args) {
         if (args.size() == 1 &&
                 args.get(0).getType().matches(type) &&
                 !type.getElementType().isOpaque()) {
@@ -73,7 +73,7 @@ public abstract class ConstructorCall extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitConstructorCall(this)) {
             return true;
         }
@@ -117,7 +117,7 @@ public abstract class ConstructorCall extends Expression {
         throw new AssertionError(i);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         StringJoiner joiner = new StringJoiner(", ");

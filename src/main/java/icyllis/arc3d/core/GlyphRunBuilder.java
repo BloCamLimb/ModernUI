@@ -20,9 +20,9 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
@@ -52,10 +52,10 @@ public class GlyphRunBuilder {
      * Initializes and returns a read-only view.
      */
     public GlyphRunList setGlyphRunList(
-            @Nonnull int[] glyphs, int glyphOffset,
-            @Nonnull float[] positions, int positionOffset,
-            int glyphCount, @Nonnull Font font,
-            @Nonnull Paint paint,
+            int @NonNull[] glyphs, int glyphOffset,
+            float @NonNull[] positions, int positionOffset,
+            int glyphCount, @NonNull Font font,
+            @NonNull Paint paint,
             float originX, float originY
     ) {
         // compute exact bounds
@@ -85,7 +85,7 @@ public class GlyphRunBuilder {
     /**
      * Initializes and returns a read-only view.
      */
-    public GlyphRunList blobToGlyphRunList(@Nonnull TextBlob blob,
+    public GlyphRunList blobToGlyphRunList(@NonNull TextBlob blob,
                                            float originX, float originY) {
         final Font[] fonts = blob.getFonts();
         final int[] counts = blob.getCounts();
@@ -112,9 +112,9 @@ public class GlyphRunBuilder {
         mGlyphRunList.clear();
     }
 
-    private void addGlyphRun(@Nonnull int[] glyphs, int glyphOffset,
-                             @Nonnull float[] positions, int positionOffset,
-                             int glyphCount, @Nonnull Font font) {
+    private void addGlyphRun(int @NonNull[] glyphs, int glyphOffset,
+            float @NonNull[] positions, int positionOffset,
+                             int glyphCount, @NonNull Font font) {
         if (glyphCount <= 0) {
             return;
         }

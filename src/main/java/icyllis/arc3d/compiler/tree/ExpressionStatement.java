@@ -21,9 +21,8 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Operator;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * A lone expression being used as a statement.
@@ -38,7 +37,7 @@ public final class ExpressionStatement extends Statement {
     }
 
     @Nullable
-    public static Statement convert(@Nonnull Context context, Expression expr) {
+    public static Statement convert(@NonNull Context context, Expression expr) {
         if (expr.isIncomplete(context)) {
             return null;
         }
@@ -55,7 +54,7 @@ public final class ExpressionStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitExpression(this)) {
             return true;
         }
@@ -70,7 +69,7 @@ public final class ExpressionStatement extends Statement {
         mExpression = expression;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mExpression.toString(Operator.PRECEDENCE_STATEMENT) + ";";

@@ -20,8 +20,8 @@
 package icyllis.arc3d.core.effects;
 
 import icyllis.arc3d.core.*;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
 public final class BlendModeColorFilter implements ColorFilter {

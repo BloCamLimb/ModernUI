@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Position;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,7 +99,7 @@ public final class BlockStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitBlock(this)) {
             return true;
         }
@@ -137,7 +137,7 @@ public final class BlockStatement extends Statement {
         mScoped = scoped;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();

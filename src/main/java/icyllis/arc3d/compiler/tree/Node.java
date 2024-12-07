@@ -20,8 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Position;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Represents a node in the AST. The AST is a fully-resolved version of the program
@@ -153,12 +152,12 @@ public abstract class Node {
      *
      * @return true to stop recursion and propagate true up the stack, false to continue
      */
-    public abstract boolean accept(@Nonnull TreeVisitor visitor);
+    public abstract boolean accept(@NonNull TreeVisitor visitor);
 
     /**
      * @return a string representation of this AST node
      */
-    @Nonnull
+    @NonNull
     @Override
     public abstract String toString();
 }

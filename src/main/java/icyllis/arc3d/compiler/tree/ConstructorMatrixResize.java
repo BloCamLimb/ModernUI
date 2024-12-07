@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import java.util.OptionalDouble;
 
 /**
@@ -35,8 +36,8 @@ public final class ConstructorMatrixResize extends ConstructorCall {
         assert arguments.length == 1;
     }
 
-    @Nonnull
-    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
+    @NonNull
+    public static Expression make(int position, @NonNull Type type, @NonNull Expression arg) {
         assert (type.isMatrix());
         assert (arg.getType().getComponentType().matches(type.getComponentType()));
 
@@ -82,7 +83,7 @@ public final class ConstructorMatrixResize extends ConstructorCall {
         return OptionalDouble.of((col == row) ? 1.0 : 0.0);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new ConstructorMatrixResize(position, getType(), cloneArguments());

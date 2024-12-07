@@ -20,8 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Represents the construction of a vector splat (broadcast), such as `float3(n)`.
@@ -36,8 +35,8 @@ public final class ConstructorVectorSplat extends ConstructorCall {
     }
 
     // The input argument must be scalar. A "splat" to a scalar type will be optimized into a no-op.
-    @Nonnull
-    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
+    @NonNull
+    public static Expression make(int position, @NonNull Type type, @NonNull Expression arg) {
         assert (type.isScalar() || type.isVector());
         assert (arg.getType().matches(type.getComponentType()));
         assert (arg.getType().isScalar());
@@ -61,7 +60,7 @@ public final class ConstructorVectorSplat extends ConstructorCall {
         return ExpressionKind.CONSTRUCTOR_VECTOR_SPLAT;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new ConstructorVectorSplat(position, getType(), cloneArguments());

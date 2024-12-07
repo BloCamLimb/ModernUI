@@ -23,8 +23,8 @@ import icyllis.arc3d.core.Canvas;
 import icyllis.arc3d.core.Image;
 import icyllis.arc3d.core.Paint;
 import icyllis.arc3d.core.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
@@ -72,7 +72,7 @@ public class RasterDevice extends Device {
     }
 
     @Override
-    public void getClipBounds(@Nonnull Rect2i bounds) {
+    public void getClipBounds(@NonNull Rect2i bounds) {
 
     }
 

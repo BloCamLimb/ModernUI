@@ -20,10 +20,10 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import icyllis.arc3d.compiler.Context;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -46,11 +46,11 @@ public final class FieldAccess extends Expression {
      * Returns a field-access expression.
      */
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int position,
-                                     @Nonnull Expression base,
+                                     @NonNull Expression base,
                                      int namePosition,
-                                     @Nonnull String name) {
+                                     @NonNull String name) {
         Type baseType = base.getType();
         if (baseType.isVector() || baseType.isScalar()) {
             return Swizzle.convert(context, position, base, namePosition, name);
@@ -72,7 +72,7 @@ public final class FieldAccess extends Expression {
     /**
      * Returns a field-access expression.
      */
-    @Nonnull
+    @NonNull
     public static Expression make(int position,
                                   Expression base,
                                   int fieldIndex,
@@ -92,7 +92,7 @@ public final class FieldAccess extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitFieldAccess(this)) {
             return true;
         }
@@ -111,7 +111,7 @@ public final class FieldAccess extends Expression {
         return mAnonymousBlock;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new FieldAccess(position,
@@ -120,7 +120,7 @@ public final class FieldAccess extends Expression {
                 mAnonymousBlock);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         String s = mBase.toString(Operator.PRECEDENCE_POSTFIX);

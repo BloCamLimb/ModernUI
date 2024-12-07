@@ -20,8 +20,7 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * GlyphRun provides raw buffer views and represents a text run.
@@ -48,9 +47,9 @@ public class GlyphRun {
     public GlyphRun() {
     }
 
-    public void set(@Nonnull int[] glyphs, int glyphOffset,
-                    @Nonnull float[] positions, int positionOffset,
-                    int glyphCount, @Nonnull Font font) {
+    public void set(int @NonNull[] glyphs, int glyphOffset,
+            float @NonNull[] positions, int positionOffset,
+                    int glyphCount, @NonNull Font font) {
         mGlyphs = glyphs;
         mGlyphOffset = glyphOffset;
         mPositions = positions;

@@ -21,9 +21,8 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * The {@link SurfaceProxy} implements the proxy pattern for {@link GpuSurface},
@@ -292,7 +291,7 @@ public abstract class SurfaceProxy extends RefCnt {
     /**
      * @return the backend format of the surface
      */
-    @Nonnull
+    @NonNull
     public final BackendFormat getBackendFormat() {
         return mFormat;
     }
@@ -486,7 +485,7 @@ public abstract class SurfaceProxy extends RefCnt {
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public abstract boolean doLazyInstantiation(ResourceProvider resourceProvider);
 
-    @Nonnull
+    @NonNull
     abstract IResourceKey computeScratchKey();
 
     @Nullable

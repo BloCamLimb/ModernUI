@@ -1,7 +1,12 @@
 import org.gradle.internal.os.OperatingSystem
 
+plugins {
+    id 'org.checkerframework' version '0.6.47' apply false
+}
+
 apply plugin: 'java'
 apply plugin: 'java-library'
+apply plugin: 'org.checkerframework'
 
 version = "${arc3d_version}"
 group = 'icyllis.arc3d'
@@ -13,9 +18,19 @@ repositories {
     mavenLocal()
 }
 
+checkerFramework {
+    checkers = ['org.checkerframework.checker.nullness.NullnessChecker']
+    skipCheckerFramework = true
+    excludeTests = true
+    extraJavacArgs = ["-AassumeAssertionsAreEnabled", "-AsuppressWarnings=type.anno.before.modifier"]
+}
+
 dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     compileOnly 'org.jetbrains:annotations:23.1.0'
+
+    compileOnly 'org.checkerframework:checker-qual:3.48.3'
+    checkerFramework 'org.checkerframework:checker:3.48.3'
 
     api "org.slf4j:slf4j-api:2.0.9"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"

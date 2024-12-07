@@ -21,9 +21,8 @@ package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Op is the base class for all deferred GPU operations. To facilitate reordering and to
@@ -82,7 +81,7 @@ public abstract class Op extends Rect2f {
      * true, it means that the passed op will be added to the tail of the chain, while
      * the head op is responsible for rendering the chain.
      */
-    public final boolean mayChain(@Nonnull Op op) {
+    public final boolean mayChain(@NonNull Op op) {
         assert (op != this);
         if (getClass() != op.getClass()) {
             return false;
@@ -95,7 +94,7 @@ public abstract class Op extends Rect2f {
         return result;
     }
 
-    protected boolean onMayChain(@Nonnull Op op) {
+    protected boolean onMayChain(@NonNull Op op) {
         return false;
     }
 
@@ -156,7 +155,7 @@ public abstract class Op extends Rect2f {
      * Concatenates two op chains. This op must be a tail and the passed op must be a head. The ops
      * must be of the same subclass.
      */
-    public final void chainConcat(@Nonnull Op next) {
+    public final void chainConcat(@NonNull Op next) {
         assert (getClass() == next.getClass());
         assert (isChainTail());
         assert (next.isChainHead());

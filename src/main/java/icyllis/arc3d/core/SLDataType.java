@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Types of shader-language-specific boxed variables we can create, shared constants.
@@ -383,7 +383,7 @@ public final class SLDataType {
         throw new IllegalArgumentException(String.valueOf(type));
     }
 
-    @Nonnull
+    @NonNull
     public static String typeString(byte type) {
         switch (type) {
             case kVoid:

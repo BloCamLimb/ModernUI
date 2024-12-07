@@ -20,9 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.engine.*;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nullable;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
 

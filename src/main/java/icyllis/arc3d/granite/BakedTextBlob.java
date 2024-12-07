@@ -20,8 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A BakedTextBlob contains a fully processed TextBlob, suitable for nearly immediate drawing
@@ -51,18 +50,18 @@ public final class BakedTextBlob {
     private final SubRunContainer mSubRuns;
     private final long mMemorySize;
 
-    public BakedTextBlob(@Nonnull SubRunContainer subRuns) {
+    public BakedTextBlob(@NonNull SubRunContainer subRuns) {
         mSubRuns = subRuns;
         long size = subRuns.getMemorySize();
         size += 16 + 8 + 8 + 8 + 8 + 40 + 8 + 16 + 8;
         mMemorySize = size;
     }
 
-    @Nonnull
-    public static BakedTextBlob make(@Nonnull GlyphRunList glyphRunList,
-                                     @Nonnull Paint paint,
-                                     @Nonnull Matrixc positionMatrix,
-                                     @Nonnull StrikeCache strikeCache) {
+    @NonNull
+    public static BakedTextBlob make(@NonNull GlyphRunList glyphRunList,
+                                     @NonNull Paint paint,
+                                     @NonNull Matrixc positionMatrix,
+                                     @NonNull StrikeCache strikeCache) {
         var container = SubRunContainer.make(
                 glyphRunList, positionMatrix, paint,
                 strikeCache

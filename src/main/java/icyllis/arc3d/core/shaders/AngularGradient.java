@@ -19,10 +19,15 @@
 
 package icyllis.arc3d.core.shaders;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.Matrix;
+import icyllis.arc3d.core.Matrixc;
+import icyllis.arc3d.core.SharedPtr;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.*;
+import javax.annotation.CheckReturnValue;
 
 /**
  * The angular gradient, also known as sweep gradient, conic gradient.
@@ -37,9 +42,9 @@ public final class AngularGradient extends Gradient1DShader {
     @VisibleForTesting
     public AngularGradient(float centerX, float centerY,
                            float tStart, float tEnd,
-                           @Nonnull float[] colors,
+                           float @NonNull [] colors,
                            @Nullable ColorSpace colorSpace,
-                           @Nullable float[] positions,
+                           float @Nullable [] positions,
                            int colorCount,
                            int tileMode,
                            int interpolation) {
@@ -107,9 +112,9 @@ public final class AngularGradient extends Gradient1DShader {
     @SharedPtr
     public static Shader make(float centerX, float centerY,
                               float startAngle, float endAngle,
-                              @Nonnull float[] colors,
+                              float @NonNull [] colors,
                               @Nullable ColorSpace colorSpace,
-                              @Nullable float[] positions,
+                              float @Nullable [] positions,
                               int colorCount,
                               int tileMode,
                               int interpolation,

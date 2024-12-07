@@ -27,10 +27,10 @@ import icyllis.arc3d.engine.VertexInputLayout.Attribute;
 import icyllis.arc3d.engine.VertexInputLayout.AttributeSet;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.shading.VaryingHandler;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Formatter;
 
 /**
@@ -102,11 +102,11 @@ public class AnalyticArcStep extends GeometryStep {
     }
 
     @Override
-    public void appendToKey(@Nonnull KeyBuilder b) {
+    public void appendToKey(@NonNull KeyBuilder b) {
 
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return null;
@@ -137,7 +137,7 @@ public class AnalyticArcStep extends GeometryStep {
 
     @Override
     public void emitVertexGeomCode(Formatter vs,
-                                   @Nonnull String worldPosVar,
+                                   @NonNull String worldPosVar,
                                    @Nullable String localPosVar,
                                    boolean usesFastSolidColor) {
         // {(-1,-1), (-1,1), (1,-1), (1,1)}
@@ -283,7 +283,7 @@ public class AnalyticArcStep extends GeometryStep {
 
     @Override
     public void writeMesh(MeshDrawWriter writer, Draw draw,
-                          @Nullable float[] solidColor,
+            float @Nullable[] solidColor,
                           boolean mayRequireLocalCoords) {
         writer.beginInstances(null, null, 4);
         long instanceData = writer.append(1);

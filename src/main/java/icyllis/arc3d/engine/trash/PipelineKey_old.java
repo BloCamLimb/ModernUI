@@ -21,8 +21,7 @@ package icyllis.arc3d.engine.trash;
 
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.GeometryStep;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * This class is used to generate a generic pipeline cache key.
@@ -60,7 +59,7 @@ public final class PipelineKey_old extends KeyBuilder {
      * @param info the pipeline information
      * @param caps the context capabilities
      */
-    @Nonnull
+    @NonNull
     public static PipelineKey_old build(PipelineKey_old desc, GraphicsPipelineDesc_Old info, Caps caps) {
         desc.clear();
         genKey(desc, info, caps);

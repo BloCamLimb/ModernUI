@@ -22,8 +22,8 @@ package icyllis.arc3d.engine.task;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -53,7 +53,7 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
     /**
      * This method moves the given task list.
      */
-    public void appendTasks(@Nonnull TaskList tasks) {
+    public void appendTasks(@NonNull TaskList tasks) {
         assert tasks != this;
         mTasks.addAll(tasks.mTasks);
         tasks.mTasks.clear();
@@ -62,7 +62,7 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
     /**
      * This method moves the given task list.
      */
-    public void appendTasks(@Nonnull List<@SharedPtr ? extends Task> tasks) {
+    public void appendTasks(@NonNull List<@SharedPtr ? extends Task> tasks) {
         mTasks.addAll(tasks);
         tasks.clear();
     }

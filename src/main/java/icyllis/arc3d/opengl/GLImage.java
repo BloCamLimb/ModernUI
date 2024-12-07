@@ -20,8 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Represents OpenGL textures and renderbuffers.
@@ -37,7 +36,7 @@ public abstract sealed class GLImage extends Image
         super(context, budgeted, wrapped, desc, mutableState);
     }
 
-    @Nonnull
+    @NonNull
     public final GLImageDesc getGLDesc() {
         return (GLImageDesc) getDesc();
     }

@@ -20,8 +20,9 @@
 package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.tree.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -31,8 +32,8 @@ import java.util.*;
 public final class Context {
 
     // The Context holds a pointer to the configuration of the program being compiled.
-    private ShaderKind mKind;
-    private CompileOptions mOptions;
+    private @Nullable ShaderKind mKind;
+    private @Nullable CompileOptions mOptions;
     private boolean mIsBuiltin;
     private boolean mIsModule;
 
@@ -92,10 +93,13 @@ public final class Context {
     }
 
     public ShaderKind getKind() {
+        assert mKind != null;
         return mKind;
     }
 
+    @NonNull
     public CompileOptions getOptions() {
+        assert mOptions != null;
         return mOptions;
     }
 

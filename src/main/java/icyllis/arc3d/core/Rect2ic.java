@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Interface to a read-only view of a rectangle in integer coordinates.
@@ -98,14 +98,14 @@ public sealed interface Rect2ic permits Rect2i {
      *
      * @param dst the rectangle to store
      */
-    void store(@Nonnull Rect2i dst);
+    void store(@NonNull Rect2i dst);
 
     /**
      * Stores the coordinates from this into dst.
      *
      * @param dst the rectangle to store
      */
-    void store(@Nonnull Rect2f dst);
+    void store(@NonNull Rect2f dst);
 
     /**
      * Returns true if this rectangle intersects the specified rectangle.

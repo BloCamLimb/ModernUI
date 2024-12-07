@@ -20,9 +20,9 @@
 package icyllis.arc3d.compiler.analysis;
 
 import icyllis.arc3d.compiler.tree.*;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
 
 /**
@@ -60,7 +60,7 @@ public final class SymbolUsage extends TreeVisitor {
 
     private int mDelta;
 
-    @Nonnull
+    @NonNull
     public Count computeStructCount(Type typeSymbol) {
         return mStructCounts.computeIfAbsent(typeSymbol, __ -> new Count());
     }
@@ -78,7 +78,7 @@ public final class SymbolUsage extends TreeVisitor {
         return 0;
     }
 
-    @Nonnull
+    @NonNull
     public Count computeFunctionCount(FunctionDecl functionSymbol) {
         return mFunctionCounts.computeIfAbsent(functionSymbol, __ -> new Count());
     }
@@ -96,7 +96,7 @@ public final class SymbolUsage extends TreeVisitor {
         return 0;
     }
 
-    @Nonnull
+    @NonNull
     public VariableCounts computeVariableCounts(Variable varSymbol) {
         return mVariableCounts.computeIfAbsent(varSymbol, __ -> new VariableCounts());
     }
@@ -106,12 +106,12 @@ public final class SymbolUsage extends TreeVisitor {
         return mVariableCounts.get(varSymbol);
     }
 
-    public void add(@Nonnull Node node) {
+    public void add(@NonNull Node node) {
         mDelta = 1;
         node.accept(this);
     }
 
-    public void remove(@Nonnull Node node) {
+    public void remove(@NonNull Node node) {
         mDelta = -1;
         node.accept(this);
     }

@@ -19,11 +19,13 @@
 
 package icyllis.arc3d.core;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.checkerframework.common.value.qual.ArrayLen;
+import org.checkerframework.common.value.qual.MinLen;
 import org.lwjgl.system.*;
 import sun.misc.Unsafe;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 import static icyllis.arc3d.core.PixelUtils.UNSAFE;
@@ -36,7 +38,7 @@ import static icyllis.arc3d.core.PixelUtils.UNSAFE;
  */
 public class Pixmap {
 
-    @Nonnull
+    @NonNull
     protected final ImageInfo mInfo;
     @Nullable
     protected final Object mBase;
@@ -57,7 +59,7 @@ public class Pixmap {
      * @param address  address if native buffer, or array base offset; may be NULL
      * @param rowBytes size of one row of buffer; width times bpp, or larger
      */
-    public Pixmap(@Nonnull ImageInfo info,
+    public Pixmap(@NonNull ImageInfo info,
                   @Nullable Object base,
                   @NativeType("const void *") long address,
                   int rowBytes) {
@@ -70,15 +72,15 @@ public class Pixmap {
     /**
      * Reinterprets an existing {@link Pixmap} with <var>newInfo</var>.
      */
-    public Pixmap(@Nonnull ImageInfo newInfo,
-                  @Nonnull Pixmap oldPixmap) {
+    public Pixmap(@NonNull ImageInfo newInfo,
+                  @NonNull Pixmap oldPixmap) {
         this(newInfo, oldPixmap.mBase, oldPixmap.mAddress, oldPixmap.mRowBytes);
     }
 
     /**
      * Returns width, height, AlphaType, ColorType, and ColorSpace.
      */
-    @Nonnull
+    @NonNull
     public ImageInfo getInfo() {
         return mInfo;
     }
@@ -175,7 +177,7 @@ public class Pixmap {
      * @return a pixmap if intersection of this and subset is not empty
      */
     @Nullable
-    public Pixmap makeSubset(@Nonnull Rect2ic subset) {
+    public Pixmap makeSubset(@NonNull Rect2ic subset) {
         var r = new Rect2i(0, 0, getWidth(), getHeight());
         if (!r.intersect(subset)) {
             return null;
@@ -201,7 +203,7 @@ public class Pixmap {
      * Returns (0, 0) if pixels is NULL.
      */
     public void getPixelOrigin(long pix,
-                               @Nonnull @Size(2) int[] origin) {
+                               int @NonNull @MinLen(2) [] origin) {
         long addr = getAddress();
         long rb = getRowBytes();
         if (pix == MemoryUtil.NULL || rb == 0) {
@@ -274,7 +276,7 @@ public class Pixmap {
      * @param y   row index, zero or greater, and less than height()
      * @param dst pixel converted to float color
      */
-    public void getColor4f(int x, int y, @Nonnull @Size(4) float[] dst) {
+    public void getColor4f(int x, int y,  @Size(4) float @NonNull[] dst) {
         assert getAddress() != MemoryUtil.NULL;
         assert x < getWidth();
         assert y < getHeight();
@@ -295,7 +297,7 @@ public class Pixmap {
      * @param y   row index, zero or greater, and less than height()
      * @param src float color to set
      */
-    public void setColor4f(int x, int y, @Nonnull @Size(4) float[] src) {
+    public void setColor4f(int x, int y,  @Size(4) float @NonNull[] src) {
         assert getAddress() != MemoryUtil.NULL;
         assert x < getWidth();
         assert y < getHeight();
@@ -322,7 +324,7 @@ public class Pixmap {
      * @param srcY row index whose absolute value is less than height()
      * @return true if pixels are copied to dst
      */
-    public boolean readPixels(@Nonnull Pixmap dst, int srcX, int srcY) {
+    public boolean readPixels(@NonNull Pixmap dst, int srcX, int srcY) {
         ImageInfo dstInfo = dst.getInfo();
         if (!getInfo().isValid() || !dstInfo.isValid()) {
             return false;
@@ -369,7 +371,7 @@ public class Pixmap {
      * @param dstY row index whose absolute value is less than height()
      * @return true if src pixels are copied to pixmap
      */
-    public boolean writePixels(@Nonnull Pixmap src, int dstX, int dstY) {
+    public boolean writePixels(@NonNull Pixmap src, int dstX, int dstY) {
         ImageInfo srcInfo = src.getInfo();
         if (!getInfo().isValid() || !srcInfo.isValid()) {
             return false;
@@ -407,7 +409,7 @@ public class Pixmap {
      * @param subset bounding box of pixels to write; may be null
      * @return true if pixels are changed
      */
-    public boolean clear(@Nonnull @Size(4) float[] color,
+    public boolean clear( @Size(4) float @NonNull[] color,
                          @Nullable Rect2ic subset) {
         var ct = getColorType();
         if (ct == ColorInfo.CT_UNKNOWN) {

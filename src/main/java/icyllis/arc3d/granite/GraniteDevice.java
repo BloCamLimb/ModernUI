@@ -28,9 +28,9 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.geom.BoundsManager;
 import icyllis.arc3d.granite.geom.HybridBoundsManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.function.BiConsumer;
 
 /**
@@ -80,7 +80,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     @Nullable
     @SharedPtr
     public static GraniteDevice make(@RawPtr RecordingContext rc,
-                                     @Nonnull ImageInfo deviceInfo,
+                                     @NonNull ImageInfo deviceInfo,
                                      int surfaceFlags,
                                      int origin,
                                      byte initialLoadOp,
@@ -182,7 +182,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         mRC = null;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public RecordingContext getRecordingContext() {
         assert mRC != null;
@@ -199,7 +199,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
     @Nullable
     @SharedPtr
-    public GraniteImage makeImageCopy(@Nonnull Rect2ic subset,
+    public GraniteImage makeImageCopy(@NonNull Rect2ic subset,
                                       boolean budgeted,
                                       boolean mipmapped,
                                       boolean approxFit) {
@@ -266,7 +266,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     private final Rect2i mTmpClipBoundsI = new Rect2i();
 
     @Override
-    public void getClipBounds(@Nonnull Rect2i bounds) {
+    public void getClipBounds(@NonNull Rect2i bounds) {
         mClipStack.getConservativeBounds(mTmpClipBounds);
         mTmpClipBounds.roundOut(bounds);
     }

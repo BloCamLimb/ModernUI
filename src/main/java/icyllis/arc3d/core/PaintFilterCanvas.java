@@ -20,9 +20,8 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.RecordingContext;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public abstract class PaintFilterCanvas extends NWayCanvas {
 
@@ -32,7 +31,7 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
      * The new PaintFilterCanvas is configured for forwarding to the
      * specified canvas.  Also copies the target canvas matrix and clip bounds.
      */
-    public PaintFilterCanvas(@RawPtr @Nonnull Canvas canvas) {
+    public PaintFilterCanvas(@RawPtr @NonNull Canvas canvas) {
         super(canvas.getImageInfo().width(),
                 canvas.getImageInfo().height());
         // Transfer matrix & clip state before adding the target canvas.
@@ -208,7 +207,7 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
         return getProxy().makeSurface(info);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected ImageInfo onGetImageInfo() {
         return getProxy().getImageInfo();

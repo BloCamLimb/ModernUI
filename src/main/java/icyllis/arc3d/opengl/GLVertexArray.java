@@ -22,9 +22,9 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.VertexShaderBuilder;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Iterator;
 
 import static org.lwjgl.opengl.GL30C.*;
@@ -80,8 +80,8 @@ public final class GLVertexArray extends ManagedResource {
 
     @Nullable
     @SharedPtr
-    public static GLVertexArray make(@Nonnull GLDevice device,
-                                     @Nonnull VertexInputLayout inputLayout,
+    public static GLVertexArray make(@NonNull GLDevice device,
+                                     @NonNull VertexInputLayout inputLayout,
                                      String label) {
         var gl = device.getGL();
         final boolean dsa = device.getCaps().hasDSASupport();
@@ -188,7 +188,7 @@ public final class GLVertexArray extends ManagedResource {
     }
 
     private static int set_vertex_format_legacy(GLInterface gl,
-                                                @Nonnull Iterator<VertexInputLayout.Attribute> attribs,
+                                                @NonNull Iterator<VertexInputLayout.Attribute> attribs,
                                                 int index, int divisor, int[] attributes) {
         while (attribs.hasNext()) {
             var attrib = attribs.next();
@@ -270,7 +270,7 @@ public final class GLVertexArray extends ManagedResource {
      * See {@link VertexShaderBuilder}.
      */
     private static int set_vertex_format_binding_group(GLInterface gl,
-                                                       @Nonnull Iterator<VertexInputLayout.Attribute> attribs,
+                                                       @NonNull Iterator<VertexInputLayout.Attribute> attribs,
                                                        int index,
                                                        int binding,
                                                        int divisor) {
@@ -356,7 +356,7 @@ public final class GLVertexArray extends ManagedResource {
      * See {@link VertexShaderBuilder}.
      */
     private static int set_vertex_format_binding_group_dsa(GLInterface gl,
-                                                           @Nonnull Iterator<VertexInputLayout.Attribute> attribs,
+                                                           @NonNull Iterator<VertexInputLayout.Attribute> attribs,
                                                            int array,
                                                            int index,
                                                            int binding,
@@ -475,7 +475,7 @@ public final class GLVertexArray extends ManagedResource {
      *
      * @param buffer the element buffer object, raw ptr
      */
-    public void bindIndexBuffer(@Nonnull @RawPtr GLBuffer buffer) {
+    public void bindIndexBuffer(@NonNull @RawPtr GLBuffer buffer) {
         if (mVertexArray == 0) {
             return;
         }
@@ -497,7 +497,7 @@ public final class GLVertexArray extends ManagedResource {
      * @param buffer the vertex buffer object, raw ptr
      * @param offset first vertex data to the base of the buffer, in bytes
      */
-    public void bindVertexBuffer(int binding, @Nonnull @RawPtr GLBuffer buffer, long offset) {
+    public void bindVertexBuffer(int binding, @NonNull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray == 0) {
             return;
         }

@@ -22,8 +22,7 @@ package icyllis.arc3d.granite.geom;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.GeometryStep;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 public final class DefaultGeoProc extends GeometryStep {
 
@@ -55,11 +54,11 @@ public final class DefaultGeoProc extends GeometryStep {
     }
 
     @Override
-    public void appendToKey(@Nonnull KeyBuilder b) {
+    public void appendToKey(@NonNull KeyBuilder b) {
         b.addBits(3, mFlags, "gpFlags");
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         //TODO

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A symbol which should be interpreted as a field access. Fields are added to the SymbolTable
@@ -37,13 +37,13 @@ public final class AnonymousField extends Symbol {
         mFieldIndex = fieldIndex;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public SymbolKind getKind() {
         return SymbolKind.ANONYMOUS_FIELD;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Type getType() {
         return mContainer.getType().getFields()[mFieldIndex].type();
@@ -57,7 +57,7 @@ public final class AnonymousField extends Symbol {
         return mContainer;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mContainer.toString() + "." + getName();

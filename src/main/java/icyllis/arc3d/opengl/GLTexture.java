@@ -22,9 +22,8 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.Context;
 import icyllis.arc3d.engine.ISurface;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nullable;
 
 import static org.lwjgl.opengl.GL30C.*;
 

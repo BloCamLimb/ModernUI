@@ -21,9 +21,8 @@ package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.tree.Type;
 import icyllis.arc3d.core.MathUtil;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Standard layout for interface blocks, according to OpenGL and Vulkan specification.
@@ -62,7 +61,7 @@ public enum MemoryLayout {
     /**
      * Returns the alignment in bytes.
      */
-    public int alignment(@Nonnull Type type) {
+    public int alignment(@NonNull Type type) {
         return alignment(type, null);
     }
 
@@ -75,7 +74,7 @@ public enum MemoryLayout {
      * @param out size, matrix stride, array stride, respectively, can be null
      * @return base alignment
      */
-    public int alignment(@Nonnull Type type, @Nullable int[] out) {
+    public int alignment(@NonNull Type type, int @Nullable[] out) {
         return switch (type.getTypeKind()) {
             case Type.kScalar_TypeKind -> {
                 int width = type.getWidth();
@@ -158,7 +157,7 @@ public enum MemoryLayout {
      * Returns the minimum stride for {@code SpvDecorationArrayStride} and
      * {@code SpvDecorationMatrixStride}.
      */
-    public int stride(@Nonnull Type type) {
+    public int stride(@NonNull Type type) {
         return switch (type.getTypeKind()) {
             case Type.kMatrix_TypeKind, Type.kArray_TypeKind -> {
                 // 15.5.4. Offset and Stride Assignment
@@ -174,7 +173,7 @@ public enum MemoryLayout {
     /**
      * Returns the total size in bytes, including padding at the end.
      */
-    public int size(@Nonnull Type type) {
+    public int size(@NonNull Type type) {
         return switch (type.getTypeKind()) {
             case Type.kScalar_TypeKind -> {
                 int width = type.getWidth();
@@ -219,7 +218,7 @@ public enum MemoryLayout {
      * Returns true if the type is host shareable, i.e., a composite type.
      * Boolean type is not supported, use uint32 instead.
      */
-    public boolean isSupported(@Nonnull Type type) {
+    public boolean isSupported(@NonNull Type type) {
         return switch (type.getTypeKind()) {
             case Type.kScalar_TypeKind -> !type.isBoolean();
             case Type.kVector_TypeKind,

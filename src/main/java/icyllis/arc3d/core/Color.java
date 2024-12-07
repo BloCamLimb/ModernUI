@@ -20,8 +20,7 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * <p>The <code>Color</code> class provides methods for creating, converting and
@@ -570,7 +569,7 @@ public final class Color {
      *
      * @return A non-null string representation of the object
      */
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "Color(" + mR +
@@ -593,7 +592,7 @@ public final class Color {
      * </ul>
      */
     @ColorInt
-    public static int parseColor(@Nonnull String s) {
+    public static int parseColor(@NonNull String s) {
         if (s.charAt(0) == '#') {
             int color = Integer.parseUnsignedInt(s.substring(1), 16);
             if (s.length() == 7) {
@@ -842,7 +841,7 @@ public final class Color {
      * @return the color (straight) resulting from the color blending
      */
     @ColorInt
-    public static int blend(@Nonnull BlendMode mode, @ColorInt int src, @ColorInt int dst) {
+    public static int blend(@NonNull BlendMode mode, @ColorInt int src, @ColorInt int dst) {
         switch (mode) {
             case CLEAR -> {
                 return TRANSPARENT;
@@ -870,8 +869,8 @@ public final class Color {
         return result;
     }
 
-    @Nonnull
-    public static float[] load_and_premul(int col) {
+
+    public static float @NonNull[] load_and_premul(int col) {
         float[] col4 = new float[4];
         float a = (col4[3] = (col >>> 24) * (1 / 255.0f)) * (1 / 255.0f);
         col4[0] = ((col >> 16) & 0xFF) * a;

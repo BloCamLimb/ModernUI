@@ -19,8 +19,9 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
+
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -57,22 +58,22 @@ public class LinkedListMultimap<K, V> extends HashMap<K, LinkedList<V>> {
     public LinkedListMultimap() {
     }
 
-    public LinkedListMultimap(@Nonnull Map<? extends K, ? extends LinkedList<V>> other) {
+    public LinkedListMultimap(@NonNull Map<? extends K, ? extends LinkedList<V>> other) {
         super(other);
     }
 
-    public void addFirstEntry(@Nonnull K k, @Nonnull V v) {
+    public void addFirstEntry(@NonNull K k, @NonNull V v) {
         computeIfAbsent(k, __ -> new LinkedList<>())
                 .addFirst(Objects.requireNonNull(v));
     }
 
-    public void addLastEntry(@Nonnull K k, @Nonnull V v) {
+    public void addLastEntry(@NonNull K k, @NonNull V v) {
         computeIfAbsent(k, __ -> new LinkedList<>())
                 .addLast(Objects.requireNonNull(v));
     }
 
     @Nullable
-    public V pollFirstEntry(@Nonnull K k) {
+    public V pollFirstEntry(@NonNull K k) {
         assert (mTmpValue == null);
         computeIfPresent(k, mPollFirstEntry);
         V v = mTmpValue;
@@ -81,7 +82,7 @@ public class LinkedListMultimap<K, V> extends HashMap<K, LinkedList<V>> {
     }
 
     @Nullable
-    public V pollLastEntry(@Nonnull K k) {
+    public V pollLastEntry(@NonNull K k) {
         assert (mTmpValue == null);
         computeIfPresent(k, mPollLastEntry);
         V v = mTmpValue;
@@ -90,20 +91,20 @@ public class LinkedListMultimap<K, V> extends HashMap<K, LinkedList<V>> {
     }
 
     @Nullable
-    public V peekFirstEntry(@Nonnull K k) {
+    public V peekFirstEntry(@NonNull K k) {
         var list = get(k);
         // we always remove empty linked lists, so getFirst() not peekFirst()
         return list != null ? list.getFirst() : null;
     }
 
     @Nullable
-    public V peekLastEntry(@Nonnull K k) {
+    public V peekLastEntry(@NonNull K k) {
         var list = get(k);
         // we always remove empty linked lists, so getFirst() not peekFirst()
         return list != null ? list.getLast() : null;
     }
 
-    public void removeFirstEntry(@Nonnull K k, @Nonnull V v) {
+    public void removeFirstEntry(@NonNull K k, @NonNull V v) {
         assert (mTmpValue == null);
         mTmpValue = v;
         computeIfPresent(k, mRemoveFirstEntry);
@@ -111,7 +112,7 @@ public class LinkedListMultimap<K, V> extends HashMap<K, LinkedList<V>> {
         mTmpValue = null;
     }
 
-    public void removeLastEntry(@Nonnull K k, @Nonnull V v) {
+    public void removeLastEntry(@NonNull K k, @NonNull V v) {
         assert (mTmpValue == null);
         mTmpValue = v;
         computeIfPresent(k, mRemoveLastEntry);

@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class PathUtils {
 
@@ -38,17 +38,17 @@ public class PathUtils {
      * represents hairline and cannot be filled).
      */
     public static boolean fillPathWithPaint(
-            @Nonnull Path src, @Nonnull Paint paint,
-            @Nonnull Path dst, @Nullable Rect2fc cullRect,
+            @NonNull Path src, @NonNull Paint paint,
+            @NonNull Path dst, @Nullable Rect2fc cullRect,
             float resScale) {
         return fillPathWithPaint(src, paint, dst, cullRect,
                 Matrix.makeScale(resScale, resScale));
     }
 
     public static boolean fillPathWithPaint(
-            @Nonnull Path src, @Nonnull Paint paint,
-            @Nonnull Path dst, @Nullable Rect2fc cullRect,
-            @Nonnull Matrixc ctm) {
+            @NonNull Path src, @NonNull Paint paint,
+            @NonNull Path dst, @Nullable Rect2fc cullRect,
+            @NonNull Matrixc ctm) {
         if (!src.isFinite()) {
             dst.reset();
             return false;

@@ -21,8 +21,8 @@ package icyllis.arc3d.core;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -55,9 +55,9 @@ public final class Strike {
 
     // Use StrikeCache to obtain an instance
     @ApiStatus.Internal
-    public Strike(@Nonnull StrikeCache strikeCache,
-                  @Nonnull StrikeDesc strikeDesc, // immutable, no copy
-                  @Nonnull ScalerContext scalerContext) {
+    public Strike(@NonNull StrikeCache strikeCache,
+                  @NonNull StrikeDesc strikeDesc, // immutable, no copy
+                  @NonNull ScalerContext scalerContext) {
         mStrikeDesc = strikeDesc;
         mStrikeCache = strikeCache;
         mScalerContext = scalerContext;
@@ -95,7 +95,7 @@ public final class Strike {
      *
      * @param glyphID typeface-specified glyph ID
      */
-    @Nonnull
+    @NonNull
     public Glyph getGlyph(int glyphID) {
         return digestFor(Glyph.kDirectMask, glyphID);
     }
@@ -110,7 +110,7 @@ public final class Strike {
      * @param actionType e.g. {@link Glyph#kDirectMask}
      * @param glyphID    typeface-specified glyph ID
      */
-    @Nonnull
+    @NonNull
     public Glyph digestFor(int actionType, int glyphID) {
         assert mLock.isLocked();
         Glyph glyph = mGlyphs.get(glyphID);
@@ -141,7 +141,7 @@ public final class Strike {
      * <p>
      * Requires lock.
      */
-    public boolean prepareForImage(@Nonnull Glyph glyph) {
+    public boolean prepareForImage(@NonNull Glyph glyph) {
         assert mLock.isLocked();
         if (glyph.setImage(mScalerContext)) {
             mMemoryIncrease += glyph.getImageSize() + 16;
@@ -162,6 +162,7 @@ public final class Strike {
         return glyph.getPath() != null;
     }
 
+
     /**
      * Compute metrics for a list of glyphs in bulk. The glyph metrics within
      * the given range will be computed, and the glyph pointers will be stored
@@ -169,9 +170,8 @@ public final class Strike {
      * <p>
      * Excludes lock.
      */
-    @Nonnull
-    public Glyph[] getMetrics(@Nonnull int[] glyphs, int glyphOffset, int glyphCount,
-                              @Nonnull Glyph[] results) {
+    public Glyph @NonNull[] getMetrics(int @NonNull[] glyphs, int glyphOffset, int glyphCount,
+            Glyph @NonNull[] results) {
         assert results.length >= glyphCount;
         lock();
         try {

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * A no-op statement ";".
@@ -36,7 +36,7 @@ public final class EmptyStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         return visitor.visitEmpty(this);
     }
 
@@ -45,7 +45,7 @@ public final class EmptyStatement extends Statement {
         return true;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return ";";

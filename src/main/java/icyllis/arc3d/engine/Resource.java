@@ -21,9 +21,9 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
@@ -144,7 +144,7 @@ public abstract class Resource implements RefCounted {
 
     private final long mMemorySize;
 
-    @Nonnull
+    @NonNull
     private volatile String mLabel = "";
     private final UniqueID mUniqueID = new UniqueID();
 
@@ -342,7 +342,7 @@ public abstract class Resource implements RefCounted {
      * never hold a reference to this Resource object, so it can be used to track state
      * changes through '=='.
      */
-    @Nonnull
+    @NonNull
     public UniqueID getUniqueID() {
         return mUniqueID;
     }
@@ -350,7 +350,7 @@ public abstract class Resource implements RefCounted {
     /**
      * @return the label for the resource, or empty
      */
-    @Nonnull
+    @NonNull
     public final String getLabel() {
         return mLabel;
     }
@@ -407,7 +407,7 @@ public abstract class Resource implements RefCounted {
      * By default, resources are not recycled as scratch.
      */
     @ApiStatus.Internal
-    public final void setKey(@Nonnull IResourceKey key) {
+    public final void setKey(@NonNull IResourceKey key) {
         assert !key.isShareable() || mBudgeted;
         mKey = key;
     }

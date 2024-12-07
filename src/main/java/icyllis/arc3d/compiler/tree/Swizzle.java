@@ -21,9 +21,9 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.analysis.Analysis;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -80,9 +80,9 @@ public final class Swizzle extends Expression {
     }
 
     @Nullable
-    private static Expression optimizeSwizzle(@Nonnull Context context,
+    private static Expression optimizeSwizzle(@NonNull Context context,
                                               int pos,
-                                              @Nonnull ConstructorCompound base,
+                                              @NonNull ConstructorCompound base,
                                               byte[] components,
                                               int numComponents) {
         Expression[] baseArguments = base.getArguments();
@@ -225,9 +225,9 @@ public final class Swizzle extends Expression {
      * combines constructors and native swizzles (comprised solely of X/Y/W/Z).
      */
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int position, @Nonnull Expression base,
-                                     int maskPosition, @Nonnull String maskString) {
+    public static Expression convert(@NonNull Context context,
+                                     int position, @NonNull Expression base,
+                                     int maskPosition, @NonNull String maskString) {
         if (maskString.length() > 4) {
             context.error(maskPosition,
                     "too many components in swizzle mask");
@@ -398,9 +398,9 @@ public final class Swizzle extends Expression {
     }
 
     // input array must be immutable
-    @Nonnull
-    public static Expression make(@Nonnull Context context,
-                                  int position, @Nonnull Expression base,
+    @NonNull
+    public static Expression make(@NonNull Context context,
+                                  int position, @NonNull Expression base,
                                   byte[] components, int numComponents) {
         Type baseType = base.getType();
         assert baseType.isVector() || baseType.isScalar();
@@ -498,7 +498,7 @@ public final class Swizzle extends Expression {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         if (visitor.visitSwizzle(this)) {
             return true;
         }
@@ -514,13 +514,13 @@ public final class Swizzle extends Expression {
         return mComponents;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Expression clone(int position) {
         return new Swizzle(position, getType(), mBase.clone(), mComponents);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         StringBuilder result = new StringBuilder(

@@ -23,8 +23,7 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.ImageUploadTask;
 import it.unimi.dsi.fastutil.objects.ObjectIntPair;
-
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class TextureUtils {
 

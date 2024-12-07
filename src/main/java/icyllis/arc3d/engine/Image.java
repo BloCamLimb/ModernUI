@@ -21,8 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Represents GPU image resources, which may be 2D or 3D. This class also represents a
@@ -67,7 +66,7 @@ public abstract class Image extends Resource {
         mMutableState = mutableState;
     }
 
-    @Nonnull
+    @NonNull
     public final ImageDesc getDesc() {
         return mDesc;
     }
@@ -286,7 +285,7 @@ public abstract class Image extends Resource {
          *
          * @return this
          */
-        @Nonnull
+        @NonNull
         public ResourceKey compute(BackendFormat format,
                                    int width, int height,
                                    int sampleCount,

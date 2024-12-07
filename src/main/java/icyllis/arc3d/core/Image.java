@@ -21,9 +21,8 @@ package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.Context;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Image describes a two-dimensional array of pixels to draw. The pixels may be
@@ -45,7 +44,7 @@ public abstract class Image extends RefCnt {
     protected final ImageInfo mInfo;
     protected final UniqueID mUniqueID;
 
-    protected Image(@Nonnull ImageInfo info) {
+    protected Image(@NonNull ImageInfo info) {
         if (info.isEmpty()) {
             throw new IllegalArgumentException();
         }
@@ -53,7 +52,7 @@ public abstract class Image extends RefCnt {
         mUniqueID = new UniqueID();
     }
 
-    @Nonnull
+    @NonNull
     public final ImageInfo getInfo() {
         return mInfo;
     }
@@ -76,11 +75,11 @@ public abstract class Image extends RefCnt {
         return mInfo.height();
     }
 
-    public final void getBounds(@Nonnull Rect2i bounds) {
+    public final void getBounds(@NonNull Rect2i bounds) {
         bounds.set(0, 0, mInfo.width(), mInfo.height());
     }
 
-    public final void getBounds(@Nonnull Rect2f bounds) {
+    public final void getBounds(@NonNull Rect2f bounds) {
         bounds.set(0, 0, mInfo.width(), mInfo.height());
     }
 
@@ -91,7 +90,7 @@ public abstract class Image extends RefCnt {
      *
      * @return unique identifier
      */
-    @Nonnull
+    @NonNull
     public final UniqueID getUniqueID() {
         return mUniqueID;
     }

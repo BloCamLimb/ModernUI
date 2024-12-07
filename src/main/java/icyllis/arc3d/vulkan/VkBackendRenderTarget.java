@@ -21,8 +21,7 @@ package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.BackendRenderTarget;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
 import static org.lwjgl.vulkan.VK11.*;
@@ -87,7 +86,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
         mState.setQueueFamilyIndex(queueFamilyIndex);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {

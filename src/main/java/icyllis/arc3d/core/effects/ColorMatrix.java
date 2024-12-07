@@ -20,8 +20,8 @@
 package icyllis.arc3d.core.effects;
 
 import icyllis.arc3d.core.Size;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
@@ -103,7 +103,7 @@ public class ColorMatrix {
      *
      * @param src the matrix to create from
      */
-    public ColorMatrix(@Nonnull ColorMatrix src) {
+    public ColorMatrix(@NonNull ColorMatrix src) {
         set(src);
     }
 
@@ -126,7 +126,7 @@ public class ColorMatrix {
      *
      * @param src the matrix to copy from
      */
-    public void set(@Nonnull ColorMatrix src) {
+    public void set(@NonNull ColorMatrix src) {
         set(src.mMat, 0);
     }
 
@@ -157,7 +157,7 @@ public class ColorMatrix {
      *
      * @param src the array to copy from
      */
-    public void set(@Nonnull ByteBuffer src) {
+    public void set(@NonNull ByteBuffer src) {
         int offset = src.position();
         for (int i = 0; i < 20; i++) {
             mMat[i] = src.getFloat(offset);
@@ -171,7 +171,7 @@ public class ColorMatrix {
      *
      * @param src the array to copy from
      */
-    public void set(@Nonnull FloatBuffer src) {
+    public void set(@NonNull FloatBuffer src) {
         src.get(src.position(), mMat);
     }
 
@@ -180,7 +180,7 @@ public class ColorMatrix {
      *
      * @param dst the matrix to store
      */
-    public void store(@Nonnull ColorMatrix dst) {
+    public void store(@NonNull ColorMatrix dst) {
         store(dst.mMat, 0);
     }
 
@@ -208,7 +208,7 @@ public class ColorMatrix {
      *
      * @param dst the pointer of the array to store
      */
-    public void store(@Nonnull ByteBuffer dst) {
+    public void store(@NonNull ByteBuffer dst) {
         int offset = dst.position();
         for (int i = 0; i < 20; i++) {
             dst.putFloat(offset, mMat[i]);
@@ -221,7 +221,7 @@ public class ColorMatrix {
      *
      * @param dst the pointer of the array to store
      */
-    public void store(@Nonnull FloatBuffer dst) {
+    public void store(@NonNull FloatBuffer dst) {
         dst.put(dst.position(), mMat);
     }
 
@@ -314,7 +314,7 @@ public class ColorMatrix {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat(@Nonnull ColorMatrix lhs) {
+    public void preConcat(@NonNull ColorMatrix lhs) {
         set_concat(mMat, lhs.mMat, mMat);
     }
 
@@ -332,7 +332,7 @@ public class ColorMatrix {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat(@Nonnull ColorMatrix rhs) {
+    public void postConcat(@NonNull ColorMatrix rhs) {
         set_concat(mMat, mMat, rhs.mMat);
     }
 
@@ -349,7 +349,7 @@ public class ColorMatrix {
      * same matrix as <code>this</code>.
      * </p>
      */
-    public void setConcat(@Nonnull ColorMatrix lhs, @Nonnull ColorMatrix rhs) {
+    public void setConcat(@NonNull ColorMatrix lhs, @NonNull ColorMatrix rhs) {
         set_concat(mMat, lhs.mMat, rhs.mMat);
     }
 

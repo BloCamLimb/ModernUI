@@ -22,9 +22,9 @@ package icyllis.arc3d.core;
 import icyllis.arc3d.engine.RecordingContext;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -142,12 +142,12 @@ public class Canvas implements AutoCloseable {
         this(new NoPixelsDevice(0, 0, Math.max(width, 0), Math.max(height, 0)));
     }
 
-    protected Canvas(@Nonnull Rect2ic bounds) {
+    protected Canvas(@NonNull Rect2ic bounds) {
         this(new NoPixelsDevice(bounds.isEmpty() ? Rect2i.empty() : bounds));
     }
 
     @ApiStatus.Internal
-    public Canvas(@SharedPtr Device device) {
+    public Canvas(@Nullable @SharedPtr Device device) {
         if (device == null) {
             device = new NoPixelsDevice(Rect2i.empty());
         }
@@ -163,7 +163,7 @@ public class Canvas implements AutoCloseable {
      *
      * @return dimensions and ColorType of Canvas
      */
-    @Nonnull
+    @NonNull
     public final ImageInfo getImageInfo() {
         return onGetImageInfo();
     }
@@ -634,7 +634,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param matrix the matrix to premultiply with the current matrix
      */
-    public final void concat(@Nonnull Matrixc matrix) {
+    public final void concat(@NonNull Matrixc matrix) {
         if (matrix.isIdentity()) {
             return;
         }
@@ -650,7 +650,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param matrix the matrix to premultiply with the current matrix
      */
-    public final void concat(@Nonnull Matrix4c matrix) {
+    public final void concat(@NonNull Matrix4c matrix) {
         checkForDeferredSave();
         Matrix4 transform = top().mMatrix;
         transform.preConcat(matrix);
@@ -664,7 +664,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param matrix matrix to copy, replacing the current matrix
      */
-    public final void setMatrix(@Nonnull Matrix4c matrix) {
+    public final void setMatrix(@NonNull Matrix4c matrix) {
         checkForDeferredSave();
         Matrix4 transform = top().mMatrix;
         transform.set(matrix);
@@ -1591,11 +1591,11 @@ public class Canvas implements AutoCloseable {
      * @param font       typeface, text size and so, used to describe the text
      * @param paint      blend, color, and so on, used to draw
      */
-    public final void drawGlyphs(@Nonnull int[] glyphs, int glyphOffset,
-                                 @Nonnull float[] positions, int positionOffset,
+    public final void drawGlyphs(int @NonNull[] glyphs, int glyphOffset,
+            float @NonNull[] positions, int positionOffset,
                                  int glyphCount,
                                  float originX, float originY,
-                                 @Nonnull Font font, @Nonnull Paint paint) {
+                                 @NonNull Font font, @NonNull Paint paint) {
         if (glyphCount <= 0) {
             return;
         }
@@ -1627,7 +1627,7 @@ public class Canvas implements AutoCloseable {
      * @param paint   blend, color, stroking, and so on, used to draw
      */
     public final void drawTextBlob(TextBlob blob, float originX, float originY,
-                                   @Nonnull Paint paint) {
+                                   @NonNull Paint paint) {
         if (blob == null) {
             return;
         }
@@ -1699,7 +1699,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param storage transformation from local coordinates to device / pixels.
      */
-    public final void getLocalToDevice(@Nonnull Matrix4 storage) {
+    public final void getLocalToDevice(@NonNull Matrix4 storage) {
         top().mMatrix.store(storage);
     }
 
@@ -1709,7 +1709,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param storage transformation from local coordinates to device / pixels.
      */
-    public final void getLocalToDevice(@Nonnull Matrix storage) {
+    public final void getLocalToDevice(@NonNull Matrix storage) {
         top().mMatrix.toMatrix(storage);
     }
 
@@ -1727,7 +1727,7 @@ public class Canvas implements AutoCloseable {
         }
     }
 
-    @Nonnull
+    @NonNull
     protected ImageInfo onGetImageInfo() {
         return mRootDevice.getImageInfo();
     }
@@ -1772,7 +1772,7 @@ public class Canvas implements AutoCloseable {
     protected void didSetMatrix(Matrix4c matrix) {
     }
 
-    @Nonnull
+    @NonNull
     private MCRec push() {
         final int i = ++mMCIndex;
         MCRec[] stack = mMCStack;
@@ -1795,14 +1795,14 @@ public class Canvas implements AutoCloseable {
         }
     }
 
-    @Nonnull
+    @NonNull
     private MCRec top() {
         return mMCStack[mMCIndex];
     }
 
     // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
     // operations should route to this device.
-    @Nonnull
+    @NonNull
     private Device topDevice() {
         return top().mDevice;
     }

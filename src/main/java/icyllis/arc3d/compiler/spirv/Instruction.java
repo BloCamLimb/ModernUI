@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.compiler.spirv;
 
+import it.unimi.dsi.fastutil.ints.IntArrays;
+
 import java.util.Arrays;
 
 /**
@@ -40,6 +42,7 @@ sealed class Instruction permits InstructionBuilder {
     transient int mHash;
 
     Instruction() {
+        mWords = IntArrays.EMPTY_ARRAY;
     }
 
     Instruction(int opcode,

@@ -20,11 +20,12 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.lwjgl.util.spvc.Spv;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.OptionalLong;
 
@@ -43,7 +44,7 @@ public class Type extends Symbol {
      */
     public record Field(int position, Modifiers modifiers, Type type, String name) {
 
-        @Nonnull
+        @NonNull
         @Override
         public String toString() {
             return modifiers.toString() + type.getName() + " " + name + ";";
@@ -90,8 +91,7 @@ public class Type extends Symbol {
     /**
      * Creates an alias which maps to another type.
      */
-    @Nonnull
-    public static Type makeAliasType(String name, Type type) {
+    public static @NonNull Type makeAliasType(@NonNull String name, @NonNull Type type) {
         assert (type == type.resolve());
         return new AliasType(type.mPosition, name, type);
     }
@@ -99,7 +99,7 @@ public class Type extends Symbol {
     /**
      * Creates an alias which maps to another type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeAliasType(int position, String name, Type type) {
         assert (type == type.resolve());
         return new AliasType(position, name, type);
@@ -109,7 +109,7 @@ public class Type extends Symbol {
      * Create a generic type which maps to the listed types
      * (e.g. __genFType is a generic type which can match float, float2, float3 or float4).
      */
-    @Nonnull
+    @NonNull
     public static Type makeGenericType(String name, Type... types) {
         for (Type type : types) {
             assert (type == type.resolve());
@@ -122,7 +122,7 @@ public class Type extends Symbol {
      *
      * @param kind a scalar kind
      */
-    @Nonnull
+    @NonNull
     public static Type makeScalarType(String name, String desc,
                                       byte kind, int rank, int width) {
         return makeScalarType(name, desc, kind, rank, width, width);
@@ -133,7 +133,7 @@ public class Type extends Symbol {
      *
      * @param kind a scalar kind
      */
-    @Nonnull
+    @NonNull
     public static Type makeScalarType(String name, String desc,
                                       byte kind, int rank, int minWidth, int width) {
         assert minWidth == width || (width == 32 && minWidth < width);
@@ -145,7 +145,7 @@ public class Type extends Symbol {
      *
      * @param componentType a scalar type
      */
-    @Nonnull
+    @NonNull
     public static Type makeVectorType(String name, String desc,
                                       Type componentType, int rows) {
         assert (componentType == componentType.resolve());
@@ -157,7 +157,7 @@ public class Type extends Symbol {
      *
      * @param columnType a vector type
      */
-    @Nonnull
+    @NonNull
     public static Type makeMatrixType(String name, String desc,
                                       Type columnType, int cols) {
         assert (columnType == columnType.resolve());
@@ -179,7 +179,7 @@ public class Type extends Symbol {
      * @param component  e.g. texture2D has a type of half
      * @param dimensions SpvDim (e.g. {@link Spv#SpvDim1D})
      */
-    @Nonnull
+    @NonNull
     public static Type makeSamplerType(String name, String abbr, Type component, int dimensions,
                                        boolean isShadow, boolean isArrayed, boolean isMultiSampled,
                                        boolean isSampled, boolean isSampler) {
@@ -191,7 +191,7 @@ public class Type extends Symbol {
     /**
      * Create an image or subpass type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeImageType(String name, String abbr, Type component, int dimensions,
                                      boolean isArrayed, boolean isMultiSampled) {
         assert (component.isScalar());
@@ -202,7 +202,7 @@ public class Type extends Symbol {
     /**
      * Create a texture type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeTextureType(String name, String abbr, Type component, int dimensions,
                                        boolean isArrayed, boolean isMultiSampled) {
         assert (component.isScalar());
@@ -213,7 +213,7 @@ public class Type extends Symbol {
     /**
      * Create a separate sampler type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeSeparateType(String name, String abbr, Type component, boolean isShadow) {
         assert (component.isVoid());
         return makeSamplerType(name, abbr, component, /*dimensions*/-1, isShadow, /*isArrayed*/false,
@@ -223,7 +223,7 @@ public class Type extends Symbol {
     /**
      * Create a combined sampler type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeCombinedType(String name, String abbr, Type component, int dimensions,
                                         boolean isShadow, boolean isArrayed, boolean isMultiSampled) {
         assert (component.isScalar());
@@ -236,7 +236,7 @@ public class Type extends Symbol {
      *
      * @param kind a type kind
      */
-    @Nonnull
+    @NonNull
     public static Type makeSpecialType(String name, String abbr, byte kind) {
         return new Type(name, abbr, kind);
     }
@@ -246,7 +246,7 @@ public class Type extends Symbol {
      *
      * @param type the element type
      */
-    @Nonnull
+    @NonNull
     public static Type makeArrayType(String name, Type type, int size) {
         assert !type.isArray();
         return new ArrayType(name, type, size);
@@ -255,9 +255,9 @@ public class Type extends Symbol {
     /**
      * Creates a struct type with the given fields. Reports an error if the struct is ill-formed.
      */
-    @Nonnull
-    public static Type makeStructType(@Nonnull Context context, int position,
-                                      @Nonnull String name, @Nonnull List<Field> fields,
+    @NonNull
+    public static Type makeStructType(@NonNull Context context, int position,
+                                      @NonNull String name, @NonNull List<Field> fields,
                                       boolean interfaceBlock) {
         String structOrBlock = interfaceBlock ? "block" : "struct";
         if (fields.isEmpty()) {
@@ -282,7 +282,7 @@ public class Type extends Symbol {
                 nestingDepth + 1, interfaceBlock);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public SymbolKind getKind() {
         return SymbolKind.TYPE;
@@ -291,7 +291,7 @@ public class Type extends Symbol {
     /**
      * Returns this.
      */
-    @Nonnull
+    @NonNull
     @Override
     public final Type getType() {
         return this;
@@ -300,7 +300,7 @@ public class Type extends Symbol {
     /**
      * If this is an alias, returns the underlying type, otherwise returns this.
      */
-    @Nonnull
+    @NonNull
     public Type resolve() {
         return this;
     }
@@ -309,8 +309,7 @@ public class Type extends Symbol {
      * For arrays, returns the base type. For matrices, returns the column vector type.
      * For vectors, returns the scalar type. For all other types, returns the type itself.
      */
-    @Nonnull
-    public Type getElementType() {
+    public @NonNull Type getElementType() {
         return this;
     }
 
@@ -320,7 +319,7 @@ public class Type extends Symbol {
      * of Float). For arrays, returns the component type of their base type. For all other types,
      * returns the type itself.
      */
-    @Nonnull
+    @NonNull
     public Type getComponentType() {
         return this;
     }
@@ -328,14 +327,14 @@ public class Type extends Symbol {
     /**
      * Returns true if these types are equal after alias resolution.
      */
-    public final boolean matches(@Nonnull Type other) {
+    public final boolean matches(@NonNull Type other) {
         return resolve().getName().equals(other.resolve().getName());
     }
 
     /**
      * Returns a descriptor of the type, meant for name-mangling. (e.g. float4x4 -> f44)
      */
-    @Nonnull
+    @NonNull
     public final String getDesc() {
         return mDesc;
     }
@@ -354,7 +353,7 @@ public class Type extends Symbol {
         return kNonScalar_ScalarKind;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public final String toString() {
         return getName();
@@ -540,11 +539,11 @@ public class Type extends Symbol {
         return CoercionCost.saturate();
     }
 
+
     /**
      * For generic types, returns the types that this generic type can substitute for.
      */
-    @Nonnull
-    public Type[] getCoercibleTypes() {
+    public Type @NonNull[] getCoercibleTypes() {
         throw new AssertionError();
     }
 
@@ -553,7 +552,7 @@ public class Type extends Symbol {
      * error and returns null.
      */
     @Nullable
-    public final Expression coerceExpression(@Nonnull Context context,
+    public final Expression coerceExpression(@NonNull Context context,
                                              @Nullable Expression expr) {
         if (expr == null || expr.isIncomplete(context)) {
             return null;
@@ -637,8 +636,7 @@ public class Type extends Symbol {
     }
 
     @Unmodifiable
-    @Nonnull
-    public Field[] getFields() {
+    public Field @NonNull[] getFields() {
         throw new AssertionError();
     }
 
@@ -743,7 +741,7 @@ public class Type extends Symbol {
     /**
      * Returns the corresponding vector type with the specified number of rows.
      */
-    public final Type toVector(@Nonnull Context context, int rows) {
+    public final Type toVector(@NonNull Context context, int rows) {
         return toCompound(context, 1, rows);
     }
 
@@ -751,7 +749,7 @@ public class Type extends Symbol {
      * Returns the corresponding vector or matrix type with the specified number of columns and
      * rows.
      */
-    public final Type toCompound(@Nonnull Context context, int cols, int rows) {
+    public final Type toCompound(@NonNull Context context, int cols, int rows) {
         if (!isScalar()) {
             throw new IllegalStateException("non-scalar");
         }
@@ -867,7 +865,7 @@ public class Type extends Symbol {
     /**
      * Converts an element type and a size (float, 10) into an array name ("float[10]").
      */
-    @Nonnull
+    @NonNull
     public String getArrayName(int size) {
         if (size == kUnsizedArray) {
             return getName() + "[]";
@@ -898,7 +896,7 @@ public class Type extends Symbol {
     /**
      * Reports errors and returns false if this type cannot be used as the element type for an array.
      */
-    public boolean isUsableInArray(@Nonnull Context context, int position) {
+    public boolean isUsableInArray(@NonNull Context context, int position) {
         if (isArray()) {
             // Vulkan: disallow multi-dimensional arrays
             context.error(position, "multi-dimensional arrays are not allowed");
@@ -920,7 +918,7 @@ public class Type extends Symbol {
      * Verifies that the expression is a valid constant array size for this type. Returns the array
      * size, or reports errors and returns zero if the expression isn't a valid literal value.
      */
-    public int convertArraySize(@Nonnull Context context, int position, Expression size) {
+    public int convertArraySize(@NonNull Context context, int position, @Nullable Expression size) {
         size = context.getTypes().mInt.coerceExpression(context, size);
         if (size == null) {
             return 0;
@@ -933,7 +931,7 @@ public class Type extends Symbol {
         return convertArraySize(context, position, size.mPosition, value.getAsLong());
     }
 
-    public int convertArraySize(@Nonnull Context context, int position, int sizePosition, long size) {
+    public int convertArraySize(@NonNull Context context, int position, int sizePosition, long size) {
         if (!isUsableInArray(context, position)) {
             return 0;
         }
@@ -1025,24 +1023,23 @@ public class Type extends Symbol {
 
         private final Type mUnderlyingType;
 
-        AliasType(int position, String name, Type type) {
+        AliasType(int position, String name, @NonNull Type type) {
             super(name, type.getDesc(), type.getTypeKind(), position);
             mUnderlyingType = type;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type resolve() {
             return mUnderlyingType;
         }
 
-        @Nonnull
         @Override
-        public Type getElementType() {
+        public @NonNull Type getElementType() {
             return mUnderlyingType.getElementType();
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getComponentType() {
             return mUnderlyingType.getComponentType();
@@ -1173,15 +1170,15 @@ public class Type extends Symbol {
             return mUnderlyingType.isStorageImage();
         }
 
-        @Nonnull
+
         @Override
-        public Type[] getCoercibleTypes() {
+        public Type @NonNull[] getCoercibleTypes() {
             return mUnderlyingType.getCoercibleTypes();
         }
 
-        @Nonnull
+
         @Override
-        public Field[] getFields() {
+        public Field @NonNull[] getFields() {
             return mUnderlyingType.getFields();
         }
     }
@@ -1222,13 +1219,13 @@ public class Type extends Symbol {
             return mElementType.getComponents() * mArraySize;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getElementType() {
             return mElementType;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getComponentType() {
             return mElementType.getComponentType();
@@ -1338,13 +1335,13 @@ public class Type extends Symbol {
             return true;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getElementType() {
             return mComponentType;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public ScalarType getComponentType() {
             return mComponentType;
@@ -1383,13 +1380,13 @@ public class Type extends Symbol {
             return true;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getElementType() {
             return mColumnType;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public ScalarType getComponentType() {
             return mColumnType.getComponentType();
@@ -1436,7 +1433,7 @@ public class Type extends Symbol {
             mIsShadow = isShadow;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getComponentType() {
             return mComponentType;
@@ -1519,9 +1516,9 @@ public class Type extends Symbol {
             return mInterfaceBlock;
         }
 
-        @Nonnull
+
         @Override
-        public Field[] getFields() {
+        public Field @NonNull[] getFields() {
             return mFields;
         }
 
@@ -1545,9 +1542,9 @@ public class Type extends Symbol {
             mCoercibleTypes = types;
         }
 
-        @Nonnull
+
         @Override
-        public Type[] getCoercibleTypes() {
+        public Type @NonNull[] getCoercibleTypes() {
             return mCoercibleTypes;
         }
     }

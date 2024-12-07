@@ -22,9 +22,9 @@ package icyllis.arc3d.core;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.intellij.lang.annotations.MagicConstant;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import javax.annotation.CheckReturnValue;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -230,8 +230,8 @@ public class PathMeasure {
      */
     @CheckReturnValue
     public boolean getPosTan(float distance,
-                             @Nullable float[] position, int positionOff,
-                             @Nullable float[] tangent, int tangentOff) {
+            float @Nullable[] position, int positionOff,
+            float @Nullable[] tangent, int tangentOff) {
         if (!hasContour()) {
             return false;
         }

@@ -21,8 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.StrikeDesc;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * The GPU GlyphStrike holds GPU {@link BakedGlyph Glyphs} for a Strike.
@@ -42,7 +41,7 @@ public class GlyphStrike {
     /**
      * Find or create Glyph and returns a pointer to it.
      */
-    @Nonnull
+    @NonNull
     public BakedGlyph getGlyph(int glyphID) {
         return mGlyphs.computeIfAbsent(glyphID, __ -> new BakedGlyph());
     }

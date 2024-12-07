@@ -21,8 +21,7 @@ package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-
-import javax.annotation.Nonnull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Base class for mesh-drawing {@link DrawOp DrawOps}.
@@ -76,7 +75,7 @@ public abstract class MeshDrawOp extends DrawOp implements Mesh {
         onPrepareDraws(state);
     }
 
-    @Nonnull
+    @NonNull
     protected abstract GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView,
                                                                      int pipelineFlags);
 

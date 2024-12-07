@@ -20,9 +20,9 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.Reference;
 import java.util.Arrays;
 
@@ -45,9 +45,9 @@ public final class TextBlob {
      * @return new text blob or null
      */
     @Nullable
-    public static TextBlob make(@Nonnull int[] glyphs, int glyphOffset,
-                                @Nonnull float[] positions, int positionOffset,
-                                int glyphCount, @Nonnull Font font,
+    public static TextBlob make(int @NonNull[] glyphs, int glyphOffset,
+            float @NonNull[] positions, int positionOffset,
+                                int glyphCount, @NonNull Font font,
                                 @Nullable Rect2fc bounds) {
         if (glyphCount <= 0) {
             return null;
@@ -83,13 +83,13 @@ public final class TextBlob {
                 return this;
             }
 
-            public RunBuffer addGlyphs(@Nonnull int[] glyphs, int offset, int count) {
+            public RunBuffer addGlyphs(int @NonNull[] glyphs, int offset, int count) {
                 System.arraycopy(glyphs, offset, mGlyphs, mGlyphOffset, count);
                 mGlyphOffset += count;
                 return this;
             }
 
-            public RunBuffer addPositions(@Nonnull float[] positions, int offset, int count) {
+            public RunBuffer addPositions(float @NonNull[] positions, int offset, int count) {
                 System.arraycopy(positions, offset, mPositions, mPositionOffset, count * 2);
                 mPositionOffset += count * 2;
                 return this;
@@ -137,8 +137,8 @@ public final class TextBlob {
          * @param bounds optional run bounding box
          * @return writable glyph buffer and position buffer
          */
-        @Nonnull
-        public RunBuffer allocRunPos(@Nonnull Font font, int count,
+        @NonNull
+        public RunBuffer allocRunPos(@NonNull Font font, int count,
                                      @Nullable Rect2fc bounds) {
             if (count <= 0) {
                 return mCurrentRunBuffer;
@@ -222,7 +222,7 @@ public final class TextBlob {
             return blob;
         }
 
-        private boolean mergeRun(@Nonnull Font font, int count) {
+        private boolean mergeRun(@NonNull Font font, int count) {
             assert count > 0;
             if (mRunCount == 0) {
                 return false;
@@ -319,8 +319,8 @@ public final class TextBlob {
      */
     // privilege method
     @ApiStatus.Internal
-    public static TextBlob makeNoCopy(@Nonnull int[] glyphs, @Nonnull float[] positions,
-                                      @Nonnull Font font, @Nullable Rect2fc bounds) {
+    public static TextBlob makeNoCopy(int @NonNull[] glyphs, float @NonNull[] positions,
+                                      @NonNull Font font, @Nullable Rect2fc bounds) {
         assert glyphs.length > 0 && positions.length == glyphs.length * 2;
         final var finalBounds = new Rect2f();
         if (bounds != null) {
@@ -390,12 +390,12 @@ public final class TextBlob {
      *
      * @return bounding box, may be conservative
      */
-    @Nonnull
+    @NonNull
     public Rect2fc getBounds() {
         return mBounds;
     }
 
-    public void getBounds(@Nonnull Rect2f bounds) {
+    public void getBounds(@NonNull Rect2f bounds) {
         mBounds.store(bounds);
     }
 

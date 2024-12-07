@@ -22,9 +22,9 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.trash.ops.OpsTask;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 @Deprecated
@@ -151,7 +151,7 @@ public class RenderTaskManager {
         return task;
     }
 
-    public void setLastRenderTask(@Nonnull SurfaceProxy surfaceProxy,
+    public void setLastRenderTask(@NonNull SurfaceProxy surfaceProxy,
                                   @Nullable RenderTask task) {
         var key = surfaceProxy.getUniqueID();
         if (task != null) {
@@ -162,7 +162,7 @@ public class RenderTaskManager {
     }
 
     // nullable
-    public RenderTask getLastRenderTask(@Nonnull SurfaceProxy proxy) {
+    public RenderTask getLastRenderTask(@NonNull SurfaceProxy proxy) {
         return mLastRenderTasks.get(proxy.getUniqueID());
     }
 
