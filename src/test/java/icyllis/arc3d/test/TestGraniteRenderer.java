@@ -46,6 +46,8 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.*;
 
+import static org.lwjgl.glfw.GLFW.*;
+
 public class TestGraniteRenderer {
 
     public static final Logger LOGGER = LoggerFactory.getLogger("Arc3D");
@@ -64,7 +66,7 @@ public class TestGraniteRenderer {
 
     public static final boolean TEST_OPENGL_ES = false;
 
-    public static final int TEST_SCENE = 0;
+    public static final int TEST_SCENE = 1;
     public static final boolean POST_PROCESS = false;
 
     public static final ExecutorService RECORDING_THREAD = Executors.newSingleThreadExecutor();
@@ -111,6 +113,8 @@ public class TestGraniteRenderer {
             GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
             GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
         }
+        glfwWindowHint(GLFW_DEPTH_BITS, 0);
+        glfwWindowHint(GLFW_STENCIL_BITS, 0);
         //GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Test Window", 0, 0);
         if (window == 0) {
@@ -317,7 +321,7 @@ public class TestGraniteRenderer {
                 Objects.requireNonNull(mPostSurface);
             }
 
-            {
+            /*{
                 int[] x = {0}, y = {0}, channels = {0};
                 var imgData = STBImage.stbi_load(
                         "F:/123459857_p0.png",
@@ -346,7 +350,7 @@ public class TestGraniteRenderer {
                     STBImage.stbi_image_free(imgData);
                     MemoryUtil.nmemFree(newPixels);
                 }
-            }
+            }*/
 
             if (mTestImage != null) {
                 var scalingMatrix = new Matrix();
