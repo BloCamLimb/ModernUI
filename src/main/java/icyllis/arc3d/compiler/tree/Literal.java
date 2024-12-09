@@ -124,7 +124,7 @@ public final class Literal extends Expression {
     }
 
     @Override
-    public OptionalDouble getConstantValue(int i) {
+    public @NonNull OptionalDouble getConstantValue(int i) {
         assert i == 0;
         return OptionalDouble.of(mValue);
     }

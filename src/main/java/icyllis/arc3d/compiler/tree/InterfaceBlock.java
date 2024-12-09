@@ -23,8 +23,10 @@ import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.ShaderKind;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.lang.ref.WeakReference;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -82,11 +84,11 @@ public final class InterfaceBlock extends TopLevelElement {
     }
 
     private static boolean checkFields(@NonNull Context context,
-            Type.Field @NonNull[] fields,
+                                       @Unmodifiable @NonNull List<Type.Field> fields,
                                        int blockStorage) {
         boolean success = true;
-        for (int i = 0; i < fields.length; i++) {
-            Type.Field field = fields[i];
+        for (int i = 0; i < fields.size(); i++) {
+            Type.Field field = fields.get(i);
             Modifiers fieldModifiers = field.modifiers();
             int permittedFlags = Modifiers.kStorage_Flags;
             int permittedLayoutFlags = 0;
@@ -117,7 +119,7 @@ public final class InterfaceBlock extends TopLevelElement {
             }
             if (field.type().isUnsizedArray()) {
                 if (blockStorage == Modifiers.kBuffer_Flag) {
-                    if (i != fields.length - 1) {
+                    if (i != fields.size() - 1) {
                         context.error(field.position(),
                                 "runtime sized array must be the last member of a shader storage block");
                         success = false;
@@ -195,11 +197,11 @@ public final class InterfaceBlock extends TopLevelElement {
 
         if (variable.getName().isEmpty()) {
             // This interface block is anonymous. Add each field to the top-level symbol table.
-            Type.Field[] fields = variable.getType().getFields();
-            for (int i = 0; i < fields.length; i++) {
+            var fields = variable.getType().getFields();
+            for (int i = 0; i < fields.size(); i++) {
                 context.getSymbolTable().insert(
                         context,
-                        new AnonymousField(fields[i].position(), variable, i)
+                        new AnonymousField(fields.get(i).position(), variable, i)
                 );
             }
         } else {

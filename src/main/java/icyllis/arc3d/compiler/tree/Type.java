@@ -164,8 +164,8 @@ public class Type extends Symbol {
     }
 
     /**
-     * Create a sampler/image type. Includes images, textures without sampler,
-     * textures with sampler and pure samplers.
+     * Create a sampler/image type. Includes images, subpass inputs, textures without sampler,
+     * textures with sampler, and pure samplers.
      * <ul>
      * <li>isSampled=true,isSampler=true: combined texture sampler (e.g. sampler2D)</li>
      * <li>isSampled=true,isSampler=false: pure texture (e.g. texture2D)</li>
@@ -277,7 +277,7 @@ public class Type extends Symbol {
             context.error(position, structOrBlock + " '" + name +
                     "' is too deeply nested");
         }
-        return new StructType(position, name, fields.toArray(new Field[0]),
+        return new StructType(position, name, fields,
                 nestingDepth + 1, interfaceBlock);
     }
 
@@ -522,9 +522,9 @@ public class Type extends Symbol {
             }
         }
         if (isGeneric()) {
-            final Type[] types = getCoercibleTypes();
-            for (int i = 0; i < types.length; i++) {
-                if (types[i].matches(other)) {
+            final var types = getCoercibleTypes();
+            for (int i = 0; i < types.size(); i++) {
+                if (types.get(i).matches(other)) {
                     return CoercionCost.widening(i + 1);
                 }
             }
@@ -532,11 +532,10 @@ public class Type extends Symbol {
         return CoercionCost.saturate();
     }
 
-
     /**
      * For generic types, returns the types that this generic type can substitute for.
      */
-    public Type @NonNull[] getCoercibleTypes() {
+    public @Unmodifiable List<Type> getCoercibleTypes() {
         throw new AssertionError();
     }
 
@@ -628,8 +627,7 @@ public class Type extends Symbol {
         throw new AssertionError();
     }
 
-    @Unmodifiable
-    public Field @NonNull[] getFields() {
+    public @Unmodifiable List<Field> getFields() {
         throw new AssertionError();
     }
 
@@ -1169,15 +1167,13 @@ public class Type extends Symbol {
             return mUnderlyingType.isStorageImage();
         }
 
-
         @Override
-        public Type @NonNull[] getCoercibleTypes() {
+        public @Unmodifiable List<Type> getCoercibleTypes() {
             return mUnderlyingType.getCoercibleTypes();
         }
 
-
         @Override
-        public Field @NonNull[] getFields() {
+        public @Unmodifiable List<Field> getFields() {
             return mUnderlyingType.getFields();
         }
     }
@@ -1481,17 +1477,17 @@ public class Type extends Symbol {
 
     public static final class StructType extends Type {
 
-        private final Field[] mFields;
+        private final @Unmodifiable List<Field> mFields;
         private final int mNestingDepth;
         private final boolean mInterfaceBlock;
         private final int mComponents;
 
         // name - the type name, not instance name
         // (interface block can have no instance name, but there must be type name)
-        StructType(int position, String name, Field[] fields, int nestingDepth,
+        StructType(int position, String name, List<Field> fields, int nestingDepth,
                    boolean interfaceBlock) {
             super(name, name, kStruct_TypeKind, position);
-            mFields = fields;
+            mFields = List.copyOf(fields);
             mNestingDepth = nestingDepth;
             mInterfaceBlock = interfaceBlock;
             int components = 0;
@@ -1515,9 +1511,8 @@ public class Type extends Symbol {
             return mInterfaceBlock;
         }
 
-
         @Override
-        public Field @NonNull[] getFields() {
+        public @Unmodifiable List<Field> getFields() {
             return mFields;
         }
 
@@ -1534,16 +1529,15 @@ public class Type extends Symbol {
 
     public static final class GenericType extends Type {
 
-        private final Type[] mCoercibleTypes;
+        private final @Unmodifiable List<Type> mCoercibleTypes;
 
         GenericType(String name, Type[] types) {
             super(name, "G", kGeneric_TypeKind);
-            mCoercibleTypes = types;
+            mCoercibleTypes = List.of(types);
         }
 
-
         @Override
-        public Type @NonNull[] getCoercibleTypes() {
+        public @Unmodifiable List<Type> getCoercibleTypes() {
             return mCoercibleTypes;
         }
     }

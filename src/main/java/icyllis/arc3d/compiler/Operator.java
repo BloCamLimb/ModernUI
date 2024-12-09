@@ -20,6 +20,8 @@
 package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.tree.Type;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.common.value.qual.MinLen;
 
 /**
  * Operators.
@@ -130,7 +132,7 @@ public enum Operator {
     /**
      * Returns the operator name surrounded by the expected whitespace for a tidy binary expression.
      */
-    public String getPrettyName() {
+    public @NonNull String getPrettyName() {
         return switch (this) {
             case ADD         -> " + ";
             case SUB         -> " - ";
@@ -174,7 +176,7 @@ public enum Operator {
      * Returns the operator name without any surrounding whitespace.
      */
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return switch (this) {
             case ADD         -> "+";
             case SUB         -> "-";
@@ -256,7 +258,7 @@ public enum Operator {
      * Given a compound assignment operator, returns the non-assignment version of the operator
      * (e.g. '+=' becomes '+')
      */
-    public Operator removeAssignment() {
+    public @NonNull Operator removeAssignment() {
         return switch (this) {
             case ADD_ASSIGN -> ADD;
             case SUB_ASSIGN -> SUB;
@@ -325,7 +327,7 @@ public enum Operator {
         };
     }
 
-    private boolean isMatrixMultiply(Type left, Type right) {
+    private boolean isMatrixMultiply(@NonNull Type left, @NonNull Type right) {
         if (this != MUL && this != MUL_ASSIGN) {
             return false;
         }
@@ -344,10 +346,10 @@ public enum Operator {
      * @param out left type, right type and result type, respectively
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean determineBinaryType(Context context,
-                                       Type left,
-                                       Type right,
-                                       Type[] out) {
+    public boolean determineBinaryType(@NonNull Context context,
+                                       @NonNull Type left,
+                                       @NonNull Type right,
+                                       Type @NonNull @MinLen(3) [] out) {
         assert (out.length >= 3);
         switch (this) {
             case ASSIGN -> {    // left = right

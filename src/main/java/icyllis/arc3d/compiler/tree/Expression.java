@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
+import icyllis.arc3d.compiler.Position;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.util.OptionalDouble;
@@ -106,31 +108,27 @@ public abstract class Expression extends Node {
      * `vec4(1, vec2(2), 3)` contains four compile-time constants: (1, 2, 2, 3)
      * `mat2(f)` contains four slots, and two are constant: (empty, 0, 0, empty)
      */
-    public OptionalDouble getConstantValue(int i) {
+    public @NonNull OptionalDouble getConstantValue(int i) {
         return OptionalDouble.empty();
     }
 
     /**
      * Returns a deep copy at the same position.
      */
-    @NonNull
     @Override
-    public final Expression clone() {
+    public final @NonNull Expression clone() {
         return clone(mPosition);
     }
 
-    @NonNull
-    public abstract Expression clone(int position);
+    public abstract @NonNull Expression clone(int position);
 
     /**
      * Returns a description of the expression.
      */
-    @NonNull
     @Override
-    public final String toString() {
+    public final @NonNull String toString() {
         return toString(Operator.PRECEDENCE_EXPRESSION);
     }
 
-    @NonNull
-    public abstract String toString(int parentPrecedence);
+    public abstract @NonNull String toString(int parentPrecedence);
 }

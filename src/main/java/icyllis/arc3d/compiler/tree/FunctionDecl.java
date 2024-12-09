@@ -144,9 +144,9 @@ public final class FunctionDecl extends Symbol {
     private static int findGenericIndex(@NonNull Type concreteType,
                                         @NonNull Type genericType,
                                         boolean allowNarrowing) {
-        Type[] types = genericType.getCoercibleTypes();
-        for (int index = 0; index < types.length; index++) {
-            if (concreteType.canCoerceTo(types[index], allowNarrowing)) {
+        final var types = genericType.getCoercibleTypes();
+        for (int index = 0; index < types.size(); index++) {
+            if (concreteType.canCoerceTo(types.get(index), allowNarrowing)) {
                 return index;
             }
         }
@@ -203,7 +203,7 @@ public final class FunctionDecl extends Symbol {
 
             // Make generic types concrete.
             if (otherParamType.isGeneric()) {
-                otherParamType = otherParamType.getCoercibleTypes()[genericIndex];
+                otherParamType = otherParamType.getCoercibleTypes().get(genericIndex);
             }
             // Detect type mismatches.
             if (!paramType.matches(otherParamType)) {
@@ -378,7 +378,7 @@ public final class FunctionDecl extends Symbol {
     // returns returnType
     @Nullable
     public Type resolveParameterTypes(@NonNull List<Expression> arguments,
-                                      List<Type> outParameterTypes) {
+                                      @NonNull List<Type> outParameterTypes) {
         List<Variable> parameters = mParameters;
         assert parameters.size() == arguments.size();
 
@@ -401,7 +401,7 @@ public final class FunctionDecl extends Symbol {
                     return null;
                 }
             }
-            outParameterTypes.add(parameterType.getCoercibleTypes()[genericIndex]);
+            outParameterTypes.add(parameterType.getCoercibleTypes().get(genericIndex));
         }
         // Apply the generic index to our return type.
         Type returnType = mReturnType;
@@ -410,7 +410,7 @@ public final class FunctionDecl extends Symbol {
                 // We don't support functions with a generic return type and no other generics.
                 return null;
             }
-            return returnType.getCoercibleTypes()[genericIndex];
+            return returnType.getCoercibleTypes().get(genericIndex);
         } else {
             return returnType;
         }
