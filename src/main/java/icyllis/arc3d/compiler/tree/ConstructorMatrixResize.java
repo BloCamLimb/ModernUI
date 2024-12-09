@@ -55,7 +55,7 @@ public final class ConstructorMatrixResize extends ConstructorCall {
     }
 
     @Override
-    public OptionalDouble getConstantValue(int i) {
+    public @NonNull OptionalDouble getConstantValue(int i) {
         int rows = getType().getRows();
         int row = i % rows;
         int col = i / rows;

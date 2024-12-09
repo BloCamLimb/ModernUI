@@ -31,8 +31,8 @@ public final class AnonymousField extends Symbol {
     private final Variable mContainer;
     private final int mFieldIndex;
 
-    public AnonymousField(int position, Variable container, int fieldIndex) {
-        super(position, container.getType().getFields()[fieldIndex].name());
+    public AnonymousField(int position, @NonNull Variable container, int fieldIndex) {
+        super(position, container.getType().getFields().get(fieldIndex).name());
         mContainer = container;
         mFieldIndex = fieldIndex;
     }
@@ -46,14 +46,14 @@ public final class AnonymousField extends Symbol {
     @NonNull
     @Override
     public Type getType() {
-        return mContainer.getType().getFields()[mFieldIndex].type();
+        return mContainer.getType().getFields().get(mFieldIndex).type();
     }
 
     public int getFieldIndex() {
         return mFieldIndex;
     }
 
-    public Variable getContainer() {
+    public @NonNull Variable getContainer() {
         return mContainer;
     }
 

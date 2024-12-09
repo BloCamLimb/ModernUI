@@ -948,8 +948,8 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
         int offset = 0;
         int[] size = new int[3]; // size, matrix stride and array stride
-        for (int i = 0; i < fields.length; i++) {
-            var field = fields[i];
+        for (int i = 0; i < fields.size(); i++) {
+            var field = fields.get(i);
             if (unique) {
                 if (mEmitNames) {
                     writeInstruction(SpvOpMemberName, resultId, i, field.name(), mNameBuffer);
@@ -1239,7 +1239,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         assert !type.isVector() || count == type.getRows();
         assert !type.isMatrix() || count == type.getCols();
         assert !type.isArray() || count == type.getArraySize();
-        assert !type.isStruct() || count == type.getFields().length;
+        assert !type.isStruct() || count == type.getFields().size();
         int typeId = writeType(type);
         return writeInstructionWithCache(
                 getInstBuilder(SpvOpConstantComposite)

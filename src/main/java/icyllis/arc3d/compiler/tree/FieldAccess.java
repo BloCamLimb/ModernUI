@@ -36,7 +36,7 @@ public final class FieldAccess extends Expression {
     private final boolean mAnonymousBlock;
 
     private FieldAccess(int position, Expression base, int fieldIndex, boolean anonymousBlock) {
-        super(position, base.getType().getFields()[fieldIndex].type());
+        super(position, base.getType().getFields().get(fieldIndex).type());
         mBase = base;
         mFieldIndex = fieldIndex;
         mAnonymousBlock = anonymousBlock;
@@ -57,9 +57,9 @@ public final class FieldAccess extends Expression {
         }
         //TODO length() method for vector, matrix and array
         if (baseType.isStruct()) {
-            final Type.Field[] fields = baseType.getFields();
-            for (int i = 0; i < fields.length; i++) {
-                if (fields[i].name().equals(name)) {
+            final var fields = baseType.getFields();
+            for (int i = 0; i < fields.size(); i++) {
+                if (fields.get(i).name().equals(name)) {
                     return FieldAccess.make(position, base, i, false);
                 }
             }
@@ -81,7 +81,7 @@ public final class FieldAccess extends Expression {
         if (!baseType.isStruct()) {
             throw new AssertionError();
         }
-        Objects.checkIndex(fieldIndex, baseType.getFields().length);
+        Objects.checkIndex(fieldIndex, baseType.getFields().size());
 
         return new FieldAccess(position, base, fieldIndex, anonymousBlock);
     }
@@ -127,6 +127,6 @@ public final class FieldAccess extends Expression {
         if (!s.isEmpty()) {
             s += ".";
         } // else anonymous block
-        return s + mBase.getType().getFields()[mFieldIndex].name();
+        return s + mBase.getType().getFields().get(mFieldIndex).name();
     }
 }

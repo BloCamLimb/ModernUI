@@ -659,8 +659,8 @@ public class Parser {
         if (peek(Token.TK_LBRACE)) {
             long start = nextToken();
             if (type.isStruct()) {
-                Type.Field[] fields = type.getFields();
-                ArrayList<Expression> args = new ArrayList<>(fields.length);
+                var fields = type.getFields();
+                ArrayList<Expression> args = new ArrayList<>(fields.size());
                 for (Type.Field field : fields) {
                     Expression expr = Initializer(field.type());
                     if (expr == null) {
@@ -673,10 +673,10 @@ public class Parser {
                 }
                 expect(Token.TK_RBRACE, "'}' to complete initializer list");
                 int pos = rangeFrom(start);
-                if (fields.length != args.size() || args.isEmpty()) {
+                if (fields.size() != args.size() || args.isEmpty()) {
                     mCompiler.getContext().error(pos,
                             String.format("invalid arguments to '%s' constructor " +
-                                    "(expected %d elements, but found %d)", type, fields.length,
+                                    "(expected %d elements, but found %d)", type, fields.size(),
                             args.size()));
                 }
                 return ConstructorStruct.convert(mCompiler.getContext(),

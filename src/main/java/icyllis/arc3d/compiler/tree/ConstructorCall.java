@@ -65,7 +65,7 @@ public abstract class ConstructorCall extends Expression {
         if (type.isArray()) {
             return ConstructorArray.convert(context, pos, type, args);
         }
-        if (type.isStruct() && type.getFields().length > 0) {
+        if (type.isStruct() && !type.getFields().isEmpty()) {
             return ConstructorStruct.convert(context, pos, type, args);
         }
         context.error(pos, "cannot construct '" + type + "'");
@@ -105,7 +105,7 @@ public abstract class ConstructorCall extends Expression {
     }
 
     @Override
-    public OptionalDouble getConstantValue(int i) {
+    public @NonNull OptionalDouble getConstantValue(int i) {
         assert (i >= 0 && i < getType().getComponents());
         for (Expression arg : mArguments) {
             int components = arg.getType().getComponents();
