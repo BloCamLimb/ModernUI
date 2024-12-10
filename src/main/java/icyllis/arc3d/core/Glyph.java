@@ -25,8 +25,57 @@ import sun.misc.Unsafe;
 /**
  * Represents a CPU glyph + digest information for GPU drawing,
  * managed by {@link Strike}.
+ * <p>
+ * GlyphID is represented as an int value. For TrueType/OpenType fonts,
+ * glyph ID (or glyph index) is a 16-bit unsigned int. For composite fonts
+ * (mapping a logical font to a set of physical fonts) in JDK, the slot index
+ * is stored in the higher 8 bits, then the 16-24 bits is reserved.
+ * <p>
+ * Another form of GlyphID is PackedGlyphID, which is also represented by an
+ * int value. It stores sub-pixel information based on the GlyphID. We use
+ * bit 22 and bit 23 to represent the sub-pixel X positions of glyph rendering at
+ * 0.0, 0.25, 0.5, and 0.75 in the horizontal direction.
+ * <p>
+ * If sub-pixel positioning is not required, then GlyphID and PackedGlyphID are
+ * interchangeable.
+ *
+ * <ul>
+ * <li>0-16 bits: glyph index</li>
+ * <li>16-22 bits: reserved</li>
+ * <li>22-24 bits: sub-pixel X position</li>
+ * <li>24-32 bits: slot index</li>
+ * </ul>
  */
 public final class Glyph {
+
+    // we have 4 sub-pixel positions, use two bits
+    // 0.0~0.25, 0.25~0.5, 0.5~0.75, 0.75~1.0
+    public static final int kSubPixelPosLen = 2;
+    public static final int kSubPixelPosMask = (1 << kSubPixelPosLen) - 1;
+    public static final int kSubPixelXShift = 22;
+    public static final int kSubPixelXMask = kSubPixelPosMask << kSubPixelXShift;
+
+    public static int packGlyphID(int glyphID, float xPos, int mask) {
+        final float magic = 1.0f * (1 << (kSubPixelPosLen + kSubPixelXShift));
+
+        xPos = (xPos - (float) Math.floor(xPos)) + 1.0f;
+        int subX = (int) (xPos * magic) & mask;
+
+        assert (glyphID & kSubPixelXMask) == 0;
+        assert subX / (1 << kSubPixelXShift) < (1 << kSubPixelPosLen);
+        return glyphID | subX;
+    }
+
+    public static int getGlyphID(int packedID) {
+        return packedID & (~kSubPixelXMask);
+    }
+
+    public static float getSubX(int packedID) {
+        final float magic = 1.0f / (1 << kSubPixelPosLen);
+
+        int subX = (packedID >> kSubPixelXShift) & kSubPixelPosMask;
+        return subX * magic;
+    }
 
     /**
      * Action for methods.
@@ -58,7 +107,10 @@ public final class Glyph {
     static {
         //noinspection ConstantValue
         assert (kMaxGlyphWidth - 1) * ((1 << 16) - 1) * 4 <= Integer.MAX_VALUE;
-        // (max width * max height * max bpp) <= int max
+        // the max glyph image width is 8191
+        // the max glyph image height is 65535
+        // the max bpp is 4
+        // assert (max width * max height * max bpp) <= int max
     }
 
     static final int kSizeOf = 48;
@@ -101,7 +153,15 @@ public final class Glyph {
     }
 
     public int getGlyphID() {
+        return getGlyphID(mID);
+    }
+
+    public int getPackedID() {
         return mID;
+    }
+
+    public float getSubX() {
+        return getSubX(mID);
     }
 
     /**

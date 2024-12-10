@@ -20,8 +20,8 @@
 package icyllis.arc3d.core;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.jetbrains.annotations.ApiStatus;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.concurrent.locks.ReentrantLock;
@@ -93,11 +93,11 @@ public final class Strike {
      * <p>
      * Requires lock.
      *
-     * @param glyphID typeface-specified glyph ID
+     * @param packedID typeface-specified glyph ID
      */
     @NonNull
-    public Glyph getGlyph(int glyphID) {
-        return digestFor(Glyph.kDirectMask, glyphID);
+    public Glyph getGlyph(int packedID) {
+        return digestFor(Glyph.kDirectMask, packedID);
     }
 
     /**
@@ -108,20 +108,20 @@ public final class Strike {
      * Requires lock.
      *
      * @param actionType e.g. {@link Glyph#kDirectMask}
-     * @param glyphID    typeface-specified glyph ID
+     * @param packedID   typeface-specified glyph ID
      */
     @NonNull
-    public Glyph digestFor(int actionType, int glyphID) {
+    public Glyph digestFor(int actionType, int packedID) {
         assert mLock.isLocked();
-        Glyph glyph = mGlyphs.get(glyphID);
+        Glyph glyph = mGlyphs.get(packedID);
         if (glyph != null && glyph.actionFor(actionType) != Glyph.kUnset_Action) {
             return glyph;
         }
 
         if (glyph == null) {
-            glyph = mScalerContext.makeGlyph(glyphID);
+            glyph = mScalerContext.makeGlyph(packedID);
             glyph.initActions();
-            mGlyphs.put(glyphID, glyph);
+            mGlyphs.put(packedID, glyph);
             mMemoryIncrease += Glyph.kSizeOf;
             if (glyph.setPathHasBeenCalled()) {
                 Path path = glyph.getPath();
@@ -170,8 +170,8 @@ public final class Strike {
      * <p>
      * Excludes lock.
      */
-    public Glyph @NonNull[] getMetrics(int @NonNull[] glyphs, int glyphOffset, int glyphCount,
-            Glyph @NonNull[] results) {
+    public Glyph @NonNull [] getMetrics(int @NonNull [] glyphs, int glyphOffset, int glyphCount,
+                                        Glyph @NonNull [] results) {
         assert results.length >= glyphCount;
         lock();
         try {
