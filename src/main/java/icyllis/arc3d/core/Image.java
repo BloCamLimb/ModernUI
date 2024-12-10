@@ -21,8 +21,8 @@ package icyllis.arc3d.core;
 
 import icyllis.arc3d.engine.Context;
 import org.jetbrains.annotations.ApiStatus;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Image describes a two-dimensional array of pixels to draw. The pixels may be

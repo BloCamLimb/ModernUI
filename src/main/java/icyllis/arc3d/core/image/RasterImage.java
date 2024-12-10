@@ -20,8 +20,8 @@
 package icyllis.arc3d.core.image;
 
 import icyllis.arc3d.core.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
 public class RasterImage extends Image {

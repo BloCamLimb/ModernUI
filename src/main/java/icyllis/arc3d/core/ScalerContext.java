@@ -20,7 +20,7 @@
 package icyllis.arc3d.core;
 
 import icyllis.arc3d.core.j2d.DrawBase;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 import sun.misc.Unsafe;
 
 import java.awt.image.BufferedImage;

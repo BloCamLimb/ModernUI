@@ -21,8 +21,8 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.BlendInfo;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Wraps the shader outputs and HW blend state that comprise a Porter Duff blend mode with coverage.

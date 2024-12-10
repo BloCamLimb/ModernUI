@@ -22,7 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 

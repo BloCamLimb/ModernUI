@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A variable declaration appearing at global scope. A global declaration like 'int x, y;' produces

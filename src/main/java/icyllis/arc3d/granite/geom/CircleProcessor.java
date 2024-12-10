@@ -22,7 +22,7 @@ package icyllis.arc3d.granite.geom;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.GeometryStep;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import static icyllis.arc3d.engine.Engine.*;
 

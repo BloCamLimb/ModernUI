@@ -21,7 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.BackendImage;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import static icyllis.arc3d.engine.Engine.*;
 

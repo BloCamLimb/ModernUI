@@ -21,8 +21,8 @@ package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;

@@ -24,8 +24,8 @@ import icyllis.arc3d.core.Matrix;
 import icyllis.arc3d.core.Matrixc;
 import icyllis.arc3d.core.Point;
 import icyllis.arc3d.core.SharedPtr;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.CheckReturnValue;

@@ -20,7 +20,7 @@
 package icyllis.arc3d.compiler.glsl;
 
 import it.unimi.dsi.fastutil.bytes.ByteArrays;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Write to a UTF-8 string stream.

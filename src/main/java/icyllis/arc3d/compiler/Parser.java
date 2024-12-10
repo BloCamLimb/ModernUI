@@ -23,8 +23,8 @@ import icyllis.arc3d.compiler.lex.Lexer;
 import icyllis.arc3d.compiler.lex.Token;
 import icyllis.arc3d.compiler.tree.*;
 import it.unimi.dsi.fastutil.longs.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.util.spvc.Spv;
 
 import java.util.*;

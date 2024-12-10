@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.tree.Type;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.common.value.qual.MinLen;
+import icyllis.arc3d.core.Size;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Operators.
@@ -349,7 +349,7 @@ public enum Operator {
     public boolean determineBinaryType(@NonNull Context context,
                                        @NonNull Type left,
                                        @NonNull Type right,
-                                       Type @NonNull @MinLen(3) [] out) {
+                                       @Size(3) Type @NonNull [] out) {
         assert (out.length >= 3);
         switch (this) {
             case ASSIGN -> {    // left = right

@@ -23,7 +23,7 @@ import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.Engine;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.NativeType;
 import org.lwjgl.vulkan.VK10;
 

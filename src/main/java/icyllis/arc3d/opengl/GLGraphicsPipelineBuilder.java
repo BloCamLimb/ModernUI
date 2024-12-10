@@ -23,7 +23,7 @@ import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.ShaderCaps;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.MemoryUtil;

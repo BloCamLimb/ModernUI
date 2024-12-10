@@ -23,7 +23,7 @@ import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.Buffer;
 import icyllis.arc3d.engine.Context;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
 import static icyllis.arc3d.engine.Engine.BufferUsageFlags;

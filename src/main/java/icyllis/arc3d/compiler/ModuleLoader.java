@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;

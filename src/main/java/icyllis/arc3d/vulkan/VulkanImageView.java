@@ -22,8 +22,8 @@ package icyllis.arc3d.vulkan;
 import icyllis.arc3d.engine.Engine.ImageType;
 import icyllis.arc3d.engine.ManagedResource;
 import icyllis.arc3d.engine.Swizzle;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.*;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 

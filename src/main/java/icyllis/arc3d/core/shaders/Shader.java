@@ -21,7 +21,7 @@ package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Shaders specify the source color(s) for what is being drawn. If a paint

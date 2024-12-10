@@ -23,7 +23,7 @@ import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SurfaceCharacterization;
 import icyllis.arc3d.granite.RendererProvider;
 import org.jetbrains.annotations.ApiStatus;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 /**

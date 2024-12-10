@@ -22,7 +22,7 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.engine.BackendFormat;
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.concurrent.Immutable;

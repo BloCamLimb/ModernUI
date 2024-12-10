@@ -20,7 +20,7 @@
 package icyllis.arc3d.core.j2d;
 
 import icyllis.arc3d.core.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.awt.Font;
 

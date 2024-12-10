@@ -22,7 +22,7 @@ package icyllis.arc3d.compiler.spirv;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Position;
 import it.unimi.dsi.fastutil.ints.IntArrays;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;

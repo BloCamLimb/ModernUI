@@ -22,7 +22,7 @@ package icyllis.arc3d.core;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.intellij.lang.annotations.MagicConstant;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.CheckReturnValue;
 import java.lang.annotation.Retention;

@@ -20,10 +20,10 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.Size;
 import icyllis.arc3d.core.UniqueID;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.common.value.qual.ArrayLenRange;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.Immutable;
@@ -205,8 +205,8 @@ public final class FramebufferDesc {
     }
 
     public FramebufferDesc(int width, int height, int sampleCount,
-                           @NonNull ColorAttachmentDesc
-                           @Nullable @ArrayLenRange(to = Caps.MAX_COLOR_TARGETS) [] colorAttachments,
+                           @NonNull @Size(max = Caps.MAX_COLOR_TARGETS) ColorAttachmentDesc
+                           @Nullable [] colorAttachments,
                            @Nullable DepthStencilAttachmentDesc depthStencilAttachment) {
         mWidth = width;
         mHeight = height;

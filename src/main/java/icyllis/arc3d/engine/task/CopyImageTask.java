@@ -21,7 +21,7 @@ package icyllis.arc3d.engine.task;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 public class CopyImageTask extends Task {
 

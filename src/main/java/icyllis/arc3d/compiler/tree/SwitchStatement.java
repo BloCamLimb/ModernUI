@@ -22,7 +22,7 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.ConstantFolder;
 import icyllis.arc3d.compiler.Context;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 

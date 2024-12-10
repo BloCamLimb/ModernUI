@@ -23,7 +23,7 @@ import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ShaderVar;
 import icyllis.arc3d.granite.shading.UniformHandler;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Formatter;

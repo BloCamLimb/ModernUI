@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Blend modes, all the blend equations apply to premultiplied colors.

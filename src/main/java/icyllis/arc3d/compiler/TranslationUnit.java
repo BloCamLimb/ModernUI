@@ -21,7 +21,7 @@ package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.analysis.SymbolUsage;
 import icyllis.arc3d.compiler.tree.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 

@@ -21,8 +21,8 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.SLDataType;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.*;

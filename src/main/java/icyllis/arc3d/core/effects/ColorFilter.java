@@ -20,8 +20,8 @@
 package icyllis.arc3d.core.effects;
 
 import icyllis.arc3d.core.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * ColorFilters are optional objects in the drawing pipeline. When present in

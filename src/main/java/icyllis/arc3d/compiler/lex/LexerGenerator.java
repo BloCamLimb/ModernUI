@@ -21,7 +21,7 @@ package icyllis.arc3d.compiler.lex;
 
 import icyllis.arc3d.core.MathUtil;
 import it.unimi.dsi.fastutil.ints.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;

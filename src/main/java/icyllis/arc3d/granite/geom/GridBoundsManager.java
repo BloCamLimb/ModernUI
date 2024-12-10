@@ -22,7 +22,7 @@ package icyllis.arc3d.granite.geom;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Rect2fc;
 import icyllis.arc3d.granite.DrawOrder;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 

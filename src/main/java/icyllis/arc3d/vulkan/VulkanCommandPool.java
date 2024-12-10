@@ -20,7 +20,7 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.ManagedResource;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 import org.lwjgl.vulkan.VkFenceCreateInfo;

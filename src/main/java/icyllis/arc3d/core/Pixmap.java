@@ -19,11 +19,11 @@
 
 package icyllis.arc3d.core;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.common.value.qual.ArrayLen;
-import org.checkerframework.common.value.qual.MinLen;
-import org.lwjgl.system.*;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.NativeType;
 import sun.misc.Unsafe;
 
 import java.util.Objects;
@@ -203,7 +203,7 @@ public class Pixmap {
      * Returns (0, 0) if pixels is NULL.
      */
     public void getPixelOrigin(long pix,
-                               int @NonNull @MinLen(2) [] origin) {
+                               @Size(2) int @NonNull [] origin) {
         long addr = getAddress();
         long rb = getRowBytes();
         if (pix == MemoryUtil.NULL || rb == 0) {
@@ -276,7 +276,7 @@ public class Pixmap {
      * @param y   row index, zero or greater, and less than height()
      * @param dst pixel converted to float color
      */
-    public void getColor4f(int x, int y,  @Size(4) float @NonNull[] dst) {
+    public void getColor4f(int x, int y, @Size(4) float @NonNull [] dst) {
         assert getAddress() != MemoryUtil.NULL;
         assert x < getWidth();
         assert y < getHeight();
@@ -297,7 +297,7 @@ public class Pixmap {
      * @param y   row index, zero or greater, and less than height()
      * @param src float color to set
      */
-    public void setColor4f(int x, int y,  @Size(4) float @NonNull[] src) {
+    public void setColor4f(int x, int y, @Size(4) float @NonNull [] src) {
         assert getAddress() != MemoryUtil.NULL;
         assert x < getWidth();
         assert y < getHeight();
@@ -409,7 +409,7 @@ public class Pixmap {
      * @param subset bounding box of pixels to write; may be null
      * @return true if pixels are changed
      */
-    public boolean clear( @Size(4) float @NonNull[] color,
+    public boolean clear(@Size(4) float @NonNull [] color,
                          @Nullable Rect2ic subset) {
         var ct = getColorType();
         if (ct == ColorInfo.CT_UNKNOWN) {
@@ -467,7 +467,7 @@ public class Pixmap {
             boolean fast = true;
             byte v0 = UNSAFE.getByte(dst);
             for (int i = 1; i < bpp; ++i) {
-                byte v = UNSAFE.getByte(dst+i);
+                byte v = UNSAFE.getByte(dst + i);
                 if (v != v0) {
                     fast = false;
                     break;
@@ -490,14 +490,14 @@ public class Pixmap {
             } else if (ct == ColorInfo.CT_RGB_888) {
                 // RGB_888 is the only type where bpp is not a power of 2
                 assert bpp == 3;
-                byte v1 = UNSAFE.getByte(dst+1);
-                byte v2 = UNSAFE.getByte(dst+2);
+                byte v1 = UNSAFE.getByte(dst + 1);
+                byte v2 = UNSAFE.getByte(dst + 2);
                 for (int y = clip.mTop; y < clip.mBottom; ++y) {
                     long addr = getAddress(clip.x(), y);
                     for (int i = 0, e = clip.width(); i < e; ++i) {
                         UNSAFE.putByte(base, addr, v0);
-                        UNSAFE.putByte(base, addr+1, v1);
-                        UNSAFE.putByte(base, addr+2, v2);
+                        UNSAFE.putByte(base, addr + 1, v1);
+                        UNSAFE.putByte(base, addr + 2, v2);
                         addr += 3;
                     }
                 }

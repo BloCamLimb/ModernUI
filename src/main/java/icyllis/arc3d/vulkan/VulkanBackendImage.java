@@ -22,7 +22,7 @@ package icyllis.arc3d.vulkan;
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.BackendImage;
 import icyllis.arc3d.engine.Engine.BackendApi;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import static org.lwjgl.vulkan.VK11.*;
 

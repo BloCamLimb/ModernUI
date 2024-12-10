@@ -21,7 +21,7 @@ package icyllis.arc3d.engine.trash;
 
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.GeometryStep;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class is used to generate a generic pipeline cache key.

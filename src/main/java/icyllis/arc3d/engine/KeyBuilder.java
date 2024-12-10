@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine;
 
 import it.unimi.dsi.fastutil.ints.IntArrays;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
