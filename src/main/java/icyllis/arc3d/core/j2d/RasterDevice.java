@@ -23,7 +23,7 @@ import icyllis.arc3d.core.Canvas;
 import icyllis.arc3d.core.Image;
 import icyllis.arc3d.core.Paint;
 import icyllis.arc3d.core.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;

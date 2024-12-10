@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A symbol which should be interpreted as a field access. Fields are added to the SymbolTable

@@ -22,8 +22,8 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.VertexShaderBuilder;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Iterator;
 

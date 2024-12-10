@@ -21,7 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.engine.BufferViewInfo;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.IntBuffer;

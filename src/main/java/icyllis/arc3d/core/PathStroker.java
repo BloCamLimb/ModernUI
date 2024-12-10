@@ -21,7 +21,7 @@ package icyllis.arc3d.core;
 
 import org.intellij.lang.annotations.PrintFormat;
 import org.jetbrains.annotations.Contract;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * PathStroker is a {@link PathConsumer} that converts paths by stroking paths.

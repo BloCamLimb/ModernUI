@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Limited set of GLSL versions we generate shaders for. Caller should round

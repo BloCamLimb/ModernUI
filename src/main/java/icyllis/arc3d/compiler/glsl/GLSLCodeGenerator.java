@@ -24,8 +24,8 @@ import icyllis.arc3d.compiler.tree.InterfaceBlock;
 import icyllis.arc3d.compiler.tree.Layout;
 import icyllis.arc3d.compiler.tree.Modifiers;
 import icyllis.arc3d.compiler.tree.Type;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;

@@ -22,7 +22,7 @@ package icyllis.arc3d.mock;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.BackendFormat;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
 

@@ -22,7 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link SurfaceAllocator} explicitly distributes {@link GpuSurface} at flush time.

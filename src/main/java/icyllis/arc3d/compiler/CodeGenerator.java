@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 

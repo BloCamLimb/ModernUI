@@ -21,7 +21,7 @@ package icyllis.arc3d.compiler.lex;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.jetbrains.annotations.Unmodifiable;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.function.IntPredicate;
 

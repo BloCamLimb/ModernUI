@@ -21,7 +21,7 @@ package icyllis.arc3d.compiler.spirv;
 
 import icyllis.arc3d.compiler.tree.Type;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 

@@ -20,7 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.ManagedResource;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 import icyllis.arc3d.core.SharedPtr;
 
 import static org.lwjgl.opengl.GL45C.*;

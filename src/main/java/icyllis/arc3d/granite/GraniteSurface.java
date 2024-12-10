@@ -22,8 +22,8 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.Image;
 import icyllis.arc3d.engine.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The surface that is backed by GPU.

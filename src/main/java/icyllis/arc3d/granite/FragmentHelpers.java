@@ -23,7 +23,7 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.core.effects.*;
 import icyllis.arc3d.core.shaders.*;
 import icyllis.arc3d.engine.*;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Build {@link icyllis.arc3d.engine.Key PaintParamsKey} and collect

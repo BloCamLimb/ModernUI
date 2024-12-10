@@ -20,7 +20,7 @@
 package icyllis.arc3d.core.effects;
 
 import icyllis.arc3d.core.*;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public final class ColorMatrixColorFilter implements ColorFilter {
 

@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.core.image;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.EOFException;
 import java.io.IOException;

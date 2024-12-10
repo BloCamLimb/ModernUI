@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents GPU image resources, which may be 2D or 3D. This class also represents a

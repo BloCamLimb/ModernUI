@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Descriptor of 3D API image/texture that can be shared between

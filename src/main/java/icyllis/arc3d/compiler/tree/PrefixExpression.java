@@ -21,7 +21,7 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.analysis.Analysis;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An expression modified by a unary operator appearing before it.

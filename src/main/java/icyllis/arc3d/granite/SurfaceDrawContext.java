@@ -23,7 +23,7 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 

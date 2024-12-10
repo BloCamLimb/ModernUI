@@ -24,8 +24,8 @@ import icyllis.arc3d.engine.Device;
 import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;

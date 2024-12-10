@@ -20,7 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.ManagedResource;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents OpenGL programs.

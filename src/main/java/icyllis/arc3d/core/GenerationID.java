@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An object with identity. This can be used to track content changes through

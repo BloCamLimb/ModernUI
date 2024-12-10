@@ -21,7 +21,7 @@ package icyllis.arc3d.engine.trash.ops;
 
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.engine.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 @Deprecated
 public final class ClearOp extends Op {

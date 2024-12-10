@@ -22,8 +22,8 @@ package icyllis.arc3d.core.shaders;
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.BitSet;

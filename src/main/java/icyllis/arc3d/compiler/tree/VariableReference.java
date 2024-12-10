@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A reference to a variable, through which it can be read or written.

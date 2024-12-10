@@ -20,7 +20,7 @@
 package icyllis.arc3d.core.effects;
 
 import icyllis.arc3d.core.Size;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;

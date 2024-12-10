@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Operator;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import icyllis.arc3d.compiler.Context;
 
 /**

@@ -21,8 +21,8 @@ package icyllis.arc3d.granite.shading;
 
 import icyllis.arc3d.engine.ShaderVar;
 import org.intellij.lang.annotations.PrintFormat;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryUtil;
 

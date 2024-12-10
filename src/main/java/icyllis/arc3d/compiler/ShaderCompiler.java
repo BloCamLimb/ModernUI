@@ -22,8 +22,8 @@ package icyllis.arc3d.compiler;
 import icyllis.arc3d.compiler.spirv.SPIRVCodeGenerator;
 import icyllis.arc3d.compiler.tree.Node;
 import org.jetbrains.annotations.ApiStatus;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

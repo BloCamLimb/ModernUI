@@ -22,7 +22,7 @@ package icyllis.arc3d.granite.shading;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ShaderVar;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class implements the various fragment builder interfaces.

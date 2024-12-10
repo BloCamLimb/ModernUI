@@ -22,7 +22,7 @@ package icyllis.arc3d.core;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.SharedContext;
 import org.jetbrains.annotations.ApiStatus;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
 

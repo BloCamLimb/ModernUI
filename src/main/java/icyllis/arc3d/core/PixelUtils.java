@@ -20,7 +20,7 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.Contract;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 

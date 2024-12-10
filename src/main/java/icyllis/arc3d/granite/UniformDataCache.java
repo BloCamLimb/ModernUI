@@ -20,8 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.MathUtil;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;

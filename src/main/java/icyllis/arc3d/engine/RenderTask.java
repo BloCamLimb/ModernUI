@@ -22,7 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.trash.ops.OpsTask;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;

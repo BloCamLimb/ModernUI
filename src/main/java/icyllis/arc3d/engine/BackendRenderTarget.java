@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.opengl.GLFramebufferInfo;
 import icyllis.arc3d.vulkan.VulkanImageDesc;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A BackendRenderTarget instance is initialized once, and may be shared.

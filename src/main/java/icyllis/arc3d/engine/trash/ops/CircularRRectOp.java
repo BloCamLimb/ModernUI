@@ -25,7 +25,7 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.granite.GeometryStep;
 import icyllis.arc3d.granite.shading.*;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import static icyllis.arc3d.engine.Engine.VertexAttribType;
 

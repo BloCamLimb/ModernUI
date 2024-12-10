@@ -22,7 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
 import icyllis.arc3d.engine.SamplerDesc;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.Arrays;

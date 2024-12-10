@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Types of shader-language-specific boxed variables we can create, shared constants.
