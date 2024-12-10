@@ -80,8 +80,8 @@ public abstract class ScalerContext {
     }
 
     @NonNull
-    public final Glyph makeGlyph(int glyphID) {
-        Glyph glyph = new Glyph(glyphID);
+    public final Glyph makeGlyph(int packedID) {
+        Glyph glyph = new Glyph(packedID);
         // subclass may return a different value
         glyph.mMaskFormat = getMaskFormat();
         GlyphMetrics metrics = generateMetrics(glyph);
