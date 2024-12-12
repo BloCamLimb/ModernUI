@@ -37,6 +37,9 @@ public final class Strike {
     private final StrikeDesc mStrikeDesc;
     private final StrikeCache mStrikeCache;
 
+    private final float mSubpixelRounding;
+    private final int mSubpixelFieldMask;
+
     private final ReentrantLock mLock = new ReentrantLock();
 
     @GuardedBy("mLock")
@@ -61,8 +64,15 @@ public final class Strike {
         mStrikeDesc = strikeDesc;
         mStrikeCache = strikeCache;
         mScalerContext = scalerContext;
+        if (scalerContext.isSubpixel()) {
+            mSubpixelRounding = 1.0f / (1 << (Glyph.kSubPixelPosLen + 1));
+            mSubpixelFieldMask = Glyph.kSubPixelXMask;
+        } else {
+            mSubpixelRounding = 0.5f;
+            mSubpixelFieldMask = 0;
+        }
         // approximate bytes used
-        mMemoryUsed = 16 + 56 + 8 + 8 + 8 + 8 + 80 + 8 + 8 + 8 + 8 + 8;
+        mMemoryUsed = 16 + 56 + 8 + 8 + 8 + 8 + 80 + 8 + 8 + 8 + 8 + 8 + 8;
     }
 
     public void lock() {
@@ -188,5 +198,13 @@ public final class Strike {
     // read only!!
     public StrikeDesc getStrikeDesc() {
         return mStrikeDesc;
+    }
+
+    public float getSubpixelRounding() {
+        return mSubpixelRounding;
+    }
+
+    public int getSubpixelFieldMask() {
+        return mSubpixelFieldMask;
     }
 }

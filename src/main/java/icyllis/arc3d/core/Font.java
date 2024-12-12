@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.core;
 
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
@@ -37,7 +38,8 @@ public class Font {
             kAntiAlias_Edging = 1;
 
     // private flags
-    static final int
+    private static final int
+            kSubpixelPositioning_Flag = 0x2,
             kLinearMetrics_Flag = 0x4;
 
     private Typeface mTypeface;
@@ -46,6 +48,7 @@ public class Font {
     private byte mEdging;
 
     public Font() {
+        mSize = 12;
     }
 
     public Font(@NonNull Font other) {
@@ -103,6 +106,7 @@ public class Font {
     /**
      * Whether edge pixels draw opaque or with partial transparency.
      */
+    @MagicConstant(intValues = {kAlias_Edging, kAntiAlias_Edging})
     public int getEdging() {
         return mEdging;
     }
@@ -111,8 +115,17 @@ public class Font {
      * Requests, but does not require, that edge pixels draw opaque or with
      * partial transparency.
      */
-    public void setEdging(int edging) {
+    public void setEdging(@MagicConstant(intValues = {kAlias_Edging, kAntiAlias_Edging}) int edging) {
         mEdging = (byte) edging;
+    }
+
+    /**
+     * Returns true if glyphs may be drawn at sub-pixel offsets.
+     *
+     * @return true if glyphs may be drawn at sub-pixel offsets.
+     */
+    public boolean isSubpixel() {
+        return (mFlags & kSubpixelPositioning_Flag) != 0;
     }
 
     /**
@@ -122,6 +135,19 @@ public class Font {
      */
     public boolean isLinearMetrics() {
         return (mFlags & kLinearMetrics_Flag) != 0;
+    }
+
+    /**
+     * Requests, but does not require, that glyphs respect sub-pixel positioning.
+     *
+     * @param subpixel setting for sub-pixel positioning
+     */
+    public void setSubpixel(boolean subpixel) {
+        if (subpixel) {
+            mFlags |= kSubpixelPositioning_Flag;
+        } else {
+            mFlags &= ~kSubpixelPositioning_Flag;
+        }
     }
 
     /**

@@ -61,8 +61,12 @@ public abstract class ScalerContext {
         return mDesc.getMaskFormat();
     }
 
+    public final boolean isSubpixel() {
+        return (mDesc.mFlags & StrikeDesc.kSubpixelPositioning_Flag) != 0;
+    }
+
     public final boolean isLinearMetrics() {
-        return (mDesc.getFlags() & StrikeDesc.kLinearMetrics_Flag) != 0;
+        return (mDesc.mFlags & StrikeDesc.kLinearMetrics_Flag) != 0;
     }
 
     private static void saturate_glyph_bounds(
@@ -225,7 +229,7 @@ public abstract class ScalerContext {
 
             if (mDesc.getFrameWidth() >= 0) {
                 strokeRec.setStrokeStyle(mDesc.getFrameWidth(),
-                        (mDesc.getFlags() & StrikeDesc.kFrameAndFill_Flag) != 0);
+                        (mDesc.mFlags & StrikeDesc.kFrameAndFill_Flag) != 0);
                 // glyphs are always closed contours, so cap type is ignored,
                 // so we just pass something.
                 strokeRec.setStrokeParams(Paint.CAP_BUTT,

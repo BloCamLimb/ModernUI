@@ -51,6 +51,8 @@ public final class TextBlobCache {
         private float mScaleY;
         private float mShearX;
         private float mShearY;
+        private float mTransX;
+        private float mTransY;
 
         private float mFrameWidth;
         private float mMiterLimit;
@@ -68,6 +70,8 @@ public final class TextBlobCache {
             mScaleY = other.mScaleY;
             mShearX = other.mShearX;
             mShearY = other.mShearY;
+            mTransX = other.mTransX;
+            mTransY = other.mTransY;
             mFrameWidth = other.mFrameWidth;
             mMiterLimit = other.mMiterLimit;
             mHasDirectSubRuns = other.mHasDirectSubRuns;
@@ -111,11 +115,17 @@ public final class TextBlobCache {
                 } else {
                     mShearX = mShearY = 0;
                 }
+                mTransX = positionMatrix.getTranslateX();
+                mTransY = positionMatrix.getTranslateY();
+                mTransX = StrikeDesc.round_mat_elem(mTransX - (float) Math.floor(mTransX));
+                mTransY = StrikeDesc.round_mat_elem(mTransY - (float) Math.floor(mTransY));
             } else {
                 mScaleX = 1;
                 mScaleY = 1;
                 mShearX = 0;
                 mShearY = 0;
+                mTransX = 0;
+                mTransY = 0;
             }
         }
 
@@ -125,6 +135,8 @@ public final class TextBlobCache {
             h = 31 * h + Float.floatToIntBits(mScaleY);
             h = 31 * h + Float.floatToIntBits(mShearX);
             h = 31 * h + Float.floatToIntBits(mShearY);
+            h = 31 * h + Float.floatToIntBits(mTransX);
+            h = 31 * h + Float.floatToIntBits(mTransY);
             h = 31 * h + Float.floatToIntBits(mFrameWidth);
             h = 31 * h + Float.floatToIntBits(mMiterLimit);
             h = 31 * h + (mHasDirectSubRuns ? 1 : 0);
@@ -142,6 +154,8 @@ public final class TextBlobCache {
                         mScaleY == that.mScaleY &&
                         mShearX == that.mShearX &&
                         mShearY == that.mShearY &&
+                        mTransX == that.mTransX &&
+                        mTransY == that.mTransY &&
                         mFrameWidth == that.mFrameWidth &&
                         mMiterLimit == that.mMiterLimit &&
                         mStyle == that.mStyle &&

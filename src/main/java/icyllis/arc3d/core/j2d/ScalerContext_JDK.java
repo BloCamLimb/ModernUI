@@ -64,15 +64,25 @@ public class ScalerContext_JDK extends ScalerContext {
     protected GlyphMetrics generateMetrics(Glyph glyph) {
         GlyphMetrics metrics = new GlyphMetrics(glyph.getMaskFormat());
         GlyphVector gv = mFont.createGlyphVector(mFRC, new int[]{glyph.getGlyphID()});
-        // JDK has a rasterization limit of 1024x1024 for getPixelBounds,
-        // gv.getVisualBounds() is equivalent to FT_Outline_Get_BBox
-        var pixelBounds = gv.getPixelBounds(null, 0, 0);
-        if (pixelBounds.isEmpty()) {
+        final boolean subpixel = isSubpixel();
+        Rectangle pixelBounds = null;
+        if (!subpixel) {
+            // JDK has a rasterization limit of 1024x1024 for getPixelBounds,
+            // gv.getVisualBounds() is equivalent to FT_Outline_Get_BBox
+            pixelBounds = gv.getPixelBounds(null, 0, 0);
+        }
+        // use floating-point bounds if subpixel or large
+        if (subpixel || pixelBounds.isEmpty()) {
             var bounds = gv.getVisualBounds();
             metrics.mLeft = (float) bounds.getMinX();
             metrics.mTop = (float) bounds.getMinY();
             metrics.mRight = (float) bounds.getMaxX();
             metrics.mBottom = (float) bounds.getMaxY();
+            if (metrics.mLeft < metrics.mRight && subpixel) {
+                float subX = glyph.getSubX();
+                metrics.mLeft += subX;
+                metrics.mRight += subX;
+            }
         } else {
             metrics.mLeft = (float) pixelBounds.getMinX();
             metrics.mTop = (float) pixelBounds.getMinY();
@@ -88,11 +98,28 @@ public class ScalerContext_JDK extends ScalerContext {
                 BufferedImage.TYPE_BYTE_GRAY);
         var g2d = bufferedImage.createGraphics();
 
-        // JDK will use freetype if text size < 100, otherwise use outline
         GlyphVector gv = mFont.createGlyphVector(mFRC, new int[]{glyph.getGlyphID()});
         g2d.setColor(Color.WHITE);
         g2d.setComposite(AlphaComposite.Src);
-        g2d.drawGlyphVector(gv, -glyph.getLeft(), -glyph.getTop());
+        float subX = glyph.getSubX();
+        if (subX == 0) {
+            // JDK will use freetype if text size < 100, otherwise use outline
+            g2d.drawGlyphVector(gv, -glyph.getLeft(), -glyph.getTop());
+        } else {
+            var outline = gv.getOutline(subX, 0);
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    glyph.getMaskFormat() != Mask.kBW_Format
+                            ? RenderingHints.VALUE_ANTIALIAS_ON
+                            : RenderingHints.VALUE_ANTIALIAS_OFF);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING,
+                    RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                    RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+            g2d.translate(-glyph.getLeft(), -glyph.getTop());
+            g2d.fill(outline);
+        }
 
         var data = ((DataBufferByte) bufferedImage.getRaster().getDataBuffer()).getData();
 

@@ -31,7 +31,8 @@ public final class StrikeDesc {
 
     public static final int
             kFrameAndFill_Flag = 0x01,
-            kLinearMetrics_Flag = 0x02;
+            kSubpixelPositioning_Flag = 0x02,
+            kLinearMetrics_Flag = 0x04;
 
     private Typeface mTypeface;
 
@@ -47,7 +48,7 @@ public final class StrikeDesc {
 
     private byte mMaskFormat;
     private byte mStrokeJoin;
-    private short mFlags;
+    public short mFlags;
 
     private PathEffect mPathEffect;
 
@@ -108,7 +109,7 @@ public final class StrikeDesc {
         int style = paint != null ? paint.getStyle() : Paint.FILL;
         float strokeWidth = paint != null ? paint.getStrokeWidth() : 0;
 
-        int flags = 0;
+        short flags = 0;
 
         if (style != Paint.FILL && strokeWidth >= 0) {
             mFrameWidth = strokeWidth;
@@ -137,28 +138,18 @@ public final class StrikeDesc {
             }
         };
 
+        if (font.isSubpixel()) {
+            flags |= kSubpixelPositioning_Flag;
+        }
         if (font.isLinearMetrics()) {
             flags |= kLinearMetrics_Flag;
         }
 
-        mFlags = (short) flags;
+        mFlags = flags;
 
         mPathEffect = paint != null ? paint.getPathEffect() : null;
 
-        int h = mTypeface.hashCode();
-        h = 31 * h + Float.floatToIntBits(mTextSize);
-        h = 31 * h + Float.floatToIntBits(mPostScaleX);
-        h = 31 * h + Float.floatToIntBits(mPostScaleY);
-        h = 31 * h + Float.floatToIntBits(mPostShearX);
-        h = 31 * h + Float.floatToIntBits(mPostShearY);
-        h = 31 * h + Float.floatToIntBits(mFrameWidth);
-        h = 31 * h + Float.floatToIntBits(mMiterLimit);
-        h = 31 * h + (int) mMaskFormat;
-        h = 31 * h + (int) mStrokeJoin;
-        h = 31 * h + (int) mFlags;
-        h = 31 * h + Objects.hashCode(mPathEffect);
-        mHash = h;
-
+        mHash = computeHashCode();
         return this;
     }
 
@@ -222,10 +213,6 @@ public final class StrikeDesc {
         return mStrokeJoin;
     }
 
-    public int getFlags() {
-        return mFlags & 0xFFFF;
-    }
-
     public PathEffect getPathEffect() {
         return mPathEffect;
     }
@@ -243,6 +230,22 @@ public final class StrikeDesc {
     @NonNull
     public ScalerContext createScalerContext() {
         return mTypeface.createScalerContext(this);
+    }
+
+    private int computeHashCode() {
+        int h = mTypeface.hashCode();
+        h = 31 * h + Float.floatToIntBits(mTextSize);
+        h = 31 * h + Float.floatToIntBits(mPostScaleX);
+        h = 31 * h + Float.floatToIntBits(mPostScaleY);
+        h = 31 * h + Float.floatToIntBits(mPostShearX);
+        h = 31 * h + Float.floatToIntBits(mPostShearY);
+        h = 31 * h + Float.floatToIntBits(mFrameWidth);
+        h = 31 * h + Float.floatToIntBits(mMiterLimit);
+        h = 31 * h + (int) mMaskFormat;
+        h = 31 * h + (int) mStrokeJoin;
+        h = 31 * h + (int) mFlags;
+        h = 31 * h + Objects.hashCode(mPathEffect);
+        return h;
     }
 
     @Override
