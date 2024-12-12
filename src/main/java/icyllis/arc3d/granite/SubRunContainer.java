@@ -344,6 +344,8 @@ public class SubRunContainer {
                 rejectedSize = 0;
         var runBounds = new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
                 Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+        float subpixelRounding = strike.getSubpixelRounding();
+        int subpixelFieldMask = strike.getSubpixelFieldMask();
         var bounds = new Rect2f();
         var mappedPos = new float[2];
         strike.lock();
@@ -356,19 +358,22 @@ public class SubRunContainer {
                     continue;
                 }
                 int glyphID = buffers.mSourceGlyphs[i];
-                var glyph = strike.digestFor(Glyph.kDirectMask, glyphID);
+                creationMatrix.mapPoints(
+                        buffers.mSourcePositions, j,
+                        mappedPos, 0, 1
+                );
+                mappedPos[0] += subpixelRounding;
+                mappedPos[1] += 0.5f;
+                int packedGlyphID = Glyph.packGlyphID(glyphID, mappedPos[0], subpixelFieldMask);
+                var glyph = strike.digestFor(Glyph.kDirectMask, packedGlyphID);
                 switch (glyph.actionFor(Glyph.kDirectMask)) {
                     case Glyph.kAccept_Action -> {
-                        creationMatrix.mapPoints(
-                                buffers.mSourcePositions, j,
-                                mappedPos, 0, 1
-                        );
-                        float roundedPosX = (float) Math.floor(mappedPos[0] + 0.5f);
-                        float roundedPosY = (float) Math.floor(mappedPos[1] + 0.5f);
+                        float roundedPosX = (float) Math.floor(mappedPos[0]);
+                        float roundedPosY = (float) Math.floor(mappedPos[1]);
                         glyph.getBounds(bounds);
                         bounds.offset(roundedPosX, roundedPosY);
                         runBounds.joinNoCheck(bounds);
-                        buffers.mAcceptedGlyphs[acceptedSize] = glyphID;
+                        buffers.mAcceptedGlyphs[acceptedSize] = packedGlyphID;
                         // accepted buffer index starts from zero, it's safe to use OR
                         buffers.mAcceptedPositions[acceptedSize << 1] = bounds.x();
                         buffers.mAcceptedPositions[(acceptedSize << 1) | 1] = bounds.y();
@@ -580,25 +585,21 @@ public class SubRunContainer {
                     // If clients use linear metrics and want grid alignment, they should align
                     // the origin instead of having us align the position of each glyph, which can
                     // greatly improve the cache hit rate.
-                    Matrix creationMatrix = new Matrix(positionMatrix);
-                    creationMatrix.setTranslateX(0);
-                    creationMatrix.setTranslateY(0);
-
                     strikeDesc.updateForMask(
-                            runFont, runPaint, creationMatrix
+                            runFont, runPaint, positionMatrix
                     );
 
                     Strike strike = strikeDesc.findOrCreateStrike(strikeCache);
 
                     var creationBounds = prepare_for_direct_mask_drawing(
-                            strike, creationMatrix, buffers
+                            strike, positionMatrix, buffers
                     );
                     buffers.setSourceToRejected();
 
                     if (buffers.mAcceptedGlyphCount > 0) {
                         add_multi_mask_format(container,
                                 strikeDesc,
-                                creationMatrix,
+                                positionMatrix,
                                 creationBounds,
                                 DirectMaskSubRun::new,
                                 buffers);

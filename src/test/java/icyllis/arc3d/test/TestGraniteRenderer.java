@@ -32,10 +32,8 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
 import org.lwjgl.opengles.*;
-import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +64,7 @@ public class TestGraniteRenderer {
 
     public static final boolean TEST_OPENGL_ES = false;
 
-    public static final int TEST_SCENE = 1;
+    public static final int TEST_SCENE = 3;
     public static final boolean POST_PROCESS = false;
 
     public static final ExecutorService RECORDING_THREAD = Executors.newSingleThreadExecutor();
@@ -93,13 +91,13 @@ public class TestGraniteRenderer {
         System.setProperty("java.awt.headless", "true");
         GLFW.glfwInit();
         LOGGER.info(Long.toString(ProcessHandle.current().pid()));
-        TinyFileDialogs.tinyfd_messageBox(
+        /*TinyFileDialogs.tinyfd_messageBox(
                 "Arc3D Test",
                 "Arc3D starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true
-        );
+        );*/
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         if (TEST_OPENGL_ES) {
@@ -411,11 +409,12 @@ public class TestGraniteRenderer {
             );
 
             Typeface_JDK typeface = new Typeface_JDK(
-                    new java.awt.Font("STXingKai", java.awt.Font.PLAIN, 1));
+                    new java.awt.Font("Microsoft YaHei", java.awt.Font.PLAIN, 1));
             {
-                char[] text = "TeaCon甲辰".toCharArray();
-                var vector = typeface.getFont().deriveFont(80F).layoutGlyphVector(
-                        new FontRenderContext(null, true, false),
+                char[] text = "9-nine-天色天歌天籁音".toCharArray();
+                float fontSize = 14;
+                var vector = typeface.getFont().deriveFont(fontSize).layoutGlyphVector(
+                        new FontRenderContext(null, true, true),
                         text, 0, text.length, java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
                 int nGlyphs = vector.getNumGlyphs();
                 int[] glyphs = vector.getGlyphCodes(0, nGlyphs, null);
@@ -423,8 +422,10 @@ public class TestGraniteRenderer {
 
                 Font font = new Font();
                 font.setTypeface(typeface);
-                font.setSize(80);
+                font.setSize(fontSize);
                 font.setEdging(Font.kAntiAlias_Edging);
+                font.setLinearMetrics(true);
+                font.setSubpixel(true);
 
                 /*Paint paint = new Paint();
                 paint.setStyle(Paint.STROKE);
@@ -742,11 +743,13 @@ public class TestGraniteRenderer {
                 canvas.translate(wid, 0);
                 canvas.drawRect(rect, paint);
             } else if (TEST_SCENE == 3) {
-                paint.setStyle(Paint.STROKE);
+                /*paint.setStyle(Paint.STROKE);
                 paint.setStrokeJoin(Paint.JOIN_MITER);
-                paint.setStrokeWidth(2);
-                canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 400, 400, paint);
-                canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 800, 620, paint);
+                paint.setStrokeWidth(2);*/
+                float scale = glfwGetTime() > 6.0 ? 1.5f : 1.0f;
+                canvas.scale(scale, scale);
+                canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 400 + (System.currentTimeMillis() % 1000) / 100f, 400, paint);
+                //canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 800, 620, paint);
             }
             paint.close();
             canvas.restore();
