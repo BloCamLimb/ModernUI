@@ -141,8 +141,11 @@ public final class Literal extends Expression {
         if (getType().isFloat()) {
             return String.valueOf(getFloatValue());
         }
-        if (getType().isInteger()) {
+        if (getType().isSigned()) {
             return String.valueOf(getIntegerValue());
+        }
+        if (getType().isUnsigned()) {
+            return getIntegerValue() + "u";
         }
         assert (getType().isBoolean());
         return String.valueOf(getBooleanValue());
