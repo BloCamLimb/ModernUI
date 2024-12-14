@@ -19,15 +19,18 @@
 
 package icyllis.arc3d.core;
 
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
 /**
  * Descriptor of font strike.
+ * <p>
+ * A {@code StrikeDesc} is immutable unless it is a {@link Mutable} subclass.
  */
-public final class StrikeDesc {
+@NullMarked
+public sealed class StrikeDesc {
 
     public static final int
             kFrameAndFill_Flag = 0x01,
@@ -48,16 +51,17 @@ public final class StrikeDesc {
 
     private byte mMaskFormat;
     private byte mStrokeJoin;
-    public short mFlags;
+    short mFlags;
 
+    @Nullable
     private PathEffect mPathEffect;
 
     private transient int mHash;
 
-    public StrikeDesc() {
+    StrikeDesc() {
     }
 
-    public StrikeDesc(StrikeDesc other) {
+    StrikeDesc(StrikeDesc other) {
         mTypeface = other.mTypeface;
         mPathEffect = other.mPathEffect;
         mTextSize = other.mTextSize;
@@ -73,6 +77,11 @@ public final class StrikeDesc {
         mHash = other.mHash;
     }
 
+    public static StrikeDesc makeMask(Font font, @Nullable Paint paint,
+                                      Matrixc deviceMatrix) {
+        return new StrikeDesc().update(font, paint, deviceMatrix);
+    }
+
     /**
      * Return the scalar with only limited fractional precision. Used to consolidate matrices
      * that vary only slightly when we create our key into the font cache, since the font scaler
@@ -82,9 +91,8 @@ public final class StrikeDesc {
         return Math.round(x * 1024) / 1024.0f;
     }
 
-    @NonNull
-    public StrikeDesc update(@NonNull Font font, @Nullable Paint paint,
-                             @NonNull Matrixc deviceMatrix) {
+    private StrikeDesc update(Font font, @Nullable Paint paint,
+                              Matrixc deviceMatrix) {
         if (deviceMatrix.hasPerspective()) {
             throw new IllegalArgumentException();
         }
@@ -149,14 +157,13 @@ public final class StrikeDesc {
 
         mPathEffect = paint != null ? paint.getPathEffect() : null;
 
-        mHash = computeHashCode();
+        computeHashCode();
         return this;
     }
 
     // Create a strike spec for mask style cache entries.
-    @NonNull
-    public StrikeDesc updateForMask(@NonNull Font font, @NonNull Paint paint,
-                                    @NonNull Matrixc deviceMatrix) {
+    private StrikeDesc updateForMask(Font font, Paint paint,
+                                     Matrixc deviceMatrix) {
         return update(font, paint, deviceMatrix);
     }
 
@@ -213,26 +220,27 @@ public final class StrikeDesc {
         return mStrokeJoin;
     }
 
-    public PathEffect getPathEffect() {
+    public int getFlags() {
+        return mFlags & 0xFFFF;
+    }
+
+    public @Nullable PathEffect getPathEffect() {
         return mPathEffect;
     }
 
-    @NonNull
     public Strike findOrCreateStrike() {
         return StrikeCache.getGlobalStrikeCache().findOrCreateStrike(this);
     }
 
-    @NonNull
-    public Strike findOrCreateStrike(@NonNull StrikeCache cache) {
+    public Strike findOrCreateStrike(StrikeCache cache) {
         return cache.findOrCreateStrike(this);
     }
 
-    @NonNull
     public ScalerContext createScalerContext() {
         return mTypeface.createScalerContext(this);
     }
 
-    private int computeHashCode() {
+    void computeHashCode() {
         int h = mTypeface.hashCode();
         h = 31 * h + Float.floatToIntBits(mTextSize);
         h = 31 * h + Float.floatToIntBits(mPostScaleX);
@@ -245,7 +253,7 @@ public final class StrikeDesc {
         h = 31 * h + (int) mStrokeJoin;
         h = 31 * h + (int) mFlags;
         h = 31 * h + Objects.hashCode(mPathEffect);
-        return h;
+        mHash = h;
     }
 
     @Override
@@ -273,12 +281,43 @@ public final class StrikeDesc {
         return false;
     }
 
-    @NonNull
-    public StrikeDesc copy() {
-        return new StrikeDesc(this);
+    public StrikeDesc immutable() {
+        return getClass() == StrikeDesc.class ? this : new StrikeDesc(this);
+    }
+
+    public boolean isImmutable() {
+        return getClass() == StrikeDesc.class;
     }
 
     public long getMemorySize() {
         return 64;
+    }
+
+    /**
+     * A reusable strike desc for lookup.
+     */
+    public static final class Mutable extends StrikeDesc {
+
+        public Mutable() {
+        }
+
+        public Mutable(StrikeDesc other) {
+            super(other);
+        }
+
+        public StrikeDesc update(Font font, @Nullable Paint paint,
+                                 Matrixc deviceMatrix) {
+            return super.update(font, paint, deviceMatrix);
+        }
+
+        public StrikeDesc updateForMask(Font font, Paint paint,
+                                        Matrixc deviceMatrix) {
+            return super.updateForMask(font, paint, deviceMatrix);
+        }
+
+        public void setFlags(int flags) {
+            mFlags = (short) flags;
+            computeHashCode();
+        }
     }
 }

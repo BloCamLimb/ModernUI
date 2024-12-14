@@ -345,7 +345,7 @@ public final class TextBlob {
         // compute exact bounds
         var glyphPtrs = new Glyph[glyphCount];
         //TODO this is not correct, need to canonicalize
-        var strike = new StrikeDesc().update(font, null, Matrix.identity())
+        var strike = StrikeDesc.makeMask(font, null, Matrix.identity())
                 .findOrCreateStrike();
         strike.getMetrics(glyphs, glyphOffset, glyphCount, glyphPtrs);
 

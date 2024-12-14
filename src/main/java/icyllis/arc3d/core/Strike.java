@@ -61,14 +61,15 @@ public final class Strike {
     public Strike(@NonNull StrikeCache strikeCache,
                   @NonNull StrikeDesc strikeDesc, // immutable, no copy
                   @NonNull ScalerContext scalerContext) {
+        assert strikeDesc.isImmutable();
         mStrikeDesc = strikeDesc;
         mStrikeCache = strikeCache;
         mScalerContext = scalerContext;
         if (scalerContext.isSubpixel()) {
-            mSubpixelRounding = 1.0f / (1 << (Glyph.kSubPixelPosLen + 1));
+            mSubpixelRounding = 1.0f / (1 << (Glyph.kSubPixelPosLen + 1)); // 1/8
             mSubpixelFieldMask = Glyph.kSubPixelXMask;
         } else {
-            mSubpixelRounding = 0.5f;
+            mSubpixelRounding = 0.5f; // 1/2
             mSubpixelFieldMask = 0;
         }
         // approximate bytes used
@@ -195,8 +196,8 @@ public final class Strike {
         }
     }
 
-    // read only!!
-    public StrikeDesc getStrikeDesc() {
+    // immutable
+    public @NonNull StrikeDesc getStrikeDesc() {
         return mStrikeDesc;
     }
 

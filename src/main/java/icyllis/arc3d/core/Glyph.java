@@ -67,7 +67,7 @@ public final class Glyph {
     }
 
     public static int getGlyphID(int packedID) {
-        return packedID & (~kSubPixelXMask);
+        return packedID & ~kSubPixelXMask;
     }
 
     public static float getSubX(int packedID) {

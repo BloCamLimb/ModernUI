@@ -24,9 +24,9 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.jspecify.annotations.NonNull;
 
 /**
- * The GPU GlyphStrike holds GPU {@link BakedGlyph Glyphs} for a Strike.
+ * The GPU {@link GlyphStrike} holds GPU {@link BakedGlyph Glyphs} for a CPU {@link icyllis.arc3d.core.Strike}.
  */
-public class GlyphStrike {
+public final class GlyphStrike {
 
     private final StrikeDesc mStrikeDesc;
     private final Int2ObjectOpenHashMap<BakedGlyph> mGlyphs = new Int2ObjectOpenHashMap<>();
@@ -34,20 +34,21 @@ public class GlyphStrike {
     /**
      * <var>desc</var> must be immutable, no copy will be made.
      */
-    public GlyphStrike(StrikeDesc desc) {
+    // Use GlyphStrikeCache to obtain an instance
+    public GlyphStrike(@NonNull StrikeDesc desc) {
+        assert desc.isImmutable();
         mStrikeDesc = desc;
     }
 
     /**
      * Find or create Glyph and returns a pointer to it.
      */
-    @NonNull
-    public BakedGlyph getGlyph(int glyphID) {
+    public @NonNull BakedGlyph getGlyph(int glyphID) {
         return mGlyphs.computeIfAbsent(glyphID, __ -> new BakedGlyph());
     }
 
-    // read only!!
-    public StrikeDesc getStrikeDesc() {
+    // immutable
+    public @NonNull StrikeDesc getStrikeDesc() {
         return mStrikeDesc;
     }
 }
