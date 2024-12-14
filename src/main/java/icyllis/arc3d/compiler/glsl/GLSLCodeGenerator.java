@@ -20,12 +20,10 @@
 package icyllis.arc3d.compiler.glsl;
 
 import icyllis.arc3d.compiler.*;
-import icyllis.arc3d.compiler.tree.InterfaceBlock;
-import icyllis.arc3d.compiler.tree.Layout;
-import icyllis.arc3d.compiler.tree.Modifiers;
-import icyllis.arc3d.compiler.tree.Type;
+import icyllis.arc3d.compiler.tree.*;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.lwjgl.util.spvc.Spv;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -290,5 +288,229 @@ public final class GLSLCodeGenerator extends CodeGenerator {
             }
         }
         writeLine(';');
+    }
+
+    private void writeExpression(Expression expr, int parentPrecedence) {
+        switch (expr.getKind()) {
+            case LITERAL -> writeLiteral((Literal) expr);
+            case PREFIX -> writePrefixExpression((PrefixExpression) expr, parentPrecedence);
+            case POSTFIX -> writePostfixExpression((PostfixExpression) expr, parentPrecedence);
+            case BINARY -> writeBinaryExpression((BinaryExpression) expr, parentPrecedence);
+            case CONDITIONAL -> writeConditionalExpression((ConditionalExpression) expr, parentPrecedence);
+            case VARIABLE_REFERENCE -> writeVariableReference((VariableReference) expr);
+            case INDEX -> writeIndexExpression((IndexExpression) expr);
+            case FIELD_ACCESS -> writeFieldAccess((FieldAccess) expr);
+            case SWIZZLE -> writeSwizzle((Swizzle) expr);
+            case CONSTRUCTOR_ARRAY_CAST -> writeExpression(((ConstructorArrayCast) expr).getArgument(), parentPrecedence);
+            case CONSTRUCTOR_SCALAR_CAST,
+                 CONSTRUCTOR_COMPOUND_CAST -> writeConstructorCast((ConstructorCall) expr, parentPrecedence);
+            case CONSTRUCTOR_ARRAY,
+                 CONSTRUCTOR_COMPOUND,
+                 CONSTRUCTOR_VECTOR_SPLAT,
+                 CONSTRUCTOR_DIAGONAL_MATRIX,
+                 CONSTRUCTOR_MATRIX_RESIZE,
+                 CONSTRUCTOR_STRUCT -> writeConstructorCall((ConstructorCall) expr);
+            default -> getContext().error(expr.mPosition, "unsupported expression: " + expr.getKind());
+        }
+    }
+
+    private String getBuiltinName(int builtin, String name) {
+        return switch (builtin) {
+            case Spv.SpvBuiltInPosition -> "gl_Position";
+            case Spv.SpvBuiltInVertexId -> "gl_VertexID";
+            case Spv.SpvBuiltInInstanceId -> "gl_InstanceID";
+            case Spv.SpvBuiltInVertexIndex -> "gl_VertexIndex";
+            case Spv.SpvBuiltInInstanceIndex -> "gl_InstanceIndex";
+            case Spv.SpvBuiltInFragCoord -> "gl_FragCoord";
+            default -> name;
+        };
+    }
+
+    private void writeLiteral(Literal literal) {
+        write(literal.toString());
+    }
+
+    private void writePrefixExpression(PrefixExpression p,
+                                                  int parentPrecedence) {
+        boolean needsParens = (Operator.PRECEDENCE_PREFIX >= parentPrecedence);
+        if (needsParens) {
+            write('(');
+        }
+        write(p.getOperator().toString());
+        writeExpression(p.getOperand(), Operator.PRECEDENCE_PREFIX);
+        if (needsParens) {
+            write(')');
+        }
+    }
+
+    private void writePostfixExpression(PostfixExpression p,
+                                        int parentPrecedence) {
+        boolean needsParens = (Operator.PRECEDENCE_POSTFIX >= parentPrecedence);
+        if (needsParens) {
+            write('(');
+        }
+        writeExpression(p.getOperand(), Operator.PRECEDENCE_POSTFIX);
+        write(p.getOperator().toString());
+        if (needsParens) {
+            write(')');
+        }
+    }
+
+    private void writeBinaryExpression(BinaryExpression expr, int parentPrecedence) {
+        Expression left = expr.getLeft();
+        Expression right = expr.getRight();
+        Operator op = expr.getOperator();
+        int precedence = op.getBinaryPrecedence();
+        boolean needsParens = (precedence >= parentPrecedence);
+        if (needsParens) {
+            write('(');
+        }
+        writeExpression(left, precedence);
+        write(mPrettyPrint ? op.getPrettyName() : op.toString());
+        writeExpression(right, precedence);
+        if (needsParens) {
+            write(')');
+        }
+    }
+
+    private void writeConditionalExpression(ConditionalExpression expr,
+                                            int parentPrecedence) {
+        boolean needsParens = (Operator.PRECEDENCE_CONDITIONAL >= parentPrecedence);
+        if (needsParens) {
+            write('(');
+        }
+        writeExpression(expr.getCondition(), Operator.PRECEDENCE_CONDITIONAL);
+        if (mPrettyPrint) {
+            write(" ? ");
+        } else {
+            write('?');
+        }
+        writeExpression(expr.getWhenTrue(), Operator.PRECEDENCE_CONDITIONAL);
+        if (mPrettyPrint) {
+            write(" : ");
+        } else {
+            write(':');
+        }
+        writeExpression(expr.getWhenFalse(), Operator.PRECEDENCE_CONDITIONAL);
+        if (needsParens) {
+            write(')');
+        }
+    }
+
+    private void writeVariableReference(VariableReference ref) {
+        var variable = ref.getVariable();
+        write(getBuiltinName(variable.getModifiers().layoutBuiltin(), variable.getName()));
+    }
+
+    private void writeIndexExpression(IndexExpression expr) {
+        writeExpression(expr.getBase(), Operator.PRECEDENCE_POSTFIX);
+        write('[');
+        writeExpression(expr.getIndex(), Operator.PRECEDENCE_EXPRESSION);
+        write(']');
+    }
+
+    private void writeFieldAccess(FieldAccess expr) {
+        if (!expr.isAnonymousBlock()) {
+            writeExpression(expr.getBase(), Operator.PRECEDENCE_POSTFIX);
+            write('.');
+        }
+        var field = expr.getBase().getType().getFields().get(expr.getFieldIndex());
+        write(getBuiltinName(field.modifiers().layoutBuiltin(), field.name()));
+    }
+
+    private void writeSwizzle(Swizzle swizzle) {
+        writeExpression(swizzle.getBase(), Operator.PRECEDENCE_POSTFIX);
+        write('.');
+        for (var component : swizzle.getComponents()) {
+            switch (component) {
+                case Swizzle.X -> write('x');
+                case Swizzle.Y -> write('y');
+                case Swizzle.Z -> write('z');
+                case Swizzle.W -> write('w');
+                default -> throw new IllegalStateException();
+            }
+        }
+    }
+
+    private void writeFunctionCall(FunctionCall call) {
+        final var function = call.getFunction();
+        final var arguments = call.getArguments();
+        switch (function.getIntrinsicKind()) {
+            case IntrinsicList.kFma -> {
+                assert arguments.length == 3;
+                if ((mOutputVersion.isCoreProfile() && !mOutputVersion.isAtLeast(GLSLVersion.GLSL_400)) ||
+                        (mOutputVersion.isESProfile() && !mOutputVersion.isAtLeast(GLSLVersion.GLSL_320_ES))) {
+                    write("((");
+                    writeExpression(arguments[0], Operator.PRECEDENCE_SEQUENCE);
+                    if (mPrettyPrint) {
+                        write(") * (");
+                    } else {
+                        write(")*(");
+                    }
+                    writeExpression(arguments[1], Operator.PRECEDENCE_SEQUENCE);
+                    if (mPrettyPrint) {
+                        write(") + (");
+                    } else {
+                        write(")+(");
+                    }
+                    writeExpression(arguments[2], Operator.PRECEDENCE_SEQUENCE);
+                    write("))");
+                    return;
+                }
+            }
+            case IntrinsicList.kSaturate -> {
+                assert arguments.length == 1;
+                write("clamp(");
+                writeExpression(arguments[0], Operator.PRECEDENCE_SEQUENCE);
+                if (mPrettyPrint) {
+                    write(", 0.0, 1.0)");
+                } else {
+                    write(",0.0,1.0)");
+                }
+                return;
+            }
+        }
+        writeIdentifier(function.getMangledName());
+        write('(');
+        for (int i = 0; i < arguments.length; i++) {
+            if (i != 0) {
+                if (mPrettyPrint) {
+                    write(", ");
+                } else {
+                    write(',');
+                }
+            }
+            writeExpression(arguments[i], Operator.PRECEDENCE_SEQUENCE);
+        }
+        write(')');
+    }
+
+    private void writeConstructorCall(ConstructorCall ctor) {
+        writeType(ctor.getType());
+        write('(');
+        final var arguments = ctor.getArguments();
+        for (int i = 0; i < arguments.length; i++) {
+            if (i != 0) {
+                if (mPrettyPrint) {
+                    write(", ");
+                } else {
+                    write(',');
+                }
+            }
+            writeExpression(arguments[i], Operator.PRECEDENCE_SEQUENCE);
+        }
+        write(')');
+    }
+
+    private void writeConstructorCast(ConstructorCall ctor, int parentPrecedence) {
+        var argument = ctor.getArgument();
+        var argComponentType = argument.getType().getComponentType();
+        var resultComponentType = ctor.getType().getComponentType();
+        if (argComponentType.getScalarKind() == resultComponentType.getScalarKind() &&
+                argComponentType.getWidth() == resultComponentType.getWidth()) {
+            writeExpression(argument, parentPrecedence);
+            return;
+        }
+        writeConstructorCall(ctor);
     }
 }
