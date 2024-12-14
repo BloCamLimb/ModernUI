@@ -21,15 +21,21 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
+import org.jspecify.annotations.NonNull;
+
+import java.util.Arrays;
 
 /**
- * GlyphVector provides a way to delay the lookup of {@link BakedGlyph Glyphs} until the code is running on the GPU
- * in single threaded mode. The GlyphVector is created in a multi-threaded environment, but the
- * StrikeCache is only single threaded (and must be single threaded because of the atlas).
+ * GlyphVector provides a way to delay the lookup of GPU {@link BakedGlyph Glyphs}
+ * until the code is running on the GPU in single threaded mode. The GlyphVector is created
+ * in a multi-threaded environment, but the {@link GlyphStrike} is only single threaded
+ * (and must be single threaded because of the atlas).
  */
-public class GlyphVector extends DrawAtlas.PlotBulkUseUpdater {
+public class GlyphVector
+    // this class extends BulkUseUpdater and just wants it to be treated as a value type
+        extends DrawAtlas.PlotBulkUseUpdater {
 
-    // the strikeDesc and glyphIDs
+    // the strikeDesc and packedGlyphIDs
     private final StrikeDesc mStrikeDesc;
     private final int[] mGlyphs;
     private BakedGlyph[] mBakedGlyphs;
@@ -37,12 +43,11 @@ public class GlyphVector extends DrawAtlas.PlotBulkUseUpdater {
     private long mAtlasGeneration = DrawAtlas.AtlasGenerationCounter.INVALID_GENERATION;
 
     /**
-     * The <var>strikeDesc</var> and <var>glyphs</var> must be immutable,
-     * no copy will be made.
+     * All params are read-only, copy will be made.
      */
-    public GlyphVector(StrikeDesc strikeDesc, int[] glyphs) {
-        mStrikeDesc = strikeDesc;
-        mGlyphs = glyphs;
+    public GlyphVector(@NonNull StrikeDesc strikeDesc, int @NonNull [] glyphs, int start, int end) {
+        mStrikeDesc = strikeDesc.immutable();
+        mGlyphs = Arrays.copyOfRange(glyphs, start, end);
     }
 
     // This call is not thread safe. It should only be called from a known single-threaded env.

@@ -38,7 +38,7 @@ public class GlyphRunBuilder {
 
     // for bounds computation
     private final Rect2f mTmpBounds = new Rect2f();
-    private final StrikeDesc mTmpStrikeDesc = new StrikeDesc();
+    private final StrikeDesc.Mutable mTmpStrikeDesc = new StrikeDesc.Mutable();
     private Glyph[] mTmpGlyphs = new Glyph[60];
 
     private Glyph[] ensureGlyphs(int glyphCount) {

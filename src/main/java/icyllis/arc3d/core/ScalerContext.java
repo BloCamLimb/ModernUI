@@ -44,9 +44,10 @@ public abstract class ScalerContext {
 
     public ScalerContext(Typeface typeface,
                          StrikeDesc desc) {
-        mDesc = new StrikeDesc(desc);
+        var mutableDesc = new StrikeDesc.Mutable(desc);
         // Allow the typeface to adjust the rec.
-        typeface.onFilterStrikeDesc(mDesc);
+        typeface.onFilterStrikeDesc(mutableDesc);
+        mDesc = mutableDesc.immutable();
 
         mTypeface = typeface;
         mGenerateImageFromPath = mDesc.getFrameWidth() >= 0;

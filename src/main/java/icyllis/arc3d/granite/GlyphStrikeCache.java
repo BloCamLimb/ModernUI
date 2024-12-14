@@ -35,8 +35,8 @@ public class GlyphStrikeCache {
     /**
      * <var>desc</var> must be immutable, no copy will be made.
      */
-    @NonNull
-    public GlyphStrike findOrCreateStrike(StrikeDesc desc) {
+    public @NonNull GlyphStrike findOrCreateStrike(@NonNull StrikeDesc desc) {
+        assert desc.isImmutable();
         return mCache.computeIfAbsent(desc, GlyphStrike::new);
     }
 

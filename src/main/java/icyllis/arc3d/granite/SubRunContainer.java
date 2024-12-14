@@ -72,9 +72,8 @@ public class SubRunContainer {
                     int acceptedGlyphCount,
                     boolean canDrawDirect) {
             assert !creationMatrix.hasPerspective();
-            mGlyphs = new GlyphVector(strikeDesc.copy(),
-                    Arrays.copyOfRange(acceptedGlyphs, acceptedGlyphOffset,
-                            acceptedGlyphOffset + acceptedGlyphCount));
+            mGlyphs = new GlyphVector(strikeDesc, acceptedGlyphs, acceptedGlyphOffset,
+                    acceptedGlyphOffset + acceptedGlyphCount);
             mMaskFormat = maskFormat;
             mCanDrawDirect = canDrawDirect;
             mCreationMatrix = new Matrix(creationMatrix);
@@ -552,7 +551,7 @@ public class SubRunContainer {
         float glyphRunListX = glyphRunList.getSourceBounds().centerX();
         float glyphRunListY = glyphRunList.getSourceBounds().centerY();
 
-        var strikeDesc = new StrikeDesc();
+        var strikeDesc = new StrikeDesc.Mutable();
 
         // Handle all the runs in the glyphRunList
         for (int i = 0; i < glyphRunList.mGlyphRunCount; i++) {

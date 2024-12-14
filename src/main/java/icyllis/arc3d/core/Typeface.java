@@ -51,7 +51,7 @@ public abstract class Typeface {
     @NonNull
     protected abstract ScalerContext onCreateScalerContext(StrikeDesc desc);
 
-    protected abstract void onFilterStrikeDesc(StrikeDesc desc);
+    protected abstract void onFilterStrikeDesc(StrikeDesc.Mutable desc);
 
     @Override
     public final int hashCode() {

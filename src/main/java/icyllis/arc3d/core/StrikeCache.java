@@ -68,7 +68,7 @@ public final class StrikeCache {
         try {
             Strike strike = internalFindStrike(desc);
             if (strike == null) {
-                strike = internalCreateStrike(desc.copy());
+                strike = internalCreateStrike(desc.immutable());
             }
             internalPurge(0);
             return strike;
@@ -172,6 +172,7 @@ public final class StrikeCache {
 
     @NonNull
     private Strike internalCreateStrike(@NonNull StrikeDesc desc) {
+        assert desc.isImmutable();
         var scalerContext = desc.createScalerContext();
         var strike = new Strike(this, desc, scalerContext);
 

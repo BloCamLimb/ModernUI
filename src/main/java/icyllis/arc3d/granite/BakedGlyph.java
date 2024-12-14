@@ -22,6 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.Glyph;
 import icyllis.arc3d.core.Mask;
 import icyllis.arc3d.engine.Engine;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class holds information for a glyph about its pre-rendered image in a
@@ -41,7 +42,7 @@ public class BakedGlyph extends DrawAtlas.AtlasLocator {
         };
     }
 
-    public static int chooseMaskFormat(Glyph glyph) {
+    public static int chooseMaskFormat(@NonNull Glyph glyph) {
         return chooseMaskFormat(glyph.getMaskFormat());
     }
 }

@@ -51,10 +51,10 @@ public class Typeface_JDK extends Typeface {
     }
 
     @Override
-    protected void onFilterStrikeDesc(StrikeDesc desc) {
+    protected void onFilterStrikeDesc(StrikeDesc.Mutable desc) {
         // subpixel positioning requires linear metrics (no font hinting)
-        if ((desc.mFlags & StrikeDesc.kLinearMetrics_Flag) == 0) {
-            desc.mFlags &= ~StrikeDesc.kSubpixelPositioning_Flag;
+        if ((desc.getFlags() & StrikeDesc.kLinearMetrics_Flag) == 0) {
+            desc.setFlags(desc.getFlags() & ~StrikeDesc.kSubpixelPositioning_Flag);
         }
     }
 }
