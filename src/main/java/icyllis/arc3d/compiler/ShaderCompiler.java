@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.compiler;
 
+import icyllis.arc3d.compiler.glsl.GLSLCodeGenerator;
 import icyllis.arc3d.compiler.spirv.SPIRVCodeGenerator;
 import icyllis.arc3d.compiler.tree.Node;
 import org.jetbrains.annotations.ApiStatus;
@@ -275,6 +276,26 @@ public class ShaderCompiler {
                 return null;
             }
             return parser.parseModule(parent);
+        } finally {
+            endContext();
+        }
+    }
+
+    @Nullable
+    public ByteBuffer generateGLSL(@NonNull TranslationUnit translationUnit,
+                                   @NonNull ShaderCaps shaderCaps) {
+        startContext(translationUnit.getKind(),
+                translationUnit.getOptions(),
+                null,
+                false,
+                false,
+                translationUnit.getSource(),
+                translationUnit.getSourceOffset(),
+                translationUnit.getSourceLength());
+        try {
+            CodeGenerator generator = new GLSLCodeGenerator(
+                    this, translationUnit, shaderCaps);
+            return generator.generateCode();
         } finally {
             endContext();
         }

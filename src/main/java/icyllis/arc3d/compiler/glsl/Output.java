@@ -21,6 +21,9 @@ package icyllis.arc3d.compiler.glsl;
 
 import it.unimi.dsi.fastutil.bytes.ByteArrays;
 import org.jspecify.annotations.NonNull;
+import org.lwjgl.BufferUtils;
+
+import java.nio.ByteBuffer;
 
 /**
  * Write to a UTF-8 string stream.
@@ -101,5 +104,44 @@ class CodeBuffer implements Output {
             a = ByteArrays.forceCapacity(a, newCapacity, size);
         }
         return a;
+    }
+}
+
+/**
+ * Writes code to a native buffer.
+ */
+class NativeOutput implements Output {
+    private final ByteBuffer mBuffer;
+
+    NativeOutput(int size) {
+        mBuffer = BufferUtils.createByteBuffer(size);
+    }
+
+    public ByteBuffer detach() {
+        return mBuffer.flip();
+    }
+
+    @Override
+    public void write(char c) {
+        assert c <= 0x7F;
+        mBuffer.put((byte) c);
+    }
+
+    @Override
+    public void writeString(byte[] str, int n) {
+        if (n == 0) return;
+        mBuffer.put(str, 0, n); // copyMemory
+    }
+
+    @Override
+    public boolean writeString8(@NonNull String s) {
+        final int len = s.length();
+        int check = 0;
+        for (int i = 0; i < len; i++) {
+            final char c = s.charAt(i);
+            mBuffer.put((byte) c);
+            check |= c;
+        }
+        return (check & ~0x7F) == 0;
     }
 }
