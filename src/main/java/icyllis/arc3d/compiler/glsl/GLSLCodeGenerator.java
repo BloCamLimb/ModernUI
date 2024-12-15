@@ -20,7 +20,9 @@
 package icyllis.arc3d.compiler.glsl;
 
 import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.analysis.Analysis;
 import icyllis.arc3d.compiler.tree.*;
+import icyllis.arc3d.core.MathUtil;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.util.spvc.Spv;
@@ -43,7 +45,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
     private int mIndentation = 0;
     private boolean mAtLineStart = false;
 
-    private boolean mPrettyPrint;
+    private final boolean mPrettyPrint;
 
     public GLSLCodeGenerator(@NonNull ShaderCompiler compiler,
                              @NonNull TranslationUnit translationUnit,
@@ -56,11 +58,52 @@ public final class GLSLCodeGenerator extends CodeGenerator {
 
     @Override
     public @Nullable ByteBuffer generateCode() {
-        return null;
+        CodeBuffer body = new CodeBuffer();
+        mOutput = body;
+        // Write all the program elements except for functions.
+        for (var e : mTranslationUnit) {
+            switch (e.getKind()) {
+                case GLOBAL_VARIABLE -> writeGlobalVariableDecl(((GlobalVariableDecl) e).getVariableDecl());
+                case INTERFACE_BLOCK -> writeInterfaceBlock((InterfaceBlock) e);
+                case FUNCTION_PROTOTYPE -> writeFunctionPrototype((FunctionPrototype) e);
+                case STRUCT_DEFINITION -> writeStructDefinition((StructDefinition) e);
+            }
+        }
+        // Emit prototypes for every built-in function; these aren't always added in perfect order.
+        for (var e : mTranslationUnit.getSharedElements()) {
+            if (e instanceof FunctionDefinition functionDef) {
+                writeFunctionDecl(functionDef.getFunctionDecl());
+                writeLine(';');
+            }
+        }
+        // Write the functions last.
+        // Why don't we write things in their original order? Because the Inliner likes to move function
+        // bodies around. After inlining, code can inadvertently move upwards, above ProgramElements
+        // that the code relies on.
+        for (var e : mTranslationUnit) {
+            if (e instanceof FunctionDefinition functionDef) {
+                writeFunctionDefinition(functionDef);
+            }
+        }
+
+        NativeOutput output = new NativeOutput(MathUtil.align4(body.size() + 20));
+        mOutput = output;
+        write(mOutputVersion.mVersionDecl);
+        output.writeString(body.elements(), body.size());
+        mOutput = null;
+        if (getContext().getErrorHandler().errorCount() != 0) {
+            return null;
+        }
+        return output.detach();
     }
 
     private void write(char c) {
         assert c != '\n' && c <= 0x7F;
+        if (mAtLineStart && mPrettyPrint) {
+            for (int i = 0; i < mIndentation; i++) {
+                mOutput.writeString8("    ");
+            }
+        }
         mOutput.write(c);
         mAtLineStart = false;
     }
@@ -249,6 +292,13 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         write(getTypePrecision(type));
     }
 
+    private void writeGlobalVariableDecl(VariableDecl decl) {
+        if (decl.getVariable().getModifiers().layoutBuiltin() == -1) {
+            writeVariableDecl(decl);
+            finishLine();
+        }
+    }
+
     private void writeInterfaceBlock(@NonNull InterfaceBlock block) {
         Type blockType = block.getVariable().getType().getElementType();
         boolean hasNonBuiltin = false;
@@ -290,6 +340,98 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         writeLine(';');
     }
 
+    private void writeFunctionDecl(FunctionDecl decl) {
+        writeTypePrecision(decl.getReturnType());
+        writeType(decl.getReturnType());
+        write(' ');
+        writeIdentifier(decl.getMangledName());
+        write('(');
+        var parameters = decl.getParameters();
+        for (int i = 0; i < parameters.size(); i++) {
+            var param = parameters.get(i);
+            if (i != 0) {
+                if (mPrettyPrint) {
+                    write(", ");
+                } else {
+                    write(',');
+                }
+            }
+            writeModifiers(param.getModifiers());
+            if (param.getName().isEmpty()) {
+                Type type = param.getType();
+                writeTypePrecision(type);
+                writeType(type);
+            } else {
+                Type baseType = param.getType();
+                int arraySize = 0;
+                if (baseType.isArray()) {
+                    arraySize = baseType.getArraySize();
+                    baseType = baseType.getElementType();
+                }
+                writeTypePrecision(baseType);
+                writeType(baseType);
+                write(' ');
+                writeIdentifier(param.getName());
+                if (arraySize > 0) {
+                    write('[');
+                    write(Integer.toString(arraySize));
+                    write(']');
+                }
+            }
+        }
+        write(')');
+    }
+
+    private void writeFunctionDefinition(FunctionDefinition f) {
+        writeFunctionDecl(f.getFunctionDecl());
+        writeLine(" {");
+        mIndentation++;
+
+        for (var stmt : f.getBody().getStatements()) {
+            if (!stmt.isEmpty()) {
+                writeStatement(stmt);
+                finishLine();
+            }
+        }
+
+        mIndentation--;
+        writeLine('}');
+    }
+
+    private void writeFunctionPrototype(FunctionPrototype f) {
+        writeFunctionDecl(f.getFunctionDecl());
+        writeLine(';');
+    }
+
+    private void writeStructDefinition(StructDefinition s) {
+        Type type = s.getType();
+        write("struct ");
+        writeIdentifier(type.getName());
+        writeLine(" {");
+        mIndentation++;
+        for (var f : type.getFields()) {
+            writeModifiers(f.modifiers());
+            Type baseType = f.type();
+            int arraySize = 0;
+            if (baseType.isArray()) {
+                arraySize = baseType.getArraySize();
+                baseType = baseType.getElementType();
+            }
+            writeTypePrecision(baseType);
+            writeType(baseType);
+            write(' ');
+            writeIdentifier(f.name());
+            if (arraySize > 0) {
+                write('[');
+                write(Integer.toString(arraySize));
+                write(']');
+            }
+            writeLine(';');
+        }
+        mIndentation--;
+        writeLine("};");
+    }
+
     private void writeExpression(Expression expr, int parentPrecedence) {
         switch (expr.getKind()) {
             case LITERAL -> writeLiteral((Literal) expr);
@@ -301,6 +443,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
             case INDEX -> writeIndexExpression((IndexExpression) expr);
             case FIELD_ACCESS -> writeFieldAccess((FieldAccess) expr);
             case SWIZZLE -> writeSwizzle((Swizzle) expr);
+            case FUNCTION_CALL -> writeFunctionCall((FunctionCall) expr);
             case CONSTRUCTOR_ARRAY_CAST -> writeExpression(((ConstructorArrayCast) expr).getArgument(), parentPrecedence);
             case CONSTRUCTOR_SCALAR_CAST,
                  CONSTRUCTOR_COMPOUND_CAST -> writeConstructorCast((ConstructorCall) expr, parentPrecedence);
@@ -512,5 +655,132 @@ public final class GLSLCodeGenerator extends CodeGenerator {
             return;
         }
         writeConstructorCall(ctor);
+    }
+
+    private void writeStatement(Statement stmt) {
+        switch (stmt.getKind()) {
+            case BLOCK -> writeBlockStatement((BlockStatement) stmt);
+            case RETURN -> writeReturnStatement((ReturnStatement) stmt);
+            case IF -> writeIfStatement((IfStatement) stmt);
+            case FOR_LOOP -> writeForLoop((ForLoop) stmt);
+            case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt);
+            case EXPRESSION -> writeExpressionStatement((ExpressionStatement) stmt);
+            case BREAK -> write("break;");
+            case CONTINUE -> write("continue;");
+            case DISCARD -> write("discard;");
+        }
+    }
+
+    private void writeBlockStatement(BlockStatement b) {
+        boolean isScope = b.isScoped() || b.isEmpty();
+        if (isScope) {
+            writeLine('{');
+            mIndentation++;
+        }
+        for (var stmt : b.getStatements()) {
+            if (!stmt.isEmpty()) {
+                writeStatement(stmt);
+                finishLine();
+            }
+        }
+        if (isScope) {
+            mIndentation--;
+            write('}');
+        }
+    }
+
+    private void writeReturnStatement(ReturnStatement s) {
+        write("return");
+        if (s.getExpression() != null) {
+            write(' ');
+            writeExpression(s.getExpression(), Operator.PRECEDENCE_EXPRESSION);
+        }
+        write(';');
+    }
+
+    private void writeIfStatement(IfStatement s) {
+        write("if (");
+        writeExpression(s.getCondition(), Operator.PRECEDENCE_EXPRESSION);
+        write(") ");
+        writeStatement(s.getWhenTrue());
+        if (s.getWhenFalse() != null) {
+            write(" else ");
+            writeStatement(s.getWhenFalse());
+        }
+    }
+
+    private void writeForLoop(ForLoop f) {
+        if (f.getInit() == null && f.getCondition() != null && f.getStep() == null) {
+            write("while (");
+            writeExpression(f.getCondition(), Operator.PRECEDENCE_EXPRESSION);
+            write(") ");
+            writeStatement(f.getStatement());
+            return;
+        }
+
+        write("for (");
+        if (f.getInit() != null && !f.getInit().isEmpty()) {
+            writeStatement(f.getInit());
+            if (mPrettyPrint && f.getCondition() != null) {
+                write(' ');
+            }
+        } else {
+            if (mPrettyPrint && f.getCondition() != null) {
+                write("; ");
+            } else {
+                write(';');
+            }
+        }
+        if (f.getCondition() != null) {
+            writeExpression(f.getCondition(), Operator.PRECEDENCE_EXPRESSION);
+        }
+        if (mPrettyPrint && f.getStep() != null) {
+            write("; ");
+        } else {
+            write(';');
+        }
+        if (f.getStep() != null) {
+            writeExpression(f.getStep(), Operator.PRECEDENCE_EXPRESSION);
+        }
+        write(") ");
+        writeStatement(f.getStatement());
+    }
+
+    private void writeVariableDecl(VariableDecl decl) {
+        var variable = decl.getVariable();
+        writeModifiers(variable.getModifiers());
+        Type baseType = variable.getType();
+        int arraySize = 0;
+        if (baseType.isArray()) {
+            arraySize = baseType.getArraySize();
+            baseType = baseType.getElementType();
+        }
+        writeTypePrecision(baseType);
+        writeType(baseType);
+        write(' ');
+        writeIdentifier(variable.getName());
+        if (arraySize > 0) {
+            write('[');
+            write(Integer.toString(arraySize));
+            write(']');
+        }
+        if (decl.getInit() != null) {
+            if (mPrettyPrint) {
+                write(" = ");
+            } else {
+                write('=');
+            }
+            writeExpression(decl.getInit(), Operator.PRECEDENCE_EXPRESSION);
+        }
+        write(';');
+    }
+
+    private void writeExpressionStatement(ExpressionStatement s) {
+        if (getContext().getOptions().mOptimizationLevel >= 1 &&
+                !Analysis.hasSideEffects(s.getExpression())) {
+            return;
+        }
+        writeExpression(s.getExpression(), Operator.PRECEDENCE_STATEMENT);
+        write(';');
     }
 }
