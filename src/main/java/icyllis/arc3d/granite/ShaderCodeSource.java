@@ -998,7 +998,7 @@ public class ShaderCodeSource {
                                 mix(sa * da - 2 * (sa - s) * (da - d),
                                     2 * s * d,
                                     lessThanEqual(2 * d, da)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_DARKEN = """
@@ -1020,7 +1020,7 @@ public class ShaderCodeSource {
                                     greaterThanEqual(s, sa)),
                                 s * (1 - da),
                                 lessThanEqual(d, vec3(0))),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_COLOR_BURN = """
@@ -1032,7 +1032,7 @@ public class ShaderCodeSource {
                                     lessThanEqual(s, vec3(0))),
                                 sa * da + s * (1 - da) + d * (1 - sa),
                                 greaterThanEqual(d, da)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_HARD_LIGHT = """
@@ -1043,7 +1043,7 @@ public class ShaderCodeSource {
                                 mix(sa * da - 2 * (sa - s) * (da - d),
                                     2 * s * d,
                                     lessThanEqual(2 * s, sa)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_SOFT_LIGHT = """
@@ -1057,7 +1057,7 @@ public class ShaderCodeSource {
                                     lessThanEqual(4 * d, da)),
                                 d * d * (sa - 2 * s) / da + s * (1 - da) + d * (2 * s + 1 - sa),
                                 lessThanEqual(2 * s, sa)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_DIFFERENCE = """
@@ -1118,7 +1118,7 @@ public class ShaderCodeSource {
                                     d * (1 - sa),
                                     lessThanEqual(s, vec3(0))),
                                 lessThan(2 * s, sa)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_LINEAR_LIGHT = """
@@ -1127,7 +1127,7 @@ public class ShaderCodeSource {
                 vec3 sa = vec3(src.a),  da = vec3(dst.a);
                 return vec4(clamp(2 * s * da + d * sa - sa * da, vec3(0), sa * da) +
                                   s * (1 - da) + d * (1 - sa),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_PIN_LIGHT = """
@@ -1143,7 +1143,7 @@ public class ShaderCodeSource {
                                     vec3(0),
                                     lessThan(2 * s, sa)),
                                 greaterThan(y, z)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_HARD_MIX = """
@@ -1153,7 +1153,7 @@ public class ShaderCodeSource {
                 vec3 b = s * da + d * sa;
                 vec3 c = sa * da;
                 return vec4(s + d - b + mix(c, vec3(0), lessThan(b, c)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     // single function declarations
