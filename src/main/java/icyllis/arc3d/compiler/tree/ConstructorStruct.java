@@ -38,7 +38,7 @@ public final class ConstructorStruct extends ConstructorCall {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorStruct(position, getType(), cloneArguments());
     }
 }

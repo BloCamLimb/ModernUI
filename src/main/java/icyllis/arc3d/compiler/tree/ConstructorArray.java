@@ -110,7 +110,7 @@ public final class ConstructorArray extends ConstructorCall {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorArray(position, getType(), cloneArguments());
     }
 }

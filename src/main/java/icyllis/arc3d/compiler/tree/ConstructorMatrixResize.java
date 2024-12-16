@@ -85,7 +85,7 @@ public final class ConstructorMatrixResize extends ConstructorCall {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorMatrixResize(position, getType(), cloneArguments());
     }
 }

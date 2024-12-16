@@ -130,7 +130,7 @@ public abstract class ConstructorCall extends Expression {
     final Expression[] cloneArguments() {
         Expression[] result = mArguments.clone();
         for (int i = 0; i < result.length; i++) {
-            result[i] = result[i].clone();
+            result[i] = result[i].copy();
         }
         return result;
     }

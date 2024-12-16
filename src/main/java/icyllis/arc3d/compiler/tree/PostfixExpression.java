@@ -83,8 +83,8 @@ public final class PostfixExpression extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
-        return new PostfixExpression(position, mOperand.clone(), mOperator);
+    public Expression copy(int position) {
+        return new PostfixExpression(position, mOperand.copy(), mOperator);
     }
 
     @NonNull

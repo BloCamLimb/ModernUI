@@ -142,11 +142,11 @@ public final class BinaryExpression extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new BinaryExpression(position,
-                mLeft.clone(),
+                mLeft.copy(),
                 mOperator,
-                mRight.clone(),
+                mRight.copy(),
                 getType());
     }
 

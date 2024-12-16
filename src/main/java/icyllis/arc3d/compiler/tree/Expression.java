@@ -22,14 +22,14 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Position;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.OptionalDouble;
 
 /**
  * Abstract superclass of all expressions.
  */
-@SuppressWarnings("MethodDoesntCallSuperMethod")
+@NullMarked
 public abstract class Expression extends Node {
 
     private final Type mType;
@@ -44,8 +44,7 @@ public abstract class Expression extends Node {
      */
     public abstract ExpressionKind getKind();
 
-    public @NonNull Type getType() {
-        assert (mType != null);
+    public final Type getType() {
         return mType;
     }
 
@@ -84,7 +83,7 @@ public abstract class Expression extends Node {
      * references that were never invoked, or type references that were never constructed, are
      * considered incomplete expressions and should result in an error.
      */
-    public final boolean isIncomplete(@NonNull Context context) {
+    public final boolean isIncomplete(Context context) {
         return switch (getKind()) {
             case FUNCTION_REFERENCE -> {
                 int pos = getEndOffset();
@@ -108,27 +107,26 @@ public abstract class Expression extends Node {
      * `vec4(1, vec2(2), 3)` contains four compile-time constants: (1, 2, 2, 3)
      * `mat2(f)` contains four slots, and two are constant: (empty, 0, 0, empty)
      */
-    public @NonNull OptionalDouble getConstantValue(int i) {
+    public OptionalDouble getConstantValue(int i) {
         return OptionalDouble.empty();
     }
 
     /**
      * Returns a deep copy at the same position.
      */
-    @Override
-    public final @NonNull Expression clone() {
-        return clone(mPosition);
+    public final Expression copy() {
+        return copy(mPosition);
     }
 
-    public abstract @NonNull Expression clone(int position);
+    public abstract Expression copy(int position);
 
     /**
      * Returns a description of the expression.
      */
     @Override
-    public final @NonNull String toString() {
+    public final String toString() {
         return toString(Operator.PRECEDENCE_EXPRESSION);
     }
 
-    public abstract @NonNull String toString(int parentPrecedence);
+    public abstract String toString(int parentPrecedence);
 }

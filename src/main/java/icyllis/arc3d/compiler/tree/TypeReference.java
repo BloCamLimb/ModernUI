@@ -57,7 +57,7 @@ public final class TypeReference extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new TypeReference(position, mValue, getType());
     }
 

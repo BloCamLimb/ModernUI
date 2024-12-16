@@ -136,8 +136,8 @@ public final class PrefixExpression extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
-        return new PrefixExpression(position, mOperator, mOperand.clone());
+    public Expression copy(int position) {
+        return new PrefixExpression(position, mOperator, mOperand.copy());
     }
 
     @NonNull

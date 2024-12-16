@@ -129,15 +129,13 @@ public final class GLSLCodeGenerator extends CodeGenerator {
     }
 
     private void writeLine(char c) {
-        mOutput.write(c);
-        mOutput.write('\n');
-        mAtLineStart = true;
+        write(c);
+        writeLine();
     }
 
     private void writeLine(@NonNull String s) {
         write(s);
-        mOutput.write('\n');
-        mAtLineStart = true;
+        writeLine();
     }
 
     private void finishLine() {
@@ -153,7 +151,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
     private void writeModifiers(@NonNull Modifiers modifiers) {
         Layout layout = modifiers.layout();
         if (layout != null) {
-            write(layout.toString());
+            write(layout.toString(mPrettyPrint));
         }
 
         int flags = modifiers.flags();
@@ -169,12 +167,10 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         if ((flags & Modifiers.kUniform_Flag) != 0) {
             write("uniform ");
         }
-        if ((flags & Modifiers.kIn_Flag) != 0 && (flags & Modifiers.kOut_Flag) != 0) {
-            write("inout ");
-        } else if ((flags & Modifiers.kIn_Flag) != 0) {
-            write("in ");
-        } else if ((flags & Modifiers.kOut_Flag) != 0) {
-            write("out ");
+        switch (flags & (Modifiers.kIn_Flag | Modifiers.kOut_Flag)) {
+            case Modifiers.kIn_Flag -> write("in ");
+            case Modifiers.kOut_Flag -> write("out ");
+            case Modifiers.kIn_Flag | Modifiers.kOut_Flag -> write("inout ");
         }
         if ((flags & Modifiers.kCoherent_Flag) != 0) {
             write("coherent ");
@@ -662,12 +658,14 @@ public final class GLSLCodeGenerator extends CodeGenerator {
             case BLOCK -> writeBlockStatement((BlockStatement) stmt);
             case RETURN -> writeReturnStatement((ReturnStatement) stmt);
             case IF -> writeIfStatement((IfStatement) stmt);
+            case SWITCH -> writeSwitchStatement((SwitchStatement) stmt);
             case FOR_LOOP -> writeForLoop((ForLoop) stmt);
             case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt);
             case EXPRESSION -> writeExpressionStatement((ExpressionStatement) stmt);
             case BREAK -> write("break;");
             case CONTINUE -> write("continue;");
             case DISCARD -> write("discard;");
+            default -> getContext().error(stmt.mPosition, "unsupported statement: " + stmt.getKind());
         }
     }
 
@@ -707,6 +705,55 @@ public final class GLSLCodeGenerator extends CodeGenerator {
             write(" else ");
             writeStatement(s.getWhenFalse());
         }
+    }
+
+    private void writeSwitchStatement(SwitchStatement s) {
+        write("switch (");
+        writeExpression(s.getInit(), Operator.PRECEDENCE_EXPRESSION);
+        writeLine(") {");
+        mIndentation++;
+        // If a switch contains only a `default` case and nothing else, this confuses some drivers and
+        // can lead to a crash. Adding a real case before the default seems to work around the bug,
+        // and doesn't change the meaning of the switch.
+        if (s.getCases().size() == 1 && ((SwitchCase)s.getCases().get(0)).isDefault()) {
+            writeLine("case 0:");
+        }
+
+        // The GLSL spec insists that the last case in a switch statement must have an associated
+        // statement. In practice, the Apple GLSL compiler crashes if that statement is a no-op, such as
+        // a semicolon or an empty brace pair.
+        // It also crashes if we put two `break` statements in a row. To work around this while honoring
+        // the rules of the standard, we inject an extra break if and only if the last switch-case block
+        // is empty.
+        boolean foundEmptyCase = false;
+
+        for (var stmt : s.getCases()) {
+            var c = (SwitchCase) stmt;
+            if (c.isDefault()) {
+                writeLine("default:");
+            } else {
+                write("case ");
+                write(Long.toString(c.getValue()));
+                writeLine(':');
+            }
+            if (c.getStatement().isEmpty()) {
+                foundEmptyCase = true;
+            } else {
+                foundEmptyCase = false;
+                mIndentation++;
+                writeStatement(c.getStatement());
+                finishLine();
+                mIndentation--;
+            }
+        }
+        if (foundEmptyCase) {
+            mIndentation++;
+            writeLine("break;");
+            mIndentation--;
+        }
+        mIndentation--;
+        finishLine();
+        write('}');
     }
 
     private void writeForLoop(ForLoop f) {

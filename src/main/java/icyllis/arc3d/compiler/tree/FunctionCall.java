@@ -210,10 +210,10 @@ public final class FunctionCall extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         Expression[] arguments = mArguments.clone();
         for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = arguments[i].clone();
+            arguments[i] = arguments[i].copy();
         }
         return new FunctionCall(position, getType(), mFunction, arguments);
     }

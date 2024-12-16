@@ -82,7 +82,7 @@ public final class ConstructorArrayCast extends ConstructorCall {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorArrayCast(position, getType(), cloneArguments());
     }
 }
