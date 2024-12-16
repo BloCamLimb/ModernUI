@@ -196,7 +196,7 @@ public final class Swizzle extends Expression {
         Expression[] newArgs = new Expression[numComponents];
         for (int i = 0; i < reorderedArgs.size(); i++) {
             ReorderedArgument reorderedArg = reorderedArgs.get(i);
-            Expression newArg = baseArguments[reorderedArg.mArgIndex].clone();
+            Expression newArg = baseArguments[reorderedArg.mArgIndex].copy();
 
             if (reorderedArg.mNumComponents == 0) {
                 newArgs[i] = newArg;
@@ -463,14 +463,14 @@ public final class Swizzle extends Expression {
             return ConstructorVectorSplat.make(
                     position,
                     ctorType,
-                    ctor.getArgument().clone());
+                    ctor.getArgument().copy());
         }
 
         // Swizzles on casts, like `half4(myFloat4).zyy`, can optimize to `half3(myFloat4.zyy)`.
         if (value instanceof ConstructorCompoundCast ctor) {
             Type ctorType = ctor.getComponentType().toVector(context, numComponents);
             Expression swizzled = make(context,
-                    position, ctor.getArgument().clone(), components, numComponents);
+                    position, ctor.getArgument().copy(), components, numComponents);
             Objects.requireNonNull(swizzled);
             return (ctorType.getRows() > 1)
                     ? ConstructorCompoundCast.make(position, ctorType, swizzled)
@@ -516,8 +516,8 @@ public final class Swizzle extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
-        return new Swizzle(position, getType(), mBase.clone(), mComponents);
+    public Expression copy(int position) {
+        return new Swizzle(position, getType(), mBase.copy(), mComponents);
     }
 
     @NonNull

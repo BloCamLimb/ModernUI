@@ -70,7 +70,7 @@ public final class ConstructorDiagonalMatrix extends ConstructorCall {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorDiagonalMatrix(position, getType(), cloneArguments());
     }
 }

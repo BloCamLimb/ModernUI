@@ -160,11 +160,11 @@ public final class IndexExpression extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new IndexExpression(position,
                 getType(),
-                mBase.clone(),
-                mIndex.clone()
+                mBase.copy(),
+                mIndex.copy()
         );
     }
 

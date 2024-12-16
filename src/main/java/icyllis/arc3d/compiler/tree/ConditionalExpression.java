@@ -119,11 +119,11 @@ public final class ConditionalExpression extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConditionalExpression(position,
-                mCondition.clone(),
-                mWhenTrue.clone(),
-                mWhenFalse.clone());
+                mCondition.copy(),
+                mWhenTrue.copy(),
+                mWhenFalse.copy());
     }
 
     @NonNull

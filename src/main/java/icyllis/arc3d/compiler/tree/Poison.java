@@ -49,7 +49,7 @@ public final class Poison extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new Poison(position, getType());
     }
 

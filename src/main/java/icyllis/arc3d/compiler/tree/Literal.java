@@ -131,7 +131,7 @@ public final class Literal extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new Literal(position, mValue, getType());
     }
 
@@ -142,7 +142,7 @@ public final class Literal extends Expression {
             return String.valueOf(getFloatValue());
         }
         if (getType().isSigned()) {
-            return String.valueOf(getIntegerValue());
+            return String.valueOf((int) getIntegerValue());
         }
         if (getType().isUnsigned()) {
             return getIntegerValue() + "u";

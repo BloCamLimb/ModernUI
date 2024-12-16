@@ -113,9 +113,9 @@ public final class FieldAccess extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new FieldAccess(position,
-                mBase.clone(),
+                mBase.copy(),
                 mFieldIndex,
                 mAnonymousBlock);
     }

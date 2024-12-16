@@ -77,7 +77,7 @@ public final class VariableReference extends Expression {
 
     @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new VariableReference(position, mVariable, mReferenceKind);
     }
 

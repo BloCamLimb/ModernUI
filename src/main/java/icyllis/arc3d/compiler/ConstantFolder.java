@@ -59,7 +59,7 @@ public class ConstantFolder {
      */
     public static Expression makeConstantValueForVariable(int pos, Expression value) {
         Expression expr = getConstantValueOrNullForVariable(value);
-        return expr != null ? expr.clone(pos) : value;
+        return expr != null ? expr.copy(pos) : value;
     }
 
     /**
@@ -107,7 +107,7 @@ public class ConstantFolder {
         // self-assignment (i.e., `var = var`) and can be reduced to just a variable reference (`var`).
         // This can happen when other parts of the assignment are optimized away.
         if (op == Operator.ASSIGN && Analysis.isSameExpressionTree(left, right)) {
-            return right.clone(pos);
+            return right.copy(pos);
         }
 
         // Simplify the expression when both sides are constant Boolean literals.
@@ -133,7 +133,7 @@ public class ConstantFolder {
             // When the literal is on the left, we can sometimes eliminate the other expression entirely.
             if ((op == Operator.LOGICAL_AND && !leftVal) ||  // (false && expr) -> (false)
                 (op == Operator.LOGICAL_OR  && leftVal)) {   // (true  || expr) -> (true)
-                return left.clone(pos);
+                return left.copy(pos);
             }
 
             // We can't eliminate the right-side expression via short-circuit, but we might still be able to
@@ -146,7 +146,7 @@ public class ConstantFolder {
                 (op == Operator.EQ          && leftVal)  ||  // (expr == true)  -> (expr)
                 (op == Operator.NE          && !leftVal)) {  // (expr != false) -> (expr)
 
-                return right.clone(pos);
+                return right.copy(pos);
             }
 
             return null;
@@ -163,7 +163,7 @@ public class ConstantFolder {
                 if ((op == Operator.LOGICAL_AND && !rightVal) ||  // (false && expr) -> (false)
                     (op == Operator.LOGICAL_OR  && rightVal)) {   // (true  || expr) -> (true)
 
-                    return right.clone(pos);
+                    return right.copy(pos);
                 }
             }
 
@@ -174,7 +174,7 @@ public class ConstantFolder {
                 (op == Operator.EQ          && rightVal)  ||  // (expr == true)  -> (expr)
                 (op == Operator.NE          && !rightVal)) {  // (expr != false) -> (expr)
 
-                return left.clone(pos);
+                return left.copy(pos);
             }
 
             return null;
@@ -361,7 +361,7 @@ public class ConstantFolder {
                 // Convert `-(-expression)` into `expression`.
                 PrefixExpression prefix = (PrefixExpression) value;
                 if (prefix.getOperator() == Operator.SUB) {
-                    return prefix.getOperand().clone(pos);
+                    return prefix.getOperand().copy(pos);
                 }
             }
             case CONSTRUCTOR_ARRAY -> {
@@ -374,7 +374,7 @@ public class ConstantFolder {
                         Expression arg = ctorArgs[i];
                         Expression folded = fold_negation(context, pos, arg);
                         if (folded == null) {
-                            folded = new PrefixExpression(pos, Operator.SUB, arg.clone());
+                            folded = new PrefixExpression(pos, Operator.SUB, arg.copy());
                         }
                         newArgs[i] = folded;
                     }
