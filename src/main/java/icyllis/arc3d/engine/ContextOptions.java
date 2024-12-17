@@ -73,7 +73,7 @@ public final class ContextOptions extends BaseContextOptions {
     /**
      * The maximum size of cache textures used for Glyph cache.
      */
-    public long mGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
+    public long mGlyphCacheTextureMaximumBytes = 2048 * 2048;
 
     /**
      * Can the glyph atlas use multiple textures. If allowed, each texture's size is bound by
@@ -105,6 +105,15 @@ public final class ContextOptions extends BaseContextOptions {
      * If 0, Engine will disable internal code paths that use multisampling.
      */
     public int mInternalMultisampleCount = 4;
+
+    /**
+     * OpenGL backend only. Setting to true to use actual staging buffers
+     * for pixel upload and buffer upload. Otherwise use CPU staging buffer
+     * and pass the client pointer to glTexSubImage* and glBufferSubData.
+     * In most cases, this will confuse the driver and make the performance
+     * worse than traditional methods, so it is recommended to keep it false.
+     */
+    public boolean mUseStagingBuffers = false;
 
     /**
      * Maximum number of GL programs or Vk pipelines to keep active in the runtime cache.

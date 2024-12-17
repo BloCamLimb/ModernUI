@@ -70,6 +70,7 @@ public abstract class GLCaps extends Caps {
     boolean mViewCompatibilityClassSupport = false;
     boolean mTexStorageSupport;
     boolean mInvalidateFramebufferSupport;
+    boolean mUseStagingBuffers = false;
     final boolean mVolatileContext;
 
     int[] mProgramBinaryFormats;
@@ -1014,6 +1015,10 @@ public abstract class GLCaps extends Caps {
         return mProgramBinarySupport;
     }
 
+    public boolean useStagingBuffers() {
+        return mUseStagingBuffers;
+    }
+
     public boolean hasVolatileContext() {
         return mVolatileContext;
     }
@@ -1452,6 +1457,7 @@ public abstract class GLCaps extends Caps {
             // NVIDIA uses threaded driver then error checks can be very slow
             mSkipErrorChecks = (mDriver == GLUtil.GLDriver.NVIDIA);
         }
+        mUseStagingBuffers = options.mUseStagingBuffers;
     }
 
     /**

@@ -67,7 +67,14 @@ public final class GLBuffer extends Buffer {
         boolean bufferStorage = device.getCaps().hasBufferStorageSupport();
         // No persistent mapping support. Most write operations are done on non OpenGL threads
         // then we just use client array as staging buffer.
-        clientUploadBuffer = !bufferStorage && (usage & BufferUsageFlags.kUpload) != 0;
+        // In my test, on NVIDIA, using glCopyNamedBufferSubData to copy a
+        // persistently-mapped buffer to the index buffer, binding the index buffer,
+        // and then glDrawElements, it will report that the index buffer is being
+        // copied/moved from VIDEO memory to HOST memory. So for GPU-only buffers
+        // and textures, we'd better use the traditional glTexSubImage* and
+        // glBufferSubData.
+        clientUploadBuffer = (!bufferStorage || !device.getCaps().useStagingBuffers()) &&
+                (usage & BufferUsageFlags.kUpload) != 0;
 
         if (clientUploadBuffer) {
             long clientBuffer = MemoryUtil.nmemAlloc(size);
@@ -154,8 +161,8 @@ public final class GLBuffer extends Buffer {
                 allocFlags |= GL_CLIENT_STORAGE_BIT;
             }
         } else if ((usage & BufferUsageFlags.kDeviceLocal) != 0) {
-            // GPU only buffers, no flags
-            allocFlags = 0;
+            // GPU only buffers
+            allocFlags = GL_DYNAMIC_STORAGE_BIT;
         } else {
             assert false;
             allocFlags = GL_DYNAMIC_STORAGE_BIT;
