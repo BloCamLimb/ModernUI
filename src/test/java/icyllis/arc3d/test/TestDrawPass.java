@@ -212,6 +212,7 @@ public class TestDrawPass {
                 LOGGER.debug("Using OpenGL 4.3 for debug logging");
                 glDebugMessageCallback(TestDrawPass::glDebugMessage, NULL);
                 glEnable(GL_DEBUG_OUTPUT);
+                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             } else if (caps.GL_ARB_debug_output) {
                 LOGGER.debug("Using ARB_debug_output for debug logging");
                 GLDebugMessageARBCallback proc = new GLDebugMessageARBCallback() {

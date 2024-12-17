@@ -129,7 +129,7 @@ public class TestManagedResource {
                     false, false, null, 0, 0);
             Type[] types = new Type[3];
             boolean success = Operator.MUL.determineBinaryType(compiler.getContext(),
-                    moduleLoader.getBuiltinTypes().mHalf3x4,
+                    moduleLoader.getBuiltinTypes().mMin16Float3x4,
                     moduleLoader.getBuiltinTypes().mFloat3, types);
             LOGGER.info("Operator types: " + success + ", " + Arrays.toString(types));
             success = Operator.ADD.determineBinaryType(compiler.getContext(),
