@@ -76,7 +76,6 @@ public abstract class Caps {
     protected boolean mTransferPixelsToRowBytesSupport = false;
     protected boolean mMustSyncGpuDuringDiscard = true;
     protected boolean mTextureBarrierSupport = false;
-    protected boolean mUseCpuStagingBuffers = false;
     protected boolean mDepthClipNegativeOneToOne = false;
     protected boolean mClampToBorderSupport = true;
 
@@ -295,10 +294,6 @@ public abstract class Caps {
 
     public final boolean reuseScratchBuffers() {
         return true;
-    }
-
-    public final boolean useCpuStagingBuffers() {
-        return mUseCpuStagingBuffers;
     }
 
     /**
