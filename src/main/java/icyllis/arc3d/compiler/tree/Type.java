@@ -776,30 +776,30 @@ public class Type extends Symbol {
                 };
                 default -> throw new AssertionError(cols);
             };
-        } else if (matches(types.mHalf)) {
+        } else if (matches(types.mMin16Float)) {
             return switch (cols) {
                 case 1 -> switch (rows) {
-                    case 2 -> types.mHalf2;
-                    case 3 -> types.mHalf3;
-                    case 4 -> types.mHalf4;
+                    case 2 -> types.mMin16Float2;
+                    case 3 -> types.mMin16Float3;
+                    case 4 -> types.mMin16Float4;
                     default -> throw new AssertionError(rows);
                 };
                 case 2 -> switch (rows) {
-                    case 2 -> types.mHalf2x2;
-                    case 3 -> types.mHalf2x3;
-                    case 4 -> types.mHalf2x4;
+                    case 2 -> types.mMin16Float2x2;
+                    case 3 -> types.mMin16Float2x3;
+                    case 4 -> types.mMin16Float2x4;
                     default -> throw new AssertionError(rows);
                 };
                 case 3 -> switch (rows) {
-                    case 2 -> types.mHalf3x2;
-                    case 3 -> types.mHalf3x3;
-                    case 4 -> types.mHalf3x4;
+                    case 2 -> types.mMin16Float3x2;
+                    case 3 -> types.mMin16Float3x3;
+                    case 4 -> types.mMin16Float3x4;
                     default -> throw new AssertionError(rows);
                 };
                 case 4 -> switch (rows) {
-                    case 2 -> types.mHalf4x2;
-                    case 3 -> types.mHalf4x3;
-                    case 4 -> types.mHalf4x4;
+                    case 2 -> types.mMin16Float4x2;
+                    case 3 -> types.mMin16Float4x3;
+                    case 4 -> types.mMin16Float4x4;
                     default -> throw new AssertionError(rows);
                 };
                 default -> throw new AssertionError(cols);
@@ -813,12 +813,12 @@ public class Type extends Symbol {
                     default -> throw new AssertionError(rows);
                 };
             }
-        } else if (matches(types.mShort)) {
+        } else if (matches(types.mMin16Int)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> types.mShort2;
-                    case 3 -> types.mShort3;
-                    case 4 -> types.mShort4;
+                    case 2 -> types.mMin16Int2;
+                    case 3 -> types.mMin16Int3;
+                    case 4 -> types.mMin16Int4;
                     default -> throw new AssertionError(rows);
                 };
             }
@@ -831,12 +831,12 @@ public class Type extends Symbol {
                     default -> throw new AssertionError(rows);
                 };
             }
-        } else if (matches(types.mUShort)) {
+        } else if (matches(types.mMin16UInt)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> types.mUShort2;
-                    case 3 -> types.mUShort3;
-                    case 4 -> types.mUShort4;
+                    case 2 -> types.mMin16UInt2;
+                    case 3 -> types.mMin16UInt3;
+                    case 4 -> types.mMin16UInt4;
                     default -> throw new AssertionError(rows);
                 };
             }
