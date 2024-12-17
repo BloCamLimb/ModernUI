@@ -815,7 +815,12 @@ public final class GLCommandBuffer extends CommandBuffer {
     }
 
     private long getIndexOffset(int baseIndex) {
-        int indexSize = Engine.IndexType.size(mIndexType);
+        int indexSize = switch (mIndexType) {
+            case GL_UNSIGNED_BYTE -> 1;
+            case GL_UNSIGNED_SHORT -> 2;
+            case GL_UNSIGNED_INT -> 4;
+            default -> throw new AssertionError();
+        };
         return (long) baseIndex * indexSize + mIndexBufferOffset;
     }
 
