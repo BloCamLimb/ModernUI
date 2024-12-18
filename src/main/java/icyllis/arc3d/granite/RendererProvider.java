@@ -49,6 +49,7 @@ public class RendererProvider {
     private final GeometryRenderer[] mArc = new GeometryRenderer[ArcShape.kTypeCount];
     // has color, has tex, vertex mode variant
     private final GeometryRenderer[] mVertices = new GeometryRenderer[Vertices.kVertexModeCount*4];
+    private final GeometryRenderer mPerEdgeAAQuad;
 
     public RendererProvider(Caps caps, StaticBufferManager staticBufferManager) {
         mSimpleBox[0] = makeSingleStep(
@@ -83,6 +84,9 @@ public class RendererProvider {
                 );
             }
         }
+        mPerEdgeAAQuad = makeSingleStep(
+                new PerEdgeAAQuadStep(staticBufferManager)
+        );
     }
 
     public GeometryRenderer getSimpleBox(boolean aa) {
@@ -99,5 +103,9 @@ public class RendererProvider {
 
     public GeometryRenderer getVertices(int vertexMode, boolean hasColor, boolean hasTexCoords) {
         return mVertices[vertexMode*4 + (hasColor?2:0) + (hasTexCoords?1:0)];
+    }
+
+    public GeometryRenderer getPerEdgeAAQuad() {
+        return mPerEdgeAAQuad;
     }
 }

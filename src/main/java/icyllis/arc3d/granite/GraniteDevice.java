@@ -26,6 +26,7 @@ import icyllis.arc3d.core.shaders.ImageShader;
 import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.geom.BoundsManager;
+import icyllis.arc3d.granite.geom.EdgeAAQuad;
 import icyllis.arc3d.granite.geom.HybridBoundsManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jspecify.annotations.NonNull;
@@ -327,8 +328,15 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
     @Override
     public void drawRect(Rect2fc r, Paint paint) {
-        drawGeometry(getLocalToDevice33(), new SimpleShape(r), SimpleShape::getBounds, paint,
-                mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+        if (paint.getStyle() == Paint.FILL) {
+            drawGeometry(getLocalToDevice33(),
+                    new EdgeAAQuad(r, paint.isAntiAlias() ? EdgeAAQuad.kAll : EdgeAAQuad.kNone),
+                    EdgeAAQuad::getBounds, paint,
+                    mRC.getRendererProvider().getPerEdgeAAQuad(), null);
+        } else {
+            drawGeometry(getLocalToDevice33(), new SimpleShape(r), SimpleShape::getBounds, paint,
+                    mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+        }
     }
 
     @Override

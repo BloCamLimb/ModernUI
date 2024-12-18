@@ -152,6 +152,9 @@ public class StaticBufferManager {
             return RESULT_NO_WORK;
         }
 
+        // copy tasks hold refs, no need to own them anymore, just flush and make a clean exit
+        ObjectArrayList<@SharedPtr Resource> resourceRefs = new ObjectArrayList<>();
+        mUploadManager.flush(resourceRefs);
         if (!mVertexBuffer.allocateAndSetBindings(mResourceProvider,
                 queueManager,
                 sharedResourceCache,
@@ -164,9 +167,6 @@ public class StaticBufferManager {
                 "StaticIndexBuffer")) {
             return RESULT_FAILURE;
         }
-        // copy tasks hold refs, no need to own them anymore, just flush and make a clean exit
-        ObjectArrayList<@SharedPtr Resource> resourceRefs = new ObjectArrayList<>();
-        mUploadManager.flush(resourceRefs);
         resourceRefs.forEach(Resource::unref);
         resourceRefs.clear();
 
