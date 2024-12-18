@@ -28,8 +28,15 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.MemoryUtil;
 
+import java.io.IOException;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.opengl.GL20C.*;
@@ -97,6 +104,69 @@ public class GLGraphicsPipelineBuilder {
                 mDevice.getCaps().shaderCaps(), options,
                 ModuleLoader.getInstance().loadCommonModule(compiler));
         System.out.println(compiler.getErrorMessage());*/
+        ShaderCompiler compiler = new ShaderCompiler();
+        CompileOptions options = new CompileOptions();
+        options.mUsePrecisionQualifiers = mDevice.getCaps().shaderCaps().mUsePrecisionModifiers;
+        {
+            var tu = compiler.parse(info.mFragSource, ShaderKind.FRAGMENT,
+                    options, ModuleLoader.getInstance().loadCommonModule(compiler));
+            System.out.println(info.mPipelineLabel);
+            Objects.requireNonNull(tu, compiler::getErrorMessage);
+            var glsl = compiler.generateGLSL(tu, mDevice.getCaps().shaderCaps());
+            Objects.requireNonNull(glsl, compiler::getErrorMessage);
+            mFinalizedFragSource = glsl;
+        }
+        {
+            var tu = compiler.parse(info.mVertSource, ShaderKind.VERTEX,
+                    options, ModuleLoader.getInstance().loadCommonModule(compiler));
+            System.out.println(info.mPipelineLabel);
+            Objects.requireNonNull(tu, compiler::getErrorMessage);
+            var glsl = compiler.generateGLSL(tu, mDevice.getCaps().shaderCaps());
+            Objects.requireNonNull(glsl, compiler::getErrorMessage);
+            mFinalizedVertSource = glsl;
+        }
+        /*CompletableFuture.runAsync(() -> {
+            String filename = mPipelineLabel.replaceAll("/", ".");
+            try {
+                Files.writeString(Path.of(filename + ".vert"), info.mVertSource,
+                        StandardCharsets.UTF_8, StandardOpenOption.WRITE,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING);
+            } catch (IOException e) {
+
+            }
+            try (var channel = FileChannel.open(Path.of(filename + ".vert.glsl"),
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING)) {
+                var src = mFinalizedVertSource.slice();
+                while (src.hasRemaining()) {
+                    channel.write(src);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                Files.writeString(Path.of(filename + ".frag"), info.mFragSource,
+                        StandardCharsets.UTF_8, StandardOpenOption.WRITE,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING);
+            } catch (IOException e) {
+
+            }
+            try (var channel = FileChannel.open(Path.of(filename + ".frag.glsl"),
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING)) {
+                var src = mFinalizedFragSource.slice();
+                while (src.hasRemaining()) {
+                    channel.write(src);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });*/
     }
 
     @NonNull
