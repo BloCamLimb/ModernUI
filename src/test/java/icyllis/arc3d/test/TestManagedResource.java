@@ -126,7 +126,7 @@ public class TestManagedResource {
             ModuleLoader moduleLoader = ModuleLoader.getInstance();
             ShaderCompiler compiler = new ShaderCompiler();
             compiler.startContext(ShaderKind.BASE, new CompileOptions(), moduleLoader.getRootModule(),
-                    false, false, null, 0, 0);
+                    false, false, null);
             Type[] types = new Type[3];
             boolean success = Operator.MUL.determineBinaryType(compiler.getContext(),
                     moduleLoader.getBuiltinTypes().mMin16Float3x4,
@@ -337,7 +337,7 @@ public class TestManagedResource {
                     col = 1.0 - exp(-col*0.5);
                     FragColor0 = col;
                 }
-                """.toCharArray());
+                """);
         long token;
         int kind;
         while ((kind = Token.kind(token = lexer.next())) != Token.TK_END_OF_FILE) {

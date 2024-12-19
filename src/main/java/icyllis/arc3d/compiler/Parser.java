@@ -40,9 +40,7 @@ public class Parser {
     private final ShaderKind mKind;
     private final CompileOptions mOptions;
 
-    private final char[] mSource;
-    private final int mSourceOffset;
-    private final int mSourceLength;
+    private final String mSource;
     private final Lexer mLexer;
 
     private final LongStack mPushback = new LongArrayList(1);
@@ -53,14 +51,12 @@ public class Parser {
     private ArrayList<TopLevelElement> mUniqueElements;
 
     public Parser(ShaderCompiler compiler, ShaderKind kind, CompileOptions options,
-                  char[] source, int offset, int length) {
+                  String source) {
         mCompiler = Objects.requireNonNull(compiler);
         mOptions = Objects.requireNonNull(options);
         mKind = Objects.requireNonNull(kind);
         mSource = source;
-        mSourceOffset = offset;
-        mSourceLength = length;
-        mLexer = new Lexer(source, offset, length);
+        mLexer = new Lexer(source);
         if (options.mExtensions != null && !options.mExtensions.isEmpty()) {
             mExtensions = new LinkedHashMap<>(options.mExtensions);
         }
@@ -118,8 +114,6 @@ public class Parser {
         if (context.getErrorHandler().errorCount() == 0) {
             result = new TranslationUnit(
                     mSource,
-                    mSourceOffset,
-                    mSourceLength,
                     mKind,
                     mOptions,
                     context.getTypes(),
@@ -252,7 +246,7 @@ public class Parser {
         if (length == 0) {
             return "EOF";
         }
-        return new String(mSource, offset + mSourceOffset, length);
+        return mSource.substring(offset, offset + length);
     }
 
     private int position(long token) {
@@ -355,9 +349,9 @@ public class Parser {
 
     private void Directives() {
         // ideally we can break long text into pieces, but shader code should not be too long
-        if (mSourceLength > 0x7FFFFE) {
+        if (mSource.length() > 0x7FFFFE) {
             mCompiler.getContext().error(Position.NO_POS,
-                    "source code is too long, " + mSourceLength + " > 8,388,606 chars");
+                    "source code is too long, " + mSource.length() + " > 8,388,606 chars");
             return;
         }
         boolean first = true;
@@ -540,9 +534,9 @@ public class Parser {
 
     private void CompilationUnit() {
         // ideally we can break long text into pieces, but shader code should not be too long
-        if (mSourceLength > 0x7FFFFE) {
+        if (mSource.length() > 0x7FFFFE) {
             mCompiler.getContext().error(Position.NO_POS,
-                    "source code is too long, " + mSourceLength + " > 8,388,606 chars");
+                    "source code is too long, " + mSource.length() + " > 8,388,606 chars");
             return;
         }
         boolean beforeDeclaration = true;
