@@ -30,9 +30,7 @@ import java.util.*;
  */
 public final class TranslationUnit extends Node implements Iterable<TopLevelElement> {
 
-    private final char[] mSource;
-    private final int mSourceOffset;
-    private final int mSourceLength;
+    private final String mSource;
 
     private final ShaderKind mKind;
     private final CompileOptions mOptions;
@@ -48,9 +46,7 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
 
     private final SymbolUsage mUsage;
 
-    public TranslationUnit(char[] source,
-                           int sourceOffset,
-                           int sourceLength,
+    public TranslationUnit(String source,
                            ShaderKind kind,
                            CompileOptions options,
                            BuiltinTypes types,
@@ -59,8 +55,6 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
                            List<Map.Entry<String, String>> extensions) {
         super(Position.NO_POS);
         mSource = source;
-        mSourceOffset = sourceOffset;
-        mSourceLength = sourceLength;
         mKind = kind;
         mOptions = options;
         mTypes = types;
@@ -72,16 +66,8 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         mUsage.add(this);
     }
 
-    public char[] getSource() {
+    public String getSource() {
         return mSource;
-    }
-
-    public int getSourceOffset() {
-        return mSourceOffset;
-    }
-
-    public int getSourceLength() {
-        return mSourceLength;
     }
 
     public ShaderKind getKind() {

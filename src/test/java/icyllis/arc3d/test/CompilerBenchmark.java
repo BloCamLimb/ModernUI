@@ -40,7 +40,7 @@ import static org.lwjgl.util.shaderc.Shaderc.*;
 @State(Scope.Thread)
 public class CompilerBenchmark {
 
-    public static final String SOURCE_AGSL = """
+    public static final String SOURCE_AKSL = """
             #version 450 core
             layout(std140, binding = 1) uniform FragmentUniforms {
             layout(offset=0) mat3 u_LocalMatrix_1;
@@ -840,7 +840,6 @@ public class CompilerBenchmark {
             }
             """;
 
-    public static final char[] SOURCE_CHARS = SOURCE_AGSL.toCharArray();
     public static final ModuleUnit COMMON_MODULE = ModuleLoader.getInstance().loadCommonModule(new ShaderCompiler());
 
     public static final ByteBuffer SOURCE_BUFFER = MemoryUtil.memUTF8(SOURCE_GLSL, false);
@@ -876,7 +875,7 @@ public class CompilerBenchmark {
     @Benchmark
     public static void arc3d(Blackhole blackhole) {
         ShaderCompiler compiler = new ShaderCompiler();
-        ByteBuffer spirv = compiler.compileIntoSPIRV(SOURCE_CHARS, 0, SOURCE_CHARS.length, ShaderKind.FRAGMENT,
+        ByteBuffer spirv = compiler.compileIntoSPIRV(SOURCE_AKSL, ShaderKind.FRAGMENT,
                 new ShaderCaps(), new CompileOptions(), COMMON_MODULE);
         blackhole.consume(Objects.requireNonNull(spirv));
     }
