@@ -190,15 +190,16 @@ public final class GLVertexArray extends ManagedResource {
     private static int set_vertex_format_legacy(GLInterface gl,
                                                 @NonNull Iterator<VertexInputLayout.Attribute> attribs,
                                                 int index, int divisor, int[] attributes) {
+        int j = 0;
         while (attribs.hasNext()) {
             var attrib = attribs.next();
             int locations = attrib.locations();
             int offset = attrib.offset();
-            while (locations-- != 0) {
+            for (int i = 0; i < locations; i++, j++) {
                 gl.glEnableVertexAttribArray(index);
                 gl.glVertexAttribDivisor(index, divisor);
                 assert offset >= 0 && offset <= 0xFFFFFF;
-                attributes[index] = (offset & 0xFFFFFF) | ((attrib.srcType() & 0xFF) << 24);
+                attributes[j] = (offset & 0xFFFFFF) | ((attrib.srcType() & 0xFF) << 24);
                 index++;
                 offset += attrib.size();
             }
@@ -279,7 +280,7 @@ public final class GLVertexArray extends ManagedResource {
             // a matrix can take up multiple locations
             int locations = attrib.locations();
             int offset = attrib.offset();
-            while (locations-- != 0) {
+            for (int i = 0; i < locations; i++) {
                 gl.glEnableVertexAttribArray(index);
                 gl.glVertexAttribBinding(index, binding);
                 set_attrib_format_binding_group(gl, attrib.srcType(), index, offset);
@@ -366,7 +367,7 @@ public final class GLVertexArray extends ManagedResource {
             // a matrix can take up multiple locations
             int locations = attrib.locations();
             int offset = attrib.offset();
-            while (locations-- != 0) {
+            for (int i = 0; i < locations; i++) {
                 gl.glEnableVertexArrayAttrib(array, index);
                 gl.glVertexArrayAttribBinding(array, index, binding);
                 set_attrib_format_binding_group_dsa(gl, attrib.srcType(), array, index, offset);
