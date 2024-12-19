@@ -27,7 +27,7 @@ import java.util.*;
 
 /**
  * Contains objects and state associated with {@link ShaderCompiler}
- * (i.e. {@link Parser} or CodeGenerator).
+ * (i.e. {@link Parser} or {@link CodeGenerator}).
  */
 public final class Context {
 
@@ -49,15 +49,15 @@ public final class Context {
 
     private boolean mActive;
 
-    Context(ErrorHandler errorHandler) {
+    public Context(ErrorHandler errorHandler) {
         mTypes = ModuleLoader.getInstance().getBuiltinTypes();
         mErrorHandler = errorHandler;
     }
 
     /**
-     * Starts the DSL on the current thread for compiling modules.
+     * Starts the DSL for compiling modules.
      */
-    void start(ShaderKind kind, CompileOptions options,
+    public void start(ShaderKind kind, CompileOptions options,
                ModuleUnit parent, boolean isBuiltin, boolean isModule) {
         if (isActive()) {
             throw new IllegalStateException("DSL is already started");
@@ -75,9 +75,9 @@ public final class Context {
     }
 
     /**
-     * Ends the DSL on the current thread.
+     * Ends the DSL.
      */
-    void end() {
+    public void end() {
         mKind = null;
         mOptions = null;
         mSymbolTable = null;

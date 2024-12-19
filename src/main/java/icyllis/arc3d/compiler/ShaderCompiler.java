@@ -170,7 +170,7 @@ public class ShaderCompiler {
         Objects.requireNonNull(parent);
         startContext(kind, options, parent, false, false, source);
         try {
-            Parser parser = new Parser(this, kind,
+            Parser parser = new Parser(getContext(), kind,
                     options,
                     source);
             if (options.mPreprocess) {
@@ -226,7 +226,7 @@ public class ShaderCompiler {
         CompileOptions options = new CompileOptions();
         startContext(kind, options, parent, builtin, true, source);
         try {
-            Parser parser = new Parser(this, kind,
+            Parser parser = new Parser(getContext(), kind,
                     options,
                     source);
             List<Map.Entry<String, Boolean>> includes = parser.preprocess();
@@ -250,7 +250,7 @@ public class ShaderCompiler {
                 translationUnit.getSource());
         try {
             CodeGenerator generator = new GLSLCodeGenerator(
-                    this, translationUnit, shaderCaps);
+                    getContext(), translationUnit, shaderCaps);
             return generator.generateCode();
         } finally {
             endContext();
@@ -282,7 +282,7 @@ public class ShaderCompiler {
                 translationUnit.getSource());
         try {
             CodeGenerator generator = new SPIRVCodeGenerator(
-                    this, translationUnit, shaderCaps);
+                    getContext(), translationUnit, shaderCaps);
             return generator.generateCode();
         } finally {
             endContext();
@@ -326,7 +326,7 @@ public class ShaderCompiler {
         Objects.requireNonNull(parent);
         startContext(kind, options, parent, false, false, source);
         try {
-            Parser parser = new Parser(this, kind,
+            Parser parser = new Parser(getContext(), kind,
                     options,
                     source);
             if (options.mPreprocess) {
@@ -341,7 +341,7 @@ public class ShaderCompiler {
                 return null;
             }
             CodeGenerator generator = new SPIRVCodeGenerator(
-                    this, translationUnit, shaderCaps);
+                    getContext(), translationUnit, shaderCaps);
             return generator.generateCode();
         } finally {
             endContext();

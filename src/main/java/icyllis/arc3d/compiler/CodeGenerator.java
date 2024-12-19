@@ -29,12 +29,12 @@ import java.nio.ByteBuffer;
  */
 public abstract class CodeGenerator {
 
-    protected final ShaderCompiler mCompiler;
+    protected final Context mContext;
     protected final TranslationUnit mTranslationUnit;
 
-    public CodeGenerator(ShaderCompiler compiler,
+    public CodeGenerator(Context context,
                          TranslationUnit translationUnit) {
-        mCompiler = compiler;
+        mContext = context;
         mTranslationUnit = translationUnit;
     }
 
@@ -55,6 +55,6 @@ public abstract class CodeGenerator {
     public abstract @Nullable ByteBuffer generateCode();
 
     protected Context getContext() {
-        return mCompiler.getContext();
+        return mContext;
     }
 }

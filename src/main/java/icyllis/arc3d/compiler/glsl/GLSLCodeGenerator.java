@@ -47,10 +47,10 @@ public final class GLSLCodeGenerator extends CodeGenerator {
 
     private final boolean mPrettyPrint;
 
-    public GLSLCodeGenerator(@NonNull ShaderCompiler compiler,
+    public GLSLCodeGenerator(@NonNull Context context,
                              @NonNull TranslationUnit translationUnit,
                              @NonNull ShaderCaps shaderCaps) {
-        super(compiler, translationUnit);
+        super(context, translationUnit);
         mOutputTarget = Objects.requireNonNullElse(shaderCaps.mTargetApi, TargetApi.OPENGL_4_5);
         mOutputVersion = Objects.requireNonNullElse(shaderCaps.mGLSLVersion, GLSLVersion.GLSL_450);
         mPrettyPrint = !getContext().getOptions().mMinifyCode;

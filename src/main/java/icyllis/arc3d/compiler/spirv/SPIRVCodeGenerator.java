@@ -388,10 +388,10 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
      */
     private boolean mEmitNames;
 
-    public SPIRVCodeGenerator(@NonNull ShaderCompiler compiler,
+    public SPIRVCodeGenerator(@NonNull Context context,
                               @NonNull TranslationUnit translationUnit,
                               @NonNull ShaderCaps shaderCaps) {
-        super(compiler, translationUnit);
+        super(context, translationUnit);
         mOutputTarget = Objects.requireNonNullElse(shaderCaps.mTargetApi, TargetApi.VULKAN_1_0);
         mOutputVersion = Objects.requireNonNullElse(shaderCaps.mSPIRVVersion, SPIRVVersion.SPIRV_1_0);
     }
