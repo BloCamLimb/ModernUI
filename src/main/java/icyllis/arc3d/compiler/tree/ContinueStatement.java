@@ -39,11 +39,6 @@ public final class ContinueStatement extends Statement {
         return StatementKind.CONTINUE;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitContinue(this);
-    }
-
     @NonNull
     @Override
     public String toString() {

@@ -95,11 +95,6 @@ public final class Literal extends Expression {
     }
 
     @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitLiteral(this);
-    }
-
-    @Override
     public boolean isLiteral() {
         return true;
     }

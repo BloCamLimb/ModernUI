@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
+import icyllis.arc3d.compiler.Position;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -81,16 +83,6 @@ public final class ConditionalExpression extends Expression {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.CONDITIONAL;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitConditional(this)) {
-            return true;
-        }
-        return mCondition.accept(visitor) ||
-                (mWhenTrue != null && mWhenTrue.accept(visitor)) ||
-                (mWhenFalse != null && mWhenFalse.accept(visitor));
     }
 
     public Expression getCondition() {

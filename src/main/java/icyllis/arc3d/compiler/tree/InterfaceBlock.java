@@ -21,9 +21,9 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.ShaderKind;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -235,11 +235,6 @@ public final class InterfaceBlock extends TopLevelElement {
     @Override
     public ElementKind getKind() {
         return ElementKind.INTERFACE_BLOCK;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitInterfaceBlock(this);
     }
 
     @NonNull

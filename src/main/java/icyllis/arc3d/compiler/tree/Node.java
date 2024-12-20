@@ -20,6 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Position;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
 import org.jspecify.annotations.NonNull;
 
 /**

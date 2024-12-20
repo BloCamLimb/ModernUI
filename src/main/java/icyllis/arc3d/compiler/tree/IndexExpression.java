@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.ConstantFolder;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -148,14 +150,6 @@ public final class IndexExpression extends Expression {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.INDEX;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitIndex(this)) {
-            return true;
-        }
-        return mBase.accept(visitor) || mIndex.accept(visitor);
     }
 
     @NonNull

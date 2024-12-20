@@ -46,11 +46,6 @@ public final class TypeReference extends Expression {
         return ExpressionKind.TYPE_REFERENCE;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitTypeReference(this);
-    }
-
     public Type getValue() {
         return mValue;
     }

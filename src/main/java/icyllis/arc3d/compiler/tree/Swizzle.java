@@ -497,14 +497,6 @@ public final class Swizzle extends Expression {
         return ExpressionKind.SWIZZLE;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitSwizzle(this)) {
-            return true;
-        }
-        return mBase != null && mBase.accept(visitor);
-    }
-
     public Expression getBase() {
         return mBase;
     }

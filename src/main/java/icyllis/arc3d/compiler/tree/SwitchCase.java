@@ -71,14 +71,6 @@ public final class SwitchCase extends Statement {
         return StatementKind.SWITCH_CASE;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitSwitchCase(this)) {
-            return true;
-        }
-        return mStatement.accept(visitor);
-    }
-
     @NonNull
     @Override
     public String toString() {

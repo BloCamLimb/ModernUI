@@ -19,10 +19,10 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Operator;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import icyllis.arc3d.compiler.Context;
 
 import java.util.Objects;
 
@@ -89,14 +89,6 @@ public final class FieldAccess extends Expression {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.FIELD_ACCESS;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitFieldAccess(this)) {
-            return true;
-        }
-        return mBase.accept(visitor);
     }
 
     public Expression getBase() {

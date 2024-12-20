@@ -53,14 +53,6 @@ public final class ExpressionStatement extends Statement {
         return StatementKind.EXPRESSION;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitExpression(this)) {
-            return true;
-        }
-        return mExpression.accept(visitor);
-    }
-
     public Expression getExpression() {
         return mExpression;
     }

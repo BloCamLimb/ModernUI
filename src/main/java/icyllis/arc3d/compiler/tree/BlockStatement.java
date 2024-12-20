@@ -99,19 +99,6 @@ public final class BlockStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitBlock(this)) {
-            return true;
-        }
-        for (Statement stmt : mStatements) {
-            if (stmt.accept(visitor)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
     public boolean isEmpty() {
         for (Statement stmt : mStatements) {
             if (!stmt.isEmpty()) {

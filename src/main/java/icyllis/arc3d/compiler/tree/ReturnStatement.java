@@ -53,14 +53,6 @@ public final class ReturnStatement extends Statement {
         return StatementKind.RETURN;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitReturn(this)) {
-            return true;
-        }
-        return mExpression != null && mExpression.accept(visitor);
-    }
-
     @NonNull
     @Override
     public String toString() {

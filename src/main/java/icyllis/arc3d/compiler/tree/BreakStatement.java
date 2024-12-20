@@ -39,11 +39,6 @@ public final class BreakStatement extends Statement {
         return StatementKind.BREAK;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitBreak(this);
-    }
-
     @NonNull
     @Override
     public String toString() {

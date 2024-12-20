@@ -106,6 +106,15 @@ public final class Variable extends Symbol {
         return mModifiers;
     }
 
+    @NonNull
+    public Type getBaseType() {
+        return mType.isArray() ? mType.getElementType() : mType;
+    }
+
+    public int getArraySize() {
+        return mType.isArray() ? mType.getArraySize() : 0;
+    }
+
     public boolean isBuiltin() {
         return mBuiltin;
     }

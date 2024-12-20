@@ -36,11 +36,6 @@ public final class EmptyStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitEmpty(this);
-    }
-
-    @Override
     public boolean isEmpty() {
         return true;
     }

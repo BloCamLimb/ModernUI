@@ -64,16 +64,6 @@ public final class IfStatement extends Statement {
         return StatementKind.IF;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitIf(this)) {
-            return true;
-        }
-        return (mCondition != null && mCondition.accept(visitor)) ||
-                (mWhenTrue != null && mWhenTrue.accept(visitor)) ||
-                (mWhenFalse != null && mWhenFalse.accept(visitor));
-    }
-
     public Expression getCondition() {
         return mCondition;
     }

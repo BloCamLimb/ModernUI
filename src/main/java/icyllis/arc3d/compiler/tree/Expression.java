@@ -22,6 +22,8 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Position;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.OptionalDouble;
@@ -43,6 +45,11 @@ public abstract class Expression extends Node {
      * @see Node.ExpressionKind
      */
     public abstract ExpressionKind getKind();
+
+    @Override
+    public final boolean accept(@NonNull TreeVisitor visitor) {
+        return visitor.visitExpression(this);
+    }
 
     public final Type getType() {
         return mType;

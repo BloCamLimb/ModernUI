@@ -71,11 +71,6 @@ public final class StructDefinition extends TopLevelElement {
         return ElementKind.STRUCT_DEFINITION;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitStructDefinition(this);
-    }
-
     @NonNull
     public Type getType() {
         return mType;

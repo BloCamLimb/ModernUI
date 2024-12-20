@@ -156,14 +156,6 @@ public final class VariableDecl extends Statement {
         return StatementKind.VARIABLE_DECL;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitVariableDecl(this)) {
-            return true;
-        }
-        return mInit != null && mInit.accept(visitor);
-    }
-
     @NonNull
     @Override
     public String toString() {

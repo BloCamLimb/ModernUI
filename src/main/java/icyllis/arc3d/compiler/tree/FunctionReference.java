@@ -46,11 +46,6 @@ public final class FunctionReference extends Expression {
         return ExpressionKind.FUNCTION_REFERENCE;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitFunctionReference(this);
-    }
-
     public FunctionDecl getOverloadChain() {
         return mOverloadChain;
     }

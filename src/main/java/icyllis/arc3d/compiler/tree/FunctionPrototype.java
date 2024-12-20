@@ -48,11 +48,6 @@ public final class FunctionPrototype extends TopLevelElement {
         return ElementKind.FUNCTION_PROTOTYPE;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitFunctionPrototype(this);
-    }
-
     @NonNull
     @Override
     public String toString() {

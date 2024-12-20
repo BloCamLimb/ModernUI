@@ -111,15 +111,6 @@ public final class BinaryExpression extends Expression {
         return ExpressionKind.BINARY;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitBinary(this)) {
-            return true;
-        }
-        return (mLeft != null && mLeft.accept(visitor)) ||
-                (mRight != null && mRight.accept(visitor));
-    }
-
     public Expression getLeft() {
         return mLeft;
     }
