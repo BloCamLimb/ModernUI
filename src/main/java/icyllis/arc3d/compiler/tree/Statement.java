@@ -19,6 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
+import org.jspecify.annotations.NonNull;
+
 /**
  * Abstract supertype of all statements.
  */
@@ -32,6 +35,11 @@ public abstract class Statement extends Node {
      * @see Node.StatementKind
      */
     public abstract StatementKind getKind();
+
+    @Override
+    public final boolean accept(@NonNull TreeVisitor visitor) {
+        return visitor.visitStatement(this);
+    }
 
     public boolean isEmpty() {
         return false;

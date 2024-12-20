@@ -35,14 +35,11 @@ public final class Analysis {
             static final IsCompileTimeConstantVisitor visitor = new IsCompileTimeConstantVisitor();
 
             @Override
-            public boolean visitLiteral(Literal expr) {
-                // Literals are compile-time constants.
-                return false;
-            }
-
-            @Override
-            protected boolean visitExpression(Expression expr) {
+            public boolean visitExpression(@NonNull Expression expr) {
                 return switch (expr.getKind()) {
+                    case LITERAL ->
+                        // Literals are compile-time constants.
+                            false;
                     case CONSTRUCTOR_ARRAY,
                          CONSTRUCTOR_COMPOUND,
                          CONSTRUCTOR_DIAGONAL_MATRIX,
@@ -209,25 +206,36 @@ public final class Analysis {
     public static boolean hasSideEffects(Expression expr) {
         class HasSideEffectsVisitor extends TreeVisitor {
             @Override
-            public boolean visitFunctionCall(FunctionCall expr) {
-                return (expr.getFunction().getModifiers().flags() & Modifiers.kPure_Flag) == 0;
-            }
-
-            @Override
-            public boolean visitPrefix(PrefixExpression expr) {
-                return expr.getOperator() == Operator.INC ||
-                        expr.getOperator() == Operator.DEC;
-            }
-
-            @Override
-            public boolean visitPostfix(PostfixExpression expr) {
-                return expr.getOperator() == Operator.INC ||
-                        expr.getOperator() == Operator.DEC;
-            }
-
-            @Override
-            public boolean visitBinary(BinaryExpression expr) {
-                return expr.getOperator().isAssignment();
+            public boolean visitExpression(@NonNull Expression expr) {
+                switch (expr.getKind()) {
+                    case FUNCTION_CALL -> {
+                        var c = (FunctionCall) expr;
+                        if ((c.getFunction().getModifiers().flags() & Modifiers.kPure_Flag) == 0) {
+                            return true;
+                        }
+                    }
+                    case PREFIX -> {
+                        var p = (PrefixExpression) expr;
+                        if (p.getOperator() == Operator.INC ||
+                                p.getOperator() == Operator.DEC) {
+                            return true;
+                        }
+                    }
+                    case POSTFIX -> {
+                        var p = (PostfixExpression) expr;
+                        if (p.getOperator() == Operator.INC ||
+                                p.getOperator() == Operator.DEC) {
+                            return true;
+                        }
+                    }
+                    case BINARY -> {
+                        var b = (BinaryExpression) expr;
+                        if (b.getOperator().isAssignment()) {
+                            return true;
+                        }
+                    }
+                }
+                return super.visitExpression(expr);
             }
         }
         return expr.accept(new HasSideEffectsVisitor());

@@ -19,9 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.ShaderCompiler;
 import org.jspecify.annotations.NonNull;
-import icyllis.arc3d.compiler.Context;
 
 /**
  * Represents an ill-formed expression. This is needed so that parser can go further.
@@ -40,11 +40,6 @@ public final class Poison extends Expression {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.POISON;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return false;
     }
 
     @NonNull

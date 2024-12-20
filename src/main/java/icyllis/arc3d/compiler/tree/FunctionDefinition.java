@@ -93,14 +93,6 @@ public final class FunctionDefinition extends TopLevelElement {
         return ElementKind.FUNCTION_DEFINITION;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitFunctionDefinition(this)) {
-            return true;
-        }
-        return mBody.accept(visitor);
-    }
-
     @NonNull
     @Override
     public String toString() {

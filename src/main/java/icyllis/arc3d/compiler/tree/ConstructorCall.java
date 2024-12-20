@@ -25,7 +25,9 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.*;
+import java.util.List;
+import java.util.OptionalDouble;
+import java.util.StringJoiner;
 
 /**
  * Base class representing a constructor call: type_name( args, ... ).
@@ -70,19 +72,6 @@ public abstract class ConstructorCall extends Expression {
         }
         context.error(pos, "cannot construct '" + type + "'");
         return null;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitConstructorCall(this)) {
-            return true;
-        }
-        for (Expression arg : mArguments) {
-            if (arg.accept(visitor)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override

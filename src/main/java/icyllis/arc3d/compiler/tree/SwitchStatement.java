@@ -145,14 +145,6 @@ public final class SwitchStatement extends Statement {
         return StatementKind.SWITCH;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitSwitch(this)) {
-            return true;
-        }
-        return mInit.accept(visitor) || mCaseBlock.accept(visitor);
-    }
-
     @NonNull
     @Override
     public String toString() {

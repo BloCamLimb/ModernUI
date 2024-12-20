@@ -19,10 +19,10 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Operator;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import icyllis.arc3d.compiler.Context;
 
 /**
  * An expression modified by a unary operator appearing after it.
@@ -63,14 +63,6 @@ public final class PostfixExpression extends Expression {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.POSTFIX;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitPostfix(this)) {
-            return true;
-        }
-        return mOperand.accept(visitor);
     }
 
     public Expression getOperand() {

@@ -78,17 +78,6 @@ public final class ForLoop extends Statement {
         return StatementKind.FOR_LOOP;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitForLoop(this)) {
-            return true;
-        }
-        return (mInit != null && mInit.accept(visitor)) ||
-                (mCondition != null && mCondition.accept(visitor)) ||
-                (mStep != null && mStep.accept(visitor)) ||
-                mStatement.accept(visitor);
-    }
-
     public Statement getInit() {
         return mInit;
     }

@@ -54,11 +54,6 @@ public final class VariableReference extends Expression {
         return ExpressionKind.VARIABLE_REFERENCE;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitVariableReference(this);
-    }
-
     public Variable getVariable() {
         return mVariable;
     }

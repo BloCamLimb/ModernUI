@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.ConstantFolder;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.analysis.Analysis;
 import org.jspecify.annotations.NonNull;
 
@@ -116,14 +118,6 @@ public final class PrefixExpression extends Expression {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.PREFIX;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitPrefix(this)) {
-            return true;
-        }
-        return mOperand.accept(visitor);
     }
 
     public Operator getOperator() {

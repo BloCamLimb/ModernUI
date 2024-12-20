@@ -51,11 +51,6 @@ public final class DiscardStatement extends Statement {
         return StatementKind.DISCARD;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        return visitor.visitDiscard(this);
-    }
-
     @NonNull
     @Override
     public String toString() {

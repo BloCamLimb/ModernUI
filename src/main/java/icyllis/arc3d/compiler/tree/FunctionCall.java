@@ -19,14 +19,16 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.analysis.Analysis;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * A function invocation: function_name( args, ... ).
@@ -154,9 +156,9 @@ public final class FunctionCall extends Expression {
             // Update the refKind on out-parameters, and ensure that they are actually assignable.
             Modifiers paramFlags = function.getParameters().get(i).getModifiers();
             if ((paramFlags.flags() & Modifiers.kOut_Flag) != 0) {
-            int refKind = (paramFlags.flags() & Modifiers.kIn_Flag) != 0
+                int refKind = (paramFlags.flags() & Modifiers.kIn_Flag) != 0
                         ? VariableReference.kReadWrite_ReferenceKind
-                : VariableReference.kPointer_ReferenceKind;
+                        : VariableReference.kPointer_ReferenceKind;
                 if (!Analysis.updateVariableRefKind(arguments.get(i), refKind)) {
                     return null;
                 }
@@ -184,19 +186,6 @@ public final class FunctionCall extends Expression {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.FUNCTION_CALL;
-    }
-
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitFunctionCall(this)) {
-            return true;
-        }
-        for (Expression arg : mArguments) {
-            if (arg.accept(visitor)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public FunctionDecl getFunction() {

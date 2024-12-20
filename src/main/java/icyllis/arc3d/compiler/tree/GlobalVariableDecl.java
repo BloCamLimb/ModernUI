@@ -43,14 +43,6 @@ public final class GlobalVariableDecl extends TopLevelElement {
         return ElementKind.GLOBAL_VARIABLE;
     }
 
-    @Override
-    public boolean accept(@NonNull TreeVisitor visitor) {
-        if (visitor.visitGlobalVariableDecl(this)) {
-            return true;
-        }
-        return mVariableDecl.accept(visitor);
-    }
-
     @NonNull
     @Override
     public String toString() {
