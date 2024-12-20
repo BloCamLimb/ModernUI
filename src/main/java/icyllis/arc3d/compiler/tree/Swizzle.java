@@ -41,7 +41,7 @@ public final class Swizzle extends Expression {
             ZERO = 16,  // custom swizzle
             ONE  = 17;  // custom swizzle
 
-    private final Expression mBase;
+    private Expression mBase;
     private final byte[] mComponents; // contains only X, Y, Z and W
 
     private Swizzle(int position, Type type, Expression base, byte[] components) {
@@ -499,6 +499,10 @@ public final class Swizzle extends Expression {
 
     public Expression getBase() {
         return mBase;
+    }
+
+    public void setBase(Expression base) {
+        mBase = base;
     }
 
     // **immutable**

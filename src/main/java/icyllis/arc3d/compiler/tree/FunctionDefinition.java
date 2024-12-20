@@ -84,8 +84,8 @@ public final class FunctionDefinition extends TopLevelElement {
         return mBody;
     }
 
-    public void setBody(BlockStatement body) {
-        mBody = body;
+    public void setBody(Statement body) {
+        mBody = (BlockStatement) body;
     }
 
     @Override

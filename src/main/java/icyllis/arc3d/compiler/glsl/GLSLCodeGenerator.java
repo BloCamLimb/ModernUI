@@ -358,12 +358,8 @@ public final class GLSLCodeGenerator extends CodeGenerator {
                 writeTypePrecision(type);
                 writeType(type);
             } else {
-                Type baseType = param.getType();
-                int arraySize = 0;
-                if (baseType.isArray()) {
-                    arraySize = baseType.getArraySize();
-                    baseType = baseType.getElementType();
-                }
+                Type baseType = param.getBaseType();
+                int arraySize = param.getArraySize();
                 writeTypePrecision(baseType);
                 writeType(baseType);
                 write(' ');
@@ -796,12 +792,8 @@ public final class GLSLCodeGenerator extends CodeGenerator {
     private void writeVariableDecl(VariableDecl decl) {
         var variable = decl.getVariable();
         writeModifiers(variable.getModifiers());
-        Type baseType = variable.getType();
-        int arraySize = 0;
-        if (baseType.isArray()) {
-            arraySize = baseType.getArraySize();
-            baseType = baseType.getElementType();
-        }
+        Type baseType = variable.getBaseType();
+        int arraySize = variable.getArraySize();
         writeTypePrecision(baseType);
         writeType(baseType);
         write(' ');

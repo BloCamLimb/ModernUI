@@ -112,10 +112,6 @@ public final class BlockStatement extends Statement {
         return mStatements;
     }
 
-    public void setStatements(List<Statement> statements) {
-        mStatements = statements;
-    }
-
     public boolean isScoped() {
         return mScoped;
     }
