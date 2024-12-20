@@ -50,260 +50,6 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // SpvId 0 is reserved by SPIR-V and also represents absence in map
     public static final int NONE_ID = 0xFFFFFFFF;
 
-    private static final int
-            kInvalid_IntrinsicOpcodeKind = 0,
-            kGLSLstd450_IntrinsicOpcodeKind = 1,
-            kSPIRV_IntrinsicOpcodeKind = 2,
-            kSpecial_IntrinsicOpcodeKind = 3;
-
-    private static final int
-            kAtan_SpecialIntrinsic = 0,
-            kClamp_SpecialIntrinsic = 1,
-            kMatrixCompMult_SpecialIntrinsic = 2,
-            kMax_SpecialIntrinsic = 3,
-            kMin_SpecialIntrinsic = 4,
-            kMix_SpecialIntrinsic = 5,
-            kMod_SpecialIntrinsic = 6,
-            kSaturate_SpecialIntrinsic = 7,
-            kSampledImage_SpecialIntrinsic = 8,
-            kSmoothStep_SpecialIntrinsic = 9,
-            kStep_SpecialIntrinsic = 10,
-            kSubpassLoad_SpecialIntrinsic = 11,
-            kTexture_SpecialIntrinsic = 12,
-            kTextureGrad_SpecialIntrinsic = 13,
-            kTextureLod_SpecialIntrinsic = 14,
-            kTextureFetch_SpecialIntrinsic = 15,
-            kTextureRead_SpecialIntrinsic = 16,
-            kTextureWrite_SpecialIntrinsic = 17,
-            kTextureWidth_SpecialIntrinsic = 18,
-            kTextureHeight_SpecialIntrinsic = 19,
-            kAtomicAdd_SpecialIntrinsic = 20,
-            kAtomicLoad_SpecialIntrinsic = 21,
-            kAtomicStore_SpecialIntrinsic = 22,
-            kStorageBarrier_SpecialIntrinsic = 23,
-            kWorkgroupBarrier_SpecialIntrinsic = 24;
-
-    // flattened intrinsic data:
-    //
-    // struct Intrinsic {
-    //     IntrinsicOpcodeKind opKind;
-    //     int32_t floatOp;
-    //     int32_t signedOp;
-    //     int32_t unsignedOp;
-    //     int32_t booleanOp;
-    // };
-    private static final int kIntrinsicDataColumn = 5;
-    private static final int[] sIntrinsicData = new int[IntrinsicList.kCount * kIntrinsicDataColumn];
-
-    private static void setIntrinsic(int intrinsic, int opKind,
-                                     int floatOp, int signedOp, int unsignedOp, int booleanOp) {
-        assert intrinsic >= 0 && intrinsic < IntrinsicList.kCount;
-        int index = intrinsic * kIntrinsicDataColumn;
-        sIntrinsicData[index] = opKind;
-        sIntrinsicData[index + 1] = floatOp;
-        sIntrinsicData[index + 2] = signedOp;
-        sIntrinsicData[index + 3] = unsignedOp;
-        sIntrinsicData[index + 4] = booleanOp;
-    }
-
-    // setup intrinsics
-    static {
-        setIntrinsic(IntrinsicList.kRound,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Round, GLSLstd450Round, GLSLstd450Round, GLSLstd450Round);
-        setIntrinsic(IntrinsicList.kRoundEven,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450RoundEven, GLSLstd450RoundEven, GLSLstd450RoundEven, GLSLstd450RoundEven);
-        setIntrinsic(IntrinsicList.kTrunc,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Trunc, GLSLstd450Trunc, GLSLstd450Trunc, GLSLstd450Trunc);
-        setIntrinsic(IntrinsicList.kAbs,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450FAbs, GLSLstd450SAbs, GLSLstd450SAbs, GLSLstd450Bad);
-        setIntrinsic(IntrinsicList.kSign,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450FSign, GLSLstd450SSign, GLSLstd450SSign, GLSLstd450Bad);
-        setIntrinsic(IntrinsicList.kFloor,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Floor, GLSLstd450Floor, GLSLstd450Floor, GLSLstd450Floor);
-        setIntrinsic(IntrinsicList.kCeil,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Ceil, GLSLstd450Ceil, GLSLstd450Ceil, GLSLstd450Ceil);
-        setIntrinsic(IntrinsicList.kFract,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Fract, GLSLstd450Fract, GLSLstd450Fract, GLSLstd450Fract);
-        setIntrinsic(IntrinsicList.kRadians,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Radians, GLSLstd450Radians, GLSLstd450Radians, GLSLstd450Radians);
-        setIntrinsic(IntrinsicList.kDegrees,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Degrees, GLSLstd450Degrees, GLSLstd450Degrees, GLSLstd450Degrees);
-        setIntrinsic(IntrinsicList.kSin,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Sin, GLSLstd450Sin, GLSLstd450Sin, GLSLstd450Sin);
-        setIntrinsic(IntrinsicList.kCos,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Cos, GLSLstd450Cos, GLSLstd450Cos, GLSLstd450Cos);
-        setIntrinsic(IntrinsicList.kTan,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Tan, GLSLstd450Tan, GLSLstd450Tan, GLSLstd450Tan);
-        setIntrinsic(IntrinsicList.kAsin,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Asin, GLSLstd450Asin, GLSLstd450Asin, GLSLstd450Asin);
-        setIntrinsic(IntrinsicList.kAcos,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Acos, GLSLstd450Acos, GLSLstd450Acos, GLSLstd450Acos);
-        setIntrinsic(IntrinsicList.kAtan,
-                kSpecial_IntrinsicOpcodeKind,
-                kAtan_SpecialIntrinsic, kAtan_SpecialIntrinsic,
-                kAtan_SpecialIntrinsic, kAtan_SpecialIntrinsic);
-
-        setIntrinsic(IntrinsicList.kPow,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Pow, GLSLstd450Pow, GLSLstd450Pow, GLSLstd450Pow);
-        setIntrinsic(IntrinsicList.kExp,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Exp, GLSLstd450Exp, GLSLstd450Exp, GLSLstd450Exp);
-        setIntrinsic(IntrinsicList.kLog,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Log, GLSLstd450Log, GLSLstd450Log, GLSLstd450Log);
-        setIntrinsic(IntrinsicList.kExp2,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Exp2, GLSLstd450Exp2, GLSLstd450Exp2, GLSLstd450Exp2);
-        setIntrinsic(IntrinsicList.kLog2,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Log2, GLSLstd450Log2, GLSLstd450Log2, GLSLstd450Log2);
-        setIntrinsic(IntrinsicList.kSqrt,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Sqrt, GLSLstd450Sqrt, GLSLstd450Sqrt, GLSLstd450Sqrt);
-
-        setIntrinsic(IntrinsicList.kMod,
-                kSpecial_IntrinsicOpcodeKind,
-                kMod_SpecialIntrinsic, kMod_SpecialIntrinsic,
-                kMod_SpecialIntrinsic, kMod_SpecialIntrinsic);
-        setIntrinsic(IntrinsicList.kModf,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Modf, GLSLstd450Modf, GLSLstd450Modf, GLSLstd450Modf);
-        setIntrinsic(IntrinsicList.kMin,
-                kSpecial_IntrinsicOpcodeKind,
-                kMin_SpecialIntrinsic, kMin_SpecialIntrinsic,
-                kMin_SpecialIntrinsic, kMin_SpecialIntrinsic);
-        setIntrinsic(IntrinsicList.kMax,
-                kSpecial_IntrinsicOpcodeKind,
-                kMax_SpecialIntrinsic, kMax_SpecialIntrinsic,
-                kMax_SpecialIntrinsic, kMax_SpecialIntrinsic);
-        setIntrinsic(IntrinsicList.kClamp,
-                kSpecial_IntrinsicOpcodeKind,
-                kClamp_SpecialIntrinsic, kClamp_SpecialIntrinsic,
-                kClamp_SpecialIntrinsic, kClamp_SpecialIntrinsic);
-        setIntrinsic(IntrinsicList.kSaturate,
-                kSpecial_IntrinsicOpcodeKind,
-                kSaturate_SpecialIntrinsic, kSaturate_SpecialIntrinsic,
-                kSaturate_SpecialIntrinsic, kSaturate_SpecialIntrinsic);
-        setIntrinsic(IntrinsicList.kDot,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpDot, SpvOpUndef, SpvOpUndef, SpvOpUndef);
-        setIntrinsic(IntrinsicList.kMix,
-                kSpecial_IntrinsicOpcodeKind,
-                kMix_SpecialIntrinsic, kMix_SpecialIntrinsic,
-                kMix_SpecialIntrinsic, kMix_SpecialIntrinsic);
-        setIntrinsic(IntrinsicList.kStep,
-                kSpecial_IntrinsicOpcodeKind,
-                kStep_SpecialIntrinsic, kStep_SpecialIntrinsic,
-                kStep_SpecialIntrinsic, kStep_SpecialIntrinsic);
-        setIntrinsic(IntrinsicList.kSmoothStep,
-                kSpecial_IntrinsicOpcodeKind,
-                kSmoothStep_SpecialIntrinsic, kSmoothStep_SpecialIntrinsic,
-                kSmoothStep_SpecialIntrinsic, kSmoothStep_SpecialIntrinsic);
-
-        setIntrinsic(IntrinsicList.kLength,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Length, GLSLstd450Length, GLSLstd450Length, GLSLstd450Length);
-        setIntrinsic(IntrinsicList.kDistance,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Distance, GLSLstd450Distance, GLSLstd450Distance, GLSLstd450Distance);
-        setIntrinsic(IntrinsicList.kCross,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Cross, GLSLstd450Cross, GLSLstd450Cross, GLSLstd450Cross);
-        setIntrinsic(IntrinsicList.kNormalize,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Normalize, GLSLstd450Normalize, GLSLstd450Normalize, GLSLstd450Normalize);
-        setIntrinsic(IntrinsicList.kFaceForward,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450FaceForward, GLSLstd450FaceForward, GLSLstd450FaceForward, GLSLstd450FaceForward);
-        setIntrinsic(IntrinsicList.kReflect,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Reflect, GLSLstd450Reflect, GLSLstd450Reflect, GLSLstd450Reflect);
-        setIntrinsic(IntrinsicList.kRefract,
-                kGLSLstd450_IntrinsicOpcodeKind,
-                GLSLstd450Refract, GLSLstd450Refract, GLSLstd450Refract, GLSLstd450Refract);
-
-        setIntrinsic(IntrinsicList.kDPdx,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpDPdx, SpvOpUndef, SpvOpUndef, SpvOpUndef);
-        setIntrinsic(IntrinsicList.kDPdy,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpDPdy, SpvOpUndef, SpvOpUndef, SpvOpUndef);
-        setIntrinsic(IntrinsicList.kFwidth,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpFwidth, SpvOpUndef, SpvOpUndef, SpvOpUndef);
-
-        setIntrinsic(IntrinsicList.kTexture,
-                kSpecial_IntrinsicOpcodeKind,
-                kTexture_SpecialIntrinsic, kTexture_SpecialIntrinsic,
-                kTexture_SpecialIntrinsic, kTexture_SpecialIntrinsic);
-        setIntrinsic(IntrinsicList.kTextureFetch,
-                kSpecial_IntrinsicOpcodeKind,
-                kTextureFetch_SpecialIntrinsic, kTextureFetch_SpecialIntrinsic,
-                kTextureFetch_SpecialIntrinsic, kTextureFetch_SpecialIntrinsic);
-
-        setIntrinsic(IntrinsicList.kAny,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpAny);
-        setIntrinsic(IntrinsicList.kAll,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpAll);
-        setIntrinsic(IntrinsicList.kLogicalNot,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpLogicalNot);
-        setIntrinsic(IntrinsicList.kEqual,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpFOrdEqual,
-                SpvOpIEqual,
-                SpvOpIEqual,
-                SpvOpLogicalEqual);
-        setIntrinsic(IntrinsicList.kNotEqual,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpFUnordNotEqual,
-                SpvOpINotEqual,
-                SpvOpINotEqual,
-                SpvOpLogicalNotEqual);
-        setIntrinsic(IntrinsicList.kLessThan,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpFOrdLessThan,
-                SpvOpSLessThan,
-                SpvOpULessThan,
-                SpvOpUndef);
-        setIntrinsic(IntrinsicList.kLessThanEqual,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpFOrdLessThanEqual,
-                SpvOpSLessThanEqual,
-                SpvOpULessThanEqual,
-                SpvOpUndef);
-        setIntrinsic(IntrinsicList.kGreaterThan,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpFOrdGreaterThan,
-                SpvOpSGreaterThan,
-                SpvOpUGreaterThan,
-                SpvOpUndef);
-        setIntrinsic(IntrinsicList.kGreaterThanEqual,
-                kSPIRV_IntrinsicOpcodeKind,
-                SpvOpFOrdGreaterThanEqual,
-                SpvOpSGreaterThanEqual,
-                SpvOpUGreaterThanEqual,
-                SpvOpUndef);
-    }
-
     public final TargetApi mOutputTarget;
     public final SPIRVVersion mOutputVersion;
 
@@ -3785,5 +3531,301 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             return;
         }
         mIdListPool[mIdListPoolSize++] = idList;
+    }
+
+    private static final int
+            kInvalid_IntrinsicOpcodeKind = 0,
+            kGLSLstd450_IntrinsicOpcodeKind = 1,
+            kSPIRV_IntrinsicOpcodeKind = 2,
+            kSpecial_IntrinsicOpcodeKind = 3;
+
+    private static final int
+            kAtan_SpecialIntrinsic = 0,
+            kClamp_SpecialIntrinsic = 1,
+            kMatrixCompMult_SpecialIntrinsic = 2,
+            kMax_SpecialIntrinsic = 3,
+            kMin_SpecialIntrinsic = 4,
+            kMix_SpecialIntrinsic = 5,
+            kMod_SpecialIntrinsic = 6,
+            kSaturate_SpecialIntrinsic = 7,
+            kSampledImage_SpecialIntrinsic = 8,
+            kSmoothStep_SpecialIntrinsic = 9,
+            kStep_SpecialIntrinsic = 10,
+            kSubpassLoad_SpecialIntrinsic = 11,
+            kTexture_SpecialIntrinsic = 12,
+            kTextureGrad_SpecialIntrinsic = 13,
+            kTextureLod_SpecialIntrinsic = 14,
+            kTextureFetch_SpecialIntrinsic = 15,
+            kTextureRead_SpecialIntrinsic = 16,
+            kTextureWrite_SpecialIntrinsic = 17,
+            kTextureWidth_SpecialIntrinsic = 18,
+            kTextureHeight_SpecialIntrinsic = 19,
+            kAtomicAdd_SpecialIntrinsic = 20,
+            kAtomicLoad_SpecialIntrinsic = 21,
+            kAtomicStore_SpecialIntrinsic = 22,
+            kStorageBarrier_SpecialIntrinsic = 23,
+            kWorkgroupBarrier_SpecialIntrinsic = 24;
+
+    // flattened intrinsic data:
+    //
+    // struct Intrinsic {
+    //     IntrinsicOpcodeKind opKind;
+    //     int32_t floatOp;
+    //     int32_t signedOp;
+    //     int32_t unsignedOp;
+    //     int32_t booleanOp;
+    // };
+    private static final int kIntrinsicDataColumn = 5;
+    private static final int[] sIntrinsicData = new int[IntrinsicList.kCount * kIntrinsicDataColumn];
+
+    private static void setIntrinsic(int intrinsic, int opKind,
+                                     int floatOp, int signedOp, int unsignedOp, int booleanOp) {
+        assert intrinsic >= 0 && intrinsic < IntrinsicList.kCount;
+        int index = intrinsic * kIntrinsicDataColumn;
+        assert sIntrinsicData[index] == kInvalid_IntrinsicOpcodeKind;
+        sIntrinsicData[index] = opKind;
+        sIntrinsicData[index + 1] = floatOp;
+        sIntrinsicData[index + 2] = signedOp;
+        sIntrinsicData[index + 3] = unsignedOp;
+        sIntrinsicData[index + 4] = booleanOp;
+    }
+
+    // setup intrinsics
+    static {
+        setIntrinsic(IntrinsicList.kRound,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Round, GLSLstd450Round, GLSLstd450Round, GLSLstd450Round);
+        setIntrinsic(IntrinsicList.kRoundEven,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450RoundEven, GLSLstd450RoundEven, GLSLstd450RoundEven, GLSLstd450RoundEven);
+        setIntrinsic(IntrinsicList.kTrunc,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Trunc, GLSLstd450Trunc, GLSLstd450Trunc, GLSLstd450Trunc);
+        setIntrinsic(IntrinsicList.kAbs,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450FAbs, GLSLstd450SAbs, GLSLstd450SAbs, GLSLstd450Bad);
+        setIntrinsic(IntrinsicList.kSign,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450FSign, GLSLstd450SSign, GLSLstd450SSign, GLSLstd450Bad);
+        setIntrinsic(IntrinsicList.kFloor,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Floor, GLSLstd450Floor, GLSLstd450Floor, GLSLstd450Floor);
+        setIntrinsic(IntrinsicList.kCeil,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Ceil, GLSLstd450Ceil, GLSLstd450Ceil, GLSLstd450Ceil);
+        setIntrinsic(IntrinsicList.kFract,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Fract, GLSLstd450Fract, GLSLstd450Fract, GLSLstd450Fract);
+        setIntrinsic(IntrinsicList.kRadians,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Radians, GLSLstd450Radians, GLSLstd450Radians, GLSLstd450Radians);
+        setIntrinsic(IntrinsicList.kDegrees,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Degrees, GLSLstd450Degrees, GLSLstd450Degrees, GLSLstd450Degrees);
+        setIntrinsic(IntrinsicList.kSin,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Sin, GLSLstd450Sin, GLSLstd450Sin, GLSLstd450Sin);
+        setIntrinsic(IntrinsicList.kCos,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Cos, GLSLstd450Cos, GLSLstd450Cos, GLSLstd450Cos);
+        setIntrinsic(IntrinsicList.kTan,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Tan, GLSLstd450Tan, GLSLstd450Tan, GLSLstd450Tan);
+        setIntrinsic(IntrinsicList.kAsin,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Asin, GLSLstd450Asin, GLSLstd450Asin, GLSLstd450Asin);
+        setIntrinsic(IntrinsicList.kAcos,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Acos, GLSLstd450Acos, GLSLstd450Acos, GLSLstd450Acos);
+        setIntrinsic(IntrinsicList.kAtan,
+                kSpecial_IntrinsicOpcodeKind,
+                kAtan_SpecialIntrinsic, kAtan_SpecialIntrinsic,
+                kAtan_SpecialIntrinsic, kAtan_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kSinh,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Sinh, GLSLstd450Sinh, GLSLstd450Sinh, GLSLstd450Sinh);
+        setIntrinsic(IntrinsicList.kCosh,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Cosh, GLSLstd450Cosh, GLSLstd450Cosh, GLSLstd450Cosh);
+        setIntrinsic(IntrinsicList.kTanh,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Tanh, GLSLstd450Tanh, GLSLstd450Tanh, GLSLstd450Tanh);
+        setIntrinsic(IntrinsicList.kAsinh,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Asinh, GLSLstd450Asinh, GLSLstd450Asinh, GLSLstd450Asinh);
+        setIntrinsic(IntrinsicList.kAcosh,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Acosh, GLSLstd450Acosh, GLSLstd450Acosh, GLSLstd450Acosh);
+        setIntrinsic(IntrinsicList.kAtanh,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Atanh, GLSLstd450Atanh, GLSLstd450Atanh, GLSLstd450Atanh);
+        setIntrinsic(IntrinsicList.kPow,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Pow, GLSLstd450Pow, GLSLstd450Pow, GLSLstd450Pow);
+        setIntrinsic(IntrinsicList.kExp,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Exp, GLSLstd450Exp, GLSLstd450Exp, GLSLstd450Exp);
+        setIntrinsic(IntrinsicList.kLog,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Log, GLSLstd450Log, GLSLstd450Log, GLSLstd450Log);
+        setIntrinsic(IntrinsicList.kExp2,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Exp2, GLSLstd450Exp2, GLSLstd450Exp2, GLSLstd450Exp2);
+        setIntrinsic(IntrinsicList.kLog2,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Log2, GLSLstd450Log2, GLSLstd450Log2, GLSLstd450Log2);
+        setIntrinsic(IntrinsicList.kSqrt,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Sqrt, GLSLstd450Sqrt, GLSLstd450Sqrt, GLSLstd450Sqrt);
+        setIntrinsic(IntrinsicList.kMatrixInverse,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450MatrixInverse, GLSLstd450MatrixInverse,
+                GLSLstd450MatrixInverse, GLSLstd450MatrixInverse);
+        setIntrinsic(IntrinsicList.kOuterProduct,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpOuterProduct, SpvOpOuterProduct, SpvOpOuterProduct, SpvOpOuterProduct);
+        setIntrinsic(IntrinsicList.kTranspose,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpTranspose, SpvOpTranspose, SpvOpTranspose, SpvOpTranspose);
+        setIntrinsic(IntrinsicList.kIsInf,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpIsInf, SpvOpIsInf, SpvOpIsInf, SpvOpIsInf);
+        setIntrinsic(IntrinsicList.kIsNan,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpIsNan, SpvOpIsNan, SpvOpIsNan, SpvOpIsNan);
+        setIntrinsic(IntrinsicList.kInverseSqrt,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450InverseSqrt, GLSLstd450InverseSqrt,
+                GLSLstd450InverseSqrt, GLSLstd450InverseSqrt);
+        setIntrinsic(IntrinsicList.kDeterminant,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Determinant, GLSLstd450Determinant,
+                GLSLstd450Determinant, GLSLstd450Determinant);
+
+        setIntrinsic(IntrinsicList.kMod,
+                kSpecial_IntrinsicOpcodeKind,
+                kMod_SpecialIntrinsic, kMod_SpecialIntrinsic,
+                kMod_SpecialIntrinsic, kMod_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kModf,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Modf, GLSLstd450Modf, GLSLstd450Modf, GLSLstd450Modf);
+        setIntrinsic(IntrinsicList.kMin,
+                kSpecial_IntrinsicOpcodeKind,
+                kMin_SpecialIntrinsic, kMin_SpecialIntrinsic,
+                kMin_SpecialIntrinsic, kMin_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kMax,
+                kSpecial_IntrinsicOpcodeKind,
+                kMax_SpecialIntrinsic, kMax_SpecialIntrinsic,
+                kMax_SpecialIntrinsic, kMax_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kClamp,
+                kSpecial_IntrinsicOpcodeKind,
+                kClamp_SpecialIntrinsic, kClamp_SpecialIntrinsic,
+                kClamp_SpecialIntrinsic, kClamp_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kSaturate,
+                kSpecial_IntrinsicOpcodeKind,
+                kSaturate_SpecialIntrinsic, kSaturate_SpecialIntrinsic,
+                kSaturate_SpecialIntrinsic, kSaturate_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kDot,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpDot, SpvOpUndef, SpvOpUndef, SpvOpUndef);
+        setIntrinsic(IntrinsicList.kMix,
+                kSpecial_IntrinsicOpcodeKind,
+                kMix_SpecialIntrinsic, kMix_SpecialIntrinsic,
+                kMix_SpecialIntrinsic, kMix_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kStep,
+                kSpecial_IntrinsicOpcodeKind,
+                kStep_SpecialIntrinsic, kStep_SpecialIntrinsic,
+                kStep_SpecialIntrinsic, kStep_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kSmoothStep,
+                kSpecial_IntrinsicOpcodeKind,
+                kSmoothStep_SpecialIntrinsic, kSmoothStep_SpecialIntrinsic,
+                kSmoothStep_SpecialIntrinsic, kSmoothStep_SpecialIntrinsic);
+
+        setIntrinsic(IntrinsicList.kLength,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Length, GLSLstd450Length, GLSLstd450Length, GLSLstd450Length);
+        setIntrinsic(IntrinsicList.kDistance,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Distance, GLSLstd450Distance, GLSLstd450Distance, GLSLstd450Distance);
+        setIntrinsic(IntrinsicList.kCross,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Cross, GLSLstd450Cross, GLSLstd450Cross, GLSLstd450Cross);
+        setIntrinsic(IntrinsicList.kNormalize,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Normalize, GLSLstd450Normalize, GLSLstd450Normalize, GLSLstd450Normalize);
+        setIntrinsic(IntrinsicList.kFaceForward,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450FaceForward, GLSLstd450FaceForward, GLSLstd450FaceForward, GLSLstd450FaceForward);
+        setIntrinsic(IntrinsicList.kReflect,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Reflect, GLSLstd450Reflect, GLSLstd450Reflect, GLSLstd450Reflect);
+        setIntrinsic(IntrinsicList.kRefract,
+                kGLSLstd450_IntrinsicOpcodeKind,
+                GLSLstd450Refract, GLSLstd450Refract, GLSLstd450Refract, GLSLstd450Refract);
+
+        setIntrinsic(IntrinsicList.kDPdx,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpDPdx, SpvOpUndef, SpvOpUndef, SpvOpUndef);
+        setIntrinsic(IntrinsicList.kDPdy,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpDPdy, SpvOpUndef, SpvOpUndef, SpvOpUndef);
+        setIntrinsic(IntrinsicList.kFwidth,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFwidth, SpvOpUndef, SpvOpUndef, SpvOpUndef);
+
+        setIntrinsic(IntrinsicList.kTexture,
+                kSpecial_IntrinsicOpcodeKind,
+                kTexture_SpecialIntrinsic, kTexture_SpecialIntrinsic,
+                kTexture_SpecialIntrinsic, kTexture_SpecialIntrinsic);
+        setIntrinsic(IntrinsicList.kTextureFetch,
+                kSpecial_IntrinsicOpcodeKind,
+                kTextureFetch_SpecialIntrinsic, kTextureFetch_SpecialIntrinsic,
+                kTextureFetch_SpecialIntrinsic, kTextureFetch_SpecialIntrinsic);
+
+        setIntrinsic(IntrinsicList.kAny,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpAny);
+        setIntrinsic(IntrinsicList.kAll,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpAll);
+        setIntrinsic(IntrinsicList.kLogicalNot,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpUndef, SpvOpUndef, SpvOpUndef, SpvOpLogicalNot);
+        setIntrinsic(IntrinsicList.kEqual,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdEqual,
+                SpvOpIEqual,
+                SpvOpIEqual,
+                SpvOpLogicalEqual);
+        setIntrinsic(IntrinsicList.kNotEqual,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFUnordNotEqual,
+                SpvOpINotEqual,
+                SpvOpINotEqual,
+                SpvOpLogicalNotEqual);
+        setIntrinsic(IntrinsicList.kLessThan,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdLessThan,
+                SpvOpSLessThan,
+                SpvOpULessThan,
+                SpvOpUndef);
+        setIntrinsic(IntrinsicList.kLessThanEqual,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdLessThanEqual,
+                SpvOpSLessThanEqual,
+                SpvOpULessThanEqual,
+                SpvOpUndef);
+        setIntrinsic(IntrinsicList.kGreaterThan,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdGreaterThan,
+                SpvOpSGreaterThan,
+                SpvOpUGreaterThan,
+                SpvOpUndef);
+        setIntrinsic(IntrinsicList.kGreaterThanEqual,
+                kSPIRV_IntrinsicOpcodeKind,
+                SpvOpFOrdGreaterThanEqual,
+                SpvOpSGreaterThanEqual,
+                SpvOpUGreaterThanEqual,
+                SpvOpUndef);
     }
 }
