@@ -35,7 +35,7 @@ import org.jspecify.annotations.NonNull;
 public final class PrefixExpression extends Expression {
 
     private final Operator mOperator;
-    private final Expression mOperand;
+    private Expression mOperand;
 
     public PrefixExpression(int position, Operator op, Expression operand) {
         super(position, operand.getType());
@@ -126,6 +126,10 @@ public final class PrefixExpression extends Expression {
 
     public Expression getOperand() {
         return mOperand;
+    }
+
+    public void setOperand(Expression operand) {
+        mOperand = operand;
     }
 
     @NonNull

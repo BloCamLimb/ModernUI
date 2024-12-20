@@ -31,7 +31,7 @@ import java.util.Objects;
  */
 public final class FieldAccess extends Expression {
 
-    private final Expression mBase;
+    private Expression mBase;
     private final int mFieldIndex;
     private final boolean mAnonymousBlock;
 
@@ -93,6 +93,10 @@ public final class FieldAccess extends Expression {
 
     public Expression getBase() {
         return mBase;
+    }
+
+    public void setBase(Expression base) {
+        mBase = base;
     }
 
     public int getFieldIndex() {

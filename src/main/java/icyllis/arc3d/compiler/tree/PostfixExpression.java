@@ -33,7 +33,7 @@ import org.jspecify.annotations.Nullable;
  */
 public final class PostfixExpression extends Expression {
 
-    private final Expression mOperand;
+    private Expression mOperand;
     private final Operator mOperator;
 
     private PostfixExpression(int position, Expression operand, Operator op) {
@@ -67,6 +67,10 @@ public final class PostfixExpression extends Expression {
 
     public Expression getOperand() {
         return mOperand;
+    }
+
+    public void setOperand(Expression operand) {
+        mOperand = operand;
     }
 
     public Operator getOperator() {

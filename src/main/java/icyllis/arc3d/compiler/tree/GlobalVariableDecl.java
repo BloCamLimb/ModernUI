@@ -27,7 +27,7 @@ import org.jspecify.annotations.NonNull;
  */
 public final class GlobalVariableDecl extends TopLevelElement {
 
-    private final VariableDecl mVariableDecl;
+    private VariableDecl mVariableDecl;
 
     public GlobalVariableDecl(@NonNull VariableDecl decl) {
         super(decl.mPosition);
@@ -36,6 +36,10 @@ public final class GlobalVariableDecl extends TopLevelElement {
 
     public VariableDecl getVariableDecl() {
         return mVariableDecl;
+    }
+
+    public void setVariableDecl(Statement decl) {
+        mVariableDecl = (VariableDecl) decl;
     }
 
     @Override
