@@ -259,7 +259,7 @@ public class PerEdgeAAQuadStep extends GeometryStep {
                 """);
         // Calculate local coordinate for the vertex (relative to xAxis and yAxis at first).
         vs.format("""
-                int cornerID = gl_VertexID / 4;
+                int cornerID = SV_VertexID / 4;
                 float2 xAxis = -float2(dx.yzwx[cornerID], dy.yzwx[cornerID]);
                 float2 yAxis =  float2(dx.xyzw[cornerID], dy.xyzw[cornerID]);
                 """);
@@ -364,7 +364,7 @@ public class PerEdgeAAQuadStep extends GeometryStep {
         // been converted to device space.
         fs.format("""
                 float2 outerDist = min(f_EdgeDistances.xy, f_EdgeDistances.zw);
-                float c = min(outerDist.x, outerDist.y) * gl_FragCoord.w;
+                float c = min(outerDist.x, outerDist.y) * SV_FragCoord.w;
                 %s = vec4(saturate(c));
                 """, outputCoverage);
     }

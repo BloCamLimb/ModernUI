@@ -142,7 +142,7 @@ public class AnalyticArcStep extends GeometryStep {
                                    boolean usesFastSolidColor) {
         // {(-1,-1), (-1,1), (1,-1), (1,1)}
         // corner selector, CCW
-        vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * 2.0 - 1.0;\n");
+        vs.format("vec2 position = vec2(SV_VertexID >> 1, SV_VertexID & 1) * 2.0 - 1.0;\n");
 
         // center x, center y, start angle, sweep angle
         vs.format("""
