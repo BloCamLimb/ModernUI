@@ -137,7 +137,7 @@ public class AnalyticSimpleBoxStep extends GeometryStep {
                                    @Nullable String localPosVar, boolean usesFastSolidColor) {
         // {(-1,-1), (-1,1), (1,-1), (1,1)}
         // corner selector, CCW
-        vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * 2.0 - 1.0;\n");
+        vs.format("vec2 position = vec2(SV_VertexID >> 1, SV_VertexID & 1) * 2.0 - 1.0;\n");
 
         // scale x, translate x, scale y, translate y
         vs.format("""

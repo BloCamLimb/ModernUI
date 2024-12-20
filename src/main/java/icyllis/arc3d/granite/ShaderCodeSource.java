@@ -873,7 +873,7 @@ public class ShaderCodeSource {
             vec4 arc_dither_shader(vec4 color,
                                    float range) {
                 // Unrolled 8x8 Bayer matrix
-                vec2 A = gl_FragCoord.xy;
+                vec2 A = SV_FragCoord.xy;
                 vec2 B = floor(A);
                 float U = fract(B.x * 0.5 + B.y * B.y * 0.75);
                 vec2 C = A * 0.5;

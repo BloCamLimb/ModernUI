@@ -20,7 +20,10 @@
 package icyllis.arc3d.granite.shading;
 
 import icyllis.arc3d.core.SLDataType;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ShaderCaps;
+import icyllis.arc3d.engine.ShaderVar;
+import icyllis.arc3d.engine.UniformDataManager;
 import icyllis.arc3d.granite.ShaderCodeSource;
 
 import java.lang.annotation.Retention;
@@ -366,16 +369,7 @@ public class UniformHandler {
         }
     }
 
-    /**
-     * Append one block declaration.
-     *
-     * @param visibility one of ShaderFlags
-     * @return true if block is not empty
-     */
-    public boolean appendUniformDecls(int visibility, int binding, String blockName, StringBuilder out) {
-        assert (visibility != 0);
-        finish(false);
-
+    private boolean checkVisible(int visibility) {
         boolean firstMember = false;
         boolean firstVisible = false;
         for (var uniform : mReorderedUniforms) {
@@ -390,6 +384,20 @@ public class UniformHandler {
                 firstVisible = true;
             }
         }
+        return firstVisible;
+    }
+
+    /**
+     * Append one block declaration.
+     *
+     * @param visibility one of ShaderFlags
+     * @return true if block is not empty
+     */
+    public boolean appendUniformDecls(int visibility, int binding, String blockName, StringBuilder out) {
+        assert (visibility != 0);
+        finish(false);
+
+        boolean firstVisible = checkVisible(visibility);
         // The uniform block definition for all shader stages must be exactly the same
         if (firstVisible) {
             out.append("layout(");

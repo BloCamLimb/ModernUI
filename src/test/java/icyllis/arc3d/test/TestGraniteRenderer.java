@@ -653,8 +653,9 @@ public class TestGraniteRenderer {
                 Matrix4 perspectiveMatrix = new Matrix4();
                 perspectiveMatrix.setIdentity();
                 perspectiveMatrix.m34 = -1.0f / 1920f;
-                perspectiveMatrix.preRotateY(Math.toRadians(30));
-                perspectiveMatrix.preRotateZ(Math.toRadians(45 * Math.sin(System.currentTimeMillis() / 1000.0 * 2)));
+                //perspectiveMatrix.preRotateY(Math.toRadians(30));
+                perspectiveMatrix.preRotateX((MathUtil.DEG_TO_RAD * 45) *
+                        Math.sin(System.currentTimeMillis() / 1000.0 * (116 / 60.0) / 4 * 2 * Math.PI));
                 perspectiveMatrix.preTranslate(-CANVAS_WIDTH / 2f, -CANVAS_HEIGHT / 2f);
                 perspectiveMatrix.postTranslate(CANVAS_WIDTH / 2f, CANVAS_HEIGHT / 2f);
                 canvas.save();
@@ -668,6 +669,8 @@ public class TestGraniteRenderer {
                 if (mRandom.nextDouble() < 0.001) {
                     mTextBlob1 = null;
                 }
+
+                canvas.concat(perspectiveMatrix);
 
                 //canvas.scale(4, 4, 1100, 300);
 
@@ -695,9 +698,10 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mTestShader1));
                 paint.setStyle(Paint.FILL);
                 paint.setAlphaF(0.7f);
-                var mat = new Matrix4();
+                /*var mat = new Matrix4();
                 mat.setTranslate(1000, 100, 0);
-                canvas.setMatrix(mat);
+                canvas.setMatrix(mat);*/
+                canvas.translate(1000, 100);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
                 canvas.drawRoundRect(rrect, paint);
 

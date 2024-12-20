@@ -124,7 +124,7 @@ public class RasterTextStep extends GeometryStep {
         assert !usesFastSolidColor;
         // {(0,0), (0,1), (1,0), (1,1)}
         // corner selector, CCW
-        vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * vec2(%s);\n",
+        vs.format("vec2 position = vec2(SV_VertexID >> 1, SV_VertexID & 1) * vec2(%s);\n",
                 SIZE.name());
 
         vs.format("""
