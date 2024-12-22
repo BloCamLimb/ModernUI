@@ -44,6 +44,7 @@ import icyllis.modernui.view.menu.MenuHelper;
 import icyllis.modernui.widget.TextView;
 import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.TestOnly;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
@@ -57,6 +58,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.LongConsumer;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -161,6 +163,18 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
      */
     @MainThread
     public void run(@NonNull Fragment fragment) {
+        run(fragment, null);
+    }
+
+    /**
+     * Runs the Modern UI with the default application setups.
+     * This method is only called by the <code>main()</code> on the main thread.
+     *
+     * @hidden
+     */
+    @TestOnly
+    @MainThread
+    public void run(@NonNull Fragment fragment, LongConsumer windowCallback) {
         Thread.currentThread().setName("Main-Thread");
 
         Core.initialize();
@@ -221,6 +235,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         LOGGER.debug(MARKER, "Preparing render thread");
         mRenderThread = new Thread(() -> runRender(latch), "Render-Thread");
         mRenderThread.start();
+
+        if (windowCallback != null) {
+            windowCallback.accept(mWindow.getHandle());
+        }
 
         CompletableFuture.supplyAsync(() -> {
             try {
@@ -399,6 +417,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         Core.requireImmediateContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
+    }
+
+    public ActivityWindow getWindow() {
+        return mWindow;
     }
 
     private void loadDefaultTypeface() {

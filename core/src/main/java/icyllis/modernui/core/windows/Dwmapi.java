@@ -16,16 +16,21 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.core.windows;
 
 import org.lwjgl.system.*;
 
 import static org.lwjgl.system.APIUtil.apiGetFunctionAddress;
 import static org.lwjgl.system.JNI.callPPI;
 
+/**
+ * Native bindings to dwmapi.dll.
+ *
+ * @hidden
+ */
 public class Dwmapi {
 
-    private static final SharedLibrary DWMAPI = Library.loadNative(Kernel32.class, "org.lwjgl", "dwmapi");
+    private static final SharedLibrary DWMAPI = Library.loadNative(Dwmapi.class, "org.lwjgl", "dwmapi");
 
     public static final class Functions {
 
@@ -33,7 +38,8 @@ public class Dwmapi {
         }
 
         public static final long
-                DwmExtendFrameIntoClientArea = apiGetFunctionAddress(DWMAPI, "DwmExtendFrameIntoClientArea");
+                DwmExtendFrameIntoClientArea = apiGetFunctionAddress(DWMAPI, "DwmExtendFrameIntoClientArea"),
+                DwmGetWindowAttribute = apiGetFunctionAddress(DWMAPI, "DwmGetWindowAttribute");
 
     }
 
@@ -46,5 +52,14 @@ public class Dwmapi {
                                                    @NativeType("const MARGINS *") long pMarInset) {
         long __functionAddress = Functions.DwmExtendFrameIntoClientArea;
         return callPPI(hWnd, pMarInset, __functionAddress);
+    }
+
+    @NativeType("HRESULT")
+    public static int DwmGetWindowAttribute(@NativeType("HWND") long hWnd,
+                                            @NativeType("DWORD") int dwAttribute,
+                                            @NativeType("PVOID") long pvAttribute,
+                                            @NativeType("DWORD") int cbAttribute) {
+        long __functionAddress = Functions.DwmGetWindowAttribute;
+        return callPPI(hWnd, dwAttribute, pvAttribute, cbAttribute, __functionAddress);
     }
 }
