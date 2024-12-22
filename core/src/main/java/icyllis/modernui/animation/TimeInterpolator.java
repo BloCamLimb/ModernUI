@@ -122,6 +122,15 @@ public interface TimeInterpolator {
     @NonNull
     TimeInterpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
 
+    @NonNull
+    TimeInterpolator FAST_OUT_SLOW_IN = new BezierInterpolator(0.4f, 0f, 0.2f, 1f);
+
+    @NonNull
+    TimeInterpolator FAST_OUT_LINEAR_IN = new BezierInterpolator(0.4f, 0f, 1f, 1f);
+
+    @NonNull
+    TimeInterpolator LINEAR_OUT_SLOW_IN = new BezierInterpolator(0f, 0f, 0.2f, 1f);
+
     /**
      * Get interpolation value. This interpolated value is then multiplied by the change in
      * value of an animation to derive the animated value at the current elapsed animation time.
