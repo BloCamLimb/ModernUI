@@ -18,9 +18,11 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.core.awt.AWTGLCanvas;
-import icyllis.modernui.core.awt.GLData;
+import icyllis.modernui.core.awt.*;
+import icyllis.modernui.core.windows.WindowsNativeWindowBorder;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.system.Platform;
+import org.lwjgl.system.jawt.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -33,6 +35,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.system.jawt.JAWTFunctions.*;
 
 public class TestAWT {
 
@@ -177,6 +180,45 @@ public class TestAWT {
         canvas.addKeyListener(new KeyAdapter() {
         });
         frame.pack();
+        if (Platform.get() == Platform.WINDOWS) {
+            Runnable cleanup = replaceWinProc(frame);
+            frame.addWindowListener(new WindowListener() {
+                @Override
+                public void windowOpened(WindowEvent e) {
+
+                }
+
+                @Override
+                public void windowClosing(WindowEvent e) {
+
+                }
+
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    cleanup.run();
+                }
+
+                @Override
+                public void windowIconified(WindowEvent e) {
+
+                }
+
+                @Override
+                public void windowDeiconified(WindowEvent e) {
+
+                }
+
+                @Override
+                public void windowActivated(WindowEvent e) {
+
+                }
+
+                @Override
+                public void windowDeactivated(WindowEvent e) {
+
+                }
+            });
+        }
         frame.setVisible(true);
         canvas.transferFocus();
 
@@ -196,5 +238,28 @@ public class TestAWT {
         };
         Thread renderThread = new Thread(renderLoop);
         renderThread.start();
+    }
+
+    private static Runnable replaceWinProc(JFrame frame) {
+        JAWTDrawingSurface ds = JAWT_GetDrawingSurface(frame, PlatformWin32GLCanvas.awt.GetDrawingSurface());
+        try {
+            int lock = JAWT_DrawingSurface_Lock(ds, ds.Lock());
+
+            try {
+                JAWTDrawingSurfaceInfo dsi = JAWT_DrawingSurface_GetDrawingSurfaceInfo(ds, ds.GetDrawingSurfaceInfo());
+                try {
+                    JAWTWin32DrawingSurfaceInfo dsiWin = JAWTWin32DrawingSurfaceInfo.create(dsi.platformInfo());
+                    long hwnd = dsiWin.hwnd();
+                    var newProc = new WindowsNativeWindowBorder.WndProc(hwnd);
+                    return newProc::destroy;
+                } finally {
+                    JAWT_DrawingSurface_FreeDrawingSurfaceInfo(dsi, ds.FreeDrawingSurfaceInfo());
+                }
+            } finally {
+                JAWT_DrawingSurface_Unlock(ds, ds.Unlock());
+            }
+        } finally {
+            JAWT_FreeDrawingSurface(ds, PlatformWin32GLCanvas.awt.FreeDrawingSurface());
+        }
     }
 }
