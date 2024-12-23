@@ -26,7 +26,7 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.*;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.material.MaterialCheckBox;
@@ -34,8 +34,7 @@ import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
-import icyllis.modernui.util.DataSet;
-import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.*;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
@@ -357,20 +356,11 @@ public class TestFragment extends Fragment {
             super(context);
             setOrientation(VERTICAL);
             setGravity(Gravity.CENTER);
-            setDividerDrawable(new Drawable() {
-                @Override
-                public void draw(@Nonnull Canvas canvas) {
-                    Paint paint = Paint.obtain();
-                    paint.setRGBA(192, 192, 192, 128);
-                    canvas.drawRect(getBounds(), paint);
-                    paint.recycle();
-                }
-
-                @Override
-                public int getIntrinsicHeight() {
-                    return 2;
-                }
-            });
+            var divider = new ShapeDrawable();
+            divider.setShape(ShapeDrawable.HLINE);
+            divider.setSize(-1, dp(1));
+            divider.setColor(0x80C0C0C0);
+            setDividerDrawable(divider);
             setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
 
             setPadding(dp(12), dp(12), dp(12), dp(12));
@@ -657,8 +647,22 @@ public class TestFragment extends Fragment {
                     v = seekbar;
                     p = new LayoutParams(dp(200), WRAP_CONTENT);
                 } else {
-                    v = new CView(getContext(), i);
-                    p = new LayoutParams(dp(200), dp(50));
+                    Button button = new Button(getContext());
+                    ShapeDrawable shape = new ShapeDrawable();
+                    shape.setStroke(dp(1), SystemTheme.COLOR_CONTROL_ACTIVATED);
+                    shape.setCornerRadius(dp(1));
+                    RippleDrawable ripple = new RippleDrawable(
+                            ColorStateList.valueOf(0x66000000 | (SystemTheme.COLOR_CONTROL_ACTIVATED & 0xFFFFFF)),
+                            shape,
+                            null
+                    );
+                    button.setBackground(ripple);
+                    button.setText("Outlined " + i);
+                    button.setTextColor(SystemTheme.COLOR_CONTROL_ACTIVATED);
+                    button.setTextSize(14);
+                    button.setPadding(dp(24), dp(6), dp(24), dp(6));
+                    v = button;
+                    p = new LayoutParams(WRAP_CONTENT, dp(40));
                 }
                 if (i == 8) {
                     v.setOnCreateContextMenuListener((menu, v1, menuInfo) -> {
