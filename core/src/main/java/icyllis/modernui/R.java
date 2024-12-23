@@ -135,6 +135,8 @@ public final class R {
         public static final int progress = 0x0102000d;
         public static final int secondaryProgress = 0x0102000f;
 
+        public static final int mask = 0x0102002e;
+
         /// INTERNAL BELOW \\\
 
         // Constant IDs for Fragment package.
