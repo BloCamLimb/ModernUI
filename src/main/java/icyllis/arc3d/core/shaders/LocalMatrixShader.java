@@ -19,9 +19,12 @@
 
 package icyllis.arc3d.core.shaders;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Matrix;
+import icyllis.arc3d.core.Matrixc;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.SharedPtr;
 
-public final class LocalMatrixShader extends RefCnt implements Shader {
+public final class LocalMatrixShader implements Shader {
 
     @SharedPtr
     private final Shader mBase;
@@ -33,9 +36,20 @@ public final class LocalMatrixShader extends RefCnt implements Shader {
         mLocalMatrix = localMatrix;
     }
 
+    // We can leak the ref countability to the underlying object in this scenario
     @Override
-    protected void deallocate() {
+    public void ref() {
+        mBase.ref();
+    }
+
+    @Override
+    public void unref() {
         mBase.unref();
+    }
+
+    @Override
+    public boolean isTriviallyCounted() {
+        return mBase.isTriviallyCounted();
     }
 
     @Override
