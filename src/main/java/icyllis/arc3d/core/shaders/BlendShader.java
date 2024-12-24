@@ -19,10 +19,13 @@
 
 package icyllis.arc3d.core.shaders;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.BlendMode;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
 import org.jspecify.annotations.Nullable;
 
-public final class BlendShader extends RefCnt implements Shader {
+public final class BlendShader implements Shader {
 
     private final BlendMode mMode;
     @SharedPtr
@@ -62,10 +65,23 @@ public final class BlendShader extends RefCnt implements Shader {
         return new BlendShader(mode, src, dst); // move
     }
 
+    // We can leak the ref countability to the underlying object in this scenario
+
     @Override
-    protected void deallocate() {
+    public void ref() {
+        mSrc.ref();
+        mDst.ref();
+    }
+
+    @Override
+    public void unref() {
         mSrc.unref();
         mDst.unref();
+    }
+
+    @Override
+    public boolean isTriviallyCounted() {
+        return mSrc.isTriviallyCounted() && mDst.isTriviallyCounted();
     }
 
     public BlendMode getMode() {

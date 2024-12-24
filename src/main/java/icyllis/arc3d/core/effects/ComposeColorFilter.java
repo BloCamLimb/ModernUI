@@ -19,14 +19,16 @@
 
 package icyllis.arc3d.core.effects;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.SharedPtr;
 
 import java.util.Objects;
 
 /**
  * @see ColorFilter#compose(ColorFilter)
  */
-public final class ComposeColorFilter extends RefCnt implements ColorFilter {
+public final class ComposeColorFilter implements ColorFilter {
 
     @SharedPtr
     private final ColorFilter mAfter;
@@ -39,10 +41,23 @@ public final class ComposeColorFilter extends RefCnt implements ColorFilter {
         mAfter = Objects.requireNonNull(after);
     }
 
+    // We can leak the ref countability to the underlying object in this scenario
+
     @Override
-    protected void deallocate() {
+    public void ref() {
+        mAfter.ref();
+        mBefore.ref();
+    }
+
+    @Override
+    public void unref() {
         mAfter.unref();
         mBefore.unref();
+    }
+
+    @Override
+    public boolean isTriviallyCounted() {
+        return mAfter.isTriviallyCounted() && mBefore.isTriviallyCounted();
     }
 
     @RawPtr
