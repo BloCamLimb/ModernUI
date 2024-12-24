@@ -35,4 +35,14 @@ public interface RefCounted {
      * Decreases the reference count by 1.
      */
     void unref();
+
+    /**
+     * A return value of true means that its ref/unref is unnecessary, for example, they are
+     * just no op. So callers can perform some optimizations.
+     * Subclass can override this method to indicate that an instance is trivially counted.
+     * For the same instance, the return value of this method must remain unchanged.
+     */
+    default boolean isTriviallyCounted() {
+        return false;
+    }
 }

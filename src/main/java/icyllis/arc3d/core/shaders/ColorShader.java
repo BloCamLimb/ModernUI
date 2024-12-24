@@ -48,4 +48,9 @@ public final class ColorShader implements Shader {
     @Override
     public void unref() {
     }
+
+    @Override
+    public boolean isTriviallyCounted() {
+        return true;
+    }
 }

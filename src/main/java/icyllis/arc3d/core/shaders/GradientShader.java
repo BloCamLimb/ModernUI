@@ -37,6 +37,11 @@ public abstract sealed class GradientShader implements Shader
     public void unref() {
     }
 
+    @Override
+    public boolean isTriviallyCounted() {
+        return true;
+    }
+
     /**
      * Color interpolation method, is packed into an int.
      */

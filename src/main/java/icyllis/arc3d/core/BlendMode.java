@@ -693,6 +693,11 @@ public enum BlendMode implements Blender {
     }
 
     @Override
+    public boolean isTriviallyCounted() {
+        return true;
+    }
+
+    @Override
     public BlendMode asBlendMode() {
         return this;
     }
