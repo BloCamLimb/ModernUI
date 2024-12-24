@@ -133,4 +133,9 @@ public final class BlendModeColorFilter implements ColorFilter {
     @Override
     public void unref() {
     }
+
+    @Override
+    public boolean isTriviallyCounted() {
+        return true;
+    }
 }
