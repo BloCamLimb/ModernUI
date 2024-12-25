@@ -23,6 +23,7 @@ import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ShaderVar;
 import icyllis.arc3d.granite.shading.UniformHandler;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
 import javax.annotation.concurrent.Immutable;
@@ -34,12 +35,14 @@ import java.util.Formatter;
  */
 //TODO
 @Immutable
+@ApiStatus.Internal
 public class FragmentStage {
 
     /**
      * Builtin Code Snippet ID, most are from Skia Graphite.
      * Do not use these ID outside Granite Renderer.
      */
+    // no ABI guarantee, used internally
     public static final int
             kError_BuiltinStageID = 0,
             kPassthrough_BuiltinStageID = 1,
@@ -56,13 +59,14 @@ public class FragmentStage {
             kImageShader_BuiltinStageID = 17,
             kCubicImageShader_BuiltinStageID = 18,
             kHWImageShader_BuiltinStageID = 19,
-            kDitherShader_BuiltinStageID = 20,
-            kColorSpaceXformColorFilter_BuiltinStageID = 21,
-            kBlend_BuiltinStageID = 22,
-            kBlendModeBlender_BuiltinStageID = 23,
-            kPorterDuffBlender_BuiltinStageID = 24,
-            kPrimitiveColor_BuiltinStageID = 25,
-            kCompose_BuiltinStageID = 26;
+            kAnalyticRRectShader_BuiltinStageID = 20,
+            kDitherShader_BuiltinStageID = 21,
+            kColorSpaceXformColorFilter_BuiltinStageID = 22,
+            kBlend_BuiltinStageID = 23,
+            kBlendModeBlender_BuiltinStageID = 24,
+            kPorterDuffBlender_BuiltinStageID = 25,
+            kPrimitiveColor_BuiltinStageID = 26,
+            kCompose_BuiltinStageID = 27;
     // Fixed blend modes hard code a specific blend function into the shader tree. This can be
     // valuable when an internal effect is known to always do a certain blend and we want to
     // benefit from inlining constants. It is also important for being able to convert the final
@@ -78,7 +82,7 @@ public class FragmentStage {
     // defined last in the enum. They are ordered to match BlendMode such that:
     //     (id - kFirstFixedBlend) == BlendMode).
     public static final int
-            kFirstFixedBlend_BuiltinStageID = 27;
+            kFirstFixedBlend_BuiltinStageID = 28;
     // this is not compile-time constant
     public static final int
             kLastFixedBlend_BuiltinStageID = kFirstFixedBlend_BuiltinStageID + BlendMode.COUNT - 1;
