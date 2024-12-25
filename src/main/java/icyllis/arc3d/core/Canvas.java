@@ -114,7 +114,8 @@ public class Canvas implements AutoCloseable {
     // a temp rect that used with arguments
     private final Rect2f mTmpRect = new Rect2f();
     private final Rect2f mTmpRect2 = new Rect2f();
-    private final RoundRect mTmpRoundRect = new RoundRect();
+    private final RRect mTmpRRect = new RRect();
+    private final float[] mTmpRadii = new float[8];
     private final Rect2f mTmpQuickBounds = new Rect2f();
     private final Rect2f mTmpQuickBounds2 = new Rect2f();
     private final Matrix mTmpMatrix = new Matrix();
@@ -1263,8 +1264,8 @@ public class Canvas implements AutoCloseable {
      * @param paint  the paint used to draw the round rectangle
      */
     public final void drawRoundRect(Rect2fc rect, float radius, Paint paint) {
-        mTmpRoundRect.setRectXY(rect, radius, radius);
-        onDrawRoundRect(mTmpRoundRect, paint);
+        mTmpRRect.setRectXY(rect, radius, radius);
+        onDrawRRect(mTmpRRect, paint);
     }
 
     /**
@@ -1280,8 +1281,8 @@ public class Canvas implements AutoCloseable {
      */
     public final void drawRoundRect(float left, float top, float right, float bottom,
                                     float radius, Paint paint) {
-        mTmpRoundRect.setRectXY(left, top, right, bottom, radius, radius);
-        onDrawRoundRect(mTmpRoundRect, paint);
+        mTmpRRect.setRectXY(left, top, right, bottom, radius, radius);
+        onDrawRRect(mTmpRRect, paint);
     }
 
     /**
@@ -1296,7 +1297,13 @@ public class Canvas implements AutoCloseable {
      * @param paint the paint used to draw the round rectangle
      */
     public final void drawRoundRect(Rect2f rect, float rUL, float rUR, float rLR, float rLL, Paint paint) {
-        drawRoundRect(rect.mLeft, rect.mTop, rect.mRight, rect.mBottom, rUL, rUR, rLR, rLL, paint);
+        var radii = mTmpRadii;
+        radii[0]=radii[1]=rUL;
+        radii[2]=radii[3]=rUR;
+        radii[4]=radii[5]=rLR;
+        radii[6]=radii[7]=rLL;
+        mTmpRRect.setRectRadii(rect,radii);
+        onDrawRRect(mTmpRRect, paint);
     }
 
     /**
@@ -1315,10 +1322,17 @@ public class Canvas implements AutoCloseable {
      */
     public void drawRoundRect(float left, float top, float right, float bottom,
                               float rUL, float rUR, float rLR, float rLL, Paint paint) {
+        var radii = mTmpRadii;
+        radii[0]=radii[1]=rUL;
+        radii[2]=radii[3]=rUR;
+        radii[4]=radii[5]=rLR;
+        radii[6]=radii[7]=rLL;
+        mTmpRRect.setRectRadii(left,top,right,bottom,radii);
+        onDrawRRect(mTmpRRect, paint);
     }
 
-    public void drawRoundRect(RoundRect roundRect, Paint paint) {
-        onDrawRoundRect(roundRect, paint);
+    public void drawRRect(RRect rr, Paint paint) {
+        onDrawRRect(rr, paint);
     }
 
     /**
@@ -1997,7 +2011,7 @@ public class Canvas implements AutoCloseable {
         }
     }
 
-    protected void onDrawRoundRect(RoundRect rr, Paint paint) {
+    protected void onDrawRRect(RRect rr, Paint paint) {
         var bounds = mTmpRect2;
         rr.getBounds(bounds);
         if (rr.isRect()) {
@@ -2011,7 +2025,7 @@ public class Canvas implements AutoCloseable {
         }
 
         if (aboutToDraw(paint)) {
-            topDevice().drawRoundRect(rr, paint);
+            topDevice().drawRRect(rr, paint);
         }
     }
 

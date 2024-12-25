@@ -109,7 +109,7 @@ public class RasterDevice extends Device {
     }
 
     @Override
-    public void drawRoundRect(RoundRect rr, Paint paint) {
+    public void drawRRect(RRect rr, Paint paint) {
         mG2D.fill(new RoundRectangle2D.Float(
 
         ));

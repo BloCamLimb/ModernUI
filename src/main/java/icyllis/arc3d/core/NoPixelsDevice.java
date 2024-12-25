@@ -177,7 +177,7 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void drawRoundRect(RoundRect rr, Paint paint) {
+    public void drawRRect(RRect rr, Paint paint) {
     }
 
     @Override

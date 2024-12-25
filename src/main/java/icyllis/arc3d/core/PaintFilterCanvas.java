@@ -117,10 +117,10 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
     }
 
     @Override
-    protected void onDrawRoundRect(RoundRect rr, Paint paint) {
+    protected void onDrawRRect(RRect rr, Paint paint) {
         mFilterPaint.set(paint);
         if (onFilter(mFilterPaint)) {
-            super.onDrawRoundRect(rr, mFilterPaint);
+            super.onDrawRRect(rr, mFilterPaint);
         }
         mFilterPaint.close();
     }

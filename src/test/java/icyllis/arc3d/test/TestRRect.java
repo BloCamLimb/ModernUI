@@ -19,11 +19,11 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.RoundRect;
+import icyllis.arc3d.core.RRect;
 
 import java.util.Random;
 
-public class TestRoundRect {
+public class TestRRect {
 
     private static final Random random = new Random();
 
@@ -32,22 +32,28 @@ public class TestRoundRect {
     }
 
     public static void main(String[] args) {
-        testRun(TestRoundRect::rand_integer_small, "rand_integer_small");
-        testRun(TestRoundRect::rand_integer_large, "rand_integer_large");
-        testRun(TestRoundRect::rand_integer_huge, "rand_integer_huge");
-        testRun(TestRoundRect::rand_float_small, "rand_float_small");
-        testRun(TestRoundRect::rand_float_large, "rand_float_large");
-        testRun(TestRoundRect::rand_float_huge, "rand_float_huge");
-        testRun(TestRoundRect::rand_float_small_round, "rand_float_small_round");
-        testRun(TestRoundRect::rand_float_large_round, "rand_float_large_round");
-        testRun(TestRoundRect::rand_float_huge_round, "rand_float_huge_round");
-        testRun(TestRoundRect::rand_float_small_ex, "rand_float_small_ex");
-        testRun(TestRoundRect::rand_float_large_ex, "rand_float_large_ex");
-        testRun(TestRoundRect::rand_float_huge_ex, "rand_float_huge_ex");
+        testRun(TestRRect::rand_integer_small, "rand_integer_small");
+        testRun(TestRRect::rand_integer_large, "rand_integer_large");
+        testRun(TestRRect::rand_integer_huge, "rand_integer_huge");
+        testRun(TestRRect::rand_float_small, "rand_float_small");
+        testRun(TestRRect::rand_float_large, "rand_float_large");
+        testRun(TestRRect::rand_float_huge, "rand_float_huge");
+        testRun(TestRRect::rand_float_small_round, "rand_float_small_round");
+        testRun(TestRRect::rand_float_large_round, "rand_float_large_round");
+        testRun(TestRRect::rand_float_huge_round, "rand_float_huge_round");
+        testRun(TestRRect::rand_float_small_ex, "rand_float_small_ex");
+        testRun(TestRRect::rand_float_large_ex, "rand_float_large_ex");
+        testRun(TestRRect::rand_float_huge_ex, "rand_float_huge_ex");
+
+        RRect rrect = new RRect();
+        rrect.setRectRadii(20, 20, 60, 60,
+                new float[]{4,4,6,6,37,37,2,2});
+        System.out.println(rrect.getType());
+        System.out.println(rrect);
     }
 
     private static void testRun(Rand r, String tag) {
-        RoundRect rrect = new RoundRect();
+        RRect rrect = new RRect();
         long fail = 0;
 
         for (int i = 0; i < 10000; i++) {
@@ -56,8 +62,8 @@ public class TestRoundRect {
         }
 
         for (int i = 0; i < 10000; i++) {
-            rrect.setEllipse(r.f(), r.f(), r.f(), r.f());
-            assert rrect.isEllipse() || rrect.isRect() || rrect.isEmpty() : rrect;
+            rrect.setOval(r.f(), r.f(), r.f(), r.f());
+            assert rrect.isOval() || rrect.isRect() || rrect.isEmpty() : rrect;
         }
 
         for (int i = 0; i < 10000; i++) {
@@ -65,36 +71,36 @@ public class TestRoundRect {
             float cy = r.f();
             float xrad = r.f();
             float yrad = r.f();
-            rrect.setEllipse(cx - xrad, cy - yrad,
+            rrect.setOval(cx - xrad, cy - yrad,
                     cx + xrad, cy + yrad);
-            assert rrect.isEllipse() || rrect.isEmpty() : rrect;
+            assert rrect.isOval() || rrect.isEmpty() : rrect;
         }
 
         for (int i = 0; i < 10000; i++) {
             float cx = r.f();
             float cy = r.f();
             float rad = r.f();
-            rrect.setEllipse(cx - rad, cy - rad,
+            rrect.setOval(cx - rad, cy - rad,
                     cx + rad, cy + rad);
-            assert rrect.isEllipse() || rrect.isEmpty() : rrect;
+            assert rrect.isOval() || rrect.isEmpty() : rrect;
         }
 
         for (int i = 0; i < 10000; i++) {
             float xrad = r.f();
             float yrad = r.f();
-            rrect.setEllipseXY(r.f(), r.f(), xrad, yrad);
-            assert rrect.isEllipse() || rrect.isRect() || rrect.isEmpty() : rrect;
+            rrect.setEllipse(r.f(), r.f(), xrad, yrad);
+            assert rrect.isOval() || rrect.isRect() || rrect.isEmpty() : rrect;
         }
 
         for (int i = 0; i < 10000; i++) {
             float rad = r.f();
-            rrect.setEllipseXY(r.f(), r.f(), rad, rad);
-            assert rrect.isEllipse() || rrect.isRect() || rrect.isEmpty() : rrect;
+            rrect.setEllipse(r.f(), r.f(), rad, rad);
+            assert rrect.isOval() || rrect.isRect() || rrect.isEmpty() : rrect;
         }
 
         for (int i = 0; i < 10000; i++) {
             rrect.setRectXY(r.f(), r.f(), r.f(), r.f(), r.f(), r.f());
-            assert rrect.isRect() || rrect.isSimple() || rrect.isEllipse() || rrect.isEmpty() : rrect;
+            assert rrect.isRect() || rrect.isSimple() || rrect.isOval() || rrect.isEmpty() : rrect;
         }
 
         for (int i = 0; i < 10000; i++) {
@@ -105,8 +111,8 @@ public class TestRoundRect {
             rrect.setRectXY(cx - xrad, cy - yrad,
                     cx + xrad, cy + yrad,
                     xrad, yrad);
-            assert rrect.isRect() || rrect.isSimple() || rrect.isEllipse() || rrect.isEmpty() : rrect;
-            if (!rrect.isEllipse() && !rrect.isEmpty()) {
+            assert rrect.isRect() || rrect.isSimple() || rrect.isOval() || rrect.isEmpty() : rrect;
+            if (!rrect.isOval() && !rrect.isEmpty()) {
                 fail++;
             }
         }
@@ -118,8 +124,8 @@ public class TestRoundRect {
             rrect.setRectXY(cx - rad, cy - rad,
                     cx + rad, cy + rad,
                     rad, rad);
-            assert rrect.isRect() || rrect.isSimple() || rrect.isEllipse() || rrect.isEmpty() : rrect;
-            if (!rrect.isEllipse() && !rrect.isEmpty()) {
+            assert rrect.isRect() || rrect.isSimple() || rrect.isOval() || rrect.isEmpty() : rrect;
+            if (!rrect.isOval() && !rrect.isEmpty()) {
                 fail++;
             }
         }
@@ -146,7 +152,7 @@ public class TestRoundRect {
                     cx + xrad, cy + yrad,
                     xrad, yrad, xrad, yrad);
             assert !rrect.isComplex() && !rrect.isNineSlice() : rrect;
-            if (!rrect.isEllipse() && !rrect.isEmpty()) {
+            if (!rrect.isOval() && !rrect.isEmpty()) {
                 fail++;
             }
         }
@@ -159,16 +165,16 @@ public class TestRoundRect {
                     cx + rad, cy + rad,
                     rad, rad, rad, rad);
             assert !rrect.isComplex() && !rrect.isNineSlice() : rrect;
-            if (!rrect.isEllipse() && !rrect.isEmpty()) {
+            if (!rrect.isOval() && !rrect.isEmpty()) {
                 fail++;
             }
         }
 
         rrect.setRect(2, 2, 2, 2);
-        assert rrect.getType() == RoundRect.kEmpty_Type;
+        assert rrect.getType() == RRect.kEmpty_Type;
 
-        rrect.setEllipse(2, 2, 2, 10);
-        assert rrect.getType() == RoundRect.kEmpty_Type;
+        rrect.setOval(2, 2, 2, 10);
+        assert rrect.getType() == RRect.kEmpty_Type;
 
         System.out.printf("[%s] fail: %d%n", tag, fail);
     }

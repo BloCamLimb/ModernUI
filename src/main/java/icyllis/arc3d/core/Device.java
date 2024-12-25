@@ -254,7 +254,7 @@ public abstract class Device extends RefCnt {
     public abstract void drawRect(Rect2fc r,
                                   Paint paint);
 
-    public abstract void drawRoundRect(RoundRect rr, Paint paint);
+    public abstract void drawRRect(RRect rr, Paint paint);
 
     public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
 

@@ -151,9 +151,9 @@ public class NWayCanvas extends NoDrawCanvas {
     }
 
     @Override
-    protected void onDrawRoundRect(RoundRect rr, Paint paint) {
+    protected void onDrawRRect(RRect rr, Paint paint) {
         for (int i = 0; i < mSize; i++) {
-            mList[i].drawRoundRect(rr, paint);
+            mList[i].drawRRect(rr, paint);
         }
     }
 
