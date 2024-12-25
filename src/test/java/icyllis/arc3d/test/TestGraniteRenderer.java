@@ -284,6 +284,9 @@ public class TestGraniteRenderer {
         @SharedPtr
         Shader mGradShader;
 
+        @SharedPtr
+        Shader mRRectShader;
+
         TextBlob mTextBlob1;
         TextBlob mTextBlob2;
 
@@ -408,6 +411,12 @@ public class TestGraniteRenderer {
                             GradientShader.Interpolation.kSRGBLinear_ColorSpace,
                             GradientShader.Interpolation.kShorter_HueMethod),
                     null
+            );
+            RRect rrect = new RRect();
+            rrect.setRectXY(420, 480, 580, 520, 30, 30);
+            mRRectShader = RRectShader.make(
+                rrect,
+                    20, true, null
             );
 
             Typeface_JDK typeface = new Typeface_JDK(
@@ -707,10 +716,10 @@ public class TestGraniteRenderer {
 
                 paint.setShader(null);
                 canvas.translate(-1000, 0);
-                if (!TEST_OPENGL_ES) {
+                //if (!TEST_OPENGL_ES) {
                     canvas.drawVertices(mVertices1, BlendMode.MODULATE, paint);
                     canvas.drawVertices(mVertices2, BlendMode.MODULATE, paint);
-                }
+                //}
 
                 paint.setARGB(255, 233, 30, 99);
                 rect.set(0, 0, 16, 16);
@@ -727,6 +736,12 @@ public class TestGraniteRenderer {
                         canvas.drawRect(rect, paint);
                     }
                 }
+
+                canvas.resetMatrix();
+                paint.setShader(RefCnt.create(mRRectShader));
+                paint.setColorFilter(null);
+                paint.setAlphaF(0.4f);
+                canvas.drawRoundRect(400, 450, 600, 550, 50, paint);
 
             } else if (TEST_SCENE == 2) {
                 Rect2f rect = new Rect2f();
@@ -804,6 +819,7 @@ public class TestGraniteRenderer {
             mTestShader2 = RefCnt.move(mTestShader2);
             mTestShader3 = RefCnt.move(mTestShader3);
             mGradShader = RefCnt.move(mGradShader);
+            mRRectShader = RefCnt.move(mRRectShader);
             mTestImage = RefCnt.move(mTestImage);
             for (int i = 0; i < BlendMode.COUNT; i++) {
                 mBlendModeColorFilters[i] = RefCnt.move(mBlendModeColorFilters[i]);

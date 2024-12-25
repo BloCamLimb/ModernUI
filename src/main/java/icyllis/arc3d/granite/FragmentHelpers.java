@@ -627,6 +627,12 @@ public class FragmentHelpers {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (BlendShader) shader);
+        } else if (shader instanceof RRectShader) {
+            append_to_key(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    (RRectShader) shader);
         } else if (shader instanceof EmptyShader) {
             append_to_key(keyContext,
                     keyBuilder,
@@ -903,6 +909,28 @@ public class FragmentHelpers {
                 textureDataGatherer,
                 shader.getMode()
         );
+    }
+
+    private static void append_to_key(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer,
+                                      @RawPtr RRectShader shader) {
+        uniformDataGatherer.write4f(
+                shader.getLeft(), shader.getTop(), shader.getRight(), shader.getBottom()
+        );
+        uniformDataGatherer.write4f(
+                shader.getTopLeftRadius(), shader.getTopRightRadius(),
+                shader.getBottomRightRadius(), shader.getBottomLeftRadius()
+        );
+        float smooth = shader.getSmoothRadius();
+        // smooth won't be NaN
+        uniformDataGatherer.write4f(
+                shader.getCenterX(), shader.getCenterY(),
+                Math.max(smooth, 0.0f), shader.isInverseFill() ? -1.0f : 1.0f
+        );
+
+        keyBuilder.addInt(FragmentStage.kAnalyticRRectShader_BuiltinStageID);
     }
 
     private static void append_to_key(KeyContext keyContext,

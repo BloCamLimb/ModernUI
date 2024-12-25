@@ -888,6 +888,24 @@ public class ShaderCodeSource {
                 return vec4(clamp(color.rgb + dithering * range, 0.0, color.a), color.a);
             }
             """;
+    public static final String ARC_ANALYTIC_RRECT_SHADER = """
+            float4 arc_analytic_rrect_shader(float2 coords,
+                                             float4 rect,
+                                             float4 radii,
+                                             float4 packed) {
+                float2 r2 = coords.x>packed.x ? radii.yz : radii.xw;
+                float r = coords.y>packed.y ? r2.y : r2.x;
+                float2 b = (rect.zw - rect.xy) * 0.5;
+                float2 p = coords - (rect.xy + rect.zw) * 0.5;
+                float2 q = abs(p)-b+r;
+                float dis = min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r;
+                float smoothRad = packed.z;
+                float alpha = smoothRad>0.0
+                    ? smoothstep(-smoothRad, 0.0, dis)
+                    : saturate(0.5 + dis/fwidth(dis));
+                return float4(0.5 + packed.w * (-alpha + 0.5));
+            }
+            """;
     /**
      * Public blend functions, these are pure functions.
      * <p>
@@ -1691,6 +1709,22 @@ public class ShaderCodeSource {
                 new Sampler[]{
                         new Sampler(SLDataType.kSampler2D, "u_Sampler")
                 },
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kAnalyticRRectShader_BuiltinStageID] = new FragmentStage(
+                "AnalyticRRectShader",
+                kLocalCoords_ReqFlag,
+                "arc_analytic_rrect_shader",
+                new String[]{
+                        ARC_ANALYTIC_RRECT_SHADER
+                },
+                new Uniform[]{
+                        new Uniform(SLDataType.kFloat4, "u_Rect"),
+                        new Uniform(SLDataType.kFloat4, "u_Radii"),
+                        new Uniform(SLDataType.kFloat4, "u_Packed")
+                },
+                NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
