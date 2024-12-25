@@ -340,7 +340,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public void drawRoundRect(RoundRect rr, Paint paint) {
+    public void drawRRect(RRect rr, Paint paint) {
         drawGeometry(getLocalToDevice33(), new SimpleShape(rr), SimpleShape::getBounds, paint,
                 mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }
@@ -348,7 +348,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     @Override
     public void drawCircle(float cx, float cy, float radius, Paint paint) {
         var shape = new SimpleShape();
-        shape.setEllipseXY(cx, cy, radius, radius);
+        shape.setEllipse(cx, cy, radius, radius);
         drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, paint,
                 mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
     }

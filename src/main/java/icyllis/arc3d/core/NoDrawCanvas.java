@@ -42,7 +42,7 @@ public class NoDrawCanvas extends Canvas {
     }
 
     @Override
-    protected void onDrawRoundRect(RoundRect rr, Paint paint) {
+    protected void onDrawRRect(RRect rr, Paint paint) {
     }
 
     @Override

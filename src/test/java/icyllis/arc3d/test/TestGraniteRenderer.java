@@ -565,7 +565,7 @@ public class TestGraniteRenderer {
                     }
                 }
             } else if (TEST_SCENE == 1) {
-                RoundRect rrect = new RoundRect();
+                RRect rrect = new RRect();
                 rrect.setRectXY(30, 60, 220, 120, 10, 10);
                 paint.setStyle(Paint.STROKE);
                 int[] aligns = {Paint.ALIGN_INSIDE, Paint.ALIGN_CENTER, Paint.ALIGN_OUTSIDE};
@@ -573,7 +573,7 @@ public class TestGraniteRenderer {
                 for (int i = 0; i < 3; i++) {
                     paint.setStrokeAlign(aligns[i]);
                     paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
-                    canvas.drawRoundRect(rrect, paint);
+                    canvas.drawRRect(rrect, paint);
                     canvas.translate(230, 0);
                     canvas.rotate(9);
                 }
@@ -648,7 +648,7 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mGradShader));
                 paint.setDither(true);
                 rrect.setRectXY(100, 650, 1500, 950, 30, 30);
-                canvas.drawRoundRect(rrect, paint);
+                canvas.drawRRect(rrect, paint);
 
                 Matrix4 perspectiveMatrix = new Matrix4();
                 perspectiveMatrix.setIdentity();
@@ -703,7 +703,7 @@ public class TestGraniteRenderer {
                 canvas.setMatrix(mat);*/
                 canvas.translate(1000, 100);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
-                canvas.drawRoundRect(rrect, paint);
+                canvas.drawRRect(rrect, paint);
 
                 paint.setShader(null);
                 canvas.translate(-1000, 0);

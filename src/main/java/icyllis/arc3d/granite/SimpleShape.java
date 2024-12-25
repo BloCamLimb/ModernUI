@@ -19,12 +19,18 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Paint;
+import icyllis.arc3d.core.Point;
+import icyllis.arc3d.core.RRect;
+import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.core.Rect2fc;
+import org.jspecify.annotations.NullMarked;
 
-public class SimpleShape extends RoundRect {
+@NullMarked
+public class SimpleShape extends RRect {
 
     /**
-     * Extends RoundRect::Type, adds three types of stroked lines.
+     * Extends RRect::Type, adds three types of stroked lines.
      * <p>
      * LeftTop becomes the start point and RightBottom becomes the end point.
      * RadiusUlx becomes half the line width.
@@ -36,7 +42,7 @@ public class SimpleShape extends RoundRect {
     public SimpleShape() {
     }
 
-    public SimpleShape(RoundRect other) {
+    public SimpleShape(RRect other) {
         super(other);
     }
 

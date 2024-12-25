@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@ package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.Arrays;
@@ -39,7 +40,8 @@ import java.util.Arrays;
  * If either axis radii is zero or less: radii are stored as zero; corner is square.
  * If corner curves overlap, radii are proportionally reduced to fit within bounds.
  */
-public class RoundRect {
+@NullMarked
+public class RRect {
 
     // these are compile-time constants
     @ApiStatus.Internal
@@ -48,19 +50,21 @@ public class RoundRect {
     public static final int kAlignOf = 4;
 
     /**
-     * Type describes possible specializations of RoundRect. Each Type is
-     * exclusive; a RoundRect may only have one type.
+     * Type describes possible specializations of RRect. Each Type is
+     * exclusive; a RRect may only have one type.
      * <p>
      * Type members become progressively less restrictive; larger values of
      * Type have more degrees of freedom than smaller values.
      */
     public static final int
-            kEmpty_Type = 0,
-            kRect_Type = 1,
-            kEllipse_Type = 2,
-            kSimple_Type = 3,
-            kNineSlice_Type = 4,
-            kComplex_Type = 5,
+            kEmpty_Type = 0, // zero width or height
+            kRect_Type = 1, // non-zero width and height, and zeroed radii
+            kOval_Type = 2, // non-zero width and height filled with radii
+            kSimple_Type = 3, // non-zero width and height with equal radii
+            kNineSlice_Type = 4, // non-zero width and height with axis-aligned radii
+            kComplex_Type = 5; // non-zero width and height with arbitrary radii
+    @ApiStatus.Internal
+    public static final int
             kLast_Type = kComplex_Type;
 
     /**
@@ -83,20 +87,20 @@ public class RoundRect {
      * Initializes bounds at (0, 0), the origin, with zero width and height.
      * Initializes corner radii to (0, 0), and sets type of kEmpty_Type.
      */
-    public RoundRect() {
+    public RRect() {
     }
 
     /**
      * Initializes to copy of other bounds and corner radii.
      */
-    public RoundRect(RoundRect other) {
+    public RRect(RRect other) {
         set(other);
     }
 
     /**
      * Initializes to copy of other bounds.
      */
-    public RoundRect(Rect2fc other) {
+    public RRect(Rect2fc other) {
         setRect(other);
     }
 
@@ -204,8 +208,8 @@ public class RoundRect {
         return getType() == kRect_Type;
     }
 
-    public boolean isEllipse() {
-        return getType() == kEllipse_Type;
+    public boolean isOval() {
+        return getType() == kOval_Type;
     }
 
     public boolean isSimple() {
@@ -246,11 +250,17 @@ public class RoundRect {
 
     /**
      * Returns the corner radii for all four corners, upper-left, upper-right, lower-right,
-     * lower-left, in that order. Note that the return value is an unmodifiable view (no copy).
+     * lower-left, in that order.
+     * <p>
+     * Note that: do NOT modify the return value, it is read-only (no copy).
      */
     @Size(8)
     public float[] getRadii() {
         return mRadii;
+    }
+
+    public float getRadius(int i) {
+        return mRadii[i];
     }
 
     // unflatten
@@ -287,7 +297,7 @@ public class RoundRect {
     /**
      * Copy the values from src into this object.
      */
-    public void set(@NonNull RoundRect src) {
+    public void set(@NonNull RRect src) {
         mLeft = src.mLeft;
         mTop = src.mTop;
         mRight = src.mRight;
@@ -334,14 +344,14 @@ public class RoundRect {
     }
 
     /**
-     * Sets bounds to ellipse, x-axis radii to half ellipse.width(), and all y-axis radii
-     * to half ellipse.height(). If ellipse bounds is empty, sets to kEmpty_Type.
+     * Sets bounds to ellipse, x-axis radii to half oval.width(), and all y-axis radii
+     * to half oval.height(). If ellipse bounds is empty, sets to kEmpty_Type.
      * Otherwise, sets to kEllipse_Type.
      *
-     * @param ellipse bounds of ellipse
+     * @param oval bounds of ellipse
      */
-    public void setEllipse(Rect2fc ellipse) {
-        setEllipse(ellipse.left(), ellipse.top(), ellipse.right(), ellipse.bottom());
+    public void setOval(Rect2fc oval) {
+        setOval(oval.left(), oval.top(), oval.right(), oval.bottom());
     }
 
     /**
@@ -349,7 +359,7 @@ public class RoundRect {
      * to half ellipse.height(). If ellipse bounds is empty, sets to kEmpty_Type.
      * Otherwise, sets to kEllipse_Type.
      */
-    public void setEllipse(float left, float top, float right, float bottom) {
+    public void setOval(float left, float top, float right, float bottom) {
         if (!initRect(left, top, right, bottom)) {
             return;
         }
@@ -364,9 +374,9 @@ public class RoundRect {
         } else {
             for (int i = 0; i < 8; i += 2) {
                 mRadii[i] = radiusX;
-                mRadii[i | 1] = radiusY;
+                mRadii[i + 1] = radiusY;
             }
-            mType = kEllipse_Type;
+            mType = kOval_Type;
         }
 
         assert isValid();
@@ -385,7 +395,7 @@ public class RoundRect {
      * @param radiusX x-axis radius of ellipse
      * @param radiusY y-axis radius of ellipse
      */
-    public void setEllipseXY(float cx, float cy, float radiusX, float radiusY) {
+    public void setEllipse(float cx, float cy, float radiusX, float radiusY) {
         if (!initRect(cx - radiusX, cy - radiusY,
                 cx + radiusX, cy + radiusY)) {
             return;
@@ -398,9 +408,9 @@ public class RoundRect {
         } else {
             for (int i = 0; i < 8; i += 2) {
                 mRadii[i] = radiusX;
-                mRadii[i | 1] = radiusY;
+                mRadii[i + 1] = radiusY;
             }
-            mType = kEllipse_Type;
+            mType = kOval_Type;
         }
 
         assert isValid();
@@ -464,11 +474,11 @@ public class RoundRect {
 
         for (int i = 0; i < 8; i += 2) {
             mRadii[i] = radiusX;
-            mRadii[i | 1] = radiusY;
+            mRadii[i + 1] = radiusY;
         }
         mType = kSimple_Type;
         if (radiusX >= width() * 0.5f && radiusY >= height() * 0.5f) {
-            mType = kEllipse_Type;
+            mType = kOval_Type;
         }
 
         assert isValid();
@@ -557,7 +567,7 @@ public class RoundRect {
 
         if (leftRad == rightRad && topRad == bottomRad) {
             if (leftRad >= width() * 0.5f && topRad >= height() * 0.5f) {
-                mType = kEllipse_Type;
+                mType = kOval_Type;
             } else if (leftRad == 0 || topRad == 0) {
                 // If the left and (by equality check above) right radii are zero then it is a rect.
                 // Same goes for top/bottom.
@@ -595,6 +605,65 @@ public class RoundRect {
     }
 
     /**
+     * Sets bounds to rect. Sets radii array for individual control of all for corners.
+     * <p>
+     * If rect is empty, sets to kEmpty_Type.
+     * Otherwise, if one of each corner radii are zero, sets to kRect_Type.
+     * Otherwise, if all x-axis radii are equal and at least half rect.width(), and
+     * all y-axis radii are equal at least half rect.height(), sets to kOval_Type.
+     * Otherwise, if all x-axis radii are equal, and all y-axis radii are equal,
+     * sets to kSimple_Type. Otherwise, sets to kNineSlice_Type.
+     *
+     * @param rect   bounds of rounded rectangle
+     * @param radii corner x-axis and y-axis radii
+     */
+    public void setRectRadii(Rect2fc rect, float[] radii) {
+        setRectRadii(rect.left(), rect.top(), rect.right(), rect.bottom(),
+                radii);
+    }
+
+    /**
+     * Sets bounds to rect. Sets radii array for individual control of all for corners.
+     * <p>
+     * If rect is empty, sets to kEmpty_Type.
+     * Otherwise, if one of each corner radii are zero, sets to kRect_Type.
+     * Otherwise, if all x-axis radii are equal and at least half rect.width(), and
+     * all y-axis radii are equal at least half rect.height(), sets to kOval_Type.
+     * Otherwise, if all x-axis radii are equal, and all y-axis radii are equal,
+     * sets to kSimple_Type. Otherwise, sets to kNineSlice_Type.
+     *
+     * @param radii corner x-axis and y-axis radii
+     */
+    public void setRectRadii(float left, float top, float right, float bottom,
+                             @Size(8) float[] radii) {
+        if (!initRect(left, top, right, bottom)) {
+            return;
+        }
+
+        if (!MathUtil.isFinite(radii, 0, 8)) {
+            // degenerate into a simple rect
+            Arrays.fill(mRadii, 0);
+            mType = kRect_Type;
+            assert isValid();
+            return;
+        }
+
+        System.arraycopy(radii, 0, mRadii, 0, 8);
+
+        if (clamp_corner_radii(mRadii)) {
+            mType = kRect_Type;
+            assert isValid();
+            return;
+        }
+
+        scaleRadii();
+
+        if (!isValid()) {
+            setRect(left, top, right, bottom);
+        }
+    }
+
+    /**
      * Initializes Rect. If the passed in rect is not finite or empty the round rect will be fully
      * initialized and false is returned. Otherwise, just Rect is initialized and true is returned.
      */
@@ -618,6 +687,97 @@ public class RoundRect {
         // infinite or NaN
         setEmpty();
         return false;
+    }
+
+    private boolean scaleRadii() {
+        // Proportionally scale down all radii to fit. Find the minimum ratio
+        // of a side and the radii on that side (for all four sides) and use
+        // that to scale down _all_ the radii. This algorithm is from the
+        // W3 spec (http://www.w3.org/TR/css3-background/) section 5.5 - Overlapping
+        // Curves:
+        // "Let f = min(Li/Si), where i is one of { top, right, bottom, left },
+        //   Si is the sum of the two corresponding radii of the corners on side i,
+        //   and Ltop = Lbottom = the width of the box,
+        //   and Lleft = Lright = the height of the box.
+        // If f < 1, then all corner radii are reduced by multiplying them by f."
+        double scale = 1.0;
+
+        // The sides of the rectangle may be larger than a float.
+        double width = (double)mRight - (double)mLeft;
+        double height = (double)mBottom - (double)mTop;
+        scale = compute_min_scale(mRadii[0], mRadii[2], width,  scale);
+        scale = compute_min_scale(mRadii[3], mRadii[5], height, scale);
+        scale = compute_min_scale(mRadii[4], mRadii[6], width,  scale);
+        scale = compute_min_scale(mRadii[7], mRadii[1], height, scale);
+
+        flush_to_zero(mRadii, 0,2);
+        flush_to_zero(mRadii, 3,5);
+        flush_to_zero(mRadii, 4,6);
+        flush_to_zero(mRadii, 7,1);
+
+        if (scale < 1.0) {
+            adjust_radii(width,  scale, mRadii, 0,2);
+            adjust_radii(height, scale, mRadii, 3,5);
+            adjust_radii(width,  scale, mRadii, 4,6);
+            adjust_radii(height, scale, mRadii, 7,1);
+        }
+
+        // adjust radii may set x or y to zero; set companion to zero as well
+        clamp_corner_radii(mRadii);
+
+        computeType();
+
+        return scale < 1.0;
+    }
+
+    private void computeType() {
+        boolean isRectEmpty = !(mLeft < mRight && mTop < mBottom);
+        if (isRectEmpty) {
+            mType = kEmpty_Type;
+            assert isValid();
+            return;
+        }
+
+        boolean allCornersSquare = (0 == mRadii[0] || 0 == mRadii[1]);
+        boolean allRadiiSame = true;
+
+        for (int i = 2; i < 8; i += 2) {
+            if (mRadii[i] != mRadii[i - 2] || mRadii[i + 1] != mRadii[i - 1]) {
+                allRadiiSame = false;
+            }
+
+            if (0 != mRadii[i] && 0 != mRadii[i + 1]) {
+                allCornersSquare = false;
+            }
+        }
+
+        if (allCornersSquare) {
+            mType = kEmpty_Type;
+            assert isValid();
+            return;
+        }
+
+        if (allRadiiSame) {
+            if (mRadii[0] >= width() * 0.5f &&
+                    mRadii[1] >= height() * 0.5f) {
+                mType = kOval_Type;
+            } else {
+                mType = kSimple_Type;
+            }
+            assert isValid();
+            return;
+        }
+
+        if (radii_are_nine_slice(mRadii)) {
+            mType = kNineSlice_Type;
+        } else {
+            mType = kComplex_Type;
+        }
+
+        if (!isValid()) {
+            setRect(mLeft, mTop, mRight, mBottom);
+            assert isValid();
+        }
     }
 
     /**
@@ -648,15 +808,15 @@ public class RoundRect {
         boolean allRadiiSame = true;
 
         for (int i = 2; i < 8; i += 2) {
-            if (0 != mRadii[i] || 0 != mRadii[i | 1]) {
+            if (0 != mRadii[i] || 0 != mRadii[i + 1]) {
                 allRadiiZero = false;
             }
 
-            if (mRadii[i] != mRadii[i - 2] || mRadii[i | 1] != mRadii[i - 1]) {
+            if (mRadii[i] != mRadii[i - 2] || mRadii[i + 1] != mRadii[i - 1]) {
                 allRadiiSame = false;
             }
 
-            if (0 != mRadii[i] && 0 != mRadii[i | 1]) {
+            if (0 != mRadii[i] && 0 != mRadii[i + 1]) {
                 allCornersSquare = false;
             }
         }
@@ -678,7 +838,7 @@ public class RoundRect {
                     return false;
                 }
                 break;
-            case kEllipse_Type:
+            case kOval_Type:
                 if (isRectEmpty || allRadiiZero || !allRadiiSame || allCornersSquare) {
                     return false;
                 }
@@ -689,7 +849,7 @@ public class RoundRect {
                 float yError = Math.max(Math.ulp(mTop), Math.ulp(mBottom)) * 0.5f;
                 for (int i = 0; i < 8; i += 2) {
                     if (!MathUtil.isApproxEqual(mRadii[i], halfWidth, xError) ||
-                            !MathUtil.isApproxEqual(mRadii[i | 1], halfHeight, yError)) {
+                            !MathUtil.isApproxEqual(mRadii[i + 1], halfHeight, yError)) {
                         return false;
                     }
                 }
@@ -741,7 +901,7 @@ public class RoundRect {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof RoundRect rr)) {
+        if (!(o instanceof RRect rr)) {
             return false;
         }
         if (mLeft == rr.mLeft && mTop == rr.mTop &&
@@ -758,7 +918,7 @@ public class RoundRect {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("RoundRect{");
+        StringBuilder sb = new StringBuilder("RRect{");
         sb.append("mRect=(");
         sb.append(mLeft);
         sb.append(", ");
@@ -769,11 +929,11 @@ public class RoundRect {
         sb.append(mBottom);
         sb.append("), mRadii={");
         int i = 0;
-        for (; ; ) {
+        for (;;) {
             sb.append("(");
             sb.append(mRadii[i]);
             sb.append(", ");
-            sb.append(mRadii[i | 1]);
+            sb.append(mRadii[i + 1]);
             i += 2;
             if (i < 8) {
                 sb.append("), ");
@@ -790,13 +950,13 @@ public class RoundRect {
 
         // Clamp negative radii to zero
         for (int i = 0; i < 8; i += 2) {
-            if (radii[i] <= 0 || radii[i | 1] <= 0) {
+            if (radii[i] <= 0 || radii[i + 1] <= 0) {
                 // In this case we are being a little fast & loose. Since one of
                 // the radii is 0 the corner is square. However, the other radii
                 // could still be non-zero and play in the global scale factor
                 // computation.
                 radii[i] = 0;
-                radii[i | 1] = 0;
+                radii[i + 1] = 0;
             } else {
                 allCornersSquare = false;
             }
@@ -836,10 +996,81 @@ public class RoundRect {
         }
         for (int i = 0; i < 8; i += 2) {
             if (!is_radius_valid(radii[i], l, r) ||
-                    !is_radius_valid(radii[i | 1], t, b)) {
+                    !is_radius_valid(radii[i + 1], t, b)) {
                 return false;
             }
         }
         return true;
+    }
+
+    // These parameters are intentionally double.
+    private static double compute_min_scale(double rad1, double rad2, double limit, double curMin) {
+        if ((rad1 + rad2) > limit) {
+            return Math.max(curMin, limit / (rad1 + rad2));
+        }
+        return curMin;
+    }
+
+    // If we can't distinguish one of the radii relative to the other, force it to zero so it
+    // doesn't confuse us later.
+    private static void flush_to_zero(float[] radii, int i, int j) {
+        assert (radii[i] >= 0);
+        assert (radii[j] >= 0);
+        if (radii[i] + radii[j] == radii[i]) {
+            radii[j] = 0;
+        } else if (radii[i] + radii[j] == radii[j]) {
+            radii[i] = 0;
+        }
+    }
+
+    // This code assumes that a and b fit in a float, and therefore the resulting smaller value
+    // of a and b will fit in a float. The side of the rectangle may be larger than a float.
+    // Scale must be less than or equal to the ratio limit / (*a + *b).
+    // This code assumes that NaN and Inf are never passed in.
+    private static void adjust_radii(double limit, double scale,
+                                     float[] radii, int i, int j) {
+        assert scale < 1.0 && scale > 0.0;
+
+        float a = radii[i] = (float)((double)radii[i] * scale);
+        float b = radii[j] = (float)((double)radii[j] * scale);
+
+        if (a + b > limit) {
+            int maxRadiusIdx;
+            float newMinRadius;
+            if (a > b) {
+                newMinRadius = b;
+                maxRadiusIdx = i;
+            } else {
+                newMinRadius = a;
+                maxRadiusIdx = j;
+            }
+
+            // newMinRadius must be float in order to give the actual value of the radius.
+            // The newMinRadius will always be smaller than limit. The largest that minRadius can be
+            // is 1/2 the ratio of minRadius : (minRadius + maxRadius), therefore in the resulting
+            // division, minRadius can be no larger than 1/2 limit + ULP.
+
+            float newMaxRadius = (float)(limit - newMinRadius);
+
+            // Reduce newMaxRadius an ulp at a time until it fits. This usually never happens,
+            // but if it does it could be 1 or 2 times. In certain pathological cases it could be
+            // more. Max iterations seen so far is 17.
+            while (newMaxRadius + newMinRadius > limit) {
+                newMaxRadius = Math.nextAfter(newMaxRadius, 0.0f);
+            }
+            radii[maxRadiusIdx] = newMaxRadius;
+        }
+
+        assert (radii[i] >= 0.0f && radii[j] >= 0.0f);
+        assert (radii[i] + radii[j] <= limit);
+    }
+
+    @ApiStatus.Internal
+    public static boolean allCornersAreCircular(RRect rr) {
+        var radii = rr.mRadii;
+        return MathUtil.isApproxEqual(radii[0], radii[1], MathUtil.PATH_TOLERANCE) &&
+                MathUtil.isApproxEqual(radii[2], radii[3], MathUtil.PATH_TOLERANCE) &&
+                MathUtil.isApproxEqual(radii[4], radii[5], MathUtil.PATH_TOLERANCE) &&
+                MathUtil.isApproxEqual(radii[6], radii[7], MathUtil.PATH_TOLERANCE);
     }
 }
