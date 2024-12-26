@@ -70,7 +70,7 @@ public final class RRectShader implements Shader {
         if (rrect.isEmpty() ||
                 !Float.isFinite(smoothRadius)) {
             // empty, infinite or NaN
-            return new EmptyShader();
+            return EmptyShader.INSTANCE;
         }
         if (!RRect.allCornersAreCircular(rrect)) {
             // elliptical corner is not supported
@@ -148,18 +148,5 @@ public final class RRectShader implements Shader {
 
     public boolean isInverseFill() {
         return mInverseFill;
-    }
-
-    @Override
-    public void ref() {
-    }
-
-    @Override
-    public void unref() {
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return true;
     }
 }

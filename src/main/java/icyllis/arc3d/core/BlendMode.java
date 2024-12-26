@@ -683,21 +683,6 @@ public enum BlendMode implements Blender {
     }
 
     @Override
-    public void ref() {
-        // BlendMode is not ref counted
-    }
-
-    @Override
-    public void unref() {
-        // BlendMode is not ref counted
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return true;
-    }
-
-    @Override
     public BlendMode asBlendMode() {
         return this;
     }
@@ -741,6 +726,58 @@ public enum BlendMode implements Blender {
      */
     public boolean isAdvanced() {
         return ordinal() >= MULTIPLY.ordinal();
+    }
+
+    /**
+     * Returns this blend mode's name in PascalCase.
+     */
+    public String getPrettyName() {
+        //@formatter:off
+        return switch (this) {
+            case CLEAR          -> "Clear";
+            case SRC            -> "Src";
+            case DST            -> "Dst";
+            case SRC_OVER       -> "SrcOver";
+            case DST_OVER       -> "DstOver";
+            case SRC_IN         -> "SrcIn";
+            case DST_IN         -> "DstIn";
+            case SRC_OUT        -> "SrcOut";
+            case DST_OUT        -> "DstOut";
+            case SRC_ATOP       -> "SrcATop";
+            case DST_ATOP       -> "DstATop";
+            case XOR            -> "Xor";
+            case PLUS           -> "Plus";
+            case PLUS_CLAMPED   -> "PlusClamped";
+            case MINUS          -> "Minus";
+            case MINUS_CLAMPED  -> "MinusClamped";
+            case MODULATE       -> "Modulate";
+            case MULTIPLY       -> "Multiply";
+            case SCREEN         -> "Screen";
+            case OVERLAY        -> "Overlay";
+            case DARKEN         -> "Darken";
+            case LIGHTEN        -> "Lighten";
+            case COLOR_DODGE    -> "ColorDodge";
+            case COLOR_BURN     -> "ColorBurn";
+            case HARD_LIGHT     -> "HardLight";
+            case SOFT_LIGHT     -> "SoftLight";
+            case DIFFERENCE     -> "Difference";
+            case EXCLUSION      -> "Exclusion";
+            case SUBTRACT       -> "Subtract";
+            case DIVIDE         -> "Divide";
+            case LINEAR_DODGE   -> "LinearDodge";
+            case LINEAR_BURN    -> "LinearBurn";
+            case VIVID_LIGHT    -> "VividLight";
+            case LINEAR_LIGHT   -> "LinearLight";
+            case PIN_LIGHT      -> "PinLight";
+            case HARD_MIX       -> "HardMix";
+            case DARKER_COLOR   -> "DarkerColor";
+            case LIGHTER_COLOR  -> "LighterColor";
+            case HUE            -> "Hue";
+            case SATURATION     -> "Saturation";
+            case COLOR          -> "Color";
+            case LUMINOSITY     -> "Luminosity";
+        };
+        //@formatter:on
     }
 
     /**

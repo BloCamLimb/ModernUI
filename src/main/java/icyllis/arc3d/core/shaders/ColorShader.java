@@ -40,17 +40,4 @@ public final class ColorShader implements Shader {
     public int getColor() {
         return mColor;
     }
-
-    @Override
-    public void ref() {
-    }
-
-    @Override
-    public void unref() {
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return true;
-    }
 }

@@ -21,6 +21,8 @@ package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.MathUtil;
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
 
 public final class Color4fShader implements Shader {
 
@@ -50,36 +52,15 @@ public final class Color4fShader implements Shader {
         return true;
     }
 
-    public float r() {
-        return mR;
-    }
-
-    public float g() {
-        return mG;
-    }
-
-    public float b() {
-        return mB;
-    }
-
-    public float a() {
-        return mA;
+    /**
+     * @return a copy of non-premultiplied color.
+     */
+    @Contract(value = " -> new", pure = true)
+    public float @NonNull [] getColor() {
+        return new float[]{mR, mG, mB, mA};
     }
 
     public ColorSpace getColorSpace() {
         return mColorSpace;
-    }
-
-    @Override
-    public void ref() {
-    }
-
-    @Override
-    public void unref() {
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return true;
     }
 }

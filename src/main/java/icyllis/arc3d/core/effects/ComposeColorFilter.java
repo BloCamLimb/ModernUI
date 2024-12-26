@@ -41,25 +41,6 @@ public final class ComposeColorFilter implements ColorFilter {
         mAfter = Objects.requireNonNull(after);
     }
 
-    // We can leak the ref countability to the underlying object in this scenario
-
-    @Override
-    public void ref() {
-        mAfter.ref();
-        mBefore.ref();
-    }
-
-    @Override
-    public void unref() {
-        mAfter.unref();
-        mBefore.unref();
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return mAfter.isTriviallyCounted() && mBefore.isTriviallyCounted();
-    }
-
     @RawPtr
     public ColorFilter getBefore() {
         return mBefore;

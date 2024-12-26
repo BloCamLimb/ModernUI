@@ -38,4 +38,18 @@ public interface Blender extends RefCounted {
     default BlendMode asBlendMode() {
         return null;
     }
+
+    // Currently all the subclasses are trivially counted
+    @Override
+    default void ref() {
+    }
+
+    @Override
+    default void unref() {
+    }
+
+    @Override
+    default boolean isTriviallyCounted() {
+        return true;
+    }
 }

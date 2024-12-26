@@ -108,4 +108,18 @@ public sealed interface ColorFilter extends RefCounted
         }
         return new ComposeColorFilter(this, after);
     }
+
+    // Currently all the subclasses are trivially counted
+    @Override
+    default void ref() {
+    }
+
+    @Override
+    default void unref() {
+    }
+
+    @Override
+    default boolean isTriviallyCounted() {
+        return true;
+    }
 }

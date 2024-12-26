@@ -707,7 +707,7 @@ public class FragmentHelpers {
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
                                       @RawPtr Color4fShader shader) {
-        float[] color = {shader.r(), shader.g(), shader.b(), shader.a()};
+        float[] color = shader.getColor();
         ColorSpace srcCS = shader.getColorSpace();
         ColorSpace dstCS = keyContext.targetInfo().colorSpace();
         if ((srcCS != null && !srcCS.isSrgb()) || (dstCS != null && !dstCS.isSrgb())) {
@@ -946,7 +946,7 @@ public class FragmentHelpers {
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
                                       @RawPtr BlendModeColorFilter colorFilter) {
-        float[] blendColor = colorFilter.getColor().clone();
+        float[] blendColor = colorFilter.getColor();
         PaintParams.prepareColorForDst(blendColor, keyContext.targetInfo(), false);
         for (int i = 0; i < 3; i++) {
             blendColor[i] *= blendColor[3];

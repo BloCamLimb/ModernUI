@@ -1834,7 +1834,7 @@ public class ShaderCodeSource {
             String function = BLEND_MODE_FUNCTIONS.get(mode);
             if (function != null) {
                 mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + i] = new FragmentStage(
-                        mode.name(),
+                        mode.getPrettyName(),
                         kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                         mode.getBlendFuncName(),
                         new String[]{function},

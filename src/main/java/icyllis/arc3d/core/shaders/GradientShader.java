@@ -29,19 +29,6 @@ public abstract sealed class GradientShader implements Shader
 
     public static final float kDegenerateTolerance = 1F / (1 << 16);
 
-    @Override
-    public void ref() {
-    }
-
-    @Override
-    public void unref() {
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return true;
-    }
-
     /**
      * Color interpolation method, is packed into an int.
      */

@@ -20,16 +20,8 @@
 package icyllis.arc3d.core.shaders;
 
 public final class EmptyShader implements Shader {
-    @Override
-    public void ref() {
-    }
+    public static final EmptyShader INSTANCE = new EmptyShader();
 
-    @Override
-    public void unref() {
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return true;
+    private EmptyShader() {
     }
 }
