@@ -20,18 +20,26 @@
 package icyllis.arc3d.core.effects;
 
 import icyllis.arc3d.core.*;
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
 public final class BlendModeColorFilter implements ColorFilter {
 
-    // non-premultiplied blend color in sRGB space
-    private final float[] mColor;
+    // non-premultiplied blend source color in sRGB space
+    private final float mR;
+    private final float mG;
+    private final float mB;
+    private final float mA;
     private final BlendMode mMode;
 
     BlendModeColorFilter(@Size(4) float[] color, BlendMode mode) {
-        mColor = color;
+        mR = color[0];
+        mG = color[1];
+        mB = color[2];
+        mA = color[3];
         mMode = mode;
     }
 
@@ -95,10 +103,11 @@ public final class BlendModeColorFilter implements ColorFilter {
     }
 
     /**
-     * @return non-premultiplied source color in sRGB space, unmodifiable.
+     * @return a copy of non-premultiplied source color in sRGB space.
      */
-    public float[] getColor() {
-        return mColor;
+    @Contract(value = " -> new", pure = true)
+    public float @NonNull [] getColor() {
+        return new float[]{mR, mG, mB, mA};
     }
 
     public BlendMode getMode() {
@@ -115,7 +124,7 @@ public final class BlendModeColorFilter implements ColorFilter {
 
     @Override
     public void filterColor4f(float[] col, float[] out, ColorSpace dstCS) {
-        float[] blendColor = mColor.clone();
+        float[] blendColor = getColor();
         if (dstCS != null && !dstCS.isSrgb()) {
             ColorSpace.connect(ColorSpace.get(ColorSpace.Named.SRGB), dstCS)
                     .transform(blendColor);
@@ -124,18 +133,5 @@ public final class BlendModeColorFilter implements ColorFilter {
             blendColor[i] *= blendColor[3];
         }
         mMode.apply(blendColor, col, out);
-    }
-
-    @Override
-    public void ref() {
-    }
-
-    @Override
-    public void unref() {
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return true;
     }
 }

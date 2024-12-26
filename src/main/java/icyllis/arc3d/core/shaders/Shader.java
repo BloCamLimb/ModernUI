@@ -121,4 +121,18 @@ public sealed interface Shader extends RefCounted
         base.ref();
         return new LocalMatrixShader(base, lm); // move
     }
+
+    // Only ImageShader is ref-counted
+    @Override
+    default void ref() {
+    }
+
+    @Override
+    default void unref() {
+    }
+
+    @Override
+    default boolean isTriviallyCounted() {
+        return true;
+    }
 }

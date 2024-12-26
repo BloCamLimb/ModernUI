@@ -252,7 +252,7 @@ public abstract sealed class Gradient1DShader extends GradientShader
                 // but approximate the final color as infinite repetitions of the colors, so
                 // it can be represented as the average color of the gradient.
                 //TODO
-                return new EmptyShader();
+                return EmptyShader.INSTANCE;
             }
             case TILE_MODE_CLAMP -> {
                 // Depending on how the gradient shape degenerates, there may be a more specialized
@@ -263,7 +263,7 @@ public abstract sealed class Gradient1DShader extends GradientShader
             case TILE_MODE_DECAL -> {
                 // normally this would reject the area outside of the interpolation region, so since
                 // inside region is empty when the radii are equal, the entire draw region is empty
-                return new EmptyShader();
+                return EmptyShader.INSTANCE;
             }
         }
         return null;

@@ -79,17 +79,4 @@ public final class ColorMatrixColorFilter implements ColorFilter {
         out[2] = z * w;
         out[3] = w;
     }
-
-    @Override
-    public void ref() {
-    }
-
-    @Override
-    public void unref() {
-    }
-
-    @Override
-    public boolean isTriviallyCounted() {
-        return true;
-    }
 }

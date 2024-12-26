@@ -70,7 +70,7 @@ public final class ImageShader extends RefCnt implements Shader {
         }
         if (image == null || subset.isEmpty()) {
             RefCnt.move(image);
-            return new EmptyShader();
+            return EmptyShader.INSTANCE;
         }
 
         if (!(0 <= subset.left() && 0 <= subset.top() && // also capture NaN
