@@ -27,8 +27,6 @@ dependencies {
         transitive = false
     }
 
-    implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
-
     def lwjglNatives
     switch (OperatingSystem.current()) {
         case OperatingSystem.WINDOWS:
