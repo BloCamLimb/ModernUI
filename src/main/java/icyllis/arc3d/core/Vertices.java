@@ -44,8 +44,7 @@ public class Vertices {
 
     private final float[] mPositions;
     private final float[] mTexCoords;
-    // convert to (r,g,b,a) array, so no need to consider endianness
-    private final byte[] mColors;
+    private final int[] mColors;
     private final short[] mIndices;
 
     private final int     mVertexCount;
@@ -54,7 +53,7 @@ public class Vertices {
     private final Rect2f mBounds;
 
     Vertices(int vertexMode, float[] positions, float[] texCoords,
-             byte[] colors, short[] indices, int vertexCount, int indexCount) {
+             int[] colors, short[] indices, int vertexCount, int indexCount) {
         mVertexMode = vertexMode;
         mPositions = positions;
         mTexCoords = texCoords;
@@ -95,16 +94,9 @@ public class Vertices {
         if (texCoords != null) {
             newTexCoords = Arrays.copyOfRange(texCoords, texCoordOffset, texCoordOffset + vertexCount * 2);
         }
-        byte[] newColors = null;
+        int[] newColors = null;
         if (colors != null) {
-            newColors = new byte[vertexCount * 4];
-            for (int i = 0, j = colorOffset, k = 0; i < vertexCount; i++, j++, k += 4) {
-                int color = colors[j];
-                newColors[k] =   (byte) ((color >> 16) & 0xFF);
-                newColors[k|1] = (byte) ((color >> 8) & 0xFF);
-                newColors[k|2] = (byte) (color & 0xFF);
-                newColors[k|3] = (byte) (color >>> 24);
-            }
+            newColors = Arrays.copyOfRange(colors, colorOffset, colorOffset + vertexCount);
         }
         short[] newIndices = null;
         if (indices != null) {
@@ -128,16 +120,10 @@ public class Vertices {
             newTexCoords = new float[vertexCount * 2];
             texCoords.get(texCoords.position(), newTexCoords);
         }
-        byte[] newColors = null;
+        int[] newColors = null;
         if (colors != null) {
-            newColors = new byte[vertexCount * 4];
-            for (int i = 0, j = colors.position(), k = 0; i < vertexCount; i++, j++, k += 4) {
-                int color = colors.get(j);
-                newColors[k] =   (byte) ((color >> 16) & 0xFF);
-                newColors[k|1] = (byte) ((color >> 8) & 0xFF);
-                newColors[k|2] = (byte) (color & 0xFF);
-                newColors[k|3] = (byte) (color >>> 24);
-            }
+            newColors = new int[vertexCount];
+            colors.get(colors.position(), newColors);
         }
         int indexCount = 0;
         short[] newIndices = null;
@@ -202,7 +188,7 @@ public class Vertices {
     }
 
     @ApiStatus.Internal
-    public byte[] getColors() {
+    public int[] getColors() {
         return mColors;
     }
 

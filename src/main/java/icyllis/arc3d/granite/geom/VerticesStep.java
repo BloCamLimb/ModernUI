@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.granite.geom;
 
+import icyllis.arc3d.core.PixelUtils;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.core.Vertices;
 import icyllis.arc3d.engine.*;
@@ -134,7 +135,7 @@ public class VerticesStep extends GeometryStep {
         assert !usesFastSolidColor;
         if (mHasColor) {
             vs.format("""
-                    %1$s = vec4(%2$s.rgb * %2$s.a, %2$s.a);
+                    %1$s = vec4(%2$s.bgr * %2$s.a, %2$s.a);
                     """, "f_Color", COLOR.name());
         }
         vs.format("vec3 devicePos = %s * vec3(%s, 1.0);\n",
@@ -162,7 +163,7 @@ public class VerticesStep extends GeometryStep {
         int indexCount = vertices.getIndexCount();
         float[] positions = vertices.getPositions();
         float[] texCoords = vertices.getTexCoords();
-        byte[] colors = vertices.getColors();
+        int[] colors = vertices.getColors();
         short[] indices = vertices.getIndices();
 
         assert (mHasColor == (colors != null));
@@ -175,37 +176,35 @@ public class VerticesStep extends GeometryStep {
             for (int i = 0; i < indexCount; i++) {
                 int index = indices[i] & 0xFFFF;
                 MemoryUtil.memPutFloat(vertexData, positions[index<<1]);
-                MemoryUtil.memPutFloat(vertexData+4, positions[(index<<1)|1]);
+                MemoryUtil.memPutFloat(vertexData+4, positions[(index<<1)+1]);
                 vertexData += 8;
                 if (mHasColor) {
-                    MemoryUtil.memPutByte(vertexData, colors[index<<2]);
-                    MemoryUtil.memPutByte(vertexData+1, colors[(index<<2)|1]);
-                    MemoryUtil.memPutByte(vertexData+2, colors[(index<<2)|2]);
-                    MemoryUtil.memPutByte(vertexData+3, colors[(index<<2)|3]);
+                    int color = colors[index];
+                    MemoryUtil.memPutInt(vertexData,
+                            PixelUtils.NATIVE_BIG_ENDIAN ? Integer.reverseBytes(color) : color);
                     vertexData += 4;
                 }
                 if (mHasTexCoords) {
                     MemoryUtil.memPutFloat(vertexData, texCoords[index<<1]);
-                    MemoryUtil.memPutFloat(vertexData+4, texCoords[(index<<1)|1]);
+                    MemoryUtil.memPutFloat(vertexData+4, texCoords[(index<<1)+1]);
                     vertexData += 8;
                 }
             }
         } else {
-            long vertexData =writer.append(vertexCount);
+            long vertexData = writer.append(vertexCount);
             for (int i = 0; i < vertexCount; i++) {
                 MemoryUtil.memPutFloat(vertexData, positions[i<<1]);
-                MemoryUtil.memPutFloat(vertexData+4, positions[(i<<1)|1]);
+                MemoryUtil.memPutFloat(vertexData+4, positions[(i<<1)+1]);
                 vertexData += 8;
                 if (mHasColor) {
-                    MemoryUtil.memPutByte(vertexData, colors[i<<2]);
-                    MemoryUtil.memPutByte(vertexData+1, colors[(i<<2)|1]);
-                    MemoryUtil.memPutByte(vertexData+2, colors[(i<<2)|2]);
-                    MemoryUtil.memPutByte(vertexData+3, colors[(i<<2)|3]);
+                    int color = colors[i];
+                    MemoryUtil.memPutInt(vertexData,
+                            PixelUtils.NATIVE_BIG_ENDIAN ? Integer.reverseBytes(color) : color);
                     vertexData += 4;
                 }
                 if (mHasTexCoords) {
                     MemoryUtil.memPutFloat(vertexData, texCoords[i<<1]);
-                    MemoryUtil.memPutFloat(vertexData+4, texCoords[(i<<1)|1]);
+                    MemoryUtil.memPutFloat(vertexData+4, texCoords[(i<<1)+1]);
                     vertexData += 8;
                 }
             }
