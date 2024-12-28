@@ -87,6 +87,18 @@ final class AttachInfo {
 
     /**
      * Global to the view hierarchy used as a temporary for dealing with
+     * x/y points in the ViewGroup.invalidateChild implementation.
+     */
+    final int[] mInvalidateChildLocation = new int[2];
+
+    /**
+     * Global to the view hierarchy used as a temporary for dealing with
+     * computing absolute on-screen location.
+     */
+    final int[] mTmpLocation = new int[2];
+
+    /**
+     * Global to the view hierarchy used as a temporary for dealing with
      * x/y location when view is transformed.
      */
     final float[] mTmpTransformLocation = new float[2];

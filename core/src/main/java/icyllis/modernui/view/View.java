@@ -2413,12 +2413,19 @@ public class View implements Drawable.Callback {
      * This method is called by ViewGroup.drawChild() to have each child view draw itself.
      */
     final void draw(@NonNull Canvas canvas, @NonNull ViewGroup group, boolean clip) {
-        final boolean identity = hasIdentityMatrix();
-        if (clip && identity &&
+        final boolean childHasIdentityMatrix = hasIdentityMatrix();
+
+        // Sets the flag as early as possible to allow draw() implementations
+        // to call invalidate() successfully when doing animations
+        mPrivateFlags |= PFLAG_DRAWN;
+
+        if (clip && childHasIdentityMatrix &&
                 canvas.quickReject(mLeft, mTop, mRight, mBottom)) {
             // quick rejected
+            mPrivateFlags2 |= PFLAG2_VIEW_QUICK_REJECTED;
             return;
         }
+        mPrivateFlags2 &= ~PFLAG2_VIEW_QUICK_REJECTED;
 
         float alpha = mAlpha * mTransitionAlpha;
         if (alpha <= 0.001f) {
@@ -2436,7 +2443,7 @@ public class View implements Drawable.Callback {
         if (mRenderNode.getAnimationMatrix() != null) {
             canvas.concat(mRenderNode.getAnimationMatrix());
         }
-        if (!identity) {
+        if (!childHasIdentityMatrix) {
             canvas.concat(getMatrix());
         }
 
@@ -2685,7 +2692,7 @@ public class View implements Drawable.Callback {
                         bounds.right, bounds.bottom);
                 scrollBar.draw(canvas);
                 if (invalidate) {
-                    invalidate();
+                    invalidate(bounds);
                 }
             }
 
@@ -2699,7 +2706,7 @@ public class View implements Drawable.Callback {
                         bounds.right, bounds.bottom);
                 scrollBar.draw(canvas);
                 if (invalidate) {
-                    invalidate();
+                    invalidate(bounds);
                 }
             }
         }
@@ -2837,12 +2844,15 @@ public class View implements Drawable.Callback {
                 sizeChange(newWidth, newHeight, oldWidth, oldHeight);
             }
 
-            // If we are visible, force the DRAWN bit to on so that
-            // this invalidate will go through (at least to our parent).
-            // This is because someone may have invalidated this view
-            // before this call to setFrame came in, thereby clearing
-            // the DRAWN bit.
-            mPrivateFlags |= PFLAG_DRAWN;
+            if ((mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                // If we are visible, force the DRAWN bit to on so that
+                // this invalidate will go through (at least to our parent).
+                // This is because someone may have invalidated this view
+                // before this call to setFrame came in, thereby clearing
+                // the DRAWN bit.
+                mPrivateFlags |= PFLAG_DRAWN;
+                invalidate();
+            }
 
             // Reset drawn bit to original value (invalidate turns it off)
             mPrivateFlags |= drawn;
@@ -3927,15 +3937,55 @@ public class View implements Drawable.Callback {
      * This must be called from a UI thread. To call from a non-UI thread, call
      * {@link #postInvalidate()}.
      */
-    public final void invalidate() {
+    public void invalidate() {
+        invalidateInternal(0, 0, mRight - mLeft, mBottom - mTop, true, true);
+    }
+
+    public void invalidate(Rect dirty) {
+        final int scrollX = mScrollX;
+        final int scrollY = mScrollY;
+        invalidateInternal(dirty.left - scrollX, dirty.top - scrollY,
+                dirty.right - scrollX, dirty.bottom - scrollY, true, false);
+    }
+
+    public void invalidate(int l, int t, int r, int b) {
+        final int scrollX = mScrollX;
+        final int scrollY = mScrollY;
+        invalidateInternal(l - scrollX, t - scrollY, r - scrollX, b - scrollY, true, false);
+    }
+
+    void invalidateInternal(int l, int t, int r, int b, boolean invalidateCache,
+                            boolean fullInvalidate) {
+        // Do not invalidate views which are not visible and which are not running an animation. They
+        // will not get drawn and they should not set dirty flags as if they will be drawn
         if ((mViewFlags & VISIBILITY_MASK) != VISIBLE &&
                 (!(mParent instanceof ViewGroup) ||
                         !((ViewGroup) mParent).isViewTransitioning(this))) {
             return;
         }
 
-        if (mAttachInfo != null) {
-            mAttachInfo.mViewRoot.invalidate();
+        if ((mPrivateFlags & (PFLAG_DRAWN | PFLAG_HAS_BOUNDS)) == (PFLAG_DRAWN | PFLAG_HAS_BOUNDS)
+                || (invalidateCache && (mPrivateFlags & PFLAG_DRAWING_CACHE_VALID) == PFLAG_DRAWING_CACHE_VALID)
+                || (mPrivateFlags & PFLAG_INVALIDATED) != PFLAG_INVALIDATED) {
+            if (fullInvalidate) {
+                mPrivateFlags &= ~PFLAG_DRAWN;
+            }
+
+            mPrivateFlags |= PFLAG_DIRTY;
+
+            if (invalidateCache) {
+                mPrivateFlags |= PFLAG_INVALIDATED;
+                mPrivateFlags &= ~PFLAG_DRAWING_CACHE_VALID;
+            }
+
+            // Propagate the damage rectangle to the parent view.
+            final AttachInfo ai = mAttachInfo;
+            final ViewParent p = mParent;
+            if (p != null && ai != null && l < r && t < b) {
+                final Rect damage = ai.mTmpInvalRect;
+                damage.set(l, t, r, b);
+                p.invalidateChild(this, damage);
+            }
         }
     }
 
@@ -3947,7 +3997,12 @@ public class View implements Drawable.Callback {
     @Override
     public void invalidateDrawable(@NonNull Drawable drawable) {
         if (verifyDrawable(drawable)) {
-            invalidate();
+            final Rect dirty = drawable.getBounds();
+            final int scrollX = mScrollX;
+            final int scrollY = mScrollY;
+
+            invalidate(dirty.left + scrollX, dirty.top + scrollY,
+                    dirty.right + scrollX, dirty.bottom + scrollY);
         }
     }
 
@@ -6602,7 +6657,24 @@ public class View implements Drawable.Callback {
      */
     public final void setLeft(int left) {
         if (left != mLeft) {
-            invalidate();
+            final boolean matrixIsIdentity = hasIdentityMatrix();
+            if (matrixIsIdentity) {
+                if (mAttachInfo != null) {
+                    int minLeft;
+                    int xLoc;
+                    if (left < mLeft) {
+                        minLeft = left;
+                        xLoc = left - mLeft;
+                    } else {
+                        minLeft = mLeft;
+                        xLoc = 0;
+                    }
+                    invalidate(xLoc, 0, mRight - minLeft, mBottom - mTop);
+                }
+            } else {
+                // Double-invalidation is necessary to capture view's old and new areas
+                invalidate();
+            }
 
             int oldWidth = mRight - mLeft;
             int height = mBottom - mTop;
@@ -6612,6 +6684,10 @@ public class View implements Drawable.Callback {
 
             sizeChange(mRight - mLeft, height, oldWidth, height);
 
+            if (!matrixIsIdentity) {
+                mPrivateFlags |= PFLAG_DRAWN; // force another invalidation with the new orientation
+                invalidate();
+            }
             mBackgroundSizeChanged = true;
             mDefaultFocusHighlightSizeChanged = true;
             if (mForegroundInfo != null) {
@@ -6638,7 +6714,24 @@ public class View implements Drawable.Callback {
      */
     public final void setTop(int top) {
         if (top != mTop) {
-            invalidate();
+            final boolean matrixIsIdentity = hasIdentityMatrix();
+            if (matrixIsIdentity) {
+                if (mAttachInfo != null) {
+                    int minTop;
+                    int yLoc;
+                    if (top < mTop) {
+                        minTop = top;
+                        yLoc = top - mTop;
+                    } else {
+                        minTop = mTop;
+                        yLoc = 0;
+                    }
+                    invalidate(0, yLoc, mRight - mLeft, mBottom - minTop);
+                }
+            } else {
+                // Double-invalidation is necessary to capture view's old and new areas
+                invalidate();
+            }
 
             int width = mRight - mLeft;
             int oldHeight = mBottom - mTop;
@@ -6648,6 +6741,10 @@ public class View implements Drawable.Callback {
 
             sizeChange(width, mBottom - mTop, width, oldHeight);
 
+            if (!matrixIsIdentity) {
+                mPrivateFlags |= PFLAG_DRAWN; // force another invalidation with the new orientation
+                invalidate();
+            }
             mBackgroundSizeChanged = true;
             mDefaultFocusHighlightSizeChanged = true;
             if (mForegroundInfo != null) {
@@ -6674,7 +6771,21 @@ public class View implements Drawable.Callback {
      */
     public final void setRight(int right) {
         if (right != mRight) {
-            invalidate();
+            final boolean matrixIsIdentity = hasIdentityMatrix();
+            if (matrixIsIdentity) {
+                if (mAttachInfo != null) {
+                    int maxRight;
+                    if (right < mRight) {
+                        maxRight = mRight;
+                    } else {
+                        maxRight = right;
+                    }
+                    invalidate(0, 0, maxRight - mLeft, mBottom - mTop);
+                }
+            } else {
+                // Double-invalidation is necessary to capture view's old and new areas
+                invalidate();
+            }
 
             int oldWidth = mRight - mLeft;
             int height = mBottom - mTop;
@@ -6684,6 +6795,10 @@ public class View implements Drawable.Callback {
 
             sizeChange(mRight - mLeft, height, oldWidth, height);
 
+            if (!matrixIsIdentity) {
+                mPrivateFlags |= PFLAG_DRAWN; // force another invalidation with the new orientation
+                invalidate();
+            }
             mBackgroundSizeChanged = true;
             mDefaultFocusHighlightSizeChanged = true;
             if (mForegroundInfo != null) {
@@ -6710,7 +6825,21 @@ public class View implements Drawable.Callback {
      */
     public final void setBottom(int bottom) {
         if (bottom != mBottom) {
-            invalidate();
+            final boolean matrixIsIdentity = hasIdentityMatrix();
+            if (matrixIsIdentity) {
+                if (mAttachInfo != null) {
+                    int maxBottom;
+                    if (bottom < mBottom) {
+                        maxBottom = mBottom;
+                    } else {
+                        maxBottom = bottom;
+                    }
+                    invalidate(0, 0, mRight - mLeft, maxBottom - mTop);
+                }
+            } else {
+                // Double-invalidation is necessary to capture view's old and new areas
+                invalidate();
+            }
 
             int width = mRight - mLeft;
             int oldHeight = mBottom - mTop;
@@ -6720,6 +6849,10 @@ public class View implements Drawable.Callback {
 
             sizeChange(width, mBottom - mTop, width, oldHeight);
 
+            if (!matrixIsIdentity) {
+                mPrivateFlags |= PFLAG_DRAWN; // force another invalidation with the new orientation
+                invalidate();
+            }
             mBackgroundSizeChanged = true;
             mDefaultFocusHighlightSizeChanged = true;
             if (mForegroundInfo != null) {

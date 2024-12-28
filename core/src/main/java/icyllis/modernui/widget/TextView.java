@@ -2291,6 +2291,66 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
     }
 
+    @Override
+    public void invalidateDrawable(@NonNull Drawable drawable) {
+        boolean handled = false;
+
+        if (verifyDrawable(drawable)) {
+            final Rect dirty = drawable.getBounds();
+            int scrollX = mScrollX;
+            int scrollY = mScrollY;
+
+            // IMPORTANT: The coordinates below are based on the coordinates computed
+            // for each compound drawable in onDraw(). Make sure to update each section
+            // accordingly.
+            final TextView.Drawables drawables = mDrawables;
+            if (drawables != null) {
+                if (drawable == drawables.mShowing[Drawables.LEFT]) {
+                    final int compoundPaddingTop = getCompoundPaddingTop();
+                    final int compoundPaddingBottom = getCompoundPaddingBottom();
+                    final int vspace = getHeight() - compoundPaddingBottom - compoundPaddingTop;
+
+                    scrollX += mPaddingLeft;
+                    scrollY += compoundPaddingTop + (vspace - drawables.mDrawableHeightLeft) / 2;
+                    handled = true;
+                } else if (drawable == drawables.mShowing[Drawables.RIGHT]) {
+                    final int compoundPaddingTop = getCompoundPaddingTop();
+                    final int compoundPaddingBottom = getCompoundPaddingBottom();
+                    final int vspace = getHeight() - compoundPaddingBottom - compoundPaddingTop;
+
+                    scrollX += (getWidth() - mPaddingRight - drawables.mDrawableSizeRight);
+                    scrollY += compoundPaddingTop + (vspace - drawables.mDrawableHeightRight) / 2;
+                    handled = true;
+                } else if (drawable == drawables.mShowing[Drawables.TOP]) {
+                    final int compoundPaddingLeft = getCompoundPaddingLeft();
+                    final int compoundPaddingRight = getCompoundPaddingRight();
+                    final int hspace = getWidth() - compoundPaddingRight - compoundPaddingLeft;
+
+                    scrollX += compoundPaddingLeft + (hspace - drawables.mDrawableWidthTop) / 2;
+                    scrollY += mPaddingTop;
+                    handled = true;
+                } else if (drawable == drawables.mShowing[Drawables.BOTTOM]) {
+                    final int compoundPaddingLeft = getCompoundPaddingLeft();
+                    final int compoundPaddingRight = getCompoundPaddingRight();
+                    final int hspace = getWidth() - compoundPaddingRight - compoundPaddingLeft;
+
+                    scrollX += compoundPaddingLeft + (hspace - drawables.mDrawableWidthBottom) / 2;
+                    scrollY += (getHeight() - mPaddingBottom - drawables.mDrawableSizeBottom);
+                    handled = true;
+                }
+            }
+
+            if (handled) {
+                invalidate(dirty.left + scrollX, dirty.top + scrollY,
+                        dirty.right + scrollX, dirty.bottom + scrollY);
+            }
+        }
+
+        if (!handled) {
+            super.invalidateDrawable(drawable);
+        }
+    }
+
     /**
      * Returns the state of the {@code textIsSelectable} flag (See
      * {@link #setTextIsSelectable setTextIsSelectable()}). Although you have to set this flag

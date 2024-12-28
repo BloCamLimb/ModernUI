@@ -1140,6 +1140,20 @@ public class ProgressBar extends View {
     }
 
     @Override
+    public void invalidateDrawable(@NonNull Drawable dr) {
+        if (!mInDrawing) {
+            // fixed by Modern UI: workaround dirty rect
+            //TODO implement this and handle RTL mirror in better way
+            if (super.verifyDrawable(dr)) {
+                super.invalidateDrawable(dr);
+            } else if (verifyDrawable(dr)) {
+                // invalidate full view due to translate padding and thumb offset
+                invalidate();
+            }
+        }
+    }
+
+    @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         updateDrawableBounds(w, h);
     }
