@@ -24,10 +24,9 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - [![License](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
   - Copyright (C) 2006 The Android Open Source Project
   - [![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
-* Runtime Libraries
+* Runtime Libraries (not part of the ModernUI project)
   - [lwjgl](https://github.com/LWJGL/lwjgl3) licensed under BSD-3-Clause
   - [fastutil](https://github.com/vigna/fastutil) by Vigna, licensed under Apache-2.0
-  - [caffeine](https://github.com/ben-manes/caffeine) by Ben Manes, licensed under Apache-2.0
   - [log4j](https://github.com/apache/logging-log4j2) licensed under Apache-2.0
   - [icu4j](https://github.com/unicode-org/icu) by Unicode, Inc. see [LICENSE](https://github.com/unicode-org/icu/blob/main/LICENSE)
 ### Documentation

@@ -18,15 +18,16 @@
 
 package icyllis.modernui.graphics.text;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.util.Pools;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Globally shared layout cache. Useful when recycling layouts, or raw data source and
@@ -57,8 +58,21 @@ public final class LayoutCache {
      */
     public static final int COMPUTE_GLYPHS_PIXEL_BOUNDS = 0x2;
 
+    //TODO make this configurable
+    private static final int MAX_ENTRIES = 5000;
+
     private static final Pools.Pool<LookupKey> sLookupKeys = Pools.newSynchronizedPool(3);
-    private static volatile Cache<Key, LayoutPiece> sCache;
+    @GuardedBy("itself")
+    private static final LinkedHashMap<Key, LayoutPiece> sCache = new LinkedHashMap<>(
+            /*initialCapacity*/ (int) (MAX_ENTRIES / 0.75f),
+            /*loadFactor*/      0.75f,
+            /*accessOrder*/     true
+    ) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Key, LayoutPiece> eldest) {
+            return size() > MAX_ENTRIES;
+        }
+    };
 
     /**
      * Get or create the layout piece from the global cache with given requirements.
@@ -89,44 +103,44 @@ public final class LayoutCache {
             return new LayoutPiece(buf, contextStart, contextLimit, start, limit, isRtl, paint,
                     null, computeFlags);
         }
-        if (sCache == null) {
-            synchronized (LayoutCache.class) {
-                if (sCache == null) {
-                    sCache = Caffeine.newBuilder()
-                            //TODO make this configurable
-                            .maximumSize(5000)
-                            //.expireAfterAccess(5, TimeUnit.MINUTES)
-                            .build();
-                }
-            }
-        }
         LookupKey key = sLookupKeys.acquire();
         if (key == null) {
             key = new LookupKey();
         }
-        LayoutPiece piece = sCache.getIfPresent(
-                key.update(buf, contextStart, contextLimit, start, limit, paint, isRtl));
+        key.update(buf, contextStart, contextLimit, start, limit, paint, isRtl);
+        LayoutPiece piece;
+        synchronized (sCache) {
+            piece = sCache.get(key);
+        }
         if (piece == null) {
             // create new
             final Key k = key.copy();
             // recycle the lookup key earlier, since creating layout is heavy
+            key.clear();
             sLookupKeys.release(key);
             piece = new LayoutPiece(buf, contextStart, contextLimit, start, limit, isRtl, paint,
                     null, computeFlags);
             // there may be a race, but we don't care
-            sCache.put(k, piece);
+            synchronized (sCache) {
+                sCache.put(k, piece);
+            }
         } else {
             int currFlags = (piece.mComputeFlags & computeFlags);
             if (currFlags != computeFlags) {
                 // re-compute for more info
                 final Key k = key.copy();
                 // recycle the lookup key earlier, since creating layout is heavy
+                key.clear();
                 sLookupKeys.release(key);
                 piece = new LayoutPiece(buf, contextStart, contextLimit, start, limit, isRtl, paint,
                         piece, currFlags ^ computeFlags); // <- compute the difference
                 // override old value
-                sCache.put(k, piece);
+                synchronized (sCache) {
+                    sCache.put(k, piece);
+                }
             } else {
+                // normal cache hit
+                key.clear();
                 sLookupKeys.release(key);
             }
         }
@@ -137,10 +151,11 @@ public final class LayoutCache {
      * Returns the approximate number of entries in this cache.
      */
     public static int getSize() {
-        if (sCache == null) {
-            return 0;
+        int size;
+        synchronized (sCache) {
+            size = sCache.size();
         }
-        return (int) Math.min(sCache.estimatedSize(), Integer.MAX_VALUE);
+        return size;
     }
 
     /**
@@ -149,14 +164,13 @@ public final class LayoutCache {
      * @return memory usage in bytes
      */
     public static int getMemoryUsage() {
-        if (sCache == null) {
-            return 0;
-        }
         int size = 0;
-        for (var entry : sCache.asMap().entrySet()) {
-            size += entry.getKey().getMemoryUsage();
-            size += entry.getValue().getMemoryUsage();
-            size += 40; // a node object
+        synchronized (sCache) {
+            for (var entry : sCache.entrySet()) {
+                size += entry.getKey().getMemoryUsage();
+                size += entry.getValue().getMemoryUsage();
+                size += 56; // a node object
+            }
         }
         return size;
     }
@@ -165,8 +179,8 @@ public final class LayoutCache {
      * Clear the cache.
      */
     public static void clear() {
-        if (sCache != null) {
-            sCache.invalidateAll();
+        synchronized (sCache) {
+            sCache.clear();
         }
     }
 
@@ -184,6 +198,7 @@ public final class LayoutCache {
         float mSize;
         Locale mLocale;
         boolean mIsRtl;
+        transient int mHash;
 
         private Key() {
         }
@@ -204,6 +219,13 @@ public final class LayoutCache {
             mSize = key.mSize;
             mLocale = key.mLocale;
             mIsRtl = key.mIsRtl;
+            mHash = key.mHash;
+            assert mHash == computeHash();
+        }
+
+        @Override
+        public int hashCode() {
+            return mHash;
         }
 
         @Override
@@ -226,24 +248,23 @@ public final class LayoutCache {
             return mLocale.equals(key.mLocale);
         }
 
-        @Override
-        public int hashCode() {
-            int result = 1;
-            for (char c : mChars) {
-                result = 31 * result + c;
-            }
-            result = 31 * result + mFont.hashCode();
-            result = 31 * result + mFlags;
-            result = 31 * result + Float.floatToIntBits(mSize);
-            result = 31 * result + mStart;
-            result = 31 * result + mLimit;
-            result = 31 * result + mLocale.hashCode();
-            result = 31 * result + (mIsRtl ? 1 : 0);
-            return result;
+        private int getMemoryUsage() {
+            return 64 + 16 + MathUtil.align8(mChars.length << 1);
         }
 
-        private int getMemoryUsage() {
-            return MathUtil.align8(12 + 16 + 8 + 8 + 4 + 4 + 8 + 1 + (mChars.length << 1));
+        private int computeHash() {
+            int h = 1;
+            for (char c : mChars) {
+                h = 31 * h + c;
+            }
+            h = 31 * h + mFont.hashCode();
+            h = 31 * h + mFlags;
+            h = 31 * h + Float.floatToIntBits(mSize);
+            h = 31 * h + mStart;
+            h = 31 * h + mLimit;
+            h = 31 * h + mLocale.hashCode();
+            h = 31 * h + (mIsRtl ? 1 : 0);
+            return h;
         }
     }
 
@@ -258,9 +279,8 @@ public final class LayoutCache {
         public LookupKey() {
         }
 
-        @NonNull
-        public Key update(@NonNull char[] text, int contextStart, int contextLimit,
-                          int start, int limit, @NonNull FontPaint paint, boolean dir) {
+        public void update(@NonNull char[] text, int contextStart, int contextLimit,
+                           int start, int limit, @NonNull FontPaint paint, boolean dir) {
             mChars = text;
             mContextStart = contextStart;
             mContextLimit = contextLimit;
@@ -272,7 +292,26 @@ public final class LayoutCache {
             mSize = paint.getFontSize();
             mLocale = paint.mLocale;
             mIsRtl = dir;
-            return this;
+            {
+                int h = 1;
+                for (int i = mContextStart; i < mContextLimit; i++) {
+                    h = 31 * h + mChars[i];
+                }
+                h = 31 * h + mFont.hashCode();
+                h = 31 * h + mFlags;
+                h = 31 * h + Float.floatToIntBits(mSize);
+                h = 31 * h + mStart;
+                h = 31 * h + mLimit;
+                h = 31 * h + mLocale.hashCode();
+                h = 31 * h + (mIsRtl ? 1 : 0);
+                mHash = h;
+            }
+        }
+
+        public void clear() {
+            mChars = null;
+            mFont = null;
+            mLocale = null;
         }
 
         @Override
@@ -295,22 +334,6 @@ public final class LayoutCache {
             }
             if (!mFont.equals(key.mFont)) return false;
             return mLocale.equals(key.mLocale);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = 1;
-            for (int i = mContextStart; i < mContextLimit; i++) {
-                result = 31 * result + mChars[i];
-            }
-            result = 31 * result + mFont.hashCode();
-            result = 31 * result + mFlags;
-            result = 31 * result + Float.floatToIntBits(mSize);
-            result = 31 * result + mStart;
-            result = 31 * result + mLimit;
-            result = 31 * result + mLocale.hashCode();
-            result = 31 * result + (mIsRtl ? 1 : 0);
-            return result;
         }
 
         @NonNull
