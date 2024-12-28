@@ -42,8 +42,7 @@ public class RenderProperties {
      */
     @Nullable
     private Matrix4 mTransform;
-    @Nullable
-    private Matrix mMatrix;
+    private final Matrix mMatrix = new Matrix();
     @Nullable
     private Matrix mInverseMatrix;
 
@@ -103,9 +102,6 @@ public class RenderProperties {
         matrix.preScale(mScaleX, mScaleY);
         matrix.preTranslate(-mPivotX, -mPivotY);
         matrix.postTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY, mTranslationZ);
-        if (mMatrix == null) {
-            mMatrix = new Matrix();
-        }
         matrix.toMatrix(mMatrix);
     }
 
@@ -116,7 +112,6 @@ public class RenderProperties {
      *
      * @return The current transform matrix, may be null
      */
-    @Nullable
     public Matrix getMatrix() {
         if (mMatrixOrPivotDirty) {
             computeTransform();
@@ -131,7 +126,6 @@ public class RenderProperties {
      *
      * @return The inverse of current transform matrix, may be null
      */
-    @Nullable
     public Matrix getInverseMatrix() {
         Matrix matrix = getMatrix();
         if (matrix == null) {
@@ -140,11 +134,11 @@ public class RenderProperties {
         if (mInverseMatrix == null) {
             mInverseMatrix = new Matrix();
         }
-        if (matrix.invert(mInverseMatrix)) {
-            return mInverseMatrix;
+        if (!matrix.invert(mInverseMatrix)) {
+            // we assume it identity if it's not invertible
+            mInverseMatrix.setIdentity();
         }
-        // we assume it identity if it's not invertible
-        return null;
+        return mInverseMatrix;
     }
 
     /**
@@ -318,8 +312,8 @@ public class RenderProperties {
      */
     public boolean setAnimationMatrix(@Nullable Matrix matrix) {
         if (matrix == null) {
-            if (mMatrix != null) {
-                mMatrix = null;
+            if (mAnimationMatrix != null) {
+                mAnimationMatrix = null;
                 return true;
             }
             return false;

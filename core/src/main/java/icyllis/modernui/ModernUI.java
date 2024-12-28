@@ -625,7 +625,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         @Override
         protected Canvas beginDrawLocked(int width, int height) {
             if (mSurface != null && width > 0 && height > 0) {
-                mSurface.getCanvas().clear(0);
                 return new ArcCanvas(mSurface.getCanvas());
             }
             return null;

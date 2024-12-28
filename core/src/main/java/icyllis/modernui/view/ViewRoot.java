@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
@@ -52,8 +53,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     private boolean mWillDrawSoon;
     private boolean mIsDrawing;
     private boolean mLayoutRequested;
-    private boolean mInvalidated;
-    private boolean mKeepInvalidated;
+    boolean mFullRedrawNeeded;
 
     private boolean mInLayout = false;
     ArrayList<View> mLayoutRequesters = new ArrayList<>();
@@ -70,6 +70,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     protected View mView;
     private int mWidth;
     private int mHeight;
+    private Rect mDirty;
 
     public final Handler mHandler;
     public final Choreographer mChoreographer;
@@ -83,6 +84,9 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     protected ViewRoot() {
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
+        mWidth = -1;
+        mHeight = -1;
+        mDirty = new Rect();
         mChoreographer = Choreographer.getInstance();
         mAttachInfo = new AttachInfo(this, mHandler, this);
 
@@ -246,7 +250,11 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
         int width = mWidth;
         int height = mHeight;
-        if (mLayoutRequested || width != host.getMeasuredWidth() || height != host.getMeasuredHeight()) {
+        if (width != host.getMeasuredWidth() || height != host.getMeasuredHeight()) {
+            mFullRedrawNeeded = true;
+            mLayoutRequested = true;
+        }
+        if (mLayoutRequested) {
             //long startTime = RenderCore.timeNanos();
 
             int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
@@ -322,20 +330,40 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 mAttachInfo.mTreeObserver.dispatchOnScrollChanged();
             }
 
-            if (mInvalidated) {
-                mIsDrawing = true;
+            mIsDrawing = true;
+
+            final Rect dirty = mDirty;
+            if (mFullRedrawNeeded) {
+                dirty.set(0, 0, mWidth, mHeight);
+            }
+            mFullRedrawNeeded = false;
+
+            if (!dirty.isEmpty()) {
                 Canvas canvas = beginDrawLocked(width, height);
                 if (canvas != null) {
+                    canvas.save();
+                    canvas.clipRect(dirty);
+
+                    //TODO arc3d does not implement this yet, use drawRect instead
+                    //canvas.drawColor(0, BlendMode.CLEAR);
+                    Paint p = Paint.obtain();
+                    p.setColor(0);
+                    p.setBlendMode(BlendMode.CLEAR);
+                    canvas.drawRect(dirty, p);
+                    p.recycle();
+
+                    dirty.setEmpty();
+
+                    host.mPrivateFlags |= View.PFLAG_DRAWN;
+
                     host.draw(canvas);
+                    canvas.restore();
+
                     endDrawLocked(canvas);
                 }
-                mIsDrawing = false;
-                if (mKeepInvalidated) {
-                    mKeepInvalidated = false;
-                } else {
-                    mInvalidated = false;
-                }
             }
+
+            mIsDrawing = false;
         } else {
             scheduleTraversals();
         }
@@ -688,11 +716,8 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     void invalidate() {
         Core.checkUiThread();
-        mInvalidated = true;
+        mDirty.set(0, 0, mWidth, mHeight);
         if (!mWillDrawSoon) {
-            if (mIsDrawing) {
-                mKeepInvalidated = true;
-            }
             scheduleTraversals();
         }
     }
@@ -703,6 +728,44 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             for (int i = 0; i < parent.getChildCount(); i++) {
                 invalidateWorld(parent.getChildAt(i));
             }
+        }
+    }
+
+    @Override
+    public void invalidateChild(View child, Rect dirty) {
+        invalidateChildInParent(null, dirty);
+    }
+
+    @Override
+    public ViewParent invalidateChildInParent(int[] location, Rect dirty) {
+        Core.checkUiThread();
+
+        if (dirty == null) {
+            invalidate();
+            return null;
+        } else if (dirty.isEmpty()) {
+            return null;
+        }
+
+        invalidateRectOnScreen(dirty);
+
+        return null;
+    }
+
+    private void invalidateRectOnScreen(Rect dirty) {
+        final Rect localDirty = mDirty;
+
+        // Add the new dirty rect to the current one
+        localDirty.union(dirty.left, dirty.top, dirty.right, dirty.bottom);
+        // Intersect with the bounds of the window to skip
+        // updates that lie outside of the visible region
+        final boolean intersected = localDirty.intersect(0, 0,
+                mWidth, mHeight);
+        if (!intersected) {
+            localDirty.setEmpty();
+        }
+        if (!mWillDrawSoon && intersected) {
+            scheduleTraversals();
         }
     }
 

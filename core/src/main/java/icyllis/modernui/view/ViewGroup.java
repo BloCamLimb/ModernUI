@@ -1897,6 +1897,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                                       boolean preventRequestLayout) {
         child.mParent = null;
         addViewInner(child, index, params, preventRequestLayout);
+        child.mPrivateFlags = (child.mPrivateFlags & ~PFLAG_DIRTY_MASK) | PFLAG_DRAWN;
         return true;
     }
 
@@ -2627,6 +2628,106 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             children[i].mParent = null;
             children[i] = null;
         }
+    }
+
+    /**
+     * Don't call or override this method. It is used for the implementation of
+     * the view hierarchy.
+     */
+    @Override
+    public final void invalidateChild(View child, Rect dirty) {
+        final AttachInfo attachInfo = mAttachInfo;
+
+        ViewParent parent = this;
+        if (attachInfo != null) {
+            // Check whether the child that requests the invalidate is fully opaque
+            // Views being animated or transformed are not considered opaque because we may
+            // be invalidating their old position and need the parent to paint behind them.
+            Matrix childMatrix = child.getMatrix();
+            // Mark the child as dirty, using the appropriate flag
+            // Make sure we do not set both flags at the same time
+
+            final int[] location = attachInfo.mInvalidateChildLocation;
+            location[0] = child.mLeft;
+            location[1] = child.mTop;
+            if (!childMatrix.isIdentity()) {
+                RectF boundingRect = attachInfo.mTmpTransformRect;
+                boundingRect.set(dirty);
+                Matrix transformMatrix;
+                transformMatrix = childMatrix;
+                transformMatrix.mapRect(boundingRect);
+                dirty.set((int) Math.floor(boundingRect.left),
+                        (int) Math.floor(boundingRect.top),
+                        (int) Math.ceil(boundingRect.right),
+                        (int) Math.ceil(boundingRect.bottom));
+            }
+
+            do {
+                View view = null;
+                if (parent instanceof View) {
+                    view = (View) parent;
+                }
+
+                // If the parent is dirty opaque or not dirty, mark it dirty with the opaque
+                // flag coming from the child that initiated the invalidate
+                if (view != null) {
+                    if ((view.mPrivateFlags & PFLAG_DIRTY_MASK) != PFLAG_DIRTY) {
+                        view.mPrivateFlags = (view.mPrivateFlags & ~PFLAG_DIRTY_MASK) | PFLAG_DIRTY;
+                    }
+                }
+
+                parent = parent.invalidateChildInParent(location, dirty);
+                if (view != null) {
+                    // Account for transform on current parent
+                    Matrix m = view.getMatrix();
+                    if (!m.isIdentity()) {
+                        RectF boundingRect = attachInfo.mTmpTransformRect;
+                        boundingRect.set(dirty);
+                        m.mapRect(boundingRect);
+                        dirty.set((int) Math.floor(boundingRect.left),
+                                (int) Math.floor(boundingRect.top),
+                                (int) Math.ceil(boundingRect.right),
+                                (int) Math.ceil(boundingRect.bottom));
+                    }
+                }
+            } while (parent != null);
+        }
+    }
+
+    /**
+     * Don't call or override this method. It is used for the implementation of
+     * the view hierarchy.
+     *
+     * This implementation returns null if this ViewGroup does not have a parent,
+     * if this ViewGroup is already fully invalidated or if the dirty rectangle
+     * does not intersect with this ViewGroup's bounds.
+     */
+    @Override
+    public ViewParent invalidateChildInParent(int[] location, Rect dirty) {
+        if ((mPrivateFlags & (PFLAG_DRAWN | PFLAG_DRAWING_CACHE_VALID)) != 0) {
+            dirty.offset(location[0] - mScrollX,
+                    location[1] - mScrollY);
+            if ((mGroupFlags & FLAG_CLIP_CHILDREN) == 0) {
+                dirty.union(0, 0, mRight - mLeft, mBottom - mTop);
+            }
+
+            final int left = mLeft;
+            final int top = mTop;
+
+            if ((mGroupFlags & FLAG_CLIP_CHILDREN) == FLAG_CLIP_CHILDREN) {
+                if (!dirty.intersect(0, 0, mRight - left, mBottom - top)) {
+                    dirty.setEmpty();
+                }
+            }
+
+            location[0] = left;
+            location[1] = top;
+            mPrivateFlags &= ~PFLAG_DRAWING_CACHE_VALID;
+
+            return mParent;
+        }
+
+        return null;
     }
 
     /**

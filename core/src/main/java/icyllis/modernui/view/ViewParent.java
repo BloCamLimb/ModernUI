@@ -52,6 +52,35 @@ public interface ViewParent {
     boolean isLayoutRequested();
 
     /**
+     * All or part of a child is dirty and needs to be redrawn.
+     *
+     * @param child The child which is dirty
+     * @param r     The area within the child that is invalid
+     */
+    void invalidateChild(View child, Rect r);
+
+    /**
+     * All or part of a child is dirty and needs to be redrawn.
+     *
+     * <p>The location array is an array of two int values which respectively
+     * define the left and the top position of the dirty child.</p>
+     *
+     * <p>This method must return the parent of this ViewParent if the specified
+     * rectangle must be invalidated in the parent. If the specified rectangle
+     * does not require invalidation in the parent or if the parent does not
+     * exist, this method must return null.</p>
+     *
+     * <p>When this method returns a non-null value, the location array must
+     * have been updated with the left and top coordinates of this ViewParent.</p>
+     *
+     * @param location An array of 2 ints containing the left and top
+     *                 coordinates of the child to invalidate
+     * @param r        The area within the child that is invalid
+     * @return the parent of this ViewParent or null
+     */
+    ViewParent invalidateChildInParent(int[] location, Rect r);
+
+    /**
      * Called when a child of this parent wants focus
      *
      * @param child   The child of this ViewParent that wants focus. This view
