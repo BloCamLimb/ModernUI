@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,23 +20,51 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.*;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.annotation.Px;
+import icyllis.modernui.core.Clipboard;
+import icyllis.modernui.core.Context;
+import icyllis.modernui.core.Core;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.text.*;
-import icyllis.modernui.text.method.*;
-import icyllis.modernui.text.style.*;
+import icyllis.modernui.text.method.ArrowKeyMovementMethod;
+import icyllis.modernui.text.method.LinkMovementMethod;
+import icyllis.modernui.text.method.MovementMethod;
+import icyllis.modernui.text.method.PasswordTransformationMethod;
+import icyllis.modernui.text.method.SingleLineTransformationMethod;
+import icyllis.modernui.text.method.TextKeyListener;
+import icyllis.modernui.text.method.TransformationMethod;
+import icyllis.modernui.text.method.WordIterator;
+import icyllis.modernui.text.style.CharacterStyle;
+import icyllis.modernui.text.style.ClickableSpan;
+import icyllis.modernui.text.style.ParagraphStyle;
+import icyllis.modernui.text.style.UpdateAppearance;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.TypedValue;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.ContextMenu;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.PointerIcon;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewTreeObserver;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
 /**
  * A user interface element that displays text to the user. To provide user-editable text,
@@ -167,6 +195,17 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     private int mAutoLinkMask;
     private boolean mLinksClickable = true;
+
+    private float mSpacingMult = 1.0f;
+    private float mSpacingAdd = 0.0f;
+
+    /**
+     * Remembers what line height was set to originally, before we broke it down into raw pixels.
+     *
+     * <p>This is stored as a complex dimension with both value and unit packed into one field!
+     * {@see TypedValue}
+     */
+    private int mLineHeightComplexDimen;
 
     private int mMaximum = Integer.MAX_VALUE;
     private int mMaxMode = LINES;
@@ -1046,6 +1085,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (s != mTextPaint.getTextSize()) {
             mTextPaint.setTextSize(s);
 
+            maybeRecalculateLineHeight();
             if (mLayout != null) {
                 nullLayouts();
                 requestLayout();
@@ -1120,7 +1160,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return The height of one standard line in pixels.
      */
     public int getLineHeight() {
-        return mTextPaint.getFontMetricsInt(null);
+        return Math.round(mTextPaint.getFontMetricsInt(null) * mSpacingMult + mSpacingAdd);
     }
 
     /**
@@ -1772,6 +1812,116 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         invalidate();
     }
 
+    /**
+     * Sets line spacing for this TextView.  Each line other than the last line will have its height
+     * multiplied by {@code mult} and have {@code add} added to it.
+     *
+     * @param add  The value in pixels that should be added to each line other than the last line.
+     *             This will be applied after the multiplier
+     * @param mult The value by which each line height other than the last line will be multiplied
+     *             by
+     */
+    public void setLineSpacing(float add, float mult) {
+        if (mSpacingAdd != add || mSpacingMult != mult) {
+            mSpacingAdd = add;
+            mSpacingMult = mult;
+
+            if (mLayout != null) {
+                nullLayouts();
+                requestLayout();
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Returns the multiplier applied to the line height.
+     *
+     * @return the value by which each line's height is multiplied to get its actual height.
+     * @see #setLineSpacing(float, float)
+     * @see #getLineSpacingAmount()
+     */
+    public float getLineSpacingMultiplier() {
+        return mSpacingMult;
+    }
+
+    /**
+     * Returns the amount added to the line height.
+     *
+     * @return the extra space that is added to the height of each lines of this TextView.
+     * @see #setLineSpacing(float, float)
+     * @see #getLineSpacingMultiplier()
+     */
+    public float getLineSpacingAmount() {
+        return mSpacingAdd;
+    }
+
+    /**
+     * Sets an explicit line height for this TextView. This is equivalent to the vertical distance
+     * between subsequent baselines in the TextView.
+     *
+     * @param lineHeight the line height in pixels
+     * @see #setLineSpacing(float, float)
+     * @see #setLineHeight(int, float)
+     * @see #getLineSpacingAmount()
+     */
+    public void setLineHeight(@Px @IntRange(from = 0) int lineHeight) {
+        setLineHeightPx(lineHeight);
+    }
+
+    private void setLineHeightPx(@Px @FloatRange(from = 0) float lineHeight) {
+        if (lineHeight < 0) {
+            throw new IllegalArgumentException("Expecting non-negative lineHeight while the input is " + lineHeight);
+        }
+
+        //TODO I think this is wrong
+        final int fontHeight = getPaint().getFontMetricsInt(null);
+        // Make sure we don't setLineSpacing if it's not needed to avoid unnecessary redraw.
+        if (lineHeight != fontHeight) {
+            // Set lineSpacingExtra by the difference of lineSpacing with lineHeight
+            setLineSpacing(lineHeight - fontHeight, 1f);
+
+            mLineHeightComplexDimen =
+                    TypedValue.createComplexDimension(lineHeight, TypedValue.COMPLEX_UNIT_PX);
+        }
+    }
+
+    /**
+     * Sets an explicit line height to a given unit and value for this TextView. This is equivalent
+     * to the vertical distance between subsequent baselines in the TextView. See {@link
+     * TypedValue} for the possible dimension units.
+     *
+     * @param unit       The desired dimension unit. SP units are strongly recommended so that line height
+     *                   stays proportional to the text size when fonts are scaled up for accessibility.
+     * @param lineHeight The desired line height in the given units.
+     * @see #setLineSpacing(float, float)
+     * @see #getLineSpacingAmount()
+     */
+    public void setLineHeight(
+            @TypedValue.ComplexDimensionUnit int unit,
+            @FloatRange(from = 0) float lineHeight
+    ) {
+        var metrics = getContext().getResources().getDisplayMetrics();
+        setLineHeightPx(TypedValue.applyDimension(unit, lineHeight, metrics));
+
+        // Do this last so it overwrites what setLineHeightPx() sets it to.
+        mLineHeightComplexDimen = TypedValue.createComplexDimension(lineHeight, unit);
+    }
+
+    private void maybeRecalculateLineHeight() {
+        if (mLineHeightComplexDimen == 0) {
+            return;
+        }
+        int unit = TypedValue.getUnitFromComplexDimension(mLineHeightComplexDimen);
+        if (unit != TypedValue.COMPLEX_UNIT_SP) {
+            // The lineHeight was never supplied in SP, so we didn't do any fancy recalculations
+            // in setLineHeight(). We don't need to recalculate.
+            return;
+        }
+
+        setLineHeight(unit, TypedValue.complexToFloat(mLineHeightComplexDimen));
+    }
+
     ///////////////////////////////////////////////////////////////////////////
 
     /**
@@ -2410,13 +2560,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             mCurTextColor = color;
             inval = true;
         }
-        /*if (mLinkTextColor != null) {
+        if (mLinkTextColor != null) {
             color = mLinkTextColor.getColorForState(drawableState, 0);
             if (color != mTextPaint.linkColor) {
                 mTextPaint.linkColor = color;
                 inval = true;
             }
-        }*/
+        }
         if (mHintTextColor != null) {
             color = mHintTextColor.getColorForState(drawableState, 0);
             if (color != mCurHintTextColor) {
@@ -2524,7 +2674,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     /**
-     * @hide
+     * @hidden
      */
     public int getHorizontalOffsetForDrawables() {
         return 0;
@@ -2764,7 +2914,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     /**
-     * @hide
+     * @hidden
      */
     @VisibleForTesting
     public final void nullLayouts() {
@@ -2878,11 +3028,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                         && (!shouldEllipsize || hintBoring.width <= ellipsisWidth)) {
                     if (mSavedHintLayout != null) {
                         mHintLayout = mSavedHintLayout.replaceOrMake(mHint, mTextPaint,
-                                hintWidth, alignment,
+                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad);
                     } else {
                         mHintLayout = BoringLayout.make(mHint, mTextPaint,
-                                hintWidth, alignment,
+                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad);
                     }
 
@@ -2890,12 +3040,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 } else if (shouldEllipsize && hintBoring.width <= hintWidth) {
                     if (mSavedHintLayout != null) {
                         mHintLayout = mSavedHintLayout.replaceOrMake(mHint, mTextPaint,
-                                hintWidth, alignment,
+                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad, mEllipsize,
                                 ellipsisWidth);
                     } else {
                         mHintLayout = BoringLayout.make(mHint, mTextPaint,
-                                hintWidth, alignment,
+                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad, mEllipsize,
                                 ellipsisWidth);
                     }
@@ -2906,6 +3056,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                                 mHint.length(), mTextPaint, hintWidth)
                         .setAlignment(alignment)
                         .setTextDirection(mTextDir)
+                        .setLineSpacing(mSpacingAdd, mSpacingMult)
                         .setIncludePad(mIncludePad)
                         .setFallbackLineSpacing(mUseFallbackLineSpacing)
                         .setMaxLines(mMaxMode == LINES ? mMaximum : Integer.MAX_VALUE)
@@ -2927,7 +3078,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * Returns true if DynamicLayout is required
      *
-     * @hide
+     * @hidden
      */
     @VisibleForTesting
     public final boolean useDynamicLayout() {
@@ -2935,7 +3086,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     /**
-     * @hide
+     * @hidden
      */
     @NonNull
     private Layout makeSingleLayout(int wantWidth, BoringLayout.Metrics boring, int ellipsisWidth,
@@ -2948,6 +3099,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     .setDisplayText(mTransformed)
                     .setAlignment(alignment)
                     .setTextDirection(mTextDir)
+                    .setLineSpacing(mSpacingAdd, mSpacingMult)
                     .setIncludePad(mIncludePad)
                     .setFallbackLineSpacing(mUseFallbackLineSpacing)
                     .setEllipsize(mBufferType != BufferType.EDITABLE ? effectiveEllipsize : null)
@@ -2966,11 +3118,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                         && (effectiveEllipsize == null || boring.width <= ellipsisWidth)) {
                     if (useSaved && mSavedLayout != null) {
                         result = mSavedLayout.replaceOrMake(mTransformed, mTextPaint,
-                                wantWidth, alignment,
+                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad);
                     } else {
                         result = BoringLayout.make(mTransformed, mTextPaint,
-                                wantWidth, alignment,
+                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad);
                     }
 
@@ -2980,12 +3132,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 } else if (shouldEllipsize && boring.width <= wantWidth) {
                     if (useSaved && mSavedLayout != null) {
                         result = mSavedLayout.replaceOrMake(mTransformed, mTextPaint,
-                                wantWidth, alignment,
+                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad, effectiveEllipsize,
                                 ellipsisWidth);
                     } else {
                         result = BoringLayout.make(mTransformed, mTextPaint,
-                                wantWidth, alignment,
+                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad, effectiveEllipsize,
                                 ellipsisWidth);
                     }
@@ -2997,6 +3149,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                             0, mTransformed.length(), mTextPaint, wantWidth)
                     .setAlignment(alignment)
                     .setTextDirection(mTextDir)
+                    .setLineSpacing(mSpacingAdd, mSpacingMult)
                     .setIncludePad(mIncludePad)
                     .setFallbackLineSpacing(mUseFallbackLineSpacing)
                     .setMaxLines(mMaxMode == LINES ? mMaximum : Integer.MAX_VALUE)
@@ -4445,7 +4598,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * This method is used by the ArrowKeyMovementMethod to jump from one word to the other.
      * Made available to achieve a consistent behavior.
      *
-     * @hide
+     * @hidden
      */
     public WordIterator getWordIterator() {
         if (mEditor != null) {
@@ -4581,7 +4734,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     /**
-     * @hide
+     * @hidden
      */
     @Override
     public void onResolveDrawables(@ResolvedLayoutDir int layoutDirection) {
@@ -4614,10 +4767,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         dr.setLayoutDirection(getLayoutDirection());
 
-        /*if (dr.isStateful()) {
+        if (dr.isStateful()) {
             dr.setState(getDrawableState());
             dr.jumpToCurrentState();
-        }*/
+        }
     }
 
     @Override

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
@@ -29,6 +30,7 @@ import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.view.KeyEvent;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Collections;
 import java.util.List;
@@ -58,6 +60,8 @@ public abstract class Layout {
     private TextPaint mPaint;
     private int mWidth;
     private Alignment mAlignment;
+    private float mSpacingMult;
+    private float mSpacingAdd;
     private boolean mSpannedText;
     private final TextDirectionHeuristic mTextDir;
     private SpanSet<LineBackgroundSpan> mLineBackgroundSpans;
@@ -68,16 +72,21 @@ public abstract class Layout {
      * Subclasses of Layout use this constructor to set the display text,
      * width, and other standard properties.
      *
-     * @param text  the text to render
-     * @param paint the default paint for the layout.  Styles can override
-     *              various attributes of the paint.
-     * @param width the wrapping width for the text.
-     * @param align whether to left, right, or center the text.  Styles can
-     *              override the alignment.
+     * @param text        the text to render
+     * @param paint       the default paint for the layout.  Styles can override
+     *                    various attributes of the paint.
+     * @param width       the wrapping width for the text.
+     * @param align       whether to left, right, or center the text.  Styles can
+     *                    override the alignment.
+     * @param spacingMult factor by which to scale the font size to get the
+     *                    default line spacing
+     * @param spacingAdd  amount to add to the default line spacing
      */
     protected Layout(CharSequence text, TextPaint paint,
-                     int width, Alignment align) {
-        this(text, paint, width, align, TextDirectionHeuristics.FIRSTSTRONG_LTR);
+                     int width, Alignment align,
+                     float spacingMult, float spacingAdd) {
+        this(text, paint, width, align, TextDirectionHeuristics.FIRSTSTRONG_LTR,
+                spacingMult, spacingAdd);
     }
 
     /**
@@ -91,9 +100,16 @@ public abstract class Layout {
      * @param align   whether to left, right, or center the text.  Styles can
      *                override the alignment.
      * @param textDir the text direction algorithm
+     * @hidden
      */
-    protected Layout(CharSequence text, TextPaint paint,
-                     int width, Alignment align, TextDirectionHeuristic textDir) {
+    @ApiStatus.Internal
+    protected Layout(CharSequence text,
+                     TextPaint paint,
+                     int width,
+                     Alignment align,
+                     TextDirectionHeuristic textDir,
+                     float spacingMult,
+                     float spacingAdd) {
         if (width < 0) {
             throw new IllegalArgumentException("Layout: " + width + " < 0");
         }
@@ -108,16 +124,18 @@ public abstract class Layout {
         mPaint = paint;
         mWidth = width;
         mAlignment = align;
+        mSpacingMult = spacingMult;
+        mSpacingAdd = spacingAdd;
         mSpannedText = text instanceof Spanned;
         mTextDir = textDir;
     }
-
 
     /**
      * Replace constructor properties of this Layout with new ones.  Be careful.
      */
     void replaceWith(CharSequence text, TextPaint paint,
-                     int width, Alignment align) {
+                     int width, Alignment align,
+                     float spacingMult, float spacingAdd) {
         if (width < 0) {
             throw new IllegalArgumentException("Layout: " + width + " < 0");
         }
@@ -126,6 +144,8 @@ public abstract class Layout {
         mPaint = paint;
         mWidth = width;
         mAlignment = align;
+        mSpacingMult = spacingMult;
+        mSpacingAdd = spacingAdd;
         mSpannedText = text instanceof Spanned;
     }
 
@@ -491,6 +511,7 @@ public abstract class Layout {
     /**
      * Return the text that is displayed by this Layout.
      */
+    @NonNull
     public final CharSequence getText() {
         return mText;
     }
@@ -500,6 +521,7 @@ public abstract class Layout {
      * Do NOT change the paint, which may result in funny
      * drawing for this layout.
      */
+    @NonNull
     public final TextPaint getPaint() {
         return mPaint;
     }
@@ -507,6 +529,7 @@ public abstract class Layout {
     /**
      * Return the width of this layout.
      */
+    @IntRange(from = 0)
     public final int getWidth() {
         return mWidth;
     }
@@ -560,6 +583,14 @@ public abstract class Layout {
      */
     public final TextDirectionHeuristic getTextDirectionHeuristic() {
         return mTextDir;
+    }
+
+    public final float getSpacingMultiplier() {
+        return mSpacingMult;
+    }
+
+    public final float getSpacingAdd() {
+        return mSpacingAdd;
     }
 
     /**
@@ -792,7 +823,21 @@ public abstract class Layout {
      * Return the vertical position of the bottom of the specified line.
      */
     public final int getLineBottom(int line) {
-        return getLineTop(line + 1);
+        return getLineBottom(line, /* includeLineSpacing= */ true);
+    }
+
+    /**
+     * Return the vertical position of the bottom of the specified line.
+     *
+     * @param line index of the line
+     * @param includeLineSpacing whether to include the line spacing
+     */
+    public int getLineBottom(int line, boolean includeLineSpacing) {
+        if (includeLineSpacing) {
+            return getLineTop(line + 1);
+        } else {
+            return getLineTop(line + 1) - getLineExtra(line);
+        }
     }
 
     /**
@@ -810,6 +855,17 @@ public abstract class Layout {
     public final int getLineAscent(int line) {
         // getLineTop(line+1) - getLineDescent(line) == getLineBaseLine(line)
         return getLineTop(line) - (getLineTop(line + 1) - getLineDescent(line));
+    }
+
+    /**
+     * Return the extra space added as a result of line spacing attributes
+     * {@link #getSpacingAdd()} and {@link #getSpacingMultiplier()}. Default value is {@code zero}.
+     *
+     * @param line the index of the line, the value should be equal or greater than {@code zero}
+     * @hidden
+     */
+    public int getLineExtra(@IntRange(from = 0) int line) {
+        return 0;
     }
 
     /**
