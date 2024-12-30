@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -262,6 +262,17 @@ public class TypedValue {
         if (value == 0) return 0;
         if (value > 0) return 1;
         return -1;
+    }
+
+    /**
+     * Return the complex unit type for the given complex dimension. For example, a dimen type
+     * with value 12sp will return {@link #COMPLEX_UNIT_SP}. Use with values created with {@link
+     * #createComplexDimension(int, int)} etc.
+     *
+     * @return The complex unit type.
+     */
+    public static int getUnitFromComplexDimension(int complexDimension) {
+        return COMPLEX_UNIT_MASK & (complexDimension >> TypedValue.COMPLEX_UNIT_SHIFT);
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,10 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.text.FontMetricsInt;
+import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.text.style.UpdateLayout;
 import icyllis.modernui.text.style.WrapTogetherSpan;
 import icyllis.modernui.util.GrowingArrayUtils;
@@ -52,6 +55,8 @@ public class DynamicLayout extends Layout {
         b.mWidth = width;
         b.mAlignment = Alignment.ALIGN_NORMAL;
         b.mTextDir = TextDirectionHeuristics.FIRSTSTRONG_LTR;
+        b.mSpacingMult = 1.0f;
+        b.mSpacingAdd = 0.0f;
         b.mIncludePad = true;
         b.mFallbackLineSpacing = true; // default true
         b.mEllipsizedWidth = width;
@@ -79,10 +84,13 @@ public class DynamicLayout extends Layout {
         private int mWidth;
         private Alignment mAlignment;
         private TextDirectionHeuristic mTextDir;
+        private float mSpacingMult;
+        private float mSpacingAdd;
         private boolean mIncludePad;
         private boolean mFallbackLineSpacing;
         private TextUtils.TruncateAt mEllipsize;
         private int mEllipsizedWidth;
+        private LineBreakConfig mLineBreakConfig = LineBreakConfig.NONE;
 
         private Builder() {
         }
@@ -135,6 +143,23 @@ public class DynamicLayout extends Layout {
         @Nonnull
         public Builder setTextDirection(@Nonnull TextDirectionHeuristic textDir) {
             mTextDir = textDir;
+            return this;
+        }
+
+        /**
+         * Set line spacing parameters. Each line will have its line spacing multiplied by
+         * {@code spacingMult} and then increased by {@code spacingAdd}. The default is 0.0 for
+         * {@code spacingAdd} and 1.0 for {@code spacingMult}.
+         *
+         * @param spacingAdd the amount of line spacing addition
+         * @param spacingMult the line spacing multiplier
+         * @return this builder, useful for chaining
+         * @see icyllis.modernui.widget.TextView#setLineSpacing
+         */
+        @NonNull
+        public Builder setLineSpacing(float spacingAdd, @FloatRange(from = 0.0) float spacingMult) {
+            mSpacingAdd = spacingAdd;
+            mSpacingMult = spacingMult;
             return this;
         }
 
@@ -229,13 +254,13 @@ public class DynamicLayout extends Layout {
     private static final int DIR = START;
     private static final int TAB = START;
     private static final int TOP = 1;
-    // DESCENT and MAY_PROTRUDE_FROM_TOP_OR_BOTTOM share the same entry.
     private static final int DESCENT = 2;
-    private static final int COLUMNS_NORMAL = 3;
+    private static final int EXTRA = 3;
+    private static final int COLUMNS_NORMAL = 4;
 
-    private static final int ELLIPSIS_START = 3;
-    private static final int ELLIPSIS_COUNT = 4;
-    private static final int COLUMNS_ELLIPSIZE = 5;
+    private static final int ELLIPSIS_START = 4;
+    private static final int ELLIPSIS_COUNT = 5;
+    private static final int COLUMNS_ELLIPSIZE = 6;
 
     private static final int START_MASK = 0x1FFFFFFF;
     private static final int DIR_SHIFT = 30;
@@ -278,7 +303,8 @@ public class DynamicLayout extends Layout {
 
     private DynamicLayout(@Nonnull Builder b) {
         super(createEllipsizer(b.mEllipsize, b.mDisplay),
-                b.mPaint, b.mWidth, b.mAlignment, b.mTextDir);
+                b.mPaint, b.mWidth, b.mAlignment, b.mTextDir,
+                b.mSpacingMult, b.mSpacingAdd);
 
         mDisplay = b.mDisplay;
         mIncludePad = b.mIncludePad;
@@ -483,9 +509,12 @@ public class DynamicLayout extends Layout {
                 .setPaint(getPaint())
                 .setWidth(getWidth())
                 .setTextDirection(getTextDirectionHeuristic())
+                .setLineSpacing(getSpacingAdd(), getSpacingMultiplier())
                 .setFallbackLineSpacing(mFallbackLineSpacing)
                 .setEllipsizedWidth(mEllipsizedWidth)
-                .setEllipsize(mEllipsizeAt);
+                .setEllipsize(mEllipsizeAt)
+                .setAddLastLineLineSpacing(!islast)
+                .setIncludePad(false);
 
         reflowed.generate(b, false /*includepad*/, true /*trackpad*/);
         int n = reflowed.getLineCount();
@@ -548,6 +577,7 @@ public class DynamicLayout extends Layout {
                 desc += botpad;
 
             ints[DESCENT] = desc;
+            ints[EXTRA] = reflowed.getLineExtra(i);
             objects[0] = reflowed.getLineDirections(i);
 
             if (mEllipsize) {
@@ -827,6 +857,11 @@ public class DynamicLayout extends Layout {
     @Override
     public int getLineDescent(int line) {
         return mInts.getValue(line, DESCENT);
+    }
+
+    @Override
+    public int getLineExtra(int line) {
+        return mInts.getValue(line, EXTRA);
     }
 
     @Override

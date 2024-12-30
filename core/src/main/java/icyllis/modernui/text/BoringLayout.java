@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,11 +18,13 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.text.style.ParagraphStyle;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,9 +57,9 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
      *                   needed to avoid clipping in some scripts
      */
     public static BoringLayout make(CharSequence source, TextPaint paint, int outerWidth,
-                                    Alignment align, BoringLayout.Metrics metrics,
+                                    Alignment align, float spacingMult, float spacingAdd, BoringLayout.Metrics metrics,
                                     boolean includePad) {
-        return new BoringLayout(source, paint, outerWidth, align, metrics,
+        return new BoringLayout(source, paint, outerWidth, align, spacingMult, spacingAdd, metrics,
                 includePad);
     }
 
@@ -79,9 +81,9 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
      *                        not used, {@code outerWidth} is used instead
      */
     public static BoringLayout make(CharSequence source, TextPaint paint, int outerWidth,
-                                    Alignment align, BoringLayout.Metrics metrics,
+                                    Alignment align, float spacingMult, float spacingAdd, BoringLayout.Metrics metrics,
                                     boolean includePad, TextUtils.TruncateAt ellipsize, int ellipsizedWidth) {
-        return new BoringLayout(source, paint, outerWidth, align, metrics,
+        return new BoringLayout(source, paint, outerWidth, align, spacingMult, spacingAdd, metrics,
                 includePad, ellipsize, ellipsizedWidth);
     }
 
@@ -100,9 +102,10 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
      *                   needed to avoid clipping in some scripts
      */
     public BoringLayout replaceOrMake(CharSequence source, TextPaint paint, int outerWidth,
-                                      Alignment align, BoringLayout.Metrics metrics,
+                                      Alignment align, float spacingMult, float spacingAdd,
+                                      BoringLayout.Metrics metrics,
                                       boolean includePad) {
-        replaceWith(source, paint, outerWidth, align);
+        replaceWith(source, paint, outerWidth, align, spacingMult, spacingAdd);
 
         mEllipsizedWidth = outerWidth;
         mEllipsizedStart = 0;
@@ -117,28 +120,50 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
      * this one if it is already suitable.  The caller must make sure that
      * no one is still using this Layout.
      *
-     * @param source          the text to render
-     * @param paint           the default paint for the layout
-     * @param outerWidth      the wrapping width for the text
-     * @param align           whether to left, right, or center the text
-     * @param metrics         {@code #Metrics} instance that contains information about FontMetrics and
-     *                        line width
-     * @param includePad      set whether to include extra space beyond font ascent and descent which is
-     *                        needed to avoid clipping in some scripts
-     * @param ellipsize       whether to ellipsize the text if width of the text is longer than the
-     *                        requested width
+     * The spacing multiplier and additional amount spacing are not used by BoringLayout.
+     * {@link Layout#getSpacingMultiplier()} will return 1.0 and {@link Layout#getSpacingAdd()} will
+     * return 0.0.
+     *
+     * @param source the text to render
+     * @param paint the default paint for the layout
+     * @param outerWidth the wrapping width for the text
+     * @param align whether to left, right, or center the text
+     * @param metrics {@code #Metrics} instance that contains information about FontMetrics and
+     *                line width
+     * @param includePad set whether to include extra space beyond font ascent and descent which is
+     *                   needed to avoid clipping in some scripts
+     * @param ellipsize whether to ellipsize the text if width of the text is longer than the
+     *                  requested width. null if ellipsis not applied.
      * @param ellipsizedWidth the width to which this Layout is ellipsizing. If {@code ellipsize} is
      *                        {@code null}, or is {@link TextUtils.TruncateAt#MARQUEE} this value is
-     *                        not used, {@code outerwidth} is used instead
+     *                        not used, {@code outerWidth} is used instead
      */
-    public BoringLayout replaceOrMake(CharSequence source, TextPaint paint, int outerWidth,
-                                      Alignment align,
-                                      BoringLayout.Metrics metrics,
-                                      boolean includePad, TextUtils.TruncateAt ellipsize, int ellipsizedWidth) {
+    @NonNull
+    public BoringLayout replaceOrMake(@NonNull CharSequence source,
+                                      @NonNull TextPaint paint, @IntRange(from = 0) int outerWidth,
+                                      @NonNull Alignment align,
+                                      @NonNull BoringLayout.Metrics metrics, boolean includePad,
+                                      @Nullable TextUtils.TruncateAt ellipsize,
+                                      @IntRange(from = 0) int ellipsizedWidth) {
+        return replaceOrMake(source, paint, outerWidth, align, 1.0f, 0.0f, metrics, includePad,
+                ellipsize, ellipsizedWidth);
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @NonNull
+    public BoringLayout replaceOrMake(@NonNull CharSequence source,
+                                      @NonNull TextPaint paint, @IntRange(from = 0) int outerWidth,
+                                      @NonNull Alignment align, float spacingMultiplier, float spacingAmount,
+                                      @NonNull BoringLayout.Metrics metrics, boolean includePad,
+                                      @Nullable TextUtils.TruncateAt ellipsize,
+                                      @IntRange(from = 0) int ellipsizedWidth) {
         boolean trust;
 
         if (ellipsize == null || ellipsize == TextUtils.TruncateAt.MARQUEE) {
-            replaceWith(source, paint, outerWidth, align);
+            replaceWith(source, paint, outerWidth, align, 1f, 0f);
 
             mEllipsizedWidth = outerWidth;
             mEllipsizedStart = 0;
@@ -146,7 +171,7 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
             trust = true;
         } else {
             replaceWith(TextUtils.ellipsize(source, paint, ellipsizedWidth, ellipsize, true, this),
-                    paint, outerWidth, align);
+                    paint, outerWidth, align, spacingMultiplier, spacingAmount);
 
             mEllipsizedWidth = ellipsizedWidth;
             trust = false;
@@ -175,8 +200,8 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
      *                   needed to avoid clipping in some scripts
      */
     public BoringLayout(CharSequence source, TextPaint paint, int outerWidth, Alignment align,
-                        BoringLayout.Metrics metrics, boolean includePad) {
-        super(source, paint, outerWidth, align);
+                        float spacingMult, float spacingAdd, BoringLayout.Metrics metrics, boolean includePad) {
+        super(source, paint, outerWidth, align, spacingMult, spacingAdd);
 
         mEllipsizedWidth = outerWidth;
         mEllipsizedStart = 0;
@@ -201,14 +226,9 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
      *                        not used, {@code outerwidth} is used instead
      */
     public BoringLayout(CharSequence source, TextPaint paint, int outerWidth, Alignment align,
-                        BoringLayout.Metrics metrics, boolean includePad,
+                        float spacingMult, float spacingAdd, BoringLayout.Metrics metrics, boolean includePad,
                         TextUtils.TruncateAt ellipsize, int ellipsizedWidth) {
-        /*
-         * It is silly to have to call super() and then replaceWith(),
-         * but we can't use "this" for the callback until the call to
-         * super() finishes.
-         */
-        super(source, paint, outerWidth, align);
+        super(source, paint, outerWidth, align, spacingMult, spacingAdd);
 
         boolean trust;
 
@@ -219,7 +239,7 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
             trust = true;
         } else {
             replaceWith(TextUtils.ellipsize(source, paint, ellipsizedWidth, ellipsize, true, this),
-                    paint, outerWidth, align);
+                    paint, outerWidth, align, spacingMult, spacingAdd);
 
             mEllipsizedWidth = ellipsizedWidth;
             trust = false;

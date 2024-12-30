@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,6 +69,8 @@ public class StaticLayout extends Layout {
         b.mWidth = width;
         b.mAlignment = Alignment.ALIGN_NORMAL;
         b.mTextDir = TextDirectionHeuristics.FIRSTSTRONG_LTR;
+        b.mSpacingMult = 1.0f;
+        b.mSpacingAdd = 0.0f;
         b.mIncludePad = true;
         b.mFallbackLineSpacing = true; // default true
         b.mEllipsizedWidth = width;
@@ -99,6 +101,8 @@ public class StaticLayout extends Layout {
         private int mWidth;
         private Alignment mAlignment;
         private TextDirectionHeuristic mTextDir;
+        private float mSpacingMult;
+        private float mSpacingAdd;
         private boolean mIncludePad;
         private boolean mFallbackLineSpacing;
         private int mEllipsizedWidth;
@@ -109,6 +113,7 @@ public class StaticLayout extends Layout {
         private int[] mLeftIndents;
         @Nullable
         private int[] mRightIndents;
+        private boolean mAddLastLineLineSpacing;
         private LineBreakConfig mLineBreakConfig = LineBreakConfig.NONE;
 
         private Builder() {
@@ -199,6 +204,23 @@ public class StaticLayout extends Layout {
         @NonNull
         public Builder setTextDirection(@NonNull TextDirectionHeuristic textDir) {
             mTextDir = textDir;
+            return this;
+        }
+
+        /**
+         * Set line spacing parameters. Each line will have its line spacing multiplied by
+         * {@code spacingMult} and then increased by {@code spacingAdd}. The default is 0.0 for
+         * {@code spacingAdd} and 1.0 for {@code spacingMult}.
+         *
+         * @param spacingAdd the amount of line spacing addition
+         * @param spacingMult the line spacing multiplier
+         * @return this builder, useful for chaining
+         * @see TextView#setLineSpacing
+         */
+        @NonNull
+        public Builder setLineSpacing(float spacingAdd, @FloatRange(from = 0.0) float spacingMult) {
+            mSpacingAdd = spacingAdd;
+            mSpacingMult = spacingMult;
             return this;
         }
 
@@ -295,6 +317,18 @@ public class StaticLayout extends Layout {
         }
 
         /**
+         * Sets whether the line spacing should be applied for the last line. Default value is
+         * {@code false}.
+         *
+         * @hidden
+         */
+        @NonNull
+        Builder setAddLastLineLineSpacing(boolean value) {
+            mAddLastLineLineSpacing = value;
+            return this;
+        }
+
+        /**
          * Set the line break configuration. The line break will be passed to native used for
          * calculating the text wrapping. The default value of the line break style is
          * {@link LineBreakConfig#LINE_BREAK_STYLE_NONE}
@@ -327,16 +361,17 @@ public class StaticLayout extends Layout {
         }
     }
 
-    private static final int COLUMNS_NORMAL = 3;
-    private static final int COLUMNS_ELLIPSIZE = 5;
+    private static final int COLUMNS_NORMAL = 4;
+    private static final int COLUMNS_ELLIPSIZE = 6;
 
     private static final int START = 0;
     private static final int DIR = START;
     private static final int TAB = START;
     private static final int TOP = 1;
     private static final int DESCENT = 2;
-    private static final int ELLIPSIS_START = 3;
-    private static final int ELLIPSIS_COUNT = 4;
+    private static final int EXTRA = 3;
+    private static final int ELLIPSIS_START = 4;
+    private static final int ELLIPSIS_COUNT = 5;
 
     private static final int START_MASK = 0x1FFFFFFF; // 29 bits
     private static final int DIR_SHIFT = 30;
@@ -380,7 +415,7 @@ public class StaticLayout extends Layout {
      * Used by DynamicLayout.
      */
     StaticLayout(@Nullable CharSequence text) {
-        super(text, null, 0, null);
+        super(text, null, 0, null, 1, 0);
 
         mColumns = COLUMNS_ELLIPSIZE;
         mLineDirections = new Directions[2];
@@ -392,7 +427,8 @@ public class StaticLayout extends Layout {
                 ? b.mText
                 : (b.mText instanceof Spanned)
                 ? new SpannedEllipsizer(b.mText)
-                : new Ellipsizer(b.mText), b.mPaint, b.mWidth, b.mAlignment, b.mTextDir);
+                : new Ellipsizer(b.mText),
+                b.mPaint, b.mWidth, b.mAlignment, b.mTextDir, b.mSpacingMult, b.mSpacingAdd);
         if (b.mEllipsize != null) {
             Ellipsizer e = (Ellipsizer) getText();
 
@@ -424,9 +460,12 @@ public class StaticLayout extends Layout {
         TextPaint paint = b.mPaint;
         int outerWidth = b.mWidth;
         TextDirectionHeuristic textDir = b.mTextDir;
+        float spacingmult = b.mSpacingMult;
+        float spacingadd = b.mSpacingAdd;
         final boolean fallbackLineSpacing = b.mFallbackLineSpacing;
         float ellipsizedWidth = b.mEllipsizedWidth;
         TextUtils.TruncateAt ellipsize = b.mEllipsize;
+        final boolean addLastLineSpacing = b.mAddLastLineLineSpacing;
 
         int lineBreakCapacity = 0;
         int[] breaks = null;
@@ -441,6 +480,7 @@ public class StaticLayout extends Layout {
 
         // current height
         int v = 0;
+        boolean needMultiply = (spacingmult != 1 || spacingadd != 0);
 
         FontMetricsInt fm = b.mFontMetricsInt;
         int[] chooseHtv = null;
@@ -668,9 +708,9 @@ public class StaticLayout extends Layout {
                     //FIXME top, bottom
                     v = out(source, here, endPos,
                             ascent, descent, ascent, descent,
-                            v, chooseHt, chooseHtv, fm,
-                            hasTabs[breakIndex],
-                            measuredPara, bufEnd, includePad, trackPad,
+                            v, spacingmult, spacingadd, chooseHt, chooseHtv, fm,
+                            hasTabs[breakIndex], needMultiply,
+                            measuredPara, bufEnd, includePad, trackPad, addLastLineSpacing,
                             paraStart, ellipsize, ellipsizedWidth, lineWidths[breakIndex],
                             paint, moreChars);
 
@@ -704,19 +744,22 @@ public class StaticLayout extends Layout {
             paint.getFontMetricsInt(fm);
             out(source, bufEnd, bufEnd,
                     fm.ascent, fm.descent, fm.ascent, fm.descent,
-                    v, Collections.emptyList(), null, fm, false,
-                    measuredPara, bufEnd,
-                    includePad, trackPad,
+                    v, spacingmult, spacingadd,
+                    Collections.emptyList(), null, fm, false,
+                    needMultiply, measuredPara, bufEnd,
+                    includePad, trackPad, addLastLineSpacing,
                     bufStart, ellipsize,
                     ellipsizedWidth, 0, paint, false);
         }
     }
 
     private int out(final CharSequence text, final int start, final int end, int above, int below,
-                    int top, int bottom, int v, final List<LineHeightSpan> chooseHt, final int[] chooseHtv,
-                    final FontMetricsInt fm, final boolean hasTab,
+                    int top, int bottom, int v, final float spacingmult, final float spacingadd,
+                    final List<LineHeightSpan> chooseHt, final int[] chooseHtv,
+                    final FontMetricsInt fm, final boolean hasTab, final boolean needMultiply,
                     @NonNull final MeasuredParagraph measured,
                     final int bufEnd, final boolean includePad, final boolean trackPad,
+                    final boolean addLastLineLineSpacing,
                     final int widthStart, final TextUtils.TruncateAt ellipsize, final float ellipsisWidth,
                     final float textWidth, final TextPaint paint, final boolean moreChars) {
         final int j = mLineCount;
@@ -801,11 +844,25 @@ public class StaticLayout extends Layout {
             }
         }
 
+        int extra;
+
+        if (needMultiply && (addLastLineLineSpacing || !lastLine)) {
+            double ex = (below - above) * (spacingmult - 1) + spacingadd;
+            if (ex >= 0) {
+                extra = (int)(ex + 0.5);
+            } else {
+                extra = -(int)(-ex + 0.5);
+            }
+        } else {
+            extra = 0;
+        }
+
         int[] lines = mLines;
 
         lines[off + START] = start;
         lines[off + TOP] = v;
-        lines[off + DESCENT] = below;
+        lines[off + DESCENT] = below + extra;
+        lines[off + EXTRA] = extra;
 
         // special case for non-ellipsized last visible line when maxLines is set
         // store the height as if it was ellipsized
@@ -816,7 +873,7 @@ public class StaticLayout extends Layout {
             mMaxLineHeight = v + (maxLineBelow - above);
         }
 
-        v += (below - above);
+        v += (below - above) + extra;
         lines[off + mColumns + START] = end;
         lines[off + mColumns + TOP] = v;
 
@@ -976,6 +1033,11 @@ public class StaticLayout extends Layout {
     @Override
     public int getLineTop(int line) {
         return mLines[mColumns * line + TOP];
+    }
+
+    @Override
+    public int getLineExtra(int line) {
+        return mLines[mColumns * line + EXTRA];
     }
 
     @Override
