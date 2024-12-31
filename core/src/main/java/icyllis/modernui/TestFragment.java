@@ -47,7 +47,6 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
@@ -111,7 +110,7 @@ public class TestFragment extends Fragment {
         var base = new ScrollView(getContext());
         base.setId(660);
 
-        base.setBackground(new Drawable() {
+        /*base.setBackground(new Drawable() {
             long lastTime = AnimationUtils.currentAnimationTimeMillis();
 
             @Override
@@ -122,7 +121,7 @@ public class TestFragment extends Fragment {
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
                 paint.recycle();
 
-                /*SpectrumGraph graph = sSpectrumGraph;
+                *//*SpectrumGraph graph = sSpectrumGraph;
                 long time = AnimationUtils.currentAnimationTimeMillis();
                 long delta = time - lastTime;
                 lastTime = time;
@@ -132,9 +131,10 @@ public class TestFragment extends Fragment {
                         graph.draw(canvas, cx, cy);
                         invalidateSelf();
                     }
-                }*/
+                }*//*
             }
-        });
+        });*/
+        base.setBackground(new ColorDrawable(SystemTheme.currentTheme().colorSurface));
         {
             var params = new FrameLayout.LayoutParams(base.dp(960), base.dp(540));
             params.gravity = Gravity.CENTER;
@@ -359,7 +359,7 @@ public class TestFragment extends Fragment {
             var divider = new ShapeDrawable();
             divider.setShape(ShapeDrawable.HLINE);
             divider.setSize(-1, dp(1));
-            divider.setColor(0x80C0C0C0);
+            divider.setColor(SystemTheme.currentTheme().colorOutlineVariant);
             setDividerDrawable(divider);
             setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
 
@@ -401,6 +401,9 @@ public class TestFragment extends Fragment {
                     "\udd99";
 
             TextView tv = new TextView(getContext());
+            tv.setTextColor(SystemTheme.currentTheme().textColorPrimary);
+            tv.setLinkTextColor(SystemTheme.currentTheme().textColorLink);
+            tv.setHighlightColor(SystemTheme.currentTheme().textColorHighlight);
             tv.setLayoutParams(new LayoutParams(tv.dp(640), WRAP_CONTENT));
             tv.setLineBreakWordStyle(LineBreakConfig.LINE_BREAK_WORD_STYLE_BREAK_ALL);
 
@@ -413,21 +416,22 @@ public class TestFragment extends Fragment {
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new URLSpan("https://www.bilibili.com/video/BV1qm411Q7LX"), firstPara, secondsPara - 1,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannable.setSpan(new ForegroundColorSpan(0xff4f81bd), firstPara, secondsPara - 1,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            /*spannable.setSpan(new ForegroundColorSpan(0xff4f81bd), firstPara, secondsPara - 1,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);*/
             spannable.setSpan(new SuperscriptSpan(), firstPara + 4, firstPara + 5,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length() / 4 * 3,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new StrikethroughSpan(), text.length() / 4 * 3, text.length(),
                     Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-            CompletableFuture.runAsync(() -> {
+            /*CompletableFuture.runAsync(() -> {
                 long startNanos = System.nanoTime();
                 var precomputed = PrecomputedText.create(spannable, tv.getTextMetricsParams());
                 long usedNanos = System.nanoTime() - startNanos;
                 LOGGER.info("Precomputed text in {} microseconds", usedNanos / 1000);
                 tv.post(() -> tv.setText(precomputed, TextView.BufferType.SPANNABLE));
-            });
+            });*/
+            tv.setText(spannable, TextView.BufferType.SPANNABLE);
             /*try {
                 Image image = ImageStore.getInstance().create(
                         FileChannel.open(Path.of("F:/Photoshop/AppleEmoji/horse-face_1f434.png"),
@@ -496,9 +500,8 @@ public class TestFragment extends Fragment {
                 LayoutParams p;
                 if (i == 1) {
                     Button button = new Button(getContext());
+                    SystemTheme.currentTheme().applyTextButtonStyle(button);
                     button.setText("Play A Music!");
-                    button.setTextColor(0xFF28A3F3);
-                    button.setTextStyle(Typeface.BOLD);
                     button.setOnClickListener(__ -> {
                         if (mGoodAnim != null) {
                             mGoodAnim.start();
@@ -564,6 +567,7 @@ public class TestFragment extends Fragment {
                     continue;
                 } else if (i == 3) {
                     EditText textField = new EditText(getContext());
+                    SystemTheme.currentTheme().applyTextAppearanceLabelLarge(textField);
                     v = textField;
                     p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -648,21 +652,10 @@ public class TestFragment extends Fragment {
                     p = new LayoutParams(dp(200), WRAP_CONTENT);
                 } else {
                     Button button = new Button(getContext());
-                    ShapeDrawable shape = new ShapeDrawable();
-                    shape.setStroke(dp(1), SystemTheme.COLOR_CONTROL_ACTIVATED);
-                    shape.setCornerRadius(dp(1));
-                    RippleDrawable ripple = new RippleDrawable(
-                            ColorStateList.valueOf(0x66000000 | (SystemTheme.COLOR_CONTROL_ACTIVATED & 0xFFFFFF)),
-                            shape,
-                            null
-                    );
-                    button.setBackground(ripple);
-                    button.setText("Outlined " + i);
-                    button.setTextColor(SystemTheme.COLOR_CONTROL_ACTIVATED);
-                    button.setTextSize(14);
-                    button.setPadding(dp(24), dp(6), dp(24), dp(6));
+                    SystemTheme.currentTheme().applyTextButtonStyle(button);
+                    button.setText("Text button " + i);
                     v = button;
-                    p = new LayoutParams(WRAP_CONTENT, dp(40));
+                    p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 }
                 if (i == 8) {
                     v.setOnCreateContextMenuListener((menu, v1, menuInfo) -> {
@@ -800,7 +793,7 @@ public class TestFragment extends Fragment {
             canvas.restore();*/
 
             Paint paint = Paint.obtain();
-            paint.setColor(SystemTheme.COLOR_CONTROL_ACTIVATED);
+            paint.setColor(SystemTheme.currentTheme().colorPrimary);
             paint.setStyle(Paint.FILL);
             canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
 

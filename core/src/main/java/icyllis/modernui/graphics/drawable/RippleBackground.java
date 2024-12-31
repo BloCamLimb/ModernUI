@@ -20,7 +20,9 @@ package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.FloatProperty;
 
 /**
@@ -71,10 +73,7 @@ class RippleBackground extends RippleComponent {
     }
 
     private void onStateChanged() {
-        // Hover             = .3 * alpha
-        // Focus             = .7 * alpha
-        // Focused + Hovered = .7 * alpha
-        float newOpacity = mFocused ? .7f : mHovered ? .3f : 0f;
+        float newOpacity = mFocused || mHovered ? 1.0f : 0.0f;
         if (mAnimator != null) {
             mAnimator.cancel();
             mAnimator = null;

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,8 +24,10 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
@@ -64,20 +66,11 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
         super(context);
         setMinimumWidth(dp(196));
         setOrientation(VERTICAL);
-        setDividerDrawable(new Drawable() {
-            @Override
-            public void draw(@NonNull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setRGBA(255, 255, 255, 32);
-                canvas.drawRect(getBounds(), paint);
-                paint.recycle();
-            }
-
-            @Override
-            public int getIntrinsicHeight() {
-                return dp(1);
-            }
-        });
+        var divider = new ShapeDrawable();
+        divider.setShape(ShapeDrawable.HLINE);
+        divider.setSize(-1, dp(1));
+        divider.setColor(SystemTheme.currentTheme().colorOutlineVariant);
+        setDividerDrawable(divider);
         setDividerPadding(dp(2));
 
         {
@@ -93,7 +86,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
             {
                 mTitleView = new TextView(getContext());
                 mTitleView.setId(R.id.title);
-                mTitleView.setTextSize(16);
+                mTitleView.setTextSize(14);
                 mTitleView.setTextColor(TEXT_COLOR);
                 mTitleView.setSingleLine();
                 mTitleView.setDuplicateParentStateEnabled(true);
@@ -107,7 +100,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
 
             {
                 mShortcutView = new TextView(getContext());
-                mShortcutView.setTextSize(14);
+                mShortcutView.setTextSize(12);
                 mShortcutView.setTextColor(0xFFCECECE);
                 mShortcutView.setSingleLine();
                 mShortcutView.setDuplicateParentStateEnabled(true);

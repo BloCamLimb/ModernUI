@@ -113,6 +113,7 @@ public class TextPaint extends Paint {
         mLocale = paint.mLocale;
         bgColor = paint.bgColor;
         baselineShift = paint.baselineShift;
+        linkColor = paint.linkColor;
     }
 
     /**
