@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,8 +20,8 @@ package icyllis.modernui.view.menu;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.transition.AutoTransition;
 import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
@@ -120,26 +120,15 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
 
         //TODO Added by ModernUI, use Resources in the future
         mPopup = new MenuPopupWindow(context);
-        mPopup.setBackgroundDrawable(new Drawable() {
-            private final float mRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
-                    8, context.getResources().getDisplayMetrics());
-
-            @Override
-            public void draw(@NonNull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setColor(0xec303030);
-                Rect b = getBounds();
-                canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, mRadius, paint);
-                paint.recycle();
-            }
-
-            @Override
-            public boolean getPadding(@NonNull Rect padding) {
-                int r = (int) Math.ceil(mRadius / 2f);
-                padding.set(r, r, r, r);
-                return true;
-            }
-        });
+        var background = new ShapeDrawable();
+        background.setShape(ShapeDrawable.RECTANGLE);
+        background.setColor(SystemTheme.currentTheme().colorSurfaceContainer);
+        float cornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
+                4, context.getResources().getDisplayMetrics());
+        background.setCornerRadius(cornerRadius);
+        int padding = (int) Math.ceil(cornerRadius / 2f);
+        background.setPadding(padding, padding, padding, padding);
+        mPopup.setBackgroundDrawable(background);
         //TODO configurable
         mPopup.setEnterTransition(new AutoTransition());
         mPopup.setExitTransition(new AutoTransition());

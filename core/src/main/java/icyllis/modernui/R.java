@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -82,6 +82,7 @@ public final class R {
          * State identifier indicating the group is empty (has no children).
          */
         public static final int state_empty =0x010100a9;
+        public static final int state_checkable = 0x0101009f;
 
         static {
             __();
