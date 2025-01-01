@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -393,8 +393,10 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      */
     void initAnimation() {
         if (!mInitialized) {
-            for (var value : mValues) {
-                value.init();
+            if (mValues != null) {
+                for (var value : mValues) {
+                    value.init();
+                }
             }
             mInitialized = true;
         }
@@ -1269,8 +1271,10 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
         fraction = mInterpolator.getInterpolation(fraction);
         mCurrentFraction = fraction;
 
-        for (var value : mValues) {
-            value.calculateValue(fraction);
+        if (mValues != null) {
+            for (var value : mValues) {
+                value.calculateValue(fraction);
+            }
         }
         if (mUpdateListeners != null) {
             for (AnimatorUpdateListener l : mUpdateListeners) {
