@@ -18,118 +18,18 @@
 
 package icyllis.modernui.material;
 
-import icyllis.modernui.R;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.graphics.drawable.StateListDrawable;
-import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.StateSet;
-import icyllis.modernui.view.View;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.widget.RadioButton;
 
-import javax.annotation.Nonnull;
-
 /**
- * A fake material design.
+ * @deprecated to be moved to another package, use base class instead
  */
+@Deprecated
 public class MaterialRadioButton extends RadioButton {
-
-    private static final int[][] ENABLED_CHECKED_STATES = {
-            new int[]{R.attr.state_enabled, R.attr.state_checked}, // [0]
-            new int[]{R.attr.state_enabled, -R.attr.state_checked}, // [1]
-            StateSet.WILD_CARD // [2]
-    };
-
-    private static final int[] COLORS = {
-            0xFFAADCF0,
-            0xFF8A8A8A,
-            0xFF616161
-    };
 
     public MaterialRadioButton(Context context) {
         super(context);
-        StateListDrawable drawable = new StateListDrawable();
-        drawable.addState(CHECKED_STATE_SET, new CheckedDrawable(this));
-        drawable.addState(StateSet.WILD_CARD, new UncheckedDrawable(this));
-        drawable.setEnterFadeDuration(300);
-        drawable.setExitFadeDuration(300);
-        setButtonDrawable(drawable);
-        setButtonTintList(new ColorStateList(ENABLED_CHECKED_STATES, COLORS));
-    }
-
-    private static class CheckedDrawable extends MaterialDrawable {
-
-        private final float mRadius;
-
-        CheckedDrawable(View view) {
-            mRadius = view.dp(4);
-        }
-
-        @Override
-        public void draw(@Nonnull Canvas canvas) {
-            final Rect r = getBounds();
-            float cx = r.exactCenterX();
-            float cy = r.exactCenterY();
-            Paint paint = Paint.obtain();
-            paint.setColor(mColor);
-            paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
-            if (paint.getAlpha() != 0) {
-                canvas.drawCircle(cx, cy, mRadius, paint);
-                paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(mRadius * 0.5f);
-                canvas.drawCircle(cx, cy, mRadius * 1.6f, paint);
-            }
-            paint.recycle();
-        }
-
-        @Override
-        public int getIntrinsicWidth() {
-            // 24dp
-            return (int) (mRadius * 6);
-        }
-
-        @Override
-        public int getIntrinsicHeight() {
-            // 24dp
-            return (int) (mRadius * 6);
-        }
-    }
-
-    private static class UncheckedDrawable extends MaterialDrawable {
-
-        private final float mRadius;
-
-        UncheckedDrawable(View view) {
-            mRadius = view.dp(4);
-        }
-
-        @Override
-        public void draw(@Nonnull Canvas canvas) {
-            final Rect r = getBounds();
-            float cx = r.exactCenterX();
-            float cy = r.exactCenterY();
-            Paint paint = Paint.obtain();
-            paint.setColor(mColor);
-            paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
-            if (paint.getAlpha() != 0) {
-                paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(mRadius * 0.5f);
-                canvas.drawCircle(cx, cy, mRadius * 1.6f, paint);
-            }
-            paint.recycle();
-        }
-
-        @Override
-        public int getIntrinsicWidth() {
-            // 24dp
-            return (int) (mRadius * 6);
-        }
-
-        @Override
-        public int getIntrinsicHeight() {
-            // 24dp
-            return (int) (mRadius * 6);
-        }
+        SystemTheme.currentTheme().applyRadioButtonStyle(this);
     }
 }

@@ -26,10 +26,12 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.material.drawable.ButtonRadioDrawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.widget.Button;
+import icyllis.modernui.widget.RadioButton;
 import icyllis.modernui.widget.TextView;
 
 import java.util.Objects;
@@ -166,6 +168,7 @@ public class SystemTheme {
             textColorLink,
             textColorLinkInverse,
             textColorAlertDialogListItem;
+    public boolean isDark;
 
     private SparseArray<ColorStateList> text_button_foreground_color_selector;
     private ColorStateList text_button_foreground_color_selector(int colorOnContainer) {
@@ -271,14 +274,23 @@ public class SystemTheme {
     public void applyTextAppearanceLabelLarge(TextView tv) {
         tv.setTextStyle(Paint.BOLD);
         tv.setTextSize(14);
-        //// lineHeight 20sp here???
+        tv.setTextColor(textColorPrimary);
         tv.setHintTextColor(textColorHint);
+        tv.setHighlightColor(textColorHighlight);
         tv.setLinkTextColor(textColorLink);
-        // textColor would be overridden
+    }
+
+    public void applyTextAppearanceBodyMedium(TextView tv) {
+        tv.setTextStyle(Paint.NORMAL);
+        tv.setTextSize(14);
+        tv.setTextColor(textColorPrimary);
+        tv.setHintTextColor(textColorHint);
+        tv.setHighlightColor(textColorHighlight);
+        tv.setLinkTextColor(textColorLink);
     }
 
     public void applyTextButtonStyle(Button btn) {
-        btn.setMinHeight(btn.dp(40));
+        btn.setMinHeight(btn.dp(32));
         btn.setMinWidth(btn.dp(80));
         btn.setMaxWidth(btn.dp(320));
         btn.setPadding(btn.dp(12), btn.dp(6), btn.dp(12), btn.dp(6));
@@ -293,6 +305,98 @@ public class SystemTheme {
         background.setTintList(backgroundTint);
         var rippleDrawable = new RippleDrawable(rippleColor, background, null);
         btn.setBackground(rippleDrawable);
+    }
+
+    private ColorStateList radioButtonTint;
+    private ColorStateList radioButtonTint() {
+        if (radioButtonTint != null) {
+            return radioButtonTint;
+        }
+        radioButtonTint = new ColorStateList(
+                new int[][]{
+                        new int[]{-R.attr.state_enabled},
+                        new int[]{R.attr.state_checked},
+                        StateSet.WILD_CARD
+                },
+                new int[]{
+                        modulateColor(colorOnSurface, 0.38f),
+                        colorPrimary,
+                        colorOnSurfaceVariant
+                }
+        );
+        return radioButtonTint;
+    }
+
+    private ColorStateList colorControlHighlight;
+    private ColorStateList colorControlHighlight() {
+        if (colorControlHighlight != null) {
+            return colorControlHighlight;
+        }
+        colorControlHighlight = new ColorStateList(
+                new int[][]{
+                        new int[]{R.attr.state_enabled, R.attr.state_checked},
+                        StateSet.WILD_CARD
+                },
+                new int[]{
+                        modulateColor(colorSecondary, 0.2f),
+                        isDark ? 0x33ffffff : 0x1f000000
+                }
+        );
+        return colorControlHighlight;
+    }
+
+    private ColorStateList radioButtonRippleTint;
+    private ColorStateList radioButtonRippleTint() {
+        if (radioButtonRippleTint != null) {
+            return radioButtonRippleTint;
+        }
+        radioButtonRippleTint = new ColorStateList(
+            new int[][]{
+                    new int[]{R.attr.state_checked, R.attr.state_pressed},
+                    new int[]{R.attr.state_checked, R.attr.state_focused},
+                    new int[]{R.attr.state_checked, R.attr.state_hovered},
+                    new int[]{R.attr.state_checked},
+
+                    new int[]{R.attr.state_pressed},
+                    new int[]{R.attr.state_focused},
+                    new int[]{R.attr.state_hovered},
+                    StateSet.WILD_CARD
+            },
+                new int[]{
+                        modulateColor(colorOnSurface, 0.1f),
+                        modulateColor(colorPrimary, 0.102f),
+                        modulateColor(colorPrimary, 0.08f),
+                        modulateColor(colorPrimary, 0.064f),
+
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorOnSurface, 0.102f),
+                        modulateColor(colorOnSurface, 0.08f),
+                        modulateColor(colorOnSurface, 0.064f)
+                }
+        );
+        return radioButtonRippleTint;
+    }
+
+    /**
+     * Widget.Material3.CompoundButton.RadioButton
+     */
+    public void applyRadioButtonStyle(RadioButton btn) {
+        applyRadioButtonStyle(btn, true, true);
+    }
+
+    /**
+     * Widget.Material3.CompoundButton.RadioButton
+     */
+    public void applyRadioButtonStyle(RadioButton btn, boolean animated, boolean withRipple) {
+        applyTextAppearanceBodyMedium(btn);
+        var button = new ButtonRadioDrawable(btn, animated, withRipple);
+        btn.setButtonDrawable(button);
+        btn.setButtonTintList(radioButtonTint());
+        if (withRipple) {
+            var ripple = new RippleDrawable(radioButtonRippleTint(), null, null);
+            ripple.setRadius(button.getIntrinsicWidth() / 2); // 16dp
+            btn.setBackground(ripple);
+        }
     }
 
     // Base.V14.Theme.Material3.Dark
@@ -580,6 +684,8 @@ public class SystemTheme {
         t.textColorLinkInverse = ColorStateList.valueOf(t.colorPrimaryInverse);
 
         t.textColorAlertDialogListItem = t.textColorPrimary;
+
+        t.isDark = isDark;
 
         return t;
     }
