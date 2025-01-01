@@ -26,7 +26,6 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialCheckBox;
-import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
@@ -319,7 +318,8 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
     }
 
     private void insertRadioButton() {
-        mRadioButton = new MaterialRadioButton(getContext());
+        mRadioButton = new RadioButton(getContext());
+        SystemTheme.currentTheme().applyRadioButtonStyle(mRadioButton, false, false);
         mRadioButton.setFocusable(false);
         mRadioButton.setClickable(false);
         mRadioButton.setDuplicateParentStateEnabled(true);

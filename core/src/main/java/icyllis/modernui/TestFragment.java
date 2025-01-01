@@ -30,7 +30,6 @@ import icyllis.modernui.graphics.drawable.*;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.material.MaterialCheckBox;
-import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
@@ -134,7 +133,6 @@ public class TestFragment extends Fragment {
                 }*//*
             }
         });*/
-        base.setBackground(new ColorDrawable(SystemTheme.currentTheme().colorSurface));
         {
             var params = new FrameLayout.LayoutParams(base.dp(960), base.dp(540));
             params.gravity = Gravity.CENTER;
@@ -142,6 +140,7 @@ public class TestFragment extends Fragment {
         }
         //base.setRotation(30);
         container.setClipChildren(true);
+        container.setBackground(new ColorDrawable(SystemTheme.currentTheme().colorSurface));
         return base;
     }
 
@@ -464,7 +463,7 @@ public class TestFragment extends Fragment {
                 mGoodAnim = anim;
             }
 
-            try (Bitmap bitmap = BitmapFactory.decodePath(Path.of("E:/flux_core.png"))) {
+            /*try (Bitmap bitmap = BitmapFactory.decodePath(Path.of("E:/flux_core.png"))) {
                 Image image = Image.createTextureFromBitmap(bitmap);
                 if (image != null) {
                     Matrix scalingMatrix = new Matrix();
@@ -475,7 +474,7 @@ public class TestFragment extends Fragment {
                     LOGGER.warn("Failed to create image");
                 }
             } catch (IOException ignored) {
-            }
+            }*/
 
             mTestLinearGrad = new LinearGradient(
                     0, 0, 128, 0,
@@ -616,15 +615,19 @@ public class TestFragment extends Fragment {
                     RadioGroup group = new RadioGroup(getContext());
                     v = group;
                     for (int j = 0; j < 3; j++) {
-                        RadioButton button = new MaterialRadioButton(getContext());
-                        button.setText("Item " + j);
-                        button.setTextSize(16);
+                        RadioButton button = new RadioButton(getContext());
+                        button.setText(switch (j) {
+                            case 0 -> "English";
+                            case 1 -> "Chinese";
+                            default -> "Spanish";
+                        });
                         button.setId(9 + j);
+                        SystemTheme.currentTheme().applyRadioButtonStyle(button);
                         group.addView(button);
                     }
-                    group.setOnCheckedChangeListener((__, checkedId) ->
+                    /*group.setOnCheckedChangeListener((__, checkedId) ->
                             Toast.makeText(context, "You checked " + checkedId, Toast.LENGTH_SHORT)
-                                    .show());
+                                    .show());*/
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 6) {
@@ -656,6 +659,7 @@ public class TestFragment extends Fragment {
                     button.setText("Text button " + i);
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                    p.setMargins(0, dp(4),0, dp(4));
                 }
                 if (i == 8) {
                     v.setOnCreateContextMenuListener((menu, v1, menuInfo) -> {
@@ -771,10 +775,10 @@ public class TestFragment extends Fragment {
         @Override
         protected void onDetachedFromWindow() {
             super.onDetachedFromWindow();
-            if (mTestImageShader != null) {
+            /*if (mTestImageShader != null) {
                 mTestImageShader.release();
                 mTestImageShader = null;
-            }
+            }*/
         }
 
         @Override
@@ -825,7 +829,7 @@ public class TestFragment extends Fragment {
             paint.setStrokeCap(Paint.CAP_SQUARE);
             canvas.drawRect(200, 450, 500, 550, paint);
 
-            canvas.save();
+            /*canvas.save();
             canvas.translate(400, 100);
             paint.setShader(mTestImageShader);
             paint.setStyle(Paint.FILL);
@@ -840,7 +844,7 @@ public class TestFragment extends Fragment {
             paint.setDither(false);
             paint.setStyle(Paint.STROKE);
             paint.setShader(null);
-            canvas.restore();
+            canvas.restore();*/
 
             paint.setStrokeWidth(40.0f);
             //paint.setSmoothWidth(40.0f);
