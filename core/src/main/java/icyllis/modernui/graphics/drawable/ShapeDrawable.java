@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -124,7 +124,7 @@ public class ShapeDrawable extends Drawable {
 
             mRect.set(getBounds());
 
-            if (mStrokePaint != null) {
+            if (mStrokePaint != null && mStrokePaint.getColor() != Color.TRANSPARENT) {
                 // the stroke align is center, inset half stroke width to fit in bounds
                 float inset = mStrokePaint.getStrokeWidth() * 0.5f;
                 mRect.inset(inset, inset);
@@ -177,7 +177,8 @@ public class ShapeDrawable extends Drawable {
         final boolean haveStroke;
         final boolean restoreStroke;
         if (mStrokePaint != null &&
-                mStrokePaint.getStrokeWidth() > 0) {
+                mStrokePaint.getStrokeWidth() > 0 &&
+                mStrokePaint.getColor() != Color.TRANSPARENT) {
             mStrokePaint.setAlpha(currStrokeAlpha);
             // stroke won't use dithering
             mStrokePaint.setColorFilter(colorFilter);
@@ -630,6 +631,7 @@ public class ShapeDrawable extends Drawable {
                 final int oldColor = strokePaint.getColor();
                 if (oldColor != newColor) {
                     strokePaint.setColor(newColor);
+                    mShapeIsDirty = true;
                     invalidateSelf = true;
                 }
             }
