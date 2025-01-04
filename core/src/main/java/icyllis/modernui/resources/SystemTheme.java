@@ -27,11 +27,13 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.drawable.ButtonRadioDrawable;
+import icyllis.modernui.material.drawable.SwitchThumbDrawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.widget.Button;
 import icyllis.modernui.widget.RadioButton;
+import icyllis.modernui.widget.Switch;
 import icyllis.modernui.widget.TextView;
 
 import java.util.Objects;
@@ -345,6 +347,7 @@ public class SystemTheme {
         return colorControlHighlight;
     }
 
+    // reused for checkbox
     private ColorStateList radioButtonRippleTint;
     private ColorStateList radioButtonRippleTint() {
         if (radioButtonRippleTint != null) {
@@ -397,6 +400,104 @@ public class SystemTheme {
             ripple.setRadius(button.getIntrinsicWidth() / 2); // 16dp
             btn.setBackground(ripple);
         }
+    }
+
+    private ColorStateList switchTrackTint;
+    private ColorStateList switchTrackTint() {
+        if (switchTrackTint != null) {
+            return switchTrackTint;
+        }
+        switchTrackTint = new ColorStateList(
+                new int[][]{
+                        new int[]{-R.attr.state_enabled, -R.attr.state_checked},
+                        new int[]{-R.attr.state_enabled, R.attr.state_checked},
+                        new int[]{R.attr.state_checked},
+                        StateSet.WILD_CARD
+                },
+                new int[]{
+                        modulateColor(colorSurfaceContainerHighest, 0.12f),
+                        modulateColor(colorOnSurface, 0.12f),
+                        colorPrimary,
+                        colorSurfaceContainerHighest
+                }
+        );
+        return switchTrackTint;
+    }
+
+    private ColorStateList switchTrackDecorationTint;
+    private ColorStateList switchTrackDecorationTint() {
+        if (switchTrackDecorationTint != null) {
+            return switchTrackDecorationTint;
+        }
+        switchTrackDecorationTint = new ColorStateList(
+                new int[][]{
+                        new int[]{R.attr.state_checked},
+                        new int[]{-R.attr.state_enabled},
+                        StateSet.WILD_CARD
+                },
+                new int[]{
+                        Color.TRANSPARENT,
+                        modulateColor(colorOnSurface, 0.12f),
+                        colorOutline
+                }
+        );
+        return switchTrackDecorationTint;
+    }
+
+    private ColorStateList switchThumbTint;
+    private ColorStateList switchThumbTint() {
+        if (switchThumbTint != null) {
+            return switchThumbTint;
+        }
+        switchThumbTint = new ColorStateList(
+                new int[][]{
+                        new int[]{-R.attr.state_enabled, -R.attr.state_checked},
+                        new int[]{-R.attr.state_enabled, R.attr.state_checked},
+                        new int[]{R.attr.state_checked, R.attr.state_pressed},
+                        new int[]{R.attr.state_checked, R.attr.state_hovered},
+                        new int[]{R.attr.state_checked, R.attr.state_focused},
+                        new int[]{R.attr.state_checked},
+                        new int[]{R.attr.state_pressed},
+                        new int[]{R.attr.state_hovered},
+                        new int[]{R.attr.state_focused},
+                        StateSet.WILD_CARD
+                },
+                new int[]{
+                        modulateColor(colorOnSurface, 0.38f),
+                        modulateColor(colorSurface, 1f),
+                        colorPrimaryContainer,
+                        colorPrimaryContainer,
+                        colorPrimaryContainer,
+                        colorOnPrimary,
+                        colorOnSurfaceVariant,
+                        colorOnSurfaceVariant,
+                        colorOnSurfaceVariant,
+                        colorOutline
+                }
+        );
+        return switchThumbTint;
+    }
+
+    /**
+     * Widget.Material3.CompoundButton.MaterialSwitch
+     */
+    public void applySwitchStyle(Switch btn) {
+        applySwitchStyle(btn, true, true);
+    }
+
+    public void applySwitchStyle(Switch btn, boolean animated, boolean usePressState) {
+        applyTextAppearanceBodyMedium(btn);
+        var track = new ShapeDrawable();
+        track.setShape(ShapeDrawable.RECTANGLE);
+        track.setSize(btn.dp(52), btn.dp(32));
+        track.setCornerRadius(btn.dp(16));
+        track.setColor(switchTrackTint());
+        track.setStroke(btn.dp(2), switchTrackDecorationTint());
+        btn.setTrackDrawable(track);
+        btn.setSwitchMinWidth(track.getIntrinsicWidth());
+        var thumb = new SwitchThumbDrawable(btn, animated, usePressState);
+        btn.setThumbDrawable(thumb);
+        btn.setThumbTintList(switchThumbTint());
     }
 
     // Base.V14.Theme.Material3.Dark

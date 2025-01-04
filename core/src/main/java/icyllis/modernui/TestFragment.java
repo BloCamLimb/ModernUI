@@ -542,9 +542,12 @@ public class TestFragment extends Fragment {
                     });*/
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                } else if (i == 4) {
-                    SwitchButton switchButton = new SwitchButton(getContext());
+                } else if (i == 0) {
+                    Switch switchButton = new Switch(getContext());
+                    SystemTheme.currentTheme().applySwitchStyle(switchButton);
                     v = switchButton;
+                    switchButton.setText("Show text block");
+                    switchButton.setPadding(dp(12), 0, dp(12), 0);
                     switchButton.setOnCheckedChangeListener((button, checked) -> {
                         if (checked) {
                             button.post(() -> addView(mTextView, 2));
@@ -561,7 +564,13 @@ public class TestFragment extends Fragment {
                             mPopupWindow.dismiss();
                         }*/
                     });
-                    p = new LayoutParams(dp(50), dp(18));
+                    switchButton.postDelayed(() -> {
+                        switchButton.toggle();
+                    }, 2000);
+                    switchButton.postDelayed(() -> {
+                        switchButton.toggle();
+                    }, 4000);
+                    p = new LayoutParams(dp(300), dp(40));
                 } else if (i == 2) {
                     continue;
                 } else if (i == 3) {
@@ -660,6 +669,26 @@ public class TestFragment extends Fragment {
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                     p.setMargins(0, dp(4),0, dp(4));
+                    /*LinearLayout outer = new LinearLayout(getContext());
+                    outer.setOrientation(LinearLayout.HORIZONTAL);
+                    v = outer;
+                    for (int z = 0; z < 20; z++) {
+                        RadioGroup group = new RadioGroup(getContext());
+                        for (int j = 0; j < 3; j++) {
+                            RadioButton button = new RadioButton(getContext());
+                            button.setText(switch (j) {
+                                case 0 -> "English";
+                                case 1 -> "Chinese";
+                                default -> "Spanish";
+                            });
+                            button.setId(9 + j);
+                            SystemTheme.currentTheme().applyRadioButtonStyle(button);
+                            group.addView(button);
+                        }
+                        outer.addView(group, WRAP_CONTENT, WRAP_CONTENT);
+                    }
+                    p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);*/
                 }
                 if (i == 8) {
                     v.setOnCreateContextMenuListener((menu, v1, menuInfo) -> {
@@ -743,8 +772,32 @@ public class TestFragment extends Fragment {
 
             /*roundRectAlphaAni = new Animation(250)
                     .applyTo(new Applier(0, 1, () -> roundRectAlpha, v -> roundRectAlpha = v));*/
+            //changeRadioButtons(9, 0);
 
             setLayoutTransition(new LayoutTransition());
+        }
+
+        private void changeRadioButtons(int id, int count) {
+            for (int i = 0; i < getChildCount(); i++) {
+                if (i != count) continue;
+                if (getChildAt(i) instanceof LinearLayout layout) {
+                    for (int j = 0; j < layout.getChildCount(); j++) {
+                        if (layout.getChildAt(j) instanceof RadioGroup group) {
+                            group.check(id);
+                        }
+                    }
+                }
+            }
+            int nextId;
+            int nextCount;
+            if (count >= 12) {
+                nextId = id >= 11 ? 9 : id + 1;
+                nextCount = 0;
+            } else {
+                nextId = id;
+                nextCount = count + 1;
+            }
+            postDelayed(() -> changeRadioButtons(nextId, nextCount), 50);
         }
 
         private static final FloatProperty<TestLinearLayout> sRoundRectLengthProp = new FloatProperty<>("roundRectLen"
@@ -784,6 +837,9 @@ public class TestFragment extends Fragment {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             super.onDraw(canvas);
+            if (true) {
+                return;
+            }
             /*canvas.moveTo(this);
             canvas.resetColor();
             canvas.setTextAlign(TextAlign.LEFT);

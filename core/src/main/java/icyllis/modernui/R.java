@@ -84,6 +84,13 @@ public final class R {
         public static final int state_empty =0x010100a9;
         public static final int state_checkable = 0x0101009f;
 
+        /// INTERNAL BELOW \\\
+
+        // Constant IDs for Material package.
+        public static final int state_error = 0x05010001;
+        public static final int state_indeterminate = 0x05010002;
+        public static final int state_with_icon = 0x05010003;
+
         static {
             __();
         }
