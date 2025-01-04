@@ -25,6 +25,10 @@ import icyllis.modernui.resources.SystemTheme;
 
 import javax.annotation.Nonnull;
 
+/**
+ * @deprecated use {@link Switch} instead
+ */
+@Deprecated
 public class SwitchButton extends CompoundButton {
 
     private final RectF mButtonRect = new RectF();
@@ -43,7 +47,7 @@ public class SwitchButton extends CompoundButton {
 
     public SwitchButton(Context context) {
         super(context);
-        mCheckedColor = SystemTheme.COLOR_CONTROL_ACTIVATED;
+        mCheckedColor = SystemTheme.currentTheme().colorPrimary;
         mUncheckedColor = 0xFFDDDDDD;
         mBorderWidth = dp(1.5f);
 
