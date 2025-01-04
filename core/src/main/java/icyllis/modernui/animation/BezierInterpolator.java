@@ -18,6 +18,7 @@
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
 
 /**
@@ -92,6 +93,56 @@ public class BezierInterpolator implements TimeInterpolator {
         }
         mXs = xs;
         mYs = ys;
+    }
+
+    private BezierInterpolator(float[] xs, float[] ys) {
+        mXs = xs;
+        mYs = ys;
+    }
+
+    /**
+     * Create an interpolator for two cubic Bezier curves.  The end points
+     * <code>(0, 0)</code> and <code>(1, 1)</code> are assumed.
+     * <p>
+     * The first cubic Bezier is formed by <code>(0, 0)</code>, <code>(controlX1, controlY1)</code>,
+     * <code>(controlX2, controlY2)</code>, <code>(controlX3, controlY3)</code>;
+     * and the second cubic Bezier is formed by <code>(controlX3, controlY3)</code>,
+     * <code>(controlX4, controlY4)</code>, <code>(controlX5, controlY5)</code>, <code>(1, 1)</code>
+     */
+    @NonNull
+    public static BezierInterpolator createTwoCubic(float controlX1, float controlY1,
+                                                    float controlX2, float controlY2,
+                                                    float controlX3, float controlY3,
+                                                    float controlX4, float controlY4,
+                                                    float controlX5, float controlY5) {
+        // linearize
+        int numPoints1 = icyllis.arc3d.engine.PathUtils.countCubicPoints(
+                0, 0, controlX1, controlY1, controlX2, controlY2, controlX3, controlY3,
+                PRECISION
+        );
+        int numPoints2 = icyllis.arc3d.engine.PathUtils.countCubicPoints(
+                controlX3, controlY3, controlX4, controlY4, controlX5, controlY5, 1f, 1f,
+                PRECISION
+        );
+        float[] coords = new float[(numPoints1 << 1) + (numPoints2 << 1)];
+        int numCoords1 = icyllis.arc3d.engine.PathUtils.generateCubicPoints(
+                0, 0, controlX1, controlY1, controlX2, controlY2, controlX3, controlY3,
+                PRECISION * PRECISION,
+                coords, 0, numPoints1 << 1
+        );
+        int numCoords2 = icyllis.arc3d.engine.PathUtils.generateCubicPoints(
+                controlX3, controlY3, controlX4, controlY4, controlX5, controlY5, 1f, 1f,
+                PRECISION * PRECISION,
+                coords, numCoords1, numPoints2 << 1
+        );
+        float[] xs = new float[1 + (numCoords1 >> 1) + (numCoords2 >> 1)];
+        float[] ys = new float[1 + (numCoords1 >> 1) + (numCoords2 >> 1)];
+        // initial point is (0,0)
+        for (int i = 0, p = 1; i < numCoords1 + numCoords2; i += 2, p++) {
+            xs[p] = coords[i];
+            ys[p] = coords[i + 1];
+        }
+        return new BezierInterpolator(xs, ys);
     }
 
     /**
