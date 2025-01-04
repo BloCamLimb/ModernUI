@@ -20,11 +20,13 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.SoundEffectConstants;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,6 +40,10 @@ import javax.annotation.Nullable;
  */
 public abstract class CompoundButton extends Button implements Checkable {
 
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
     public static final int[] CHECKED_STATE_SET = {
             R.attr.state_checked
     };
@@ -47,7 +53,9 @@ public abstract class CompoundButton extends Button implements Checkable {
 
     private Drawable mButtonDrawable;
     private ColorStateList mButtonTintList;
+    private BlendMode mButtonBlendMode;
     private boolean mHasButtonTint;
+    private boolean mHasButtonBlendMode;
 
     private OnCheckedChangeListener mOnCheckedChangeListener;
 
@@ -174,12 +182,41 @@ public abstract class CompoundButton extends Button implements Checkable {
         return mButtonTintList;
     }
 
+    /**
+     * Specifies the blending mode used to apply the tint specified by
+     * {@link #setButtonTintList(ColorStateList)}} to the button drawable. The
+     * default mode is {@link BlendMode#SRC_IN}.
+     *
+     * @param tintMode the blending mode used to apply the tint, may be
+     *                 {@code null} to clear tint
+     * @see Drawable#setTintBlendMode(BlendMode)
+     */
+    public void setButtonTintBlendMode(@Nullable BlendMode tintMode) {
+        mButtonBlendMode = tintMode;
+        mHasButtonBlendMode = true;
+
+        applyButtonTint();
+    }
+
+    /**
+     * @return the blending mode used to apply the tint to the button drawable
+     * @see #setButtonTintBlendMode(BlendMode)
+     */
+    @Nullable
+    public BlendMode getButtonTintBlendMode() {
+        return mButtonBlendMode;
+    }
+
     private void applyButtonTint() {
-        if (mButtonDrawable != null && mHasButtonTint) {
+        if (mButtonDrawable != null && (mHasButtonTint || mHasButtonBlendMode)) {
             mButtonDrawable = mButtonDrawable.mutate();
 
             if (mHasButtonTint) {
                 mButtonDrawable.setTintList(mButtonTintList);
+            }
+
+            if (mHasButtonBlendMode) {
+                mButtonDrawable.setTintBlendMode(mButtonBlendMode);
             }
 
             // The drawable (or one of its children) may not have been
