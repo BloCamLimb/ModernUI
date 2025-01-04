@@ -131,6 +131,15 @@ public interface TimeInterpolator {
     @NonNull
     TimeInterpolator LINEAR_OUT_SLOW_IN = new BezierInterpolator(0f, 0f, 0.2f, 1f);
 
+    @NonNull
+    TimeInterpolator MOTION_EASING_STANDARD = new BezierInterpolator(0.2f, 0f, 0f, 1f);
+
+    @NonNull
+    TimeInterpolator MOTION_EASING_EMPHASIZED = BezierInterpolator.createTwoCubic(
+            0.05f, 0f, 0.133333f, 0.06f, 0.166666f, 0.4f,
+            0.208333f, 0.82f, 0.25f, 1f
+    );
+
     /**
      * Get interpolation value. This interpolated value is then multiplied by the change in
      * value of an animation to derive the animated value at the current elapsed animation time.
