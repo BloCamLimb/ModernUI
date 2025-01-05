@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
@@ -23,17 +40,22 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.util.*;
+import icyllis.modernui.util.LongSparseArray;
+import icyllis.modernui.util.SparseArray;
+import icyllis.modernui.util.SparseBooleanArray;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
-import it.unimi.dsi.fastutil.longs.*;
+import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMaps;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
@@ -1052,15 +1074,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     private void useDefaultSelector() {
-        setSelector(new Drawable() {
-            @Override
-            public void draw(@NonNull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setAlpha(25);
-                canvas.drawRect(getBounds(), paint);
-                paint.recycle();
-            }
-        });
+        setSelector(new ColorDrawable(0x33808080));
     }
 
     /**
