@@ -34,7 +34,7 @@ public final class WindowGroup extends ViewGroup implements WindowManager {
     public WindowGroup(@NonNull Context context) {
         super(context);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
-        setLayoutTransition(new LayoutTransition());
+        //setLayoutTransition(new LayoutTransition());
     }
 
     @Override
