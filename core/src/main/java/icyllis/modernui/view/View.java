@@ -2449,8 +2449,21 @@ public class View implements Drawable.Callback {
 
         // true if clip region is not empty, or quick rejected
         boolean hasSpace = true;
-        if (clip) {
-            hasSpace = canvas.clipRect(0, 0, mRight - mLeft, mBottom - mTop);
+        boolean clipToClipBounds = (mRenderNode.getClippingFlags() & RenderProperties.CLIP_TO_CLIP_BOUNDS) != 0;
+        if (clip | clipToClipBounds) {
+            if (!clipToClipBounds) {
+                hasSpace = canvas.clipRect(0, 0, mRight - mLeft, mBottom - mTop);
+            } else {
+                final Rect clipRect;
+                if (clip) {
+                    clipRect = sThreadLocal.get();
+                    clipRect.set(0, 0, mRight - mLeft, mBottom - mTop);
+                    clipRect.intersectUnchecked(mRenderNode.getClipBounds());
+                } else {
+                    clipRect = mRenderNode.getClipBounds();
+                }
+                hasSpace = canvas.clipRect(clipRect);
+            }
         }
 
         canvas.translate(-sx, -sy);
@@ -7445,6 +7458,51 @@ public class View implements Drawable.Callback {
     @Nullable
     public final Matrix getAnimationMatrix() {
         return mRenderNode.getAnimationMatrix();
+    }
+
+    /**
+     * Sets a rectangular area on this view to which the view will be clipped
+     * when it is drawn. Setting the value to null will remove the clip bounds
+     * and the view will draw normally, using its full bounds.
+     *
+     * @param clipBounds The rectangular area, in the local coordinates of
+     * this view, to which future drawing operations will be clipped.
+     */
+    public void setClipBounds(@Nullable Rect clipBounds) {
+        if (mRenderNode.setClipBounds(clipBounds)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * Returns a copy of the current {@link #setClipBounds(Rect) clipBounds}.
+     *
+     * @return A copy of the current clip bounds if clip bounds are set,
+     * otherwise null.
+     */
+    @Nullable
+    public Rect getClipBounds() {
+        if ((mRenderNode.getClippingFlags() & RenderProperties.CLIP_TO_CLIP_BOUNDS) != 0) {
+            return new Rect(mRenderNode.getClipBounds());
+        }
+        return null;
+    }
+
+    /**
+     * Populates an output rectangle with the clip bounds of the view,
+     * returning {@code true} if successful or {@code false} if the view's
+     * clip bounds are {@code null}.
+     *
+     * @param outRect rectangle in which to place the clip bounds of the view
+     * @return {@code true} if successful or {@code false} if the view's
+     *         clip bounds are {@code null}
+     */
+    public boolean getClipBounds(@NonNull Rect outRect) {
+        if ((mRenderNode.getClippingFlags() & RenderProperties.CLIP_TO_CLIP_BOUNDS) != 0) {
+            outRect.set(mRenderNode.getClipBounds());
+            return true;
+        }
+        return false;
     }
 
     /**

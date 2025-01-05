@@ -21,6 +21,7 @@ package icyllis.modernui.graphics;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.view.View;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,10 +29,11 @@ import javax.annotation.Nullable;
 /**
  * Data structure that holds the properties for a RenderNode.
  */
+@ApiStatus.Internal
 public class RenderProperties {
 
-    static final int CLIP_TO_BOUNDS = 0x1;
-    static final int CLIP_TO_CLIP_BOUNDS = 0x1 << 1;
+    public static final int CLIP_TO_BOUNDS = 0x1;
+    public static final int CLIP_TO_CLIP_BOUNDS = 0x1 << 1;
 
     /**
      * Stores the total transformation of the RenderNode based upon its
@@ -46,7 +48,6 @@ public class RenderProperties {
     @Nullable
     private Matrix mInverseMatrix;
 
-    @Nullable
     private Rect mClipBounds; // lazy
     @Nullable
     private Matrix mAnimationMatrix; // copy or null
@@ -289,6 +290,14 @@ public class RenderProperties {
             }
         }
         return false;
+    }
+
+    public int getClippingFlags() {
+        return mClippingFlags;
+    }
+
+    public Rect getClipBounds() {
+        return mClipBounds;
     }
 
     /**
