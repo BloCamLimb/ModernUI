@@ -19,6 +19,8 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
@@ -299,11 +301,11 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
     @Nonnull
     @Override
     public View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
-        return createViewInner(position, convertView);
+        return createViewInner(position, convertView, false);
     }
 
     @Nonnull
-    private View createViewInner(int position, @Nullable View convertView) {
+    private View createViewInner(int position, @Nullable View convertView, boolean dropdown) {
         final TextView tv;
 
         if (convertView == null) {
@@ -319,17 +321,29 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
             tv.setText(String.valueOf(item));
         }
 
+        var theme = SystemTheme.currentTheme();
         tv.setTextSize(14);
-        tv.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-        final int dp4 = tv.dp(4);
-        tv.setPadding(dp4, dp4, dp4, dp4);
+        if (dropdown) {
+            tv.setTextColor(theme.textColorPrimaryDisableOnly);
+        } else {
+            tv.setTextColor(theme.textColorPrimary);
+        }
+        if (!dropdown) {
+            tv.setTextAlignment(View.TEXT_ALIGNMENT_INHERIT);
+        } // else GRAVITY
+        final int dp8 = tv.dp(8);
+        tv.setPadding(dp8, 0, dp8, 0);
+        if (dropdown) {
+            tv.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+            tv.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, tv.dp(32)));
+        } // else default START|TOP and (MATCH_PARENT,WRAP_CONTENT)
 
         return tv;
     }
 
     @Override
     public View getDropDownView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
-        return createViewInner(position, convertView);
+        return createViewInner(position, convertView, true);
     }
 
     @Nonnull
