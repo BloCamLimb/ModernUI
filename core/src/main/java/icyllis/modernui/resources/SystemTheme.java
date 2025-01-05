@@ -330,16 +330,18 @@ public class SystemTheme {
     }
 
     private ColorStateList colorControlHighlight;
-    private ColorStateList colorControlHighlight() {
+    public ColorStateList colorControlHighlight() {
         if (colorControlHighlight != null) {
             return colorControlHighlight;
         }
         colorControlHighlight = new ColorStateList(
                 new int[][]{
                         new int[]{R.attr.state_enabled, R.attr.state_checked},
+                        new int[]{R.attr.state_activated},
                         StateSet.WILD_CARD
                 },
                 new int[]{
+                        modulateColor(colorSecondary, 0.2f),
                         modulateColor(colorSecondary, 0.2f),
                         isDark ? 0x33ffffff : 0x1f000000
                 }
@@ -495,6 +497,7 @@ public class SystemTheme {
         track.setStroke(btn.dp(2), switchTrackDecorationTint());
         btn.setTrackDrawable(track);
         btn.setSwitchMinWidth(track.getIntrinsicWidth());
+        btn.setSwitchPadding(btn.dp(16));
         var thumb = new SwitchThumbDrawable(btn, animated, usePressState);
         btn.setThumbDrawable(thumb);
         btn.setThumbTintList(switchThumbTint());
