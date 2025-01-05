@@ -45,6 +45,7 @@ import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.Gravity;
@@ -75,6 +76,7 @@ public class Switch extends CompoundButton {
     private boolean mHasTrackTintMode;
 
     private int mSwitchMinWidth;
+    private int mSwitchPadding;
     private boolean mSplitTrack;
 
     private int mTouchMode;
@@ -136,6 +138,25 @@ public class Switch extends CompoundButton {
 
         final ViewConfiguration config = ViewConfiguration.get(context);
         mTouchSlop = config.getScaledTouchSlop();
+    }
+
+    /**
+     * Set the amount of horizontal padding between the switch and the associated text.
+     *
+     * @param pixels Amount of padding in pixels
+     */
+    public void setSwitchPadding(int pixels) {
+        mSwitchPadding = pixels;
+        requestLayout();
+    }
+
+    /**
+     * Get the amount of horizontal padding between the switch and the associated text.
+     *
+     * @return Amount of padding in pixels
+     */
+    public int getSwitchPadding() {
+        return mSwitchPadding;
     }
 
     /**
@@ -684,7 +705,11 @@ public class Switch extends CompoundButton {
         if (!isLayoutRtl()) {
             return super.getCompoundPaddingLeft();
         }
-        return super.getCompoundPaddingLeft() + mSwitchWidth;
+        int padding = super.getCompoundPaddingLeft() + mSwitchWidth;
+        if (!TextUtils.isEmpty(getText())) {
+            padding += mSwitchPadding;
+        }
+        return padding;
     }
 
     @Override
@@ -692,7 +717,11 @@ public class Switch extends CompoundButton {
         if (isLayoutRtl()) {
             return super.getCompoundPaddingRight();
         }
-        return super.getCompoundPaddingRight() + mSwitchWidth;
+        int padding = super.getCompoundPaddingRight() + mSwitchWidth;
+        if (!TextUtils.isEmpty(getText())) {
+            padding += mSwitchPadding;
+        }
+        return padding;
     }
 
     /**
