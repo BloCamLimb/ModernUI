@@ -19,13 +19,18 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.transition.AutoTransition;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.transition.EpicenterTranslateClipReveal;
+import icyllis.modernui.transition.Fade;
+import icyllis.modernui.transition.TransitionSet;
 import icyllis.modernui.util.DataSetObserver;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.PointerIcon;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.menu.ShowableListMenu;
 
 import javax.annotation.Nonnull;
@@ -58,26 +63,6 @@ public class Spinner extends AbsSpinner {
     public Spinner(Context context) {
         super(context);
         mPopup = new DropdownPopup(context);
-        //mPopup.setOverlapAnchor(true);
-        mPopup.setBackgroundDrawable(new Drawable() {
-            private final int mRadius = dp(2);
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setColor(0xe0202020); // ff303030
-                Rect b = getBounds();
-                canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, mRadius, paint);
-                paint.recycle();
-            }
-
-            @Override
-            public boolean getPadding(@Nonnull Rect padding) {
-                int r = (int) Math.ceil(mRadius / 2f);
-                padding.set(r, r, r, r);
-                return true;
-            }
-        });
         mDropDownWidth = LayoutParams.WRAP_CONTENT;
         mForwardingListener = new ForwardingListener(this) {
             @Override
@@ -176,6 +161,23 @@ public class Spinner extends AbsSpinner {
      */
     public int getDropDownWidth() {
         return mDropDownWidth;
+    }
+
+    /**
+     * Sets a drawable to use as the list item selector in the popup.
+     *
+     * @param selector List selector drawable to use in the popup.
+     */
+    public void setDropDownSelector(Drawable selector) {
+        mPopup.setListSelector(selector);
+    }
+
+    /**
+     * Sets whether the drop-down popup should overlap this anchor view when
+     * displayed. The default is false.
+     */
+    public void setDropDownOverlapAnchor(boolean overlapAnchor) {
+        mPopup.setOverlapAnchor(overlapAnchor);
     }
 
     @Override
@@ -650,8 +652,18 @@ public class Spinner extends AbsSpinner {
                 }
                 dismiss();
             });
-            mPopup.setEnterTransition(new AutoTransition());
-            mPopup.setExitTransition(new AutoTransition());
+            var enter1 = new EpicenterTranslateClipReveal();
+            enter1.setDuration(250);
+            var enter2 = new Fade();
+            enter2.setDuration(100);
+            var enterAnim = new TransitionSet();
+            enterAnim.addTransition(enter1);
+            enterAnim.addTransition(enter2);
+            enterAnim.setOrdering(TransitionSet.ORDERING_TOGETHER);
+            mPopup.setEnterTransition(enterAnim);
+            var exitAnim = new Fade();
+            exitAnim.setDuration(300);
+            mPopup.setExitTransition(exitAnim);
         }
 
         @Override
