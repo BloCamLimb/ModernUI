@@ -23,6 +23,7 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
@@ -114,7 +115,8 @@ public class EdgeEffect {
      * Construct a new EdgeEffect with a theme appropriate for the provided context.
      */
     public EdgeEffect() {
-        mPaint.setColor(0x33666666);
+        int themeColor = SystemTheme.currentTheme().colorPrimary;
+        mPaint.setColor((themeColor & 0xffffff) | 0x33000000);
         mPaint.setStyle(Paint.FILL);
         mPaint.setBlendMode(DEFAULT_BLEND_MODE);
     }
