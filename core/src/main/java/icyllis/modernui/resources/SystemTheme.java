@@ -23,6 +23,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
@@ -33,6 +34,7 @@ import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.widget.Button;
 import icyllis.modernui.widget.RadioButton;
+import icyllis.modernui.widget.Spinner;
 import icyllis.modernui.widget.Switch;
 import icyllis.modernui.widget.TextView;
 
@@ -501,6 +503,19 @@ public class SystemTheme {
         var thumb = new SwitchThumbDrawable(btn, animated, usePressState);
         btn.setThumbDrawable(thumb);
         btn.setThumbTintList(switchThumbTint());
+    }
+
+    public void applySpinnerStyle(Spinner spinner) {
+        //TODO background (arrow indicator)
+        var listSelector = new RippleDrawable(colorControlHighlight(), null, new ColorDrawable(~0));
+        spinner.setDropDownSelector(listSelector);
+        var popupBackground = new ShapeDrawable();
+        popupBackground.setShape(ShapeDrawable.RECTANGLE);
+        popupBackground.setCornerRadius(spinner.dp(4));
+        popupBackground.setColor(colorBackground);
+        int dp2 = spinner.dp(2);
+        popupBackground.setPadding(dp2, dp2, dp2, dp2);
+        spinner.setPopupBackgroundDrawable(popupBackground);
     }
 
     // Base.V14.Theme.Material3.Dark
