@@ -314,8 +314,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 Image image = Image.createTextureFromBitmap(bitmap);
                 if (image != null) {
                     Drawable drawable = new ImageDrawable(getResources(), image);
-                    drawable.setTintBlendMode(BlendMode.MODULATE);
-                    drawable.setTint(0xFF808080);
                     mDecor.setBackground(drawable);
                     synchronized (Core.class) {
                         mBackgroundImage = image;

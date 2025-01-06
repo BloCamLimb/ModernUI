@@ -29,6 +29,7 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.*;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
+import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.text.*;
@@ -41,10 +42,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.nio.file.Path;
 import java.util.ArrayList;
 
 import static icyllis.modernui.ModernUI.LOGGER;
@@ -82,6 +81,7 @@ public class TestFragment extends Fragment {
         getChildFragmentManager().beginTransaction()
                 .replace(660, new FragmentA(), null)
                 .commit();
+        //SystemTheme.setToMaterialLight();
 
         /*CompletableFuture.runAsync(() -> {
             String text = "My name is van";
@@ -141,6 +141,7 @@ public class TestFragment extends Fragment {
         //base.setRotation(30);
         container.setClipChildren(true);
         container.setBackground(new ColorDrawable(SystemTheme.currentTheme().colorSurface));
+        //container.setBackground(new ColorDrawable((SystemTheme.currentTheme().colorSurface & 0xFFFFFF) | (0x80000000)));
         return base;
     }
 
@@ -191,74 +192,6 @@ public class TestFragment extends Fragment {
         public void onDestroy() {
             super.onDestroy();
             LOGGER.info("FragmentB onDestroy()");
-        }
-    }
-
-    private static class TestView extends View {
-
-        public TestView(Context context) {
-            super(context);
-        }
-
-        @Override
-        protected void onDraw(@NonNull Canvas canvas) {
-            //canvas.drawRing(100, 20, 5, 8);
-            // 3
-
-
-            /*//RenderHelper.setupGuiFlatDiffuseLighting();
-            //GL11.glColor4d(1, 1, 1, 1);
-            //GL11.glDisable(GL11.GL_CULL_FACE);
-            GL11.glMatrixMode(GL11.GL_PROJECTION);
-            GL11.glPushMatrix();
-            GL11.glLoadIdentity();
-            RenderSystem.disableDepthTest();
-
-            MainWindow mainWindow = Minecraft.getInstance().getMainWindow();
-            RenderSystem.multMatrix(Matrix4f.perspective(90.0D,
-                    (float) mainWindow.getFramebufferWidth() / mainWindow.getFramebufferHeight(),
-                    1.0F, 100.0F));
-            //RenderSystem.viewport(0, 0, mainWindow.getFramebufferWidth(), mainWindow.getFramebufferHeight());
-            GL11.glMatrixMode(GL11.GL_MODELVIEW);
-            GL11.glPushMatrix();
-            GL11.glLoadIdentity();
-            GL11.glTranslatef(-2.8f, -1.0f, -1.8f);
-            GL11.glScalef(1 / 90f, -1 / 90f, 1 / 90f);
-            //GL11.glTranslatef(0, 3, 1984);
-            //GL11.glRotatef((canvas.getDrawingTime() / 10f) % 360 - 180, 0, 1, 0);
-            GL11.glRotatef(12, 0, 1, 0);
-            *//*if ((canvas.getDrawingTime() ^ 127) % 40 == 0) {
-             *//**//*float[] pj = new float[16];
-                GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, pj);
-                ModernUI.LOGGER.info(Arrays.toString(pj));
-                GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, pj);
-                ModernUI.LOGGER.info(Arrays.toString(pj));*//**//*
-                ModernUI.LOGGER.info(GL11.glGetBoolean(GL30.GL_RESCALE_NORMAL));
-            }*//*
-            ClientPlayerEntity player = Minecraft.getInstance().player;
-            canvas.setColor(170, 220, 240, 128);
-            if (player != null) {
-                canvas.drawRoundedRect(0, 25, player.getHealth() * 140 / player.getMaxHealth(), 39, 4);
-            }
-            *//*canvas.setAlpha(255);
-            canvas.drawRoundedFrame(1, 26, 141, 40, 4);*//*
-             *//*canvas.setColor(53, 159, 210, 192);
-            canvas.drawRoundedFrame(0, 25, 140, 39, 4);*//*
-            if (player != null) {
-                canvas.resetColor();
-                canvas.setTextAlign(TextAlign.RIGHT);
-                canvas.drawText(decimalFormat.format(player.getHealth()) + " / " + decimalFormat.format(player
-                .getMaxHealth()), 137, 28);
-            }
-            RenderSystem.enableDepthTest();
-            GL11.glPopMatrix();
-            GL11.glMatrixMode(GL11.GL_PROJECTION);
-            GL11.glPopMatrix();
-            GL11.glMatrixMode(GL11.GL_MODELVIEW);
-            //GL11.glEnable(GL11.GL_CULL_FACE);
-            //RenderHelper.setupGui3DDiffuseLighting();
-
-            //canvas.drawRoundedRect(0, 25, 48, 45, 6);*/
         }
     }
 
@@ -650,6 +583,7 @@ public class TestFragment extends Fragment {
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 7) {
                     Spinner spinner = new Spinner(getContext());
+                    SystemTheme.currentTheme().applySpinnerStyle(spinner);
                     v = spinner;
                     ArrayList<String> list = new ArrayList<>(FontFamily.getSystemFontMap().keySet());
                     list.sort(null);
@@ -713,7 +647,7 @@ public class TestFragment extends Fragment {
                 p.gravity = Gravity.CENTER;
                 addView(v, p);
             }
-            addView(new DView(getContext(), TimeInterpolator.DECELERATE), new LayoutParams(dp(120),
+            addView(new DView(getContext()), new LayoutParams(dp(120),
                     dp(40)));
 
             //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
@@ -840,17 +774,6 @@ public class TestFragment extends Fragment {
             if (true) {
                 return;
             }
-            /*canvas.moveTo(this);
-            canvas.resetColor();
-            canvas.setTextAlign(TextAlign.LEFT);
-            canvas.save();
-            canvas.scale(3, 3);
-            canvas.drawText("A Text", 10, 0);
-            canvas.drawText(ChatFormatting.BOLD + "A Text", 10, 10);
-            canvas.drawText("\u0054\u0068\u0069\u0073\u0020\u0069\u0073\u0020\u0627\u0644\u0644\u063a\u0629\u0020" +
-                    "\u0627\u0644\u0639\u0631\u0628\u064a\u0629\u002c\u0020\u0061\u006e\u0064\u0020" +
-                    "\u0073\u0068\u0065\u0020\u0069\u0073\u0020\u6d77\u87ba", 10, 20);
-            canvas.restore();*/
 
             Paint paint = Paint.obtain();
             paint.setColor(SystemTheme.currentTheme().colorPrimary);
@@ -920,183 +843,25 @@ public class TestFragment extends Fragment {
             paint.setAlpha(255);
 
             paint.recycle();
-
-            // 1
-
-            /*canvas.save();
-            RenderSystem.depthMask(true);
-
-            //canvas.scale(f, f, getLeft() + 10, getTop() + 10);
-            RenderSystem.translatef(0, 0, 0.001f);
-            RenderSystem.colorMask(false, false, false, true);
-            //canvas.setColor(0, 0, 0, 128);
-
-            paint.setStyle(Paint.Style.FILL);
-            paint.setSmoothRadius(0);
-            canvas.drawRoundRect(c, c, 40 - c, 40 - c, 3, paint);
-
-            RenderSystem.translatef(0, 0, -0.001f);
-            RenderSystem.colorMask(true, true, true, true);
-
-            paint.setSmoothRadius(1);
-            paint.setRGBA(80, 210, 240, 128);
-            canvas.drawRoundRect(0, 0, 40, 40, 6, paint);
-
-            canvas.restore();
-            RenderSystem.depthMask(false);*/
-
-
-            // 4
-
-            /*paint.reset();
-
-            canvas.save();
-            canvas.translate((float) Math.sin(circleAcc1) * 8, (float) Math.cos(circleAcc1) * 8);
-            canvas.drawCircle(40, 18, 3, paint);
-            canvas.restore();
-
-            canvas.save();
-            canvas.translate((float) Math.sin(circleAcc2) * 8, (float) Math.cos(circleAcc2) * 8);
-            canvas.drawCircle(40, 18, 2.5f, paint);
-            canvas.restore();
-
-            canvas.save();
-            canvas.translate((float) Math.sin(circleAcc3) * 8, (float) Math.cos(circleAcc3) * 8);
-            canvas.drawCircle(40, 18, 2, paint);
-            canvas.restore();
-
-            canvas.save();
-            canvas.translate((float) Math.sin(circleAcc4) * 8, (float) Math.cos(circleAcc4) * 8);
-            canvas.drawCircle(40, 18, 1.5f, paint);
-            canvas.restore();*/
-
-
-            // 5
-
-            /*canvas.drawRect(35, 55, 45, 65);
-            RenderSystem.blendFuncSeparate(GL11.GL_ONE_MINUS_DST_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11
-            .GL_ONE_MINUS_DST_ALPHA, GL11.GL_ZERO);
-            canvas.drawCircle(40, 60, 4);
-            RenderSystem.defaultBlendFunc();*/
-
-            // 2
-            /*GL11.glEnable(GL11.GL_STENCIL_TEST);
-            GL11.glClearStencil(0);
-            GL11.glClear(GL11.GL_STENCIL_BUFFER_BIT);
-
-            GL11.glStencilMask(0xff);
-
-            GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 0xff);
-            GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_REPLACE);
-
-            canvas.setColor(255, 255, 255, 128);
-            canvas.drawRect(5, 2, 15, 8);
-
-            GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
-            GL11.glStencilFunc(GL11.GL_NOTEQUAL, 1, 0xff);
-
-            canvas.setColor(0, 0, 0, 128);
-            canvas.drawRect(0, 0, 20, 10);
-
-            GL11.glDisable(GL11.GL_STENCIL_TEST);*/
-        }
-
-        protected boolean onMousePressed(double mouseX, double mouseY, int mouseButton) {
-            /*if (!b) {
-                cAnim.start();
-                b = true;
-            } else {
-                cAnim.invert();
-                b = false;
-            }
-            f = 0.95f;*/
-            return true;
-        }
-
-        protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
-            f = 1;
-            return true;
-        }
-
-        public void tick() {
-            /*ticks++;
-            if ((ticks & 15) == 0) {
-                if (!b) {
-                    cAnim.start();
-                    iconRadiusAni.start();
-                    b = true;
-                } else {
-                    cAnim.invert();
-                    iconRadiusAni.invert();
-                    b = false;
-                }
-            }
-            int a = ticks % 20;
-            if (a == 1) {
-                circleAnimation1.startFull();
-                arcStartAni.startFull();
-                arcEndAni.startFull();
-                mRoundRectLenAnim.start();
-                roundRectAlphaAni.startFull();
-            } else if (a == 3) {
-                circleAnimation2.startFull();
-            } else if (a == 5) {
-                circleAnimation3.startFull();
-            } else if (a == 7) {
-                circleAnimation4.startFull();
-            }*/
-        }
-
-        private static class CView extends View {
-
-            private final String mIndex;
-            TextPaint mTextPaint = new TextPaint();
-
-            public CView(Context context, int index) {
-                super(context);
-                mIndex = Integer.toString(index);
-            }
-
-            @Override
-            protected void onDraw(@Nonnull Canvas canvas) {
-                if (isHovered()) {
-                    Paint paint = Paint.obtain();
-                    paint.setARGB(128, 140, 200, 240);
-                    canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
-                    TextUtils.drawTextRun(canvas, mIndex, 0, mIndex.length(), 0, mIndex.length(), 20,
-                            getHeight() >> 1, false,
-                            mTextPaint);
-                    paint.recycle();
-                }
-            }
-
-            @Override
-            public void onHoverChanged(boolean hovered) {
-                super.onHoverChanged(hovered);
-                invalidate();
-            }
         }
 
         private static class DView extends View {
 
-            //private final Animation animation;
-
             private float offsetY;
 
             private final TextPaint mTextPaint = new TextPaint();
-            private int mTicks;
+            private final ShapedText mText;
 
             private final ObjectAnimator mAnimator;
 
-            public DView(Context context, TimeInterpolator interpolator) {
+            public DView(Context context) {
                 super(context);
+                mTextPaint.setColor(SystemTheme.currentTheme().colorOnPrimaryContainer);
                 mTextPaint.setTextSize(13);
-                /*animation = new Animation(200)
-                        .applyTo(new Applier(0, 60, () -> offsetY, v -> {
-                            offsetY = v;
-                            invalidate();
-                        }).setInterpolator(interpolator));
-                animation.invertFull();*/
+                mText = TextShaper.shapeText(
+                        "18:52 modernui", 0, 14,
+                        TextDirectionHeuristics.FIRSTSTRONG_LTR, mTextPaint
+                );
                 PropertyValuesHolder pvh1 = PropertyValuesHolder.ofFloat(ROTATION, 0, 360);
                 PropertyValuesHolder pvh2 = PropertyValuesHolder.ofFloat(SCALE_X, 1, 0.2f);
                 PropertyValuesHolder pvh3 = PropertyValuesHolder.ofFloat(SCALE_Y, 1, 0.2f);
@@ -1113,11 +878,10 @@ public class TestFragment extends Fragment {
             @Override
             protected void onDraw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.obtain();
-                paint.setARGB(128, 140, 200, 240);
+                paint.setColor(SystemTheme.currentTheme().colorPrimaryContainer);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
                 int x = getWidth() / 2 - 20;
-                TextUtils.drawTextRun(canvas, "18:52 modernui", 0, 14, 0, 14, x, offsetY + 24,
-                        false, mTextPaint);
+                canvas.drawShapedText(mText, x, offsetY + 24, mTextPaint);
                 paint.recycle();
             }
 
@@ -1126,15 +890,6 @@ public class TestFragment extends Fragment {
                 mAnimator.start();
                 return super.performClick();
             }
-
-            /*public void tick() {
-                mTicks++;
-                if (mTicks % 40 == 0) {
-                    animation.invert();
-                } else if (mTicks % 20 == 0) {
-                    animation.start();
-                }
-            }*/
         }
     }
 
