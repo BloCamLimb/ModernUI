@@ -103,8 +103,16 @@ public class SystemTheme {
         setCurrentTheme(createMaterial(false));
     }
 
+    public static void setToDefaultDark() {
+        setCurrentTheme(createDefault(true, 2));
+    }
+
+    public static void setToDefaultLight() {
+        setCurrentTheme(createDefault(false, 0));
+    }
+
     static {
-        setToMaterialDark();
+        setToDefaultDark();
     }
 
     public int
@@ -516,6 +524,458 @@ public class SystemTheme {
         int dp2 = spinner.dp(2);
         popupBackground.setPadding(dp2, dp2, dp2, dp2);
         spinner.setPopupBackgroundDrawable(popupBackground);
+    }
+
+    public static SystemTheme createDefault(boolean isDark, int subclass) {
+        SystemTheme t = new SystemTheme();
+        int colorTextPrimaryInverse;
+        int colorTextSecondaryAndTertiaryInverse;
+        int colorTextSecondaryAndTertiaryInverseDisabled;
+        int colorTextPrimaryInverseDisableOnly;
+        int colorTextHintInverse;
+        if (subclass == 0) {
+            if (isDark) {
+                t.colorSurface = 0xFF1A110F;
+                t.colorSurfaceDim = 0xFF1A110F;
+                t.colorSurfaceBright = 0xFF423734;
+                t.colorSurfaceContainerLowest = 0xFF140C0A;
+                t.colorSurfaceContainerLow = 0xFF231917;
+                t.colorSurfaceContainer = 0xFF271D1B;
+                t.colorSurfaceContainerHigh = 0xFF322825;
+                t.colorSurfaceContainerHighest = 0xFF3D3230;
+                t.colorOnSurface = 0xFFF1DFDA;
+                t.colorSurfaceVariant = 0xFF53433F;
+                t.colorOnSurfaceVariant = 0xFFD8C2BC;
+                t.colorSurfaceInverse = 0xFFF1DFDA;
+                t.colorOnSurfaceInverse = 0xFF392E2B;
+                t.colorOutline = 0xFFA08C87;
+                t.colorOutlineVariant = 0xFF53433F;
+                t.colorPrimary = 0xFFFFB5A1;
+                t.colorOnPrimary = 0xFF561F10;
+                t.colorPrimaryContainer = 0xFF723523;
+                t.colorOnPrimaryContainer = 0xFFFFDBD1;
+                t.colorPrimaryInverse = 0xFF8F4B39;
+                t.colorSecondary = 0xFFE7BDB2;
+                t.colorOnSecondary = 0xFF442A23;
+                t.colorSecondaryContainer = 0xFF5D4038;
+                t.colorOnSecondaryContainer = 0xFFFFDBD1;
+                t.colorTertiary = 0xFFD9C58D;
+                t.colorOnTertiary = 0xFF3B2F05;
+                t.colorTertiaryContainer = 0xFF534619;
+                t.colorOnTertiaryContainer = 0xFFF6E1A6;
+                t.colorError = 0xFFFFB4AB;
+                t.colorOnError = 0xFF690005;
+                t.colorErrorContainer = 0xFF93000A;
+                t.colorOnErrorContainer = 0xFFFFDAD6;
+                colorTextPrimaryInverse = 0xFF231917;
+                colorTextSecondaryAndTertiaryInverse = 0xFF53433F;
+                colorTextSecondaryAndTertiaryInverseDisabled = 0xFF231917;
+                colorTextPrimaryInverseDisableOnly = 0xFF231917;
+                colorTextHintInverse = 0xFF231917;
+            } else {
+                t.colorSurface = 0xFFFFF8F6;
+                t.colorSurfaceDim = 0xFFE8D6D2;
+                t.colorSurfaceBright = 0xFFFFF8F6;
+                t.colorSurfaceContainerLowest = 0xFFFFFFFF;
+                t.colorSurfaceContainerLow = 0xFFFFF1ED;
+                t.colorSurfaceContainer = 0xFFFCEAE5;
+                t.colorSurfaceContainerHigh = 0xFFF7E4E0;
+                t.colorSurfaceContainerHighest = 0xFFF1DFDA;
+                t.colorOnSurface = 0xFF231917;
+                t.colorSurfaceVariant = 0xFFF5DED8;
+                t.colorOnSurfaceVariant = 0xFF53433F;
+                t.colorSurfaceInverse = 0xFF392E2B;
+                t.colorOnSurfaceInverse = 0xFFFFEDE8;
+                t.colorOutline = 0xFF85736E;
+                t.colorOutlineVariant = 0xFFD8C2BC;
+                t.colorPrimary = 0xFF8F4B39;
+                t.colorOnPrimary = 0xFFFFFFFF;
+                t.colorPrimaryContainer = 0xFFFFDBD1;
+                t.colorOnPrimaryContainer = 0xFF723523;
+                t.colorPrimaryInverse = 0xFFFFB5A1;
+                t.colorSecondary = 0xFF77574E;
+                t.colorOnSecondary = 0xFFFFFFFF;
+                t.colorSecondaryContainer = 0xFFFFDBD1;
+                t.colorOnSecondaryContainer = 0xFF5D4038;
+                t.colorTertiary = 0xFF6C5D2F;
+                t.colorOnTertiary = 0xFFFFFFFF;
+                t.colorTertiaryContainer = 0xFFF6E1A6;
+                t.colorOnTertiaryContainer = 0xFF534619;
+                t.colorError = 0xFFBA1A1A;
+                t.colorOnError = 0xFFFFFFFF;
+                t.colorErrorContainer = 0xFFFFDAD6;
+                t.colorOnErrorContainer = 0xFF93000A;
+                colorTextPrimaryInverse = 0xFFF1DFDA;
+                colorTextSecondaryAndTertiaryInverse = 0xFFD8C2BC;
+                colorTextSecondaryAndTertiaryInverseDisabled = 0xFFF1DFDA;
+                colorTextPrimaryInverseDisableOnly = 0xFFF1DFDA;
+                colorTextHintInverse = 0xFFF1DFDA;
+            }
+            t.colorPrimaryFixed = 0xFFFFDBD1;
+            t.colorPrimaryFixedDim = 0xFFFFB5A1;
+            t.colorOnPrimaryFixed = 0xFF3A0B01;
+            t.colorOnPrimaryFixedVariant = 0xFF723523;
+            t.colorSecondaryFixed = 0xFFFFDBD1;
+            t.colorSecondaryFixedDim = 0xFFE7BDB2;
+            t.colorOnSecondaryFixed = 0xFF2C150F;
+            t.colorOnSecondaryFixedVariant = 0xFF5D4038;
+            t.colorTertiaryFixed = 0xFFF6E1A6;
+            t.colorTertiaryFixedDim = 0xFFD9C58D;
+            t.colorOnTertiaryFixed = 0xFF231B00;
+            t.colorOnTertiaryFixedVariant = 0xFF534619;
+        } else if (subclass == 1) {
+            if (isDark) {
+                t.colorSurface = 0xFF161312;
+                t.colorSurfaceDim = 0xFF161312;
+                t.colorSurfaceBright = 0xFF3D3837;
+                t.colorSurfaceContainerLowest = 0xFF110D0D;
+                t.colorSurfaceContainerLow = 0xFF1E1B1A;
+                t.colorSurfaceContainer = 0xFF221F1E;
+                t.colorSurfaceContainerHigh = 0xFF2D2928;
+                t.colorSurfaceContainerHighest = 0xFF383433;
+                t.colorOnSurface = 0xFFE9E1DF;
+                t.colorSurfaceVariant = 0xFF504441;
+                t.colorOnSurfaceVariant = 0xFFD4C3BE;
+                t.colorSurfaceInverse = 0xFFE9E1DF;
+                t.colorOnSurfaceInverse = 0xFF342F2E;
+                t.colorOutline = 0xFF9D8D8A;
+                t.colorOutlineVariant = 0xFF504441;
+                t.colorPrimary = 0xFFEABEB2;
+                t.colorOnPrimary = 0xFF452922;
+                t.colorPrimaryContainer = 0xFFCDA398;
+                t.colorOnPrimaryContainer = 0xFF573931;
+                t.colorPrimaryInverse = 0xFF78564D;
+                t.colorSecondary = 0xFFD9C1BC;
+                t.colorOnSecondary = 0xFF3C2D29;
+                t.colorSecondaryContainer = 0xFF564541;
+                t.colorOnSecondaryContainer = 0xFFCAB4AE;
+                t.colorTertiary = 0xFFD6C6A0;
+                t.colorOnTertiary = 0xFF392F14;
+                t.colorTertiaryContainer = 0xFFBAAB86;
+                t.colorOnTertiaryContainer = 0xFF4A3F22;
+                t.colorError = 0xFFFFB4AB;
+                t.colorOnError = 0xFF690005;
+                t.colorErrorContainer = 0xFF93000A;
+                t.colorOnErrorContainer = 0xFFFFDAD6;
+                colorTextPrimaryInverse = 0xFF1E1B1A;
+                colorTextSecondaryAndTertiaryInverse = 0xFF504441;
+                colorTextPrimaryInverseDisableOnly = 0xFF1E1B1A;
+                colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1E1B1A;
+                colorTextHintInverse = 0xFF1E1B1A;
+            } else {
+                t.colorSurface = 0xFFFFF8F6;
+                t.colorSurfaceDim = 0xFFE0D8D6;
+                t.colorSurfaceBright = 0xFFFFF8F6;
+                t.colorSurfaceContainerLowest = 0xFFFFFFFF;
+                t.colorSurfaceContainerLow = 0xFFFBF2F0;
+                t.colorSurfaceContainer = 0xFFF5ECEA;
+                t.colorSurfaceContainerHigh = 0xFFEFE6E4;
+                t.colorSurfaceContainerHighest = 0xFFE9E1DF;
+                t.colorOnSurface = 0xFF1E1B1A;
+                t.colorSurfaceVariant = 0xFFF1DFDA;
+                t.colorOnSurfaceVariant = 0xFF504441;
+                t.colorSurfaceInverse = 0xFF342F2E;
+                t.colorOnSurfaceInverse = 0xFFF8EFED;
+                t.colorOutline = 0xFF827470;
+                t.colorOutlineVariant = 0xFFD4C3BE;
+                t.colorPrimary = 0xFF78564D;
+                t.colorOnPrimary = 0xFFFFFFFF;
+                t.colorPrimaryContainer = 0xFFCDA398;
+                t.colorOnPrimaryContainer = 0xFF573931;
+                t.colorPrimaryInverse = 0xFFE9BDB1;
+                t.colorSecondary = 0xFF6C5A56;
+                t.colorOnSecondary = 0xFFFFFFFF;
+                t.colorSecondaryContainer = 0xFFF6DDD7;
+                t.colorOnSecondaryContainer = 0xFF73605C;
+                t.colorTertiary = 0xFF695D3E;
+                t.colorOnTertiary = 0xFFFFFFFF;
+                t.colorTertiaryContainer = 0xFFBAAB86;
+                t.colorOnTertiaryContainer = 0xFF4A3F22;
+                t.colorError = 0xFFBA1A1A;
+                t.colorOnError = 0xFFFFFFFF;
+                t.colorErrorContainer = 0xFFFFDAD6;
+                t.colorOnErrorContainer = 0xFF93000A;
+                colorTextPrimaryInverse = 0xFFE9E1DF;
+                colorTextSecondaryAndTertiaryInverse = 0xFFD4C3BE;
+                colorTextPrimaryInverseDisableOnly = 0xFFE9E1DF;
+                colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE9E1DF;
+                colorTextHintInverse = 0xFFE9E1DF;
+            }
+            t.colorPrimaryFixed = 0xFFFFDBD1;
+            t.colorPrimaryFixedDim = 0xFFE9BDB1;
+            t.colorOnPrimaryFixed = 0xFF2D150E;
+            t.colorOnPrimaryFixedVariant = 0xFF5E3F37;
+            t.colorSecondaryFixed = 0xFFF6DDD7;
+            t.colorSecondaryFixedDim = 0xFFD9C1BC;
+            t.colorOnSecondaryFixed = 0xFF251915;
+            t.colorOnSecondaryFixedVariant = 0xFF53433F;
+            t.colorTertiaryFixed = 0xFFF2E1B9;
+            t.colorTertiaryFixedDim = 0xFFD5C59F;
+            t.colorOnTertiaryFixed = 0xFF231B03;
+            t.colorOnTertiaryFixedVariant = 0xFF504628;
+        } else if (subclass == 2) {
+            if (isDark) {
+                t.colorSurface = 0xFF161312;
+                t.colorSurfaceDim = 0xFF161312;
+                t.colorSurfaceBright = 0xFF3C3837;
+                t.colorSurfaceContainerLowest = 0xFF100E0D;
+                t.colorSurfaceContainerLow = 0xFF1E1B1A;
+                t.colorSurfaceContainer = 0xFF221F1E;
+                t.colorSurfaceContainerHigh = 0xFF2D2928;
+                t.colorSurfaceContainerHighest = 0xFF383433;
+                t.colorOnSurface = 0xFFE9E1DF;
+                t.colorSurfaceVariant = 0xFF4A4645;
+                t.colorOnSurfaceVariant = 0xFFCCC5C3;
+                t.colorSurfaceInverse = 0xFFE9E1DF;
+                t.colorOnSurfaceInverse = 0xFF332F2F;
+                t.colorOutline = 0xFF968F8E;
+                t.colorOutlineVariant = 0xFF4A4645;
+                t.colorPrimary = 0xFFE0BFB7;
+                t.colorOnPrimary = 0xFF402C26;
+                t.colorPrimaryContainer = 0xFF58413B;
+                t.colorOnPrimaryContainer = 0xFFFDDBD3;
+                t.colorPrimaryInverse = 0xFF715952;
+                t.colorSecondary = 0xFFD8C2BC;
+                t.colorOnSecondary = 0xFF3B2D2A;
+                t.colorSecondaryContainer = 0xFF53433F;
+                t.colorOnSecondaryContainer = 0xFFF5DED8;
+                t.colorTertiary = 0xFFE7BDB2;
+                t.colorOnTertiary = 0xFF442A23;
+                t.colorTertiaryContainer = 0xFF5D4038;
+                t.colorOnTertiaryContainer = 0xFFFFDBD1;
+                t.colorError = 0xFFFFB4AB;
+                t.colorOnError = 0xFF690005;
+                t.colorErrorContainer = 0xFF93000A;
+                t.colorOnErrorContainer = 0xFFFFDAD6;
+                colorTextPrimaryInverse = 0xFF1E1B1A;
+                colorTextSecondaryAndTertiaryInverse = 0xFF4A4645;
+                colorTextPrimaryInverseDisableOnly = 0xFF1E1B1A;
+                colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1E1B1A;
+                colorTextHintInverse = 0xFF1E1B1A;
+            } else {
+                t.colorSurface = 0xFFFFF8F6;
+                t.colorSurfaceDim = 0xFFE0D8D6;
+                t.colorSurfaceBright = 0xFFFFF8F6;
+                t.colorSurfaceContainerLowest = 0xFFFFFFFF;
+                t.colorSurfaceContainerLow = 0xFFFAF2F0;
+                t.colorSurfaceContainer = 0xFFF4ECEA;
+                t.colorSurfaceContainerHigh = 0xFFEFE6E4;
+                t.colorSurfaceContainerHighest = 0xFFE9E1DF;
+                t.colorOnSurface = 0xFF1E1B1A;
+                t.colorSurfaceVariant = 0xFFE9E1DF;
+                t.colorOnSurfaceVariant = 0xFF4A4645;
+                t.colorSurfaceInverse = 0xFF332F2F;
+                t.colorOnSurfaceInverse = 0xFFF7EFED;
+                t.colorOutline = 0xFF7C7674;
+                t.colorOutlineVariant = 0xFFCCC5C3;
+                t.colorPrimary = 0xFF715952;
+                t.colorOnPrimary = 0xFFFFFFFF;
+                t.colorPrimaryContainer = 0xFFFDDBD3;
+                t.colorOnPrimaryContainer = 0xFF58413B;
+                t.colorPrimaryInverse = 0xFFE0BFB7;
+                t.colorSecondary = 0xFF6C5B56;
+                t.colorOnSecondary = 0xFFFFFFFF;
+                t.colorSecondaryContainer = 0xFFF5DED8;
+                t.colorOnSecondaryContainer = 0xFF53433F;
+                t.colorTertiary = 0xFF77574E;
+                t.colorOnTertiary = 0xFFFFFFFF;
+                t.colorTertiaryContainer = 0xFFFFDBD1;
+                t.colorOnTertiaryContainer = 0xFF5D4038;
+                t.colorError = 0xFFBA1A1A;
+                t.colorOnError = 0xFFFFFFFF;
+                t.colorErrorContainer = 0xFFFFDAD6;
+                t.colorOnErrorContainer = 0xFF93000A;
+                colorTextPrimaryInverse = 0xFFE9E1DF;
+                colorTextSecondaryAndTertiaryInverse = 0xFFCCC5C3;
+                colorTextPrimaryInverseDisableOnly = 0xFFE9E1DF;
+                colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE9E1DF;
+                colorTextHintInverse = 0xFFE9E1DF;
+            }
+            t.colorPrimaryFixed = 0xFFFDDBD3;
+            t.colorPrimaryFixedDim = 0xFFE0BFB7;
+            t.colorOnPrimaryFixed = 0xFF291712;
+            t.colorOnPrimaryFixedVariant = 0xFF58413B;
+            t.colorSecondaryFixed = 0xFFF5DED8;
+            t.colorSecondaryFixedDim = 0xFFD8C2BC;
+            t.colorOnSecondaryFixed = 0xFF251915;
+            t.colorOnSecondaryFixedVariant = 0xFF53433F;
+            t.colorTertiaryFixed = 0xFFFFDBD1;
+            t.colorTertiaryFixedDim = 0xFFE7BDB2;
+            t.colorOnTertiaryFixed = 0xFF2C150F;
+            t.colorOnTertiaryFixedVariant = 0xFF5D4038;
+        } else {
+            if (isDark) {
+                t.colorSurface = 0xFF131313;
+                t.colorSurfaceDim = 0xFF131313;
+                t.colorSurfaceBright = 0xFF393939;
+                t.colorSurfaceContainerLowest = 0xFF0E0E0E;
+                t.colorSurfaceContainerLow = 0xFF1B1B1B;
+                t.colorSurfaceContainer = 0xFF1F1F1F;
+                t.colorSurfaceContainerHigh = 0xFF2A2A2A;
+                t.colorSurfaceContainerHighest = 0xFF353535;
+                t.colorOnSurface = 0xFFE2E2E2;
+                t.colorSurfaceVariant = 0xFF474747;
+                t.colorOnSurfaceVariant = 0xFFC6C6C6;
+                t.colorSurfaceInverse = 0xFFE2E2E2;
+                t.colorOnSurfaceInverse = 0xFF303030;
+                t.colorOutline = 0xFF919191;
+                t.colorOutlineVariant = 0xFF474747;
+                t.colorPrimary = 0xFFFFFFFF;
+                t.colorOnPrimary = 0xFF1B1B1B;
+                t.colorPrimaryContainer = 0xFFD4D4D4;
+                t.colorOnPrimaryContainer = 0xFF000000;
+                t.colorPrimaryInverse = 0xFF5E5E5E;
+                t.colorSecondary = 0xFFC6C6C6;
+                t.colorOnSecondary = 0xFF1B1B1B;
+                t.colorSecondaryContainer = 0xFF474747;
+                t.colorOnSecondaryContainer = 0xFFE2E2E2;
+                t.colorTertiary = 0xFFE2E2E2;
+                t.colorOnTertiary = 0xFF1B1B1B;
+                t.colorTertiaryContainer = 0xFF919191;
+                t.colorOnTertiaryContainer = 0xFF000000;
+                t.colorError = 0xFFFFB4AB;
+                t.colorOnError = 0xFF690005;
+                t.colorErrorContainer = 0xFF93000A;
+                t.colorOnErrorContainer = 0xFFFFDAD6;
+                colorTextPrimaryInverse = 0xFF1B1B1B;
+                colorTextSecondaryAndTertiaryInverse = 0xFF474747;
+                colorTextPrimaryInverseDisableOnly = 0xFF1B1B1B;
+                colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1B1B1B;
+                colorTextHintInverse = 0xFF1B1B1B;
+            } else {
+                t.colorSurface = 0xFFF9F9F9;
+                t.colorSurfaceDim = 0xFFDADADA;
+                t.colorSurfaceBright = 0xFFF9F9F9;
+                t.colorSurfaceContainerLowest = 0xFFFFFFFF;
+                t.colorSurfaceContainerLow = 0xFFF3F3F3;
+                t.colorSurfaceContainer = 0xFFEEEEEE;
+                t.colorSurfaceContainerHigh = 0xFFE8E8E8;
+                t.colorSurfaceContainerHighest = 0xFFE2E2E2;
+                t.colorOnSurface = 0xFF1B1B1B;
+                t.colorSurfaceVariant = 0xFFE2E2E2;
+                t.colorOnSurfaceVariant = 0xFF474747;
+                t.colorSurfaceInverse = 0xFF303030;
+                t.colorOnSurfaceInverse = 0xFFF1F1F1;
+                t.colorOutline = 0xFF777777;
+                t.colorOutlineVariant = 0xFFC6C6C6;
+                t.colorPrimary = 0xFF000000;
+                t.colorOnPrimary = 0xFFE2E2E2;
+                t.colorPrimaryContainer = 0xFF3B3B3B;
+                t.colorOnPrimaryContainer = 0xFFFFFFFF;
+                t.colorPrimaryInverse = 0xFFC6C6C6;
+                t.colorSecondary = 0xFF5E5E5E;
+                t.colorOnSecondary = 0xFFFFFFFF;
+                t.colorSecondaryContainer = 0xFFD4D4D4;
+                t.colorOnSecondaryContainer = 0xFF1B1B1B;
+                t.colorTertiary = 0xFF3B3B3B;
+                t.colorOnTertiary = 0xFFE2E2E2;
+                t.colorTertiaryContainer = 0xFF747474;
+                t.colorOnTertiaryContainer = 0xFFFFFFFF;
+                t.colorError = 0xFFBA1A1A;
+                t.colorOnError = 0xFFFFFFFF;
+                t.colorErrorContainer = 0xFFFFDAD6;
+                t.colorOnErrorContainer = 0xFF410002;
+                colorTextPrimaryInverse = 0xFFE2E2E2;
+                colorTextSecondaryAndTertiaryInverse = 0xFFC6C6C6;
+                colorTextPrimaryInverseDisableOnly = 0xFFE2E2E2;
+                colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE2E2E2;
+                colorTextHintInverse = 0xFFE2E2E2;
+            }
+            t.colorPrimaryFixed = 0xFF5E5E5E;
+            t.colorPrimaryFixedDim = 0xFF474747;
+            t.colorOnPrimaryFixed = 0xFFFFFFFF;
+            t.colorOnPrimaryFixedVariant = 0xFFE2E2E2;
+            t.colorSecondaryFixed = 0xFFC6C6C6;
+            t.colorSecondaryFixedDim = 0xFFABABAB;
+            t.colorOnSecondaryFixed = 0xFF1B1B1B;
+            t.colorOnSecondaryFixedVariant = 0xFF3B3B3B;
+            t.colorTertiaryFixed = 0xFF5E5E5E;
+            t.colorTertiaryFixedDim = 0xFF474747;
+            t.colorOnTertiaryFixed = 0xFFFFFFFF;
+            t.colorOnTertiaryFixedVariant = 0xFFE2E2E2;
+        }
+
+        t.colorBackground = t.colorSurface;
+        t.colorOnBackground = t.colorOnSurface;
+
+        var textStateSpec = new int[][]{
+                new int[]{-R.attr.state_enabled},
+                StateSet.WILD_CARD
+        };
+        t.textColorPrimary = new ColorStateList(
+                textStateSpec,
+                new int[]{
+                        modulateColor(t.colorOnSurface, 0.38f),
+                        t.colorOnSurface
+                }
+        );
+        t.textColorPrimaryInverse = new ColorStateList(
+                textStateSpec,
+                new int[]{
+                        modulateColor(colorTextPrimaryInverse, 0.38f),
+                        colorTextPrimaryInverse
+                }
+        );
+        t.textColorSecondary = new ColorStateList(
+                textStateSpec,
+                new int[]{
+                        modulateColor(t.colorOnSurface, 0.38f),
+                        t.colorOnSurfaceVariant
+                }
+        );
+        t.textColorSecondaryInverse = new ColorStateList(
+                textStateSpec,
+                new int[]{
+                        modulateColor(colorTextSecondaryAndTertiaryInverseDisabled, 0.38f),
+                        colorTextSecondaryAndTertiaryInverse
+                }
+        );
+        t.textColorPrimaryDisableOnly = new ColorStateList(
+                textStateSpec,
+                new int[]{
+                        modulateColor(t.colorOnBackground, 0.6f),
+                        t.colorOnBackground
+                }
+        );
+        t.textColorPrimaryInverseDisableOnly = new ColorStateList(
+                textStateSpec,
+                new int[]{
+                        modulateColor(colorTextPrimaryInverseDisableOnly, 0.6f),
+                        colorTextPrimaryInverseDisableOnly
+                }
+        );
+        var hintStateSpec = new int[][]{
+                new int[]{R.attr.state_enabled, R.attr.state_pressed},
+                StateSet.WILD_CARD
+        };
+        t.textColorHint = new ColorStateList(
+                hintStateSpec,
+                new int[]{
+                        modulateColor(t.colorOnBackground, 0.6f),
+                        modulateColor(t.colorOnBackground, 0.38f)
+                }
+        );
+        t.textColorHintInverse = new ColorStateList(
+                hintStateSpec,
+                new int[]{
+                        modulateColor(colorTextHintInverse, 0.87f),
+                        modulateColor(colorTextHintInverse, 0.6f)
+                }
+        );
+        t.textColorTertiary = t.textColorSecondary;
+        t.textColorTertiaryInverse = t.textColorSecondaryInverse;
+
+        t.textColorHighlight = modulateColor(t.colorPrimary, 0.6f);
+        t.textColorHighlightInverse = modulateColor(t.colorPrimaryInverse, 0.6f);
+
+        t.textColorLink = ColorStateList.valueOf(t.colorPrimary);
+        t.textColorLinkInverse = ColorStateList.valueOf(t.colorPrimaryInverse);
+
+        t.textColorAlertDialogListItem = t.textColorPrimary;
+
+        t.isDark = isDark;
+
+        return t;
     }
 
     // Base.V14.Theme.Material3.Dark
