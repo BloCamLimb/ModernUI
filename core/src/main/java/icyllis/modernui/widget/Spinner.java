@@ -28,7 +28,6 @@ import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.MotionEvent;
-import icyllis.modernui.view.PointerIcon;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.menu.ShowableListMenu;
@@ -512,14 +511,6 @@ public class Spinner extends AbsSpinner {
         }
 
         return width;
-    }
-
-    @Override
-    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
-        if (isClickable() && isEnabled()) {
-            return PointerIcon.getSystemIcon(PointerIcon.TYPE_HAND);
-        }
-        return super.onResolvePointerIcon(event);
     }
 
     /**
