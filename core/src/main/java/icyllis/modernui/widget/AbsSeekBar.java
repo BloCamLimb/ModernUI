@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2007 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
@@ -22,12 +39,18 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewParent;
 
+// Modified from Android
 public abstract class AbsSeekBar extends ProgressBar {
 
     private Drawable mThumb;
@@ -71,10 +94,13 @@ public abstract class AbsSeekBar extends ProgressBar {
     private boolean mIsDragging;
     private float mTouchThumbOffset = 0.0f;
 
+    private final Rect mTempRect = new Rect();
     private final Rect mThumbRect = new Rect();
 
     public AbsSeekBar(Context context) {
         super(context);
+
+        setFocusable(true);
     }
 
     /**
@@ -570,8 +596,26 @@ public abstract class AbsSeekBar extends ProgressBar {
 
     @Override
     void drawTrack(Canvas canvas) {
-        super.drawTrack(canvas);
-        drawTickMarks(canvas);
+        final Drawable thumbDrawable = mThumb;
+        if (thumbDrawable != null && mSplitTrack) {
+            //TODO
+            //final Insets insets = thumbDrawable.getOpticalInsets();
+            final Rect tempRect = mTempRect;
+            thumbDrawable.copyBounds(tempRect);
+            tempRect.offset(mPaddingLeft - mThumbOffset, mPaddingTop);
+            // Modern UI changed: outset the rect instead of inset
+            tempRect.left -= thumbDrawable.getIntrinsicWidth();
+            tempRect.right += thumbDrawable.getIntrinsicWidth();
+
+            final int saveCount = canvas.save();
+            canvas.clipOutRect(tempRect);
+            super.drawTrack(canvas);
+            drawTickMarks(canvas);
+            canvas.restoreToCount(saveCount);
+        } else {
+            super.drawTrack(canvas);
+            drawTickMarks(canvas);
+        }
     }
 
     protected void drawTickMarks(Canvas canvas) {
@@ -584,9 +628,22 @@ public abstract class AbsSeekBar extends ProgressBar {
                 final int halfH = h >= 0 ? h / 2 : 1;
                 mTickMark.setBounds(-halfW, -halfH, halfW, halfH);
 
-                final float spacing = (getWidth() - mPaddingLeft - mPaddingRight) / (float) count;
                 final int saveCount = canvas.save();
-                canvas.translate(mPaddingLeft, getHeight() / 2f);
+
+                // Modern UI changed: respect thumbOffset
+                final Drawable thumb = mThumb;
+                int available = getWidth() - mPaddingLeft - mPaddingRight;
+                if (thumb != null) {
+                    int thumbWidth = thumb.getIntrinsicWidth();
+                    available -= thumbWidth;
+                    available += mThumbOffset * 2;
+                    int offset = mThumbOffset - thumbWidth / 2;
+                    canvas.translate(mPaddingLeft - offset, getHeight() / 2f);
+                } else {
+                    canvas.translate(mPaddingLeft, getHeight() / 2f);
+                }
+
+                final float spacing = available / (float) count;
                 for (int i = 0; i <= count; i++) {
                     mTickMark.draw(canvas);
                     canvas.translate(spacing, 0);
@@ -610,6 +667,19 @@ public abstract class AbsSeekBar extends ProgressBar {
         }
     }
 
+    // Modern UI added
+    private boolean isInVerticalScrollingContainer() {
+        ViewParent p = getParent();
+        while (p instanceof ViewGroup parent) {
+            boolean canScrollVertically = parent.canScrollVertically(1) || parent.canScrollVertically(-1);
+            if (canScrollVertically && parent.shouldDelayChildPressedState()) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
+    }
+
     @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
         if (!mIsUserSeekable || !isEnabled()) {
@@ -626,7 +696,7 @@ public abstract class AbsSeekBar extends ProgressBar {
                         mTouchThumbOffset = 0;
                     }
                 }
-                if (isInScrollingContainer()) {
+                if (isInVerticalScrollingContainer()) {
                     mTouchDownX = event.getX();
                 } else {
                     startDrag(event);
@@ -723,7 +793,7 @@ public abstract class AbsSeekBar extends ProgressBar {
         progress += scale * range + getMin();
 
         setHotspot(x, y);
-        setProgressInternal(Math.round(progress), true, false);
+        setProgressInternal(Math.round(progress), true, mTickMark != null);
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,14 +18,16 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.R;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.drawable.*;
-import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.StateSet;
-import icyllis.modernui.view.Gravity;
 
+/**
+ * A SeekBar is an extension of ProgressBar that adds a draggable thumb. The user can touch
+ * the thumb and drag left or right to set the current progress level or use the arrow keys.
+ * Placing focusable widgets to the left or right of a SeekBar is discouraged.
+ * <p>
+ * Clients of the SeekBar can attach a {@link SeekBar.OnSeekBarChangeListener} to
+ * be notified of the user's actions.
+ */
 public class SeekBar extends AbsSeekBar {
 
     /**
@@ -73,55 +75,6 @@ public class SeekBar extends AbsSeekBar {
 
     public SeekBar(Context context) {
         super(context);
-
-        setFocusable(true);
-
-        if (getClass() == SeekBar.class) {
-            {
-                final Drawable track;
-                {
-                    var shape = new ShapeDrawable();
-                    shape.setShape(ShapeDrawable.HLINE);
-                    shape.setStroke(dp(2), SystemTheme.COLOR_CONTROL_ACTIVATED);
-                    shape.setSize(-1, dp(2));
-                    shape.setCornerRadius(1);
-                    track = new ScaleDrawable(shape, Gravity.LEFT, 1, -1);
-                }
-                final Drawable secondaryTrack;
-                {
-                    var shape = new ShapeDrawable();
-                    shape.setShape(ShapeDrawable.HLINE);
-                    shape.setStroke(dp(2), SystemTheme.COLOR_FOREGROUND_DISABLED);
-                    shape.setSize(-1, dp(2));
-                    shape.setCornerRadius(1);
-                    secondaryTrack = shape;
-                }
-                var progress = new LayerDrawable(secondaryTrack, track);
-                progress.setId(0, R.id.secondaryProgress);
-                progress.setId(1, R.id.progress);
-                setProgressDrawable(progress);
-            }
-            {
-                var thumb = new ShapeDrawable();
-                thumb.setShape(ShapeDrawable.CIRCLE);
-                thumb.setSize(dp(12), dp(12));
-                thumb.setColor(SystemTheme.COLOR_CONTROL_ACTIVATED);
-                int[][] stateSet = {
-                        StateSet.get(StateSet.VIEW_STATE_PRESSED),
-                        StateSet.get(StateSet.VIEW_STATE_HOVERED),
-                        StateSet.WILD_CARD
-                };
-                int[] colors = {
-                        0x80DDDDDD,
-                        0x80DDDDDD,
-                        0xFF808080
-                };
-                thumb.setStroke(dp(1.5f), new ColorStateList(stateSet, colors));
-                thumb.setUseLevelForShape(false);
-                setThumb(thumb);
-            }
-            setPadding(dp(16), 0, dp(16), 0);
-        }
     }
 
     @Override
