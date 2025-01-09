@@ -21,6 +21,7 @@ package icyllis.modernui.view;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.widget.TextView;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -36,7 +37,7 @@ public final class TooltipPopup {
     public TooltipPopup(Context context) {
         mContext = context;
         mTextView = new TextView(context);
-        mTextView.setTextColor(0xFFFFFFFF);
+        mTextView.setTextColor(SystemTheme.currentTheme().colorOnSurfaceInverse);
         mTextView.setTextSize(14);
         mParams = new WindowManager.LayoutParams();
         mParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -45,8 +46,8 @@ public final class TooltipPopup {
         mParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_ABOVE_SUB_PANEL;
         var background = new ShapeDrawable();
         background.setShape(ShapeDrawable.RECTANGLE);
-        background.setColor(0xE6313131);
-        background.setCornerRadius(mTextView.dp(2));
+        background.setColor(SystemTheme.currentTheme().colorSurfaceInverse);
+        background.setCornerRadius(mTextView.dp(4));
         mTextView.setBackground(background);
     }
 
