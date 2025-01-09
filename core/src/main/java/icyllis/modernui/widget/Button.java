@@ -20,10 +20,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.core.Context;
 import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.MotionEvent;
-import icyllis.modernui.view.PointerIcon;
-
-import javax.annotation.Nonnull;
 
 /**
  * A user interface element the user can tap or click to perform an action.
@@ -62,13 +58,5 @@ public class Button extends TextView {
         setFocusable(true);
         setClickable(true);
         setGravity(Gravity.CENTER);
-    }
-
-    @Override
-    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
-        if (isClickable() && isEnabled()) {
-            return PointerIcon.getSystemIcon(PointerIcon.TYPE_HAND);
-        }
-        return super.onResolvePointerIcon(event);
     }
 }
