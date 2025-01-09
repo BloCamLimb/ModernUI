@@ -24,6 +24,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.view.*;
 import org.apache.logging.log4j.Marker;
@@ -68,7 +69,6 @@ public final class ToastManager {
         mTextView.setEllipsize(TextUtils.TruncateAt.END);
         mTextView.setMaxLines(2);
         mBackground.setShape(ShapeDrawable.RECTANGLE);
-        mBackground.setColor(0xC0000000);
         mTextView.setBackground(mBackground);
     }
 
@@ -91,10 +91,12 @@ public final class ToastManager {
 
         mTextView.setText(r.mText);
         mTextView.setTextSize(14);
+        mTextView.setTextColor(SystemTheme.currentTheme().textColorPrimary);
         mTextView.setTypeface(ModernUI.getSelectedTypeface());
         mTextView.setMaxWidth(mTextView.dp(300));
         mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));
         mParams.y = mTextView.dp(64);
+        mBackground.setColor(SystemTheme.currentTheme().colorBackground);
         mBackground.setCornerRadius(mTextView.dp(28));
         mWindowManager.addView(mTextView, mParams);
 

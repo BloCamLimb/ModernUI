@@ -34,6 +34,7 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
+import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.method.LinkMovementMethod;
@@ -249,7 +250,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     public TextView(Context context) {
         super(context);
         setTextSize(16);
-        setTextColor(0xFFFFFFFF);
+        setTextColor(SystemTheme.currentTheme().textColorPrimary);
     }
 
     /**
