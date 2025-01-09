@@ -25,7 +25,9 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.transition.AutoTransition;
+import icyllis.modernui.transition.EpicenterTranslateClipReveal;
+import icyllis.modernui.transition.Fade;
+import icyllis.modernui.transition.TransitionSet;
 import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
@@ -149,23 +151,20 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
                 nextInfo = null;
             }
 
-            final Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    // Close any other submenus that might be open at the
-                    // current or a deeper level.
-                    if (nextInfo != null) {
-                        // Disable exit animations to prevent overlapping
-                        // fading out submenus.
-                        mShouldCloseImmediately = true;
-                        nextInfo.menu.close(false /* closeAllMenus */);
-                        mShouldCloseImmediately = false;
-                    }
+            final Runnable runnable = () -> {
+                // Close any other submenus that might be open at the
+                // current or a deeper level.
+                if (nextInfo != null) {
+                    // Disable exit animations to prevent overlapping
+                    // fading out submenus.
+                    mShouldCloseImmediately = true;
+                    nextInfo.menu.close(false /* closeAllMenus */);
+                    mShouldCloseImmediately = false;
+                }
 
-                    // Then open the selected submenu, if there is one.
-                    if (item.isEnabled() && item.hasSubMenu()) {
-                        menu.performItemAction(item, 0);
-                    }
+                // Then open the selected submenu, if there is one.
+                if (item.isEnabled() && item.hasSubMenu()) {
+                    menu.performItemAction(item, 0);
                 }
             };
             final long timeMillis = Core.timeMillis() + SUBMENU_TIMEOUT_MS;
@@ -230,8 +229,18 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
         background.setPadding(padding, padding, padding, padding);
         popupWindow.setBackgroundDrawable(background);
         //TODO configurable
-        popupWindow.setEnterTransition(new AutoTransition());
-        popupWindow.setExitTransition(new AutoTransition());
+        var enter1 = new EpicenterTranslateClipReveal();
+        enter1.setDuration(250);
+        var enter2 = new Fade();
+        enter2.setDuration(100);
+        var enterAnim = new TransitionSet();
+        enterAnim.addTransition(enter1);
+        enterAnim.addTransition(enter2);
+        enterAnim.setOrdering(TransitionSet.ORDERING_TOGETHER);
+        popupWindow.setEnterTransition(enterAnim);
+        var exitAnim = new Fade();
+        exitAnim.setDuration(300);
+        popupWindow.setExitTransition(exitAnim);
         // always overlap
         popupWindow.setOverlapAnchor(true);
 

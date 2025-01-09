@@ -22,7 +22,9 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.transition.AutoTransition;
+import icyllis.modernui.transition.EpicenterTranslateClipReveal;
+import icyllis.modernui.transition.Fade;
+import icyllis.modernui.transition.TransitionSet;
 import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
@@ -129,9 +131,18 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
         int padding = (int) Math.ceil(cornerRadius / 2f);
         background.setPadding(padding, padding, padding, padding);
         mPopup.setBackgroundDrawable(background);
-        //TODO configurable
-        mPopup.setEnterTransition(new AutoTransition());
-        mPopup.setExitTransition(new AutoTransition());
+        var enter1 = new EpicenterTranslateClipReveal();
+        enter1.setDuration(250);
+        var enter2 = new Fade();
+        enter2.setDuration(100);
+        var enterAnim = new TransitionSet();
+        enterAnim.addTransition(enter1);
+        enterAnim.addTransition(enter2);
+        enterAnim.setOrdering(TransitionSet.ORDERING_TOGETHER);
+        mPopup.setEnterTransition(enterAnim);
+        var exitAnim = new Fade();
+        exitAnim.setDuration(300);
+        mPopup.setExitTransition(exitAnim);
         // always overlap
         mPopup.setOverlapAnchor(true);
 
