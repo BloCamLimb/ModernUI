@@ -27,8 +27,6 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 import icyllis.modernui.widget.ImageView.ScaleType;
@@ -38,16 +36,8 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 /**
  * The item view for each item in the ListView-based MenuViews.
  */
-public class ListMenuItemView extends LinearLayout implements MenuView.ItemView, AbsListView.SelectionBoundsAdjuster {
-
-    private static final ColorStateList TEXT_COLOR = new ColorStateList(
-            new int[][]{
-                    StateSet.get(StateSet.VIEW_STATE_ENABLED),
-                    StateSet.WILD_CARD
-            }, new int[]{
-            0xFFFFFFFF,
-            0xFF808080
-    });
+public class ListMenuItemView extends LinearLayout
+        implements MenuView.ItemView, AbsListView.SelectionBoundsAdjuster {
 
     private MenuItemImpl mItemData;
 
@@ -85,8 +75,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
             {
                 mTitleView = new TextView(getContext());
                 mTitleView.setId(R.id.title);
-                mTitleView.setTextSize(14);
-                mTitleView.setTextColor(TEXT_COLOR);
+                SystemTheme.currentTheme().applyTextAppearanceBodyMedium(mTitleView);
                 mTitleView.setSingleLine();
                 mTitleView.setDuplicateParentStateEnabled(true);
                 mTitleView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
@@ -99,8 +88,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
 
             {
                 mShortcutView = new TextView(getContext());
-                mShortcutView.setTextSize(12);
-                mShortcutView.setTextColor(0xFFCECECE);
+                SystemTheme.currentTheme().applyTextAppearanceBodySmall(mShortcutView);
                 mShortcutView.setSingleLine();
                 mShortcutView.setDuplicateParentStateEnabled(true);
                 mShortcutView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
@@ -116,6 +104,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
                 mSubMenuArrowView.setScaleType(ScaleType.CENTER);
                 mSubMenuArrowView.setVisibility(GONE);
                 mSubMenuArrowView.setImageDrawable(new SubMenuArrowDrawable(context));
+                mSubMenuArrowView.setImageTintList(SystemTheme.currentTheme().textColorSecondary);
 
                 var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 params.gravity = Gravity.CENTER;
