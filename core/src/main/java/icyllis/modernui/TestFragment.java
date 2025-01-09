@@ -81,7 +81,7 @@ public class TestFragment extends Fragment {
         getChildFragmentManager().beginTransaction()
                 .replace(660, new FragmentA(), null)
                 .commit();
-        //SystemTheme.setToMaterialLight();
+        //SystemTheme.setToDefaultLight();
 
         /*CompletableFuture.runAsync(() -> {
             String text = "My name is van";
@@ -141,7 +141,7 @@ public class TestFragment extends Fragment {
         //base.setRotation(30);
         container.setClipChildren(true);
         container.setBackground(new ColorDrawable(SystemTheme.currentTheme().colorSurface));
-        //container.setBackground(new ColorDrawable((SystemTheme.currentTheme().colorSurface & 0xFFFFFF) | (0x80000000)));
+        //container.setBackground(new ColorDrawable((SystemTheme.currentTheme().colorSurface & 0xFFFFFF) | (0x99000000)));
         return base;
     }
 
@@ -497,12 +497,12 @@ public class TestFragment extends Fragment {
                             mPopupWindow.dismiss();
                         }*/
                     });
-                    switchButton.postDelayed(() -> {
+                    /*switchButton.postDelayed(() -> {
                         switchButton.toggle();
                     }, 2000);
                     switchButton.postDelayed(() -> {
                         switchButton.toggle();
-                    }, 4000);
+                    }, 4000);*/
                     p = new LayoutParams(dp(300), dp(40));
                 } else if (i == 2) {
                     continue;
@@ -593,7 +593,8 @@ public class TestFragment extends Fragment {
                     spinner.setMinimumWidth(dp(240));
                 } else if (i == 11) {
                     var seekbar = new SeekBar(getContext());
-                    seekbar.setMax(20);
+                    SystemTheme.currentTheme().applySeekBarStyle(seekbar, true);
+                    seekbar.setMax(8);
                     v = seekbar;
                     p = new LayoutParams(dp(200), WRAP_CONTENT);
                 } else {

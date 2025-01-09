@@ -25,15 +25,20 @@ import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.LayerDrawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
+import icyllis.modernui.graphics.drawable.ScaleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.drawable.ButtonRadioDrawable;
+import icyllis.modernui.material.drawable.SeekbarThumbDrawable;
 import icyllis.modernui.material.drawable.SwitchThumbDrawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
+import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.Button;
 import icyllis.modernui.widget.RadioButton;
+import icyllis.modernui.widget.SeekBar;
 import icyllis.modernui.widget.Spinner;
 import icyllis.modernui.widget.Switch;
 import icyllis.modernui.widget.TextView;
@@ -54,24 +59,6 @@ public class SystemTheme {
     public static final float SECONDARY_CONTENT_ALPHA = 0.7f;
 
     public static final int COLOR_CONTROL_ACTIVATED = 0xffcda398;
-
-    public static final ColorStateList TEXT_COLOR_SECONDARY;
-
-    static {
-        int[][] stateSet = {
-                new int[]{-R.attr.state_enabled},
-                new int[]{R.attr.state_hovered},
-                StateSet.WILD_CARD
-        };
-        int[] colors = {
-                COLOR_FOREGROUND_DISABLED,
-                COLOR_FOREGROUND,
-                COLOR_FOREGROUND_NORMAL
-        };
-        TEXT_COLOR_SECONDARY = new ColorStateList(stateSet, colors);
-    }
-
-    public static final ColorStateList COLOR_CONTROL_NORMAL = TEXT_COLOR_SECONDARY;
 
     public static int modulateColor(int baseColor, float alphaMod) {
         if (alphaMod == 1.0f) {
@@ -292,10 +279,28 @@ public class SystemTheme {
         tv.setLinkTextColor(textColorLink);
     }
 
+    public void applyTextAppearanceBodyLarge(TextView tv) {
+        tv.setTextStyle(Paint.NORMAL);
+        tv.setTextSize(16);
+        tv.setTextColor(textColorPrimary);
+        tv.setHintTextColor(textColorHint);
+        tv.setHighlightColor(textColorHighlight);
+        tv.setLinkTextColor(textColorLink);
+    }
+
     public void applyTextAppearanceBodyMedium(TextView tv) {
         tv.setTextStyle(Paint.NORMAL);
         tv.setTextSize(14);
         tv.setTextColor(textColorPrimary);
+        tv.setHintTextColor(textColorHint);
+        tv.setHighlightColor(textColorHighlight);
+        tv.setLinkTextColor(textColorLink);
+    }
+
+    public void applyTextAppearanceBodySmall(TextView tv) {
+        tv.setTextStyle(Paint.NORMAL);
+        tv.setTextSize(12);
+        tv.setTextColor(textColorSecondary);
         tv.setHintTextColor(textColorHint);
         tv.setHighlightColor(textColorHighlight);
         tv.setLinkTextColor(textColorLink);
@@ -524,6 +529,80 @@ public class SystemTheme {
         int dp2 = spinner.dp(2);
         popupBackground.setPadding(dp2, dp2, dp2, dp2);
         spinner.setPopupBackgroundDrawable(popupBackground);
+    }
+
+    private ColorStateList sliderTrackColorActive;
+    private ColorStateList sliderTrackColorActive() {
+        if (sliderTrackColorActive != null) {
+            return sliderTrackColorActive;
+        }
+        sliderTrackColorActive = new ColorStateList(
+                new int[][]{
+                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                        StateSet.WILD_CARD
+                },
+                new int[]{
+                        colorPrimary,
+                        modulateColor(colorOnSurface, 0.38f)
+                }
+        );
+        return sliderTrackColorActive;
+    }
+
+    private ColorStateList sliderTrackColorInactive;
+    private ColorStateList sliderTrackColorInactive() {
+        if (sliderTrackColorInactive != null) {
+            return sliderTrackColorInactive;
+        }
+        sliderTrackColorInactive = new ColorStateList(
+                new int[][]{
+                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                        StateSet.WILD_CARD
+                },
+                new int[]{
+                        colorSecondaryContainer,
+                        modulateColor(colorOnSurface, 0.12f)
+                }
+        );
+        return sliderTrackColorInactive;
+    }
+
+    public void applySeekBarStyle(SeekBar seekBar) {
+        applySeekBarStyle(seekBar, false);
+    }
+
+    public void applySeekBarStyle(SeekBar seekBar, boolean discrete) {
+        seekBar.setClickable(true);
+        var background = new ShapeDrawable();
+        background.setShape(ShapeDrawable.HLINE);
+        background.setSize(-1, seekBar.dp(10));
+        background.setCornerRadius(seekBar.dp(5));
+        background.setColor(sliderTrackColorInactive());
+        var progress = new ShapeDrawable();
+        progress.setShape(ShapeDrawable.HLINE);
+        progress.setSize(-1, seekBar.dp(10));
+        progress.setCornerRadius(seekBar.dp(5));
+        progress.setColor(sliderTrackColorActive());
+        var scaledProgress = new ScaleDrawable(progress, Gravity.LEFT, 1.0f, -1.0f);
+        var track = new LayerDrawable(background, scaledProgress);
+        track.setId(0, R.id.background);
+        track.setId(1, R.id.progress);
+        track.setLayerGravity(0, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
+        track.setLayerGravity(1, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
+        seekBar.setProgressDrawable(track);
+        seekBar.setSplitTrack(true);
+        var thumb = new SeekbarThumbDrawable(seekBar);
+        seekBar.setThumb(thumb);
+        seekBar.setThumbTintList(sliderTrackColorActive());
+        seekBar.setPadding(seekBar.dp(16), 0, seekBar.dp(16), 0);
+        if (discrete) {
+            var tick = new ShapeDrawable();
+            tick.setShape(ShapeDrawable.CIRCLE);
+            tick.setSize(seekBar.dp(4), seekBar.dp(4));
+            tick.setColor(sliderTrackColorInactive());
+            tick.setUseLevelForShape(false);
+            seekBar.setTickMark(tick);
+        }
     }
 
     public static SystemTheme createDefault(boolean isDark, int subclass) {
