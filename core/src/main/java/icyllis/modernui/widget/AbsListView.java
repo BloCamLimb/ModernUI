@@ -663,12 +663,12 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         /*setVerticalScrollBarEnabled(true);
         ShapeDrawable thumb = new ShapeDrawable();
         thumb.setShape(ShapeDrawable.VLINE);
-        thumb.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.COLOR_FOREGROUND, 0.25f));
+        thumb.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.currentTheme().colorOnSurfaceVariant, 0.25f));
         thumb.setCornerRadius(1);
         setVerticalScrollbarThumbDrawable(thumb);
         ShapeDrawable track = new ShapeDrawable();
         track.setShape(ShapeDrawable.VLINE);
-        track.setStroke(dp(4), 0x40808080);
+        track.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.currentTheme().colorOnSurfaceVariant, 0.25f));
         track.setSize(dp(4), -1);
         track.setCornerRadius(1);
         setVerticalScrollbarTrackDrawable(track);*/
