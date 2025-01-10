@@ -20,6 +20,7 @@
 package icyllis.arc3d.core.shaders;
 
 import icyllis.arc3d.core.*;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
@@ -104,16 +105,30 @@ public sealed interface Shader extends RefCounted
     //  Methods to create combinations or variants of shaders
 
     /**
-     * Return a shader that will apply the specified localMatrix to this shader.
-     * The specified matrix will be applied AFTER any matrix associated with this shader.
+     * Accepted by {@link #makeWithLocalMatrix(Matrixc, int)}, whether the specified matrix
+     * will be applied AFTER or BEFORE any matrix associated with this shader,
+     * or replace the matrix associated with this shader with the specified matrix.
+     */
+    int LOCAL_MATRIX_AFTER = 0,         // andThen
+            LOCAL_MATRIX_BEFORE = 1,    // compose
+            LOCAL_MATRIX_REPLACE = 2;
+
+    /**
+     * Creates a new shader that will apply the specified localMatrix to this shader.
      */
     @NonNull
     @SharedPtr
-    default Shader makeWithLocalMatrix(@NonNull Matrixc localMatrix) {
+    default Shader makeWithLocalMatrix(@NonNull Matrixc localMatrix,
+                                       @MagicConstant(intValues = {LOCAL_MATRIX_AFTER, LOCAL_MATRIX_BEFORE,
+                                               LOCAL_MATRIX_REPLACE}) int mode) {
         var lm = new Matrix(localMatrix);
         Shader base; // raw ptr
         if (this instanceof LocalMatrixShader lms) {
-            lm.preConcat(lms.getLocalMatrix());
+            if (mode == LOCAL_MATRIX_AFTER) {
+                lm.preConcat(lms.getLocalMatrix());
+            } else if (mode == LOCAL_MATRIX_BEFORE) {
+                lm.postConcat(lms.getLocalMatrix());
+            }
             base = lms.getBase();
         } else {
             base = this;
