@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,8 @@ import java.io.InputStream;
 /**
  * A Drawable that wraps an image and can be tiled, stretched, or aligned. You can create a
  * ImageDrawable from a file path, an input stream, or from a {@link Image} object.
+ *
+ * @see RoundedImageDrawable
  */
 public class ImageDrawable extends Drawable {
 
@@ -128,7 +130,7 @@ public class ImageDrawable extends Drawable {
 
     /**
      * Switch to a new Image object. Calling this method will also reset
-     * the subset to the full image, see {@link #setSrcRect(Rect)}.
+     * the subset to the full image, see {@link #setSubset(Rect)}.
      */
     public void setImage(@Nullable Image image) {
         if (mImageState.mImage != image) {
@@ -187,17 +189,18 @@ public class ImageDrawable extends Drawable {
 
     /**
      * Specifies the subset of the image to draw. To draw the full image,
-     * call {@link #setSrcRect(Rect)} with null.
+     * call {@link #setSubset(Rect)} with null.
      * <p>
      * Calling this method when there's no image has no effect. Next call
      * to {@link #setImage(Image)} will reset the subset to the full image.
      */
+    @Deprecated
     public void setSrcRect(int left, int top, int right, int bottom) {
         final Image image = mImageState.mImage;
         if (image == null) {
             return;
         }
-        setSrcRect(new Rect(left, top, right, bottom));
+        setSubset(new Rect(left, top, right, bottom));
     }
 
     /**
@@ -208,14 +211,27 @@ public class ImageDrawable extends Drawable {
      *
      * @param srcRect the subset of the image
      */
+    @Deprecated
     public void setSrcRect(@Nullable Rect srcRect) {
+        setSubset(srcRect);
+    }
+
+    /**
+     * Specifies the subset of the image to draw. Null for the full image.
+     * <p>
+     * Calling this method when there's no image has no effect. Next call
+     * to {@link #setImage(Image)} will reset the subset to the full image.
+     *
+     * @param subset the subset of the image
+     */
+    public void setSubset(@Nullable Rect subset) {
         final Image image = mImageState.mImage;
         if (image == null) {
             return;
         }
         int imageWidth = image.getWidth();
         int imageHeight = image.getHeight();
-        if (srcRect == null || srcRect.contains(0, 0, imageWidth, imageHeight)) {
+        if (subset == null || subset.contains(0, 0, imageWidth, imageHeight)) {
             if (!mFullImage) {
                 invalidateSelf();
             }
@@ -223,13 +239,13 @@ public class ImageDrawable extends Drawable {
         } else {
             if (mSrcRect == null) {
                 mSrcRect = new Rect(0, 0, imageWidth, imageHeight);
-                if (!mSrcRect.intersect(srcRect)) {
+                if (!mSrcRect.intersect(subset)) {
                     mSrcRect.setEmpty();
                 }
                 invalidateSelf();
-            } else if (!mSrcRect.equals(srcRect)) {
+            } else if (!mSrcRect.equals(subset)) {
                 mSrcRect.set(0, 0, imageWidth, imageHeight);
-                if (!mSrcRect.intersect(srcRect)) {
+                if (!mSrcRect.intersect(subset)) {
                     mSrcRect.setEmpty();
                 }
                 invalidateSelf();
