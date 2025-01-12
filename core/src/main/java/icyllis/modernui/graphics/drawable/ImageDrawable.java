@@ -121,6 +121,7 @@ public class ImageDrawable extends Drawable {
     /**
      * Returns the image used by this drawable to render. May be null.
      */
+    @Nullable
     public final Image getImage() {
         return mImageState.mImage;
     }
@@ -196,34 +197,7 @@ public class ImageDrawable extends Drawable {
         if (image == null) {
             return;
         }
-        int imageWidth = image.getWidth();
-        int imageHeight = image.getHeight();
-        if (left <= 0 && top <= 0 &&
-                right >= imageWidth && bottom >= imageHeight) {
-            if (!mFullImage) {
-                invalidateSelf();
-            }
-            mFullImage = true;
-        } else {
-            if (mSrcRect == null) {
-                mSrcRect = new Rect(0, 0, imageWidth, imageHeight);
-                if (!mSrcRect.intersect(left, top, right, bottom)) {
-                    mSrcRect.setEmpty();
-                }
-                invalidateSelf();
-            } else {
-                Rect oldBounds = mSrcRect;
-                if (oldBounds.left != left || oldBounds.top != top ||
-                        oldBounds.right != right || oldBounds.bottom != bottom) {
-                    mSrcRect.set(0, 0, imageWidth, imageHeight);
-                    if (!mSrcRect.intersect(left, top, right, bottom)) {
-                        mSrcRect.setEmpty();
-                    }
-                    invalidateSelf();
-                }
-            }
-            mFullImage = false;
-        }
+        setSrcRect(new Rect(left, top, right, bottom));
     }
 
     /**
@@ -241,8 +215,7 @@ public class ImageDrawable extends Drawable {
         }
         int imageWidth = image.getWidth();
         int imageHeight = image.getHeight();
-        if (srcRect == null || (srcRect.left <= 0 && srcRect.top <= 0 &&
-                srcRect.right >= imageWidth && srcRect.bottom >= imageHeight)) {
+        if (srcRect == null || srcRect.contains(0, 0, imageWidth, imageHeight)) {
             if (!mFullImage) {
                 invalidateSelf();
             }
@@ -254,14 +227,12 @@ public class ImageDrawable extends Drawable {
                     mSrcRect.setEmpty();
                 }
                 invalidateSelf();
-            } else {
-                if (!mSrcRect.equals(srcRect)) {
-                    mSrcRect.set(0, 0, imageWidth, imageHeight);
-                    if (!mSrcRect.intersect(srcRect)) {
-                        mSrcRect.setEmpty();
-                    }
-                    invalidateSelf();
+            } else if (!mSrcRect.equals(srcRect)) {
+                mSrcRect.set(0, 0, imageWidth, imageHeight);
+                if (!mSrcRect.intersect(srcRect)) {
+                    mSrcRect.setEmpty();
                 }
+                invalidateSelf();
             }
             mFullImage = false;
         }
@@ -479,7 +450,7 @@ public class ImageDrawable extends Drawable {
             state.mRebuildShader = false;
         } else {
             rebuildShader = false;
-            useShader = paint.getShader() != null;
+            useShader = paint.hasShader();
         }
 
         final int restoreAlpha;

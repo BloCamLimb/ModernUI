@@ -304,7 +304,6 @@ public class Paint {
     // closed by cleaner
     private final icyllis.arc3d.core.Paint mPaint;
 
-    private Shader          mShader;
     private ColorFilter     mColorFilter;
 
     // style + rendering hints (+ text decoration)
@@ -418,14 +417,12 @@ public class Paint {
     }
 
     private void internalReset() {
-        mShader = null;
         mColorFilter = null;
         mFlags = DEFAULT_FLAGS;
         mFontSize = 16;
     }
 
     private void internalSetFrom(@NonNull Paint paint) {
-        mShader = paint.mShader;
         mColorFilter = paint.mColorFilter;
         mFlags = paint.mFlags;
         mFontSize = paint.mFontSize;
@@ -816,27 +813,28 @@ public class Paint {
     ///// Effects
 
     /**
-     * Returns optional colors used when filling a path, such as a gradient.
+     * Returns true if there are optional colors used when filling a path, such as a gradient.
+     * <p>
+     * Note: There is no way to get the Shader object. The Shader set by {@link #setShader(Shader)}
+     * will be optimized and converted to internal form. However, this method guarantees that the
+     * return value is consistent with the nullability of the object passed to setShader method.
      *
-     * @return Shader if previously set, null otherwise
+     * @return true to use Shader colors, false to use Paint's solid color
      */
-    @Nullable
-    public Shader getShader() {
-        return mShader;
+    public boolean hasShader() {
+        return mPaint.getShader() != null;
     }
 
     /**
-     * Sets optional colors used when filling a path, such as a gradient.
+     * Sets optional colors used when drawing geometries and text, such as a gradient. The final alpha
+     * will be Shader's alpha modulated by Paint's alpha. Sets to null to use Paint's solid color.
      *
      * @param shader how geometry is filled with color; if null, solid color is used instead
      */
     public void setShader(@Nullable Shader shader) {
-        if (mShader != shader) {
-            mShader = shader;
-            mPaint.setShader(shader != null
-                    ? RefCnt.create(shader.getNativeShader())
-                    : null);
-        }
+        mPaint.setShader(shader != null
+                ? RefCnt.create(shader.getNativeShader())
+                : null);
     }
 
     /**
