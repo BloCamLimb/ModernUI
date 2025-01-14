@@ -11,7 +11,14 @@ dependencies {
 
 // for IntelliJ IDEA, you must set up this in IDEA Settings, Kotlin Compiler
 tasks.withType(KotlinCompilationTask).configureEach {
-    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+    compilerOptions{
+        jvmTarget.set(JvmTarget.JVM_17)
+        freeCompilerArgs.addAll(
+                '-Xno-call-assertions',
+                '-Xno-param-assertions',
+                '-Xno-receiver-assertions',
+        )
+    }
 }
 
 jar {
