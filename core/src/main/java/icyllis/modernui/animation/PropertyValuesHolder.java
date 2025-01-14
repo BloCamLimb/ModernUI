@@ -600,6 +600,11 @@ public sealed class PropertyValuesHolder implements Cloneable {
         return mAnimatedValue;
     }
 
+    @Override
+    public String toString() {
+        return (mProperty != null ? mProperty.getName() : "") + ": " + mKeyframes.toString();
+    }
+
     static final class IntPropertyValuesHolder extends PropertyValuesHolder {
 
         private int mIntAnimatedValue;

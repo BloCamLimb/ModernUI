@@ -368,4 +368,16 @@ public final class ObjectAnimator extends ValueAnimator {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("ObjectAnimator@" + Integer.toHexString(hashCode()) + ", target " +
+                getTarget());
+        if (mValues != null) {
+            for (var value : mValues) {
+                sb.append("\n    ").append(value.toString());
+            }
+        }
+        return sb.toString();
+    }
 }
