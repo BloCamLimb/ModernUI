@@ -1318,6 +1318,17 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
         return anim;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("ValueAnimator@" + Integer.toHexString(hashCode()));
+        if (mValues != null) {
+            for (var value : mValues) {
+                sb.append("\n    ").append(value.toString());
+            }
+        }
+        return sb.toString();
+    }
+
     /**
      * Implementors of this interface can add themselves as update listeners
      * to an <code>ValueAnimator</code> instance to receive callbacks on every animation

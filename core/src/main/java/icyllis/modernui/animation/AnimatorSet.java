@@ -1364,11 +1364,13 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
     @Nonnull
     @Override
     public String toString() {
-        StringBuilder returnVal = new StringBuilder("AnimatorSet@" + Integer.toHexString(hashCode()) + "{");
-        for (Node node : mNodes) {
-            returnVal.append("\n    ").append(node.mAnimation.toString());
+        StringBuilder sb = new StringBuilder("AnimatorSet@" + Integer.toHexString(hashCode()) + "{");
+        int size = mNodes.size();
+        for (int i = 0; i < size; i++) {
+            Node node = mNodes.get(i);
+            sb.append("\n    ").append(node.mAnimation.toString());
         }
-        return returnVal + "\n}";
+        return sb.append("\n}").toString();
     }
 
     private void printChildCount() {
