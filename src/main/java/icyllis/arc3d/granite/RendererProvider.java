@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ public class RendererProvider {
         return new GeometryRenderer(name, singleStep);
     }
 
-    // AA variant
+    // blur variant
     private final GeometryRenderer[] mSimpleBox = new GeometryRenderer[2];
     // mask format variant
     private final GeometryRenderer[] mRasterText = new GeometryRenderer[Engine.MASK_FORMAT_COUNT];
@@ -89,8 +89,8 @@ public class RendererProvider {
         );
     }
 
-    public GeometryRenderer getSimpleBox(boolean aa) {
-        return mSimpleBox[aa ? 1 : 0];
+    public GeometryRenderer getSimpleBox(boolean blur) {
+        return mSimpleBox[blur ? 1 : 0];
     }
 
     public GeometryRenderer getRasterText(int maskFormat) {

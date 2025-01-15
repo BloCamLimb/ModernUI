@@ -80,7 +80,7 @@ public class RoundRectOp extends MeshDrawOp {
     @Override
     protected GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView, int pipelineFlags) {
         return new GraphicsPipelineDesc_Old(writeView,
-                new AnalyticSimpleBoxStep(true), null, null, null,
+                new AnalyticSimpleBoxStep(false), null, null, null,
                 null, pipelineFlags);
     }
 

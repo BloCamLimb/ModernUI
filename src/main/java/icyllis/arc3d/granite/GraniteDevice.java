@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@ import icyllis.arc3d.core.effects.ColorFilter;
 import icyllis.arc3d.core.shaders.ImageShader;
 import icyllis.arc3d.core.shaders.Shader;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.geom.BlurredBox;
 import icyllis.arc3d.granite.geom.BoundsManager;
 import icyllis.arc3d.granite.geom.EdgeAAQuad;
 import icyllis.arc3d.granite.geom.HybridBoundsManager;
@@ -323,7 +324,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         var shape = new SimpleShape();
         shape.setLine(x0, y0, x1, y1, cap, width);
         drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, paint,
-                mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                mRC.getRendererProvider().getSimpleBox(false), null);
     }
 
     @Override
@@ -335,14 +336,14 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                     mRC.getRendererProvider().getPerEdgeAAQuad(), null);
         } else {
             drawGeometry(getLocalToDevice33(), new SimpleShape(r), SimpleShape::getBounds, paint,
-                    mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                    mRC.getRendererProvider().getSimpleBox(false), null);
         }
     }
 
     @Override
     public void drawRRect(RRect rr, Paint paint) {
         drawGeometry(getLocalToDevice33(), new SimpleShape(rr), SimpleShape::getBounds, paint,
-                mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                mRC.getRendererProvider().getSimpleBox(false), null);
     }
 
     @Override
@@ -350,7 +351,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         var shape = new SimpleShape();
         shape.setEllipse(cx, cy, radius, radius);
         drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, paint,
-                mRC.getRendererProvider().getSimpleBox(paint.isAntiAlias()), null);
+                mRC.getRendererProvider().getSimpleBox(false), null);
     }
 
     @Override
@@ -432,6 +433,33 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
             );
             container.draw(canvas, glyphRunList.mOriginX, glyphRunList.mOriginY, paint, this);
         }
+    }
+
+    public void drawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
+        if (rr.isEmpty() || !Float.isFinite(blurRadius)) {
+            return;
+        }
+        //TODO compute device blur radius
+        if (blurRadius < 0.1f) {
+            drawRRect(rr, paint);
+            return;
+        }
+        if (!(noiseAlpha >= 0f)) {
+            noiseAlpha = 0f;
+        }
+        float minDim = Math.min(rr.width(), rr.height());
+        BlurredBox shape = new BlurredBox(rr);
+        // we found that multiplying the radius by 1.25 is closest to a Gaussian blur with a sigma of radius/3
+        blurRadius *= 1.25f;
+        float radius = rr.getSimpleRadiusX();
+        // the closer to a rectangle, the larger the corner radius needs to be
+        float t = Math.min(radius / Math.min(minDim, blurRadius), 1.0f);
+        radius += MathUtil.lerp(0.36f, 0.09f, t) * blurRadius;
+        shape.mRadius = radius;
+        shape.mBlurRadius = blurRadius;
+        shape.mNoiseAlpha = noiseAlpha;
+        drawGeometry(getLocalToDevice33(), shape, BlurredBox::getBounds, paint,
+                mRC.getRendererProvider().getSimpleBox(true), null);
     }
 
     @Override
