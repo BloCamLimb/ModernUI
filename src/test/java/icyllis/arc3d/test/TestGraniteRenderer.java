@@ -93,13 +93,13 @@ public class TestGraniteRenderer {
         System.setProperty("java.awt.headless", "true");
         GLFW.glfwInit();
         LOGGER.info(Long.toString(ProcessHandle.current().pid()));
-        TinyFileDialogs.tinyfd_messageBox(
+        /*TinyFileDialogs.tinyfd_messageBox(
                 "Arc3D Test",
                 "Arc3D starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true
-        );
+        );*/
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         if (TEST_OPENGL_ES) {
@@ -268,6 +268,8 @@ public class TestGraniteRenderer {
         RecordingContext mRC;
         @SharedPtr
         Surface mSurface;
+        @RawPtr
+        GraniteDevice mGraniteDevice;
 
         @SharedPtr
         Surface mPostSurface;
@@ -310,6 +312,7 @@ public class TestGraniteRenderer {
                         true
                 );
                 Objects.requireNonNull(device);
+                mGraniteDevice = device;
                 mSurface = new GraniteSurface(device); // move
             }
             if (POST_PROCESS) {
@@ -534,7 +537,7 @@ public class TestGraniteRenderer {
 
         private void drawScene(Canvas canvas) {
             final int nRects = 10000;
-            canvas.clear(0x00000000);
+            canvas.clear(0xFFFFFFFF);
             canvas.save();
             Paint paint = new Paint();
             if (TEST_SCENE == 0) {
@@ -704,7 +707,7 @@ public class TestGraniteRenderer {
 
                 paint.setDither(false);
 
-                paint.setShader(RefCnt.create(mTestShader1));
+                //paint.setShader(RefCnt.create(mTestShader1));
                 paint.setStyle(Paint.FILL);
                 paint.setAlphaF(0.7f);
                 /*var mat = new Matrix4();
@@ -712,6 +715,11 @@ public class TestGraniteRenderer {
                 canvas.setMatrix(mat);*/
                 canvas.translate(1000, 100);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
+                paint.setShader(null);
+                paint.setColor4f(0, 0, 0, 0.227f);
+                mGraniteDevice.drawBlurredRRect(rrect, paint, 12f, 0.1f);
+                paint.setColor4f(1,1,1,1);
+                paint.setShader(RefCnt.create(mTestShader1));
                 canvas.drawRRect(rrect, paint);
 
                 paint.setShader(null);

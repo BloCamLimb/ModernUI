@@ -100,7 +100,7 @@ public class TestDrawPass {
         MeshDrawWriter drawWriter = new MeshDrawWriter(recordingContext.getDynamicBufferManager(),
                 commandList);
 
-        var step = new AnalyticSimpleBoxStep(true);
+        var step = new AnalyticSimpleBoxStep(false);
 
         drawWriter.newPipelineState(
                 step.vertexBinding(),
