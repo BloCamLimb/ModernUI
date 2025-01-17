@@ -32,6 +32,7 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
@@ -47,8 +48,8 @@ public class TestIterator {
                 .run();
     }
 
-    private ArrayList<String> list;
-    private ObjectArrayList<String> list2;
+    private List<String> list;
+    private List<String> list2;
 
     @Setup
     public void setup() {
@@ -56,6 +57,7 @@ public class TestIterator {
         for (int i = 0; i < 100; i++) {
             list.add(String.valueOf(i));
         }
+        list = (List<String>) (List) List.of(list.toArray());
         list2 = new ObjectArrayList<>(list);
     }
 
@@ -89,7 +91,7 @@ public class TestIterator {
 
     @Benchmark
     public void arrayObject(Blackhole blackhole) {
-        Object[] es = list2.elements();
+        Object[] es = ((ObjectArrayList) list2).elements();
         for (int i = 0, e = list2.size(); i < e; i++) {
             blackhole.consume(es[i]);
         }

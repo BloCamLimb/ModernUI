@@ -24,13 +24,15 @@ import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ShaderVar;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.Formatter;
+import java.util.List;
 
 /**
- * Represents a substage of a fragment shader, providing custom shader code to the
+ * Represents a substage of a fragment shader, providing custom shader code snippet to the
  * Arc3D shading pipeline. Managed by {@link ShaderCodeSource}.
  */
 //TODO
@@ -117,9 +119,12 @@ public class FragmentStage {
     public record Sampler(byte type, String name) {
     }
 
-    public static final String[] NO_FUNCTIONS = new String[0];
-    public static final Uniform[] NO_UNIFORMS = new Uniform[0];
-    public static final Sampler[] NO_SAMPLERS = new Sampler[0];
+    @Unmodifiable
+    public static final List<String> NO_FUNCTIONS = List.of();
+    @Unmodifiable
+    public static final List<Uniform> NO_UNIFORMS = List.of();
+    @Unmodifiable
+    public static final List<Sampler> NO_SAMPLERS = List.of();
 
     /**
      * Emit assignment expression statement.
@@ -139,16 +144,19 @@ public class FragmentStage {
     public final int mRequirementFlags;
     public final String mStaticFunctionName;
     // will use String's reference identity
-    public final String[] mRequiredFunctions;
-    public final Uniform[] mUniforms;
-    public final Sampler[] mSamplers;
+    @Unmodifiable
+    public final List<String> mRequiredFunctions;
+    @Unmodifiable
+    public final List<Uniform> mUniforms;
+    @Unmodifiable
+    public final List<Sampler> mSamplers;
     public final GenerateExpression mExpressionGenerator;
     public final int mNumChildren;
 
     public FragmentStage(String name, int requirementFlags,
                          String staticFunctionName,
-                         String[] requiredFunctions, // will use String's reference identity
-                         Uniform[] uniforms, Sampler[] samplers,
+                         List<String> requiredFunctions, // will use String's reference identity
+                         List<Uniform> uniforms, List<Sampler> samplers,
                          GenerateExpression expressionGenerator,
                          int numChildren) {
         mName = name;
@@ -167,7 +175,8 @@ public class FragmentStage {
     }
 
     public void generateUniforms(UniformHandler uniformHandler, int stageIndex) {
-        for (var uniform : mUniforms) {
+        for (int i = 0, e = mUniforms.size(); i < e; i++) {
+            var uniform = mUniforms.get(i);
             uniformHandler.addUniformArray(
                     Engine.ShaderFlags.kFragment,
                     uniform.type,
@@ -176,7 +185,8 @@ public class FragmentStage {
                     stageIndex
             );
         }
-        for (var sampler : mSamplers) {
+        for (int i = 0, e = mSamplers.size(); i < e; i++) {
+            var sampler = mSamplers.get(i);
             uniformHandler.addSampler(
                     sampler.type,
                     sampler.name,
