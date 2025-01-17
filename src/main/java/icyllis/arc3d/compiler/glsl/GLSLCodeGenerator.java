@@ -145,6 +145,11 @@ public final class GLSLCodeGenerator extends CodeGenerator {
     }
 
     private void writeIdentifier(@NonNull String identifier) {
+        if (identifier.equals("packed")) {
+            // Prior to GLSL ES 3.00, 'packed' is a reserved keyword.
+            // However, even if we use versions 3.00 and above, some drivers still consider it a keyword.
+            write("_arcReserved_");
+        }
         write(identifier);
     }
 
