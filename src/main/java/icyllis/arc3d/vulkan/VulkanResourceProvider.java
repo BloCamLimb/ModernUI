@@ -34,11 +34,11 @@ public class VulkanResourceProvider extends ResourceProvider {
 
     @Nullable
     @Override
-    protected Image onCreateNewImage(ImageDesc desc, boolean budgeted) {
+    protected Image onCreateNewImage(ImageDesc desc) {
         if (!(desc instanceof VulkanImageDesc vulkanImageDesc)) {
             return null;
         }
-        return VulkanImage.make(mContext, vulkanImageDesc, budgeted);
+        return VulkanImage.make(mContext, vulkanImageDesc);
     }
 
     @Nullable

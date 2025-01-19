@@ -41,8 +41,8 @@ public final class VulkanImage extends Image {
                        VulkanImageDesc desc,
                        VulkanImageMutableState mutableState,
                        long image, VulkanAllocation memoryAlloc,
-                       boolean budgeted, boolean wrapped) {
-        super(context, budgeted, wrapped, desc, mutableState);
+                       boolean wrapped) {
+        super(context, wrapped, desc, mutableState);
         mImage = image;
         mMemoryAlloc = memoryAlloc;
     }
@@ -170,8 +170,7 @@ public final class VulkanImage extends Image {
     @Nullable
     @SharedPtr
     public static VulkanImage make(@NonNull Context context,
-                                   @NonNull VulkanImageDesc desc,
-                                   boolean budgeted) {
+                                   @NonNull VulkanImageDesc desc) {
         VulkanDevice device = (VulkanDevice) context.getDevice();
         CreatedImageInfo imageInfo = create(device, desc);
         if (imageInfo == null) {
@@ -182,7 +181,6 @@ public final class VulkanImage extends Image {
                 imageInfo.mutableState,
                 imageInfo.image,
                 imageInfo.memoryAlloc,
-                budgeted,
                 false);
     }
 

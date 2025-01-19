@@ -48,15 +48,14 @@ public final class GLResourceProvider extends ResourceProvider {
     @Nullable
     @SharedPtr
     @Override
-    protected GLImage onCreateNewImage(ImageDesc desc,
-                                       boolean budgeted) {
+    protected GLImage onCreateNewImage(ImageDesc desc) {
         if (!(desc instanceof GLImageDesc glImageDesc)) {
             return null;
         }
         if (glImageDesc.mTarget == GL_RENDERBUFFER) {
-            return GLRenderbuffer.make(mContext, glImageDesc, budgeted);
+            return GLRenderbuffer.make(mContext, glImageDesc);
         } else {
-            return GLTexture.make(mContext, glImageDesc, budgeted);
+            return GLTexture.make(mContext, glImageDesc);
         }
     }
 

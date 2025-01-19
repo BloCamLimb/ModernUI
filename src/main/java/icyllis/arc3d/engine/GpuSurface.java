@@ -40,7 +40,7 @@ public abstract class GpuSurface extends Resource {
                          boolean budgeted,
                          boolean wrapped,
                          long memorySize) {
-        super(context, budgeted, wrapped, memorySize);
+        super(context, wrapped, memorySize);
     }
 
     /**

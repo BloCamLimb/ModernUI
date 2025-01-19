@@ -406,7 +406,7 @@ public final class SurfaceAllocator {
 
             // Make texture budgeted if this proxy is budgeted.
             if (proxy.isBudgeted() && surface.isBudgeted()) {
-                surface.makeBudgeted(true);
+                surface.setBudgeted(true);
             }
 
             // Propagate the proxy unique key to the texture if we have one.
