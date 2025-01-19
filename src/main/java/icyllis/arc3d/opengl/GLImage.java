@@ -29,11 +29,10 @@ public abstract sealed class GLImage extends Image
         permits GLTexture, GLRenderbuffer {
 
     protected GLImage(Context context,
-                      boolean budgeted,
                       boolean wrapped,
                       GLImageDesc desc,
                       ImageMutableState mutableState) {
-        super(context, budgeted, wrapped, desc, mutableState);
+        super(context, wrapped, desc, mutableState);
     }
 
     @NonNull

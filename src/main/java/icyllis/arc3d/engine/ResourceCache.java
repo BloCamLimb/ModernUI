@@ -195,34 +195,44 @@ public final class ResourceCache {
      */
     @Nullable
     public Resource findAndRefResource(@NonNull IResourceKey key,
-                                       boolean budgeted) {
+                                       boolean budgeted,
+                                       boolean shareable) {
         assert mContext.isOwnerThread();
-        Resource resource = mResourceMap.peekFirstEntry(key);
+        // If the resource is in ResourceMap then it's available, so a non-shareable state means
+        // it really has no outstanding uses and can be converted to any other shareable state.
+        // Otherwise, if it's available, it can only be reused with the same mode.
+        Resource resource = shareable
+                ? mResourceMap.peekFirstEntry(key)
+                : mResourceMap.peekFirstEntry(key, v -> !v.isShareable());
         if (resource == null) {
             // The main reason to call processReturnedResources in this call is to see if there are any
             // resources that we could match with the key. However, there is overhead into calling it.
             // So we only call it if we first failed to find a matching resource.
             if (processReturnedResources()) {
-                resource = mResourceMap.peekFirstEntry(key);
+                resource = shareable
+                        ? mResourceMap.peekFirstEntry(key)
+                        : mResourceMap.peekFirstEntry(key, v -> !v.isShareable());
             }
         }
 
         if (resource != null) {
             // All resources we pull out of the cache for use should be budgeted
             assert resource.isBudgeted();
-            if (!key.isShareable()) {
-                // If a resource is not shareable (i.e. scratch resource) then we remove it from the map
-                // so that it isn't found again.
+            if (!shareable) {
+                // If the returned resource is no longer shareable then we remove it from the map so
+                // that it isn't found again.
+                assert !resource.isShareable();
                 mResourceMap.removeFirstEntry(key, resource);
                 if (!budgeted) {
-                    resource.makeBudgeted(false);
+                    resource.setBudgeted(false);
                     mBudgetedCount--;
                     mBudgetedBytes -= resource.getMemorySize();
                 }
                 resource.mNonShareableInCache = false;
             } else {
-                // Shareable resources should never be requested as non budgeted
+                // Shareable resources should never be requested as non-budgeted
                 assert budgeted;
+                resource.setShareable(true);
             }
             refAndMakeResourceMRU(resource);
         }
@@ -457,14 +467,26 @@ public final class ResourceCache {
         assert isInCache(resource);
 
         if (refType == Resource.REF_TYPE_USAGE) {
-            if (resource.getKey().isShareable()) {
+            if (resource.isShareable()) {
                 // Shareable resources should still be in the cache
                 assert mResourceMap.containsKey(resource.getKey());
+                // Reset the resource's sharing mode so that any shareable request can use it (e.g. now
+                // that no more usages that required it to be fully shareable are held, the underlying
+                // resource can be used in a non-shareable manner the next time it's fetched from the
+                // cache). We can only change the shareable state when there are no outstanding usage
+                // refs. Because this resource was shareable, it remained in fResourceMap and could have
+                // a new usage ref before a prior LastRemovedRef::kUsage event was processed from the
+                // return queue. However, when a shareable ref has no usage refs, this is the only
+                // thread that could add an initial usage ref so it is safe to adjust its shareable type
+                if (!resource.hasUsageRef()) {
+                    resource.setShareable(false);
+                    resource.mNonShareableInCache = true;
+                }
             } else {
                 resource.mNonShareableInCache = true;
                 mResourceMap.addFirstEntry(resource.getKey(), resource);
                 if (!resource.isBudgeted()) {
-                    resource.makeBudgeted(true);
+                    resource.setBudgeted(true);
                     mBudgetedCount++;
                     mBudgetedBytes += resource.getMemorySize();
                 }
@@ -501,12 +523,15 @@ public final class ResourceCache {
         }
     }
 
-    public void insertResource(@NonNull Resource resource) {
+    public void insertResource(@NonNull Resource resource,
+                               @NonNull IResourceKey key,
+                               boolean budgeted,
+                               boolean shareable) {
         assert mContext.isOwnerThread();
+        assert !shareable || budgeted;
         assert !isInCache(resource);
         assert !resource.isDestroyed();
         assert !resource.isPurgeable();
-        assert resource.getKey() != null;
         // All resources in the cache are owned. If we track wrapped resources in the cache we'll need
         // to update this check.
         assert !resource.isWrapped();
@@ -521,7 +546,7 @@ public final class ResourceCache {
             processReturnedResources();
         }
 
-        resource.registerWithCache(this);
+        resource.registerWithCache(this, key, budgeted, shareable);
         resource.refCache();
 
         // We must set the timestamp before adding to the array in case the timestamp wraps, and we wind
@@ -531,7 +556,7 @@ public final class ResourceCache {
 
         addToNonPurgeableArray(resource);
 
-        if (resource.getKey().isShareable()) {
+        if (resource.isShareable()) {
             mResourceMap.addFirstEntry(resource.getKey(), resource);
         }
 

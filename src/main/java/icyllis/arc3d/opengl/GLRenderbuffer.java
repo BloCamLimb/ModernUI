@@ -43,8 +43,8 @@ public final class GLRenderbuffer extends GLImage {
 
     private BackendFormat mBackendFormat;
 
-    private GLRenderbuffer(Context context, GLImageDesc desc, int renderbuffer, boolean budgeted) {
-        super(context, budgeted, false, desc, null);
+    private GLRenderbuffer(Context context, GLImageDesc desc, int renderbuffer) {
+        super(context, false, desc, null);
         mRenderbuffer = renderbuffer;
 
         if (mRenderbuffer == 0) {
@@ -153,13 +153,11 @@ public final class GLRenderbuffer extends GLImage {
                 width, height, 1, 1, 1, sampleCount, ISurface.FLAG_RENDERABLE);
         return new GLRenderbuffer(context,
                 desc,
-                renderbuffer,
-                false); //TODO should be cacheable
+                renderbuffer); //TODO should be cacheable
     }
 
     public static GLRenderbuffer make(Context context,
-                                      GLImageDesc desc,
-                                      boolean budgeted) {
+                                      GLImageDesc desc) {
         final GLDevice device = (GLDevice) context.getDevice();
         final int handle;
         if (device.isOnExecutingThread()) {
@@ -171,8 +169,7 @@ public final class GLRenderbuffer extends GLImage {
             handle = 0;
         }
         return new GLRenderbuffer(context, desc,
-                handle,
-                budgeted);
+                handle);
     }
 
     static int internalCreateRenderbuffer(GLDevice device, GLImageDesc desc) {

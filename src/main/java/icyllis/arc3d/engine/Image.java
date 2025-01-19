@@ -57,11 +57,10 @@ public abstract class Image extends Resource {
     private ReleaseCallback mReleaseCallback;
 
     protected Image(Context context,
-                    boolean budgeted,
                     boolean wrapped,
                     ImageDesc desc,
                     ImageMutableState mutableState) {
-        super(context, budgeted, wrapped, DataUtils.computeSize(desc));
+        super(context, wrapped, DataUtils.computeSize(desc));
         mDesc = desc;
         mMutableState = mutableState;
     }

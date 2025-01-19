@@ -296,11 +296,6 @@ public final class SamplerDesc implements IResourceKey {
     }
 
     @Override
-    public boolean isShareable() {
-        return true;
-    }
-
-    @Override
     public SamplerDesc copy() {
         return this;
     }

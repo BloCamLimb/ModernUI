@@ -25,6 +25,7 @@ import org.jspecify.annotations.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 /**
  * Implementation of {@code Multimap} that uses an {@code LinkedList} to store the values for a given
@@ -102,6 +103,36 @@ public class LinkedListMultimap<K, V> extends HashMap<K, LinkedList<V>> {
         var list = get(k);
         // we always remove empty linked lists, so getFirst() not peekFirst()
         return list != null ? list.getLast() : null;
+    }
+
+    @Nullable
+    public V peekFirstEntry(@NonNull K k, @NonNull Predicate<V> test) {
+        var list = get(k);
+        if (list == null) {
+            return null;
+        }
+        for (var it = list.listIterator(0); it.hasNext(); ) {
+            var v = it.next();
+            if (test.test(v)) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public V peekLastEntry(@NonNull K k, @NonNull Predicate<V> test) {
+        var list = get(k);
+        if (list == null) {
+            return null;
+        }
+        for (var it = list.listIterator(list.size()); it.hasPrevious(); ) {
+            var v = it.previous();
+            if (test.test(v)) {
+                return v;
+            }
+        }
+        return null;
     }
 
     public void removeFirstEntry(@NonNull K k, @NonNull V v) {
