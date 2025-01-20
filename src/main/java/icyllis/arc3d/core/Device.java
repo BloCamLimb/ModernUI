@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -287,6 +287,9 @@ public abstract class Device extends RefCnt {
 
     public abstract void drawVertices(Vertices vertices, @SharedPtr Blender blender,
                                       Paint paint);
+
+    public void drawEdgeAAQuad(Rect2fc r, float[] clip, int flags, Paint paint) {
+    }
 
     @Nullable
     protected Surface makeSurface(ImageInfo info) {

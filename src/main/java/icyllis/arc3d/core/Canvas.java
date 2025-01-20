@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1685,6 +1685,27 @@ public class Canvas implements AutoCloseable {
         cleanedPaint.reset();
     }
 
+    @ApiStatus.Experimental
+    public static final int
+            QUAD_AA_FLAG_LEFT = 0b0001,
+            QUAD_AA_FLAG_TOP = 0b0010,
+            QUAD_AA_FLAG_RIGHT = 0b0100,
+            QUAD_AA_FLAG_BOTTOM = 0b1000,
+            QUAD_AA_FLAGS_NONE = 0b0000,
+            QUAD_AA_FLAGS_ALL = QUAD_AA_FLAG_LEFT|QUAD_AA_FLAG_TOP|QUAD_AA_FLAG_RIGHT|QUAD_AA_FLAG_BOTTOM;
+
+    @ApiStatus.Experimental
+    public final void drawEdgeAAQuad(Rect2fc rect, @Size(8) float[] clip,
+                                     @MagicConstant(flags = {QUAD_AA_FLAG_LEFT, QUAD_AA_FLAG_TOP, QUAD_AA_FLAG_RIGHT,
+                                             QUAD_AA_FLAG_BOTTOM}) int edgeFlags, Paint paint) {
+        var cleanedPaint = mTmpPaint;
+        cleanedPaint.set(paint);
+        cleanedPaint.setStyle(Paint.FILL);
+        cleanedPaint.setPathEffect(null);
+        onDrawEdgeAAQuad(rect, clip, edgeFlags, cleanedPaint);
+        cleanedPaint.reset();
+    }
+
     /**
      * Returns true if clip is empty; that is, nothing will draw.
      * <p>
@@ -2130,6 +2151,16 @@ public class Canvas implements AutoCloseable {
             topDevice().drawVertices(vertices, blender, paint);
         } else {
             RefCnt.move(blender);
+        }
+    }
+
+    protected void onDrawEdgeAAQuad(Rect2fc rect, @Size(8) float[] clip, int edgeFlags, Paint paint) {
+        if ((clip == null || rect != null) && internalQuickReject(rect, paint)) {
+            return;
+        }
+
+        if (predrawNotify(false)) {
+            topDevice().drawEdgeAAQuad(rect, clip, edgeFlags, paint);
         }
     }
 

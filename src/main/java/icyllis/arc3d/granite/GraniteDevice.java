@@ -470,6 +470,15 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                 blender); // move
     }
 
+    @Override
+    public void drawEdgeAAQuad(Rect2fc r, float[] clip, int flags, Paint paint) {
+        EdgeAAQuad quad = clip != null ? new EdgeAAQuad(clip, flags) : new EdgeAAQuad(r, flags);
+        drawGeometry(getLocalToDevice33(),
+                quad,
+                EdgeAAQuad::getBounds, paint,
+                mRC.getRendererProvider().getPerEdgeAAQuad(), null);
+    }
+
     public void drawAtlasSubRun(SubRunContainer.AtlasSubRun subRun,
                                 float originX, float originY,
                                 Paint paint) {

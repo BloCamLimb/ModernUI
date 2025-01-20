@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -297,6 +297,10 @@ public class TestGraniteRenderer {
 
         final ColorFilter[] mBlendModeColorFilters = new ColorFilter[BlendMode.COUNT];
 
+        float[] mMarkPts1;
+        float[] mMarkPts2;
+        float[] mTriPts;
+
         public Painter(ImmediateContext immediateContext) {
             mRC = immediateContext.makeRecordingContext();
             {
@@ -533,11 +537,31 @@ public class TestGraniteRenderer {
                     );
                 }
             }
+
+            mMarkPts1 = new float[]{
+                    140,182f,
+                    114f,156f,
+                    100,170,
+                    140,210,
+            };
+            mMarkPts2 = new float[]{
+                    140,210,
+                    220,130,
+                    206f,116f,
+                    140,182f,
+            };
+            mTriPts = new float[]{
+                    520,20,
+                    520,100,
+                    590,60,
+                    590,60,
+            };
         }
 
         private void drawScene(Canvas canvas) {
             final int nRects = 10000;
-            canvas.clear(0xFFFFFFFF);
+            //canvas.clear(0xFFF8F1F6);
+            canvas.clear(0xFF000000);
             canvas.save();
             Paint paint = new Paint();
             if (TEST_SCENE == 0) {
@@ -714,10 +738,16 @@ public class TestGraniteRenderer {
                 mat.setTranslate(1000, 100, 0);
                 canvas.setMatrix(mat);*/
                 canvas.translate(1000, 100);
+                //canvas.translate((float) (500+500*Math.sin(System.currentTimeMillis()/1000d)), 100);
                 rrect.setRectXY(200, 100, 600, 500, 20, 20);
                 paint.setShader(null);
-                paint.setColor4f(0, 0, 0, 0.227f);
-                mGraniteDevice.drawBlurredRRect(rrect, paint, 12f, 0.1f);
+                float z = (float) (12*Math.sin(System.currentTimeMillis()/500d));
+                if (z > 0.001f) {
+                    /*DrawShadowUtils.drawShadow(mGraniteDevice,
+                            rrect, 0, 0, z,
+                            mSurface.getWidth() / 2f, 0, 600, 800,
+                            0x1E000000, 0x30000000);*/
+                }
                 paint.setColor4f(1,1,1,1);
                 paint.setShader(RefCnt.create(mTestShader1));
                 canvas.drawRRect(rrect, paint);
@@ -728,6 +758,12 @@ public class TestGraniteRenderer {
                     canvas.drawVertices(mVertices1, BlendMode.MODULATE, paint);
                     canvas.drawVertices(mVertices2, BlendMode.MODULATE, paint);
                 //}
+                canvas.drawEdgeAAQuad(null,
+                        mMarkPts1, Canvas.QUAD_AA_FLAG_RIGHT | Canvas.QUAD_AA_FLAG_TOP | Canvas.QUAD_AA_FLAG_BOTTOM, paint);
+                canvas.drawEdgeAAQuad(null,
+                        mMarkPts2, Canvas.QUAD_AA_FLAG_RIGHT | Canvas.QUAD_AA_FLAG_TOP | Canvas.QUAD_AA_FLAG_BOTTOM, paint);
+                canvas.drawEdgeAAQuad(null,
+                        mTriPts, Canvas.QUAD_AA_FLAGS_ALL, paint);
 
                 paint.setARGB(255, 233, 30, 99);
                 rect.set(0, 0, 16, 16);
