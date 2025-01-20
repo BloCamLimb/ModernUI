@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +24,7 @@ import icyllis.arc3d.core.Rect2fc;
 
 public class EdgeAAQuad {
 
+    // see Canvas
     public static final int
             kLeft   = 0b0001,
             kTop    = 0b0010,
@@ -49,6 +50,19 @@ public class EdgeAAQuad {
         y3=rect.bottom();
         mEdgeFlags = (byte) edgeFlags;
         mIsRect = true;
+    }
+
+    public EdgeAAQuad(float[] points, int edgeFlags) {
+        x0=points[0];
+        x1=points[2];
+        x2=points[4];
+        x3=points[6];
+        y0=points[1];
+        y1=points[3];
+        y2=points[5];
+        y3=points[7];
+        mEdgeFlags = (byte) edgeFlags;
+        mIsRect = false;
     }
 
     public int edgeFlags() {

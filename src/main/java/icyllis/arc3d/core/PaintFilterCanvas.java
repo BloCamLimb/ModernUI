@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -197,6 +197,15 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
             super.onDrawVertices(vertices, blender, mFilterPaint);
         } else {
             RefCnt.move(blender);
+        }
+        mFilterPaint.close();
+    }
+
+    @Override
+    protected void onDrawEdgeAAQuad(Rect2fc rect, float[] clip, int edgeFlags, Paint paint) {
+        mFilterPaint.set(paint);
+        if (onFilter(mFilterPaint)) {
+            super.onDrawEdgeAAQuad(rect, clip, edgeFlags, paint);
         }
         mFilterPaint.close();
     }
