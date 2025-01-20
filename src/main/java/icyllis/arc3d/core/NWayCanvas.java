@@ -222,4 +222,11 @@ public class NWayCanvas extends NoDrawCanvas {
             mList[i].onDrawEdgeAAQuad(rect, clip, edgeFlags, paint);
         }
     }
+
+    @Override
+    protected void onDrawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
+        for (int i = 0; i < mSize; i++) {
+            mList[i].onDrawBlurredRRect(rr, paint, blurRadius, noiseAlpha);
+        }
+    }
 }

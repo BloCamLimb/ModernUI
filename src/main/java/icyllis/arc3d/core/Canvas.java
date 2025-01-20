@@ -1706,6 +1706,16 @@ public class Canvas implements AutoCloseable {
         cleanedPaint.reset();
     }
 
+    @ApiStatus.Experimental
+    public final void drawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
+        var cleanedPaint = mTmpPaint;
+        cleanedPaint.set(paint);
+        cleanedPaint.setStyle(Paint.FILL);
+        cleanedPaint.setPathEffect(null);
+        onDrawBlurredRRect(rr, cleanedPaint, blurRadius, noiseAlpha);
+        cleanedPaint.reset();
+    }
+
     /**
      * Returns true if clip is empty; that is, nothing will draw.
      * <p>
@@ -2161,6 +2171,12 @@ public class Canvas implements AutoCloseable {
 
         if (predrawNotify(false)) {
             topDevice().drawEdgeAAQuad(rect, clip, edgeFlags, paint);
+        }
+    }
+
+    protected void onDrawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
+        if (predrawNotify(false)) {
+            topDevice().drawBlurredRRect(rr, paint, blurRadius, noiseAlpha);
         }
     }
 

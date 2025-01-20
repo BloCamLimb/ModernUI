@@ -210,6 +210,15 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
         mFilterPaint.close();
     }
 
+    @Override
+    protected void onDrawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
+        mFilterPaint.set(paint);
+        if (onFilter(mFilterPaint)) {
+            super.onDrawBlurredRRect(rr, paint, blurRadius, noiseAlpha);
+        }
+        mFilterPaint.close();
+    }
+
     @Nullable
     @Override
     protected Surface onNewSurface(ImageInfo info) {

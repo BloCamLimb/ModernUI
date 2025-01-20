@@ -291,6 +291,10 @@ public abstract class Device extends RefCnt {
     public void drawEdgeAAQuad(Rect2fc r, float[] clip, int flags, Paint paint) {
     }
 
+    public boolean drawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
+        return false;
+    }
+
     @Nullable
     protected Surface makeSurface(ImageInfo info) {
         return null;
