@@ -83,4 +83,8 @@ public class NoDrawCanvas extends Canvas {
     @Override
     protected void onDrawEdgeAAQuad(Rect2fc rect, float[] clip, int edgeFlags, Paint paint) {
     }
+
+    @Override
+    protected void onDrawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
+    }
 }

@@ -435,14 +435,32 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         }
     }
 
-    public void drawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
-        if (rr.isEmpty() || !Float.isFinite(blurRadius)) {
-            return;
+    @Override
+    public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
+        drawGeometry(getLocalToDevice33(), vertices, Vertices::getBounds, paint,
+                mRC.getRendererProvider().getVertices(
+                        vertices.getVertexMode(), vertices.hasColors(), vertices.hasTexCoords()),
+                blender); // move
+    }
+
+    @Override
+    public void drawEdgeAAQuad(Rect2fc r, float[] clip, int flags, Paint paint) {
+        EdgeAAQuad quad = clip != null ? new EdgeAAQuad(clip, flags) : new EdgeAAQuad(r, flags);
+        drawGeometry(getLocalToDevice33(),
+                quad,
+                EdgeAAQuad::getBounds, paint,
+                mRC.getRendererProvider().getPerEdgeAAQuad(), null);
+    }
+
+    @Override
+    public boolean drawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
+        if (!Float.isFinite(blurRadius)) {
+            return true;
         }
         //TODO compute device blur radius
         if (blurRadius < 0.1f) {
             drawRRect(rr, paint);
-            return;
+            return true;
         }
         if (!(noiseAlpha >= 0f)) {
             noiseAlpha = 0f;
@@ -460,23 +478,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         shape.mNoiseAlpha = noiseAlpha;
         drawGeometry(getLocalToDevice33(), shape, BlurredBox::getBounds, paint,
                 mRC.getRendererProvider().getSimpleBox(true), null);
-    }
-
-    @Override
-    public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
-        drawGeometry(getLocalToDevice33(), vertices, Vertices::getBounds, paint,
-                mRC.getRendererProvider().getVertices(
-                        vertices.getVertexMode(), vertices.hasColors(), vertices.hasTexCoords()),
-                blender); // move
-    }
-
-    @Override
-    public void drawEdgeAAQuad(Rect2fc r, float[] clip, int flags, Paint paint) {
-        EdgeAAQuad quad = clip != null ? new EdgeAAQuad(clip, flags) : new EdgeAAQuad(r, flags);
-        drawGeometry(getLocalToDevice33(),
-                quad,
-                EdgeAAQuad::getBounds, paint,
-                mRC.getRendererProvider().getPerEdgeAAQuad(), null);
+        return true;
     }
 
     public void drawAtlasSubRun(SubRunContainer.AtlasSubRun subRun,

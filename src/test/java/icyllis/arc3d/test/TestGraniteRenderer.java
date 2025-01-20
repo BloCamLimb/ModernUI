@@ -268,8 +268,6 @@ public class TestGraniteRenderer {
         RecordingContext mRC;
         @SharedPtr
         Surface mSurface;
-        @RawPtr
-        GraniteDevice mGraniteDevice;
 
         @SharedPtr
         Surface mPostSurface;
@@ -316,7 +314,6 @@ public class TestGraniteRenderer {
                         true
                 );
                 Objects.requireNonNull(device);
-                mGraniteDevice = device;
                 mSurface = new GraniteSurface(device); // move
             }
             if (POST_PROCESS) {
@@ -560,8 +557,8 @@ public class TestGraniteRenderer {
 
         private void drawScene(Canvas canvas) {
             final int nRects = 10000;
-            //canvas.clear(0xFFF8F1F6);
-            canvas.clear(0xFF000000);
+            canvas.clear(0xFFF8F1F6);
+            //canvas.clear(0xFF000000);
             canvas.save();
             Paint paint = new Paint();
             if (TEST_SCENE == 0) {
@@ -743,12 +740,12 @@ public class TestGraniteRenderer {
                 paint.setShader(null);
                 float z = (float) (12*Math.sin(System.currentTimeMillis()/500d));
                 if (z > 0.001f) {
-                    /*DrawShadowUtils.drawShadow(mGraniteDevice,
+                    /*DrawShadowUtils.drawShadow(canvas,
                             rrect, 0, 0, z,
                             mSurface.getWidth() / 2f, 0, 600, 800,
                             0x1E000000, 0x30000000);*/
                 }
-                paint.setColor4f(1,1,1,1);
+                paint.setColor4f(0.5f,0.5f,0.5f,1);
                 paint.setShader(RefCnt.create(mTestShader1));
                 canvas.drawRRect(rrect, paint);
 
