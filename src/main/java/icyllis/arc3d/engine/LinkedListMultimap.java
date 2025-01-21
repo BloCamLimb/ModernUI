@@ -19,135 +19,118 @@
 
 package icyllis.arc3d.engine;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 /**
  * Implementation of {@code Multimap} that uses an {@code LinkedList} to store the values for a given
- * key. A {@link HashMap} associates each key with an {@link LinkedList} of values. Empty
+ * key. A {@code HashMap} associates each key with an {@code LinkedList} of values. Empty
  * {@code LinkedList} values will be automatically removed.
- *
- * @see HashMap
- * @see LinkedList
  */
 @NotThreadSafe
-public class LinkedListMultimap<K, V> extends HashMap<K, LinkedList<V>> {
+public class LinkedListMultimap<K, V> extends Object2ObjectOpenHashMap<K, LinkedListMultimap.ListNode<V>> {
 
-    private V mTmpValue;
+    private V outerValue;
 
-    private final BiFunction<K, LinkedList<V>, LinkedList<V>> mPollFirstEntry =
-            (k, list) -> {
-                mTmpValue = list.pollFirst();
-                return list.isEmpty() ? null : list;
-            };
-    private final BiFunction<K, LinkedList<V>, LinkedList<V>> mPollLastEntry =
-            (k, list) -> {
-                mTmpValue = list.pollLast();
-                return list.isEmpty() ? null : list;
-            };
+    static class ListNode<V> {
+        V item;
+        ListNode<V> next;
 
-    private final BiFunction<K, LinkedList<V>, LinkedList<V>> mRemoveFirstEntry =
-            (k, list) -> list.removeFirstOccurrence(mTmpValue) && list.isEmpty() ? null : list;
-    private final BiFunction<K, LinkedList<V>, LinkedList<V>> mRemoveLastEntry =
-            (k, list) -> list.removeLastOccurrence(mTmpValue) && list.isEmpty() ? null : list;
+        ListNode(V value, ListNode<V> next) {
+            this.item = value;
+            this.next = next;
+        }
+    }
+
+    private final BiFunction<K, ListNode<V>, ListNode<V>> insertEntry = (k, list) -> {
+        if (list != null) {
+            list.next = new ListNode<>(list.item, list.next);
+            list.item = outerValue;
+        } else {
+            return new ListNode<>(outerValue, null);
+        }
+        return list;
+    };
+
+    private final BiFunction<K, ListNode<V>, ListNode<V>> removeEntry = (k, list) -> {
+        V value = outerValue;
+        ListNode<V> head = list;
+        ListNode<V> prev = null;
+        do {
+            if (list.item == value) {
+                return internalRemoveEntry(prev, list, head);
+            }
+            prev = list;
+            list = list.next;
+        } while (list != null);
+        return head;
+    };
 
     public LinkedListMultimap() {
     }
 
-    public LinkedListMultimap(@NonNull Map<? extends K, ? extends LinkedList<V>> other) {
-        super(other);
+    @Nullable
+    public V find(@NonNull K k) {
+        var list = get(k);
+        return list != null ? list.item : null;
     }
 
-    public void addFirstEntry(@NonNull K k, @NonNull V v) {
-        computeIfAbsent(k, __ -> new LinkedList<>())
-                .addFirst(Objects.requireNonNull(v));
+    @Nullable
+    public V find(@NonNull K k, @NonNull Predicate<V> test) {
+        for (var list = get(k); list != null; list = list.next) {
+            if (test.test(list.item)) {
+                return list.item;
+            }
+        }
+        return null;
     }
 
+    public void insertEntry(@NonNull K k, @NonNull V v) {
+        assert (outerValue == null);
+        outerValue = v;
+        compute(k, insertEntry);
+        assert (outerValue == v);
+        outerValue = null;
+    }
+
+    public void removeEntry(@NonNull K k, @NonNull V v) {
+        assert (outerValue == null);
+        outerValue = v;
+        computeIfPresent(k, removeEntry);
+        assert (outerValue == v);
+        outerValue = null;
+    }
+
+    private ListNode<V> internalRemoveEntry(ListNode<V> prev, ListNode<V> curr, ListNode<V> head) {
+        if (curr.next != null) {
+            ListNode<V> next = curr.next;
+            curr.item = next.item;
+            curr.next = next.next;
+            // 'next' is gone
+        } else if (prev != null) {
+            assert prev.next == curr;
+            prev.next = null;
+            // 'curr' is gone
+        } else {
+            assert head == curr;
+            // 'head' is gone
+            return null;
+        }
+        return head;
+    }
+
+    @Deprecated
     public void addLastEntry(@NonNull K k, @NonNull V v) {
-        computeIfAbsent(k, __ -> new LinkedList<>())
-                .addLast(Objects.requireNonNull(v));
     }
 
+    @Deprecated
     @Nullable
     public V pollFirstEntry(@NonNull K k) {
-        assert (mTmpValue == null);
-        computeIfPresent(k, mPollFirstEntry);
-        V v = mTmpValue;
-        mTmpValue = null;
-        return v;
-    }
-
-    @Nullable
-    public V pollLastEntry(@NonNull K k) {
-        assert (mTmpValue == null);
-        computeIfPresent(k, mPollLastEntry);
-        V v = mTmpValue;
-        mTmpValue = null;
-        return v;
-    }
-
-    @Nullable
-    public V peekFirstEntry(@NonNull K k) {
-        var list = get(k);
-        // we always remove empty linked lists, so getFirst() not peekFirst()
-        return list != null ? list.getFirst() : null;
-    }
-
-    @Nullable
-    public V peekLastEntry(@NonNull K k) {
-        var list = get(k);
-        // we always remove empty linked lists, so getFirst() not peekFirst()
-        return list != null ? list.getLast() : null;
-    }
-
-    @Nullable
-    public V peekFirstEntry(@NonNull K k, @NonNull Predicate<V> test) {
-        var list = get(k);
-        if (list == null) {
-            return null;
-        }
-        for (var it = list.listIterator(0); it.hasNext(); ) {
-            var v = it.next();
-            if (test.test(v)) {
-                return v;
-            }
-        }
         return null;
-    }
-
-    @Nullable
-    public V peekLastEntry(@NonNull K k, @NonNull Predicate<V> test) {
-        var list = get(k);
-        if (list == null) {
-            return null;
-        }
-        for (var it = list.listIterator(list.size()); it.hasPrevious(); ) {
-            var v = it.previous();
-            if (test.test(v)) {
-                return v;
-            }
-        }
-        return null;
-    }
-
-    public void removeFirstEntry(@NonNull K k, @NonNull V v) {
-        assert (mTmpValue == null);
-        mTmpValue = v;
-        computeIfPresent(k, mRemoveFirstEntry);
-        assert (mTmpValue == v);
-        mTmpValue = null;
-    }
-
-    public void removeLastEntry(@NonNull K k, @NonNull V v) {
-        assert (mTmpValue == null);
-        mTmpValue = v;
-        computeIfPresent(k, mRemoveLastEntry);
-        assert (mTmpValue == v);
-        mTmpValue = null;
     }
 }
