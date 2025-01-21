@@ -252,8 +252,7 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
                             BoringLayout.Metrics metrics, boolean includePad, boolean trustWidth) {
         int spacing;
 
-        if (source instanceof String &&
-                (align == Alignment.ALIGN_NORMAL || align == Alignment.ALIGN_LEFT)) {
+        if (source instanceof String) {
             String direct = source.toString();
             int len = direct.length();
             mDirect = TextShaper.shapeTextRun(
@@ -484,7 +483,21 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
     @Override
     public void drawText(@NonNull Canvas canvas, int firstLine, int lastLine) {
         if (mDirect != null) {
-            canvas.drawShapedText(mDirect, 0, mBottom - mDesc, mPaint);
+            // Added by Modern UI
+            Alignment align = getAlignment();
+            final int x;
+            if (align == Alignment.ALIGN_NORMAL || align == Alignment.ALIGN_LEFT) {
+                x = 0;
+            } else {
+                int max = (int) mMax;
+                if (align == Alignment.ALIGN_OPPOSITE || align == Alignment.ALIGN_RIGHT) {
+                    x = getWidth() - max;
+                } else { // Alignment.ALIGN_CENTER
+                    max = max & ~1;
+                    x = (getWidth() - max) >> 1;
+                }
+            }
+            canvas.drawShapedText(mDirect, x, mBottom - mDesc, mPaint);
         } else {
             super.drawText(canvas, firstLine, lastLine);
         }
