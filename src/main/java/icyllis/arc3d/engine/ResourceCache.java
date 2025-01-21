@@ -202,16 +202,16 @@ public final class ResourceCache {
         // it really has no outstanding uses and can be converted to any other shareable state.
         // Otherwise, if it's available, it can only be reused with the same mode.
         Resource resource = shareable
-                ? mResourceMap.peekFirstEntry(key)
-                : mResourceMap.peekFirstEntry(key, v -> !v.isShareable());
+                ? mResourceMap.find(key)
+                : mResourceMap.find(key, v -> !v.isShareable());
         if (resource == null) {
             // The main reason to call processReturnedResources in this call is to see if there are any
             // resources that we could match with the key. However, there is overhead into calling it.
             // So we only call it if we first failed to find a matching resource.
             if (processReturnedResources()) {
                 resource = shareable
-                        ? mResourceMap.peekFirstEntry(key)
-                        : mResourceMap.peekFirstEntry(key, v -> !v.isShareable());
+                        ? mResourceMap.find(key)
+                        : mResourceMap.find(key, v -> !v.isShareable());
             }
         }
 
@@ -222,7 +222,7 @@ public final class ResourceCache {
                 // If the returned resource is no longer shareable then we remove it from the map so
                 // that it isn't found again.
                 assert !resource.isShareable();
-                mResourceMap.removeFirstEntry(key, resource);
+                mResourceMap.removeEntry(key, resource);
                 if (!budgeted) {
                     resource.setBudgeted(false);
                     mBudgetedCount--;
@@ -484,7 +484,7 @@ public final class ResourceCache {
                 }
             } else {
                 resource.mNonShareableInCache = true;
-                mResourceMap.addFirstEntry(resource.getKey(), resource);
+                mResourceMap.insertEntry(resource.getKey(), resource);
                 if (!resource.isBudgeted()) {
                     resource.setBudgeted(true);
                     mBudgetedCount++;
@@ -557,7 +557,7 @@ public final class ResourceCache {
         addToNonPurgeableArray(resource);
 
         if (resource.isShareable()) {
-            mResourceMap.addFirstEntry(resource.getKey(), resource);
+            mResourceMap.insertEntry(resource.getKey(), resource);
         }
 
         if (resource.isBudgeted()) {
@@ -571,7 +571,7 @@ public final class ResourceCache {
     private void purgeResource(@NonNull Resource resource) {
         assert resource.isPurgeable();
 
-        mResourceMap.removeFirstEntry(resource.getKey(), resource);
+        mResourceMap.removeEntry(resource.getKey(), resource);
 
         if (resource.isCacheable()) {
             assert isInPurgeableQueue(resource);
