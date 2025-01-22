@@ -142,6 +142,8 @@ public final class ContextOptions extends BaseContextOptions {
      */
     public boolean mVolatileContext = false;
 
+    public boolean mAllowGLSPIRV = true;
+
     public long mVulkanVMALargeHeapBlockSize = 0;
 
     public DriverBugWorkarounds mDriverBugWorkarounds;
