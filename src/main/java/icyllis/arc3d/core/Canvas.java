@@ -996,7 +996,7 @@ public class Canvas implements AutoCloseable {
         Paint paint = mTmpPaint;
         paint.setColor(color);
         paint.setBlendMode(mode);
-        drawPaint(paint);
+        onDrawPaint(paint);
         paint.reset();
     }
 
@@ -1014,7 +1014,7 @@ public class Canvas implements AutoCloseable {
         Paint paint = mTmpPaint;
         paint.setColor4f(r, g, b, a);
         paint.setBlendMode(mode);
-        drawPaint(paint);
+        onDrawPaint(paint);
         paint.reset();
     }
 
@@ -1028,7 +1028,12 @@ public class Canvas implements AutoCloseable {
      * @param paint the paint used to draw onto the canvas
      */
     public final void drawPaint(Paint paint) {
-        onDrawPaint(paint);
+        var cleanedPaint = mTmpPaint;
+        cleanedPaint.set(paint);
+        cleanedPaint.setStyle(Paint.FILL);
+        cleanedPaint.setPathEffect(null);
+        onDrawPaint(cleanedPaint);
+        cleanedPaint.reset();
     }
 
     /**

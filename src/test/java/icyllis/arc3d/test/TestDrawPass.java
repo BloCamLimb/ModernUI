@@ -112,7 +112,6 @@ public class TestDrawPass {
 
         int nRects = 1000;
         for (int i = 0; i < nRects; i++) {
-            Draw draw = new Draw();
             SimpleShape rrect = new SimpleShape();
             int l = (int) (Math.random() * 910);
             int t = (int) (Math.random() * 450);
@@ -123,14 +122,13 @@ public class TestDrawPass {
                     l, t, l + w, t + h,
                     rad, rad
             );
-            draw.mGeometry = rrect;
             var transform = new Matrix4();
             float cx = rrect.centerX();
             float cy = rrect.centerY();
             transform.preTranslate(cx, cy);
             transform.preRotateZ(i);
             transform.preTranslate(-cx, -cy);
-            draw.mTransform = transform.toMatrix();
+            Draw draw = new Draw(transform.toMatrix(), rrect);
             int stroke = (int) (Math.random() * 50);
             draw.mHalfWidth = stroke < 25 ? -1 : stroke - 20;
             float[] col = {(float) Math.random(), (float) Math.random(), (float) Math.random(), 1.0f};

@@ -282,11 +282,22 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
     @Override
     public void drawPaint(Paint paint) {
-        //TODO fill the clip, not fullscreen clear
-        float[] color = new float[4];
-        if (PaintParams.getSolidColor(paint, getImageInfo(), color)) {
-            mSDC.clear(color);
+        if (isClipWideOpen() && !paint_depends_on_dst(paint)) {
+            float[] color = new float[4];
+            if (PaintParams.getSolidColor(paint, getImageInfo(), color)) {
+                // do fullscreen clear
+                mSDC.clear(color);
+                return;
+            } else {
+                // This paint does not depend on the destination and covers the entire surface, so
+                // discard everything previously recorded and proceed with the draw.
+                mSDC.discard();
+            }
         }
+
+        // An empty shape with an inverse fill completely floods the clip
+        drawGeometry(getLocalToDevice33(), null, (__, dest) -> dest.setEmpty(),
+                true, paint, mRC.getRendererProvider().getNonAABoundsFill(), null);
     }
 
     @Override
@@ -323,26 +334,32 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                          @Paint.Cap int cap, float width, Paint paint) {
         var shape = new SimpleShape();
         shape.setLine(x0, y0, x1, y1, cap, width);
-        drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, false, paint,
                 mRC.getRendererProvider().getSimpleBox(false), null);
     }
 
     @Override
     public void drawRect(Rect2fc r, Paint paint) {
         if (paint.getStyle() == Paint.FILL) {
-            drawGeometry(getLocalToDevice33(),
-                    new EdgeAAQuad(r, paint.isAntiAlias() ? EdgeAAQuad.kAll : EdgeAAQuad.kNone),
-                    EdgeAAQuad::getBounds, paint,
-                    mRC.getRendererProvider().getPerEdgeAAQuad(), null);
+            if (paint.isAntiAlias()) {
+                drawGeometry(getLocalToDevice33(),
+                        new EdgeAAQuad(r, EdgeAAQuad.kAll),
+                        EdgeAAQuad::getBounds, false, paint,
+                        mRC.getRendererProvider().getPerEdgeAAQuad(), null);
+            } else {
+                drawGeometry(getLocalToDevice33(),
+                        new Rect2f(r), Rect2f::store, false, paint,
+                        mRC.getRendererProvider().getNonAABoundsFill(), null);
+            }
         } else {
-            drawGeometry(getLocalToDevice33(), new SimpleShape(r), SimpleShape::getBounds, paint,
+            drawGeometry(getLocalToDevice33(), new SimpleShape(r), SimpleShape::getBounds, false, paint,
                     mRC.getRendererProvider().getSimpleBox(false), null);
         }
     }
 
     @Override
     public void drawRRect(RRect rr, Paint paint) {
-        drawGeometry(getLocalToDevice33(), new SimpleShape(rr), SimpleShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), new SimpleShape(rr), SimpleShape::getBounds, false, paint,
                 mRC.getRendererProvider().getSimpleBox(false), null);
     }
 
@@ -350,7 +367,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     public void drawCircle(float cx, float cy, float radius, Paint paint) {
         var shape = new SimpleShape();
         shape.setEllipse(cx, cy, radius, radius);
-        drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, false, paint,
                 mRC.getRendererProvider().getSimpleBox(false), null);
     }
 
@@ -364,7 +381,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
             case Paint.CAP_SQUARE -> ArcShape.kArcSquare_Type;
             default -> throw new AssertionError();
         };
-        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, false, paint,
                 mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
@@ -373,7 +390,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                         float sweepAngle, Paint paint) {
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
         shape.mType = ArcShape.kPie_Type;
-        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, false, paint,
                 mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
@@ -382,7 +399,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                           float sweepAngle, Paint paint) {
         var shape = new ArcShape(cx, cy, radius, startAngle, sweepAngle, 0);
         shape.mType = ArcShape.kChord_Type;
-        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, ArcShape::getBounds, false, paint,
                 mRC.getRendererProvider().getArc(shape.mType), null);
     }
 
@@ -396,7 +413,6 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                 modifiedPaint
         );
         if (!modifiedDst.isEmpty()) {
-            //TODO use edge AA quad
             drawRect(modifiedDst, modifiedPaint);
         }
         modifiedPaint.close();
@@ -437,7 +453,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
 
     @Override
     public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
-        drawGeometry(getLocalToDevice33(), vertices, Vertices::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), vertices, Vertices::getBounds, false, paint,
                 mRC.getRendererProvider().getVertices(
                         vertices.getVertexMode(), vertices.hasColors(), vertices.hasTexCoords()),
                 blender); // move
@@ -448,7 +464,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         EdgeAAQuad quad = clip != null ? new EdgeAAQuad(clip, flags) : new EdgeAAQuad(r, flags);
         drawGeometry(getLocalToDevice33(),
                 quad,
-                EdgeAAQuad::getBounds, paint,
+                EdgeAAQuad::getBounds, false, paint,
                 mRC.getRendererProvider().getPerEdgeAAQuad(), null);
     }
 
@@ -476,7 +492,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         shape.mRadius = radius;
         shape.mBlurRadius = blurRadius;
         shape.mNoiseAlpha = noiseAlpha;
-        drawGeometry(getLocalToDevice33(), shape, BlurredBox::getBounds, paint,
+        drawGeometry(getLocalToDevice33(), shape, BlurredBox::getBounds, false, paint,
                 mRC.getRendererProvider().getSimpleBox(true), null);
         return true;
     }
@@ -521,7 +537,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                 }
                 subRunPaint.setStyle(Paint.FILL);
 
-                drawGeometry(subRunToDevice, subRunData, SubRunData::getBounds, paint,
+                drawGeometry(subRunToDevice, subRunData, SubRunData::getBounds, false, paint,
                         mRC.getRendererProvider().getRasterText(maskFormat),
                         BlendMode.DST_IN);
             } else if (flushed) {
@@ -583,20 +599,26 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                 paintParams.getPrimitiveBlender());
     }
 
+    private static boolean paint_depends_on_dst(Paint paint) {
+        return paint_depends_on_dst(paint.a(),
+                paint.getShader(),
+                paint.getColorFilter(),
+                paint.getBlender(),
+                null);
+    }
+
     public <GEO> void drawGeometry(Matrixc localToDevice,
                                    GEO geometry,
                                    BiConsumer<GEO, Rect2f> boundsFn,
+                                   boolean inverseFill,
                                    Paint paint,
                                    GeometryRenderer renderer,
                                    @SharedPtr Blender primitiveBlender) {
-        Draw draw = new Draw();
-        draw.mTransform = localToDevice;
-        draw.mGeometry = geometry;
+        Draw draw = new Draw(localToDevice, geometry);
+        draw.mInverseFill = inverseFill;
         draw.mRenderer = renderer;
 
-        if (paint.getStyle() == Paint.FILL) {
-            draw.mHalfWidth = -1;
-        } else {
+        if (paint.getStyle() != Paint.FILL) {
             draw.mHalfWidth = paint.getStrokeWidth() * 0.5f;
             switch (paint.getStrokeJoin()) {
                 case Paint.JOIN_ROUND -> draw.mJoinLimit = -1;
@@ -667,8 +689,24 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         mCurrentDepth = drawDepth;
     }
 
-    public void drawClipShape(Draw draw, boolean inverseFill) {
-        //TODO
+    public void drawClipShape(Draw draw) {
+        if (draw.mInverseFill || !(draw.mGeometry instanceof Rect2f)) {
+            //TODO not implement tessellation yet
+            return;
+        }
+        // difference clip => non-inverse-fill, draw rect
+        draw.mRenderer = mRC.getRendererProvider().getNonAABoundsFill();
+
+        assert mSDC.numPendingSteps() + draw.mRenderer.numSteps() < DrawPass.MAX_RENDER_STEPS;
+
+        assert !draw.mRenderer.emitsCoverage();
+
+        mSDC.recordDraw(draw);
+
+        int depth = draw.getDepth();
+        if (depth > mCurrentDepth) {
+            mCurrentDepth = depth;
+        }
     }
 
     private boolean needsFlushBeforeDraw(int numNewRenderSteps) {
