@@ -50,6 +50,7 @@ public class RendererProvider {
     // has color, has tex, vertex mode variant
     private final GeometryRenderer[] mVertices = new GeometryRenderer[Vertices.kVertexModeCount*4];
     private final GeometryRenderer mPerEdgeAAQuad;
+    private final GeometryRenderer mNonAABoundsFill;
 
     public RendererProvider(Caps caps, StaticBufferManager staticBufferManager) {
         mSimpleBox[0] = makeSingleStep(
@@ -87,6 +88,9 @@ public class RendererProvider {
         mPerEdgeAAQuad = makeSingleStep(
                 new PerEdgeAAQuadStep(staticBufferManager)
         );
+        mNonAABoundsFill = makeSingleStep(
+                new CoverBoundsStep("non-aa-fill", CommonDepthStencilSettings.kDirectDepthGreaterPass)
+        );
     }
 
     public GeometryRenderer getSimpleBox(boolean blur) {
@@ -107,5 +111,10 @@ public class RendererProvider {
 
     public GeometryRenderer getPerEdgeAAQuad() {
         return mPerEdgeAAQuad;
+    }
+
+    // Non-AA bounds filling (can handle inverse "fills" but will touch every pixel within the clip)
+    public GeometryRenderer getNonAABoundsFill() {
+        return mNonAABoundsFill;
     }
 }

@@ -213,8 +213,10 @@ public final class ClipStack {
             return true;
         }
 
-        //TODO initial value for this is inverse-fill
-        boolean infiniteBounds = false;
+        // Inverse-filled shapes always fill the entire device (restricted to the clip).
+        // Query the invertedness of the shape before any of the `setRect` calls below, which can
+        // modify it.
+        boolean infiniteBounds = draw.mInverseFill;
 
         if (!infiniteBounds && shapeBounds.isEmpty()) {
             if (!draw.isStroke()) {
@@ -917,9 +919,9 @@ public final class ClipStack {
                 long order = DrawOrder.makeFromDepthAndPaintersOrder(
                         mMaxDepth + 1, mPaintersOrder
                 );
-                Draw draw = new Draw();
-                draw.mTransform = mViewMatrix.clone();
-                draw.mGeometry = new SimpleShape(mShape);
+                //TODO maybe not need a copy of matrix
+                Draw draw = new Draw(mViewMatrix.clone(), new Rect2f(mShape));
+                draw.mInverseFill = mInverseFill;
                 draw.mDrawBounds = drawBounds;
                 draw.mTransformedShapeBounds = drawBounds;
                 draw.mScissorRect = scissor;
@@ -929,7 +931,7 @@ public final class ClipStack {
                 // draw directly.
                 assert ((mClipOp == ClipOp.CLIP_OP_DIFFERENCE && !mInverseFill) ||
                         (mClipOp == ClipOp.CLIP_OP_INTERSECT && mInverseFill));
-                device.drawClipShape(draw, mInverseFill);
+                device.drawClipShape(draw);
             }
 
             // After the clip shape is drawn, reset its state. If the clip element is being popped off the
