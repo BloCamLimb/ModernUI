@@ -627,6 +627,7 @@ public final class GLUtil {
         f.format("Program linking error%n");
         f.format("---------------------%n");
         for (int i = 0; i < headers.length; i++) {
+            if (sources[i] == null) continue;
             f.format("%s%n", headers[i]);
             String[] lines = sources[i].split("\n");
             for (int j = 0; j < lines.length; ++j) {

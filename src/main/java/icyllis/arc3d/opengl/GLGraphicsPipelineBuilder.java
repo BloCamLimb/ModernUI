@@ -30,6 +30,7 @@ import icyllis.arc3d.engine.DepthStencilSettings;
 import icyllis.arc3d.engine.PipelineDesc;
 import icyllis.arc3d.engine.VertexInputLayout;
 import org.jspecify.annotations.NonNull;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.MemoryUtil;
 
@@ -99,36 +100,52 @@ public class GLGraphicsPipelineBuilder {
         ShaderCompiler compiler = new ShaderCompiler();
         CompileOptions options = new CompileOptions();
         options.mUsePrecisionQualifiers = mDevice.getCaps().shaderCaps().mUsePrecisionModifiers;
-        TranslationUnit fragmentProgram = compiler.parse(info.mFragSource, ShaderKind.FRAGMENT,
-                options, ModuleLoader.getInstance().loadCommonModule(compiler));
-        if (fragmentProgram == null) {
-            GLUtil.handleCompileError(mDevice.getLogger(),
-                    info.mFragSource, compiler.getErrorMessage());
-        } else {
-            if (mDevice.getCaps().hasSPIRVSupport()) {
-                mFinalizedFragSPIRV = compiler.generateSPIRV(fragmentProgram, mDevice.getCaps().shaderCaps());
-            } else {
-                mFinalizedFragGLSL = compiler.generateGLSL(fragmentProgram, mDevice.getCaps().shaderCaps());
-            }
-            if (mFinalizedFragGLSL == null && mFinalizedFragSPIRV == null) {
+
+        boolean success = true;
+        if (!info.mFragSource.isEmpty()) {
+            TranslationUnit fragmentProgram = compiler.parse(info.mFragSource, ShaderKind.FRAGMENT,
+                    options, ModuleLoader.getInstance().loadCommonModule(compiler));
+            if (fragmentProgram == null) {
                 GLUtil.handleCompileError(mDevice.getLogger(),
                         info.mFragSource, compiler.getErrorMessage());
-            }
-        }
-        TranslationUnit vertexProgram = compiler.parse(info.mVertSource, ShaderKind.VERTEX,
-                options, ModuleLoader.getInstance().loadCommonModule(compiler));
-        if (vertexProgram == null) {
-            GLUtil.handleCompileError(mDevice.getLogger(),
-                    info.mVertSource, compiler.getErrorMessage());
-        } else {
-            if (mDevice.getCaps().hasSPIRVSupport()) {
-                mFinalizedVertSPIRV = compiler.generateSPIRV(vertexProgram, mDevice.getCaps().shaderCaps());
+                success = false;
             } else {
-                mFinalizedVertGLSL = compiler.generateGLSL(vertexProgram, mDevice.getCaps().shaderCaps());
+                if (mDevice.getCaps().hasSPIRVSupport()) {
+                    mFinalizedFragSPIRV = compiler.generateSPIRV(fragmentProgram, mDevice.getCaps().shaderCaps());
+                } else {
+                    mFinalizedFragGLSL = compiler.generateGLSL(fragmentProgram, mDevice.getCaps().shaderCaps());
+                }
+                if (mFinalizedFragGLSL == null && mFinalizedFragSPIRV == null) {
+                    GLUtil.handleCompileError(mDevice.getLogger(),
+                            info.mFragSource, compiler.getErrorMessage());
+                    success = false;
+                }
             }
-            if (mFinalizedVertGLSL == null && mFinalizedVertSPIRV == null) {
+        } else if (mDevice.getCaps().isGLES()) {
+            // OpenGL ES requires both a vertex shader and fragment shader, create a simple shader
+            String trivialFragGLSL = mDevice.getCaps().shaderCaps().mGLSLVersion.mVersionDecl + """
+                    void main() {
+                    }
+                    """;
+            mFinalizedFragGLSL = BufferUtils.createByteBuffer(trivialFragGLSL.length());
+            MemoryUtil.memUTF8(trivialFragGLSL, false, mFinalizedFragGLSL);
+        }
+        if (success) {
+            TranslationUnit vertexProgram = compiler.parse(info.mVertSource, ShaderKind.VERTEX,
+                    options, ModuleLoader.getInstance().loadCommonModule(compiler));
+            if (vertexProgram == null) {
                 GLUtil.handleCompileError(mDevice.getLogger(),
                         info.mVertSource, compiler.getErrorMessage());
+            } else {
+                if (mDevice.getCaps().hasSPIRVSupport()) {
+                    mFinalizedVertSPIRV = compiler.generateSPIRV(vertexProgram, mDevice.getCaps().shaderCaps());
+                } else {
+                    mFinalizedVertGLSL = compiler.generateGLSL(vertexProgram, mDevice.getCaps().shaderCaps());
+                }
+                if (mFinalizedVertGLSL == null && mFinalizedVertSPIRV == null) {
+                    GLUtil.handleCompileError(mDevice.getLogger(),
+                            info.mVertSource, compiler.getErrorMessage());
+                }
             }
         }
         /*CompletableFuture.runAsync(() -> {
@@ -186,8 +203,7 @@ public class GLGraphicsPipelineBuilder {
     }*/
 
     boolean finish(GLGraphicsPipeline dest) {
-        if ((mFinalizedVertGLSL == null || mFinalizedFragGLSL == null) &&
-                (mFinalizedVertSPIRV == null || mFinalizedFragSPIRV == null)) {
+        if (mFinalizedVertGLSL == null && mFinalizedVertSPIRV == null) {
             return false;
         }
         GLInterface gl = mDevice.getGL();
@@ -196,17 +212,20 @@ public class GLGraphicsPipelineBuilder {
             return false;
         }
 
-        int frag;
-        if (mFinalizedFragSPIRV != null) {
-            frag = GLUtil.glSpecializeShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSPIRV,
-                    "main", mDevice.getSharedResourceCache().getStats());
-        } else {
-            frag = GLUtil.glCompileShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragGLSL,
-                    mDevice.getSharedResourceCache().getStats());
-        }
-        if (frag == 0) {
-            gl.glDeleteProgram(program);
-            return false;
+        // fragment shader is optional in OpenGL
+        int frag = 0;
+        if (mFinalizedFragGLSL != null || mFinalizedFragSPIRV != null) {
+            if (mFinalizedFragSPIRV != null) {
+                frag = GLUtil.glSpecializeShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSPIRV,
+                        "main", mDevice.getSharedResourceCache().getStats());
+            } else {
+                frag = GLUtil.glCompileShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragGLSL,
+                        mDevice.getSharedResourceCache().getStats());
+            }
+            if (frag == 0) {
+                gl.glDeleteProgram(program);
+                return false;
+            }
         }
 
         int vert;
@@ -219,26 +238,30 @@ public class GLGraphicsPipelineBuilder {
         }
         if (vert == 0) {
             gl.glDeleteProgram(program);
-            gl.glDeleteShader(frag);
+            if (frag != 0) {
+                gl.glDeleteShader(frag);
+            }
             return false;
         }
 
         gl.glAttachShader(program, vert);
-        gl.glAttachShader(program, frag);
+        if (frag != 0) {
+            gl.glAttachShader(program, frag);
+        }
 
         gl.glLinkProgram(program);
 
         if (gl.glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
             try {
                 String log = gl.glGetProgramInfoLog(program);
-                if (mFinalizedVertGLSL != null && mFinalizedFragGLSL != null) {
+                if (mFinalizedVertGLSL != null) {
                     GLUtil.handleLinkError(mDevice.getLogger(),
                             new String[]{
                                     "Vertex GLSL",
                                     "Fragment GLSL"},
                             new String[]{
                                     MemoryUtil.memUTF8(mFinalizedVertGLSL),
-                                    MemoryUtil.memUTF8(mFinalizedFragGLSL)},
+                                    MemoryUtil.memUTF8Safe(mFinalizedFragGLSL)},
                             log);
                 } else {
                     mDevice.getLogger().error("Program linking error: {}", log);
@@ -248,16 +271,20 @@ public class GLGraphicsPipelineBuilder {
                 Reference.reachabilityFence(mFinalizedVertGLSL);
                 Reference.reachabilityFence(mFinalizedFragGLSL);
                 gl.glDeleteProgram(program);
-                gl.glDeleteShader(frag);
+                if (frag != 0) {
+                    gl.glDeleteShader(frag);
+                }
                 gl.glDeleteShader(vert);
             }
         }
 
         // the shaders can be detached after the linking
         gl.glDetachShader(program, vert);
-        gl.glDetachShader(program, frag);
+        if (frag != 0) {
+            gl.glDetachShader(program, frag);
+            gl.glDeleteShader(frag);
+        }
         // the shaders can be marked for deletion after the linking
-        gl.glDeleteShader(frag);
         gl.glDeleteShader(vert);
 
         /*try (MemoryStack stack = MemoryStack.stackPush()) {
