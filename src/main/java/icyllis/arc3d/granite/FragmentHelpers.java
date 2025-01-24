@@ -609,12 +609,6 @@ public class FragmentHelpers {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (ColorShader) shader);
-        } else if (shader instanceof Color4fShader) {
-            append_to_key(keyContext,
-                    keyBuilder,
-                    uniformDataGatherer,
-                    textureDataGatherer,
-                    (Color4fShader) shader);
         } else if (shader instanceof Gradient1DShader) {
             append_to_key(keyContext,
                     keyBuilder,
@@ -687,39 +681,13 @@ public class FragmentHelpers {
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
                                       @RawPtr ColorShader shader) {
-        //TODO should we apply color space here?
-        int color = shader.getColor();
-        float r = ((color >> 16) & 0xff) / 255.0f;
-        float g = ((color >> 8) & 0xff) / 255.0f;
-        float b = (color & 0xff) / 255.0f;
-        float a = (color >>> 24) / 255.0f;
-        appendSolidColorShaderBlock(
-                keyContext,
-                keyBuilder,
-                uniformDataGatherer,
-                textureDataGatherer,
-                r * a, g * a, b * a, a
-        );
-    }
-
-    private static void append_to_key(KeyContext keyContext,
-                                      KeyBuilder keyBuilder,
-                                      UniformDataGatherer uniformDataGatherer,
-                                      TextureDataGatherer textureDataGatherer,
-                                      @RawPtr Color4fShader shader) {
         float[] color = shader.getColor();
-        ColorSpace srcCS = shader.getColorSpace();
         ColorSpace dstCS = keyContext.targetInfo().colorSpace();
-        if ((srcCS != null && !srcCS.isSrgb()) || (dstCS != null && !dstCS.isSrgb())) {
-            if (srcCS == null) {
-                srcCS = ColorSpace.get(ColorSpace.Named.SRGB);
-            }
-            if (dstCS == null) {
-                dstCS = ColorSpace.get(ColorSpace.Named.SRGB);
-            }
-            ColorSpace.connect(srcCS, dstCS)
+        if (dstCS != null && !dstCS.isSrgb()) {
+            ColorSpace.connect(ColorSpace.get(ColorSpace.Named.SRGB), dstCS)
                     .transform(color);
         }
+        // premul
         for (int i = 0; i < 3; i++) {
             color[i] *= color[3];
         }
