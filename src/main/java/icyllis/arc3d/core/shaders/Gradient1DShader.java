@@ -188,6 +188,11 @@ public abstract sealed class Gradient1DShader extends GradientShader
         mLastStopIsImplicit = lastStopIsImplicit;
     }
 
+    @Override
+    public boolean isOpaque() {
+        return mColorsAreOpaque && mTileMode != TILE_MODE_DECAL;
+    }
+
     @VisibleForTesting
     public float[] getColors() {
         return mColors;
@@ -258,7 +263,7 @@ public abstract sealed class Gradient1DShader extends GradientShader
                 // Depending on how the gradient shape degenerates, there may be a more specialized
                 // fallback representation for the factories to use, but this is a reasonable default.
                 int i = (colorCount - 1) * 4;
-                return new Color4fShader(colors[i], colors[i + 1], colors[i + 2], colors[i + 3], colorSpace);
+                return ColorShader.make(colors[i], colors[i + 1], colors[i + 2], colors[i + 3], colorSpace);
             }
             case TILE_MODE_DECAL -> {
                 // normally this would reject the area outside of the interpolation region, so since

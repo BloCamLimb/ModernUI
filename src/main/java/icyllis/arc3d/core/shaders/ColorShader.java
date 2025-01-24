@@ -19,9 +19,14 @@
 
 package icyllis.arc3d.core.shaders;
 
+import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.MathUtil;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.Size;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Shader that represents a single color. In general, this effect can be accomplished by just
@@ -50,11 +55,32 @@ public final class ColorShader implements Shader {
     /**
      * Create a ColorShader wrapping the given sRGB color.
      */
+    @VisibleForTesting
     public ColorShader(float r, float g, float b, float a) {
         mR = r;
         mG = g;
         mB = b;
         mA = MathUtil.pin(a, 0.0f, 1.0f);
+    }
+
+    @Contract(pure = true)
+    @SharedPtr
+    public static @Nullable Shader make(@Size(4) float @NonNull [] color, @Nullable ColorSpace space) {
+        return make(color[0], color[1], color[2], color[3], space);
+    }
+
+    @Contract(pure = true)
+    @SharedPtr
+    public static @Nullable Shader make(float r, float g, float b, float a, @Nullable ColorSpace space) {
+        if (!MathUtil.isFinite(r, g, b, a)) {
+            return null;
+        }
+        if (space != null && !space.isSrgb()) {
+            float[] srgb = ColorSpace.connect(space)
+                    .transform(r, g, b);
+            return new ColorShader(srgb[0], srgb[1], srgb[2], a);
+        }
+        return new ColorShader(r, g, b, a);
     }
 
     @Override

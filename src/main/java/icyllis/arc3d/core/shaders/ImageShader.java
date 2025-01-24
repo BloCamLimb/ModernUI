@@ -95,6 +95,12 @@ public final class ImageShader extends RefCnt implements Shader {
         RefCnt.move(mImage);
     }
 
+    @Override
+    public boolean isOpaque() {
+        return mImage.isOpaque() &&
+                mTileModeX != TILE_MODE_DECAL && mTileModeY != TILE_MODE_DECAL;
+    }
+
     @RawPtr
     public Image getImage() {
         return mImage;

@@ -134,7 +134,7 @@ public final class LinearGradient extends Gradient1DShader {
             return null;
         }
         if (colorCount == 1) {
-            return new Color4fShader(colors[0], colors[1], colors[2], colors[3], colorSpace);
+            return ColorShader.make(colors[0], colors[1], colors[2], colors[3], colorSpace);
         }
         if (localMatrix != null && !localMatrix.invert(null)) {
             return null;
