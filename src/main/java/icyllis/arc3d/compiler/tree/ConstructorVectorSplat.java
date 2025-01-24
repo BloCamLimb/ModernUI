@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,8 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
 import org.jspecify.annotations.NonNull;
+
+import java.util.OptionalDouble;
 
 /**
  * Represents the construction of a vector splat (broadcast), such as `float3(n)`.
@@ -58,6 +60,12 @@ public final class ConstructorVectorSplat extends ConstructorCall {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.CONSTRUCTOR_VECTOR_SPLAT;
+    }
+
+    @Override
+    public @NonNull OptionalDouble getConstantValue(int i) {
+        assert (i >= 0 && i < getType().getRows());
+        return getArgument().getConstantValue(0);
     }
 
     @NonNull
