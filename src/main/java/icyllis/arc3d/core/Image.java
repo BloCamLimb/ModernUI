@@ -114,6 +114,10 @@ public abstract class Image extends RefCnt {
         return ColorInfo.colorTypeIsAlphaOnly(getColorType());
     }
 
+    public final boolean isOpaque() {
+        return getAlphaType() == ColorInfo.AT_OPAQUE;
+    }
+
     @ApiStatus.Internal
     @Nullable
     public Context getContext() {
