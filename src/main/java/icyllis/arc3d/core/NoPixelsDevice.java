@@ -181,7 +181,7 @@ public class NoPixelsDevice extends Device {
     }
 
     @Override
-    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+    public void drawEllipse(float cx, float cy, float rx, float ry, Paint paint) {
     }
 
     @Override

@@ -1295,19 +1295,20 @@ public class Canvas implements AutoCloseable {
      * rectangle will be filled or framed based on the Style in the paint.
      *
      * @param rect  The rectangular bounds of the round rect to be drawn
-     * @param rUL   the radius used to round the upper left corner
-     * @param rUR   the radius used to round the upper right corner
-     * @param rLR   the radius used to round the lower right corner
-     * @param rLL   the radius used to round the lower left corner
+     * @param upperLeftRadius  the radius used to round the upper left corner
+     * @param upperRightRadius the radius used to round the upper right corner
+     * @param lowerRightRadius the radius used to round the lower right corner
+     * @param lowerLeftRadius  the radius used to round the lower left corner
      * @param paint the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(Rect2f rect, float rUL, float rUR, float rLR, float rLL, Paint paint) {
+    public final void drawRoundRect(Rect2fc rect, float upperLeftRadius, float upperRightRadius,
+                                    float lowerRightRadius, float lowerLeftRadius, Paint paint) {
         var radii = mTmpRadii;
-        radii[0]=radii[1]=rUL;
-        radii[2]=radii[3]=rUR;
-        radii[4]=radii[5]=rLR;
-        radii[6]=radii[7]=rLL;
-        mTmpRRect.setRectRadii(rect,radii);
+        radii[RRect.kUpperLeftX] = radii[RRect.kUpperLeftY] = upperLeftRadius;
+        radii[RRect.kUpperRightX] = radii[RRect.kUpperRightY] = upperRightRadius;
+        radii[RRect.kLowerRightX] = radii[RRect.kLowerRightY] = lowerRightRadius;
+        radii[RRect.kLowerLeftX] = radii[RRect.kLowerLeftY] = lowerLeftRadius;
+        mTmpRRect.setRectRadii(rect, radii);
         onDrawRRect(mTmpRRect, paint);
     }
 
@@ -1315,29 +1316,42 @@ public class Canvas implements AutoCloseable {
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
      * rectangle will be filled or framed based on the Style in the paint.
      *
-     * @param left   the left of the rectangular bounds
-     * @param top    the top of the rectangular bounds
-     * @param right  the right of the rectangular bounds
-     * @param bottom the bottom of the rectangular bounds
-     * @param rUL    the radius used to round the upper left corner
-     * @param rUR    the radius used to round the upper right corner
-     * @param rLR    the radius used to round the lower right corner
-     * @param rLL    the radius used to round the lower left corner
-     * @param paint  the paint used to draw the round rectangle
+     * @param left             the left of the rectangular bounds
+     * @param top              the top of the rectangular bounds
+     * @param right            the right of the rectangular bounds
+     * @param bottom           the bottom of the rectangular bounds
+     * @param upperLeftRadius  the radius used to round the upper left corner
+     * @param upperRightRadius the radius used to round the upper right corner
+     * @param lowerRightRadius the radius used to round the lower right corner
+     * @param lowerLeftRadius  the radius used to round the lower left corner
+     * @param paint            the paint used to draw the round rectangle
      */
-    public void drawRoundRect(float left, float top, float right, float bottom,
-                              float rUL, float rUR, float rLR, float rLL, Paint paint) {
+    public final void drawRoundRect(float left, float top, float right, float bottom,
+                                    float upperLeftRadius, float upperRightRadius,
+                                    float lowerRightRadius, float lowerLeftRadius,
+                                    Paint paint) {
         var radii = mTmpRadii;
-        radii[0]=radii[1]=rUL;
-        radii[2]=radii[3]=rUR;
-        radii[4]=radii[5]=rLR;
-        radii[6]=radii[7]=rLL;
-        mTmpRRect.setRectRadii(left,top,right,bottom,radii);
+        radii[RRect.kUpperLeftX] = radii[RRect.kUpperLeftY] = upperLeftRadius;
+        radii[RRect.kUpperRightX] = radii[RRect.kUpperRightY] = upperRightRadius;
+        radii[RRect.kLowerRightX] = radii[RRect.kLowerRightY] = lowerRightRadius;
+        radii[RRect.kLowerLeftX] = radii[RRect.kLowerLeftY] = lowerLeftRadius;
+        mTmpRRect.setRectRadii(left, top, right, bottom, radii);
         onDrawRRect(mTmpRRect, paint);
     }
 
-    public void drawRRect(RRect rr, Paint paint) {
-        onDrawRRect(rr, paint);
+    /**
+     * Draws RRect using the current matrix, clip and specified paint.
+     * In paint: Style determines if rrect is stroked or filled;
+     * if stroked, Paint stroke width describes the line thickness.
+     * <p>
+     * rrect may represent a rectangle, circle, oval, uniformly rounded rectangle, or
+     * may have any combination of positive non-square radii for the four corners.
+     *
+     * @param rrect SkRRect with up to eight corner radii to draw
+     * @param paint SkPaint stroke or fill, blend, color, and so on, used to draw
+     */
+    public final void drawRRect(RRect rrect, Paint paint) {
+        onDrawRRect(rrect, paint);
     }
 
     /**
@@ -1352,10 +1366,28 @@ public class Canvas implements AutoCloseable {
      * @param paint  the paint used to draw the circle
      */
     public final void drawCircle(float cx, float cy, float radius, Paint paint) {
-        onDrawCircle(cx, cy, Math.max(radius, 0.0f), paint);
+        drawEllipse(cx, cy, radius, radius, paint);
     }
 
-    //TODO draw ellipse and oval
+    /**
+     * Draw the specified ellipse at (cx, cy) with radii using the specified paint.
+     * If either radiusX or radiusY is zero or less, nothing is drawn.
+     * In paint: Paint's style determines if ellipse is stroked or filled;
+     * if stroked, paint's stroke width describes the line thickness.
+     *
+     * @param cx      the x-coordinate of the center of the ellipse to be drawn
+     * @param cy      the y-coordinate of the center of the ellipse to be drawn
+     * @param radiusX the x-axis radius of the ellipse to be drawn
+     * @param radiusY the y-axis radius of the ellipse to be drawn
+     * @param paint   the paint used to draw the ellipse
+     */
+    public final void drawEllipse(float cx, float cy, float radiusX, float radiusY, Paint paint) {
+        if (radiusX < 0)
+            radiusX = 0;
+        if (radiusY < 0)
+            radiusY = 0;
+        onDrawEllipse(cx, cy, radiusX, radiusY, paint);
+    }
 
     /**
      * Draw a circular arc at (cx, cy) with radius using the current matrix,
@@ -1473,25 +1505,6 @@ public class Canvas implements AutoCloseable {
     }
 
     //TODO draw path
-
-    /**
-     * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
-     * <p>
-     * The Style is ignored in the paint, triangles are always "filled".
-     * The smooth radius and gradient color are ignored as well.
-     *
-     * @param x0    the x-coordinate of the first vertex
-     * @param y0    the y-coordinate of the first vertex
-     * @param x1    the x-coordinate of the second vertex
-     * @param y1    the y-coordinate of the second vertex
-     * @param x2    the x-coordinate of the last vertex
-     * @param y2    the y-coordinate of the last vertex
-     * @param paint the paint used to draw the triangle
-     */
-    public void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
-                             Paint paint) {
-        //TODO
-    }
 
     /**
      * The {@code SrcRectConstraint} controls the behavior at the edge of source rect,
@@ -1711,7 +1724,7 @@ public class Canvas implements AutoCloseable {
         cleanedPaint.reset();
     }
 
-    @ApiStatus.Experimental
+    @ApiStatus.Internal
     public final void drawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
         var cleanedPaint = mTmpPaint;
         cleanedPaint.set(paint);
@@ -2050,7 +2063,7 @@ public class Canvas implements AutoCloseable {
     protected void onDrawRRect(RRect rr, Paint paint) {
         var bounds = mTmpRect2;
         rr.getBounds(bounds);
-        if (rr.isRect()) {
+        if (rr.getType() <= RRect.kRect_Type) {
             bounds.sort();
             onDrawRect(bounds, paint);
             return;
@@ -2065,16 +2078,16 @@ public class Canvas implements AutoCloseable {
         }
     }
 
-    protected void onDrawCircle(float cx, float cy, float radius, Paint paint) {
+    protected void onDrawEllipse(float cx, float cy, float rx, float ry, Paint paint) {
         var bounds = mTmpRect2;
-        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius);
+        bounds.set(cx - rx, cy - ry, cx + rx, cy + ry);
 
         if (internalQuickReject(bounds, paint)) {
             return;
         }
 
         if (aboutToDraw(paint)) {
-            topDevice().drawCircle(cx, cy, radius, paint);
+            topDevice().drawEllipse(cx, cy, rx, ry, paint);
         }
     }
 

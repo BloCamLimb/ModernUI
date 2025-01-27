@@ -23,6 +23,7 @@ import icyllis.arc3d.core.Matrix;
 import icyllis.arc3d.core.Matrixc;
 import icyllis.arc3d.core.RRect;
 import icyllis.arc3d.core.SharedPtr;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -31,6 +32,8 @@ import org.jspecify.annotations.Nullable;
  * rounded rect is supported. This shader emits single channel coverage modulated
  * by white alpha values.
  */
+@ApiStatus.Experimental
+// maybe make this a RuntimeShader
 public final class RRectShader implements Shader {
 
     private final float mLeft;

@@ -256,7 +256,7 @@ public abstract class Device extends RefCnt {
 
     public abstract void drawRRect(RRect rr, Paint paint);
 
-    public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
+    public abstract void drawEllipse(float cx, float cy, float rx, float ry, Paint paint);
 
     public abstract void drawArc(float cx, float cy, float radius, float startAngle,
                                  float sweepAngle, @Paint.Cap int cap, float width, Paint paint);

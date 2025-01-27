@@ -92,14 +92,15 @@ public class TestGraniteRenderer {
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         GLFW.glfwInit();
+        LOGGER.info("Java {}", Runtime.version());
         LOGGER.info(Long.toString(ProcessHandle.current().pid()));
-        /*TinyFileDialogs.tinyfd_messageBox(
+        TinyFileDialogs.tinyfd_messageBox(
                 "Arc3D Test",
                 "Arc3D starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true
-        );*/
+        );
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         if (TEST_OPENGL_ES) {
@@ -126,6 +127,7 @@ public class TestGraniteRenderer {
         ContextOptions contextOptions = new ContextOptions();
         contextOptions.mLogger = LOGGER;
         contextOptions.mSkipGLErrorChecks = Boolean.TRUE;
+        contextOptions.mAllowGLSPIRV = true;
         ImmediateContext immediateContext = GLUtil.makeOpenGL(
                 TEST_OPENGL_ES ? GLES.createCapabilities() : GL.createCapabilities(),
                 contextOptions
@@ -557,16 +559,16 @@ public class TestGraniteRenderer {
 
         private void drawScene(Canvas canvas) {
             final int nRects = 10000;
-            canvas.clear(0xFFF8F1F6);
-            //canvas.clear(0xFF000000);
+            //canvas.clear(0);
             canvas.save();
+            canvas.clear(0xFFF8F1F6);
             Paint paint = new Paint();
             if (TEST_SCENE == 0) {
                 Matrix4 mat = new Matrix4();
                 mat.m34 = -1 / 1920f;
                 mat.preRotateX(MathUtil.PI_O_6);
                 canvas.concat(mat);
-                Rect2f rrect = new Rect2f();
+                RRect rrect = new RRect();
                 paint.setStroke(true);
                 paint.setStrokeWidth(10);
                 for (int i = 0; i < nRects; i++) {
@@ -576,21 +578,21 @@ public class TestGraniteRenderer {
                             (MAX_RECT_WIDTH - MIN_RECT_WIDTH)) + MIN_RECT_WIDTH;
                     int h = (int) (mRandom.nextDouble() * mRandom.nextDouble() * mRandom.nextDouble() * mRandom.nextDouble() *
                             (MAX_RECT_HEIGHT - MIN_RECT_HEIGHT)) + MIN_RECT_HEIGHT;
-                    int rad = Math.min(mRandom.nextInt(MAX_CORNER_RADIUS), Math.min(w, h) / 2);
-                    rrect.set(
+                    int rad = Math.min(mRandom.nextInt(MAX_CORNER_RADIUS) + 1, Math.min(w, h) / 2);
+                    rrect.setRectXY(
                             cx - (int) Math.ceil(w / 2d),
                             cy - (int) Math.ceil(h / 2d),
                             cx + (int) Math.floor(w / 2d),
-                            cy + (int) Math.floor(h / 2d)/*,
-                            rad, rad*/
+                            cy + (int) Math.floor(h / 2d),
+                            rad, rad
                     );
                     int stroke = mRandom.nextInt(50);
                     //paint.setStyle(stroke < 25 ? Paint.FILL : Paint.STROKE);
                     //paint.setStrokeWidth((stroke - 20) * 2);
                     paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256),
                             mRandom.nextInt(128));
-                    canvas.drawRect(rrect, paint);
-                    canvas.drawArc(cx, cy, rad, 20, 130, paint);
+                    canvas.drawRRect(rrect, paint);
+                    //canvas.drawArc(cx, cy, rad, 20, 130, paint);
                     if ((i & 15) == 0) {
                         canvas.translate(CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
                         canvas.rotate(1);
@@ -613,7 +615,7 @@ public class TestGraniteRenderer {
                 Rect2f rect = new Rect2f();
                 rrect.getRect(rect);
                 //paint.setStrokeAlign(Paint.ALIGN_CENTER);
-                paint.setStrokeJoin(Paint.JOIN_MITER);
+                paint.setStrokeJoin(Paint.JOIN_BEVEL);
                 paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
                 canvas.drawRect(rect, paint);
                 Runnable lines = () -> {
@@ -633,7 +635,10 @@ public class TestGraniteRenderer {
                 paint.setStrokeWidth(4);
                 paint.setStrokeJoin(Paint.JOIN_MITER);
                 paint.setStrokeAlign(Paint.ALIGN_CENTER);
+                canvas.save();
+                canvas.clipRect(150, 160, 100, 330, ClipOp.CLIP_OP_DIFFERENCE);
                 lines.run();
+                canvas.restore();
 
                 canvas.translate(0, 100);
                 paint.setStrokeJoin(Paint.JOIN_ROUND);
@@ -653,7 +658,7 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mTestShader1));
                 paint.setStyle(Paint.FILL);
                 //paint.setRGBA(mRandom.nextInt(256), mRandom.nextInt(256), mRandom.nextInt(256), 255);
-                canvas.drawCircle(300, 300, 20, paint);
+                canvas.drawEllipse(300, 300, 40, 20, paint);
 
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeJoin(Paint.JOIN_BEVEL);
@@ -736,7 +741,10 @@ public class TestGraniteRenderer {
                 canvas.setMatrix(mat);*/
                 canvas.translate(1000, 100);
                 //canvas.translate((float) (500+500*Math.sin(System.currentTimeMillis()/1000d)), 100);
-                rrect.setRectXY(200, 100, 600, 500, 20, 20);
+                rrect.setRectRadii(200, 100, 600, 500, new float[]{
+                        20, 20, 40, 40,
+                        60, 60, 80, 80
+                });
                 paint.setShader(null);
                 float z = (float) (12*Math.sin(System.currentTimeMillis()/500d));
                 if (z > 0.001f) {
