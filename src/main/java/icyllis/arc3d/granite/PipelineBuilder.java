@@ -211,6 +211,8 @@ public class PipelineBuilder {
         //// Varyings
         mVaryings.getVertDecls(out);
 
+        mDesc.geomStep().emitVertexDefinitions(vs);
+
         //// Entry Point
         out.append("void main() {\n");
 
@@ -311,6 +313,8 @@ public class PipelineBuilder {
                 out.append(";\n");
             }
         }
+
+        mDesc.geomStep().emitFragmentDefinitions(fs);
 
         ShaderCodeSource.emitDefinitions(mRootNodes, new IdentityHashMap<>(), fs);
 

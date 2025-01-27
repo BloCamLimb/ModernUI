@@ -441,6 +441,9 @@ public abstract class GeometryStep {
     public void emitSamplers(UniformHandler uniformHandler) {
     }
 
+    public void emitVertexDefinitions(Formatter vs) {
+    }
+
     /**
      * Emits the geometry code into the vertex shader.
      * Implementation must define "vec4 worldPosVar" with the given name
@@ -451,6 +454,9 @@ public abstract class GeometryStep {
                                    @NonNull String worldPosVar,
                                    @Nullable String localPosVar,
                                    boolean usesFastSolidColor) {
+    }
+
+    public void emitFragmentDefinitions(Formatter fs) {
     }
 
     /**
