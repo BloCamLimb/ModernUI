@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -31,6 +32,7 @@ import org.jspecify.annotations.NonNull;
  * @author BloCamLimb
  * @see Rect2f
  */
+//TODO consider removing this interface and only describing mutability via Contract
 public sealed interface Rect2fc permits Rect2f {
     // one implementation is fast
 
@@ -41,6 +43,7 @@ public sealed interface Rect2fc permits Rect2f {
      *
      * @return true if width() or height() are zero or negative
      */
+    @Contract(pure = true)
     boolean isEmpty();
 
     /**
@@ -50,6 +53,7 @@ public sealed interface Rect2fc permits Rect2f {
      *
      * @return true if width() or height() are zero or positive
      */
+    @Contract(pure = true)
     boolean isSorted();
 
     /**
@@ -57,60 +61,71 @@ public sealed interface Rect2fc permits Rect2f {
      *
      * @return true if no member is infinite or NaN
      */
+    @Contract(pure = true)
     boolean isFinite();
 
     /**
      * Returns the rectangle's left.
      */
+    @Contract(pure = true)
     float x();
 
     /**
      * Return the rectangle's top.
      */
+    @Contract(pure = true)
     float y();
 
     /**
      * Returns the rectangle's left.
      */
+    @Contract(pure = true)
     float left();
 
     /**
      * Return the rectangle's top.
      */
+    @Contract(pure = true)
     float top();
 
     /**
      * Return the rectangle's right.
      */
+    @Contract(pure = true)
     float right();
 
     /**
      * Return the rectangle's bottom.
      */
+    @Contract(pure = true)
     float bottom();
 
     /**
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */
+    @Contract(pure = true)
     float width();
 
     /**
      * @return the rectangle's height. This does not check for a valid rectangle
      * (i.e. top <= bottom) so the result may be negative.
      */
+    @Contract(pure = true)
     float height();
 
     /**
      * @return the horizontal center of the rectangle. This does not check for
      * a valid rectangle (i.e. left <= right)
      */
+    @Contract(pure = true)
     float centerX();
 
     /**
      * @return the vertical center of the rectangle. This does not check for
      * a valid rectangle (i.e. top <= bottom)
      */
+    @Contract(pure = true)
     float centerY();
 
     /**
@@ -118,6 +133,7 @@ public sealed interface Rect2fc permits Rect2f {
      *
      * @param dst the rectangle to store
      */
+    @Contract(mutates = "param")
     void store(@NonNull Rect2f dst);
 
     /**
@@ -125,6 +141,7 @@ public sealed interface Rect2fc permits Rect2f {
      *
      * @param dst the rectangle to store
      */
+    @Contract(mutates = "param")
     void store(@NonNull Rect2i dst);
 
     /**
@@ -140,6 +157,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
+    @Contract(pure = true)
     boolean intersects(float left, float top, float right, float bottom);
 
     /**
@@ -150,6 +168,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
+    @Contract(pure = true)
     boolean intersects(@NonNull Rect2fc r);
 
     /**
@@ -161,6 +180,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
+    @Contract(pure = true)
     boolean intersects(@NonNull Rect2ic r);
 
     /**
@@ -174,6 +194,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if (x,y) are contained by the rectangle, where containment
      * means left <= x < right and top <= y < bottom
      */
+    @Contract(pure = true)
     boolean contains(float x, float y);
 
     /**
@@ -188,6 +209,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the 4 specified sides of a rectangle are inside or
      * equal to this rectangle
      */
+    @Contract(pure = true)
     boolean contains(float left, float top, float right, float bottom);
 
     /**
@@ -198,6 +220,7 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
+    @Contract(pure = true)
     boolean contains(@NonNull Rect2fc r);
 
     /**
@@ -208,41 +231,48 @@ public sealed interface Rect2fc permits Rect2f {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
+    @Contract(pure = true)
     boolean contains(@NonNull Rect2ic r);
 
     /**
      * Set the dst integer Rect by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
+    @Contract(mutates = "param")
     void round(@NonNull Rect2i dst);
 
     /**
      * Set the dst integer Rect by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
+    @Contract(mutates = "param")
     void roundIn(@NonNull Rect2i dst);
 
     /**
      * Set the dst integer Rect by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
+    @Contract(mutates = "param")
     void roundOut(@NonNull Rect2i dst);
 
     /**
      * Set the dst rectangle by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
+    @Contract(mutates = "param")
     void round(@NonNull Rect2f dst);
 
     /**
      * Set the dst rectangle by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
+    @Contract(mutates = "param")
     void roundIn(@NonNull Rect2f dst);
 
     /**
      * Set the dst rectangle by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
+    @Contract(mutates = "param")
     void roundOut(@NonNull Rect2f dst);
 }
