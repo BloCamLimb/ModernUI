@@ -68,6 +68,19 @@ public class RRect {
             kLast_Type = kComplex_Type;
 
     /**
+     * The radii are stored: top-left, top-right, bottom-right, bottom-left.
+     */
+    public static final int
+            kUpperLeftX = 0,
+            kUpperLeftY = 1,
+            kUpperRightX = 2,
+            kUpperRightY = 3,
+            kLowerRightX = 4,
+            kLowerRightY = 5,
+            kLowerLeftX = 6,
+            kLowerLeftY = 7;
+
+    /**
      * The rectangular bounds, see {@link Rect2f}.
      */
     protected float mLeft;
