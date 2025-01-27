@@ -43,6 +43,7 @@ public class RendererProvider {
 
     // blur variant
     private final GeometryRenderer[] mSimpleBox = new GeometryRenderer[2];
+    private final GeometryRenderer mComplexBox;
     // mask format variant
     private final GeometryRenderer[] mRasterText = new GeometryRenderer[Engine.MASK_FORMAT_COUNT];
     // arc type variant
@@ -58,6 +59,9 @@ public class RendererProvider {
         );
         mSimpleBox[1] = makeSingleStep(
                 new AnalyticSimpleBoxStep(true)
+        );
+        mComplexBox = makeSingleStep(
+                new AnalyticComplexBoxStep(staticBufferManager)
         );
         for (int i = 0; i < Engine.MASK_FORMAT_COUNT; i++) {
             if (i == Engine.MASK_FORMAT_A565) continue;
@@ -95,6 +99,10 @@ public class RendererProvider {
 
     public GeometryRenderer getSimpleBox(boolean blur) {
         return mSimpleBox[blur ? 1 : 0];
+    }
+
+    public GeometryRenderer getComplexBox() {
+        return mComplexBox;
     }
 
     public GeometryRenderer getRasterText(int maskFormat) {

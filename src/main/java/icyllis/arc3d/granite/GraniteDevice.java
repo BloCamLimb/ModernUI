@@ -352,15 +352,34 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                         mRC.getRendererProvider().getNonAABoundsFill(), null);
             }
         } else {
+            var join = paint.getStrokeJoin();
+            boolean complex = join == Paint.JOIN_BEVEL ||
+                    (join == Paint.JOIN_MITER && paint.getStrokeMiter() < MathUtil.SQRT2);
+            GeometryRenderer renderer = complex
+                    ? mRC.getRendererProvider().getComplexBox()
+                    : mRC.getRendererProvider().getSimpleBox(false);
             drawGeometry(getLocalToDevice33(), new SimpleShape(r), SimpleShape::getBounds, false, paint,
-                    mRC.getRendererProvider().getSimpleBox(false), null);
+                    renderer, null);
         }
     }
 
     @Override
     public void drawRRect(RRect rr, Paint paint) {
+        //TODO stroking an ellipse requires new renderer
+        boolean complex = switch (rr.getType()) {
+            case RRect.kOval_Type, RRect.kSimple_Type -> rr.getSimpleRadiusX() != rr.getSimpleRadiusY();
+            case RRect.kNineSlice_Type, RRect.kComplex_Type -> true;
+            default -> {
+                // empty and rect are handled by Canvas
+                assert false;
+                yield false;
+            }
+        };
+        GeometryRenderer renderer = complex
+                ? mRC.getRendererProvider().getComplexBox()
+                : mRC.getRendererProvider().getSimpleBox(false);
         drawGeometry(getLocalToDevice33(), new SimpleShape(rr), SimpleShape::getBounds, false, paint,
-                mRC.getRendererProvider().getSimpleBox(false), null);
+                renderer, null);
     }
 
     @Override
