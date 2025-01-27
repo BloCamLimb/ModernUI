@@ -126,10 +126,10 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
     }
 
     @Override
-    protected void onDrawCircle(float cx, float cy, float radius, Paint paint) {
+    protected void onDrawEllipse(float cx, float cy, float rx, float ry, Paint paint) {
         mFilterPaint.set(paint);
         if (onFilter(mFilterPaint)) {
-            super.onDrawCircle(cx, cy, radius, mFilterPaint);
+            super.onDrawEllipse(cx, cy, rx, ry, mFilterPaint);
         }
         mFilterPaint.close();
     }

@@ -46,7 +46,7 @@ public class NoDrawCanvas extends Canvas {
     }
 
     @Override
-    protected void onDrawCircle(float cx, float cy, float radius, Paint paint) {
+    protected void onDrawEllipse(float cx, float cy, float rx, float ry, Paint paint) {
     }
 
     @Override

@@ -310,7 +310,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
             float radius = paint.getStrokeWidth() * 0.5f;
             if (cap == Paint.CAP_ROUND) {
                 for (int i = offset, e = offset + count * 2; i < e; i += 2) {
-                    drawCircle(pts[i], pts[i + 1], radius, paint);
+                    drawEllipse(pts[i], pts[i + 1], radius, radius, paint);
                 }
             } else {
                 Rect2f rect = new Rect2f(-radius, -radius, radius, radius);
@@ -383,11 +383,14 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+    public void drawEllipse(float cx, float cy, float rx, float ry, Paint paint) {
         var shape = new SimpleShape();
-        shape.setEllipse(cx, cy, radius, radius);
+        shape.setEllipse(cx, cy, rx, ry);
+        GeometryRenderer renderer = rx != ry
+                ? mRC.getRendererProvider().getComplexBox()
+                : mRC.getRendererProvider().getSimpleBox(false);
         drawGeometry(getLocalToDevice33(), shape, SimpleShape::getBounds, false, paint,
-                mRC.getRendererProvider().getSimpleBox(false), null);
+                renderer, null);
     }
 
     @Override

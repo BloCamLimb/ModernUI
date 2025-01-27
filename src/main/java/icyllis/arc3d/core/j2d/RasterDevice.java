@@ -116,7 +116,7 @@ public class RasterDevice extends Device {
     }
 
     @Override
-    public void drawCircle(float cx, float cy, float radius, icyllis.arc3d.core.Paint paint) {
+    public void drawEllipse(float cx, float cy, float rx, float ry, Paint paint) {
 
     }
 

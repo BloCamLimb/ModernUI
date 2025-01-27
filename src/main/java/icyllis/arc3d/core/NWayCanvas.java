@@ -158,9 +158,9 @@ public class NWayCanvas extends NoDrawCanvas {
     }
 
     @Override
-    protected void onDrawCircle(float cx, float cy, float radius, Paint paint) {
+    protected void onDrawEllipse(float cx, float cy, float rx, float ry, Paint paint) {
         for (int i = 0; i < mSize; i++) {
-            mList[i].drawCircle(cx, cy, radius, paint);
+            mList[i].drawEllipse(cx, cy, rx, ry, paint);
         }
     }
 
