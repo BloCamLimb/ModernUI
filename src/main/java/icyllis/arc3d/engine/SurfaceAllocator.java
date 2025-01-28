@@ -70,6 +70,7 @@ import org.jspecify.annotations.NonNull;
  * <p>
  * The task manager will drop the flush if any proxies fail to instantiate.
  */
+@Deprecated
 public final class SurfaceAllocator {
 
     private final ImmediateContext mContext;

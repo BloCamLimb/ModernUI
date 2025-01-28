@@ -29,7 +29,7 @@ import java.util.Objects;
 /**
  * Deferred, lazy-callback or wrapped a render target.
  */
-//TODO
+@Deprecated
 @VisibleForTesting
 public final class RenderTargetProxy extends SurfaceProxy {
 

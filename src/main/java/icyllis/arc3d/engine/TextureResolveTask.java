@@ -24,6 +24,7 @@ import icyllis.arc3d.core.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public final class TextureResolveTask extends RenderTask {
 
     private record Resolve(int flags, int msaaLeft, int msaaTop, int msaaRight, int msaaBottom) {

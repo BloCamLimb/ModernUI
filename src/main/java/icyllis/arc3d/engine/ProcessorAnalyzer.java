@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 //TODO
+@Deprecated
 public class ProcessorAnalyzer {
 
     public static final int
