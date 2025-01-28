@@ -22,7 +22,7 @@ package icyllis.arc3d.engine.trash.ops;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.granite.geom.SDFRectGeoProc;
+import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
@@ -58,7 +58,7 @@ public class RectOp extends MeshDrawOp {
             mViewMatrix = null;
         }
         int gpFlags = 0;
-        if (aa) {
+        /*if (aa) {
             gpFlags |= SDFRectGeoProc.FLAG_ANTIALIASING;
         }
         if (stroke) {
@@ -66,7 +66,7 @@ public class RectOp extends MeshDrawOp {
         }
         if (mViewMatrix != null) {
             gpFlags |= SDFRectGeoProc.FLAG_INSTANCED_MATRIX;
-        }
+        }*/
         mGPFlags = gpFlags;
         if (mViewMatrix != null) {
             mViewMatrix.mapRect(localRect, this);
@@ -99,7 +99,7 @@ public class RectOp extends MeshDrawOp {
     @Override
     protected GraphicsPipelineDesc_Old onCreatePipelineInfo(ImageProxyView writeView, int pipelineFlags) {
         return new GraphicsPipelineDesc_Old(writeView,
-                new SDFRectGeoProc(mGPFlags), null, null, null,
+                new AnalyticSimpleBoxStep(false), null, null, null,
                 null, pipelineFlags);
     }
 
@@ -154,13 +154,13 @@ public class RectOp extends MeshDrawOp {
             instanceData.putFloat(op.mLocalRect.height() / 2f);
             instanceData.putFloat(op.mLocalRect.centerY());
             // radii
-            if ((op.mGPFlags & SDFRectGeoProc.FLAG_STROKE) != 0) {
+            //if ((op.mGPFlags & SDFRectGeoProc.FLAG_STROKE) != 0) {
                 instanceData.putFloat(op.mStrokeRadius).putFloat(op.mStrokePos);
-            }
-            if ((op.mGPFlags & SDFRectGeoProc.FLAG_INSTANCED_MATRIX) != 0) {
+            //}
+            //if ((op.mGPFlags & SDFRectGeoProc.FLAG_INSTANCED_MATRIX) != 0) {
                 op.mViewMatrix.store(MemoryUtil.memAddress(instanceData));
                 instanceData.position(instanceData.position() + 36);
-            }
+            //}
         }
     }
 }

@@ -56,6 +56,7 @@ import org.jspecify.annotations.Nullable;
  * @see ImageViewProxy
  * @see ImageProxyView
  */
+@Deprecated
 public abstract class SurfaceProxy extends RefCnt {
 
     /**

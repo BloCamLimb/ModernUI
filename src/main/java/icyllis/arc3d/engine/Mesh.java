@@ -25,6 +25,7 @@ import icyllis.arc3d.core.RawPtr;
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}
  * for mesh-drawing operations.
  */
+@Deprecated
 public interface Mesh {
 
     /**
