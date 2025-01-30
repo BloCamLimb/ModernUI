@@ -24,7 +24,9 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import java.util.Iterator;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -37,13 +39,52 @@ public class LinkedListMultimap<K, V> extends Object2ObjectOpenHashMap<K, Linked
 
     private V outerValue;
 
-    static class ListNode<V> {
+    static class ListNode<V> implements Iterable<V> {
         V item;
         ListNode<V> next;
 
         ListNode(V value, ListNode<V> next) {
             this.item = value;
             this.next = next;
+        }
+
+        @Override
+        public @NonNull Iterator<V> iterator() {
+            return new Iter<>(this);
+        }
+
+        @Override
+        public void forEach(Consumer<? super V> action) {
+            for (var list = this; list != null; list = list.next) {
+                action.accept(list.item);
+            }
+        }
+
+        static class Iter<V> implements Iterator<V> {
+            ListNode<V> next;
+
+            Iter(ListNode<V> head) {
+                this.next = head;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return next != null;
+            }
+
+            @Override
+            public V next() {
+                V item = next.item;
+                next = next.next;
+                return item;
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super V> action) {
+                for (var list = next; list != null; list = list.next) {
+                    action.accept(list.item);
+                }
+            }
         }
     }
 
@@ -72,6 +113,8 @@ public class LinkedListMultimap<K, V> extends Object2ObjectOpenHashMap<K, Linked
     };
 
     public LinkedListMultimap() {
+        // 0.5f load factor is used for linear probing
+        super(DEFAULT_INITIAL_SIZE, FAST_LOAD_FACTOR);
     }
 
     @Nullable
