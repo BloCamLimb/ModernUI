@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,16 +18,26 @@
 
 package icyllis.modernui.text;
 
+import com.ibm.icu.lang.UCharacter;
+import com.ibm.icu.lang.UCharacterDirection;
 import com.ibm.icu.text.Bidi;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.IntRange;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.text.*;
-import icyllis.modernui.text.style.*;
+import icyllis.modernui.graphics.text.FontMetricsInt;
+import icyllis.modernui.graphics.text.FontPaint;
+import icyllis.modernui.graphics.text.LineBreakConfig;
+import icyllis.modernui.graphics.text.MeasuredText;
+import icyllis.modernui.text.style.MetricAffectingSpan;
+import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * MeasuredParagraph provides text information for rendering purpose.
@@ -43,7 +53,7 @@ import java.util.*;
 @NotThreadSafe
 public class MeasuredParagraph {
 
-    private static final Pools.Pool<MeasuredParagraph> sPool = Pools.newSynchronizedPool(1);
+    private static final Pools.Pool<MeasuredParagraph> sPool = Pools.newSynchronizedPool(2);
 
     /**
      * The cast original text.
@@ -66,18 +76,12 @@ public class MeasuredParagraph {
     private char[] mCopiedBuffer;
 
     /**
-     * The base paragraph direction. Either {@link Layout#DIR_LEFT_TO_RIGHT}
-     * or {@link Layout#DIR_RIGHT_TO_LEFT)
-     */
-    private int mParaDir;
-
-    /**
      * The bidi level for individual characters.
      * <p>
      * This is null if the text is LTR direction and doesn't contain any bidi characters.
      */
     @Nullable
-    private byte[] mLevels;
+    private Bidi mBidi;
 
     /**
      * @see #getSpanEndCache()
@@ -115,7 +119,7 @@ public class MeasuredParagraph {
     private void reset() {
         mSpanned = null;
         mCopiedBuffer = null;
-        mLevels = null;
+        mBidi = null;
         mSpanEndCache.clear();
         mFontMetrics.clear();
         mMeasuredText = null;
@@ -140,7 +144,7 @@ public class MeasuredParagraph {
      * Returns the characters to be measured. This will be the same value
      * as {@link MeasuredText#getTextBuf()} if {@link #getMeasuredText()} available.
      *
-     * @return backend text buffer
+     * @return backed text buffer
      */
     @NonNull
     public char[] getChars() {
@@ -153,7 +157,11 @@ public class MeasuredParagraph {
      * @return either {@link Layout#DIR_LEFT_TO_RIGHT} or {@link Layout#DIR_RIGHT_TO_LEFT)
      */
     public int getParagraphDir() {
-        return mParaDir;
+        if (mBidi == null) {
+            return Layout.DIR_LEFT_TO_RIGHT;
+        }
+        return (mBidi.getParaLevel() & 0x01) == 0
+                ? Layout.DIR_LEFT_TO_RIGHT : Layout.DIR_RIGHT_TO_LEFT;
     }
 
     /**
@@ -165,124 +173,62 @@ public class MeasuredParagraph {
      */
     @NonNull
     public Directions getDirections(int start, int end) {
-        if (start == end || mLevels == null) {
+        // Easy case: mBidi == null means the text is all LTR and no bidi support is needed.
+        if (mBidi == null) {
             return Directions.ALL_LEFT_TO_RIGHT;
         }
 
-        int baseLevel = mParaDir == Layout.DIR_LEFT_TO_RIGHT ? 0 : 1;
-        byte[] levels = mLevels;
-
-        int curLevel = levels[start];
-        int minLevel = curLevel;
-        int runCount = 1;
-        for (int i = start + 1; i < end; ++i) {
-            int level = levels[i];
-            if (level != curLevel) {
-                curLevel = level;
-                ++runCount;
-            }
-        }
-
-        // add final run for trailing counter-directional whitespace
-        int visLen = end - start;
-        if ((curLevel & 1) != (baseLevel & 1)) {
-            // look for visible end
-            while (--visLen >= 0) {
-                char ch = mCopiedBuffer[start + visLen];
-
-                if (ch == '\n') {
-                    --visLen;
-                    break;
-                }
-
-                if (ch != ' ' && ch != '\t') {
-                    break;
-                }
-            }
-            ++visLen;
-            if (visLen != end - start) {
-                ++runCount;
-            }
-        }
-
-        if (runCount == 1 && minLevel == baseLevel) {
-            // we're done, only one run on this line
-            if ((minLevel & 1) != 0) {
+        // Easy case: If the original text only contains single directionality run, the
+        // substring is only single run.
+        if (start == end) {
+            if ((mBidi.getParaLevel() & 0x01) == 0) {
+                return Directions.ALL_LEFT_TO_RIGHT;
+            } else {
                 return Directions.ALL_RIGHT_TO_LEFT;
             }
-            return Directions.ALL_LEFT_TO_RIGHT;
         }
 
-        int[] ld = new int[runCount * 2];
-        int maxLevel = minLevel;
-        int levelBits = minLevel << Directions.RUN_LEVEL_SHIFT;
+        // Okay, now we need to generate the line instance.
+        Bidi bidi = mBidi.createLineBidi(start, end);
 
-        // Start of first pair is always 0, we write
-        // length then start at each new run, and the
-        // last run length after we're done.
-        int n = 1;
-        int prev = start;
-        curLevel = minLevel;
-        for (int i = start, e = start + visLen; i < e; ++i) {
-            int level = levels[i];
-            if (level != curLevel) {
-                curLevel = level;
-                if (level > maxLevel) {
-                    maxLevel = level;
-                } else if (level < minLevel) {
-                    minLevel = level;
-                }
-                // XXX ignore run length limit of 2^RUN_LEVEL_SHIFT
-                ld[n++] = (i - prev) | levelBits;
-                ld[n++] = i - start;
-                levelBits = curLevel << Directions.RUN_LEVEL_SHIFT;
-                prev = i;
+        // Easy case: If the line instance only contains single directionality run, no need
+        // to reorder visually.
+        if (bidi.getRunCount() == 1) {
+            if (bidi.getRunLevel(0) == 1) {
+                return Directions.ALL_RIGHT_TO_LEFT;
+            } else if (bidi.getRunLevel(0) == 0) {
+                return Directions.ALL_LEFT_TO_RIGHT;
+            } else {
+                return new Directions(new int[]{
+                        0, bidi.getRunLevel(0) << Directions.RUN_LEVEL_SHIFT | (end - start)});
             }
         }
-        ld[n] = (start + visLen - prev) | levelBits;
-        if (visLen < end - start) {
-            ld[++n] = visLen;
-            ld[++n] = (end - start - visLen) | (baseLevel << Directions.RUN_LEVEL_SHIFT);
+
+        // Reorder directionality run visually.
+        byte[] levels = new byte[bidi.getRunCount()];
+        for (int i = 0; i < bidi.getRunCount(); ++i) {
+            levels[i] = (byte) bidi.getRunLevel(i);
+        }
+        int[] visualOrders = Bidi.reorderVisual(levels);
+
+        int[] dirs = new int[bidi.getRunCount() * 2];
+        for (int i = 0; i < bidi.getRunCount(); ++i) {
+            int vIndex;
+            if ((mBidi.getBaseLevel() & 0x01) == 1) {
+                // For the historical reasons, if the base directionality is RTL, ModernUI
+                // draws from the right, i.e. the visually reordered run needs to be reversed.
+                vIndex = visualOrders[bidi.getRunCount() - i - 1];
+            } else {
+                vIndex = visualOrders[i];
+            }
+
+            // Special packing of dire
+            dirs[i * 2] = bidi.getRunStart(vIndex);
+            dirs[i * 2 + 1] = bidi.getRunLevel(vIndex) << Directions.RUN_LEVEL_SHIFT
+                    | (bidi.getRunLimit(vIndex) - dirs[i * 2]);
         }
 
-        // See if we need to swap any runs.
-        // If the min level run direction doesn't match the base
-        // direction, we always need to swap (at this point
-        // we have more than one run).
-        // Otherwise, we don't need to swap the lowest level.
-        // Since there are no logically adjacent runs at the same
-        // level, if the max level is the same as the (new) min
-        // level, we have a series of alternating levels that
-        // is already in order, so there's no more to do.
-        final boolean swap;
-        if ((minLevel & 1) == baseLevel) {
-            minLevel += 1;
-            swap = maxLevel > minLevel;
-        } else {
-            swap = runCount > 1;
-        }
-        if (swap) {
-            for (int level = maxLevel - 1; level >= minLevel; --level) {
-                for (int i = 0; i < ld.length; i += 2) {
-                    if (levels[ld[i]] >= level) {
-                        int e = i + 2;
-                        while (e < ld.length && levels[ld[e]] >= level) {
-                            e += 2;
-                        }
-                        for (int low = i, hi = e - 2; low < hi; low += 2, hi -= 2) {
-                            int x = ld[low];
-                            ld[low] = ld[hi];
-                            ld[hi] = x;
-                            x = ld[low + 1];
-                            ld[low + 1] = ld[hi + 1];
-                            ld[hi + 1] = x;
-                        }
-                        i = e + 2;
-                    }
-                }
-            }
-        }
-        return new Directions(ld);
+        return new Directions(dirs);
     }
 
     /**
@@ -479,7 +425,8 @@ public class MeasuredParagraph {
         // Replace characters associated with ReplacementSpan to U+FFFC.
         if (mSpanned != null) {
             final List<ReplacementSpan> spans = mSpanned.getSpans(start, end, ReplacementSpan.class);
-            for (ReplacementSpan span : spans) {
+            for (int i = 0, e = spans.size(); i < e; i++) {
+                ReplacementSpan span = spans.get(i);
                 int startInPara = mSpanned.getSpanStart(span) - start;
                 int endInPara = mSpanned.getSpanEnd(span) - start;
                 // The span interval may be larger and must be restricted to [start, end)
@@ -495,8 +442,7 @@ public class MeasuredParagraph {
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
                 && !Bidi.requiresBidi(mCopiedBuffer, 0, length)) {
-            mLevels = null;
-            mParaDir = Layout.DIR_LEFT_TO_RIGHT;
+            mBidi = null;
         } else {
             final byte paraLevel;
             if (dir == TextDirectionHeuristics.LTR) {
@@ -511,10 +457,30 @@ public class MeasuredParagraph {
                 final boolean isRtl = dir.isRtl(mCopiedBuffer, 0, length);
                 paraLevel = isRtl ? Bidi.RTL : Bidi.LTR;
             }
-            Bidi bidi = new Bidi(length, 0);
-            bidi.setPara(mCopiedBuffer, paraLevel, null);
-            mLevels = bidi.getLevels();
-            mParaDir = (bidi.getParaLevel() & 0x1) == 0 ? Layout.DIR_LEFT_TO_RIGHT : Layout.DIR_RIGHT_TO_LEFT;
+            mBidi = new Bidi(length, 0);
+            mBidi.setPara(mCopiedBuffer, paraLevel, null);
+
+            if (length > 0
+                    && mBidi.getParagraphIndex(length - 1) != 0) {
+                // Historically, the MeasuredParagraph does not treat the CR letters as paragraph
+                // breaker but ICU BiDi treats it as paragraph breaker. In the MeasureParagraph,
+                // the given range always represents a single paragraph, so if the BiDi object has
+                // multiple paragraph, it should contains a CR letters in the text. Using CR is not
+                // common in ModernUI and also it should not penalize the easy case, e.g. all LTR,
+                // check the paragraph count here and replace the CR letters and re-calculate
+                // BiDi again.
+                for (int i = 0; i < length; ++i) {
+                    if (Character.isSurrogate(mCopiedBuffer[i])) {
+                        // All block separators are in BMP.
+                        continue;
+                    }
+                    if (UCharacter.getDirection(mCopiedBuffer[i])
+                            == UCharacterDirection.BLOCK_SEPARATOR) {
+                        mCopiedBuffer[i] = '\uFFFC';
+                    }
+                }
+                mBidi.setPara(mCopiedBuffer, paraLevel, null);
+            }
         }
     }
 
@@ -531,7 +497,8 @@ public class MeasuredParagraph {
         tp.baselineShift = 0;
 
         ReplacementSpan replacement = null;
-        for (MetricAffectingSpan span : spans) {
+        for (int i = 0, e = spans.size(); i < e; i++) {
+            MetricAffectingSpan span = spans.get(i);
             if (span instanceof ReplacementSpan) {
                 // The last ReplacementSpan is effective for backward compatibility reasons.
                 replacement = (ReplacementSpan) span;
@@ -565,23 +532,23 @@ public class MeasuredParagraph {
     private void applyStyleRun(@NonNull FontPaint paint, int start, int end,
                                @Nullable LineBreakConfig config,
                                @NonNull MeasuredText.Builder builder) {
-        if (mLevels == null) {
+        if (mBidi == null) {
             // If the whole text is LTR direction, just apply whole region.
             builder.addStyleRun(paint, config, end - start, false);
         } else {
             // If there is multiple bidi levels, split into individual bidi level and apply style.
-            byte level = mLevels[start];
+            byte level = mBidi.getLevelAt(start);
             // Note that the empty text or empty range won't reach this method.
             // Safe to search from start + 1.
             for (int levelStart = start, levelEnd = start + 1; ; ++levelEnd) {
-                if (levelEnd == end || mLevels[levelEnd] != level) { // transition point
+                if (levelEnd == end || mBidi.getLevelAt(levelEnd) != level) { // transition point
                     final boolean isRtl = (level & 0x1) != 0;
                     builder.addStyleRun(paint, config, levelEnd - levelStart, isRtl);
                     if (levelEnd == end) {
                         break;
                     }
                     levelStart = levelEnd;
-                    level = mLevels[levelEnd];
+                    level = mBidi.getLevelAt(levelEnd);
                 }
             }
         }
@@ -637,8 +604,7 @@ public class MeasuredParagraph {
      */
     public int getMemoryUsage() {
         return MathUtil.align8(12 + 8 + 4 + 8 + (mCopiedBuffer == null ?
-                0 : 16 + (mCopiedBuffer.length << 1)) + 4 + (mLevels == null ?
-                0 : 16 + mLevels.length) + 16 + (mSpanEndCache.size() << 2) +
+                0 : 16 + (mCopiedBuffer.length << 1)) + 4 + 16 + (mSpanEndCache.size() << 2) +
                 16 + (mFontMetrics.size() << 2) + 8) +
                 (mMeasuredText == null ? 0 : mMeasuredText.getMemoryUsage());
     }
