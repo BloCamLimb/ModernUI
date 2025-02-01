@@ -58,9 +58,9 @@ public class DrawAtlas implements AutoCloseable {
      */
     public static class AtlasGenerationCounter {
         // must be 0
-        public static final long INVALID_GENERATION = 0;
+        public static final long kInvalidGeneration = 0;
         // max generation (inclusive), also used as bit mask
-        public static final long MAX_GENERATION = (1L << 48) - 1;
+        public static final long kMaxGeneration = (1L << 48) - 1;
 
         private long mGeneration = 1;
 
@@ -68,7 +68,7 @@ public class DrawAtlas implements AutoCloseable {
          * Returns next valid generation number.
          */
         public long next() {
-            if (mGeneration > MAX_GENERATION) {
+            if (mGeneration > kMaxGeneration) {
                 mGeneration = 1;
             }
             return mGeneration++;
@@ -83,14 +83,14 @@ public class DrawAtlas implements AutoCloseable {
      */
     public static class AtlasToken {
         // must be 0
-        public static final long INVALID_TOKEN = 0;
+        public static final long kInvalidToken = 0;
 
         /**
          * Returns next valid sequence number.
          */
         public static long next(long token) {
             long next = token + 1;
-            if (next == INVALID_TOKEN) {
+            if (next == kInvalidToken) {
                 return 1;
             }
             return next;
@@ -103,10 +103,10 @@ public class DrawAtlas implements AutoCloseable {
             if (lhs == rhs) {
                 return 0;
             }
-            if (lhs == INVALID_TOKEN) {
+            if (lhs == kInvalidToken) {
                 return -1;
             }
-            if (rhs == INVALID_TOKEN) {
+            if (rhs == kInvalidToken) {
                 return 1;
             }
             // use subtraction since it can wrap
@@ -117,11 +117,11 @@ public class DrawAtlas implements AutoCloseable {
          * Returns true if the token is in the [start, end] inclusive interval.
          */
         public static boolean inInterval(long token, long start, long end) {
-            assert end != INVALID_TOKEN;
-            if (start == INVALID_TOKEN) {
+            assert end != kInvalidToken;
+            if (start == kInvalidToken) {
                 return true;
             }
-            if (token == INVALID_TOKEN) {
+            if (token == kInvalidToken) {
                 return false;
             }
             // use subtraction since it can wrap
@@ -137,7 +137,7 @@ public class DrawAtlas implements AutoCloseable {
      */
     public static class AtlasTokenTracker {
 
-        private long mCurrentFlushToken = AtlasToken.INVALID_TOKEN;
+        private long mCurrentFlushToken = AtlasToken.kInvalidToken;
 
         /**
          * Gets the token one beyond the last token that has been flushed,
@@ -158,9 +158,9 @@ public class DrawAtlas implements AutoCloseable {
      */
     public static class PlotLocator {
         // this can be 1,2,4
-        public static final int MAX_PAGES = 4;
+        public static final int kMaxPages = 4;
         // this can be 32,64
-        public static final int MAX_PLOTS = 64;
+        public static final int kMaxPlots = 64;
 
         //  0-48: generation
         // 48-56: plot index
@@ -191,8 +191,8 @@ public class DrawAtlas implements AutoCloseable {
         }
 
         public void setLocation(int pageIndex, int plotIndex, long generation) {
-            assert pageIndex < MAX_PAGES;
-            assert plotIndex < MAX_PLOTS;
+            assert pageIndex < kMaxPages;
+            assert plotIndex < kMaxPlots;
             assert generation < (1L << 48);
             loc = ((long) pageIndex << 56) | ((long) plotIndex << 48) | generation;
         }
@@ -285,7 +285,7 @@ public class DrawAtlas implements AutoCloseable {
      */
     public static class PlotBulkUseUpdater {
         // 64 plots per page, long is sufficient
-        private final long[] mBitSet = new long[PlotLocator.MAX_PAGES];
+        private final long[] mBitSet = new long[PlotLocator.kMaxPages];
         // plots to update, max count is 4 * 64 = 256
         // the data is sync with the bitset, but it can be iterated faster
         //  0-16: plot index
@@ -300,8 +300,8 @@ public class DrawAtlas implements AutoCloseable {
         public boolean add(AtlasLocator locator) {
             int plotIndex = locator.getPlotIndex();
             int pageIndex = locator.getPageIndex();
-            assert plotIndex < PlotLocator.MAX_PLOTS;
-            assert pageIndex < PlotLocator.MAX_PAGES;
+            assert plotIndex < PlotLocator.kMaxPlots;
+            assert pageIndex < PlotLocator.kMaxPages;
             if (((mBitSet[pageIndex] >>> plotIndex) & 1) != 0) {
                 // already set
                 return false;
@@ -372,7 +372,7 @@ public class DrawAtlas implements AutoCloseable {
 
         public Plot(int pageIndex, int plotIndex, AtlasGenerationCounter generationCounter,
                     int plotX, int plotY, int width, int height, int colorType, int bpp) {
-            mLastUseToken = AtlasToken.INVALID_TOKEN;
+            mLastUseToken = AtlasToken.kInvalidToken;
             mFlushesSinceLastUsed = 0;
             mGenerationCounter = generationCounter;
             setLocation(pageIndex, plotIndex, generationCounter.next());
@@ -470,7 +470,7 @@ public class DrawAtlas implements AutoCloseable {
         }
 
         public void setLastUseToken(long token) {
-            assert token != AtlasToken.INVALID_TOKEN;
+            assert token != AtlasToken.kInvalidToken;
             mLastUseToken = token;
         }
 
@@ -530,7 +530,7 @@ public class DrawAtlas implements AutoCloseable {
         public void clear() {
             mRectanglePacker.clear();
             setGeneration(mGenerationCounter.next());
-            mLastUseToken = AtlasToken.INVALID_TOKEN;
+            mLastUseToken = AtlasToken.kInvalidToken;
 
             // zero out the plot
             if (mData != MemoryUtil.NULL) {
@@ -645,7 +645,7 @@ public class DrawAtlas implements AutoCloseable {
         int numPlotsX = width / plotWidth;
         int numPlotsY = height / plotHeight;
         int numPlots = numPlotsX * numPlotsY;
-        assert numPlots <= PlotLocator.MAX_PLOTS;
+        assert numPlots <= PlotLocator.kMaxPlots;
         assert plotWidth * numPlotsX == width;
         assert plotHeight * numPlotsY == height;
         mTextureWidth = width;
@@ -660,12 +660,12 @@ public class DrawAtlas implements AutoCloseable {
         mGenerationCounter = generationCounter;
         mAtlasGeneration = generationCounter.next();
 
-        mPrevFlushToken = AtlasToken.INVALID_TOKEN;
+        mPrevFlushToken = AtlasToken.kInvalidToken;
         mFlushesSinceLastUsed = 0;
 
         // allocate pages
         mPages = new Page[useMultiPages
-                ? PlotLocator.MAX_PAGES
+                ? PlotLocator.kMaxPages
                 : 1];
         for (int pageIndex = 0; pageIndex < mPages.length; pageIndex++) {
             Page page = mPages[pageIndex] = new Page();
@@ -738,17 +738,17 @@ public class DrawAtlas implements AutoCloseable {
         }
     }
 
-    public static final int RESULT_SUCCESS = 0;
-    public static final int RESULT_FAILURE = 1;
-    public static final int RESULT_TRY_AGAIN = 2;
+    public static final int kSuccess_Result = 0;
+    public static final int kFailure_Result = 1;
+    public static final int kTryAgain_Result = 2;
 
     /**
-     * Adds a width x height sub-image to the atlas. Upon success, it returns {@link #RESULT_SUCCESS}
+     * Adds a width x height sub-image to the atlas. Upon success, it returns {@link #kSuccess_Result}
      * and returns the plot location and the sub-image's coordinates in the backing texture.
-     * {@link #RESULT_TRY_AGAIN} is returned if the sub-image cannot fit in the atlas without overwriting
+     * {@link #kTryAgain_Result} is returned if the sub-image cannot fit in the atlas without overwriting
      * texels that will be read in the current list of draws. This indicates that the {@link GraniteDevice}
      * should end its current draw, snap a {@link DrawPass}, and begin another before adding more data.
-     * {@link #RESULT_FAILURE} will be returned when some unrecoverable error was encountered while trying
+     * {@link #kFailure_Result} will be returned when some unrecoverable error was encountered while trying
      * to add the sub-image. In this case the draw being created should be discarded.
      * <p>
      * This tracking does not generate {@link ImageUploadTask UploadTasks} per se. Instead, when the
@@ -765,7 +765,7 @@ public class DrawAtlas implements AutoCloseable {
                        int width, int height,
                        @NonNull AtlasLocator atlasLocator) {
         if (width > mPlotWidth || height > mPlotHeight || width < 0 || height < 0) {
-            return RESULT_FAILURE;
+            return kFailure_Result;
         }
 
         // We permit zero-sized rects to allow inverse fills in the PathAtlases to work,
@@ -776,13 +776,13 @@ public class DrawAtlas implements AutoCloseable {
             if (mNumActivePages == 0) {
                 // Make sure we have a Page for the AtlasLocator to refer to
                 if (!activateNextPage(context)) {
-                    return RESULT_FAILURE;
+                    return kFailure_Result;
                 }
             }
             atlasLocator.setRect(Rect2i.empty());
             // Use the MRU Plot from the first Page
             atlasLocator.setLocation(mPages[0].mHead);
-            return RESULT_SUCCESS;
+            return kSuccess_Result;
         }
 
         // Look through each page to see if we can upload without having to flush
@@ -790,7 +790,7 @@ public class DrawAtlas implements AutoCloseable {
         // to remove unused pages in reverse page order.
         for (int pageIndex = 0; pageIndex < mNumActivePages; ++pageIndex) {
             if (addRectToPage(pageIndex, width, height, atlasLocator)) {
-                return RESULT_SUCCESS;
+                return kSuccess_Result;
             }
         }
 
@@ -798,17 +798,17 @@ public class DrawAtlas implements AutoCloseable {
             // If we haven't activated all the available pages, try to create a new one and add to it
             if (activateNextPage(context)) {
                 if (addRectToPage(mNumActivePages - 1, width, height, atlasLocator)) {
-                    return RESULT_SUCCESS;
+                    return kSuccess_Result;
                 } else {
                     assert false;
-                    return RESULT_FAILURE;
+                    return kFailure_Result;
                 }
             }
         }
 
         if (mNumActivePages == 0) {
             // There's no page at all...
-            return RESULT_FAILURE;
+            return kFailure_Result;
         }
 
         // If the above fails, then see if the least recently used plot per page has already been
@@ -824,10 +824,10 @@ public class DrawAtlas implements AutoCloseable {
                 if (plot.addRect(width, height, atlasLocator)) {
                     page.moveToHead(plot);
                     atlasLocator.setLocation(plot);
-                    return RESULT_SUCCESS;
+                    return kSuccess_Result;
                 } else {
                     assert false;
-                    return RESULT_FAILURE;
+                    return kFailure_Result;
                 }
             }
         }
@@ -836,7 +836,7 @@ public class DrawAtlas implements AutoCloseable {
         // gives the Device a chance to snap the current set of uploads and draws, advance the draw
         // token, and call back into this function. The subsequent call will have plots available
         // for fresh uploads.
-        return RESULT_TRY_AGAIN;
+        return kTryAgain_Result;
     }
 
     /**
@@ -859,7 +859,7 @@ public class DrawAtlas implements AutoCloseable {
                           Object imageBase, long imageAddr,
                           @NonNull AtlasLocator atlasLocator) {
         int res = addRect(context, width, height, atlasLocator);
-        if (res == RESULT_SUCCESS) {
+        if (res == kSuccess_Result) {
             Plot plot = getPlot(atlasLocator);
             plot.copySubImage(atlasLocator, imageBase, imageAddr);
         }
@@ -1063,7 +1063,7 @@ public class DrawAtlas implements AutoCloseable {
                 // If this plot was used recently
                 if (plot.numFlushesSinceLastUsed() <= kPlotRecentlyUsedCount) {
                     ++usedPlots;
-                } else if (plot.getLastUseToken() != AtlasToken.INVALID_TOKEN) {
+                } else if (plot.getLastUseToken() != AtlasToken.kInvalidToken) {
                     // otherwise if aged out just evict it.
                     evictAndReset(plot);
                 }

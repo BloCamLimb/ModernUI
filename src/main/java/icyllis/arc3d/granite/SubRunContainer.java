@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
 import icyllis.arc3d.engine.SamplerDesc;
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
@@ -35,6 +36,21 @@ import java.util.Arrays;
  */
 public class SubRunContainer {
 
+    @Contract(pure = true)
+    public static boolean isDirect(float approximateDeviceTextSize,
+                                   Paint paint, Matrixc matrix) {
+        //TODO try to avoid use direct sub runs for animations
+        return 0 < approximateDeviceTextSize &&
+                approximateDeviceTextSize <= Glyph.kMaxTextSizeForMask &&
+                !matrix.hasPerspective();
+    }
+
+    @Contract(pure = true)
+    public static boolean isDirect(float approximateDeviceTextSize) {
+        return 0 < approximateDeviceTextSize &&
+                approximateDeviceTextSize <= Glyph.kMaxTextSizeForMask;
+    }
+
     /**
      * SubRun defines the most basic functionality of a SubRun; the ability to draw, and the
      * ability to be in a list.
@@ -44,6 +60,10 @@ public class SubRunContainer {
 
         public abstract void draw(Canvas canvas, float originX, float originY,
                                   Paint paint, GraniteDevice device);
+
+        @Contract(pure = true)
+        public abstract boolean canReuse(@NonNull Paint paint, @NonNull Matrixc positionMatrix,
+                                         float glyphRunListX, float glyphRunListY);
 
         public abstract long getMemorySize();
     }
@@ -61,6 +81,7 @@ public class SubRunContainer {
         /**
          * All params are read-only, copy will be made.
          */
+        @Contract(pure = true)
         AtlasSubRun(StrikeDesc strikeDesc,
                     Matrixc creationMatrix,
                     Rect2fc creationBounds,
@@ -185,6 +206,7 @@ public class SubRunContainer {
          * origin, and return it.
          */
         @SuppressWarnings("AssertWithSideEffects")
+        @Contract(mutates = "param4,param5")
         public int getMatrixAndFilter(Matrixc localToDevice,
                                       float originX, float originY,
                                       Matrix outSubRunToLocal,
@@ -240,6 +262,7 @@ public class SubRunContainer {
         /**
          * All params are read-only, copy will be made.
          */
+        @Contract(pure = true)
         public DirectMaskSubRun(StrikeDesc strikeDesc,
                                 Matrixc creationMatrix,
                                 Rect2fc creationBounds,
@@ -248,19 +271,34 @@ public class SubRunContainer {
                                 int acceptedGlyphOffset,
                                 float[] acceptedPositions,
                                 int acceptedPositionOffset,
-                                int acceptedGlyphCount) {
+                                int acceptedGlyphCount,
+                                float minScaleFactor,
+                                float maxScaleFactor) {
             super(strikeDesc, creationMatrix, creationBounds,
                     maskFormat, acceptedGlyphs, acceptedGlyphOffset,
                     acceptedPositions, acceptedPositionOffset, acceptedGlyphCount,
                     true);
+            assert minScaleFactor == 1 && maxScaleFactor == 1;
+        }
+
+        @Override
+        public boolean canReuse(@NonNull Paint paint, @NonNull Matrixc positionMatrix,
+                                float glyphRunListX, float glyphRunListY) {
+            // direct mask is always created from/reused by an exact position matrix,
+            // no need for a second check
+            return true;
         }
     }
 
     public static final class TransformedMaskSubRun extends AtlasSubRun {
 
+        private final float mMinScaleFactor;
+        private final float mMaxScaleFactor;
+
         /**
          * All params are read-only, copy will be made.
          */
+        @Contract(pure = true)
         public TransformedMaskSubRun(StrikeDesc strikeDesc,
                                      Matrixc creationMatrix,
                                      Rect2fc creationBounds,
@@ -269,11 +307,34 @@ public class SubRunContainer {
                                      int acceptedGlyphOffset,
                                      float[] acceptedPositions,
                                      int acceptedPositionOffset,
-                                     int acceptedGlyphCount) {
+                                     int acceptedGlyphCount,
+                                     float minScaleFactor,
+                                     float maxScaleFactor) {
             super(strikeDesc, creationMatrix, creationBounds,
                     maskFormat, acceptedGlyphs, acceptedGlyphOffset,
                     acceptedPositions, acceptedPositionOffset, acceptedGlyphCount,
                     false);
+            mMinScaleFactor = minScaleFactor;
+            mMaxScaleFactor = maxScaleFactor;
+        }
+
+        @Override
+        public boolean canReuse(@NonNull Paint paint, @NonNull Matrixc positionMatrix,
+                                float glyphRunListX, float glyphRunListY) {
+            // We want to reuse the subrun that scales to the range 0.5 to 1.5 relative to the
+            // creation matrix.
+            float scaleFactor = 1;
+            if (positionMatrix.hasPerspective()) {
+                float maxAreaScale = positionMatrix.differentialAreaScale(
+                        glyphRunListX, glyphRunListY
+                );
+                if (Float.isFinite(maxAreaScale) && maxAreaScale > MathUtil.PATH_TOLERANCE) {
+                    scaleFactor = (float) Math.sqrt(maxAreaScale);
+                }
+            } else {
+                scaleFactor = positionMatrix.getMaxScale();
+            }
+            return mMinScaleFactor < scaleFactor && scaleFactor <= mMaxScaleFactor;
         }
     }
 
@@ -341,8 +402,7 @@ public class SubRunContainer {
         // so we just need to floor to get the device result.
         int acceptedSize = 0,
                 rejectedSize = 0;
-        var runBounds = new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
-                Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+        var runBounds = Rect2f.makeInfiniteInverted();
         float subpixelRounding = strike.getSubpixelRounding();
         int subpixelFieldMask = strike.getSubpixelFieldMask();
         var bounds = new Rect2f();
@@ -405,8 +465,7 @@ public class SubRunContainer {
                                                        Buffers buffers) {
         int acceptedSize = 0,
                 rejectedSize = 0;
-        var runBounds = new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
-                Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+        var runBounds = Rect2f.makeInfiniteInverted();
         var bounds = new Rect2f();
         var mappedPos = new float[2];
         strike.lock();
@@ -467,13 +526,17 @@ public class SubRunContainer {
                            int acceptedGlyphOffset,
                            float[] acceptedPositions,
                            int acceptedPositionOffset,
-                           int acceptedGlyphCount);
+                           int acceptedGlyphCount,
+                           float minScaleFactor,
+                           float maxScaleFactor);
     }
 
     static void add_multi_mask_format(SubRunContainer container,
                                       StrikeDesc strikeDesc,
                                       Matrixc creationMatrix,
                                       Rect2fc creationBounds,
+                                      float minScaleFactor,
+                                      float maxScaleFactor,
                                       AtlasSubRunFactory factory,
                                       Buffers buffers) {
         assert buffers.mAcceptedGlyphCount > 0;
@@ -494,7 +557,9 @@ public class SubRunContainer {
                                 prevIndex,
                                 buffers.mAcceptedPositions,
                                 prevIndex * 2,
-                                index - prevIndex
+                                index - prevIndex,
+                                minScaleFactor,
+                                maxScaleFactor
                         )
                 );
                 prevFormat = format;
@@ -511,7 +576,9 @@ public class SubRunContainer {
                         prevIndex,
                         buffers.mAcceptedPositions,
                         prevIndex * 2,
-                        buffers.mAcceptedGlyphCount - prevIndex
+                        buffers.mAcceptedGlyphCount - prevIndex,
+                        minScaleFactor,
+                        maxScaleFactor
                 )
         );
     }
@@ -540,14 +607,10 @@ public class SubRunContainer {
     ) {
         SubRunContainer container = new SubRunContainer(positionMatrix);
 
-        //TODO this value is TBD
-        int maxMaskSize = Glyph.MAX_ATLAS_DIMENSION;
-
         Buffers buffers = new Buffers(
                 glyphRunList.maxGlyphRunSize()
         );
 
-        //TODO this may not be correct, need to plus origin
         float glyphRunListX = glyphRunList.getSourceBounds().centerX();
         float glyphRunListY = glyphRunList.getSourceBounds().centerY();
 
@@ -571,7 +634,7 @@ public class SubRunContainer {
             // Atlas mask cases - SDF and direct mask
             // Only consider using direct or SDF drawing if not drawing hairlines and not too big.
             if ((runPaint.getStyle() != Paint.STROKE || runPaint.getStrokeWidth() != 0) &&
-                    approximateDeviceFontSize < maxMaskSize) {
+                    approximateDeviceFontSize <= Glyph.kMaxTextSizeForMask) {
                 //TODO SDF case
 
                 // Direct Mask case
@@ -598,8 +661,8 @@ public class SubRunContainer {
                     if (buffers.mAcceptedGlyphCount > 0) {
                         add_multi_mask_format(container,
                                 strikeDesc,
-                                positionMatrix,
-                                creationBounds,
+                                positionMatrix, creationBounds,
+                                1, 1,
                                 DirectMaskSubRun::new,
                                 buffers);
                     }
@@ -619,8 +682,12 @@ public class SubRunContainer {
                 // Creation matrix will be changed below to meet the following criteria:
                 // * No perspective - the font scaler and the strikes can't handle perspective masks.
                 // * Fits atlas - creationMatrix will be conditioned so that the maximum glyph
-                //   dimension for this run will be < MAX_BILERP_ATLAS_DIMENSION.
+                //   dimension for this run will be < kMaxBilerpAtlasDimension.
                 Matrix creationMatrix = new Matrix(positionMatrix);
+                // We want to reuse the subrun that scales to the range 0.5 to 1.5 relative to the
+                // creation matrix.
+                float minScaleFactor;
+                float maxScaleFactor;
 
                 if (creationMatrix.hasPerspective()) {
                     float maxAreaScale = creationMatrix.differentialAreaScale(
@@ -634,6 +701,14 @@ public class SubRunContainer {
                     // Masks can not be created in perspective. Create a non-perspective font with a
                     // scale that will support the perspective keystoning.
                     creationMatrix.setScale(perspectiveFactor, perspectiveFactor);
+
+                    minScaleFactor = 0.5f * perspectiveFactor;
+                    maxScaleFactor = 1.5f * perspectiveFactor;
+                } else {
+                    float scale = creationMatrix.getMaxScale();
+
+                    minScaleFactor = 0.5f * scale;
+                    maxScaleFactor = 1.5f * scale;
                 }
 
                 // Condition the creationMatrix so that glyphs fit in the atlas.
@@ -646,11 +721,14 @@ public class SubRunContainer {
                     Strike gaugingStrike = strikeDesc.findOrCreateStrike(strikeCache);
                     float maxDimension = find_max_glyph_dimension(gaugingStrike,
                             buffers.mSourceGlyphs, buffers.mSourceGlyphOffset, buffers.mSourceGlyphCount);
-                    if (maxDimension <= Glyph.MAX_BILERP_ATLAS_DIMENSION) {
+                    if (maxDimension <= Glyph.kMaxBilerpAtlasDimension) {
                         break;
                     }
-                    float reductionFactor = Glyph.MAX_BILERP_ATLAS_DIMENSION / maxDimension;
+                    float reductionFactor = Glyph.kMaxBilerpAtlasDimension / maxDimension;
                     creationMatrix.postScale(reductionFactor, reductionFactor);
+                    // If the metric is too large, then we remove the upper limit,
+                    // because it will eventually fall back onto the same path
+                    maxScaleFactor = Float.POSITIVE_INFINITY;
                 }
 
                 // Draw using the creationMatrix.
@@ -668,8 +746,8 @@ public class SubRunContainer {
                 if (buffers.mAcceptedGlyphCount > 0) {
                     add_multi_mask_format(container,
                             strikeDesc,
-                            creationMatrix,
-                            creationBounds,
+                            creationMatrix, creationBounds,
+                            minScaleFactor, maxScaleFactor,
                             TransformedMaskSubRun::new,
                             buffers);
                 }
@@ -701,6 +779,17 @@ public class SubRunContainer {
 
     public boolean isEmpty() {
         return mHead == null;
+    }
+
+    @Contract(pure = true)
+    public boolean canReuse(@NonNull Paint paint, @NonNull Matrixc positionMatrix,
+                            float glyphRunListX, float glyphRunListY) {
+        for (var subRun = mHead; subRun != null; subRun = subRun.mNext) {
+            if (!subRun.canReuse(paint, positionMatrix, glyphRunListX, glyphRunListY)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public long getMemorySize() {

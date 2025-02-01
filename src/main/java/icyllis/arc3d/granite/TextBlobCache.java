@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -92,33 +92,43 @@ public final class TextBlobCache {
                     mMiterLimit = 0;
                 }
             } else {
-                mFrameWidth = -1;
+                mFrameWidth = 0;
                 mStrokeJoin = 0;
                 mMiterLimit = 0;
             }
 
-            //TODO try to avoid use direct sub runs for animations
-
-            //TODO keep sync with SubRunContainer factory method
             mHasDirectSubRuns = !positionMatrix.hasPerspective();
+            if (mHasDirectSubRuns) {
+                mHasDirectSubRuns = false;
+                float centerX = glyphRunList.getSourceBounds().centerX();
+                float centerY = glyphRunList.getSourceBounds().centerY();
+                for (int i = 0; i < glyphRunList.mGlyphRunCount; i++) {
+                    float approximateDeviceTextSize = glyphRunList.mGlyphRuns[i].font()
+                            .approximateTransformedFontSize(positionMatrix, centerX, centerY);
+                    if (SubRunContainer.isDirect(approximateDeviceTextSize)) {
+                        mHasDirectSubRuns = true;
+                        break;
+                    }
+                }
+            }
             if (mHasDirectSubRuns) {
                 int typeMask = positionMatrix.getType();
                 if ((typeMask & Matrixc.kScale_Mask) != 0) {
-                    mScaleX = StrikeDesc.round_mat_elem(positionMatrix.getScaleX());
-                    mScaleY = StrikeDesc.round_mat_elem(positionMatrix.getScaleY());
+                    mScaleX = positionMatrix.getScaleX();
+                    mScaleY = positionMatrix.getScaleY();
                 } else {
                     mScaleX = mScaleY = 1;
                 }
                 if ((typeMask & Matrixc.kAffine_Mask) != 0) {
-                    mShearX = StrikeDesc.round_mat_elem(positionMatrix.getShearX());
-                    mShearY = StrikeDesc.round_mat_elem(positionMatrix.getShearY());
+                    mShearX = positionMatrix.getShearX();
+                    mShearY = positionMatrix.getShearY();
                 } else {
                     mShearX = mShearY = 0;
                 }
                 mTransX = positionMatrix.getTranslateX();
                 mTransY = positionMatrix.getTranslateY();
-                mTransX = StrikeDesc.round_mat_elem(mTransX - (float) Math.floor(mTransX));
-                mTransY = StrikeDesc.round_mat_elem(mTransY - (float) Math.floor(mTransY));
+                mTransX = mTransX - (float) Math.floor(mTransX);
+                mTransY = mTransY - (float) Math.floor(mTransY);
             } else {
                 mScaleX = 1;
                 mScaleY = 1;
@@ -149,7 +159,9 @@ public final class TextBlobCache {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o instanceof FeatureKey that) {
-                return mHasDirectSubRuns == that.mHasDirectSubRuns &&
+                return mStyle == that.mStyle &&
+                        mStrokeJoin == that.mStrokeJoin &&
+                        mHasDirectSubRuns == that.mHasDirectSubRuns &&
                         mScaleX == that.mScaleX &&
                         mScaleY == that.mScaleY &&
                         mShearX == that.mShearX &&
@@ -157,9 +169,7 @@ public final class TextBlobCache {
                         mTransX == that.mTransX &&
                         mTransY == that.mTransY &&
                         mFrameWidth == that.mFrameWidth &&
-                        mMiterLimit == that.mMiterLimit &&
-                        mStyle == that.mStyle &&
-                        mStrokeJoin == that.mStrokeJoin;
+                        mMiterLimit == that.mMiterLimit;
             }
             return false;
         }

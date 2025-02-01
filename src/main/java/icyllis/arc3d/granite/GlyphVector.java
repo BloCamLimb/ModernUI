@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,8 +19,12 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Glyph;
+import icyllis.arc3d.core.MathUtil;
+import icyllis.arc3d.core.Strike;
+import icyllis.arc3d.core.StrikeDesc;
 import icyllis.arc3d.engine.RecordingContext;
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
@@ -40,11 +44,12 @@ public class GlyphVector
     private final int[] mGlyphs;
     private BakedGlyph[] mBakedGlyphs;
 
-    private long mAtlasGeneration = DrawAtlas.AtlasGenerationCounter.INVALID_GENERATION;
+    private long mAtlasGeneration = DrawAtlas.AtlasGenerationCounter.kInvalidGeneration;
 
     /**
      * All params are read-only, copy will be made.
      */
+    @Contract(pure = true)
     public GlyphVector(@NonNull StrikeDesc strikeDesc, int @NonNull [] glyphs, int start, int end) {
         mStrikeDesc = strikeDesc.immutable();
         mGlyphs = Arrays.copyOfRange(glyphs, start, end);
@@ -110,11 +115,11 @@ public class GlyphVector
                     var res = atlasManager.addGlyphToAtlas(
                             glyph, bakedGlyph
                     );
-                    if (res != DrawAtlas.RESULT_SUCCESS) {
-                        assert res == DrawAtlas.RESULT_FAILURE ||
-                                res == DrawAtlas.RESULT_TRY_AGAIN;
+                    if (res != DrawAtlas.kSuccess_Result) {
+                        assert res == DrawAtlas.kFailure_Result ||
+                                res == DrawAtlas.kTryAgain_Result;
                         // try again meaning the atlas is full, it's not an error
-                        success = res != DrawAtlas.RESULT_FAILURE;
+                        success = res != DrawAtlas.kFailure_Result;
                         break;
                     }
                 }
