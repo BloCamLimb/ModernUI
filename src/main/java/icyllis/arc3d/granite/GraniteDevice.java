@@ -481,7 +481,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
     }
 
     @Override
-    public void drawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
+    public void drawVertices(Vertices vertices, Blender blender, Paint paint) {
         drawGeometry(getLocalToDevice33(), vertices, Vertices::getBounds, false, paint,
                 mRC.getRendererProvider().getVertices(
                         vertices.getVertexMode(), vertices.hasColors(), vertices.hasTexCoords()),
@@ -642,7 +642,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
                                    boolean inverseFill,
                                    Paint paint,
                                    GeometryRenderer renderer,
-                                   @SharedPtr Blender primitiveBlender) {
+                                   Blender primitiveBlender) {
         Draw draw = new Draw(localToDevice, geometry);
         draw.mInverseFill = inverseFill;
         draw.mRenderer = renderer;
@@ -665,7 +665,6 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         boolean clippedOut = mClipStack.prepareForDraw(draw, geometry, boundsFn,
                 outsetBoundsForAA, mElementsForMask);
         if (clippedOut) {
-            RefCnt.move(primitiveBlender);
             return;
         }
 
@@ -673,7 +672,7 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         // Additionally, if a renderer emits a primitive color, then a null primitive blender should
         // be interpreted as SrcOver blending mode.
         if (!renderer.emitsPrimitiveColor()) {
-            primitiveBlender = RefCnt.move(primitiveBlender);
+            primitiveBlender = null;
         } else if (primitiveBlender == null) {
             primitiveBlender = BlendMode.SRC_OVER;
         }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,10 @@
 
 package icyllis.arc3d.core.shaders;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Matrix;
+import icyllis.arc3d.core.Matrixc;
+import icyllis.arc3d.core.RefCounted;
+import icyllis.arc3d.core.SharedPtr;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
@@ -146,7 +149,12 @@ public sealed interface Shader extends RefCounted
     default void unref() {
     }
 
-    @Override
+    /**
+     * A return value of true means that its ref/unref is unnecessary, for example, they are
+     * just no op. So callers can perform some optimizations.
+     * Subclass can override this method to indicate that an instance is trivially counted.
+     * For the same instance, the return value of this method must remain unchanged.
+     */
     default boolean isTriviallyCounted() {
         return true;
     }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,11 @@
 
 package icyllis.arc3d.core.effects;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Color;
+import icyllis.arc3d.core.ColorInt;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.MathUtil;
+import icyllis.arc3d.core.Size;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -31,7 +35,7 @@ import org.jspecify.annotations.Nullable;
  * All subclasses are required to be reentrant-safe : it must be legal to share
  * the same instance between several threads.
  */
-public sealed interface ColorFilter extends RefCounted
+public sealed interface ColorFilter
         permits BlendModeColorFilter, ColorMatrixColorFilter, ComposeColorFilter {
 
     /**
@@ -83,9 +87,7 @@ public sealed interface ColorFilter extends RefCounted
      * @return a composed color filter
      */
     @NonNull
-    @SharedPtr
-    default ColorFilter compose(@Nullable @SharedPtr ColorFilter before) {
-        ref();
+    default ColorFilter compose(@Nullable ColorFilter before) {
         if (before == null) {
             return this;
         }
@@ -100,26 +102,10 @@ public sealed interface ColorFilter extends RefCounted
      * @return a composed color filter
      */
     @NonNull
-    @SharedPtr
-    default ColorFilter andThen(@Nullable @SharedPtr ColorFilter after) {
-        ref();
+    default ColorFilter andThen(@Nullable ColorFilter after) {
         if (after == null) {
             return this;
         }
         return new ComposeColorFilter(this, after);
-    }
-
-    // Currently all the subclasses are trivially counted
-    @Override
-    default void ref() {
-    }
-
-    @Override
-    default void unref() {
-    }
-
-    @Override
-    default boolean isTriviallyCounted() {
-        return true;
     }
 }

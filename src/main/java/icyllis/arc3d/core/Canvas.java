@@ -1689,10 +1689,9 @@ public class Canvas implements AutoCloseable {
      * @param paint    specifies the Shader, used as Vertices texture, and ColorFilter.
      */
     public final void drawVertices(Vertices vertices,
-                                   @SharedPtr Blender blender,
+                                   Blender blender,
                                    Paint paint) {
         if (vertices == null) {
-            RefCnt.move(blender);
             return;
         }
         var cleanedPaint = mTmpPaint;
@@ -2168,17 +2167,14 @@ public class Canvas implements AutoCloseable {
         }
     }
 
-    protected void onDrawVertices(Vertices vertices, @SharedPtr Blender blender,
+    protected void onDrawVertices(Vertices vertices, Blender blender,
                                   Paint paint) {
         if (internalQuickReject(vertices.getBounds(), paint)) {
-            RefCnt.move(blender);
             return;
         }
 
         if (aboutToDraw(paint)) {
             topDevice().drawVertices(vertices, blender, paint);
-        } else {
-            RefCnt.move(blender);
         }
     }
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -216,9 +216,7 @@ public class Paint implements AutoCloseable {
     private PathEffect mPathEffect;
     @SharedPtr
     private Shader mShader;
-    @SharedPtr
     private ColorFilter mColorFilter;
-    @SharedPtr
     private Blender mBlender;
 
     /*
@@ -274,8 +272,8 @@ public class Paint implements AutoCloseable {
         mMiterLimit = 4.0f;
         mPathEffect = null;
         mShader = RefCnt.move(mShader);
-        mColorFilter = RefCnt.move(mColorFilter);
-        mBlender = RefCnt.move(mBlender);
+        mColorFilter = null;
+        mBlender = null;
         mFlags = DEFAULT_FLAGS;
     }
 
@@ -296,8 +294,8 @@ public class Paint implements AutoCloseable {
             mMiterLimit = paint.mMiterLimit;
             mPathEffect = paint.mPathEffect;
             mShader = RefCnt.create(mShader, paint.mShader);
-            mColorFilter = RefCnt.create(mColorFilter, paint.mColorFilter);
-            mBlender = RefCnt.create(mBlender, paint.mBlender);
+            mColorFilter = paint.mColorFilter;
+            mBlender = paint.mBlender;
             mFlags = paint.mFlags;
         }
     }
@@ -305,8 +303,6 @@ public class Paint implements AutoCloseable {
     @Override
     public void close() {
         mShader = RefCnt.move(mShader);
-        mColorFilter = RefCnt.move(mColorFilter);
-        mBlender = RefCnt.move(mBlender);
     }
 
     ///// Solid Color
@@ -770,20 +766,8 @@ public class Paint implements AutoCloseable {
      * @return ColorFilter if previously set, null otherwise
      */
     @Nullable
-    @RawPtr
     public ColorFilter getColorFilter() {
         return mColorFilter;
-    }
-
-    /**
-     * Returns ColorFilter if set, or null.
-     *
-     * @return ColorFilter if previously set, null otherwise
-     */
-    @Nullable
-    @SharedPtr
-    public ColorFilter refColorFilter() {
-        return RefCnt.create(mColorFilter);
     }
 
     /**
@@ -791,8 +775,8 @@ public class Paint implements AutoCloseable {
      *
      * @param colorFilter ColorFilter to apply to subsequent draw
      */
-    public void setColorFilter(@Nullable @SharedPtr ColorFilter colorFilter) {
-        mColorFilter = RefCnt.move(mColorFilter, colorFilter);
+    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+        mColorFilter = colorFilter;
     }
 
     /**
@@ -829,23 +813,8 @@ public class Paint implements AutoCloseable {
      * @see #setBlender(Blender)
      */
     @Nullable
-    @RawPtr
     public final Blender getBlender() {
         return mBlender;
-    }
-
-    /**
-     * Returns the user-supplied blend function, if one has been set.
-     * <p>
-     * A null blender signifies the default {@link BlendMode#SRC_OVER} behavior.
-     *
-     * @return the blender assigned to this paint, otherwise null
-     * @see #setBlender(Blender)
-     */
-    @Nullable
-    @SharedPtr
-    public Blender refBlender() {
-        return RefCnt.create(mBlender);
     }
 
     /**
@@ -861,8 +830,8 @@ public class Paint implements AutoCloseable {
      * @param blender the blender to be installed in the paint, may be null
      * @see #getBlender()
      */
-    public final void setBlender(@Nullable @SharedPtr Blender blender) {
-        mBlender = RefCnt.move(mBlender, blender);
+    public final void setBlender(@Nullable Blender blender) {
+        mBlender = blender;
     }
 
     /**

@@ -76,8 +76,7 @@ public class NoDrawCanvas extends Canvas {
     }
 
     @Override
-    protected void onDrawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
-        RefCnt.move(blender);
+    protected void onDrawVertices(Vertices vertices, Blender blender, Paint paint) {
     }
 
     @Override
