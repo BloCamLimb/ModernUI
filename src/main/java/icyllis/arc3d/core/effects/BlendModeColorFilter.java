@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.core.effects;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.BlendMode;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.Size;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -44,7 +46,6 @@ public final class BlendModeColorFilter implements ColorFilter {
     }
 
     @Nullable
-    @SharedPtr
     public static BlendModeColorFilter make(@Size(4) float[] color,
                                             @Nullable ColorSpace colorSpace,
                                             BlendMode mode) {

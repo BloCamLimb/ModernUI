@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,7 @@ import org.jspecify.annotations.Nullable;
  *
  * @see BlendMode
  */
-public interface Blender extends RefCounted {
+public interface Blender {
 
     /**
      * Returns the blender's BlendMode in 'mode' if this Blender represents any BlendMode.
@@ -37,19 +37,5 @@ public interface Blender extends RefCounted {
     @Nullable
     default BlendMode asBlendMode() {
         return null;
-    }
-
-    // Currently all the subclasses are trivially counted
-    @Override
-    default void ref() {
-    }
-
-    @Override
-    default void unref() {
-    }
-
-    @Override
-    default boolean isTriviallyCounted() {
-        return true;
     }
 }

@@ -191,12 +191,10 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
     }
 
     @Override
-    protected void onDrawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
+    protected void onDrawVertices(Vertices vertices, Blender blender, Paint paint) {
         mFilterPaint.set(paint);
         if (onFilter(mFilterPaint)) {
             super.onDrawVertices(vertices, blender, mFilterPaint);
-        } else {
-            RefCnt.move(blender);
         }
         mFilterPaint.close();
     }

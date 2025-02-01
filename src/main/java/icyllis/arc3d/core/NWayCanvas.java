@@ -209,11 +209,10 @@ public class NWayCanvas extends NoDrawCanvas {
     }
 
     @Override
-    protected void onDrawVertices(Vertices vertices, @SharedPtr Blender blender, Paint paint) {
+    protected void onDrawVertices(Vertices vertices, Blender blender, Paint paint) {
         for (int i = 0; i < mSize; i++) {
-            mList[i].drawVertices(vertices, RefCnt.create(blender), paint);
+            mList[i].drawVertices(vertices, blender, paint);
         }
-        RefCnt.move(blender);
     }
 
     @Override

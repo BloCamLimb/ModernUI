@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,6 @@ package icyllis.arc3d.core.effects;
 
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
 
 import java.util.Objects;
 
@@ -30,13 +29,11 @@ import java.util.Objects;
  */
 public final class ComposeColorFilter implements ColorFilter {
 
-    @SharedPtr
     private final ColorFilter mAfter;
-    @SharedPtr
     private final ColorFilter mBefore;
 
-    ComposeColorFilter(@SharedPtr ColorFilter before,
-                       @SharedPtr ColorFilter after) {
+    ComposeColorFilter(ColorFilter before,
+                       ColorFilter after) {
         mBefore = Objects.requireNonNull(before);
         mAfter = Objects.requireNonNull(after);
     }

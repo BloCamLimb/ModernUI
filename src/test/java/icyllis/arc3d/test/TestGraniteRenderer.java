@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.awt.font.FontRenderContext;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.*;
@@ -94,13 +95,13 @@ public class TestGraniteRenderer {
         GLFW.glfwInit();
         LOGGER.info("Java {}", Runtime.version());
         LOGGER.info(Long.toString(ProcessHandle.current().pid()));
-        TinyFileDialogs.tinyfd_messageBox(
+        /*TinyFileDialogs.tinyfd_messageBox(
                 "Arc3D Test",
                 "Arc3D starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
                 "info",
                 true
-        );
+        );*/
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         if (TEST_OPENGL_ES) {
@@ -698,9 +699,9 @@ public class TestGraniteRenderer {
                 perspectiveMatrix.postTranslate(CANVAS_WIDTH / 2f, CANVAS_HEIGHT / 2f);
                 canvas.save();
                 canvas.setMatrix(perspectiveMatrix);
-                paint.setStyle(Paint.STROKE);
-                paint.setStrokeJoin(Paint.JOIN_MITER);
-                paint.setStrokeWidth(2);
+                paint.setStroke(false);
+                /*paint.setStrokeJoin(Paint.JOIN_MITER);
+                paint.setStrokeWidth(1);*/
                 canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 400, 400, paint);
                 canvas.restore();
 
@@ -779,7 +780,7 @@ public class TestGraniteRenderer {
                         } else {
                             paint.setColor(0xFFFFFFFF);
                         }*/
-                        paint.setColorFilter(RefCnt.create(mBlendModeColorFilters[j * 14 + i]));
+                        paint.setColorFilter(mBlendModeColorFilters[j * 14 + i]);
                         rect.offsetTo(400 + i * 24 + mRandom.nextInt(6),
                                 450 + j * 24 + mRandom.nextInt(6));
                         canvas.drawRect(rect, paint);
@@ -870,9 +871,7 @@ public class TestGraniteRenderer {
             mGradShader = RefCnt.move(mGradShader);
             mRRectShader = RefCnt.move(mRRectShader);
             mTestImage = RefCnt.move(mTestImage);
-            for (int i = 0; i < BlendMode.COUNT; i++) {
-                mBlendModeColorFilters[i] = RefCnt.move(mBlendModeColorFilters[i]);
-            }
+            Arrays.fill(mBlendModeColorFilters, null);
 
             mPostSurface = RefCnt.move(mPostSurface);
             mSurface = RefCnt.move(mSurface);

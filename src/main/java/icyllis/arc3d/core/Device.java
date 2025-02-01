@@ -285,7 +285,7 @@ public abstract class Device extends RefCnt {
                                                GlyphRunList glyphRunList,
                                                Paint paint);
 
-    public abstract void drawVertices(Vertices vertices, @SharedPtr Blender blender,
+    public abstract void drawVertices(Vertices vertices, Blender blender,
                                       Paint paint);
 
     public void drawEdgeAAQuad(Rect2fc r, float[] clip, int flags, Paint paint) {
