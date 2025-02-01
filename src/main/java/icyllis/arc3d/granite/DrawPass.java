@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -115,8 +115,7 @@ public class DrawPass implements AutoCloseable {
             return index;
         };
 
-        var passBounds = new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
-                Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+        var passBounds = Rect2f.makeInfiniteInverted();
         int depthStencilFlags = Engine.DepthStencilFlags.kNone;
 
         var geometryUniformTracker = new UniformTracker();
