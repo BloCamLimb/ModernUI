@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -116,11 +116,14 @@ public final class Glyph {
     static final int kSizeOf = 48;
 
     // The padding needed for bilinear interpolating the glyph when drawing.
-    public static final int BILERP_GLYPH_BORDER = 1;
+    public static final int kBilerpGlyphBorder = 1;
     // An atlas consists of plots, and plots hold glyphs. The minimum a plot can be is 256x256.
     // This means that the maximum size a glyph can be is 256x256.
-    public static final int MAX_ATLAS_DIMENSION = 256;
-    public static final int MAX_BILERP_ATLAS_DIMENSION = MAX_ATLAS_DIMENSION - (2 * BILERP_GLYPH_BORDER);
+    public static final int kMaxAtlasDimension = 256;
+    public static final int kMaxBilerpAtlasDimension = kMaxAtlasDimension - (2 * kBilerpGlyphBorder);
+    // Max allowed font size in device space that can be used with (direct) mask rendering,
+    // although pixel height and text size are not the same...
+    public static final int kMaxTextSizeForMask = 162;
 
     // The glyph ID
     private final int mID;
@@ -363,13 +366,13 @@ public final class Glyph {
             switch (actionType) {
                 case kDirectMask -> {
                     // fits in atlas
-                    if (getMaxDimension() <= MAX_ATLAS_DIMENSION) {
+                    if (getMaxDimension() <= kMaxAtlasDimension) {
                         action = kAccept_Action;
                     }
                 }
                 case kTransformedMask -> {
                     // fits in atlas
-                    if (getMaxDimension() <= MAX_BILERP_ATLAS_DIMENSION) {
+                    if (getMaxDimension() <= kMaxBilerpAtlasDimension) {
                         action = kAccept_Action;
                     }
                 }

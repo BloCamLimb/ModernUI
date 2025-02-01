@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -72,6 +73,18 @@ public final class BakedTextBlob {
     public void draw(Canvas canvas, float originX, float originY,
                      Paint paint, GraniteDevice device) {
         mSubRuns.draw(canvas, originX, originY, paint, device);
+    }
+
+    @Contract(pure = true)
+    public boolean canReuse(@NonNull Paint paint, @NonNull Matrixc positionMatrix,
+                            float glyphRunListX, float glyphRunListY) {
+        // A singular matrix will create a BakedTextBlob with no SubRuns, but unknown glyphs can also
+        // cause empty runs. If there are no subRuns, then regenerate when the matrices don't match.
+        if (mSubRuns.isEmpty() && !mSubRuns.initialPosition().equals(positionMatrix)) {
+            return false;
+        }
+
+        return mSubRuns.canReuse(paint, positionMatrix, glyphRunListX, glyphRunListY);
     }
 
     public long getMemorySize() {

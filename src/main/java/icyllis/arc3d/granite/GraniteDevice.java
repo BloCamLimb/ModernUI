@@ -448,10 +448,17 @@ public final class GraniteDevice extends icyllis.arc3d.core.Device {
         positionMatrix.preTranslate(glyphRunList.mOriginX, glyphRunList.mOriginY);
 
         if (glyphRunList.mOriginalTextBlob != null) {
+            // use cache if it comes from TextBlob
             var blobCache = mRC.getTextBlobCache();
             mBlobKey.update(glyphRunList, paint, positionMatrix);
             var entry = blobCache.find(glyphRunList.mOriginalTextBlob, mBlobKey);
-            if (entry == null) {
+            if (entry == null || !entry.canReuse(paint, positionMatrix,
+                    glyphRunList.getSourceBounds().centerX(),
+                    glyphRunList.getSourceBounds().centerY())) {
+                if (entry != null) {
+                    // We have to remake the blob because changes may invalidate our masks.
+                    blobCache.remove(entry);
+                }
                 entry = BakedTextBlob.make(
                         glyphRunList,
                         paint,
