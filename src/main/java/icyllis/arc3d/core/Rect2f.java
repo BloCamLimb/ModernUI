@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -95,6 +95,15 @@ public non-sealed class Rect2f implements Rect2fc {
     @NonNull
     public static Rect2fc empty() {
         return EMPTY;
+    }
+
+    /**
+     * Creates a new rect [inf, inf, -inf, -inf], useful for accumulating unchecked unions.
+     */
+    @NonNull
+    public static Rect2f makeInfiniteInverted() {
+        return new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
+                Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
     }
 
     /**
