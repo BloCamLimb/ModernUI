@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,7 +51,7 @@ public abstract class Typeface {
     @NonNull
     protected abstract ScalerContext onCreateScalerContext(StrikeDesc desc);
 
-    protected abstract void onFilterStrikeDesc(StrikeDesc.Mutable desc);
+    protected abstract void onFilterStrikeDesc(StrikeDesc.Lookup desc);
 
     @Override
     public final int hashCode() {

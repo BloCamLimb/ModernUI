@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -187,6 +187,21 @@ public class Font {
         } else {
             return mSize * matrix.getMaxScale();
         }
+    }
+
+    @ApiStatus.Internal
+    public static final int kCanonicalTextSizeForPaths = 64;
+
+    @ApiStatus.Internal
+    public float setupForPaths(Paint paint) {
+        setLinearMetrics(true);
+        if (paint != null) {
+            paint.setStyle(Paint.FILL);
+            paint.setPathEffect(null);
+        }
+        float textSize = mSize;
+        setSize(kCanonicalTextSizeForPaths);
+        return textSize / kCanonicalTextSizeForPaths;
     }
 
     @Override

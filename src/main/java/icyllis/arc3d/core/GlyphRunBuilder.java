@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,7 +38,7 @@ public class GlyphRunBuilder {
 
     // for bounds computation
     private final Rect2f mTmpBounds = new Rect2f();
-    private final StrikeDesc.Mutable mTmpStrikeDesc = new StrikeDesc.Mutable();
+    private final StrikeDesc.Lookup mTmpStrikeDesc = new StrikeDesc.Lookup();
     private Glyph[] mTmpGlyphs = new Glyph[60];
 
     private Glyph[] ensureGlyphs(int glyphCount) {
@@ -60,9 +60,8 @@ public class GlyphRunBuilder {
     ) {
         // compute exact bounds
         var glyphPtrs = ensureGlyphs(glyphCount);
-        //TODO this is not correct, need to canonicalize
-        var strike = mTmpStrikeDesc.update(font, paint, Matrix.identity())
-                .findOrCreateStrike();
+        float strikeToSourceScale = mTmpStrikeDesc.updateForCanonicalized(font, paint);
+        var strike = mTmpStrikeDesc.findOrCreateStrike();
         strike.getMetrics(glyphs, glyphOffset, glyphCount, glyphPtrs);
 
         var bounds = mTmpBounds;
@@ -71,10 +70,10 @@ public class GlyphRunBuilder {
             var glyphPtr = glyphPtrs[i];
             if (!glyphPtr.isEmpty()) {
                 // offset bounds by position x/y
-                float l = glyphPtr.getLeft() + positions[j];
-                float t = glyphPtr.getTop() + positions[j + 1];
-                float r = glyphPtr.getLeft() + glyphPtr.getWidth() + positions[j];
-                float b = glyphPtr.getTop() + glyphPtr.getHeight() + positions[j + 1];
+                float l = glyphPtr.getLeft() * strikeToSourceScale + positions[j];
+                float t = glyphPtr.getTop() * strikeToSourceScale + positions[j + 1];
+                float r = (glyphPtr.getLeft() + glyphPtr.getWidth()) * strikeToSourceScale + positions[j];
+                float b = (glyphPtr.getTop() + glyphPtr.getHeight()) * strikeToSourceScale + positions[j + 1];
                 bounds.join(l, t, r, b);
             }
         }

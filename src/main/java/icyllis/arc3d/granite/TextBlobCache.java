@@ -92,7 +92,7 @@ public final class TextBlobCache {
                     mMiterLimit = 0;
                 }
             } else {
-                mFrameWidth = 0;
+                mFrameWidth = -1;
                 mStrokeJoin = 0;
                 mMiterLimit = 0;
             }
