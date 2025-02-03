@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -44,7 +44,7 @@ public abstract class ScalerContext {
 
     public ScalerContext(Typeface typeface,
                          StrikeDesc desc) {
-        var mutableDesc = new StrikeDesc.Mutable(desc);
+        var mutableDesc = new StrikeDesc.Lookup(desc);
         // Allow the typeface to adjust the rec.
         typeface.onFilterStrikeDesc(mutableDesc);
         mDesc = mutableDesc.immutable();

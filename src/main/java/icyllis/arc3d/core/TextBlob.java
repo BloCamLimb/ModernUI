@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -344,19 +344,19 @@ public final class TextBlob {
                                    Rect2f bounds) {
         // compute exact bounds
         var glyphPtrs = new Glyph[glyphCount];
-        //TODO this is not correct, need to canonicalize
-        var strike = StrikeDesc.makeMask(font, null, Matrix.identity())
-                .findOrCreateStrike();
+        var desc = new StrikeDesc.Lookup();
+        float strikeToSourceScale = desc.updateForCanonicalized(font, null);
+        var strike = desc.findOrCreateStrike();
         strike.getMetrics(glyphs, glyphOffset, glyphCount, glyphPtrs);
 
         for (int i = 0, j = positionOffset; i < glyphCount; i += 1, j += 2) {
             var glyphPtr = glyphPtrs[i];
             if (!glyphPtr.isEmpty()) {
                 // offset bounds by position x/y
-                float l = glyphPtr.getLeft() + positions[j];
-                float t = glyphPtr.getTop() + positions[j + 1];
-                float r = glyphPtr.getLeft() + glyphPtr.getWidth() + positions[j];
-                float b = glyphPtr.getTop() + glyphPtr.getHeight() + positions[j + 1];
+                float l = glyphPtr.getLeft() * strikeToSourceScale + positions[j];
+                float t = glyphPtr.getTop() * strikeToSourceScale + positions[j + 1];
+                float r = (glyphPtr.getLeft() + glyphPtr.getWidth()) * strikeToSourceScale + positions[j];
+                float b = (glyphPtr.getTop() + glyphPtr.getHeight()) * strikeToSourceScale + positions[j + 1];
                 bounds.join(l, t, r, b);
             }
         }

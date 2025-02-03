@@ -614,7 +614,7 @@ public class SubRunContainer {
         float glyphRunListX = glyphRunList.getSourceBounds().centerX();
         float glyphRunListY = glyphRunList.getSourceBounds().centerY();
 
-        var strikeDesc = new StrikeDesc.Mutable();
+        var strikeDesc = new StrikeDesc.Lookup();
 
         // Handle all the runs in the glyphRunList
         for (int i = 0; i < glyphRunList.mGlyphRunCount; i++) {

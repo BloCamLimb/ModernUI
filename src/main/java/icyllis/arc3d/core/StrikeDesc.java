@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.core;
 
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -27,7 +28,7 @@ import java.util.Objects;
 /**
  * Descriptor of font strike.
  * <p>
- * A {@code StrikeDesc} is immutable unless it is a {@link Mutable} subclass.
+ * A {@code StrikeDesc} is immutable unless it is a {@link Lookup} subclass.
  */
 @NullMarked
 public sealed class StrikeDesc {
@@ -87,7 +88,7 @@ public sealed class StrikeDesc {
      * that vary only slightly when we create our key into the font cache, since the font scaler
      * typically returns the same looking results for tiny changes in the matrix.
      */
-    public static float round_mat_elem(float x) {
+    static float relax(float x) {
         return Math.round(x * 1024) / 1024.0f;
     }
 
@@ -102,14 +103,14 @@ public sealed class StrikeDesc {
 
         int typeMask = deviceMatrix.getType();
         if ((typeMask & Matrixc.kScale_Mask) != 0) {
-            mPostScaleX = round_mat_elem(deviceMatrix.getScaleX());
-            mPostScaleY = round_mat_elem(deviceMatrix.getScaleY());
+            mPostScaleX = relax(deviceMatrix.getScaleX());
+            mPostScaleY = relax(deviceMatrix.getScaleY());
         } else {
             mPostScaleX = mPostScaleY = 1;
         }
         if ((typeMask & Matrixc.kAffine_Mask) != 0) {
-            mPostShearX = round_mat_elem(deviceMatrix.getShearX());
-            mPostShearY = round_mat_elem(deviceMatrix.getShearY());
+            mPostShearX = relax(deviceMatrix.getShearX());
+            mPostShearY = relax(deviceMatrix.getShearY());
         } else {
             mPostShearX = mPostShearY = 0;
         }
@@ -165,6 +166,40 @@ public sealed class StrikeDesc {
     private StrikeDesc updateForMask(Font font, Paint paint,
                                      Matrixc deviceMatrix) {
         return update(font, paint, deviceMatrix);
+    }
+
+    // Create a strike spec for device-less measurements.
+    // The computed metrics does not consider thick strokes.
+    private float updateForCanonicalized(Font font, @Nullable Paint paint) {
+        Font canonicalizedFont = font;
+        float strikeToSourceScale = 1;
+        if (shouldDrawAsPath(paint, font, Matrix.identity())) {
+            // for strokes, disable hinting and it's uniformly scaled
+            canonicalizedFont = new Font(font);
+            strikeToSourceScale = canonicalizedFont.setupForPaths(null);
+            // compute metrics from filling
+            paint = null;
+        }
+
+        update(canonicalizedFont, paint, Matrix.identity());
+        return strikeToSourceScale;
+    }
+
+    @Contract(pure = true)
+    public static boolean shouldDrawAsPath(@Nullable Paint paint, Font font,
+                                           Matrixc viewMatrix) {
+        // draw path for strokes, this matches Strike and ScalerContext
+        if (paint != null && paint.getStyle() != Paint.FILL && paint.getStrokeWidth() >= 0) {
+            return true;
+        }
+
+        // No mask rendering for perspective
+        if (viewMatrix.hasPerspective()) {
+            return true;
+        }
+
+        float devTextSize = font.getSize() * viewMatrix.getMaxScale();
+        return devTextSize > Glyph.kMaxTextSizeForMask;
     }
 
     public void getLocalMatrix(Matrix dst) {
@@ -296,12 +331,12 @@ public sealed class StrikeDesc {
     /**
      * A reusable strike desc for lookup.
      */
-    public static final class Mutable extends StrikeDesc {
+    public static final class Lookup extends StrikeDesc {
 
-        public Mutable() {
+        public Lookup() {
         }
 
-        public Mutable(StrikeDesc other) {
+        public Lookup(StrikeDesc other) {
             super(other);
         }
 
@@ -313,6 +348,10 @@ public sealed class StrikeDesc {
         public StrikeDesc updateForMask(Font font, Paint paint,
                                         Matrixc deviceMatrix) {
             return super.updateForMask(font, paint, deviceMatrix);
+        }
+
+        public float updateForCanonicalized(Font font, @Nullable Paint paint) {
+            return super.updateForCanonicalized(font, paint);
         }
 
         public void setFlags(int flags) {
