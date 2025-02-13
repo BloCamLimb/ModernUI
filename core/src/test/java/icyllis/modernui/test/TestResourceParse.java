@@ -55,9 +55,9 @@ public class TestResourceParse {
                     if (reader.getLocalName().equals("declare-styleable")) {
                         ResourceParser parser = new ResourceParser();
                         ResourceParser.ParsedResource resource = new ResourceParser.ParsedResource();
-                        if (parser.DeclareStyleable(reader, resource)) {
+                        /*if (parser.DeclareStyleable(reader, resource)) {
                             LOGGER.info(resource);
-                        }
+                        }*/
                     }
                 }
             }

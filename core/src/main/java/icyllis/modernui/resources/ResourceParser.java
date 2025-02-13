@@ -179,7 +179,7 @@ public class ResourceParser {
         return true;
     }
 
-    public boolean DeclareStyleable(XMLStreamReader reader, ParsedResource out_resource) {
+    /*public boolean DeclareStyleable(XMLStreamReader reader, ParsedResource out_resource) {
         out_resource.name = new Resource.ResourceName();
         out_resource.name.setType(Resource.TYPE_STYLEABLE);
 
@@ -229,5 +229,5 @@ public class ResourceParser {
 
         out_resource.value = styleable;
         return true;
-    }
+    }*/
 }

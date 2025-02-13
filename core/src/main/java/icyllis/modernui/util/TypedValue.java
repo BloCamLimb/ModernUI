@@ -67,6 +67,7 @@ public class TypedValue {
      * The <var>data</var> field holds a complex number encoding a fraction of a container.
      */
     public static final int TYPE_FRACTION = 0x06;
+    public static final int TYPE_OBJECT = 0x0F;
 
     /**
      * Complex data: bit shift of unit information.
