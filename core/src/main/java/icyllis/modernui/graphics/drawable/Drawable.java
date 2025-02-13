@@ -23,7 +23,6 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.resources.Theme;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.ImageView;
@@ -700,7 +699,7 @@ public abstract class Drawable {
      *
      * @param t the theme to apply
      */
-    public void applyTheme(@NonNull @SuppressWarnings("unused") Theme t) {
+    public void applyTheme(@NonNull @SuppressWarnings("unused") Resources.Theme t) {
     }
 
     public boolean canApplyTheme() {

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,13 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.annotation;
 
-public class Theme {
+import java.lang.annotation.*;
 
-    private final Resources mResources;
-
-    public Theme(Resources resources) {
-        mResources = resources;
-    }
+/**
+ * Denotes that a string parameter, field or method return value is expected
+ * to be an attribute reference (e.g. "action").
+ */
+@Documented
+@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.FIELD})
+@Retention(RetentionPolicy.SOURCE)
+public @interface AttrRes {
 }
