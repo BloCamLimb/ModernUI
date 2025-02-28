@@ -63,44 +63,4 @@ public class Resource {
             default -> "";
         };
     }
-
-    // A resource's name. This can uniquely identify
-    // a resource in the ResourceTable.
-    // "namespace:type/entry"
-    public static class ResourceName {
-
-        public String namespace;
-
-        // Pair of type name as in ResourceTable and actual resource type.
-        // Corresponds to the 'type' in "namespace:type/entry".
-        // This is to support resource types with custom names inside resource tables.
-        public String typename;
-        public int type;
-
-        public String entry;
-
-        public ResourceName() {
-            namespace = "";
-            typename = "";
-            type = TYPE_RAW;
-            entry = "";
-        }
-
-        public ResourceName(String namespace, int type, String entry) {
-            this.namespace = namespace;
-            this.typename = getTypeName(type);
-            this.type = type;
-            this.entry = entry;
-        }
-
-        public void setType(int type) {
-            this.typename = getTypeName(type);
-            this.type = type;
-        }
-
-        @Override
-        public String toString() {
-            return (namespace.isEmpty() ? "" : namespace + ":") + typename + "/" + entry;
-        }
-    }
 }

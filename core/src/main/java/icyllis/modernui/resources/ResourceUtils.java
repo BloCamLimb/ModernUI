@@ -70,7 +70,7 @@ public class ResourceUtils {
             namespace = "";
             entry = name.substring(start);
         }
-        ref.name = new Resource.ResourceName(namespace, Resource.TYPE_ATTR, entry);
+        ref.name = new ResourceId(namespace, Resource.getTypeName(Resource.TYPE_ATTR), entry);
         return ref;
     }
 }

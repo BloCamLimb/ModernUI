@@ -20,11 +20,14 @@ package icyllis.modernui.resources;
 
 import icyllis.arc3d.engine.TopologicalSort;
 import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.TypedValue;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,11 +36,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.ToIntFunction;
 
+@ApiStatus.Internal
 public class ThemeBuilder {
-
-    Resources mResources;
 
     Object2IntOpenHashMap<String> mKeyStringTable = new Object2IntOpenHashMap<>();
     ArrayList<String> mKeyStringArray = new ArrayList<>();
@@ -55,59 +58,64 @@ public class ThemeBuilder {
         return index;
     };
 
-    HashMap<String, StyleBuilder> mStyleTable = new HashMap<>();
+    HashMap<String, Style> mStyleTable = new HashMap<>();
     Object2IntOpenHashMap<String> mStyleToOffset = new Object2IntOpenHashMap<>();
 
-    public ThemeBuilder(Resources resources) {
-        mResources = resources;
-
+    public ThemeBuilder() {
         mKeyStringTable.defaultReturnValue(-1);
         mGlobalObjectTable.defaultReturnValue(-1);
         mStyleToOffset.defaultReturnValue(-1);
     }
 
-    String storeKeyString(String key) {
-        return mKeyStringArray.get(mKeyStringTable.computeIfAbsent(key, mKeyStringMapper));
+    int storeKeyString(String key) {
+        return mKeyStringTable.computeIfAbsent(key, mKeyStringMapper);
+    }
+
+    String dedupKeyString(String key) {
+        return mKeyStringArray.get(storeKeyString(key));
     }
 
     int storeGlobalObject(Object o) {
         return mGlobalObjectTable.computeIfAbsent(o, mGlobalObjectMapper);
     }
 
-    public StyleBuilder newStyle(@StyleRes String style, @StyleRes String parent) {
-        style = storeKeyString(style);
-        parent = storeKeyString(parent);
-        StyleBuilder builder = new StyleBuilder(style, parent);
-        if (mStyleTable.putIfAbsent(style, builder) == null) {
+    public Style newStyle(@NonNull @StyleRes String name,
+                          @NonNull @StyleRes String parent) {
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        name = dedupKeyString(name);
+        if (!parent.isEmpty()) {
+            parent = dedupKeyString(parent);
+        }
+        Style builder = new Style(name, parent);
+        if (mStyleTable.putIfAbsent(name, builder) == null) {
             return builder;
         }
         throw new IllegalStateException("style is already defined");
     }
 
-    public Resources.Theme build() {
-        Resources.Theme theme = mResources.newTheme();
+    public Resources build() {
+        Resources resources = new Resources();
 
-        theme.mKeyStrings = mKeyStringArray.toArray(new String[0]);
+        resources.mKeyStrings = mKeyStringArray.toArray(new String[0]);
         mKeyStringArray = null;
 
         mGlobalObjectTable = null;
-        theme.mGlobalObjects = mGlobalObjectArray.toArray();
+        resources.mGlobalObjects = mGlobalObjectArray.toArray();
         mGlobalObjectArray = null;
 
-        ArrayList<StyleBuilder> styles = new ArrayList<>(mStyleTable.values());
-        TopologicalSort.topologicalSort(styles, StyleBuilder.ACCESS);
+        ArrayList<Style> styles = new ArrayList<>(mStyleTable.values());
+        TopologicalSort.topologicalSort(styles, Style.TOPOSORT_TRAIT);
 
         int dataCount = 0;
-        Comparator<StyleBuilder.Entry> entryComparator = Comparator.comparingInt(
-                s -> mKeyStringTable.getInt(s.attr)
-        );
         for (int i = 0; i < styles.size(); i++) {
             var style = styles.get(i);
             if (!style.mParent.isEmpty() && mStyleTable.get(style.mParent) == null) {
                 throw new IllegalStateException("parent style not found");
             }
-            style.mEntries.sort(entryComparator);
-            dataCount += Resources.Theme.MAP_ENTRY_HEADER_COLUMNS + Resources.Theme.MAP_COLUMNS * style.mEntries.size();
+            style.mEntries.sort(Style.STYLE_ENTRY_COMPARATOR);
+            dataCount += Resources.MAP_ENTRY_HEADER_COLUMNS + Resources.MAP_COLUMNS * style.mEntries.size();
         }
 
         mStyleTable = null;
@@ -117,21 +125,21 @@ public class ThemeBuilder {
         for (int i = 0; i < styles.size(); i++) {
             var style = styles.get(i);
             mStyleToOffset.put(style.mName, index);
-            data[index + Resources.Theme.MAP_ENTRY_PARENT] = mKeyStringTable.getInt(style.mParent);
-            data[index + Resources.Theme.MAP_ENTRY_COUNT] = style.mEntries.size();
-            index += Resources.Theme.MAP_ENTRY_ENTRIES;
+            data[index + Resources.MAP_ENTRY_PARENT] = !style.mParent.isEmpty() ? mKeyStringTable.getInt(style.mParent) : -1;
+            data[index + Resources.MAP_ENTRY_COUNT] = style.mEntries.size();
+            index += Resources.MAP_ENTRY_ENTRIES;
             var entries = style.mEntries;
             for (int j = 0; j < entries.size(); j++) {
                 var entry = entries.get(j);
-                data[index + Resources.Theme.MAP_NAME] = mKeyStringTable.getInt(entry.attr);
-                data[index + Resources.Theme.MAP_DATA_TYPE] = entry.dataType;
-                data[index + Resources.Theme.MAP_DATA] = entry.data;
-                index += Resources.Theme.MAP_COLUMNS;
+                data[index + Resources.MAP_NAME] = mKeyStringTable.getInt(entry.attr);
+                data[index + Resources.MAP_DATA_TYPE] = entry.dataType;
+                data[index + Resources.MAP_DATA] = entry.data;
+                index += Resources.MAP_COLUMNS;
             }
         }
         assert index == dataCount;
 
-        theme.mData = data;
+        resources.mData = data;
         mKeyStringTable = null;
 
         Object2IntMap.Entry<String>[] entries = mStyleToOffset.object2IntEntrySet().toArray(new Object2IntMap.Entry[0]);
@@ -142,40 +150,40 @@ public class ThemeBuilder {
             styleKeys[i] = entries[i].getKey();
             styleOffsets[i] = entries[i].getIntValue();
         }
-        theme.mStyleKeys = styleKeys;
-        theme.mStyleOffsets = styleOffsets;
+        resources.mStyleKeys = styleKeys;
+        resources.mStyleOffsets = styleOffsets;
         mStyleToOffset = null;
 
-        return theme;
+        return resources;
     }
 
-    public class StyleBuilder {
+    public class Style {
 
-        static final TopologicalSort.Access<StyleBuilder> ACCESS = new TopologicalSort.Access<>() {
+        static final TopologicalSort.Access<Style> TOPOSORT_TRAIT = new TopologicalSort.Access<>() {
             @Override
-            public void setIndex(StyleBuilder node, int index) {
+            public void setIndex(Style node, int index) {
                 node.mIndex = index;
             }
 
             @Override
-            public int getIndex(StyleBuilder node) {
+            public int getIndex(Style node) {
                 return node.mIndex;
             }
 
             @Override
-            public void setTempMarked(StyleBuilder node, boolean marked) {
+            public void setTempMarked(Style node, boolean marked) {
                 node.mTmpMarked = marked;
             }
 
             @Override
-            public boolean isTempMarked(StyleBuilder node) {
+            public boolean isTempMarked(Style node) {
                 return node.mTmpMarked;
             }
 
             @Override
-            public Collection<StyleBuilder> getIncomingEdges(StyleBuilder node) {
+            public Collection<Style> getIncomingEdges(Style node) {
                 if (!node.mParent.isEmpty()) {
-                    StyleBuilder parent = node.getThemeBuilder().mStyleTable.get(node.mParent);
+                    Style parent = node.getThemeBuilder().mStyleTable.get(node.mParent);
                     if (parent != null) {
                         return List.of(parent);
                     }
@@ -193,25 +201,70 @@ public class ThemeBuilder {
         }
         final ArrayList<Entry> mEntries = new ArrayList<>();
 
-        int mIndex;
+        static final Comparator<Entry> STYLE_ENTRY_COMPARATOR = Comparator.comparing(Entry::attr);
+
+        int mIndex = -1;
         boolean mTmpMarked;
 
-        StyleBuilder(String name, String parent) {
+        Style(String name, String parent) {
             mName = name;
             mParent = parent;
         }
 
         public void addDimension(@AttrRes String attr, float value, int units) {
-            attr = storeKeyString(attr);
+            attr = dedupKeyString(attr);
             mEntries.add(new Entry(attr, TypedValue.TYPE_DIMENSION,
                     TypedValue.createComplexDimension(value, units))
             );
         }
 
-        public void addDrawable(@AttrRes String attr, Drawable.ConstantState cs) {
-            attr = storeKeyString(attr);
-            mEntries.add(new Entry(attr, TypedValue.TYPE_OBJECT,
-                    storeGlobalObject(cs)));
+        public void addAttribute(@AttrRes String attr, @AttrRes String referent) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_ATTRIBUTE,
+                    storeKeyString(referent)));
+        }
+
+        public void addReference(@AttrRes String attr, @StyleRes String referent) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_REFERENCE,
+                    storeKeyString(referent)));
+        }
+
+        public void addBoolean(@AttrRes String attr, boolean v) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_BOOLEAN, v ? 1 : 0));
+        }
+
+        public void addColor(@AttrRes String attr, int argb) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_COLOR_ARGB8, argb));
+        }
+
+        public void addInteger(@AttrRes String attr, int v) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_DEC, v));
+        }
+
+        public void addEnum(@AttrRes String attr, int ord) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_DEC, ord));
+        }
+
+        public void addFlags(@AttrRes String attr, int flags) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_HEX, flags));
+        }
+
+        public void addColor(@AttrRes String attr, BiFunction<Resources, Resources.Theme, ColorStateList> supplier) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_SUPPLIER,
+                    storeGlobalObject(supplier)));
+        }
+
+        public void addDrawable(@AttrRes String attr, BiFunction<Resources, Resources.Theme, Drawable> supplier) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_SUPPLIER,
+                    storeGlobalObject(supplier)));
         }
 
         ThemeBuilder getThemeBuilder() {

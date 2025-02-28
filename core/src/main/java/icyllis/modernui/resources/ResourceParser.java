@@ -23,11 +23,8 @@ import org.jetbrains.annotations.Contract;
 
 import javax.xml.stream.*;
 import java.io.StringReader;
-import java.lang.invoke.MethodHandles;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.List;
+import icyllis.modernui.resources.ResourceTypes.ResTable_map;
 
 /**
  * Parses an XML file for resources and adds them to a ResourceTable.
@@ -35,7 +32,7 @@ import java.util.List;
 public class ResourceParser {
 
     public static class ParsedResource {
-        public Resource.ResourceName name;
+        public ResourceId name;
         public int id;
         public boolean staged_api = false;
         public boolean allow_new = false;
@@ -59,14 +56,14 @@ public class ResourceParser {
     @Contract(pure = true)
     public static int FormatTypeNoEnumOrFlags(@NonNull String s) {
         return switch (s) {
-            case "reference"    -> ResourceTypes.TYPE_REFERENCE;
-            case "string"       -> ResourceTypes.TYPE_STRING;
-            case "integer"      -> ResourceTypes.TYPE_INTEGER;
-            case "boolean"      -> ResourceTypes.TYPE_BOOLEAN;
-            case "color"        -> ResourceTypes.TYPE_COLOR;
-            case "float"        -> ResourceTypes.TYPE_FLOAT;
-            case "dimension"    -> ResourceTypes.TYPE_DIMENSION;
-            case "fraction"     -> ResourceTypes.TYPE_FRACTION;
+            case "reference"    -> ResTable_map.TYPE_REFERENCE;
+            case "string"       -> ResTable_map.TYPE_STRING;
+            case "integer"      -> ResTable_map.TYPE_INTEGER;
+            case "boolean"      -> ResTable_map.TYPE_BOOLEAN;
+            case "color"        -> ResTable_map.TYPE_COLOR;
+            case "float"        -> ResTable_map.TYPE_FLOAT;
+            case "dimension"    -> ResTable_map.TYPE_DIMENSION;
+            case "fraction"     -> ResTable_map.TYPE_FRACTION;
             default             -> 0;
         };
     }
@@ -74,8 +71,8 @@ public class ResourceParser {
     @Contract(pure = true)
     public static int FormatType(@NonNull String s) {
         return switch (s) {
-            case "enum"     -> ResourceTypes.TYPE_ENUM;
-            case "flags"    -> ResourceTypes.TYPE_FLAGS;
+            case "enum"     -> ResTable_map.TYPE_ENUM;
+            case "flags"    -> ResTable_map.TYPE_FLAGS;
             default         -> FormatTypeNoEnumOrFlags(s);
         };
     }
@@ -162,12 +159,12 @@ public class ResourceParser {
             }
         }
 
-        if ((hasMin || hasMax) && (type_mask & ResourceTypes.TYPE_INTEGER) == 0) {
+        if ((hasMin || hasMax) && (type_mask & ResTable_map.TYPE_INTEGER) == 0) {
             return false;
         }
 
         var attribute = new ResourceValues.Attribute(
-                type_mask != 0 ? type_mask : ResourceTypes.TYPE_ANY);
+                type_mask != 0 ? type_mask : ResTable_map.TYPE_ANY);
         if (hasMin) {
             attribute.min_int = min;
         }
