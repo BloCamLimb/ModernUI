@@ -67,7 +67,79 @@ public class TypedValue {
      * The <var>data</var> field holds a complex number encoding a fraction of a container.
      */
     public static final int TYPE_FRACTION = 0x06;
-    public static final int TYPE_OBJECT = 0x0F;
+    /**
+     * The <var>data</var> field holds an index to runtime-specified supplier table.
+     */
+    public static final int TYPE_SUPPLIER = 0x0F;
+
+    /**
+     * Identifies the start of plain integer values.  Any type value
+     * from this to {@link #TYPE_LAST_INT} means the
+     * <var>data</var> field holds a generic integer value.
+     */
+    public static final int TYPE_FIRST_INT = 0x10;
+
+    /**
+     * The <var>data</var> field holds a number that was
+     * originally specified in decimal.
+     */
+    public static final int TYPE_INT_DEC = 0x10;
+    /**
+     * The <var>data</var> field holds a number that was
+     * originally specified in hexadecimal (0xn).
+     */
+    public static final int TYPE_INT_HEX = 0x11;
+    /**
+     * The <var>data</var> field holds 0 or 1 that was originally
+     * specified as "false" or "true".
+     */
+    public static final int TYPE_INT_BOOLEAN = 0x12;
+
+    /**
+     * Identifies the start of integer values that were specified as
+     * color constants (starting with '#').
+     */
+    public static final int TYPE_FIRST_COLOR_INT = 0x1c;
+
+    /**
+     * The <var>data</var> field holds a color that was originally
+     * specified as #aarrggbb.
+     */
+    public static final int TYPE_INT_COLOR_ARGB8 = 0x1c;
+    /**
+     * The <var>data</var> field holds a color that was originally
+     * specified as #rrggbb.
+     */
+    public static final int TYPE_INT_COLOR_RGB8 = 0x1d;
+    /**
+     * The <var>data</var> field holds a color that was originally
+     * specified as #argb.
+     */
+    public static final int TYPE_INT_COLOR_ARGB4 = 0x1e;
+    /**
+     * The <var>data</var> field holds a color that was originally
+     * specified as #rgb.
+     */
+    public static final int TYPE_INT_COLOR_RGB4 = 0x1f;
+
+    /**
+     * Identifies the end of integer values that were specified as color
+     * constants.
+     */
+    public static final int TYPE_LAST_COLOR_INT = 0x1f;
+
+    /**
+     * Identifies the end of plain integer values.
+     */
+    public static final int TYPE_LAST_INT = 0x1f;
+
+    /**
+     * Type: mask to extract single type information.
+     * If masked type is {@link #TYPE_REFERENCE}, then the next 8 bits
+     * hold the type index of the resource it refers to. The type string
+     * can be found in type string table indexed by {@link #assetCookie}.
+     */
+    public static final int TYPE_MASK = 0xff;
 
     /**
      * Complex data: bit shift of unit information.
@@ -167,6 +239,41 @@ public class TypedValue {
      */
     public static final int COMPLEX_MANTISSA_MASK = 0xffffff;
 
+    /**
+     * The type held by this value, as defined by the constants here.
+     * This tells you how to interpret the other fields in the object.
+     * <p>
+     * 0..7 bits: one of type constants listed above.<br>
+     * 8..15 bits: type index of the referent resource, if value type is REFERENCE.
+     */
+    public int type;
+
+    /**
+     * If the value holds a string, this is it.
+     */
+    public CharSequence string;
+
+    /**
+     * Basic data in the value, interpreted according to {@link #type}
+     */
+    public int data;
+
+    /**
+     * Additional information about where the value came from; only
+     * set for strings.
+     */
+    public int assetCookie;
+
+    public int changingConfigurations = -1;
+
+    /**
+     * Return the data for this value as a float.  Only use for values
+     * whose type is {@link #TYPE_FLOAT}.
+     */
+    public final float getFloat() {
+        return Float.intBitsToFloat(data);
+    }
+
     private static final float MANTISSA_MULT =
             1.0f / (1 << COMPLEX_MANTISSA_SHIFT);
     private static final float[] RADIX_MULTS = {
@@ -175,6 +282,25 @@ public class TypedValue {
             MANTISSA_MULT / (1 << 15),
             MANTISSA_MULT / (1 << 23)
     };
+
+    /**
+     * Determine if a value is a color.
+     * <p>
+     * This works by comparing {@link #type} to {@link #TYPE_FIRST_COLOR_INT}
+     * and {@link #TYPE_LAST_COLOR_INT}.
+     *
+     * @return true if this value is a color
+     */
+    public boolean isColorType() {
+        return (type >= TYPE_FIRST_COLOR_INT && type <= TYPE_LAST_COLOR_INT);
+    }
+
+    /**
+     * Determine if a value is a reference.
+     */
+    public boolean isReferenceType() {
+        return (type & TYPE_MASK) == TYPE_REFERENCE;
+    }
 
     /**
      * Retrieve the base value from a complex data integer.

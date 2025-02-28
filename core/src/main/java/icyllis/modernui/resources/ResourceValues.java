@@ -20,7 +20,6 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 
 public class ResourceValues {
@@ -36,7 +35,7 @@ public class ResourceValues {
         public static final byte ATTRIBUTE = 1;
 
         @Nullable
-        public Resource.ResourceName name;
+        public ResourceId name;
         public boolean has_id;
         public int id;
         public boolean has_type_flags;
