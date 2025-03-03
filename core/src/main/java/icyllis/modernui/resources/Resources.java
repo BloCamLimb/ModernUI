@@ -19,11 +19,9 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.util.TypedValue;
@@ -243,47 +241,88 @@ public class Resources {
         return newBag;
     }
 
-    public class Theme {
+    public final class Theme {
 
-        public void applyStyle(String style, boolean force) {
+        private final Object mLock = new Object();
+
+        private final Resources.ThemeKey mKey = new Resources.ThemeKey();
+        // a snapshot of key
+        private Resources.ThemeKey mKeyCopy = mKey.clone();
+
+        // open addressing
+        Object2ObjectOpenHashMap<String, Entry> mEntries;
+
+        /**
+         * Place new attribute values into the theme.  The style resource
+         * specified by <var>namespace</var>:<var>style</var> will be
+         * retrieved from this Theme's resources, its values placed into the
+         * Theme object.
+         *
+         * <p>The semantics of this function depends on the <var>force</var>
+         * argument:  If false, only values that are not already defined in
+         * the theme will be copied from the system resource; otherwise, if
+         * any of the style's attributes are already defined in the theme, the
+         * current values in the theme will be overwritten.
+         *
+         * @param namespace The namespace of a style resource from which to
+         *                  obtain attribute values.
+         * @param style     The name of a style resource from which to
+         *                  obtain attribute values.
+         * @param force     If true, values in the style resource will always be
+         *                  used in the theme; otherwise, they will only be used
+         *                  if not already defined in the theme.
+         */
+        public void applyStyle(@NonNull String namespace, @NonNull String style, boolean force) {
+            synchronized (mLock) {
+                boolean result = applyStyleInternal(namespace, style, force);
+                if (!result) {
+                    throw new IllegalArgumentException("Failed to apply style " +
+                            ResourceId.toString(namespace, "style", style) + " to theme");
+                }
+                mKey.append(namespace, style, force);
+                mKeyCopy = mKey.clone();
+            }
+        }
+
+        private boolean applyStyleInternal(String namespace, String style, boolean force) {
             var bag = getBag(style);
             if (bag == null) {
-                throw new IllegalArgumentException("Failed to apply style " + style + " to theme");
+                return false;
             }
 
-            int initialSize = entries.size();
             int entryCount = bag.getEntryCount();
-            if (initialSize == 0) {
-                entries.ensureCapacity(entryCount);
+            if (entryCount == 0) {
+                return true;
             }
 
-            Object2ObjectOpenHashMap<String, Entry> newEntries = new Object2ObjectOpenHashMap<>();
+            boolean initial = mEntries == null;
+
+            Object2ObjectOpenHashMap<String, Entry> newEntries = new Object2ObjectOpenHashMap<>(entryCount);
             for (int i = 0; i < entryCount; i++) {
-                boolean isUndefined = isUndefined(bag.getType(i), bag.getData(i));
+                boolean isUndefined = isUndefined(bag.type(i), bag.data(i));
                 if (!force && isUndefined) {
                     continue;
                 }
-                String key = bag.keys[i*2+1];
-                var existing = entries.get(key);
-                if (existing != null) {
+                String key = bag.attribute(i);
+                Entry existing;
+                if (!initial && (existing = mEntries.get(key)) != null) {
                     if (force || isUndefined(existing.type, existing.data)) {
-                        existing.type = bag.getType(i);
-                        existing.data = bag.getData(i);
-                        existing.cookie = bag.getCookie(i);
-                        existing.typeSpecFlags = bag.typeSpecFlags;
+                        existing.set(bag, i);
                     }
                 } else if (!isUndefined) {
-                    Entry e = new Entry();
-                    e.set(bag, i);
-                    newEntries.put(key, e);
+                    Entry entry = new Entry();
+                    entry.set(bag, i);
+                    newEntries.put(key, entry);
                 }
             }
 
-            if (initialSize == 0) {
-                entries = newEntries;
+            if (initial) {
+                mEntries = newEntries;
             } else {
-                entries.putAll(newEntries);
+                mEntries.putAll(newEntries);
             }
+
+            return true;
         }
 
         @NonNull
@@ -293,8 +332,10 @@ public class Resources {
             final int len = attrs.length >> 1;
             final TypedArray array = TypedArray.obtain(getResources(), len);
 
-            applyStyle(style, attrs,
-                    array.mData, array.mIndices);
+            synchronized (mLock) {
+                applyStyle(style, attrs,
+                        array.mData, array.mIndices);
+            }
             return array;
         }
 
@@ -306,23 +347,25 @@ public class Resources {
 
             void set(@NonNull ResolvedBag bag, int index) {
                 int offset = index * ResolvedBag.VALUE_COLUMNS;
-                cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
-                data = bag.values[offset + ResolvedBag.COLUMN_DATA];
                 type = bag.values[offset + ResolvedBag.COLUMN_TYPE];
+                data = bag.values[offset + ResolvedBag.COLUMN_DATA];
+                cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
                 typeSpecFlags = bag.typeSpecFlags;
             }
         }
-
-        Object2ObjectOpenHashMap<String, Entry> entries = new Object2ObjectOpenHashMap<>();
 
         static boolean isUndefined(int type, int data) {
             return type == Res_value.TYPE_NULL && data != Res_value.DATA_NULL_EMPTY;
         }
 
-        AssetManager.SelectedValue getAttribute(String entryString) {
+        @Nullable
+        AssetManager.SelectedValue getAttribute(String entryName) {
+            if (mEntries == null) {
+                return null;
+            }
             int typeSpecFlags = 0;
             for (int i = 0; i < 20; i++) {
-                Entry e = entries.get(entryString);
+                Entry e = mEntries.get(entryName);
                 if (e == null) {
                     return null;
                 }
@@ -331,7 +374,7 @@ public class Resources {
                 }
                 typeSpecFlags |= e.typeSpecFlags;
                 if (e.type == Res_value.TYPE_ATTRIBUTE) {
-                    entryString = mKeyStrings[e.data];
+                    entryName = mKeyStrings[e.data];
                     continue;
                 }
 
@@ -347,6 +390,7 @@ public class Resources {
 
         boolean resolveAttributeReference(AssetManager.SelectedValue value) {
             if (value.type != Res_value.TYPE_ATTRIBUTE) {
+                //TODO currently we have only style resources, where styles do not need resolve
                 return true;
             }
 
@@ -423,6 +467,143 @@ public class Resources {
             return Resources.this;
         }
 
+        ThemeKey getKey() {
+            synchronized (mLock) {
+                return mKeyCopy;
+            }
+        }
+    }
 
+    static final class ThemeKey implements Cloneable {
+        String[] mNamespace;
+        String[] mThemeName;
+        boolean[] mForce;
+
+        private transient int mHashCode = 0;
+
+        private int findValue(String namespace, String themeName, boolean force) {
+            int count = mForce != null ? mForce.length : 0;
+            for (int i = 0; i < count; i++) {
+                if (mForce[i] == force &&
+                        themeName.equals(mThemeName[i]) &&
+                        namespace.equals(mNamespace[i])) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private void moveToLast(int index) {
+            int count = mForce.length;
+            if (index < 0 || index >= count - 1) {
+                return;
+            }
+            final String namespace = mNamespace[index];
+            final String themeName = mThemeName[index];
+            final boolean force = mForce[index];
+
+            // we need copy-on-write
+
+            final String[] newNamespace = new String[count];
+            System.arraycopy(mNamespace, 0, newNamespace, 0, index);
+            System.arraycopy(mNamespace, index + 1, newNamespace, index, count - index - 1);
+            newNamespace[count - 1] = namespace;
+            mNamespace = newNamespace;
+
+            final String[] newThemeName = new String[count];
+            System.arraycopy(mThemeName, 0, newThemeName, 0, index);
+            System.arraycopy(mThemeName, index + 1, newThemeName, index, count - index - 1);
+            newThemeName[count - 1] = themeName;
+            mThemeName = newThemeName;
+
+            final boolean[] newForce = new boolean[count];
+            System.arraycopy(mForce, 0, newForce, 0, index);
+            System.arraycopy(mForce, index + 1, newForce, index, count - index - 1);
+            newForce[count - 1] = force;
+            mForce = newForce;
+
+            // recompute hashcode
+
+            mHashCode = 0;
+            for (int i = 0; i < count; i++) {
+                mHashCode = 31 * mHashCode + newNamespace[i].hashCode();
+                mHashCode = 31 * mHashCode + newThemeName[i].hashCode();
+                mHashCode = 31 * mHashCode + (newForce[i] ? 1 : 0);
+            }
+        }
+
+        public void append(String namespace, String themeName, boolean force) {
+            final int index = findValue(namespace, themeName, force);
+            if (index >= 0) {
+                moveToLast(index);
+            } else {
+                int count = mForce != null ? mForce.length + 1 : 1;
+
+                // we need copy-on-write
+
+                final String[] newNamespace = mNamespace == null ? new String[count]
+                        : Arrays.copyOf(mNamespace, count);
+                newNamespace[count - 1] = namespace;
+                mNamespace = newNamespace;
+
+                final String[] newThemeName = mThemeName == null ? new String[count]
+                        : Arrays.copyOf(mThemeName, count);
+                newThemeName[count - 1] = themeName;
+                mThemeName = newThemeName;
+
+                final boolean[] newForce = mForce == null ? new boolean[count]
+                        : Arrays.copyOf(mForce, count);
+                newForce[count - 1] = force;
+                mForce = newForce;
+
+                mHashCode = 31 * mHashCode + namespace.hashCode();
+                mHashCode = 31 * mHashCode + themeName.hashCode();
+                mHashCode = 31 * mHashCode + (force ? 1 : 0);
+            }
+        }
+
+        public void setTo(@NonNull ThemeKey other) {
+            // A shallow copy, because we use copy-on-write
+            mNamespace = other.mNamespace;
+            mThemeName = other.mThemeName;
+            mForce = other.mForce;
+            mHashCode = other.mHashCode;
+        }
+
+        @Override
+        public int hashCode() {
+            return mHashCode;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            final ThemeKey t = (ThemeKey) o;
+
+            if (!Arrays.equals(mForce, t.mForce)) {
+                return false;
+            }
+            if (!Arrays.equals(mThemeName, t.mThemeName)) {
+                return false;
+            }
+            return Arrays.equals(mNamespace, t.mNamespace);
+        }
+
+        // A shallow copy, because we use copy-on-write
+        @Override
+        public ThemeKey clone() {
+            try {
+                return (ThemeKey) super.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
