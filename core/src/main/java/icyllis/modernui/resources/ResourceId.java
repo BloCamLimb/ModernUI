@@ -96,6 +96,13 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
                 : namespace + ":" + type + "/" + entry;
     }
 
+    @NonNull
+    @Contract(pure = true)
+    public static String toString(@NonNull String namespace, @NonNull String type, @NonNull String entry) {
+        return namespace.isEmpty() ? type + "/" + entry
+                : namespace + ":" + type + "/" + entry;
+    }
+
     /**
      * Compare strings lexicographically, by namespace, then type, then entry.
      *

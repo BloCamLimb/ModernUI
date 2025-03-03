@@ -52,22 +52,30 @@ public class AssetManager {
          */
         public int[] values;
 
-        public int getType(int index) {
+        public String namespace(int index) {
+            return keys[index << 1];
+        }
+
+        public String attribute(int index) {
+            return keys[(index << 1) + 1];
+        }
+
+        public int type(int index) {
             return values[index * VALUE_COLUMNS + COLUMN_TYPE];
         }
 
-        public int getData(int index) {
+        public int data(int index) {
             return values[index * VALUE_COLUMNS + COLUMN_DATA];
         }
 
-        public int getCookie(int index) {
+        public int cookie(int index) {
             return values[index * VALUE_COLUMNS + COLUMN_COOKIE];
         }
 
         public int getEntryCount() {
             assert values == null ||
-                    (values.length / VALUE_COLUMNS) == (keys.length / 2);
-            return values != null ? values.length / VALUE_COLUMNS : 0;
+                    (values.length / VALUE_COLUMNS) == (keys.length >> 1);
+            return keys != null ? keys.length >> 1 : 0;
         }
     }
 
@@ -103,9 +111,9 @@ public class AssetManager {
 
         public void set(@NonNull ResolvedBag bag, int index) {
             int offset = index * ResolvedBag.VALUE_COLUMNS;
-            cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
-            data = bag.values[offset + ResolvedBag.COLUMN_DATA];
             type = bag.values[offset + ResolvedBag.COLUMN_TYPE];
+            data = bag.values[offset + ResolvedBag.COLUMN_DATA];
+            cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
             flags = bag.typeSpecFlags;
         }
 
