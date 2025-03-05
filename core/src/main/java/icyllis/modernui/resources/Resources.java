@@ -19,9 +19,13 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.StyleableRes;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.util.TypedValue;
@@ -31,10 +35,10 @@ import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 
 import icyllis.modernui.resources.AssetManager.ResolvedBag;
-import icyllis.modernui.resources.AssetManager.BagAttributeFinder;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
 
 import java.util.Arrays;
+import java.util.function.BiFunction;
 
 @ApiStatus.Experimental
 public class Resources {
@@ -79,6 +83,23 @@ public class Resources {
 
     Object2ObjectOpenHashMap<String, ResolvedBag> mCachedBags = new Object2ObjectOpenHashMap<>();
 
+    /**
+     * This exception is thrown by the resource APIs when a requested resource
+     * can not be found.
+     */
+    public static class NotFoundException extends RuntimeException {
+        public NotFoundException() {
+        }
+
+        public NotFoundException(String message) {
+            super(message);
+        }
+
+        public NotFoundException(String message, Exception cause) {
+            super(message, cause);
+        }
+    }
+
     public Resources() {
         mMetrics.setToDefaults();
     }
@@ -105,10 +126,73 @@ public class Resources {
 
     @Nullable
     CharSequence getPooledStringForCookie(int cookie, int id) {
-        if (cookie == 0 && id >= 0) {
+        if (cookie == 0 && id >= 0 && id < mGlobalObjects.length) {
             return (CharSequence) mGlobalObjects[id];
         }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    ColorStateList loadColorStateList(@NonNull TypedValue value,
+                                      @NonNull String namespace, @NonNull String entry,
+                                      @Nullable Theme theme) {
+        // Handle inline color definitions.
+        if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+            return ColorStateList.valueOf(value.data);
+        }
+
+        if (value.type == TypedValue.TYPE_FACTORY) {
+            Object object = mGlobalObjects[value.data];
+            if (object instanceof BiFunction<?, ?, ?>) {
+                object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
+                if (object == null) {
+                    return null;
+                }
+                if (object instanceof ColorStateList) {
+                    return (ColorStateList) object;
+                }
+            }
+            throw new NotFoundException("Resource is not a color: " + value);
+        }
+
+        throw new NotFoundException(
+                "Can't find ColorStateList from drawable resource "
+                        + ResourceId.toString(namespace, "color", entry));
+    }
+
+    @SuppressWarnings("unchecked")
+    Drawable loadDrawable(@NonNull TypedValue value,
+                          @NonNull String namespace, @NonNull String entry,
+                          @Nullable Theme theme) {
+        try {
+            if (value.type == TypedValue.TYPE_FACTORY) {
+                Object object = mGlobalObjects[value.data];
+                if (object instanceof BiFunction<?, ?, ?>) {
+                    object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
+                    if (object == null) {
+                        return null;
+                    }
+                    if (object instanceof Drawable) {
+                        return (Drawable) object;
+                    }
+                }
+                throw new NotFoundException("Resource is not a drawable: " + value);
+            }
+
+            //TODO
+            return null;
+        } catch (Exception e) {
+            String name = ResourceId.toString(namespace, "drawable", entry);
+
+            // The target drawable might fail to load for any number of
+            // reasons, but we always want to include the resource name.
+            // Since the client already expects this method to throw a
+            // NotFoundException, just throw one of those.
+            final NotFoundException nfe = new NotFoundException("Drawable " + name, e);
+            nfe.setStackTrace(new StackTraceElement[0]);
+            throw nfe;
+        }
     }
 
     @SuppressWarnings("ConstantValue")
@@ -327,7 +411,7 @@ public class Resources {
 
         @NonNull
         public TypedArray obtainStyledAttributes(@Nullable @StyleRes String style,
-                                                 @NonNull String[] attrs) {
+                                                 @NonNull @StyleableRes String[] attrs) {
             assert (attrs.length & 1) == 0;
             final int len = attrs.length >> 1;
             final TypedArray array = TypedArray.obtain(getResources(), len);
@@ -358,19 +442,19 @@ public class Resources {
             return type == Res_value.TYPE_NULL && data != Res_value.DATA_NULL_EMPTY;
         }
 
-        @Nullable
-        AssetManager.SelectedValue getAttribute(String entryName) {
+        boolean getAttribute(String namespace, String entryName,
+                             AssetManager.SelectedValue outValue) {
             if (mEntries == null) {
-                return null;
+                return false;
             }
             int typeSpecFlags = 0;
             for (int i = 0; i < 20; i++) {
                 Entry e = mEntries.get(entryName);
                 if (e == null) {
-                    return null;
+                    return false;
                 }
                 if (isUndefined(e.type, e.data)) {
-                    return null;
+                    return false;
                 }
                 typeSpecFlags |= e.typeSpecFlags;
                 if (e.type == Res_value.TYPE_ATTRIBUTE) {
@@ -378,14 +462,13 @@ public class Resources {
                     continue;
                 }
 
-                var value = new AssetManager.SelectedValue();
-                value.cookie = e.cookie;
-                value.flags = typeSpecFlags;
-                value.type = e.type;
-                value.data = e.data;
-                return value;
+                outValue.cookie = e.cookie;
+                outValue.flags = typeSpecFlags;
+                outValue.type = e.type;
+                outValue.data = e.data;
+                return true;
             }
-            return null;
+            return false;
         }
 
         boolean resolveAttributeReference(AssetManager.SelectedValue value) {
@@ -394,15 +477,12 @@ public class Resources {
                 return true;
             }
 
-            var result = getAttribute(mKeyStrings[value.data]);
-            if (result == null) {
+            int flags = value.flags;
+            if (!getAttribute(R.ns, mKeyStrings[value.data], value)) {
                 return false;
             }
 
-            value.cookie = result.cookie;
-            value.type = result.type;
-            value.data = result.data;
-            value.flags |= result.flags;
+            value.flags |= flags;
             return true;
         }
 
@@ -410,7 +490,7 @@ public class Resources {
                         @NonNull String[] attrs,
                         @NonNull int[] outValues, @NonNull int[] outIndices) {
 
-            ResolvedBag xmlStyleBag = null;
+            AssetManager.ResolvedBag xmlStyleBag = null;
             BagAttributeFinder xmlStyleAttrFinder = null;
             if (style != null && !style.isEmpty()) {
                 xmlStyleBag = getBag(style);
@@ -424,12 +504,12 @@ public class Resources {
 
             for (int ii = 0; ii < attrs.length; ii += 2) {
                 String curNs = attrs[ii];
-                String curName = attrs[ii+1];
+                String curAttr = attrs[ii+1];
 
                 value.reset();
 
                 if (xmlStyleAttrFinder != null) {
-                    int xmlAttrIdx = xmlStyleAttrFinder.find(curNs, curName);
+                    int xmlAttrIdx = xmlStyleAttrFinder.find(curNs, curAttr);
                     if (xmlAttrIdx != -1) {
                         value.set(xmlStyleBag, xmlAttrIdx);
                     }
@@ -438,9 +518,8 @@ public class Resources {
                 if (value.type != Res_value.TYPE_NULL) {
                     resolveAttributeReference(value);
                 } else if (value.data != Res_value.DATA_NULL_EMPTY) {
-                    var attrValue = getAttribute(curName);
-                    if (attrValue != null) {
-                        value.set(attrValue);
+                    if (getAttribute(curNs, curAttr, value)) {
+
                     }
                 }
 

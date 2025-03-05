@@ -79,22 +79,6 @@ public class AssetManager {
         }
     }
 
-    public static class BagAttributeFinder extends AttributeFinder {
-
-        private final String[] keys;
-
-        public BagAttributeFinder(@Nullable ResolvedBag bag) {
-            super(0, bag != null ? bag.getEntryCount() : 0);
-            this.keys = bag != null ? bag.keys : null;
-        }
-
-        @Override
-        protected void onGetAttribute(int index) {
-            currentNamespace = keys[index*2+0];
-            currentAttribute = keys[index*2+1];
-        }
-    }
-
     public static class SelectedValue {
 
         public int cookie = kInvalidCookie;
