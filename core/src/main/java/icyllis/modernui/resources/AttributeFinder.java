@@ -45,7 +45,7 @@ public abstract class AttributeFinder {
     /**
      * Called before the search starts.
      */
-    protected final void reset(int start, int end) {
+    public void reset(int start, int end) {
         this.start = start;
         this.end = end;
         current = start;
@@ -57,13 +57,12 @@ public abstract class AttributeFinder {
     /**
      * Called after the search ends.
      */
-    public final void clear() {
+    public void clear() {
         haystackNamespace = null;
         haystackAttribute = null;
     }
 
     // Returns the index or '-1' if not found
-    @SuppressWarnings("StringEquality")
     public int find(@NonNull String namespace, @NonNull String attribute) {
         if (start >= end) {
             return -1;
@@ -73,11 +72,8 @@ public abstract class AttributeFinder {
         assert haystackAttribute != null;
 
         while (current != end) {
-            // Namespace strings are interned, so compare identity first can be more efficient
-            int compare = haystackNamespace == namespace ? 0 : haystackNamespace.compareTo(namespace);
-            if (compare == 0) {
-                compare = haystackAttribute.compareTo(attribute);
-            }
+            int compare = ResourceId.comparePair(haystackNamespace, haystackAttribute,
+                    namespace, attribute);
             if (compare > 0) {
                 // The attribute we are looking was not found.
                 break;
@@ -100,11 +96,19 @@ public abstract class AttributeFinder {
 
 class BagAttributeFinder extends AttributeFinder {
 
-    private final String[] keys;
+    private String[] keys;
 
-    public BagAttributeFinder(@Nullable AssetManager.ResolvedBag bag) {
+    public BagAttributeFinder() {
+    }
+
+    public void reset(@Nullable AssetManager.ResolvedBag bag) {
         this.keys = bag != null ? bag.keys : null;
-        reset(0, bag != null ? bag.getEntryCount() : 0);
+        super.reset(0, bag != null ? bag.getEntryCount() : 0);
+    }
+
+    public void clear() {
+        super.clear();
+        keys = null;
     }
 
     @Override

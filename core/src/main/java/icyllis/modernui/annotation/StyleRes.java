@@ -21,8 +21,8 @@ package icyllis.modernui.annotation;
 import java.lang.annotation.*;
 
 /**
- * Denotes that a string parameter, field or method return value is expected
- * to be a style resource reference (e.g. "TextAppearance").
+ * Denotes that a parameter, field or method return value is expected
+ * to be a style resource reference (e.g. "modernui:style/TextAppearance").
  */
 @Documented
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.FIELD})

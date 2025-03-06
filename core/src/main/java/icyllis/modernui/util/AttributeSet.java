@@ -18,5 +18,8 @@
 
 package icyllis.modernui.util;
 
+/**
+ * Reserved for future use.
+ */
 public interface AttributeSet {
 }
