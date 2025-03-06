@@ -19,12 +19,15 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.AssetManager.ResolvedBag;
+import icyllis.modernui.resources.ResourceTypes.Res_value;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Pools;
@@ -34,13 +37,11 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 
-import icyllis.modernui.resources.AssetManager.ResolvedBag;
-import icyllis.modernui.resources.ResourceTypes.Res_value;
-
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
 @ApiStatus.Experimental
+@SuppressWarnings("SuspiciousMethodCalls")
 public class Resources {
 
     public static final Marker MARKER = MarkerManager.getMarker("Resources");
@@ -195,8 +196,12 @@ public class Resources {
         }
     }
 
+    ResolvedBag getBag(@NonNull ResourceId style) {
+        return getBag(style.entry());
+    }
+
     @SuppressWarnings("ConstantValue")
-    ResolvedBag getBag(String style) {
+    ResolvedBag getBag(@NonNull String style) {
         var cached = mCachedBags.get(style);
         if (cached != null) {
             return cached;
@@ -222,10 +227,10 @@ public class Resources {
                 String[] keys = new String[entryCount * 2];
                 int[] values = new int[entryCount * 3];
                 for (int i = 0; i < entryCount; i++) {
-                    keys[i*2+0] = DEFAULT_NAMESPACE;
-                    keys[i*2+1] = mKeyStrings[data[offset + MAP_NAME]];
-                    values[i*ResolvedBag.VALUE_COLUMNS+ResolvedBag.COLUMN_TYPE] = data[offset+MAP_DATA_TYPE];
-                    values[i*ResolvedBag.VALUE_COLUMNS+ResolvedBag.COLUMN_DATA] = data[offset+MAP_DATA];
+                    keys[i * 2 + 0] = DEFAULT_NAMESPACE;
+                    keys[i * 2 + 1] = mKeyStrings[data[offset + MAP_NAME]];
+                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] = data[offset + MAP_DATA_TYPE];
+                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] = data[offset + MAP_DATA];
                     offset += MAP_COLUMNS;
                 }
                 bag.keys = keys;
@@ -246,6 +251,7 @@ public class Resources {
         int parentCount = parentBag.getEntryCount();
         int maxCount = parentCount + entryCount;
         if (maxCount > 0) {
+            // allocate max possible array
             String[] newKeys = new String[maxCount * 2];
             int[] newValues = new int[maxCount * ResolvedBag.VALUE_COLUMNS];
             int newIndex = 0;
@@ -254,6 +260,8 @@ public class Resources {
             int childIndex = 0;
             int childOffset = offset;
             int parentIndex = 0;
+
+            // merge two sorted arrays (parent and child)
 
             while (childIndex < entryCount && parentIndex < parentCount) {
                 String childKey = mKeyStrings[data[childOffset + MAP_NAME]];
@@ -266,8 +274,10 @@ public class Resources {
                     // or is equal to the parent (overrides).
                     newKeys[newIndex * 2 + 0] = DEFAULT_NAMESPACE;
                     newKeys[newIndex * 2 + 1] = childKey;
-                    newValues[newIndex*ResolvedBag.VALUE_COLUMNS+ResolvedBag.COLUMN_TYPE] = data[childOffset + MAP_DATA_TYPE];
-                    newValues[newIndex*ResolvedBag.VALUE_COLUMNS+ResolvedBag.COLUMN_DATA] = data[childOffset + MAP_DATA];
+                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
+                            data[childOffset + MAP_DATA_TYPE];
+                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
+                            data[childOffset + MAP_DATA];
                     childIndex++;
                     childOffset += MAP_COLUMNS;
                 } else {
@@ -291,8 +301,10 @@ public class Resources {
                 String childKey = mKeyStrings[data[childOffset + MAP_NAME]];
                 newKeys[newIndex * 2 + 0] = DEFAULT_NAMESPACE;
                 newKeys[newIndex * 2 + 1] = childKey;
-                newValues[newIndex*ResolvedBag.VALUE_COLUMNS+ResolvedBag.COLUMN_TYPE] = data[childOffset + MAP_DATA_TYPE];
-                newValues[newIndex*ResolvedBag.VALUE_COLUMNS+ResolvedBag.COLUMN_DATA] = data[childOffset + MAP_DATA];
+                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
+                        data[childOffset + MAP_DATA_TYPE];
+                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
+                        data[childOffset + MAP_DATA];
                 childIndex++;
                 childOffset += MAP_COLUMNS;
                 newIndex++;
@@ -338,7 +350,7 @@ public class Resources {
 
         /**
          * Place new attribute values into the theme.  The style resource
-         * specified by <var>namespace</var>:<var>style</var> will be
+         * specified by <var>style</var> will be
          * retrieved from this Theme's resources, its values placed into the
          * Theme object.
          *
@@ -348,27 +360,25 @@ public class Resources {
          * any of the style's attributes are already defined in the theme, the
          * current values in the theme will be overwritten.
          *
-         * @param namespace The namespace of a style resource from which to
-         *                  obtain attribute values.
-         * @param style     The name of a style resource from which to
-         *                  obtain attribute values.
-         * @param force     If true, values in the style resource will always be
-         *                  used in the theme; otherwise, they will only be used
-         *                  if not already defined in the theme.
+         * @param style The resource ID of a style resource from which to
+         *              obtain attribute values.
+         * @param force If true, values in the style resource will always be
+         *              used in the theme; otherwise, they will only be used
+         *              if not already defined in the theme.
          */
-        public void applyStyle(@NonNull String namespace, @NonNull String style, boolean force) {
+        public void applyStyle(@NonNull @StyleRes ResourceId style, boolean force) {
             synchronized (mLock) {
-                boolean result = applyStyleInternal(namespace, style, force);
+                boolean result = applyStyleInternal(style, force);
                 if (!result) {
                     throw new IllegalArgumentException("Failed to apply style " +
-                            ResourceId.toString(namespace, "style", style) + " to theme");
+                            style + " to theme");
                 }
-                mKey.append(namespace, style, force);
+                mKey.append(style, force);
                 mKeyCopy = mKey.clone();
             }
         }
 
-        private boolean applyStyleInternal(String namespace, String style, boolean force) {
+        private boolean applyStyleInternal(@NonNull ResourceId style, boolean force) {
             var bag = getBag(style);
             if (bag == null) {
                 return false;
@@ -409,18 +419,174 @@ public class Resources {
             return true;
         }
 
+        /**
+         * Return a TypedArray holding the values defined by
+         * <var>Theme</var> which are listed in <var>attrs</var>.
+         *
+         * <p>Be sure to call {@link TypedArray#recycle() TypedArray.recycle()} when you are done
+         * with the array.
+         *
+         * @param attrs The desired attributes to be retrieved. See {@link StyleableRes} for requirements.
+         * @return Returns a TypedArray holding an array of the attribute values.
+         * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
+         * when done with it.
+         * @see Resources#obtainAttributes
+         * @see #obtainStyledAttributes(ResourceId, String[])
+         * @see #obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])
+         */
         @NonNull
-        public TypedArray obtainStyledAttributes(@Nullable @StyleRes String style,
+        public TypedArray obtainStyledAttributes(@NonNull @StyleableRes String[] attrs) {
+            return obtainStyledAttributes(null, null, null, attrs);
+        }
+
+        /**
+         * Return a TypedArray holding the values defined by the <var>style</var>
+         * resource which are listed in <var>attrs</var>.
+         *
+         * <p>Be sure to call {@link TypedArray#recycle() TypedArray.recycle()} when you are done
+         * with the array.
+         *
+         * @param style The desired style resource.
+         * @param attrs The desired attributes to be retrieved. See {@link StyleableRes} for requirements.
+         * @return Returns a TypedArray holding an array of the attribute values.
+         * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
+         * when done with it.
+         * @see Resources#obtainAttributes
+         * @see #obtainStyledAttributes(ResourceId, String[])
+         * @see #obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])
+         */
+        @NonNull
+        public TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId style,
                                                  @NonNull @StyleableRes String[] attrs) {
+            return obtainStyledAttributes(null, null, style, attrs);
+        }
+
+        /**
+         * Return a TypedArray holding the attribute values in
+         * <var>set</var>
+         * that are listed in <var>attrs</var>.  In addition, if the given
+         * AttributeSet specifies a style class (through the "style" attribute),
+         * that style will be applied on top of the base attributes it defines.
+         *
+         * <p>Be sure to call {@link TypedArray#recycle() TypedArray.recycle()} when you are done
+         * with the array.
+         *
+         * <p>When determining the final value of a particular attribute, there
+         * are four inputs that come into play:</p>
+         *
+         * <ol>
+         *     <li> Any attribute values in the given AttributeSet.
+         *     <li> The style resource specified in the AttributeSet (named
+         *     "style").
+         *     <li> The default style specified by <var>defStyleAttr</var> and
+         *     <var>defStyleRes</var>
+         *     <li> The base values in this theme.
+         * </ol>
+         *
+         * <p>Each of these inputs is considered in-order, with the first listed
+         * taking precedence over the following ones.  In other words, if in the
+         * AttributeSet you have supplied <code>&lt;Button
+         * textColor="#ff000000"&gt;</code>, then the button's text will
+         * <em>always</em> be black, regardless of what is specified in any of
+         * the styles.
+         *
+         * @param set          The base set of attribute values.  May be null.
+         * @param defStyleAttr An attribute in the current theme that contains a
+         *                     reference to a style resource that supplies
+         *                     defaults values for the TypedArray.  Can be
+         *                     null to not look for defaults.
+         * @param defStyleRes  A resource identifier of a style resource that
+         *                     supplies default values for the TypedArray,
+         *                     used only if defStyleAttr is null or can not be found
+         *                     in the theme.  Can be null to not look for defaults.
+         * @param attrs        The desired attributes to be retrieved. See {@link StyleableRes} for requirements.
+         * @return Returns a TypedArray holding an array of the attribute values.
+         * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
+         * when done with it.
+         * @see Resources#obtainAttributes
+         * @see #obtainStyledAttributes(String[])
+         * @see #obtainStyledAttributes(ResourceId, String[])
+         */
+        @NonNull
+        public TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
+                                                 @Nullable @AttrRes ResourceId defStyleAttr,
+                                                 @Nullable @StyleRes ResourceId defStyleRes,
+                                                 @NonNull @StyleableRes String[] attrs) {
+            assert defStyleAttr == null || defStyleAttr.type().equals("attr");
             assert (attrs.length & 1) == 0;
             final int len = attrs.length >> 1;
             final TypedArray array = TypedArray.obtain(getResources(), len);
 
             synchronized (mLock) {
-                applyStyle(style, attrs,
-                        array.mData, array.mIndices);
+                applyStyle(set, defStyleAttr, defStyleRes,
+                        attrs, array.mData, array.mIndices,
+                        array.mSelectedValue,
+                        array.mDefStyleAttrFinder);
             }
+            array.mDefStyleAttrFinder.clear();
             return array;
+        }
+
+        /**
+         * Retrieve the value of an attribute in the Theme.  The contents of
+         * <var>outValue</var> are ultimately filled in by
+         * {@link Resources#getValue}.
+         *
+         * @param attr        The resource identifier of the desired theme
+         *                    attribute.
+         * @param outValue    Filled in with the ultimate resource value supplied
+         *                    by the attribute.
+         * @param resolveRefs If true, resource references will be walked; if
+         *                    false, <var>outValue</var> may be a
+         *                    TYPE_REFERENCE.  In either case, it will never
+         *                    be a TYPE_ATTRIBUTE.
+         * @return boolean Returns true if the attribute was found and
+         * <var>outValue</var> is valid, else false.
+         */
+        public boolean resolveAttribute(@NonNull @AttrRes ResourceId attr,
+                                        @NonNull TypedValue outValue, boolean resolveRefs) {
+            assert attr.type().equals("attr");
+            return resolveAttribute(attr.namespace(), attr.entry(), outValue, resolveRefs);
+        }
+
+        /**
+         * Retrieve the value of an attribute in the Theme.  The contents of
+         * <var>outValue</var> are ultimately filled in by
+         * {@link Resources#getValue}.
+         *
+         * @param outValue    Filled in with the ultimate resource value supplied
+         *                    by the attribute.
+         * @param resolveRefs If true, resource references will be walked; if
+         *                    false, <var>outValue</var> may be a
+         *                    TYPE_REFERENCE.  In either case, it will never
+         *                    be a TYPE_ATTRIBUTE.
+         * @return boolean Returns true if the attribute was found and
+         * <var>outValue</var> is valid, else false.
+         */
+        public boolean resolveAttribute(@NonNull String namespace, @NonNull String attribute,
+                                        @NonNull TypedValue outValue, boolean resolveRefs) {
+            synchronized (mLock) {
+                AssetManager.SelectedValue value = new AssetManager.SelectedValue();
+                if (!getAttribute(namespace, attribute, value)) {
+                    return false;
+                }
+
+                if (resolveRefs) {
+                    //TODO
+                }
+
+                outValue.type = value.type;
+                outValue.data = value.data;
+                outValue.assetCookie = value.cookie;
+                outValue.changingConfigurations = value.flags;
+
+                if (outValue.type == TypedValue.TYPE_STRING) {
+                    if ((outValue.string = getPooledStringForCookie(value.cookie, outValue.data)) == null) {
+                        return false;
+                    }
+                }
+                return true;
+            }
         }
 
         static class Entry {
@@ -442,14 +608,14 @@ public class Resources {
             return type == Res_value.TYPE_NULL && data != Res_value.DATA_NULL_EMPTY;
         }
 
-        boolean getAttribute(String namespace, String entryName,
-                             AssetManager.SelectedValue outValue) {
+        boolean getAttribute(@NonNull String namespace, @NonNull String attribute,
+                             @NonNull AssetManager.SelectedValue outValue) {
             if (mEntries == null) {
                 return false;
             }
             int typeSpecFlags = 0;
             for (int i = 0; i < 20; i++) {
-                Entry e = mEntries.get(entryName);
+                Entry e = mEntries.get(attribute);
                 if (e == null) {
                     return false;
                 }
@@ -458,7 +624,7 @@ public class Resources {
                 }
                 typeSpecFlags |= e.typeSpecFlags;
                 if (e.type == Res_value.TYPE_ATTRIBUTE) {
-                    entryName = mKeyStrings[e.data];
+                    attribute = mKeyStrings[e.data];
                     continue;
                 }
 
@@ -478,7 +644,7 @@ public class Resources {
             }
 
             int flags = value.flags;
-            if (!getAttribute(R.ns, mKeyStrings[value.data], value)) {
+            if (!getAttribute(DEFAULT_NAMESPACE, mKeyStrings[value.data], value)) {
                 return false;
             }
 
@@ -486,33 +652,38 @@ public class Resources {
             return true;
         }
 
-        void applyStyle(@Nullable @StyleRes String style,
+        void applyStyle(@Nullable AttributeSet set,
+                        @Nullable @AttrRes ResourceId defStyleAttr,
+                        @Nullable @StyleRes ResourceId defStyleRes,
                         @NonNull String[] attrs,
-                        @NonNull int[] outValues, @NonNull int[] outIndices) {
+                        @NonNull int[] outValues, @NonNull int[] outIndices,
+                        @NonNull AssetManager.SelectedValue value,
+                        @NonNull BagAttributeFinder defStyleAttrFinder) {
 
-            AssetManager.ResolvedBag xmlStyleBag = null;
-            BagAttributeFinder xmlStyleAttrFinder = null;
-            if (style != null && !style.isEmpty()) {
-                xmlStyleBag = getBag(style);
-                xmlStyleAttrFinder = new BagAttributeFinder(xmlStyleBag);
+            AssetManager.ResolvedBag defStyleBag = null;
+            if (defStyleAttr != null) {
+                if (getAttribute(defStyleAttr.namespace(), defStyleAttr.entry(), value)) {
+                    defStyleBag = getBag(mKeyStrings[value.data]);
+                }
             }
-
-            AssetManager.SelectedValue value = new AssetManager.SelectedValue();
+            if (defStyleBag == null && defStyleRes != null) {
+                defStyleBag = getBag(defStyleRes);
+            }
+            defStyleAttrFinder.reset(defStyleBag);
 
             int valuesIdx = 0;
             int indicesIdx = 0;
 
             for (int ii = 0; ii < attrs.length; ii += 2) {
                 String curNs = attrs[ii];
-                String curAttr = attrs[ii+1];
+                String curAttr = attrs[ii + 1];
 
                 value.reset();
 
-                if (xmlStyleAttrFinder != null) {
-                    int xmlAttrIdx = xmlStyleAttrFinder.find(curNs, curAttr);
-                    if (xmlAttrIdx != -1) {
-                        value.set(xmlStyleBag, xmlAttrIdx);
-                    }
+                int defAttrIdx = defStyleAttrFinder.find(curNs, curAttr);
+                if (defAttrIdx != -1) {
+                    assert defStyleBag != null;
+                    value.set(defStyleBag, defAttrIdx);
                 }
 
                 if (value.type != Res_value.TYPE_NULL) {
@@ -529,7 +700,7 @@ public class Resources {
                 outValues[valuesIdx + TypedArray.STYLE_CHANGING_CONFIGURATIONS] = value.flags;
 
                 if (value.type != Res_value.TYPE_NULL || value.data == Res_value.DATA_NULL_EMPTY) {
-                    outIndices[++indicesIdx] = ii>>1;
+                    outIndices[++indicesIdx] = ii >> 1;
                 }
                 valuesIdx += TypedArray.STYLE_NUM_ENTRIES;
             }
@@ -554,18 +725,15 @@ public class Resources {
     }
 
     static final class ThemeKey implements Cloneable {
-        String[] mNamespace;
-        String[] mThemeName;
+        Object[] mResId;
         boolean[] mForce;
 
         private transient int mHashCode = 0;
 
-        private int findValue(String namespace, String themeName, boolean force) {
+        private int findValue(@NonNull ResourceId resId, boolean force) {
             int count = mForce != null ? mForce.length : 0;
             for (int i = 0; i < count; i++) {
-                if (mForce[i] == force &&
-                        themeName.equals(mThemeName[i]) &&
-                        namespace.equals(mNamespace[i])) {
+                if (mForce[i] == force && resId.equals(mResId[i])) {
                     return i;
                 }
             }
@@ -577,23 +745,16 @@ public class Resources {
             if (index < 0 || index >= count - 1) {
                 return;
             }
-            final String namespace = mNamespace[index];
-            final String themeName = mThemeName[index];
+            final Object resId = mResId[index];
             final boolean force = mForce[index];
 
             // we need copy-on-write
 
-            final String[] newNamespace = new String[count];
-            System.arraycopy(mNamespace, 0, newNamespace, 0, index);
-            System.arraycopy(mNamespace, index + 1, newNamespace, index, count - index - 1);
-            newNamespace[count - 1] = namespace;
-            mNamespace = newNamespace;
-
-            final String[] newThemeName = new String[count];
-            System.arraycopy(mThemeName, 0, newThemeName, 0, index);
-            System.arraycopy(mThemeName, index + 1, newThemeName, index, count - index - 1);
-            newThemeName[count - 1] = themeName;
-            mThemeName = newThemeName;
+            final Object[] newResId = new Object[count];
+            System.arraycopy(mResId, 0, newResId, 0, index);
+            System.arraycopy(mResId, index + 1, newResId, index, count - index - 1);
+            newResId[count - 1] = resId;
+            mResId = newResId;
 
             final boolean[] newForce = new boolean[count];
             System.arraycopy(mForce, 0, newForce, 0, index);
@@ -605,46 +766,38 @@ public class Resources {
 
             mHashCode = 0;
             for (int i = 0; i < count; i++) {
-                mHashCode = 31 * mHashCode + newNamespace[i].hashCode();
-                mHashCode = 31 * mHashCode + newThemeName[i].hashCode();
+                mHashCode = 31 * mHashCode + newResId[i].hashCode();
                 mHashCode = 31 * mHashCode + (newForce[i] ? 1 : 0);
             }
         }
 
-        public void append(String namespace, String themeName, boolean force) {
-            final int index = findValue(namespace, themeName, force);
+        public void append(@NonNull ResourceId resId, boolean force) {
+            final int index = findValue(resId, force);
             if (index >= 0) {
                 moveToLast(index);
             } else {
-                int count = mForce != null ? mForce.length + 1 : 1;
+                int newCount = mForce != null ? mForce.length + 1 : 1;
 
                 // we need copy-on-write
 
-                final String[] newNamespace = mNamespace == null ? new String[count]
-                        : Arrays.copyOf(mNamespace, count);
-                newNamespace[count - 1] = namespace;
-                mNamespace = newNamespace;
+                final Object[] newResId = mResId == null ? new Object[newCount]
+                        : Arrays.copyOf(mResId, newCount);
+                newResId[newCount - 1] = resId;
+                mResId = newResId;
 
-                final String[] newThemeName = mThemeName == null ? new String[count]
-                        : Arrays.copyOf(mThemeName, count);
-                newThemeName[count - 1] = themeName;
-                mThemeName = newThemeName;
-
-                final boolean[] newForce = mForce == null ? new boolean[count]
-                        : Arrays.copyOf(mForce, count);
-                newForce[count - 1] = force;
+                final boolean[] newForce = mForce == null ? new boolean[newCount]
+                        : Arrays.copyOf(mForce, newCount);
+                newForce[newCount - 1] = force;
                 mForce = newForce;
 
-                mHashCode = 31 * mHashCode + namespace.hashCode();
-                mHashCode = 31 * mHashCode + themeName.hashCode();
+                mHashCode = 31 * mHashCode + resId.hashCode();
                 mHashCode = 31 * mHashCode + (force ? 1 : 0);
             }
         }
 
         public void setTo(@NonNull ThemeKey other) {
             // A shallow copy, because we use copy-on-write
-            mNamespace = other.mNamespace;
-            mThemeName = other.mThemeName;
+            mResId = other.mResId;
             mForce = other.mForce;
             mHashCode = other.mHashCode;
         }
@@ -669,10 +822,7 @@ public class Resources {
             if (!Arrays.equals(mForce, t.mForce)) {
                 return false;
             }
-            if (!Arrays.equals(mThemeName, t.mThemeName)) {
-                return false;
-            }
-            return Arrays.equals(mNamespace, t.mNamespace);
+            return Arrays.equals(mResId, t.mResId);
         }
 
         // A shallow copy, because we use copy-on-write

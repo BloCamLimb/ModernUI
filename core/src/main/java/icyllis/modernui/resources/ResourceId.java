@@ -86,6 +86,16 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
     }
 
     /**
+     * Helper method to create an attribute resource id, where the resource type
+     * name will be "attr".
+     */
+    @NonNull
+    @Contract("_, _ -> new")
+    public static ResourceId attr(@NonNull String namespace, @NonNull String name) {
+        return new ResourceId(namespace, "attr", name);
+    }
+
+    /**
      * Returns a new, single string representation of this resource identifier.
      */
     @NonNull
@@ -117,10 +127,11 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
         return this.entry.compareTo(o.entry);
     }
 
+    @SuppressWarnings("StringEquality")
     public static int comparePair(@NonNull String lhsNamespace, @NonNull String lhsName,
                                   @NonNull String rhsNamespace, @NonNull String rhsName) {
-        int res = lhsNamespace.compareTo(rhsNamespace);
-        if (res != 0) return res;
-        return lhsName.compareTo(rhsName);
+        // Namespace strings are interned, so compare identity first can be more efficient
+        int res = lhsNamespace == rhsNamespace ? 0 : lhsNamespace.compareTo(rhsNamespace);
+        return res != 0 ? res : lhsName.compareTo(rhsName);
     }
 }

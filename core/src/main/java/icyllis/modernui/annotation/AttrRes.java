@@ -21,8 +21,8 @@ package icyllis.modernui.annotation;
 import java.lang.annotation.*;
 
 /**
- * Denotes that a string parameter, field or method return value is expected
- * to be an attribute reference (e.g. "action").
+ * Denotes that a parameter, field or method return value is expected
+ * to be an attribute reference (e.g. "modernui:attr/textSize").
  */
 @Documented
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.FIELD})

@@ -37,6 +37,7 @@ import java.lang.annotation.Target;
  * Example:
  * <pre>{@code
  *  // 5 attributes
+ *  @StyleableRes
  *  static final String[] STYLEABLE = {
  *    "framework", "color", // index 0
  *    "framework", "size",  // index 1
@@ -45,7 +46,7 @@ import java.lang.annotation.Target;
  *    "library", "shape",   // index 4
  *  };
  *  {
- *      TypedArray a = theme.obtainStyledAttributes("MyStyle", STYLEABLE);
+ *      TypedArray a = theme.obtainStyledAttributes(R.style.MyStyle, STYLEABLE);
  *      int value = a.getDimensionPixelSize(1, -1); // get "framework:attr/size"
  *      a.recycle();
  *  }
