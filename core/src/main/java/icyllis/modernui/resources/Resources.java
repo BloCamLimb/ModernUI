@@ -19,6 +19,7 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -36,21 +37,25 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
+
+import static icyllis.modernui.resources.AssetManager.kMaxIterations;
 
 @ApiStatus.Experimental
 @SuppressWarnings("SuspiciousMethodCalls")
 public class Resources {
 
     public static final Marker MARKER = MarkerManager.getMarker("Resources");
-    public static final String DEFAULT_NAMESPACE = ModernUI.ID;
+    public static final String DEFAULT_NAMESPACE = R.ns;
 
     private final DisplayMetrics mMetrics = new DisplayMetrics();
 
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
 
+    String[] mNamespaces = {DEFAULT_NAMESPACE};
     String[] mKeyStrings;
     Object[] mGlobalObjects;
 
@@ -196,8 +201,8 @@ public class Resources {
         }
     }
 
-    ResolvedBag getBag(@NonNull ResourceId style) {
-        return getBag(style.entry());
+    ResolvedBag getBag(@NonNull ResourceId resId) {
+        return getBag(resId.entry());
     }
 
     @SuppressWarnings("ConstantValue")
@@ -345,12 +350,12 @@ public class Resources {
         // a snapshot of key
         private Resources.ThemeKey mKeyCopy = mKey.clone();
 
-        // open addressing
-        Object2ObjectOpenHashMap<String, Entry> mEntries;
+        // open addressing, namespace -> attribute -> entry
+        Object2ObjectOpenHashMap<String, Object2ObjectOpenHashMap<String, Entry>> mEntries;
 
         /**
          * Place new attribute values into the theme.  The style resource
-         * specified by <var>style</var> will be
+         * specified by <var>resId</var> will be
          * retrieved from this Theme's resources, its values placed into the
          * Theme object.
          *
@@ -360,26 +365,27 @@ public class Resources {
          * any of the style's attributes are already defined in the theme, the
          * current values in the theme will be overwritten.
          *
-         * @param style The resource ID of a style resource from which to
+         * @param resId The resource ID of a style resource from which to
          *              obtain attribute values.
          * @param force If true, values in the style resource will always be
          *              used in the theme; otherwise, they will only be used
          *              if not already defined in the theme.
+         * @throws IllegalArgumentException if the resId is not a style or not found
          */
-        public void applyStyle(@NonNull @StyleRes ResourceId style, boolean force) {
+        public void applyStyle(@NonNull @StyleRes ResourceId resId, boolean force) {
             synchronized (mLock) {
-                boolean result = applyStyleInternal(style, force);
+                boolean result = applyStyleInternal(resId, force);
                 if (!result) {
                     throw new IllegalArgumentException("Failed to apply style " +
-                            style + " to theme");
+                            resId + " to theme");
                 }
-                mKey.append(style, force);
+                mKey.append(resId, force);
                 mKeyCopy = mKey.clone();
             }
         }
 
-        private boolean applyStyleInternal(@NonNull ResourceId style, boolean force) {
-            var bag = getBag(style);
+        private boolean applyStyleInternal(@NonNull ResourceId resId, boolean force) {
+            var bag = getBag(resId);
             if (bag == null) {
                 return false;
             }
@@ -391,29 +397,37 @@ public class Resources {
 
             boolean initial = mEntries == null;
 
-            Object2ObjectOpenHashMap<String, Entry> newEntries = new Object2ObjectOpenHashMap<>(entryCount);
+            Object2ObjectOpenHashMap<String, Object2ObjectOpenHashMap<String, Entry>> newEntries =
+                    new Object2ObjectOpenHashMap<>();
             for (int i = 0; i < entryCount; i++) {
                 boolean isUndefined = isUndefined(bag.type(i), bag.data(i));
                 if (!force && isUndefined) {
                     continue;
                 }
-                String key = bag.attribute(i);
+                String namespace = bag.namespace(i);
+                String attribute = bag.attribute(i);
+                Object2ObjectOpenHashMap<String, Entry> group;
                 Entry existing;
-                if (!initial && (existing = mEntries.get(key)) != null) {
+                if (!initial && (group = mEntries.get(namespace)) != null && (existing = group.get(attribute)) != null) {
                     if (force || isUndefined(existing.type, existing.data)) {
                         existing.set(bag, i);
                     }
                 } else if (!isUndefined) {
                     Entry entry = new Entry();
                     entry.set(bag, i);
-                    newEntries.put(key, entry);
+                    newEntries.computeIfAbsent(namespace, __ -> new Object2ObjectOpenHashMap<>())
+                            .put(attribute, entry);
                 }
             }
 
             if (initial) {
                 mEntries = newEntries;
             } else {
-                mEntries.putAll(newEntries);
+                for (var it = newEntries.object2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
+                    var group = it.next();
+                    mEntries.computeIfAbsent(group.getKey(), __ -> new Object2ObjectOpenHashMap<>())
+                            .putAll(group.getValue());
+                }
             }
 
             return true;
@@ -532,7 +546,7 @@ public class Resources {
          * <var>outValue</var> are ultimately filled in by
          * {@link Resources#getValue}.
          *
-         * @param attr        The resource identifier of the desired theme
+         * @param resId       The resource identifier of the desired theme
          *                    attribute.
          * @param outValue    Filled in with the ultimate resource value supplied
          *                    by the attribute.
@@ -543,10 +557,10 @@ public class Resources {
          * @return boolean Returns true if the attribute was found and
          * <var>outValue</var> is valid, else false.
          */
-        public boolean resolveAttribute(@NonNull @AttrRes ResourceId attr,
+        public boolean resolveAttribute(@NonNull @AttrRes ResourceId resId,
                                         @NonNull TypedValue outValue, boolean resolveRefs) {
-            assert attr.type().equals("attr");
-            return resolveAttribute(attr.namespace(), attr.entry(), outValue, resolveRefs);
+            assert resId.type().equals("attr");
+            return resolveAttribute(resId.namespace(), resId.entry(), outValue, resolveRefs);
         }
 
         /**
@@ -614,9 +628,10 @@ public class Resources {
                 return false;
             }
             int typeSpecFlags = 0;
-            for (int i = 0; i < 20; i++) {
-                Entry e = mEntries.get(attribute);
-                if (e == null) {
+            for (int __ = 0; __ < kMaxIterations; __++) {
+                Object2ObjectOpenHashMap<String, Entry> group;
+                Entry e;
+                if ((group = mEntries.get(namespace)) == null || (e = group.get(attribute)) == null) {
                     return false;
                 }
                 if (isUndefined(e.type, e.data)) {
@@ -624,7 +639,8 @@ public class Resources {
                 }
                 typeSpecFlags |= e.typeSpecFlags;
                 if (e.type == Res_value.TYPE_ATTRIBUTE) {
-                    attribute = mKeyStrings[e.data];
+                    namespace = mNamespaces[e.data >>> 24];
+                    attribute = mKeyStrings[e.data & 0xFFFFFF];
                     continue;
                 }
 
@@ -644,7 +660,9 @@ public class Resources {
             }
 
             int flags = value.flags;
-            if (!getAttribute(DEFAULT_NAMESPACE, mKeyStrings[value.data], value)) {
+            String namespace = mNamespaces[value.data >>> 24];
+            String attribute = mKeyStrings[value.data & 0xFFFFFF];
+            if (!getAttribute(namespace, attribute, value)) {
                 return false;
             }
 
@@ -715,6 +733,50 @@ public class Resources {
          */
         public Resources getResources() {
             return Resources.this;
+        }
+
+        /**
+         * @hidden
+         */
+        @NonNull
+        @Contract(pure = true)
+        @ApiStatus.Internal
+        public String[] getTheme() {
+            final ThemeKey key = getKey();
+            final int n = key.mForce != null ? key.mForce.length : 0;
+            final String[] themes = new String[n * 2];
+            for (int i = 0, j = n - 1; i < themes.length; i += 2, --j) {
+                themes[i] = key.mResId[j].toString();
+                themes[i + 1] = key.mForce[j] ? "forced" : "not forced";
+            }
+            return themes;
+        }
+
+        @Override
+        public int hashCode() {
+            return getKey().hashCode();
+        }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            final Theme other = (Theme) o;
+            return getKey().equals(other.getKey());
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return '{' +
+                    "Themes=" + Arrays.deepToString(getTheme()) +
+                    '}';
         }
 
         ThemeKey getKey() {

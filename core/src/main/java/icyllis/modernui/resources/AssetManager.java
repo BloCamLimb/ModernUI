@@ -22,13 +22,16 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.ResourceTypes.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+@ApiStatus.Internal
 public class AssetManager {
 
     public static final int kInvalidCookie = -1;
+    public static final int kMaxIterations = 20;
 
     public static class ResolvedBag {
         public static final int COLUMN_TYPE = 0;
