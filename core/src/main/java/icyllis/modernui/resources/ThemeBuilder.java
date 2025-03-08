@@ -19,6 +19,7 @@
 package icyllis.modernui.resources;
 
 import icyllis.arc3d.engine.TopologicalSort;
+import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.StyleRes;
@@ -39,8 +40,21 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.ToIntFunction;
 
+/**
+ * Not stable
+ *
+ * @hidden
+ */
 @ApiStatus.Internal
 public class ThemeBuilder {
+
+    Object2IntOpenHashMap<String> mTypeStringTable = new Object2IntOpenHashMap<>();
+    ArrayList<String> mTypeStringArray = new ArrayList<>();
+    ToIntFunction<String> mTypeStringMapper = k -> {
+        int index = mTypeStringArray.size();
+        mTypeStringArray.add(k);
+        return index;
+    };
 
     Object2IntOpenHashMap<String> mKeyStringTable = new Object2IntOpenHashMap<>();
     ArrayList<String> mKeyStringArray = new ArrayList<>();
@@ -62,9 +76,14 @@ public class ThemeBuilder {
     Object2IntOpenHashMap<String> mStyleToOffset = new Object2IntOpenHashMap<>();
 
     public ThemeBuilder() {
+        mTypeStringTable.defaultReturnValue(-1);
         mKeyStringTable.defaultReturnValue(-1);
         mGlobalObjectTable.defaultReturnValue(-1);
         mStyleToOffset.defaultReturnValue(-1);
+    }
+
+    int storeTypeString(String type) {
+        return mTypeStringTable.computeIfAbsent(type, mTypeStringMapper);
     }
 
     int storeKeyString(String key) {
@@ -125,7 +144,8 @@ public class ThemeBuilder {
         for (int i = 0; i < styles.size(); i++) {
             var style = styles.get(i);
             mStyleToOffset.put(style.mName, index);
-            data[index + Resources.MAP_ENTRY_PARENT] = !style.mParent.isEmpty() ? mKeyStringTable.getInt(style.mParent) : -1;
+            data[index + Resources.MAP_ENTRY_PARENT] = !style.mParent.isEmpty() ?
+                    mKeyStringTable.getInt(style.mParent) : -1;
             data[index + Resources.MAP_ENTRY_COUNT] = style.mEntries.size();
             index += Resources.MAP_ENTRY_ENTRIES;
             var entries = style.mEntries;
@@ -199,6 +219,7 @@ public class ThemeBuilder {
 
         record Entry(@AttrRes String attr, int dataType, int data) {
         }
+
         final ArrayList<Entry> mEntries = new ArrayList<>();
 
         static final Comparator<Entry> STYLE_ENTRY_COMPARATOR = Comparator.comparing(Entry::attr);
@@ -218,16 +239,18 @@ public class ThemeBuilder {
             );
         }
 
-        public void addAttribute(@AttrRes String attr, @AttrRes String referent) {
+        public void addAttribute(@AttrRes String attr, @AttrRes String target) {
             attr = dedupKeyString(attr);
             mEntries.add(new Entry(attr, TypedValue.TYPE_ATTRIBUTE,
-                    storeKeyString(referent)));
+                    storeKeyString(target)));
         }
 
-        public void addReference(@AttrRes String attr, @StyleRes String referent) {
+        public void addReference(@AttrRes String attr, @AnyRes ResourceId target) {
+            assert target.namespace().equals(Resources.DEFAULT_NAMESPACE);
             attr = dedupKeyString(attr);
-            mEntries.add(new Entry(attr, TypedValue.TYPE_REFERENCE,
-                    storeKeyString(referent)));
+            int typeId = storeTypeString(target.type()) + 1;
+            mEntries.add(new Entry(attr, TypedValue.TYPE_REFERENCE | (typeId << 8),
+                    storeKeyString(target.entry())));
         }
 
         public void addBoolean(@AttrRes String attr, boolean v) {
@@ -257,13 +280,13 @@ public class ThemeBuilder {
 
         public void addColor(@AttrRes String attr, BiFunction<Resources, Resources.Theme, ColorStateList> supplier) {
             attr = dedupKeyString(attr);
-            mEntries.add(new Entry(attr, TypedValue.TYPE_SUPPLIER,
+            mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
                     storeGlobalObject(supplier)));
         }
 
         public void addDrawable(@AttrRes String attr, BiFunction<Resources, Resources.Theme, Drawable> supplier) {
             attr = dedupKeyString(attr);
-            mEntries.add(new Entry(attr, TypedValue.TYPE_SUPPLIER,
+            mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
                     storeGlobalObject(supplier)));
         }
 
