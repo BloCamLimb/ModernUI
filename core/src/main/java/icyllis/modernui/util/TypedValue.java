@@ -18,6 +18,9 @@
 
 package icyllis.modernui.util;
 
+import icyllis.modernui.annotation.AnyRes;
+import icyllis.modernui.resources.AssetManager;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
@@ -68,9 +71,9 @@ public class TypedValue {
      */
     public static final int TYPE_FRACTION = 0x06;
     /**
-     * The <var>data</var> field holds an index to runtime-specified supplier table.
+     * The <var>data</var> field holds an index to runtime-specified factory table.
      */
-    public static final int TYPE_SUPPLIER = 0x0F;
+    public static final int TYPE_FACTORY = 0x0F;
 
     /**
      * Identifies the start of plain integer values.  Any type value
@@ -240,12 +243,20 @@ public class TypedValue {
     public static final int COMPLEX_MANTISSA_MASK = 0xffffff;
 
     /**
+     * {@link #TYPE_NULL} data indicating the value was not specified.
+     */
+    public static final int DATA_NULL_UNDEFINED = 0;
+    /**
+     * {@link #TYPE_NULL} data indicating the value was explicitly set to null.
+     */
+    public static final int DATA_NULL_EMPTY = 1;
+
+    /**
      * The type held by this value, as defined by the constants here.
      * This tells you how to interpret the other fields in the object.
-     * <p>
-     * 0..7 bits: one of type constants listed above.<br>
-     * 8..15 bits: type index of the referent resource, if value type is REFERENCE.
      */
+    // 0..7  bits: one of type constants listed above.
+    // 8..15 bits: type id of the reference resource, if value type is REFERENCE.
     public int type;
 
     /**
@@ -259,11 +270,21 @@ public class TypedValue {
     public int data;
 
     /**
-     * Additional information about where the value came from; only
-     * set for strings.
+     * The cookie representing the PackAssets in which the value resides.
      */
-    public int assetCookie;
+    public int assetCookie = AssetManager.kInvalidCookie;
 
+    /**
+     * If the value represents a reference to a complex resource value, this is the
+     * reference's type name and entry name, and {@link #string} is the namespace.
+     */
+    String string1;
+    String string2;
+
+    /**
+     * If the value came from a resource, these are the configurations for
+     * which its contents can change.
+     */
     public int changingConfigurations = -1;
 
     /**
@@ -546,5 +567,82 @@ public class TypedValue {
             case COMPLEX_UNIT_FRACTION_PARENT -> complexToFloat(data) * pbase;
             default -> 0;
         };
+    }
+
+    /**
+     * Regardless of the actual type of the value, try to convert it to a
+     * string value.  For example, a color type will be converted to a
+     * string of the form #aarrggbb.
+     *
+     * @return CharSequence The coerced string value.  If the value is
+     *         null or the type is not known, null is returned.
+     */
+    public final CharSequence coerceToString() {
+        int t = type;
+        if (t == TYPE_STRING) {
+            return string;
+        }
+        return coerceToString(t, data);
+    }
+
+    private static final String[] DIMENSION_UNIT_STRS = {
+            "px", "dp", "sp", "pt", "in", "mm"
+    };
+    private static final String[] FRACTION_UNIT_STRS = {
+            "%", "%p"
+    };
+
+    /**
+     * Perform type conversion as per {@link #coerceToString()} on an
+     * explicitly supplied type and data.
+     *
+     * @param type The data type identifier.
+     * @param data The data value.
+     *
+     * @return String The coerced string value.  If the value is
+     *         null or the type is not known, null is returned.
+     */
+    public static String coerceToString(int type, int data) {
+        switch (type) {
+            case TYPE_NULL:
+                return null;
+            case TYPE_ATTRIBUTE:
+                return "?" + data;
+            case TYPE_FLOAT:
+                return Float.toString(Float.intBitsToFloat(data));
+            case TYPE_DIMENSION:
+                return complexToFloat(data) + DIMENSION_UNIT_STRS[
+                        (data>>COMPLEX_UNIT_SHIFT)&COMPLEX_UNIT_MASK];
+            case TYPE_FRACTION:
+                return complexToFloat(data) * 100 + FRACTION_UNIT_STRS[
+                        (data>>COMPLEX_UNIT_SHIFT)&COMPLEX_UNIT_MASK];
+            case TYPE_INT_HEX:
+                return "0x" + Integer.toHexString(data);
+            case TYPE_INT_BOOLEAN:
+                return data != 0 ? "true" : "false";
+        }
+
+        if (type >= TYPE_FIRST_COLOR_INT && type <= TYPE_LAST_COLOR_INT) {
+            return "#" + Integer.toHexString(data);
+        } else if (type >= TYPE_FIRST_INT && type <= TYPE_LAST_INT) {
+            return Integer.toString(data);
+        }
+
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("TypedValue{t=0x").append(Integer.toHexString(type));
+        sb.append("/d=0x").append(Integer.toHexString(data));
+        if (type == TYPE_STRING) {
+            sb.append(" \"").append(string != null ? string : "<null>").append("\"");
+        }
+        if (assetCookie != 0) {
+            sb.append(" a=").append(assetCookie);
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }

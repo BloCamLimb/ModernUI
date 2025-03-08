@@ -18,10 +18,12 @@
 
 package icyllis.modernui;
 
+import icyllis.modernui.resources.ResourceId;
+
 public final class R {
 
     /**
-     * All default resources in ModernUI are defined under the default namespace 'modernui'.
+     * The namespace of {@literal modernui} resources.
      */
     public static final String ns = ModernUI.ID;
 
@@ -107,6 +109,8 @@ public final class R {
         public static final String textAppearanceLargeInverse = "textAppearanceLargeInverse";
         public static final String textAppearanceMediumInverse = "textAppearanceMediumInverse";
         public static final String textAppearanceSmallInverse = "textAppearanceSmallInverse";
+
+        public static final String colorEdgeEffect = "colorEdgeEffect";
 
         public static final String colorPrimary = "colorPrimary";
         public static final String colorOnPrimary = "colorOnPrimary";
@@ -261,6 +265,28 @@ public final class R {
         static {
             __();
         }
+    }
+
+    public static final class style {
+        private static final String type = "style";
+
+        public static final ResourceId Theme_Material3_Dark = new ResourceId(ns, type, "Theme.Material3.Dark");
+
+        public static final ResourceId TextAppearance_Material3_DisplayLarge = new ResourceId(ns, type, "TextAppearance.Material3.DisplayLarge");
+        public static final ResourceId TextAppearance_Material3_DisplayMedium = new ResourceId(ns, type, "TextAppearance.Material3.DisplayMedium");
+        public static final ResourceId TextAppearance_Material3_DisplaySmall = new ResourceId(ns, type, "TextAppearance.Material3.DisplaySmall");
+        public static final ResourceId TextAppearance_Material3_HeadlineLarge = new ResourceId(ns, type, "TextAppearance.Material3.HeadlineLarge");
+        public static final ResourceId TextAppearance_Material3_HeadlineMedium = new ResourceId(ns, type, "TextAppearance.Material3.HeadlineMedium");
+        public static final ResourceId TextAppearance_Material3_HeadlineSmall = new ResourceId(ns, type, "TextAppearance.Material3.HeadlineSmall");
+        public static final ResourceId TextAppearance_Material3_TitleLarge = new ResourceId(ns, type, "TextAppearance.Material3.TitleLarge");
+        public static final ResourceId TextAppearance_Material3_TitleMedium = new ResourceId(ns, type, "TextAppearance.Material3.TitleMedium");
+        public static final ResourceId TextAppearance_Material3_TitleSmall = new ResourceId(ns, type, "TextAppearance.Material3.TitleSmall");
+        public static final ResourceId TextAppearance_Material3_BodyLarge = new ResourceId(ns, type, "TextAppearance.Material3.BodyLarge");
+        public static final ResourceId TextAppearance_Material3_BodyMedium = new ResourceId(ns, type, "TextAppearance.Material3.BodyMedium");
+        public static final ResourceId TextAppearance_Material3_BodySmall = new ResourceId(ns, type, "TextAppearance.Material3.BodySmall");
+        public static final ResourceId TextAppearance_Material3_LabelLarge = new ResourceId(ns, type, "TextAppearance.Material3.LabelLarge");
+        public static final ResourceId TextAppearance_Material3_LabelMedium = new ResourceId(ns, type, "TextAppearance.Material3.LabelMedium");
+        public static final ResourceId TextAppearance_Material3_LabelSmall = new ResourceId(ns, type, "TextAppearance.Material3.LabelSmall");
     }
 
     static {
