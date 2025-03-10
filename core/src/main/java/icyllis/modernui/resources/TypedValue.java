@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,17 +16,19 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.util;
+package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.AnyRes;
-import icyllis.modernui.resources.AssetManager;
-import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.resources.Resources;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.util.DisplayMetrics;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import icyllis.modernui.resources.ResourceTypes.Res_value;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Locale;
 
 /**
  * Container for a dynamically typed data value.
@@ -39,40 +41,41 @@ public class TypedValue {
     /**
      * The value contains no data.
      */
-    public static final int TYPE_NULL = 0x00;
+    public static final int TYPE_NULL = Res_value.TYPE_NULL;
 
     /**
-     * The <var>data</var> field holds a resource identifier.
+     * The <var>object</var> field holds a resource identifier.
      */
-    public static final int TYPE_REFERENCE = 0x01;
+    public static final int TYPE_REFERENCE = Res_value.TYPE_REFERENCE;
     /**
-     * The <var>data</var> field holds an attribute resource
+     * The <var>object</var> field holds an attribute resource
      * identifier (referencing an attribute in the current theme
      * style, not a resource entry).
      */
-    public static final int TYPE_ATTRIBUTE = 0x02;
+    public static final int TYPE_ATTRIBUTE = Res_value.TYPE_ATTRIBUTE;
     /**
-     * The <var>string</var> field holds string data.  In addition, if
+     * The <var>object</var> field holds string data.  In addition, if
      * <var>data</var> is non-zero then it is the string block
-     * index of the string and <var>assetCookie</var> is the set of
+     * index of the string and <var>cookie</var> is the set of
      * assets the string came from.
      */
-    public static final int TYPE_STRING = 0x03;
+    public static final int TYPE_STRING = Res_value.TYPE_STRING;
     /**
      * The <var>data</var> field holds an IEEE 754 floating-point number.
      */
-    public static final int TYPE_FLOAT = 0x04;
+    public static final int TYPE_FLOAT = Res_value.TYPE_FLOAT;
     /**
      * The <var>data</var> field holds a complex number encoding a dimension value.
      */
-    public static final int TYPE_DIMENSION = 0x05;
+    public static final int TYPE_DIMENSION = Res_value.TYPE_DIMENSION;
     /**
      * The <var>data</var> field holds a complex number encoding a fraction of a container.
      */
-    public static final int TYPE_FRACTION = 0x06;
+    public static final int TYPE_FRACTION = Res_value.TYPE_FRACTION;
     /**
-     * The <var>data</var> field holds an index to runtime-specified factory table.
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final int TYPE_FACTORY = 0x0F;
 
     /**
@@ -80,69 +83,61 @@ public class TypedValue {
      * from this to {@link #TYPE_LAST_INT} means the
      * <var>data</var> field holds a generic integer value.
      */
-    public static final int TYPE_FIRST_INT = 0x10;
+    public static final int TYPE_FIRST_INT = Res_value.TYPE_FIRST_INT;
 
     /**
      * The <var>data</var> field holds a number that was
      * originally specified in decimal.
      */
-    public static final int TYPE_INT_DEC = 0x10;
+    public static final int TYPE_INT_DEC = Res_value.TYPE_INT_DEC;
     /**
      * The <var>data</var> field holds a number that was
      * originally specified in hexadecimal (0xn).
      */
-    public static final int TYPE_INT_HEX = 0x11;
+    public static final int TYPE_INT_HEX = Res_value.TYPE_INT_HEX;
     /**
      * The <var>data</var> field holds 0 or 1 that was originally
      * specified as "false" or "true".
      */
-    public static final int TYPE_INT_BOOLEAN = 0x12;
+    public static final int TYPE_INT_BOOLEAN = Res_value.TYPE_INT_BOOLEAN;
 
     /**
      * Identifies the start of integer values that were specified as
      * color constants (starting with '#').
      */
-    public static final int TYPE_FIRST_COLOR_INT = 0x1c;
+    public static final int TYPE_FIRST_COLOR_INT = Res_value.TYPE_FIRST_COLOR_INT;
 
     /**
      * The <var>data</var> field holds a color that was originally
      * specified as #aarrggbb.
      */
-    public static final int TYPE_INT_COLOR_ARGB8 = 0x1c;
+    public static final int TYPE_INT_COLOR_ARGB8 = Res_value.TYPE_INT_COLOR_ARGB8;
     /**
      * The <var>data</var> field holds a color that was originally
      * specified as #rrggbb.
      */
-    public static final int TYPE_INT_COLOR_RGB8 = 0x1d;
+    public static final int TYPE_INT_COLOR_RGB8 = Res_value.TYPE_INT_COLOR_RGB8;
     /**
      * The <var>data</var> field holds a color that was originally
      * specified as #argb.
      */
-    public static final int TYPE_INT_COLOR_ARGB4 = 0x1e;
+    public static final int TYPE_INT_COLOR_ARGB4 = Res_value.TYPE_INT_COLOR_ARGB4;
     /**
      * The <var>data</var> field holds a color that was originally
      * specified as #rgb.
      */
-    public static final int TYPE_INT_COLOR_RGB4 = 0x1f;
+    public static final int TYPE_INT_COLOR_RGB4 = Res_value.TYPE_INT_COLOR_RGB4;
 
     /**
      * Identifies the end of integer values that were specified as color
      * constants.
      */
-    public static final int TYPE_LAST_COLOR_INT = 0x1f;
+    public static final int TYPE_LAST_COLOR_INT = Res_value.TYPE_LAST_COLOR_INT;
 
     /**
      * Identifies the end of plain integer values.
      */
-    public static final int TYPE_LAST_INT = 0x1f;
-
-    /**
-     * Type: mask to extract single type information.
-     * If masked type is {@link #TYPE_REFERENCE}, then the next 8 bits
-     * hold the type index of the resource it refers to. The type string
-     * can be found in type string table indexed by {@link #assetCookie}.
-     */
-    public static final int TYPE_MASK = 0xff;
+    public static final int TYPE_LAST_INT = Res_value.TYPE_LAST_INT;
 
     /**
      * Complex data: bit shift of unit information.
@@ -257,12 +252,18 @@ public class TypedValue {
      */
     // 0..7  bits: one of type constants listed above.
     // 8..15 bits: type id of the reference resource, if value type is REFERENCE.
+    // The higher 8 bits will be erased before being exposed to the user.
     public int type;
 
     /**
-     * If the value holds a string, this is it.
+     * If the value holds some object, this is it.
+     *
+     * @hidden
      */
-    public CharSequence string;
+    // Can be String, SpannedString, or ResourceId.
+    // This field is only assigned before being exposed to the user.
+    @ApiStatus.Internal
+    public Object object;
 
     /**
      * Basic data in the value, interpreted according to {@link #type}
@@ -270,22 +271,17 @@ public class TypedValue {
     public int data;
 
     /**
-     * The cookie representing the PackAssets in which the value resides.
+     * The cookie representing the {@link PackAssets} in which the value resides.
      */
-    public int assetCookie = AssetManager.kInvalidCookie;
+    public int cookie = AssetManager.kInvalidCookie;
 
     /**
-     * If the value represents a reference to a complex resource value, this is the
-     * reference's type name and entry name, and {@link #string} is the namespace.
+     * The bitmask of configuration axis that this resource varies with.
+     *
+     * @hidden
      */
-    String string1;
-    String string2;
-
-    /**
-     * If the value came from a resource, these are the configurations for
-     * which its contents can change.
-     */
-    public int changingConfigurations = -1;
+    @ApiStatus.Internal
+    public int flags = ~0;
 
     /**
      * Return the data for this value as a float.  Only use for values
@@ -314,13 +310,6 @@ public class TypedValue {
      */
     public boolean isColorType() {
         return (type >= TYPE_FIRST_COLOR_INT && type <= TYPE_LAST_COLOR_INT);
-    }
-
-    /**
-     * Determine if a value is a reference.
-     */
-    public boolean isReferenceType() {
-        return (type & TYPE_MASK) == TYPE_REFERENCE;
     }
 
     /**
@@ -570,6 +559,31 @@ public class TypedValue {
     }
 
     /**
+     * Return the data for this value as a resource id.  Only use for values
+     * whose type is {@link #TYPE_ATTRIBUTE} or {@link #TYPE_REFERENCE},
+     * to obtain unresolved references or attributes. In addition, for complex
+     * resources (such as styles), this represents the resource itself.
+     * If the reference is invalid or null, null is returned.
+     */
+    @Nullable
+    @AnyRes
+    public final ResourceId getResourceId() {
+        if (type == TYPE_REFERENCE || type == TYPE_ATTRIBUTE) {
+            return (ResourceId) object;
+        }
+        return null;
+    }
+
+    /**
+     * If the value came from a resource, these are the configurations for
+     * which its contents can change.
+     */
+    @ApiStatus.Experimental
+    public final int getChangingConfigurations() {
+        return flags;
+    }
+
+    /**
      * Regardless of the actual type of the value, try to convert it to a
      * string value.  For example, a color type will be converted to a
      * string of the form #aarrggbb.
@@ -580,7 +594,13 @@ public class TypedValue {
     public final CharSequence coerceToString() {
         int t = type;
         if (t == TYPE_STRING) {
-            return string;
+            return (CharSequence) object;
+        }
+        if (t == TYPE_REFERENCE) {
+            return "@" + object;
+        }
+        if (t == TYPE_ATTRIBUTE) {
+            return "?" + object;
         }
         return coerceToString(t, data);
     }
@@ -598,16 +618,14 @@ public class TypedValue {
      *
      * @param type The data type identifier.
      * @param data The data value.
-     *
      * @return String The coerced string value.  If the value is
-     *         null or the type is not known, null is returned.
+     * null or the type is not known, null is returned.
      */
+    @Nullable
     public static String coerceToString(int type, int data) {
         switch (type) {
             case TYPE_NULL:
                 return null;
-            case TYPE_ATTRIBUTE:
-                return "?" + data;
             case TYPE_FLOAT:
                 return Float.toString(Float.intBitsToFloat(data));
             case TYPE_DIMENSION:
@@ -623,7 +641,7 @@ public class TypedValue {
         }
 
         if (type >= TYPE_FIRST_COLOR_INT && type <= TYPE_LAST_COLOR_INT) {
-            return "#" + Integer.toHexString(data);
+            return String.format(Locale.ROOT, "#%08X", data);
         } else if (type >= TYPE_FIRST_INT && type <= TYPE_LAST_INT) {
             return Integer.toString(data);
         }
@@ -631,16 +649,50 @@ public class TypedValue {
         return null;
     }
 
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public void reset() {
+        type = 0;
+        data = 0;
+        cookie = AssetManager.kInvalidCookie;
+        flags = 0;
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public void setTo(@NonNull AssetManager.ResolvedBag bag, int index) {
+        int offset = index * AssetManager.ResolvedBag.VALUE_COLUMNS;
+        type = bag.values[offset + AssetManager.ResolvedBag.COLUMN_TYPE];
+        data = bag.values[offset + AssetManager.ResolvedBag.COLUMN_DATA];
+        cookie = bag.values[offset + AssetManager.ResolvedBag.COLUMN_COOKIE];
+        flags = bag.typeSpecFlags;
+    }
+
+    /**
+     * @hidden
+     */
+    public void setTo(@NonNull TypedValue v) {
+        type = v.type;
+        object = v.object;
+        data = v.data;
+        cookie = v.cookie;
+        flags = v.flags;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("TypedValue{t=0x").append(Integer.toHexString(type));
         sb.append("/d=0x").append(Integer.toHexString(data));
-        if (type == TYPE_STRING) {
-            sb.append(" \"").append(string != null ? string : "<null>").append("\"");
+        if (type == TYPE_STRING || type == TYPE_REFERENCE || type == TYPE_ATTRIBUTE) {
+            sb.append(" \"").append(object != null ? object : "<null>").append("\"");
         }
-        if (assetCookie != 0) {
-            sb.append(" a=").append(assetCookie);
+        if (cookie != 0) {
+            sb.append(" a=").append(cookie);
         }
         sb.append("}");
         return sb.toString();

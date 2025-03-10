@@ -49,7 +49,7 @@ import icyllis.modernui.text.style.ClickableSpan;
 import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.text.style.UpdateAppearance;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.TypedValue;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.KeyEvent;

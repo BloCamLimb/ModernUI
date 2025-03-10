@@ -22,7 +22,7 @@ import com.ibm.icu.text.CompactDecimalFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.AlgorithmUtils;
-import icyllis.modernui.util.TypedValue;
+import icyllis.modernui.resources.TypedValue;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.lwjgl.system.MemoryUtil;

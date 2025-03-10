@@ -32,7 +32,6 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Pools;
-import icyllis.modernui.util.TypedValue;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -56,6 +55,7 @@ public class Resources {
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
 
     String[] mNamespaces = {DEFAULT_NAMESPACE};
+    String[] mTypeStrings;
     String[] mKeyStrings;
     Object[] mGlobalObjects;
 
@@ -140,7 +140,7 @@ public class Resources {
 
     @SuppressWarnings("unchecked")
     ColorStateList loadColorStateList(@NonNull TypedValue value,
-                                      @NonNull String namespace, @NonNull String entry,
+                                      @Nullable ResourceId id,
                                       @Nullable Theme theme) {
         // Handle inline color definitions.
         if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
@@ -162,14 +162,14 @@ public class Resources {
             throw new NotFoundException("Resource is not a color: " + value);
         }
 
+        String name = id != null ? id.toString() : "(missing name)";
         throw new NotFoundException(
-                "Can't find ColorStateList from drawable resource "
-                        + ResourceId.toString(namespace, "color", entry));
+                "Can't find ColorStateList from drawable " + name);
     }
 
     @SuppressWarnings("unchecked")
     Drawable loadDrawable(@NonNull TypedValue value,
-                          @NonNull String namespace, @NonNull String entry,
+                          @Nullable ResourceId id,
                           @Nullable Theme theme) {
         try {
             if (value.type == TypedValue.TYPE_FACTORY) {
@@ -189,7 +189,7 @@ public class Resources {
             //TODO
             return null;
         } catch (Exception e) {
-            String name = ResourceId.toString(namespace, "drawable", entry);
+            String name = id != null ? id.toString() : "(missing name)";
 
             // The target drawable might fail to load for any number of
             // reasons, but we always want to include the resource name.
@@ -461,7 +461,8 @@ public class Resources {
          * with the array.
          *
          * @param style The desired style resource.
-         * @param attrs The desired attributes to be retrieved. See {@link StyleableRes} for requirements.
+         * @param attrs The desired attributes to be retrieved. See
+         *              {@link StyleableRes} for requirements.
          * @return Returns a TypedArray holding an array of the attribute values.
          * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
          * when done with it.
@@ -513,7 +514,8 @@ public class Resources {
          *                     supplies default values for the TypedArray,
          *                     used only if defStyleAttr is null or can not be found
          *                     in the theme.  Can be null to not look for defaults.
-         * @param attrs        The desired attributes to be retrieved. See {@link StyleableRes} for requirements.
+         * @param attrs        The desired attributes to be retrieved. See
+         *                     {@link StyleableRes} for requirements.
          * @return Returns a TypedArray holding an array of the attribute values.
          * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
          * when done with it.
@@ -534,7 +536,7 @@ public class Resources {
             synchronized (mLock) {
                 applyStyle(set, defStyleAttr, defStyleRes,
                         attrs, array.mData, array.mIndices,
-                        array.mSelectedValue,
+                        array.mValue,
                         array.mDefStyleAttrFinder);
             }
             array.mDefStyleAttrFinder.clear();
@@ -580,8 +582,7 @@ public class Resources {
         public boolean resolveAttribute(@NonNull String namespace, @NonNull String attribute,
                                         @NonNull TypedValue outValue, boolean resolveRefs) {
             synchronized (mLock) {
-                AssetManager.SelectedValue value = new AssetManager.SelectedValue();
-                if (!getAttribute(namespace, attribute, value)) {
+                if (!getAttribute(namespace, attribute, outValue)) {
                     return false;
                 }
 
@@ -589,25 +590,43 @@ public class Resources {
                     //TODO
                 }
 
-                outValue.type = value.type;
-                outValue.data = value.data;
-                outValue.assetCookie = value.cookie;
-                outValue.changingConfigurations = value.flags;
-
-                if (outValue.type == TypedValue.TYPE_STRING) {
-                    if ((outValue.string = getPooledStringForCookie(value.cookie, outValue.data)) == null) {
-                        return false;
+                // post-process
+                switch (outValue.type & Res_value.TYPE_MASK) {
+                    case TypedValue.TYPE_STRING -> {
+                        if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
+                            return false;
+                        }
                     }
+                    case TypedValue.TYPE_REFERENCE -> {
+                        int typeId = outValue.type >>> Res_value.TYPE_ID_SHIFT;
+                        if (typeId != 0) {
+                            outValue.object = new ResourceId(
+                                    mNamespaces[outValue.data >>> Res_value.NAMESPACE_INDEX_SHIFT],
+                                    mTypeStrings[typeId - 1],
+                                    mKeyStrings[outValue.data & Res_value.KEY_INDEX_MASK]
+                            );
+                            // erase higher 8 bits
+                            outValue.type = TypedValue.TYPE_REFERENCE;
+                        } else {
+                            outValue.object = null;
+                        }
+                    }
+                    case TypedValue.TYPE_ATTRIBUTE -> outValue.object = ResourceId.attr(
+                            mNamespaces[outValue.data >>> Res_value.NAMESPACE_INDEX_SHIFT],
+                            mKeyStrings[outValue.data & Res_value.KEY_INDEX_MASK]
+                    );
+                    default -> outValue.object = null;
                 }
+
                 return true;
             }
         }
 
         static class Entry {
-            int cookie;
-            int typeSpecFlags;
             int type;
             int data;
+            int cookie;
+            int typeSpecFlags;
 
             void set(@NonNull ResolvedBag bag, int index) {
                 int offset = index * ResolvedBag.VALUE_COLUMNS;
@@ -623,7 +642,7 @@ public class Resources {
         }
 
         boolean getAttribute(@NonNull String namespace, @NonNull String attribute,
-                             @NonNull AssetManager.SelectedValue outValue) {
+                             @NonNull TypedValue outValue) {
             if (mEntries == null) {
                 return false;
             }
@@ -639,8 +658,8 @@ public class Resources {
                 }
                 typeSpecFlags |= e.typeSpecFlags;
                 if (e.type == Res_value.TYPE_ATTRIBUTE) {
-                    namespace = mNamespaces[e.data >>> 24];
-                    attribute = mKeyStrings[e.data & 0xFFFFFF];
+                    namespace = mNamespaces[e.data >>> Res_value.NAMESPACE_INDEX_SHIFT];
+                    attribute = mKeyStrings[e.data & Res_value.KEY_INDEX_MASK];
                     continue;
                 }
 
@@ -653,15 +672,15 @@ public class Resources {
             return false;
         }
 
-        boolean resolveAttributeReference(AssetManager.SelectedValue value) {
+        boolean resolveAttributeReference(@NonNull TypedValue value) {
             if (value.type != Res_value.TYPE_ATTRIBUTE) {
                 //TODO currently we have only style resources, where styles do not need resolve
                 return true;
             }
 
             int flags = value.flags;
-            String namespace = mNamespaces[value.data >>> 24];
-            String attribute = mKeyStrings[value.data & 0xFFFFFF];
+            String namespace = mNamespaces[value.data >>> Res_value.NAMESPACE_INDEX_SHIFT];
+            String attribute = mKeyStrings[value.data & Res_value.KEY_INDEX_MASK];
             if (!getAttribute(namespace, attribute, value)) {
                 return false;
             }
@@ -675,7 +694,7 @@ public class Resources {
                         @Nullable @StyleRes ResourceId defStyleRes,
                         @NonNull String[] attrs,
                         @NonNull int[] outValues, @NonNull int[] outIndices,
-                        @NonNull AssetManager.SelectedValue value,
+                        @NonNull TypedValue value,
                         @NonNull BagAttributeFinder defStyleAttrFinder) {
 
             AssetManager.ResolvedBag defStyleBag = null;
@@ -701,7 +720,7 @@ public class Resources {
                 int defAttrIdx = defStyleAttrFinder.find(curNs, curAttr);
                 if (defAttrIdx != -1) {
                     assert defStyleBag != null;
-                    value.set(defStyleBag, defAttrIdx);
+                    value.setTo(defStyleBag, defAttrIdx);
                 }
 
                 if (value.type != Res_value.TYPE_NULL) {
@@ -714,8 +733,8 @@ public class Resources {
 
                 outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
                 outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
-                outValues[valuesIdx + TypedArray.STYLE_ASSET_COOKIE] = value.cookie;
-                outValues[valuesIdx + TypedArray.STYLE_CHANGING_CONFIGURATIONS] = value.flags;
+                outValues[valuesIdx + TypedArray.STYLE_COOKIE] = value.cookie;
+                outValues[valuesIdx + TypedArray.STYLE_FLAGS] = value.flags;
 
                 if (value.type != Res_value.TYPE_NULL || value.data == Res_value.DATA_NULL_EMPTY) {
                     outIndices[++indicesIdx] = ii >> 1;

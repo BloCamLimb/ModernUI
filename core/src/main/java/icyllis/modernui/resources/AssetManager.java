@@ -82,36 +82,6 @@ public class AssetManager {
         }
     }
 
-    public static class SelectedValue {
-
-        public int cookie = kInvalidCookie;
-        public int data;
-        public int type;
-        public int flags;
-
-        public void reset() {
-            cookie = kInvalidCookie;
-            data = 0;
-            type = 0;
-            flags = 0;
-        }
-
-        public void set(@NonNull ResolvedBag bag, int index) {
-            int offset = index * ResolvedBag.VALUE_COLUMNS;
-            type = bag.values[offset + ResolvedBag.COLUMN_TYPE];
-            data = bag.values[offset + ResolvedBag.COLUMN_DATA];
-            cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
-            flags = bag.typeSpecFlags;
-        }
-
-        public void set(@NonNull SelectedValue v) {
-            cookie = v.cookie;
-            data = v.data;
-            type = v.type;
-            flags = v.flags;
-        }
-    }
-
     public static class PackageGroup {
         // The following three arrays are parallel arrays
         public final ArrayList<LoadedPackage> packages = new ArrayList<>();

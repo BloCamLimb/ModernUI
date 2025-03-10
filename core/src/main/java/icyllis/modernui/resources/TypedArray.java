@@ -25,7 +25,6 @@ import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
-import icyllis.modernui.util.TypedValue;
 
 public class TypedArray {
 
@@ -44,8 +43,8 @@ public class TypedArray {
     static final int STYLE_NUM_ENTRIES = 4;
     static final int STYLE_TYPE = 0;
     static final int STYLE_DATA = 1;
-    static final int STYLE_ASSET_COOKIE = 2;
-    static final int STYLE_CHANGING_CONFIGURATIONS = 3;
+    static final int STYLE_COOKIE = 2;
+    static final int STYLE_FLAGS = 3;
 
     private final Resources mResources;
     private DisplayMetrics mMetrics;
@@ -59,7 +58,6 @@ public class TypedArray {
     int mLength;
     final TypedValue mValue = new TypedValue();
 
-    final AssetManager.SelectedValue mSelectedValue = new AssetManager.SelectedValue();
     final BagAttributeFinder mDefStyleAttrFinder = new BagAttributeFinder();
 
     private void resize(int len) {
@@ -269,7 +267,7 @@ public class TypedArray {
             final TypedValue value = mValue;
             if (getValueAt(index, value)) {
                 final ColorStateList csl = mResources.loadColorStateList(
-                        value, "", "", mTheme);
+                        value, null, mTheme);
                 return csl.getDefaultColor();
             }
             return defValue;
@@ -316,7 +314,7 @@ public class TypedArray {
                         "Failed to resolve attribute at index " + index + ": " + value
                                 + ", theme=" + mTheme);
             }
-            return mResources.loadColorStateList(value, "", "", mTheme);
+            return mResources.loadColorStateList(value, null, mTheme);
         }
         return null;
     }
@@ -581,7 +579,7 @@ public class TypedArray {
                                 + ", theme=" + mTheme);
             }
 
-            return mResources.loadDrawable(value, "", "", mTheme);
+            return mResources.loadDrawable(value, null, mTheme);
         }
         return null;
     }
@@ -678,7 +676,9 @@ public class TypedArray {
 
         mRecycled = true;
 
+        // These may have been set by the client.
         mTheme = null;
+        mValue.object = null;
 
         mResources.mTypedArrayPool.release(this);
     }
@@ -691,16 +691,16 @@ public class TypedArray {
         }
         outValue.type = type;
         outValue.data = data[offset + STYLE_DATA];
-        outValue.assetCookie = data[offset + STYLE_ASSET_COOKIE];
-        outValue.changingConfigurations = data[offset + STYLE_CHANGING_CONFIGURATIONS];
-        outValue.string = (type == TypedValue.TYPE_STRING) ? loadStringValueAt(offset) : null;
+        outValue.cookie = data[offset + STYLE_COOKIE];
+        outValue.flags = data[offset + STYLE_FLAGS];
+        outValue.object = (type == TypedValue.TYPE_STRING) ? loadStringValueAt(offset) : null;
         return true;
     }
 
     @Nullable
     private CharSequence loadStringValueAt(int index) {
         final int[] data = mData;
-        final int cookie = data[index + STYLE_ASSET_COOKIE];
+        final int cookie = data[index + STYLE_COOKIE];
         CharSequence value = null;
         if (cookie >= 0) {
             value = mResources.getPooledStringForCookie(cookie, data[index + STYLE_DATA]);
