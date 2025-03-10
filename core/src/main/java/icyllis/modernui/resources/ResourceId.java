@@ -47,13 +47,13 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
 
     @NonNull
     @Contract("_ -> new")
-    public static ResourceId parse(@NonNull CharSequence name) {
+    public static ResourceId parse(@NonNull String name) {
         return parse(name, "", "");
     }
 
     @NonNull
     @Contract("_, _, _ -> new")
-    public static ResourceId parse(@NonNull CharSequence name,
+    public static ResourceId parse(@NonNull String name,
                                    @NonNull String fallbackType,
                                    @NonNull String fallbackNamespace) {
         String namespace = null;
@@ -61,17 +61,17 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
         int start = 0;
         int end = name.length();
         char c;
-        if (start != end && ((c = name.charAt(start)) == '@' || c == '?')) {
+        if (start != end && name.charAt(start) == '@') {
             start++;
         }
         int current = start;
         while (current != end) {
             c = name.charAt(current);
             if (type == null && c == '/') {
-                type = name.subSequence(start, current).toString();
+                type = name.substring(start, current);
                 start = current + 1;
             } else if (namespace == null && c == ':') {
-                namespace = name.subSequence(start, current).toString();
+                namespace = name.substring(start, current);
                 start = current + 1;
             }
             current++;
@@ -82,7 +82,7 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
         if (namespace == null) {
             namespace = fallbackNamespace;
         }
-        return new ResourceId(namespace, type, name.subSequence(start, end).toString());
+        return new ResourceId(namespace, type, name.substring(start, end));
     }
 
     /**
@@ -113,6 +113,21 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
                 : namespace + ":" + type + "/" + entry;
     }
 
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object instanceof ResourceId that)
+            return type.equals(that.type) &&
+                    entry.equals(that.entry) &&
+                    namespace.equals(that.namespace);
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return namespace.hashCode() ^ type.hashCode() ^ entry.hashCode();
+    }
+
     /**
      * Compare strings lexicographically, by namespace, then type, then entry.
      *
@@ -120,11 +135,12 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
      */
     @Override
     public int compareTo(@NonNull ResourceId o) {
-        int res = this.namespace.compareTo(o.namespace);
-        if (res != 0) return res;
-        res = this.type.compareTo(o.type);
-        if (res != 0) return res;
-        return this.entry.compareTo(o.entry);
+        int result = this.namespace.compareTo(o.namespace);
+        if (result == 0)
+            result = this.type.compareTo(o.type);
+        if (result == 0)
+            result = this.entry.compareTo(o.entry);
+        return result;
     }
 
     @SuppressWarnings("StringEquality")
