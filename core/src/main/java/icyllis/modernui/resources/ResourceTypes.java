@@ -139,6 +139,19 @@ public class ResourceTypes {
         // ...end of integer flavors.
         TYPE_LAST_INT = 0x1f;
 
+        /*
+         * Type: mask to extract single type information.
+         * If masked value type is TYPE_REFERENCE, then the next 8 bits
+         * hold the type id of the resource it refers to. The type string
+         * can be found in type string table indexed by {@link #cookie}.
+         * (type_id - 1) == type index (in type string table).
+         */
+        public static final int TYPE_MASK = 0xff;
+        public static final int TYPE_ID_SHIFT = 8;
+
+        public static final int KEY_INDEX_MASK = 0xffffff;
+        public static final int NAMESPACE_INDEX_SHIFT = 24;
+
         public static final int DATA_NULL_UNDEFINED = 0;
         public static final int DATA_NULL_EMPTY = 1;
 

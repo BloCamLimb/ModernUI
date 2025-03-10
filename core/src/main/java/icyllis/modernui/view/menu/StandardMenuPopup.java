@@ -25,7 +25,7 @@ import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
-import icyllis.modernui.util.TypedValue;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 

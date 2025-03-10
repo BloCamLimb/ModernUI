@@ -24,7 +24,7 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.util.LayoutDirection;
-import icyllis.modernui.util.TypedValue;
+import icyllis.modernui.resources.TypedValue;
 
 import java.nio.FloatBuffer;
 

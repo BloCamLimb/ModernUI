@@ -20,11 +20,11 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
-import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.resources.ThemeBuilder;
 import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.Log;
 
 public class TestThemeBuilder {
@@ -44,9 +44,17 @@ public class TestThemeBuilder {
                 R.ns, R.attr.textSize,
         };
         TypedArray a = theme.obtainStyledAttributes(
-                new ResourceId(R.ns, "style", "TextAppearance.Material3.DisplayMedium"),
+                R.style.TextAppearance_Material3_DisplayMedium,
                 styleable);
 
         ModernUI.LOGGER.info(a.getDimensionPixelSize(2, -1));
+
+        TypedValue value = new TypedValue();
+        boolean result = theme.resolveAttribute(R.ns, R.attr.textAppearanceDisplayMedium,
+                value, true);
+        ModernUI.LOGGER.info(result);
+        ModernUI.LOGGER.info(value);
+        ModernUI.LOGGER.info(value.getResourceId());
+        ModernUI.LOGGER.info(R.style.TextAppearance_Material3_DisplayMedium.equals(value.getResourceId()));
     }
 }

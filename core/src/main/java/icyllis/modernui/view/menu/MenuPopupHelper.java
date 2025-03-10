@@ -20,10 +20,8 @@ package icyllis.modernui.view.menu;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.util.TypedValue;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.PopupMenu;
 import icyllis.modernui.widget.PopupWindow;

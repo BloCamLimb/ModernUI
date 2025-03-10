@@ -22,10 +22,10 @@ import icyllis.arc3d.engine.TopologicalSort;
 import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.TypedValue;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -117,6 +117,8 @@ public class ThemeBuilder {
     public Resources build() {
         Resources resources = new Resources();
 
+        resources.mTypeStrings = mTypeStringArray.toArray(new String[0]);
+        mTypeStringArray = null;
         resources.mKeyStrings = mKeyStringArray.toArray(new String[0]);
         mKeyStringArray = null;
 
@@ -239,18 +241,18 @@ public class ThemeBuilder {
             );
         }
 
-        public void addAttribute(@AttrRes String attr, @AttrRes String target) {
+        public void addAttribute(@AttrRes String attr, @NonNull @AttrRes String target) {
             attr = dedupKeyString(attr);
             mEntries.add(new Entry(attr, TypedValue.TYPE_ATTRIBUTE,
                     storeKeyString(target)));
         }
 
-        public void addReference(@AttrRes String attr, @AnyRes ResourceId target) {
-            assert target.namespace().equals(Resources.DEFAULT_NAMESPACE);
+        public void addReference(@AttrRes String attr, @Nullable @AnyRes ResourceId target) {
+            assert target == null || target.namespace().equals(Resources.DEFAULT_NAMESPACE);
             attr = dedupKeyString(attr);
-            int typeId = storeTypeString(target.type()) + 1;
-            mEntries.add(new Entry(attr, TypedValue.TYPE_REFERENCE | (typeId << 8),
-                    storeKeyString(target.entry())));
+            int typeId = target == null ? 0 : storeTypeString(target.type()) + 1;
+            mEntries.add(new Entry(attr, TypedValue.TYPE_REFERENCE | (typeId << ResourceTypes.Res_value.TYPE_ID_SHIFT),
+                    target == null ? 0 : storeKeyString(target.entry())));
         }
 
         public void addBoolean(@AttrRes String attr, boolean v) {
@@ -278,16 +280,16 @@ public class ThemeBuilder {
             mEntries.add(new Entry(attr, TypedValue.TYPE_INT_HEX, flags));
         }
 
-        public void addColor(@AttrRes String attr, BiFunction<Resources, Resources.Theme, ColorStateList> supplier) {
+        public void addColor(@AttrRes String attr, @NonNull BiFunction<Resources, Resources.Theme, ColorStateList> factory) {
             attr = dedupKeyString(attr);
             mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
-                    storeGlobalObject(supplier)));
+                    storeGlobalObject(factory)));
         }
 
-        public void addDrawable(@AttrRes String attr, BiFunction<Resources, Resources.Theme, Drawable> supplier) {
+        public void addDrawable(@AttrRes String attr, @NonNull BiFunction<Resources, Resources.Theme, Drawable> factory) {
             attr = dedupKeyString(attr);
             mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
-                    storeGlobalObject(supplier)));
+                    storeGlobalObject(factory)));
         }
 
         ThemeBuilder getThemeBuilder() {
