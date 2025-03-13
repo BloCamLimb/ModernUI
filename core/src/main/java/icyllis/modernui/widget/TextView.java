@@ -20,11 +20,13 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Px;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
@@ -34,7 +36,11 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.ResourceUtils;
 import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.TextAppearance;
+import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.method.LinkMovementMethod;
@@ -48,6 +54,7 @@ import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.ClickableSpan;
 import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.text.style.UpdateAppearance;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.ContextMenu;
@@ -60,6 +67,7 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewTreeObserver;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -183,6 +191,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     // display attributes
     private final TextPaint mTextPaint = new TextPaint();
     private Layout mLayout;
+    @TypedValue.ComplexDimensionUnit
+    private int mTextSizeUnit = TypedValue.COMPLEX_UNIT_PX;
     @LineBreakConfig.LineBreakStyle
     private int mLineBreakStyle = DEFAULT_LINE_BREAK_STYLE;
     @LineBreakConfig.LineBreakWordStyle
@@ -247,10 +257,90 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     private Editor mEditor;
 
+    private static final String[] STYLEABLE = {
+            /*0*/ R.ns, R.attr.maxWidth,
+            /*1*/ R.ns, R.attr.minHeight,
+            /*2*/ R.ns, R.attr.minWidth,
+            /*3*/ R.ns, R.attr.textAppearance,
+            /*4*/ R.ns, R.attr.textColor,
+            /*5*/ R.ns, R.attr.textColorHighlight,
+            /*6*/ R.ns, R.attr.textColorHint,
+            /*7*/ R.ns, R.attr.textColorLink,
+            /*8*/ R.ns, R.attr.textFontWeight,
+            /*9*/ R.ns, R.attr.textSize,
+            /*10*/R.ns, R.attr.textStyle,
+    };
+
+    // Maps styleable attributes that exist both in TextView style and TextAppearance.
+    private static final Int2IntOpenHashMap sAppearanceValues;
+    private static void mapAttribute(@NonNull Int2IntOpenHashMap values,
+                                     @NonNull String namespace, @NonNull String attribute) {
+        values.put(ResourceUtils.indexOfAttribute(
+                TextView.STYLEABLE, namespace, attribute
+        ), ResourceUtils.indexOfAttribute(
+                TextAppearance.STYLEABLE, namespace, attribute
+        ));
+    }
+    static {
+        var values = new Int2IntOpenHashMap();
+        mapAttribute(values, R.ns, R.attr.textColor);
+        mapAttribute(values, R.ns, R.attr.textColorHighlight);
+        mapAttribute(values, R.ns, R.attr.textColorHint);
+        mapAttribute(values, R.ns, R.attr.textColorLink);
+        mapAttribute(values, R.ns, R.attr.textFontWeight);
+        mapAttribute(values, R.ns, R.attr.textSize);
+        mapAttribute(values, R.ns, R.attr.textStyle);
+        values.defaultReturnValue(-1);
+        sAppearanceValues = values;
+    }
+
     public TextView(Context context) {
         super(context);
         setTextSize(16);
         setTextColor(SystemTheme.currentTheme().textColorPrimary);
+    }
+
+    public TextView(Context context, @Nullable AttributeSet attrs,
+                    @Nullable @AttrRes ResourceId defStyleAttr,
+                    @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        final TextAppearance appearance;
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+        ResourceId ap = a.getResourceId(3); // textAppearance
+        if (ap != null) {
+            appearance = new TextAppearance(context, ap);
+        } else {
+            appearance = new TextAppearance();
+        }
+
+        // override TextAppearance with TextView values
+        appearance.read(a, sAppearanceValues);
+
+        final int n = a.getIndexCount();
+        for (int i = 0; i < n; i++) {
+            int attr = a.getIndex(i);
+
+            switch (attr) {
+                case 0: // maxWidth
+                    setMaxWidth(a.getDimensionPixelSize(attr, -1));
+                    break;
+
+                case 1: // minHeight
+                    setMinHeight(a.getDimensionPixelSize(attr, -1));
+                    break;
+
+                case 2: // minWidth
+                    setMinWidth(a.getDimensionPixelSize(attr, -1));
+                    break;
+            }
+        }
+
+        a.recycle();
+
+        applyTextAppearance(appearance);
     }
 
     /**
@@ -1031,6 +1121,33 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         return getPaddingBottom() + getPaint().getFontMetricsInt().descent;
     }
 
+    private void applyTextAppearance(@NonNull TextAppearance attributes) {
+        if (attributes.mTextColor != null) {
+            setTextColor(attributes.mTextColor);
+        }
+
+        if (attributes.mTextColorHint != null) {
+            setHintTextColor(attributes.mTextColorHint);
+        }
+
+        if (attributes.mTextColorLink != null) {
+            setLinkTextColor(attributes.mTextColorLink);
+        }
+
+        if (attributes.mTextColorHighlight != 0) {
+            setHighlightColor(attributes.mTextColorHighlight);
+        }
+
+        if (attributes.mTextSize != -1) {
+            mTextSizeUnit = attributes.mTextSizeUnit;
+            setRawTextSize(attributes.mTextSize, true /* shouldRequestLayout */);
+        }
+
+        if (attributes.mTextLocale != null) {
+            setTextLocale(attributes.mTextLocale);
+        }
+    }
+
     /**
      * Get the default primary {@link Locale} of the text in this TextView.
      *
@@ -1081,18 +1198,39 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @param size The desired size in the given units.
      */
     public void setTextSize(@TypedValue.ComplexDimensionUnit int unit, float size) {
-        float s = TypedValue.applyDimension(unit, size,
-                getContext().getResources().getDisplayMetrics());
-        if (s != mTextPaint.getTextSize()) {
-            mTextPaint.setTextSize(s);
+        setTextSizeInternal(unit, size, true /* shouldRequestLayout */);
+    }
+
+    private void setTextSizeInternal(int unit, float size, boolean shouldRequestLayout) {
+        mTextSizeUnit = unit;
+        setRawTextSize(TypedValue.applyDimension(unit, size,
+                        getContext().getResources().getDisplayMetrics()),
+                shouldRequestLayout);
+    }
+
+    private void setRawTextSize(float size, boolean shouldRequestLayout) {
+        if (size != mTextPaint.getTextSize()) {
+            mTextPaint.setTextSize(size);
 
             maybeRecalculateLineHeight();
-            if (mLayout != null) {
+            if (shouldRequestLayout && mLayout != null) {
                 nullLayouts();
                 requestLayout();
                 invalidate();
             }
         }
+    }
+
+    /**
+     * Gets the text size unit defined by the developer. It may be specified in resources or be
+     * passed as the unit argument of {@link #setTextSize(int, float)} at runtime.
+     *
+     * @return the dimension type of the text size unit originally defined.
+     * @see TypedValue#TYPE_DIMENSION
+     */
+    @TypedValue.ComplexDimensionUnit
+    public int getTextSizeUnit() {
+        return mTextSizeUnit;
     }
 
     /**

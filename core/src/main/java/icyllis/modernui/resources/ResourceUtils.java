@@ -20,6 +20,7 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleableRes;
 
 import javax.xml.stream.XMLStreamReader;
 
@@ -72,5 +73,28 @@ public class ResourceUtils {
         }
         ref.name = new ResourceId(namespace, Resource.getTypeName(Resource.TYPE_ATTR), entry);
         return ref;
+    }
+
+    /**
+     * Find the index of the attribute in the styleable.
+     * Returns -1 if not found.
+     */
+    public static int indexOfAttribute(@NonNull @StyleableRes String[] styleable,
+                                       @NonNull String namespace, @NonNull String attribute) {
+        int low = 0;
+        int high = (styleable.length>>1)-1;
+
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            int cmp = ResourceId.comparePair(styleable[mid<<1], styleable[(mid<<1)+1],
+                    namespace, attribute);
+            if (cmp < 0)
+                low = mid + 1;
+            else if (cmp > 0)
+                high = mid - 1;
+            else
+                return mid;
+        }
+        return -1;
     }
 }

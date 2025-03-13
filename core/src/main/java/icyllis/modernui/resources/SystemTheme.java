@@ -42,8 +42,11 @@ import icyllis.modernui.widget.SeekBar;
 import icyllis.modernui.widget.Spinner;
 import icyllis.modernui.widget.Switch;
 import icyllis.modernui.widget.TextView;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Temp use.
@@ -169,6 +172,264 @@ public class SystemTheme {
             textColorAlertDialogListItem;
     public boolean isDark;
 
+    @GuardedBy("self")
+    static final Object2ObjectOpenHashMap<Resources.ThemeKey, ThemedCache> gCache = new Object2ObjectOpenHashMap<>();
+
+    static class ThemedCache {
+
+        final int
+                colorPrimary,
+                colorOnPrimary,
+                colorPrimaryInverse,
+                colorPrimaryContainer,
+                colorOnPrimaryContainer,
+                colorPrimaryFixed,
+                colorPrimaryFixedDim,
+                colorOnPrimaryFixed,
+                colorOnPrimaryFixedVariant,
+                colorSecondary,
+                colorOnSecondary,
+                colorSecondaryContainer,
+                colorOnSecondaryContainer,
+                colorSecondaryFixed,
+                colorSecondaryFixedDim,
+                colorOnSecondaryFixed,
+                colorOnSecondaryFixedVariant,
+                colorTertiary,
+                colorOnTertiary,
+                colorTertiaryContainer,
+                colorOnTertiaryContainer,
+                colorTertiaryFixed,
+                colorTertiaryFixedDim,
+                colorOnTertiaryFixed,
+                colorOnTertiaryFixedVariant,
+                colorBackground,
+                colorOnBackground,
+                colorSurface,
+                colorOnSurface,
+                colorSurfaceVariant,
+                colorOnSurfaceVariant,
+                colorSurfaceInverse,
+                colorOnSurfaceInverse,
+                colorSurfaceBright,
+                colorSurfaceDim,
+                colorSurfaceContainer,
+                colorSurfaceContainerLow,
+                colorSurfaceContainerHigh,
+                colorSurfaceContainerLowest,
+                colorSurfaceContainerHighest,
+                colorOutline,
+                colorOutlineVariant,
+                colorError,
+                colorOnError,
+                colorErrorContainer,
+                colorOnErrorContainer;
+
+        ThemedCache(Resources.Theme theme) {
+            TypedValue value = new TypedValue();
+            theme.getAttribute(R.ns, R.attr.colorPrimary, value);
+            colorPrimary = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnPrimary, value);
+            colorOnPrimary = value.data;
+            theme.getAttribute(R.ns, R.attr.colorPrimaryInverse, value);
+            colorPrimaryInverse = value.data;
+            theme.getAttribute(R.ns, R.attr.colorPrimaryContainer, value);
+            colorPrimaryContainer = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnPrimaryContainer, value);
+            colorOnPrimaryContainer = value.data;
+            theme.getAttribute(R.ns, R.attr.colorPrimaryFixed, value);
+            colorPrimaryFixed = value.data;
+            theme.getAttribute(R.ns, R.attr.colorPrimaryFixedDim, value);
+            colorPrimaryFixedDim = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnPrimaryFixed, value);
+            colorOnPrimaryFixed = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnPrimaryFixedVariant, value);
+            colorOnPrimaryFixedVariant = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSecondary, value);
+            colorSecondary = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnSecondary, value);
+            colorOnSecondary = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSecondaryContainer, value);
+            colorSecondaryContainer = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnSecondaryContainer, value);
+            colorOnSecondaryContainer = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSecondaryFixed, value);
+            colorSecondaryFixed = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSecondaryFixedDim, value);
+            colorSecondaryFixedDim = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnSecondaryFixed, value);
+            colorOnSecondaryFixed = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnSecondaryFixedVariant, value);
+            colorOnSecondaryFixedVariant = value.data;
+            theme.getAttribute(R.ns, R.attr.colorTertiary, value);
+            colorTertiary = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnTertiary, value);
+            colorOnTertiary = value.data;
+            theme.getAttribute(R.ns, R.attr.colorTertiaryContainer, value);
+            colorTertiaryContainer = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnTertiaryContainer, value);
+            colorOnTertiaryContainer = value.data;
+            theme.getAttribute(R.ns, R.attr.colorTertiaryFixed, value);
+            colorTertiaryFixed = value.data;
+            theme.getAttribute(R.ns, R.attr.colorTertiaryFixedDim, value);
+            colorTertiaryFixedDim = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnTertiaryFixed, value);
+            colorOnTertiaryFixed = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnTertiaryFixedVariant, value);
+            colorOnTertiaryFixedVariant = value.data;
+            theme.getAttribute(R.ns, R.attr.colorBackground, value);
+            colorBackground = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnBackground, value);
+            colorOnBackground = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurface, value);
+            colorSurface = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnSurface, value);
+            colorOnSurface = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceVariant, value);
+            colorSurfaceVariant = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnSurfaceVariant, value);
+            colorOnSurfaceVariant = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceInverse, value);
+            colorSurfaceInverse = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnSurfaceInverse, value);
+            colorOnSurfaceInverse = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceBright, value);
+            colorSurfaceBright = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceDim, value);
+            colorSurfaceDim = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceContainer, value);
+            colorSurfaceContainer = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceContainerLow, value);
+            colorSurfaceContainerLow = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceContainerHigh, value);
+            colorSurfaceContainerHigh = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceContainerLowest, value);
+            colorSurfaceContainerLowest = value.data;
+            theme.getAttribute(R.ns, R.attr.colorSurfaceContainerHighest, value);
+            colorSurfaceContainerHighest = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOutline, value);
+            colorOutline = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOutlineVariant, value);
+            colorOutlineVariant = value.data;
+            theme.getAttribute(R.ns, R.attr.colorError, value);
+            colorError = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnError, value);
+            colorOnError = value.data;
+            theme.getAttribute(R.ns, R.attr.colorErrorContainer, value);
+            colorErrorContainer = value.data;
+            theme.getAttribute(R.ns, R.attr.colorOnErrorContainer, value);
+            colorOnErrorContainer = value.data;
+        }
+
+        private SparseArray<ColorStateList> text_button_foreground_color_selector;
+        private ColorStateList text_button_foreground_color_selector(int colorOnContainer) {
+            if (text_button_foreground_color_selector == null) {
+                text_button_foreground_color_selector = new SparseArray<>();
+            }
+            var csl = text_button_foreground_color_selector.get(colorOnContainer);
+            if (csl != null) {
+                return csl;
+            }
+            csl = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            new int[]{-R.attr.state_checkable},
+                            new int[]{R.attr.state_checked},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnSurface, 0.38f),
+                            colorOnContainer,
+                            colorOnSecondaryContainer,
+                            colorOnSurface
+                    }
+            );
+            text_button_foreground_color_selector.put(colorOnContainer, csl);
+            return csl;
+        }
+
+        private SparseArray<ColorStateList> text_button_background_color_selector;
+        private ColorStateList text_button_background_color_selector(int colorContainer) {
+            if (text_button_background_color_selector == null) {
+                text_button_background_color_selector = new SparseArray<>();
+            }
+            var csl = text_button_background_color_selector.get(colorContainer);
+            if (csl != null) {
+                return csl;
+            }
+            csl = new ColorStateList(
+                    new int[][]{
+                            new int[]{R.attr.state_enabled, R.attr.state_checked},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorSecondaryContainer,
+                            colorContainer
+                    }
+            );
+            text_button_background_color_selector.put(colorContainer, csl);
+            return csl;
+        }
+
+        private SparseArray<ColorStateList> text_button_ripple_color_selector;
+        private ColorStateList text_button_ripple_color_selector(int colorOnContainer) {
+            if (text_button_ripple_color_selector == null) {
+                text_button_ripple_color_selector = new SparseArray<>();
+            }
+            var csl = text_button_ripple_color_selector.get(colorOnContainer);
+            if (csl != null) {
+                return csl;
+            }
+            csl = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_checkable, R.attr.state_pressed},
+                            new int[]{-R.attr.state_checkable, R.attr.state_focused},
+                            new int[]{-R.attr.state_checkable, R.attr.state_hovered},
+                            new int[]{-R.attr.state_checkable},
+
+                            new int[]{R.attr.state_checked, R.attr.state_pressed},
+                            new int[]{R.attr.state_checked, R.attr.state_focused},
+                            new int[]{R.attr.state_checked, R.attr.state_hovered},
+                            new int[]{R.attr.state_checked},
+
+                            new int[]{R.attr.state_pressed},
+                            new int[]{R.attr.state_focused},
+                            new int[]{R.attr.state_hovered},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnContainer, 0.1f),
+                            modulateColor(colorOnContainer, 0.102f),
+                            modulateColor(colorOnContainer, 0.08f),
+                            modulateColor(colorOnContainer, 0.064f),
+
+                            modulateColor(colorOnSurface, 0.1f),
+                            modulateColor(colorOnSecondaryContainer, 0.102f),
+                            modulateColor(colorOnSecondaryContainer, 0.08f),
+                            modulateColor(colorOnSecondaryContainer, 0.064f),
+
+                            modulateColor(colorOnSecondaryContainer, 0.1f),
+                            modulateColor(colorOnSurface, 0.102f),
+                            modulateColor(colorOnSurface, 0.08f),
+                            modulateColor(colorOnSurface, 0.064f),
+                    }
+            );
+            text_button_ripple_color_selector.put(colorOnContainer, csl);
+            return csl;
+        }
+    }
+
+    static <T> T fromCache(Resources.Theme theme, Function<ThemedCache, T> fn) {
+        synchronized (gCache) {
+            ThemedCache cache = gCache.get(theme.getKey());
+            if (cache == null) {
+                cache = new ThemedCache(theme);
+                gCache.put(theme.getKey(), cache);
+            }
+            return fn.apply(cache);
+        }
+    }
+
     private SparseArray<ColorStateList> text_button_foreground_color_selector;
     private ColorStateList text_button_foreground_color_selector(int colorOnContainer) {
         if (text_button_foreground_color_selector == null) {
@@ -230,20 +491,20 @@ public class SystemTheme {
         }
         csl = new ColorStateList(
                 new int[][]{
-                    new int[]{-R.attr.state_checkable, R.attr.state_pressed},
-                    new int[]{-R.attr.state_checkable, R.attr.state_focused},
-                    new int[]{-R.attr.state_checkable, R.attr.state_hovered},
-                    new int[]{-R.attr.state_checkable},
+                        new int[]{-R.attr.state_checkable, R.attr.state_pressed},
+                        new int[]{-R.attr.state_checkable, R.attr.state_focused},
+                        new int[]{-R.attr.state_checkable, R.attr.state_hovered},
+                        new int[]{-R.attr.state_checkable},
 
-                    new int[]{R.attr.state_checked, R.attr.state_pressed},
-                    new int[]{R.attr.state_checked, R.attr.state_focused},
-                    new int[]{R.attr.state_checked, R.attr.state_hovered},
-                    new int[]{R.attr.state_checked},
+                        new int[]{R.attr.state_checked, R.attr.state_pressed},
+                        new int[]{R.attr.state_checked, R.attr.state_focused},
+                        new int[]{R.attr.state_checked, R.attr.state_hovered},
+                        new int[]{R.attr.state_checked},
 
-                    new int[]{R.attr.state_pressed},
-                    new int[]{R.attr.state_focused},
-                    new int[]{R.attr.state_hovered},
-                    StateSet.WILD_CARD
+                        new int[]{R.attr.state_pressed},
+                        new int[]{R.attr.state_focused},
+                        new int[]{R.attr.state_hovered},
+                        StateSet.WILD_CARD
                 },
                 new int[]{
                         modulateColor(colorOnContainer, 0.1f),
@@ -268,6 +529,208 @@ public class SystemTheme {
 
     private Drawable createButtonBackground() {
         return null;
+    }
+
+    public static void addToResources(SystemResourcesBuilder b) {
+        addStylesToResources(b);
+        {
+            SystemTheme t = createMaterial(true);
+            var style = b.newStyle(R.style.Theme_Material3_Dark.entry(), "");
+
+            addColorsToTheme(t, style);
+
+            style.addReference(R.attr.textAppearanceDisplayLarge, R.style.TextAppearance_Material3_DisplayLarge);
+            style.addReference(R.attr.textAppearanceDisplayMedium, R.style.TextAppearance_Material3_DisplayMedium);
+            style.addReference(R.attr.textAppearanceDisplaySmall, R.style.TextAppearance_Material3_DisplaySmall);
+            style.addReference(R.attr.textAppearanceHeadlineLarge, R.style.TextAppearance_Material3_HeadlineLarge);
+            style.addReference(R.attr.textAppearanceHeadlineMedium, R.style.TextAppearance_Material3_HeadlineMedium);
+            style.addReference(R.attr.textAppearanceHeadlineSmall, R.style.TextAppearance_Material3_HeadlineSmall);
+            style.addReference(R.attr.textAppearanceTitleLarge, R.style.TextAppearance_Material3_TitleLarge);
+            style.addReference(R.attr.textAppearanceTitleMedium, R.style.TextAppearance_Material3_TitleMedium);
+            style.addReference(R.attr.textAppearanceTitleSmall, R.style.TextAppearance_Material3_TitleSmall);
+            style.addReference(R.attr.textAppearanceBodyLarge, R.style.TextAppearance_Material3_BodyLarge);
+            style.addReference(R.attr.textAppearanceBodyMedium, R.style.TextAppearance_Material3_BodyMedium);
+            style.addReference(R.attr.textAppearanceBodySmall, R.style.TextAppearance_Material3_BodySmall);
+            style.addReference(R.attr.textAppearanceLabelLarge, R.style.TextAppearance_Material3_LabelLarge);
+            style.addReference(R.attr.textAppearanceLabelMedium, R.style.TextAppearance_Material3_LabelMedium);
+            style.addReference(R.attr.textAppearanceLabelSmall, R.style.TextAppearance_Material3_LabelSmall);
+
+            style.addAttribute(R.attr.colorEdgeEffect, R.attr.colorPrimary);
+        }
+    }
+
+    private static void addColorsToTheme(SystemTheme t, SystemResourcesBuilder.Style style) {
+
+        style.addColor(R.attr.colorPrimary, t.colorPrimary);
+        style.addColor(R.attr.colorOnPrimary, t.colorOnPrimary);
+        style.addColor(R.attr.colorPrimaryInverse, t.colorPrimaryInverse);
+        style.addColor(R.attr.colorPrimaryContainer, t.colorPrimaryContainer);
+        style.addColor(R.attr.colorOnPrimaryContainer, t.colorOnPrimaryContainer);
+        style.addColor(R.attr.colorPrimaryFixed, t.colorPrimaryFixed);
+        style.addColor(R.attr.colorPrimaryFixedDim, t.colorPrimaryFixedDim);
+        style.addColor(R.attr.colorOnPrimaryFixed, t.colorOnPrimaryFixed);
+        style.addColor(R.attr.colorOnPrimaryFixedVariant, t.colorOnPrimaryFixedVariant);
+        style.addColor(R.attr.colorSecondary, t.colorSecondary);
+        style.addColor(R.attr.colorOnSecondary, t.colorOnSecondary);
+        style.addColor(R.attr.colorSecondaryContainer, t.colorSecondaryContainer);
+        style.addColor(R.attr.colorOnSecondaryContainer, t.colorOnSecondaryContainer);
+        style.addColor(R.attr.colorSecondaryFixed, t.colorSecondaryFixed);
+        style.addColor(R.attr.colorSecondaryFixedDim, t.colorSecondaryFixedDim);
+        style.addColor(R.attr.colorOnSecondaryFixed, t.colorOnSecondaryFixed);
+        style.addColor(R.attr.colorOnSecondaryFixedVariant, t.colorOnSecondaryFixedVariant);
+        style.addColor(R.attr.colorTertiary, t.colorTertiary);
+        style.addColor(R.attr.colorOnTertiary, t.colorOnTertiary);
+        style.addColor(R.attr.colorTertiaryContainer, t.colorTertiaryContainer);
+        style.addColor(R.attr.colorOnTertiaryContainer, t.colorOnTertiaryContainer);
+        style.addColor(R.attr.colorTertiaryFixed, t.colorTertiaryFixed);
+        style.addColor(R.attr.colorTertiaryFixedDim, t.colorTertiaryFixedDim);
+        style.addColor(R.attr.colorOnTertiaryFixed, t.colorOnTertiaryFixed);
+        style.addColor(R.attr.colorOnTertiaryFixedVariant, t.colorOnTertiaryFixedVariant);
+        style.addColor(R.attr.colorBackground, t.colorBackground);
+        style.addColor(R.attr.colorOnBackground, t.colorOnBackground);
+        style.addColor(R.attr.colorSurface, t.colorSurface);
+        style.addColor(R.attr.colorOnSurface, t.colorOnSurface);
+        style.addColor(R.attr.colorSurfaceVariant, t.colorSurfaceVariant);
+        style.addColor(R.attr.colorOnSurfaceVariant, t.colorOnSurfaceVariant);
+        style.addColor(R.attr.colorSurfaceInverse, t.colorSurfaceInverse);
+        style.addColor(R.attr.colorOnSurfaceInverse, t.colorOnSurfaceInverse);
+        style.addColor(R.attr.colorSurfaceBright, t.colorSurfaceBright);
+        style.addColor(R.attr.colorSurfaceDim, t.colorSurfaceDim);
+        style.addColor(R.attr.colorSurfaceContainer, t.colorSurfaceContainer);
+        style.addColor(R.attr.colorSurfaceContainerLow, t.colorSurfaceContainerLow);
+        style.addColor(R.attr.colorSurfaceContainerHigh, t.colorSurfaceContainerHigh);
+        style.addColor(R.attr.colorSurfaceContainerLowest, t.colorSurfaceContainerLowest);
+        style.addColor(R.attr.colorSurfaceContainerHighest, t.colorSurfaceContainerHighest);
+        style.addColor(R.attr.colorOutline, t.colorOutline);
+        style.addColor(R.attr.colorOutlineVariant, t.colorOutlineVariant);
+        style.addColor(R.attr.colorError, t.colorError);
+        style.addColor(R.attr.colorOnError, t.colorOnError);
+        style.addColor(R.attr.colorErrorContainer, t.colorErrorContainer);
+        style.addColor(R.attr.colorOnErrorContainer, t.colorOnErrorContainer);
+
+        style.addColor(R.attr.textColorPrimary, (resources, theme) -> t.textColorPrimary);
+        style.addColor(R.attr.textColorHighlight, t.textColorHighlight);
+        style.addColor(R.attr.textColorHint, (resources, theme) -> t.textColorHint);
+        style.addColor(R.attr.textColorLink, (resources, theme) -> t.textColorLink);
+        style.addColor(R.attr.textColorSecondary, (resources, theme) -> t.textColorSecondary);
+    }
+
+    private static void addStylesToResources(SystemResourcesBuilder b) {
+        {
+            var style = b.newStyle("TextAppearance.Material", "");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addAttribute(R.attr.textColorHint, R.attr.textColorHint);
+            style.addAttribute(R.attr.textColorHighlight, R.attr.textColorHighlight);
+            style.addAttribute(R.attr.textColorLink, R.attr.textColorLink);
+            style.addDimension(R.attr.textSize, 16, TypedValue.COMPLEX_UNIT_SP);
+        }
+        // Headline
+        {
+            var style = b.newStyle("TextAppearance.Material3.DisplayLarge", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
+            style.addDimension(R.attr.textSize, 57, TypedValue.COMPLEX_UNIT_SP);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.DisplayMedium", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
+            style.addDimension(R.attr.textSize, 45, TypedValue.COMPLEX_UNIT_SP);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.DisplaySmall", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
+            style.addDimension(R.attr.textSize, 36, TypedValue.COMPLEX_UNIT_SP);
+        }
+        // Headline
+        {
+            var style = b.newStyle("TextAppearance.Material3.HeadlineLarge", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
+            style.addDimension(R.attr.textSize, 32, TypedValue.COMPLEX_UNIT_SP);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.HeadlineMedium", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addDimension(R.attr.textSize, 28, TypedValue.COMPLEX_UNIT_SP);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.HeadlineSmall", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addDimension(R.attr.textSize, 24, TypedValue.COMPLEX_UNIT_SP);
+        }
+        // Title
+        {
+            var style = b.newStyle("TextAppearance.Material3.TitleLarge", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addDimension(R.attr.textSize, 22, TypedValue.COMPLEX_UNIT_SP);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.TitleMedium", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addDimension(R.attr.textSize, 16, TypedValue.COMPLEX_UNIT_SP);
+            style.addInteger(R.attr.textFontWeight, 500);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.TitleSmall", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addDimension(R.attr.textSize, 14, TypedValue.COMPLEX_UNIT_SP);
+            style.addInteger(R.attr.textFontWeight, 500);
+        }
+        // Body
+        {
+            var style = b.newStyle("TextAppearance.Material3.BodyLarge", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addDimension(R.attr.textSize, 16, TypedValue.COMPLEX_UNIT_SP);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.BodyMedium", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addDimension(R.attr.textSize, 14, TypedValue.COMPLEX_UNIT_SP);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.BodySmall", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
+            style.addDimension(R.attr.textSize, 12, TypedValue.COMPLEX_UNIT_SP);
+        }
+        // Label
+        {
+            var style = b.newStyle("TextAppearance.Material3.LabelLarge", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
+            style.addDimension(R.attr.textSize, 14, TypedValue.COMPLEX_UNIT_SP);
+            style.addInteger(R.attr.textFontWeight, 500);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.LabelMedium", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
+            style.addDimension(R.attr.textSize, 12, TypedValue.COMPLEX_UNIT_SP);
+            style.addInteger(R.attr.textFontWeight, 500);
+        }
+        {
+            var style = b.newStyle("TextAppearance.Material3.LabelSmall", "TextAppearance.Material");
+            style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
+            style.addDimension(R.attr.textSize, 11, TypedValue.COMPLEX_UNIT_SP);
+            style.addInteger(R.attr.textFontWeight, 500);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_Button_TextButton.entry(), "");
+            style.addDimension(R.attr.minHeight, 32, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.minWidth, 80, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.maxWidth, 320, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingLeft, 12, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingRight, 12, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingTop, 6, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingBottom, 6, TypedValue.COMPLEX_UNIT_DP);
+            style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceLabelLarge);
+            style.addColor(R.attr.textColor, (resources, theme) ->
+                    fromCache(theme, cache -> cache.text_button_foreground_color_selector(cache.colorPrimary)));
+            style.addDrawable(R.attr.background, (resources, theme) -> {
+                var backgroundTint = fromCache(theme, cache -> cache.text_button_background_color_selector(0));
+                var rippleColor = fromCache(theme, cache -> cache.text_button_ripple_color_selector(cache.colorPrimary));
+
+                var background = new ShapeDrawable();
+                background.setCornerRadius(1000);
+                background.setTintList(backgroundTint);
+                return new RippleDrawable(rippleColor, background, null);
+            });
+        }
     }
 
     public void applyTextAppearanceLabelLarge(TextView tv) {
