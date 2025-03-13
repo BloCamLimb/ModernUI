@@ -27,17 +27,14 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
-import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.resources.ThemeBuilder;
+import icyllis.modernui.resources.SystemResourcesBuilder;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.*;
@@ -55,8 +52,6 @@ import org.lwjgl.system.Platform;
 
 import java.io.*;
 import java.nio.channels.*;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -124,9 +119,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 throw new RuntimeException("Multiple instances");
             }
         }
-        ThemeBuilder tb = new ThemeBuilder();
-        SystemTheme.addToResources(tb);
-        mResources = tb.build();
+        SystemResourcesBuilder sysRes = new SystemResourcesBuilder();
+        SystemTheme.addToResources(sysRes);
+        mResources = sysRes.build();
     }
 
     /**

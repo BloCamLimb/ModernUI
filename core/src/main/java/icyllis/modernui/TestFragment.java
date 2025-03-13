@@ -427,12 +427,13 @@ public class TestFragment extends Fragment {
                     .setInterpolationColorSpace(GradientShader.InterpolationColorSpace.SRGB_LINEAR)
                     .build();
 
+            long start = System.nanoTime();
             for (int i = 0; i < 13; i++) {
                 View v;
                 LayoutParams p;
                 if (i == 1) {
-                    Button button = new Button(getContext());
-                    SystemTheme.currentTheme().applyTextButtonStyle(button);
+                    Button button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_TextButton);
+                    //SystemTheme.currentTheme().applyTextButtonStyle(button);
                     button.setText("Play A Music!");
                     button.setOnClickListener(__ -> {
                         if (mGoodAnim != null) {
@@ -598,8 +599,8 @@ public class TestFragment extends Fragment {
                     v = seekbar;
                     p = new LayoutParams(dp(200), WRAP_CONTENT);
                 } else {
-                    Button button = new Button(getContext());
-                    SystemTheme.currentTheme().applyTextButtonStyle(button);
+                    Button button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_TextButton);
+                    //SystemTheme.currentTheme().applyTextButtonStyle(button);
                     button.setText("Text button " + i);
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
@@ -648,6 +649,7 @@ public class TestFragment extends Fragment {
                 p.gravity = Gravity.CENTER;
                 addView(v, p);
             }
+            LOGGER.info((System.nanoTime() - start) / 1000000D);
             addView(new DView(getContext()), new LayoutParams(dp(120),
                     dp(40)));
 

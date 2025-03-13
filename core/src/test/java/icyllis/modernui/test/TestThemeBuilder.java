@@ -22,7 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.resources.ThemeBuilder;
+import icyllis.modernui.resources.SystemResourcesBuilder;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.Log;
@@ -31,7 +31,7 @@ public class TestThemeBuilder {
 
     public static void main(String[] args) {
         Log.setLevel(Log.DEBUG);
-        ThemeBuilder builder = new ThemeBuilder();
+        SystemResourcesBuilder builder = new SystemResourcesBuilder();
 
         SystemTheme.addToResources(builder);
 

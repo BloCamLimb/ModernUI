@@ -46,7 +46,7 @@ import java.util.function.ToIntFunction;
  * @hidden
  */
 @ApiStatus.Internal
-public class ThemeBuilder {
+public class SystemResourcesBuilder {
 
     Object2IntOpenHashMap<String> mTypeStringTable = new Object2IntOpenHashMap<>();
     ArrayList<String> mTypeStringArray = new ArrayList<>();
@@ -75,7 +75,7 @@ public class ThemeBuilder {
     HashMap<String, Style> mStyleTable = new HashMap<>();
     Object2IntOpenHashMap<String> mStyleToOffset = new Object2IntOpenHashMap<>();
 
-    public ThemeBuilder() {
+    public SystemResourcesBuilder() {
         mTypeStringTable.defaultReturnValue(-1);
         mKeyStringTable.defaultReturnValue(-1);
         mGlobalObjectTable.defaultReturnValue(-1);
@@ -292,8 +292,8 @@ public class ThemeBuilder {
                     storeGlobalObject(factory)));
         }
 
-        ThemeBuilder getThemeBuilder() {
-            return ThemeBuilder.this;
+        SystemResourcesBuilder getThemeBuilder() {
+            return SystemResourcesBuilder.this;
         }
     }
 }
