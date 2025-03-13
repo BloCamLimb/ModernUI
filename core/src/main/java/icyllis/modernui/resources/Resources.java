@@ -138,6 +138,52 @@ public class Resources {
         return null;
     }
 
+    @Nullable
+    String getNamespaceForCookie(int cookie, int id) {
+        if (cookie == 0 && id >= 0 && id < mNamespaces.length) {
+            return mNamespaces[id];
+        }
+        return null;
+    }
+
+    @Nullable
+    String getTypeStringForCookie(int cookie, int id) {
+        if (cookie == 0 && id >= 0 && id < mTypeStrings.length) {
+            return mTypeStrings[id];
+        }
+        return null;
+    }
+
+    @Nullable
+    String getKeyStringForCookie(int cookie, int id) {
+        if (cookie == 0 && id >= 0 && id < mKeyStrings.length) {
+            return mKeyStrings[id];
+        }
+        return null;
+    }
+
+    @Nullable
+    ResourceId getReferenceIdForCookie(int cookie, int typeId, int data) {
+        assert typeId > 0;
+        String namespace = getNamespaceForCookie(cookie, data >>> Res_value.NAMESPACE_INDEX_SHIFT);
+        String typeName = getTypeStringForCookie(cookie, typeId - 1);
+        String entryName = getKeyStringForCookie(cookie, data & Res_value.KEY_INDEX_MASK);
+        if (namespace != null && typeName != null && entryName != null) {
+            return new ResourceId(namespace, typeName, entryName);
+        }
+        return null;
+    }
+
+    @Nullable
+    ResourceId getAttributeIdForCookie(int cookie, int data) {
+        String namespace = getNamespaceForCookie(cookie, data >>> Res_value.NAMESPACE_INDEX_SHIFT);
+        String attribute = getKeyStringForCookie(cookie, data & Res_value.KEY_INDEX_MASK);
+        if (namespace != null && attribute != null) {
+            return ResourceId.attr(namespace, attribute);
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     ColorStateList loadColorStateList(@NonNull TypedValue value,
                                       @Nullable ResourceId id,
@@ -454,13 +500,13 @@ public class Resources {
         }
 
         /**
-         * Return a TypedArray holding the values defined by the <var>style</var>
+         * Return a TypedArray holding the values defined by the <var>resId</var>
          * resource which are listed in <var>attrs</var>.
          *
          * <p>Be sure to call {@link TypedArray#recycle() TypedArray.recycle()} when you are done
          * with the array.
          *
-         * @param style The desired style resource.
+         * @param resId The desired style resource.
          * @param attrs The desired attributes to be retrieved. See
          *              {@link StyleableRes} for requirements.
          * @return Returns a TypedArray holding an array of the attribute values.
@@ -471,9 +517,9 @@ public class Resources {
          * @see #obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])
          */
         @NonNull
-        public TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId style,
+        public TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
                                                  @NonNull @StyleableRes String[] attrs) {
-            return obtainStyledAttributes(null, null, style, attrs);
+            return obtainStyledAttributes(null, null, resId, attrs);
         }
 
         /**
@@ -540,6 +586,7 @@ public class Resources {
                         array.mDefStyleAttrFinder);
             }
             array.mDefStyleAttrFinder.clear();
+            array.mTheme = this;
             return array;
         }
 
@@ -586,6 +633,9 @@ public class Resources {
                     return false;
                 }
 
+                int cookie = outValue.cookie;
+                assert cookie >= 0;
+
                 if (resolveRefs) {
                     //TODO
                 }
@@ -600,21 +650,20 @@ public class Resources {
                     case TypedValue.TYPE_REFERENCE -> {
                         int typeId = outValue.type >>> Res_value.TYPE_ID_SHIFT;
                         if (typeId != 0) {
-                            outValue.object = new ResourceId(
-                                    mNamespaces[outValue.data >>> Res_value.NAMESPACE_INDEX_SHIFT],
-                                    mTypeStrings[typeId - 1],
-                                    mKeyStrings[outValue.data & Res_value.KEY_INDEX_MASK]
-                            );
                             // erase higher 8 bits
                             outValue.type = TypedValue.TYPE_REFERENCE;
+                            if ((outValue.object = getReferenceIdForCookie(cookie, typeId, outValue.data)) == null) {
+                                return false;
+                            }
                         } else {
                             outValue.object = null;
                         }
                     }
-                    case TypedValue.TYPE_ATTRIBUTE -> outValue.object = ResourceId.attr(
-                            mNamespaces[outValue.data >>> Res_value.NAMESPACE_INDEX_SHIFT],
-                            mKeyStrings[outValue.data & Res_value.KEY_INDEX_MASK]
-                    );
+                    case TypedValue.TYPE_ATTRIBUTE -> {
+                        if ((outValue.object = getAttributeIdForCookie(outValue.cookie, outValue.data)) == null) {
+                            return false;
+                        }
+                    }
                     default -> outValue.object = null;
                 }
 

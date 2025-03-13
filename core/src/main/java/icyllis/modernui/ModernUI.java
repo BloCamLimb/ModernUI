@@ -36,6 +36,8 @@ import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.ThemeBuilder;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.*;
@@ -107,7 +109,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     private volatile Looper mRenderLooper;
     private volatile Handler mRenderHandler;
 
-    private Resources mResources = new Resources();
+    private final Object mThemeLock = new Object();
+
+    private Resources mResources;
+    private Resources.Theme mTheme;
 
     private Image mBackgroundImage;
 
@@ -119,6 +124,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 throw new RuntimeException("Multiple instances");
             }
         }
+        ThemeBuilder tb = new ThemeBuilder();
+        SystemTheme.addToResources(tb);
+        mResources = tb.build();
     }
 
     /**
@@ -460,6 +468,20 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     @Override
     public Resources getResources() {
         return mResources;
+    }
+
+    @Override
+    public Resources.Theme getTheme() {
+        synchronized (mThemeLock) {
+            if (mTheme != null) {
+                return mTheme;
+            }
+
+            mTheme = mResources.newTheme();
+            mTheme.applyStyle(R.style.Theme_Material3_Dark, true);
+
+            return mTheme;
+        }
     }
 
     /**

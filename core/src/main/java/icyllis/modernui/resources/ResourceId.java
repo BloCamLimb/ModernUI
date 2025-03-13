@@ -125,7 +125,10 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
 
     @Override
     public int hashCode() {
-        return namespace.hashCode() ^ type.hashCode() ^ entry.hashCode();
+        int result = namespace.hashCode();
+        result = 31 * result + type.hashCode();
+        result = 31 * result + entry.hashCode();
+        return result;
     }
 
     /**

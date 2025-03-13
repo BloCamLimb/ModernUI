@@ -23,4 +23,6 @@ import icyllis.modernui.resources.Resources;
 public abstract class Context {
 
     public abstract Resources getResources();
+
+    public abstract Resources.Theme getTheme();
 }

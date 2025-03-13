@@ -19,12 +19,16 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.R;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.Transition;
@@ -118,6 +122,40 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * <p>
  * Custom View ...
  *
+ * <table class="striped" >
+ *   <caption>Attributes</caption>
+ *   <thead>
+ *     <tr>
+ *       <th scope="col">Name</th>
+ *       <th scope="col">Format</th>
+ *       <th scope="col">Description</th>
+ *     </tr>
+ *   </thead>
+ *   <tbody>
+ *   <tr>
+ *     <td>{@link R.attr#background}</td>
+ *     <td>reference|color</td>
+ *     <td>A drawable to use as the background.  This can be either a reference
+ *         to a full drawable resource (such as a PNG image, 9-patch,
+ *         XML state list description, etc), or a solid color such as "#ff000000"
+ *         (black).</td>
+ *   </tr>
+ *   <tr>
+ *     <td>{@link R.attr#padding}</td>
+ *     <td>dimension</td>
+ *     <td>Sets the padding, in pixels, of all four edges. Padding is defined as
+ *         space between the edges of the view and the view's content. This value will take
+ *         precedence over any of the edge-specific values (paddingLeft, paddingTop,
+ *         paddingRight, paddingBottom, paddingHorizontal and paddingVertical), but will
+ *         not override paddingStart or paddingEnd, if set. A view's size
+ *         will include its padding. If a {@link R.attr#background}
+ *         is provided, the padding will initially be set to that (0 if the
+ *         drawable does not have padding). Explicitly setting a padding value
+ *         will override the corresponding padding found in the background.</td>
+ *   </tr>
+ *   </tbody>
+ * </table>
+ *
  * @see ViewGroup
  * @since 2.0
  */
@@ -191,28 +229,28 @@ public class View implements Drawable.Callback {
 
     /**
      * Mask for use with setFlags indicating bits used for visibility.
-     * {@hide}
+     * @hidden
      */
     static final int VISIBILITY_MASK = 0x0000000C;
 
     /**
      * This view is enabled. Interpretation varies by subclass.
      * Use with ENABLED_MASK when calling setFlags.
-     * {@hide}
+     * @hidden
      */
     static final int ENABLED = 0x00000000;
 
     /**
      * This view is disabled. Interpretation varies by subclass.
      * Use with ENABLED_MASK when calling setFlags.
-     * {@hide}
+     * @hidden
      */
     static final int DISABLED = 0x00000020;
 
     /**
      * Mask for use with setFlags indicating bits used for indicating whether
      * this view is enabled
-     * {@hide}
+     * @hidden
      */
     static final int ENABLED_MASK = 0x00000020;
 
@@ -220,77 +258,77 @@ public class View implements Drawable.Callback {
      * This view won't draw. {@link #onDraw(Canvas)} won't be
      * called and further optimizations will be performed. It is okay to have
      * this flag set and a background. Use with DRAW_MASK when calling setFlags.
-     * {@hide}
+     * @hidden
      */
     static final int WILL_NOT_DRAW = 0x00000080;
 
     /**
      * Mask for use with setFlags indicating bits used for indicating whether
      * this view is will draw
-     * {@hide}
+     * @hidden
      */
     static final int DRAW_MASK = 0x00000080;
 
     /**
      * <p>This view doesn't show scrollbars.</p>
-     * {@hide}
+     * @hidden
      */
     static final int SCROLLBARS_NONE = 0x00000000;
 
     /**
      * <p>This view shows horizontal scrollbars.</p>
-     * {@hide}
+     * @hidden
      */
     static final int SCROLLBARS_HORIZONTAL = 0x00000100;
 
     /**
      * <p>This view shows vertical scrollbars.</p>
-     * {@hide}
+     * @hidden
      */
     static final int SCROLLBARS_VERTICAL = 0x00000200;
 
     /**
      * <p>Mask for use with setFlags indicating bits used for indicating which
      * scrollbars are enabled.</p>
-     * {@hide}
+     * @hidden
      */
     static final int SCROLLBARS_MASK = 0x00000300;
 
     /**
      * <p>This view doesn't show fading edges.</p>
-     * {@hide}
+     * @hidden
      */
     static final int FADING_EDGE_NONE = 0x00000000;
 
     /**
      * <p>This view shows horizontal fading edges.</p>
-     * {@hide}
+     * @hidden
      */
     static final int FADING_EDGE_HORIZONTAL = 0x00001000;
 
     /**
      * <p>This view shows vertical fading edges.</p>
-     * {@hide}
+     * @hidden
      */
     static final int FADING_EDGE_VERTICAL = 0x00002000;
 
     /**
      * <p>Mask for use with setFlags indicating bits used for indicating which
      * fading edges are enabled.</p>
-     * {@hide}
+     * @hidden
      */
     static final int FADING_EDGE_MASK = 0x00003000;
 
     /**
      * <p>Indicates this view can be clicked. When clickable, a View reacts
      * to clicks by notifying the OnClickListener.<p>
-     * {@hide}
+     * @hidden
      */
     static final int CLICKABLE = 0x00004000;
 
     /**
      * <p>Indicates this view can take / keep focus when int touch mode.</p>
-     * {@hide}
+     * @hidden
      */
     static final int FOCUSABLE_IN_TOUCH_MODE = 0x00040000;
 
@@ -300,7 +338,7 @@ public class View implements Drawable.Callback {
      * reacts to long clicks by notifying the OnLongClickListener or showing a
      * context menu.
      * </p>
-     * {@hide}
+     * @hidden
      */
     static final int LONG_CLICKABLE = 0x00200000;
 
@@ -308,7 +346,7 @@ public class View implements Drawable.Callback {
      * <p>Indicates that this view gets its drawable states from its direct parent
      * and ignores its original internal states.</p>
      *
-     * @hide
+     * @hidden
      */
     static final int DUPLICATE_PARENT_STATE = 0x00400000;
 
@@ -318,7 +356,7 @@ public class View implements Drawable.Callback {
      * context click (e.g. a primary stylus button press or right mouse click) by notifying the
      * OnContextClickListener.
      * </p>
-     * {@hide}
+     * @hidden
      */
     static final int CONTEXT_CLICKABLE = 0x00800000;
 
@@ -362,19 +400,19 @@ public class View implements Drawable.Callback {
 
     /**
      * Mask to check if the scrollbar style is overlay or inset.
-     * {@hide}
+     * @hidden
      */
     static final int SCROLLBARS_INSET_MASK = 0x01000000;
 
     /**
      * Mask to check if the scrollbar style is inside or outside.
-     * {@hide}
+     * @hidden
      */
     static final int SCROLLBARS_OUTSIDE_MASK = 0x02000000;
 
     /**
      * Mask for scrollbar style.
-     * {@hide}
+     * @hidden
      */
     static final int SCROLLBARS_STYLE_MASK = 0x03000000;
 
@@ -392,7 +430,7 @@ public class View implements Drawable.Callback {
 
     /**
      * <p>Indicates this view can display a tooltip on hover or long press.</p>
-     * {@hide}
+     * @hidden
      */
     static final int TOOLTIP = 0x40000000;
 
@@ -900,27 +938,27 @@ public class View implements Drawable.Callback {
      * |-------|-------|-------|-------|
      */
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_WANTS_FOCUS = 0x00000001;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_FOCUSED = 0x00000002;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_SELECTED = 0x00000004;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_IS_ROOT_NAMESPACE = 0x00000008;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_HAS_BOUNDS = 0x00000010;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_DRAWN = 0x00000020;
     /**
@@ -928,44 +966,44 @@ public class View implements Drawable.Callback {
      * children and should therefore not cancel invalidate requests, even if they
      * lie outside of this view's bounds.
      * <p>
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_DRAW_ANIMATION = 0x00000040;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_SKIP_DRAW = 0x00000080;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_REQUEST_TRANSPARENT_REGIONS = 0x00000200;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_DRAWABLE_STATE_DIRTY = 0x00000400;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_MEASURED_DIMENSION_SET = 0x00000800;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_FORCE_LAYOUT = 0x00001000;
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_LAYOUT_REQUIRED = 0x00002000;
 
     private static final int PFLAG_PRESSED = 0x00004000;
 
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_DRAWING_CACHE_VALID = 0x00008000;
     /**
      * Flag used to indicate that this view should be drawn once more (and only once
      * more) after its animation has completed.
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_ANIMATION_STARTED = 0x00010000;
 
@@ -974,7 +1012,7 @@ public class View implements Drawable.Callback {
     /**
      * Indicates that the View returned true when onSetAlpha() was called and that
      * the alpha must be restored.
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_ALPHA_SET = 0x00040000;
 
@@ -991,35 +1029,35 @@ public class View implements Drawable.Callback {
     /**
      * View flag indicating whether this view was invalidated (fully or partially.)
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG_DIRTY = 0x00200000;
 
     /**
      * Mask for {@link #PFLAG_DIRTY}.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG_DIRTY_MASK = 0x00200000;
 
     /**
      * Indicates whether the background is opaque.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG_OPAQUE_BACKGROUND = 0x00800000;
 
     /**
      * Indicates whether the scrollbars are opaque.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG_OPAQUE_SCROLLBARS = 0x01000000;
 
     /**
      * Indicates whether the view is opaque.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG_OPAQUE_MASK = 0x01800000;
 
@@ -1029,14 +1067,14 @@ public class View implements Drawable.Callback {
      * a 'real' press. Prepressed is used to recognize quick taps
      * even when they are shorter than ViewConfiguration.getTapTimeout().
      *
-     * @hide
+     * @hidden
      */
     private static final int PFLAG_PREPRESSED = 0x02000000;
 
     /**
      * Indicates whether the view is temporarily detached.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG_CANCEL_NEXT_UP_EVENT = 0x04000000;
 
@@ -1046,19 +1084,19 @@ public class View implements Drawable.Callback {
      * PLEASE NOTE: This flag is now unused as we now send onVisibilityChanged
      * during window attachment and it is no longer needed. Feel free to repurpose it.
      *
-     * @hide
+     * @hidden
      */
     private static final int PFLAG_AWAKEN_SCROLL_BARS_ON_ATTACH = 0x08000000;
 
     /**
      * Indicates that the view has received HOVER_ENTER.  Cleared on HOVER_EXIT.
      *
-     * @hide
+     * @hidden
      */
     private static final int PFLAG_HOVERED = 0x10000000;
 
     /**
-     * {@hide}
+     * @hidden
      */
     static final int PFLAG_ACTIVATED = 0x40000000;
 
@@ -1068,7 +1106,7 @@ public class View implements Drawable.Callback {
      * a view's display list (as opposed to just returning a reference to its existing
      * display list).
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG_INVALIDATED = 0x80000000;
 
@@ -1116,7 +1154,7 @@ public class View implements Drawable.Callback {
      * Indicates that this view has reported that it can accept the current drag's content.
      * Cleared when the drag operation concludes.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_DRAG_CAN_ACCEPT = 0x00000001;
 
@@ -1125,7 +1163,7 @@ public class View implements Drawable.Callback {
      * drag-and-drop operation involving content that it can accept.  Cleared when
      * the drag exits the view, or when the drag operation concludes.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_DRAG_HOVERED = 0x00000002;
 
@@ -1183,14 +1221,14 @@ public class View implements Drawable.Callback {
     /**
      * Bit shift to get the horizontal layout direction. (bits after DRAG_HOVERED)
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT = 2;
 
     /**
      * Mask for use with private flags indicating bits used for horizontal layout direction.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_LAYOUT_DIRECTION_MASK = 0x00000003 << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
 
@@ -1198,21 +1236,21 @@ public class View implements Drawable.Callback {
      * Indicates whether the view horizontal layout direction has been resolved and drawn to the
      * right-to-left direction.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL = 4 << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
 
     /**
      * Indicates whether the view horizontal layout direction has been resolved.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_LAYOUT_DIRECTION_RESOLVED = 8 << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
 
     /**
      * Mask for use with private flags indicating bits used for resolved horizontal layout direction.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK = 0x0000000C
             << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
@@ -1220,7 +1258,7 @@ public class View implements Drawable.Callback {
     /*
      * Array of horizontal layout direction flags for mapping attribute "layoutDirection" to correct
      * flag value.
-     * @hide
+     * @hidden
      */
     private static final int[] LAYOUT_DIRECTION_FLAGS = {
             LAYOUT_DIRECTION_LTR,
@@ -1237,7 +1275,7 @@ public class View implements Drawable.Callback {
     /**
      * Default horizontal layout direction.
      *
-     * @hide
+     * @hidden
      */
     static final int LAYOUT_DIRECTION_RESOLVED_DEFAULT = LAYOUT_DIRECTION_LTR;
 
@@ -1297,21 +1335,21 @@ public class View implements Drawable.Callback {
     /**
      * Default resolved text direction
      *
-     * @hide
+     * @hidden
      */
     static final int TEXT_DIRECTION_RESOLVED_DEFAULT = TEXT_DIRECTION_FIRST_STRONG;
 
     /**
      * Bit shift to get the horizontal layout direction. (bits after LAYOUT_DIRECTION_RESOLVED)
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_DIRECTION_MASK_SHIFT = 6;
 
     /**
      * Mask for use with private flags indicating bits used for text direction.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_DIRECTION_MASK = 0x00000007
             << PFLAG2_TEXT_DIRECTION_MASK_SHIFT;
@@ -1320,7 +1358,7 @@ public class View implements Drawable.Callback {
      * Array of text direction flags for mapping attribute "textDirection" to correct
      * flag value.
      *
-     * @hide
+     * @hidden
      */
     private static final int[] PFLAG2_TEXT_DIRECTION_FLAGS = {
             TEXT_DIRECTION_INHERIT << PFLAG2_TEXT_DIRECTION_MASK_SHIFT,
@@ -1336,7 +1374,7 @@ public class View implements Drawable.Callback {
     /**
      * Indicates whether the view text direction has been resolved.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_DIRECTION_RESOLVED = 0x00000008
             << PFLAG2_TEXT_DIRECTION_MASK_SHIFT;
@@ -1344,14 +1382,14 @@ public class View implements Drawable.Callback {
     /**
      * Bit shift to get the horizontal layout direction. (bits after DRAG_HOVERED)
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT = 10;
 
     /**
      * Mask for use with private flags indicating bits used for resolved text direction.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_DIRECTION_RESOLVED_MASK = 0x00000007
             << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT;
@@ -1359,7 +1397,7 @@ public class View implements Drawable.Callback {
     /**
      * Indicates whether the view text direction has been resolved to the "first strong" heuristic.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT =
             TEXT_DIRECTION_RESOLVED_DEFAULT << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT;
@@ -1436,21 +1474,21 @@ public class View implements Drawable.Callback {
     /**
      * Default resolved text alignment
      *
-     * @hide
+     * @hidden
      */
     static final int TEXT_ALIGNMENT_RESOLVED_DEFAULT = TEXT_ALIGNMENT_GRAVITY;
 
     /**
      * Bit shift to get the horizontal layout direction. (bits after DRAG_HOVERED)
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT = 13;
 
     /**
      * Mask for use with private flags indicating bits used for text alignment.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_ALIGNMENT_MASK = 0x00000007 << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT;
 
@@ -1458,7 +1496,7 @@ public class View implements Drawable.Callback {
      * Array of text direction flags for mapping attribute "textAlignment" to correct
      * flag value.
      *
-     * @hide
+     * @hidden
      */
     private static final int[] PFLAG2_TEXT_ALIGNMENT_FLAGS = {
             TEXT_ALIGNMENT_INHERIT << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT,
@@ -1473,21 +1511,21 @@ public class View implements Drawable.Callback {
     /**
      * Indicates whether the view text alignment has been resolved.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_ALIGNMENT_RESOLVED = 0x00000008 << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT;
 
     /**
      * Bit shift to get the resolved text alignment.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT = 17;
 
     /**
      * Mask for use with private flags indicating bits used for text alignment.
      *
-     * @hide
+     * @hidden
      */
     static final int PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK = 0x00000007
             << PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT;
@@ -1926,14 +1964,14 @@ public class View implements Drawable.Callback {
 
     /**
      * The parent this view is attached to.
-     * {@hide}
+     * @hidden
      *
      * @see #getParent()
      */
     ViewParent mParent;
 
     /**
-     * {@hide}
+     * @hidden
      * <p>
      * Not available for general use. If you need help, hang up and then dial one of the following
      * public APIs:
@@ -1970,7 +2008,7 @@ public class View implements Drawable.Callback {
      * The field should not be used directly. Instead {@link #getLayoutParams()} and {@link
      * #setLayoutParams(ViewGroup.LayoutParams)} should be used. The setter guarantees internal
      * state correctness of the class.
-     * {@hide}
+     * @hidden
      */
     ViewGroup.LayoutParams mLayoutParams;
 
@@ -1979,7 +2017,7 @@ public class View implements Drawable.Callback {
      * <p>
      * Use {@link #setTransitionVisibility(int)} to change the visibility of this view without
      * triggering updates.
-     * {@hide}
+     * @hidden
      */
     int mViewFlags;
 
@@ -1990,7 +2028,7 @@ public class View implements Drawable.Callback {
 
     /**
      * The view's identifier.
-     * {@hide}
+     * @hidden
      *
      * @see #setId(int)
      * @see #getId()
@@ -2022,25 +2060,25 @@ public class View implements Drawable.Callback {
     /**
      * The distance in pixels from the left edge of this view's parent
      * to the left edge of this view.
-     * {@hide}
+     * @hidden
      */
     int mLeft;
     /**
      * The distance in pixels from the left edge of this view's parent
      * to the right edge of this view.
-     * {@hide}
+     * @hidden
      */
     int mRight;
     /**
      * The distance in pixels from the top edge of this view's parent
      * to the top edge of this view.
-     * {@hide}
+     * @hidden
      */
     int mTop;
     /**
      * The distance in pixels from the top edge of this view's parent
      * to the bottom edge of this view.
-     * {@hide}
+     * @hidden
      */
     int mBottom;
 
@@ -2049,7 +2087,7 @@ public class View implements Drawable.Callback {
      * horizontally.
      * Please use {@link View#getScrollX()} and {@link View#setScrollX(int)} instead of
      * accessing these directly.
-     * {@hide}
+     * @hidden
      */
     protected int mScrollX;
     /**
@@ -2057,32 +2095,32 @@ public class View implements Drawable.Callback {
      * vertically.
      * Please use {@link View#getScrollY()} and {@link View#setScrollY(int)} instead of
      * accessing these directly.
-     * {@hide}
+     * @hidden
      */
     protected int mScrollY;
 
     /**
      * The final computed left padding in pixels that is used for drawing. This is the distance in
      * pixels between the left edge of this view and the left edge of its content.
-     * {@hide}
+     * @hidden
      */
     protected int mPaddingLeft = 0;
     /**
      * The final computed right padding in pixels that is used for drawing. This is the distance in
      * pixels between the right edge of this view and the right edge of its content.
-     * {@hide}
+     * @hidden
      */
     protected int mPaddingRight = 0;
     /**
      * The final computed top padding in pixels that is used for drawing. This is the distance in
      * pixels between the top edge of this view and the top edge of its content.
-     * {@hide}
+     * @hidden
      */
     protected int mPaddingTop;
     /**
      * The final computed bottom padding in pixels that is used for drawing. This is the distance in
      * pixels between the bottom edge of this view and the bottom edge of its content.
-     * {@hide}
+     * @hidden
      */
     protected int mPaddingBottom;
 
@@ -2094,21 +2132,21 @@ public class View implements Drawable.Callback {
     /**
      * The right padding after RTL resolution, but before taking account of scroll bars.
      *
-     * @hide
+     * @hidden
      */
     int mUserPaddingRight;
 
     /**
      * The resolved bottom padding before taking account of scroll bars.
      *
-     * @hide
+     * @hidden
      */
     int mUserPaddingBottom;
 
     /**
      * The left padding after RTL resolution, but before taking account of scroll bars.
      *
-     * @hide
+     * @hidden
      */
     int mUserPaddingLeft;
 
@@ -2126,7 +2164,7 @@ public class View implements Drawable.Callback {
      * The left padding as set by a setter method, a background's padding.
      * This value is the padding before LTR resolution or taking account of scrollbars.
      *
-     * @hide
+     * @hidden
      */
     int mUserPaddingLeftInitial;
 
@@ -2134,7 +2172,7 @@ public class View implements Drawable.Callback {
      * The right padding as set by a setter method, a background's padding.
      * This value is the padding before LTR resolution or taking account of scrollbars.
      *
-     * @hide
+     * @hidden
      */
     int mUserPaddingRightInitial;
 
@@ -2157,22 +2195,22 @@ public class View implements Drawable.Callback {
 
     /**
      * Width as measured during measure pass.
-     * {@hide}
+     * @hidden
      */
     int mMeasuredWidth;
 
     /**
      * Height as measured during measure pass.
-     * {@hide}
+     * @hidden
      */
     int mMeasuredHeight;
 
     /**
-     * @hide
+     * @hidden
      */
     int mOldWidthMeasureSpec = Integer.MIN_VALUE;
     /**
-     * @hide
+     * @hidden
      */
     int mOldHeightMeasureSpec = Integer.MIN_VALUE;
 
@@ -2382,8 +2420,34 @@ public class View implements Drawable.Callback {
      */
     private HandlerActionQueue mRunQueue;
 
+    private static final String[] STYLEABLE = {
+            R.ns, R.attr.background,
+            R.ns, R.attr.clickable,
+            R.ns, R.attr.contextClickable,
+            R.ns, R.attr.focusable,
+            R.ns, R.attr.focusableInTouchMode,
+            R.ns, R.attr.id,
+            R.ns, R.attr.layoutDirection,
+            R.ns, R.attr.longClickable,
+            R.ns, R.attr.minHeight,
+            R.ns, R.attr.minWidth,
+            R.ns, R.attr.padding,
+            R.ns, R.attr.paddingBottom,
+            R.ns, R.attr.paddingEnd,
+            R.ns, R.attr.paddingLeft,
+            R.ns, R.attr.paddingRight,
+            R.ns, R.attr.paddingStart,
+            R.ns, R.attr.paddingTop,
+            R.ns, R.attr.tag,
+            R.ns, R.attr.textAlignment,
+            R.ns, R.attr.textDirection,
+    };
+
     /**
      * Simple constructor to use when creating a view from code.
+     *
+     * @param context The Context the view is running in, through which it can
+     *                access the current theme, resources, etc.
      */
     public View(Context context) {
         mContext = context;
@@ -2399,6 +2463,301 @@ public class View implements Drawable.Callback {
         setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
         mUserPaddingStart = UNDEFINED_PADDING;
         mUserPaddingEnd = UNDEFINED_PADDING;
+    }
+
+    /**
+     * Constructor that is called when inflating a view from XML. This is called
+     * when a view is being constructed from an XML file, supplying attributes
+     * that were specified in the XML file. This version uses a default style of
+     * 0, so the only attribute values applied are those in the Context's Theme
+     * and the given AttributeSet.
+     *
+     * <p>
+     * The method onFinishInflate() will be called after all children have been
+     * added.
+     *
+     * @param context The Context the view is running in, through which it can
+     *                access the current theme, resources, etc.
+     * @param attrs   The attributes of the XML tag that is inflating the view.
+     * @see #View(Context, AttributeSet, ResourceId)
+     */
+    public View(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    /**
+     * Perform inflation from XML and apply a class-specific base style from a
+     * theme attribute. This constructor of View allows subclasses to use their
+     * own base style when they are inflating. For example, a Button class's
+     * constructor would call this version of the super class constructor and
+     * supply <code>R.attr.buttonStyle</code> for <var>defStyleAttr</var>; this
+     * allows the theme's button style to modify all of the base view attributes
+     * (in particular its background) as well as the Button class's attributes.
+     *
+     * @param context      The Context the view is running in, through which it can
+     *                     access the current theme, resources, etc.
+     * @param attrs        The attributes of the XML tag that is inflating the view.
+     * @param defStyleAttr An attribute in the current theme that contains a
+     *                     reference to a style resource that supplies default values for
+     *                     the view. Can be null to not look for defaults.
+     * @see #View(Context, AttributeSet, ResourceId, ResourceId)
+     */
+    public View(Context context, @Nullable AttributeSet attrs,
+                @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    /**
+     * Perform inflation from XML and apply a class-specific base style from a
+     * theme attribute or style resource. This constructor of View allows
+     * subclasses to use their own base style when they are inflating.
+     * <p>
+     * When determining the final value of a particular attribute, there are
+     * four inputs that come into play:
+     * <ol>
+     * <li>Any attribute values in the given AttributeSet.
+     * <li>The style resource specified in the AttributeSet (named "style").
+     * <li>The default style specified by <var>defStyleAttr</var>.
+     * <li>The default style specified by <var>defStyleRes</var>.
+     * <li>The base values in this theme.
+     * </ol>
+     * <p>
+     * Each of these inputs is considered in-order, with the first listed taking
+     * precedence over the following ones. In other words, if in the
+     * AttributeSet you have supplied <code>&lt;Button * textColor="#ff000000"&gt;</code>
+     * , then the button's text will <em>always</em> be black, regardless of
+     * what is specified in any of the styles.
+     *
+     * @param context      The Context the view is running in, through which it can
+     *                     access the current theme, resources, etc.
+     * @param attrs        The attributes of the XML tag that is inflating the view.
+     * @param defStyleAttr An attribute in the current theme that contains a
+     *                     reference to a style resource that supplies default values for
+     *                     the view. Can be null to not look for defaults.
+     * @param defStyleRes  A resource identifier of a style resource that
+     *                     supplies default values for the view, used only if
+     *                     defStyleAttr is null or can not be found in the theme. Can be null
+     *                     to not look for defaults.
+     * @see #View(Context, AttributeSet, ResourceId)
+     */
+    public View(Context context, @Nullable AttributeSet attrs,
+                @Nullable @AttrRes ResourceId defStyleAttr,
+                @Nullable @StyleRes ResourceId defStyleRes) {
+        this(context);
+
+        if (attrs == null && defStyleAttr == null && defStyleRes == null) {
+            // there is a hard requirement that the attributes of the base View class
+            // should not depend on the Theme, so we can return here.
+            return;
+        }
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+
+        Drawable background = null;
+
+        int leftPadding = -1;
+        int topPadding = -1;
+        int rightPadding = -1;
+        int bottomPadding = -1;
+        int startPadding = UNDEFINED_PADDING;
+        int endPadding = UNDEFINED_PADDING;
+
+        int padding = -1;
+
+        int viewFlagValues = 0;
+        int viewFlagMasks = 0;
+
+        boolean startPaddingDefined = false;
+        boolean endPaddingDefined = false;
+        boolean leftPaddingDefined = false;
+        boolean rightPaddingDefined = false;
+
+        // Set default values.
+        viewFlagValues |= FOCUSABLE_AUTO;
+        viewFlagMasks |= FOCUSABLE_AUTO;
+
+        final int N = a.getIndexCount();
+        for (int i = 0; i < N; i++) {
+            int attr = a.getIndex(i);
+            switch (attr) {
+                case 0:
+                    background = a.getDrawable(attr);
+                    break;
+                case 1:
+                    if (a.getBoolean(attr, false)) {
+                        viewFlagValues |= CLICKABLE;
+                        viewFlagMasks |= CLICKABLE;
+                    }
+                    break;
+                case 2:
+                    if (a.getBoolean(attr, false)) {
+                        viewFlagValues |= CONTEXT_CLICKABLE;
+                        viewFlagMasks |= CONTEXT_CLICKABLE;
+                    }
+                    break;
+                case 3: {
+                    TypedValue val = a.peekValue(attr);
+                    int focusable;
+                    if (val != null) {
+                        if (val.type == TypedValue.TYPE_INT_BOOLEAN) {
+                            focusable = (val.data == 0 ? NOT_FOCUSABLE : FOCUSABLE);
+                        } else {
+                            focusable = val.data;
+                        }
+                    } else {
+                        focusable = FOCUSABLE_AUTO;
+                    }
+                    viewFlagValues = (viewFlagValues & ~FOCUSABLE_MASK) | focusable;
+                    if ((viewFlagValues & FOCUSABLE_AUTO) == 0) {
+                        viewFlagMasks |= FOCUSABLE_MASK;
+                    }
+                    break;
+                }
+                case 4:
+                    if (a.getBoolean(attr, false)) {
+                        // unset auto focus since focusableInTouchMode implies explicit focusable
+                        viewFlagValues &= ~FOCUSABLE_AUTO;
+                        viewFlagValues |= FOCUSABLE_IN_TOUCH_MODE | FOCUSABLE;
+                        viewFlagMasks |= FOCUSABLE_IN_TOUCH_MODE | FOCUSABLE_MASK;
+                    }
+                    break;
+                case 5:
+                    mID = a.getInteger(attr, NO_ID);
+                    break;
+                case 6:
+                    // Clear any layout direction flags (included resolved bits) already set
+                    mPrivateFlags2 &=
+                            ~(PFLAG2_LAYOUT_DIRECTION_MASK | PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK);
+                    // Set the layout direction flags depending on the value of the attribute
+                    final int layoutDirection = a.getInt(attr, -1);
+                    final int value = (layoutDirection != -1) ?
+                            LAYOUT_DIRECTION_FLAGS[layoutDirection] : LAYOUT_DIRECTION_DEFAULT;
+                    mPrivateFlags2 |= (value << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT);
+                    break;
+                case 7:
+                    if (a.getBoolean(attr, false)) {
+                        viewFlagValues |= LONG_CLICKABLE;
+                        viewFlagMasks |= LONG_CLICKABLE;
+                    }
+                    break;
+                case 8:
+                    mMinHeight = a.getDimensionPixelSize(attr, 0);
+                    break;
+                case 9:
+                    mMinWidth = a.getDimensionPixelSize(attr, 0);
+                    break;
+                case 10:
+                    padding = a.getDimensionPixelSize(attr, -1);
+                    mUserPaddingLeftInitial = padding;
+                    mUserPaddingRightInitial = padding;
+                    leftPaddingDefined = true;
+                    rightPaddingDefined = true;
+                    break;
+                case 11:
+                    bottomPadding = a.getDimensionPixelSize(attr, -1);
+                    break;
+                case 12:
+                    endPadding = a.getDimensionPixelSize(attr, UNDEFINED_PADDING);
+                    endPaddingDefined = (endPadding != UNDEFINED_PADDING);
+                    break;
+                case 13:
+                    leftPadding = a.getDimensionPixelSize(attr, -1);
+                    mUserPaddingLeftInitial = leftPadding;
+                    leftPaddingDefined = true;
+                    break;
+                case 14:
+                    rightPadding = a.getDimensionPixelSize(attr, -1);
+                    mUserPaddingRightInitial = rightPadding;
+                    rightPaddingDefined = true;
+                    break;
+                case 15:
+                    startPadding = a.getDimensionPixelSize(attr, UNDEFINED_PADDING);
+                    startPaddingDefined = (startPadding != UNDEFINED_PADDING);
+                    break;
+                case 16:
+                    topPadding = a.getDimensionPixelSize(attr, -1);
+                    break;
+                /*case 17:
+                    mTag = a.getText(attr);
+                    break;*/
+                case 18:
+                    // Clear any text alignment flag already set
+                    mPrivateFlags2 &= ~PFLAG2_TEXT_ALIGNMENT_MASK;
+                    // Set the text alignment flag depending on the value of the attribute
+                    final int textAlignment = a.getInt(attr, TEXT_ALIGNMENT_DEFAULT);
+                    mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_FLAGS[textAlignment];
+                    break;
+                case 19:
+                    // Clear any text direction flag already set
+                    mPrivateFlags2 &= ~PFLAG2_TEXT_DIRECTION_MASK;
+                    // Set the text direction flags depending on the value of the attribute
+                    final int textDirection = a.getInt(attr, -1);
+                    if (textDirection != -1) {
+                        mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_FLAGS[textDirection];
+                    }
+                    break;
+            }
+        }
+
+        // Cache start/end user padding as we cannot fully resolve padding here (we don't have yet
+        // the resolved layout direction). Those cached values will be used later during padding
+        // resolution.
+        mUserPaddingStart = startPadding;
+        mUserPaddingEnd = endPadding;
+
+        if (background != null) {
+            setBackground(background);
+        }
+
+        // setBackground above will record that padding is currently provided by the background.
+        // If we have padding specified via xml, record that here instead and use it.
+        mLeftPaddingDefined = leftPaddingDefined;
+        mRightPaddingDefined = rightPaddingDefined;
+
+        // Valid padding beats everything.
+        if (padding >= 0) {
+            leftPadding = padding;
+            topPadding = padding;
+            rightPadding = padding;
+            bottomPadding = padding;
+            mUserPaddingLeftInitial = padding;
+            mUserPaddingRightInitial = padding;
+        }
+
+        if (!ModernUI.getInstance().hasRtlSupport()) {
+            if (!mLeftPaddingDefined && startPaddingDefined) {
+                leftPadding = startPadding;
+            }
+            mUserPaddingLeftInitial = (leftPadding >= 0) ? leftPadding : mUserPaddingLeftInitial;
+            if (!mRightPaddingDefined && endPaddingDefined) {
+                rightPadding = endPadding;
+            }
+            mUserPaddingRightInitial = (rightPadding >= 0) ? rightPadding : mUserPaddingRightInitial;
+        } else {
+            final boolean hasRelativePadding = startPaddingDefined || endPaddingDefined;
+
+            if (mLeftPaddingDefined && !hasRelativePadding) {
+                mUserPaddingLeftInitial = leftPadding;
+            }
+            if (mRightPaddingDefined && !hasRelativePadding) {
+                mUserPaddingRightInitial = rightPadding;
+            }
+        }
+
+        // mPaddingTop and mPaddingBottom may have been set by setBackground(Drawable) so must pass
+        // them on if topPadding or bottomPadding are not valid.
+        internalSetPadding(
+                mUserPaddingLeftInitial,
+                topPadding >= 0 ? topPadding : mPaddingTop,
+                mUserPaddingRightInitial,
+                bottomPadding >= 0 ? bottomPadding : mPaddingBottom);
+
+        if (viewFlagMasks != 0) {
+            setFlags(viewFlagValues, viewFlagMasks);
+        }
+
+        a.recycle();
     }
 
     /**
