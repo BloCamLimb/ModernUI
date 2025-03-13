@@ -402,12 +402,25 @@ public class TypedValue {
     }
 
     /**
+     * Return the complex unit type for this value. For example, a dimen type
+     * with value 12sp will return {@link #COMPLEX_UNIT_SP}. Only use for values
+     * whose type is {@link #TYPE_DIMENSION}.
+     *
+     * @return The complex unit type.
+     */
+    @TypedValue.ComplexDimensionUnit
+    public int getComplexUnit() {
+        return getUnitFromComplexDimension(data);
+    }
+
+    /**
      * Return the complex unit type for the given complex dimension. For example, a dimen type
      * with value 12sp will return {@link #COMPLEX_UNIT_SP}. Use with values created with {@link
      * #createComplexDimension(int, int)} etc.
      *
      * @return The complex unit type.
      */
+    @TypedValue.ComplexDimensionUnit
     public static int getUnitFromComplexDimension(int complexDimension) {
         return COMPLEX_UNIT_MASK & (complexDimension >> TypedValue.COMPLEX_UNIT_SHIFT);
     }

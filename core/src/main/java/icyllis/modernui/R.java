@@ -91,6 +91,34 @@ public final class R {
         public static final int state_empty =0x010100a9;
         public static final int state_checkable = 0x0101009f;
 
+        public static final String id = "id";
+        public static final String tag = "tag";
+        public static final String scrollX = "scrollX";
+        public static final String scrollY = "scrollY";
+        public static final String background = "background";
+        public static final String padding = "padding";
+        public static final String paddingLeft = "paddingLeft";
+        public static final String paddingTop = "paddingTop";
+        public static final String paddingRight = "paddingRight";
+        public static final String paddingBottom = "paddingBottom";
+        public static final String focusable = "focusable";
+        public static final String focusableInTouchMode = "focusableInTouchMode";
+        public static final String visibility = "visibility";
+        public static final String clickable = "clickable";
+        public static final String longClickable = "longClickable";
+        public static final String contextClickable = "contextClickable";
+
+        public static final String minWidth = "minWidth";
+        public static final String minHeight = "minHeight";
+        public static final String maxWidth = "maxWidth";
+        public static final String maxHeight = "maxHeight";
+
+        public static final String textDirection = "textDirection";
+        public static final String textAlignment = "textAlignment";
+        public static final String layoutDirection = "layoutDirection";
+        public static final String paddingStart = "paddingStart";
+        public static final String paddingEnd = "paddingEnd";
+
         public static final String textAppearance = "textAppearance";
         public static final String textAppearanceInverse = "textAppearanceInverse";
         public static final String textColorPrimary = "textColorPrimary";
@@ -287,6 +315,8 @@ public final class R {
         public static final ResourceId TextAppearance_Material3_LabelLarge = new ResourceId(ns, type, "TextAppearance.Material3.LabelLarge");
         public static final ResourceId TextAppearance_Material3_LabelMedium = new ResourceId(ns, type, "TextAppearance.Material3.LabelMedium");
         public static final ResourceId TextAppearance_Material3_LabelSmall = new ResourceId(ns, type, "TextAppearance.Material3.LabelSmall");
+
+        public static final ResourceId Widget_Material3_Button_TextButton = new ResourceId(ns, type, "Widget.Material3.Button.TextButton");
     }
 
     static {

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -553,6 +554,45 @@ public class TypedArray {
     }
 
     /**
+     * Retrieves the resource identifier for the attribute at
+     * <var>index</var>.  Note that attribute resource as resolved when
+     * the overall {@link TypedArray} object is retrieved.  As a
+     * result, this function will return the resource identifier of the
+     * final resource value that was found, <em>not</em> necessarily the
+     * original resource that was specified by the attribute.
+     *
+     * @param index Index of attribute to retrieve.
+     *
+     * @return Attribute resource identifier, or defValue if not defined.
+     * @throws RuntimeException if the TypedArray has already been recycled.
+     */
+    @Nullable
+    @AnyRes
+    public ResourceId getResourceId(@StyleableRes int index) {
+        if (mRecycled) {
+            throw new RuntimeException("Cannot make calls to a recycled instance!");
+        }
+
+        index *= STYLE_NUM_ENTRIES;
+        final int[] data = mData;
+        final int type = data[index + STYLE_TYPE];
+        switch (type & ResourceTypes.Res_value.TYPE_MASK) {
+            case TypedValue.TYPE_REFERENCE -> {
+                int typeId = type >>> ResourceTypes.Res_value.TYPE_ID_SHIFT;
+                if (typeId != 0) {
+                    return mResources.getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
+                } else {
+                    return null;
+                }
+            }
+            case TypedValue.TYPE_ATTRIBUTE -> {
+                return mResources.getAttributeIdForCookie(data[index + STYLE_COOKIE], data[index + STYLE_DATA]);
+            }
+        }
+        return null;
+    }
+
+    /**
      * Retrieve the Drawable for the attribute at <var>index</var>.
      * <p>
      * This method will throw an exception if the attribute is defined but is
@@ -664,6 +704,31 @@ public class TypedArray {
     }
 
     /**
+     * Retrieve the raw TypedValue for the attribute at <var>index</var>
+     * and return a temporary object holding its data.  This object is only
+     * valid until the next call on to {@link TypedArray}.
+     *
+     * @param index Index of attribute to retrieve.
+     *
+     * @return Returns a TypedValue object if the attribute is defined,
+     *         containing its data; otherwise returns null.  (You will not
+     *         receive a TypedValue whose type is TYPE_NULL.)
+     * @throws RuntimeException if the TypedArray has already been recycled.
+     */
+    @Nullable
+    public TypedValue peekValue(@StyleableRes int index) {
+        if (mRecycled) {
+            throw new RuntimeException("Cannot make calls to a recycled instance!");
+        }
+
+        final TypedValue value = mValue;
+        if (getValueAt(index * STYLE_NUM_ENTRIES, value)) {
+            return value;
+        }
+        return null;
+    }
+
+    /**
      * Recycles the TypedArray, to be re-used by a later caller. After calling
      * this function you must not ever touch the typed array again.
      *
@@ -693,7 +758,24 @@ public class TypedArray {
         outValue.data = data[offset + STYLE_DATA];
         outValue.cookie = data[offset + STYLE_COOKIE];
         outValue.flags = data[offset + STYLE_FLAGS];
-        outValue.object = (type == TypedValue.TYPE_STRING) ? loadStringValueAt(offset) : null;
+        switch (type & ResourceTypes.Res_value.TYPE_MASK) {
+            case TypedValue.TYPE_STRING -> {
+                outValue.object = loadStringValueAt(offset);
+            }
+            case TypedValue.TYPE_REFERENCE -> {
+                int typeId = type >>> ResourceTypes.Res_value.TYPE_ID_SHIFT;
+                if (typeId != 0) {
+                    outValue.type = TypedValue.TYPE_REFERENCE;
+                    outValue.object = mResources.getReferenceIdForCookie(outValue.cookie, typeId, outValue.data);
+                } else {
+                    outValue.object = null;
+                }
+            }
+            case TypedValue.TYPE_ATTRIBUTE -> {
+                outValue.object = mResources.getAttributeIdForCookie(outValue.cookie, outValue.data);
+            }
+            default -> outValue.object = null;
+        }
         return true;
     }
 
