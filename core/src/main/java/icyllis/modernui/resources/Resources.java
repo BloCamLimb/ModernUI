@@ -125,7 +125,11 @@ public class Resources {
         return mMetrics;
     }
 
-    public void getValue(@NonNull CharSequence namespace, @NonNull CharSequence typeName,
+    public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue, boolean resolveRefs) {
+        getValue(id.namespace(), id.type(), id.entry(), outValue, resolveRefs);
+    }
+
+    void getValue(@NonNull CharSequence namespace, @NonNull CharSequence typeName,
                          @NonNull CharSequence entryName, @NonNull TypedValue outValue, boolean resolveRefs) {
 
     }
@@ -184,6 +188,20 @@ public class Resources {
         return null;
     }
 
+    @NonNull
+    public ColorStateList getColorStateList(@NonNull ResourceId id,
+                                            @Nullable Theme theme) {
+        final TypedValue value = new TypedValue();
+        getValue(id, value, true);
+        return loadColorStateList(value, id, theme);
+    }
+
+    @NonNull
+    public ColorStateList loadColorStateList(@NonNull TypedValue value,
+                                             @Nullable Theme theme) {
+        return loadColorStateList(value, null, theme);
+    }
+
     @SuppressWarnings("unchecked")
     ColorStateList loadColorStateList(@NonNull TypedValue value,
                                       @Nullable ResourceId id,
@@ -198,9 +216,6 @@ public class Resources {
             Object object = mGlobalObjects[value.data];
             if (object instanceof BiFunction<?, ?, ?>) {
                 object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
-                if (object == null) {
-                    return null;
-                }
                 if (object instanceof ColorStateList) {
                     return (ColorStateList) object;
                 }
@@ -461,7 +476,7 @@ public class Resources {
                 } else if (!isUndefined) {
                     Entry entry = new Entry();
                     entry.set(bag, i);
-                    newEntries.computeIfAbsent(namespace, __ -> new Object2ObjectOpenHashMap<>())
+                    newEntries.computeIfAbsent(namespace, Theme::newHashMap)
                             .put(attribute, entry);
                 }
             }
@@ -471,12 +486,16 @@ public class Resources {
             } else {
                 for (var it = newEntries.object2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
                     var group = it.next();
-                    mEntries.computeIfAbsent(group.getKey(), __ -> new Object2ObjectOpenHashMap<>())
+                    mEntries.computeIfAbsent(group.getKey(), Theme::newHashMap)
                             .putAll(group.getValue());
                 }
             }
 
             return true;
+        }
+
+        private static <K, V, X> Object2ObjectOpenHashMap<K, V> newHashMap(X __) {
+            return new Object2ObjectOpenHashMap<>();
         }
 
         /**
