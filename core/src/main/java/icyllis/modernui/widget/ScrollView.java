@@ -134,8 +134,8 @@ public class ScrollView extends FrameLayout {
     public ScrollView(Context context) {
         super(context);
         mScroller = new OverScroller();
-        mEdgeGlowTop = new EdgeEffect();
-        mEdgeGlowBottom = new EdgeEffect();
+        mEdgeGlowTop = new EdgeEffect(context);
+        mEdgeGlowBottom = new EdgeEffect(context);
         setFocusable(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);

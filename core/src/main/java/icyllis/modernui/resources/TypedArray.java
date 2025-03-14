@@ -268,7 +268,7 @@ public class TypedArray {
             final TypedValue value = mValue;
             if (getValueAt(index, value)) {
                 final ColorStateList csl = mResources.loadColorStateList(
-                        value, null, mTheme);
+                        value, mTheme);
                 return csl.getDefaultColor();
             }
             return defValue;
@@ -315,7 +315,7 @@ public class TypedArray {
                         "Failed to resolve attribute at index " + index + ": " + value
                                 + ", theme=" + mTheme);
             }
-            return mResources.loadColorStateList(value, null, mTheme);
+            return mResources.loadColorStateList(value, mTheme);
         }
         return null;
     }

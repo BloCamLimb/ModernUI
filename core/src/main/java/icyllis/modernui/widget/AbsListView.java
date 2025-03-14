@@ -645,8 +645,8 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
 
     public AbsListView(Context context) {
         super(context);
-        mEdgeGlowBottom = new EdgeEffect();
-        mEdgeGlowTop = new EdgeEffect();
+        mEdgeGlowBottom = new EdgeEffect(context);
+        mEdgeGlowTop = new EdgeEffect(context);
         // Setting focusable in touch mode will set the focusable property to true
         setClickable(true);
         setFocusableInTouchMode(true);

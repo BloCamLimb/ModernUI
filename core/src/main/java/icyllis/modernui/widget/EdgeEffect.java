@@ -18,12 +18,14 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
@@ -111,11 +113,19 @@ public class EdgeEffect {
     private float mDisplacement = 0.5f;
     private float mTargetDisplacement = 0.5f;
 
+    private static final String[] STYLEABLE = {
+            R.ns, R.attr.colorEdgeEffect
+    };
+
     /**
      * Construct a new EdgeEffect with a theme appropriate for the provided context.
      */
-    public EdgeEffect() {
-        int themeColor = SystemTheme.currentTheme().colorPrimary;
+    public EdgeEffect(Context context) {
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                STYLEABLE);
+        final int themeColor = a.getColor(0, 0xff666666);
+        a.recycle();
+
         mPaint.setColor((themeColor & 0xffffff) | 0x33000000);
         mPaint.setStyle(Paint.FILL);
         mPaint.setBlendMode(DEFAULT_BLEND_MODE);

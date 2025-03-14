@@ -102,7 +102,7 @@ public class SystemTheme {
     }
 
     static {
-        setToDefaultDark();
+        setToMaterialDark();
     }
 
     public int

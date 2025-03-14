@@ -133,8 +133,8 @@ public class HorizontalScrollView extends FrameLayout {
     public HorizontalScrollView(Context context) {
         super(context);
         mScroller = new OverScroller();
-        mEdgeGlowLeft = new EdgeEffect();
-        mEdgeGlowRight = new EdgeEffect();
+        mEdgeGlowLeft = new EdgeEffect(context);
+        mEdgeGlowRight = new EdgeEffect(context);
         setFocusable(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);
