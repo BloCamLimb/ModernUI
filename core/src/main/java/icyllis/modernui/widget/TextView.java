@@ -27,6 +27,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Px;
 import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
@@ -38,7 +39,7 @@ import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.ResourceUtils;
-import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TextAppearance;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.text.*;
@@ -257,6 +258,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     private Editor mEditor;
 
+    @StyleableRes
     private static final String[] STYLEABLE = {
             /*0*/ R.ns, R.attr.maxWidth,
             /*1*/ R.ns, R.attr.minHeight,
@@ -270,6 +272,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             /*9*/ R.ns, R.attr.textSize,
             /*10*/R.ns, R.attr.textStyle,
     };
+
+    @AttrRes
+    private static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.textViewStyle);
 
     // Maps styleable attributes that exist both in TextView style and TextAppearance.
     private static final Int2IntOpenHashMap sAppearanceValues;
@@ -294,10 +300,38 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         sAppearanceValues = values;
     }
 
+    /**
+     * Simple constructor to use when creating a text view from code.
+     *
+     * @param context The Context the view is running in, through which it can
+     *                access the current theme, resources, etc.
+     */
     public TextView(Context context) {
+        // The default style is always like this, with only 4 kinds of colors
+        // and a font size of 16sp. It does not depend on other values
+        // in the Theme, so we can call the single-parameter constructor of View.
         super(context);
         setTextSize(16);
-        setTextColor(SystemTheme.currentTheme().textColorPrimary);
+
+        final Resources.Theme theme = context.getTheme();
+        final TypedValue value = new TypedValue();
+        if (theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true))
+            setTextColor(theme.getResources().loadColorStateList(value, theme));
+        if (theme.resolveAttribute(R.ns, R.attr.textColorHint, value, true))
+            setHintTextColor(theme.getResources().loadColorStateList(value, theme));
+        if (theme.resolveAttribute(R.ns, R.attr.textColorHighlight, value, true))
+            setHighlightColor(value.data);
+        if (theme.resolveAttribute(R.ns, R.attr.textColorLink, value, true))
+            setLinkTextColor(theme.getResources().loadColorStateList(value, theme));
+    }
+
+    public TextView(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, DEF_STYLE_ATTR);
+    }
+
+    public TextView(Context context, @Nullable AttributeSet attrs,
+                    @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
     }
 
     public TextView(Context context, @Nullable AttributeSet attrs,
@@ -1119,6 +1153,35 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public int getLastBaselineToBottomHeight() {
         return getPaddingBottom() + getPaint().getFontMetricsInt().descent;
+    }
+
+    /**
+     * Sets the text appearance from the specified style resource.
+     * <p>
+     * Use a framework-defined {@code TextAppearance} style like
+     * {@link R.style#TextAppearance_Material3_BodyMedium @modernui:style/TextAppearance.Material3.BodyMedium}
+     * or see {@link TextAppearance} for the
+     * set of attributes that can be used in a custom style.
+     *
+     * @param resId the resource identifier of the style to apply
+     */
+    public void setTextAppearance(@StyleRes ResourceId resId) {
+        if (resId != null) {
+            TextAppearance textAppearance = new TextAppearance(getContext(), resId);
+            applyTextAppearance(textAppearance);
+        }
+    }
+
+    /**
+     * Sets the text appearance. The non-default attribute values in TextAppearance
+     * will be applied to this TextView.
+     *
+     * @param textAppearance the text appearance to apply
+     */
+    public void setTextAppearance(TextAppearance textAppearance) {
+        if (textAppearance != null) {
+            applyTextAppearance(textAppearance);
+        }
     }
 
     private void applyTextAppearance(@NonNull TextAppearance attributes) {

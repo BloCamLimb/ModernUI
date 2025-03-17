@@ -556,6 +556,13 @@ public class SystemTheme {
             style.addReference(R.attr.textAppearanceLabelSmall, R.style.TextAppearance_Material3_LabelSmall);
 
             style.addAttribute(R.attr.colorEdgeEffect, R.attr.colorPrimary);
+
+            style.addAttribute(R.attr.colorControlNormal, R.attr.textColorSecondary);
+            style.addAttribute(R.attr.colorControlActivated, R.attr.colorAccent);
+            style.addColor(R.attr.colorControlHighlight, 0x33ffffff);
+            style.addColor(R.attr.colorButtonNormal, 0xff5a595b);
+
+            style.addColor(R.attr.colorAccent, 0xFFD9E2FF);
         }
     }
 
@@ -609,10 +616,13 @@ public class SystemTheme {
         style.addColor(R.attr.colorOnErrorContainer, t.colorOnErrorContainer);
 
         style.addColor(R.attr.textColorPrimary, (resources, theme) -> t.textColorPrimary);
+        style.addColor(R.attr.textColorPrimaryInverse, (resources, theme) -> t.textColorPrimaryInverse);
+        style.addColor(R.attr.textColorSecondary, (resources, theme) -> t.textColorSecondary);
+        style.addColor(R.attr.textColorSecondaryInverse, (resources, theme) -> t.textColorSecondaryInverse);
+        style.addColor(R.attr.textColorPrimaryDisableOnly, (resources, theme) -> t.textColorPrimaryDisableOnly);
         style.addColor(R.attr.textColorHighlight, t.textColorHighlight);
         style.addColor(R.attr.textColorHint, (resources, theme) -> t.textColorHint);
         style.addColor(R.attr.textColorLink, (resources, theme) -> t.textColorLink);
-        style.addColor(R.attr.textColorSecondary, (resources, theme) -> t.textColorSecondary);
     }
 
     private static void addStylesToResources(SystemResourcesBuilder b) {

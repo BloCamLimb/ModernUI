@@ -18,11 +18,13 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.*;
 
 import java.util.List;
@@ -146,17 +148,24 @@ public class HorizontalScrollView extends FrameLayout {
         mOverflingDistance = configuration.getScaledOverflingDistance();
         mHorizontalScrollFactor = configuration.getScaledHorizontalScrollFactor();
 
+        ColorStateList tint = null;
+        final TypedValue value = new TypedValue();
+        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorControlNormal, value, true)) {
+            tint = context.getResources().loadColorStateList(value, context.getTheme());
+        }
         setHorizontalScrollBarEnabled(true);
         ShapeDrawable thumb = new ShapeDrawable();
         thumb.setShape(ShapeDrawable.HLINE);
-        thumb.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.currentTheme().colorOnSurfaceVariant, 0.25f));
+        thumb.setStroke(dp(4), 0x84ffffff);
         thumb.setCornerRadius(1);
+        thumb.setTintList(tint);
         setHorizontalScrollbarThumbDrawable(thumb);
         ShapeDrawable track = new ShapeDrawable();
         track.setShape(ShapeDrawable.HLINE);
-        track.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.currentTheme().colorOnSurfaceVariant, 0.25f));
+        track.setStroke(dp(4), 0x39ffffff);
         track.setSize(dp(4), -1);
         track.setCornerRadius(1);
+        track.setTintList(tint);
         setHorizontalScrollbarTrackDrawable(track);
     }
 
