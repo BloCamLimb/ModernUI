@@ -138,6 +138,11 @@ public final class R {
         public static final String textAppearanceMediumInverse = "textAppearanceMediumInverse";
         public static final String textAppearanceSmallInverse = "textAppearanceSmallInverse";
 
+        public static final String colorControlNormal = "colorControlNormal";
+        public static final String colorControlActivated = "colorControlActivated";
+        public static final String colorButtonNormal = "colorButtonNormal";
+        public static final String colorControlHighlight = "colorControlHighlight";
+        public static final String colorAccent = "colorAccent";
         public static final String colorEdgeEffect = "colorEdgeEffect";
 
         public static final String colorPrimary = "colorPrimary";
@@ -186,6 +191,32 @@ public final class R {
         public static final String colorOnError = "colorOnError";
         public static final String colorErrorContainer = "colorErrorContainer";
         public static final String colorOnErrorContainer = "colorOnErrorContainer";
+
+        public static final String absListViewStyle = "absListViewStyle";
+        public static final String autoCompleteTextViewStyle = "autoCompleteTextViewStyle";
+        public static final String buttonStyle = "buttonStyle";
+        public static final String checkboxStyle = "checkboxStyle";
+        public static final String dropDownListViewStyle = "dropDownListViewStyle";
+        public static final String editTextStyle = "editTextStyle";
+        public static final String expandableListViewStyle = "expandableListViewStyle";
+        public static final String gridViewStyle = "gridViewStyle";
+        public static final String imageButtonStyle = "imageButtonStyle";
+        public static final String listViewStyle = "listViewStyle";
+        public static final String popupWindowStyle = "popupWindowStyle";
+        public static final String progressBarStyle = "progressBarStyle";
+        public static final String progressBarStyleHorizontal = "progressBarStyleHorizontal";
+        public static final String progressBarStyleSmall = "progressBarStyleSmall";
+        public static final String progressBarStyleLarge = "progressBarStyleLarge";
+        public static final String seekBarStyle = "seekBarStyle";
+        public static final String radioButtonStyle = "radioButtonStyle";
+        public static final String scrollbarStyle = "scrollbarStyle";
+        public static final String scrollViewStyle = "scrollViewStyle";
+        public static final String spinnerStyle = "spinnerStyle";
+        public static final String textViewStyle = "textViewStyle";
+        public static final String dropDownItemStyle = "dropDownItemStyle";
+        public static final String spinnerDropDownItemStyle = "spinnerDropDownItemStyle";
+        public static final String dropDownHintAppearance = "dropDownHintAppearance";
+        public static final String spinnerItemStyle = "spinnerItemStyle";
 
         public static final String textSize = "textSize";
         public static final String textStyle = "textStyle";

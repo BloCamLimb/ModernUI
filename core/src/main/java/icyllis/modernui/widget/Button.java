@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
@@ -58,11 +59,31 @@ import icyllis.modernui.view.Gravity;
  */
 public class Button extends TextView {
 
+    @AttrRes
+    private static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.buttonStyle);
+
+    /**
+     * Simple constructor to use when creating a button from code.
+     *
+     * @param context The Context the Button is running in, through which it can
+     *                access the current theme, resources, etc.
+     * @see #Button(Context, AttributeSet)
+     */
     public Button(Context context) {
         super(context);
         setFocusable(true);
         setClickable(true);
         setGravity(Gravity.CENTER);
+    }
+
+    public Button(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, DEF_STYLE_ATTR);
+    }
+
+    public Button(Context context, @Nullable AttributeSet attrs,
+                  @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
     }
 
     public Button(Context context, @Nullable AttributeSet attrs,

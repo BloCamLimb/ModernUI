@@ -18,13 +18,13 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
@@ -218,10 +218,15 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
         MenuPopupWindow popupWindow = new MenuPopupWindow(
                 mContext);
 
+        // from m3_popupmenu_background_overlay
         //TODO Added by ModernUI, use Resources in the future
         var background = new ShapeDrawable();
         background.setShape(ShapeDrawable.RECTANGLE);
-        background.setColor(SystemTheme.currentTheme().colorSurfaceContainer);
+        TypedValue value = new TypedValue();
+        mContext.getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainer,
+                value, true);
+        assert value.isColorType();
+        background.setColor(value.data);
         float cornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
                 4, mContext.getResources().getDisplayMetrics());
         background.setCornerRadius(cornerRadius);

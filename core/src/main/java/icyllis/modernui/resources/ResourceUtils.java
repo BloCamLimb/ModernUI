@@ -76,17 +76,18 @@ public class ResourceUtils {
     }
 
     /**
-     * Find the index of the attribute in the styleable.
+     * Find the index of the attribute in the sorted keys (namespace=>attribute pairs).
      * Returns -1 if not found.
      */
-    public static int indexOfAttribute(@NonNull @StyleableRes String[] styleable,
+    public static int indexOfAttribute(@NonNull String[] keys,
                                        @NonNull String namespace, @NonNull String attribute) {
+        assert (keys.length & 1) == 0;
         int low = 0;
-        int high = (styleable.length>>1)-1;
+        int high = (keys.length >> 1) - 1;
 
         while (low <= high) {
             int mid = (low + high) >>> 1;
-            int cmp = ResourceId.comparePair(styleable[mid<<1], styleable[(mid<<1)+1],
+            int cmp = ResourceId.comparePair(keys[mid << 1], keys[(mid << 1) + 1],
                     namespace, attribute);
             if (cmp < 0)
                 low = mid + 1;

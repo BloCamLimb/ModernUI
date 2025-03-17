@@ -18,10 +18,10 @@
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
@@ -120,11 +120,16 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
 
         mAnchorView = anchorView;
 
+        // from m3_popupmenu_background_overlay
         //TODO Added by ModernUI, use Resources in the future
         mPopup = new MenuPopupWindow(context);
         var background = new ShapeDrawable();
         background.setShape(ShapeDrawable.RECTANGLE);
-        background.setColor(SystemTheme.currentTheme().colorSurfaceContainer);
+        TypedValue value = new TypedValue();
+        mContext.getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainer,
+                value, true);
+        assert value.isColorType();
+        background.setColor(value.data);
         float cornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
                 4, context.getResources().getDisplayMetrics());
         background.setCornerRadius(cornerRadius);

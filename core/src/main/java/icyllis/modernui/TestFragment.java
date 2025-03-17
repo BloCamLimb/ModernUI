@@ -509,7 +509,8 @@ public class TestFragment extends Fragment {
                     continue;
                 } else if (i == 3) {
                     EditText textField = new EditText(getContext());
-                    SystemTheme.currentTheme().applyTextAppearanceLabelLarge(textField);
+                    //SystemTheme.currentTheme().applyTextAppearanceLabelLarge(textField);
+                    textField.setTextAppearance(R.style.TextAppearance_Material3_LabelLarge);
                     v = textField;
                     p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
