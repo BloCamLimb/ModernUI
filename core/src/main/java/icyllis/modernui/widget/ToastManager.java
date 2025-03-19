@@ -19,12 +19,14 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.view.*;
 import org.apache.logging.log4j.Marker;
@@ -89,14 +91,18 @@ public final class ToastManager {
         }
         ToastRecord r = mToastQueue.getFirst();
 
+        final TypedValue value = new TypedValue();
+        final Resources.Theme theme = mTextView.getContext().getTheme();
         mTextView.setText(r.mText);
         mTextView.setTextSize(14);
-        mTextView.setTextColor(SystemTheme.currentTheme().textColorPrimary);
+        if (theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true))
+            mTextView.setTextColor(theme.getResources().loadColorStateList(value, theme));
         mTextView.setTypeface(ModernUI.getSelectedTypeface());
         mTextView.setMaxWidth(mTextView.dp(300));
         mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));
         mParams.y = mTextView.dp(64);
-        mBackground.setColor(SystemTheme.currentTheme().colorBackground);
+        if (theme.resolveAttribute(R.ns, R.attr.colorBackground, value, true))
+            mBackground.setColor(value.data);
         mBackground.setCornerRadius(mTextView.dp(28));
         mWindowManager.addView(mTextView, mParams);
 

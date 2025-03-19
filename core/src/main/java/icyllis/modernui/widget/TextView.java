@@ -260,17 +260,18 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     @StyleableRes
     private static final String[] STYLEABLE = {
-            /*0*/ R.ns, R.attr.maxWidth,
-            /*1*/ R.ns, R.attr.minHeight,
-            /*2*/ R.ns, R.attr.minWidth,
-            /*3*/ R.ns, R.attr.textAppearance,
-            /*4*/ R.ns, R.attr.textColor,
-            /*5*/ R.ns, R.attr.textColorHighlight,
-            /*6*/ R.ns, R.attr.textColorHint,
-            /*7*/ R.ns, R.attr.textColorLink,
-            /*8*/ R.ns, R.attr.textFontWeight,
-            /*9*/ R.ns, R.attr.textSize,
-            /*10*/R.ns, R.attr.textStyle,
+            /*0*/ R.ns, R.attr.gravity,
+            /*1*/ R.ns, R.attr.maxWidth,
+            /*2*/ R.ns, R.attr.minHeight,
+            /*3*/ R.ns, R.attr.minWidth,
+            /*4*/ R.ns, R.attr.textAppearance,
+            /*5*/ R.ns, R.attr.textColor,
+            /*6*/ R.ns, R.attr.textColorHighlight,
+            /*7*/ R.ns, R.attr.textColorHint,
+            /*8*/ R.ns, R.attr.textColorLink,
+            /*9*/ R.ns, R.attr.textFontWeight,
+            /*10*/R.ns, R.attr.textSize,
+            /*11*/R.ns, R.attr.textStyle,
     };
 
     @AttrRes
@@ -343,7 +344,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
                 attrs, defStyleAttr, defStyleRes, STYLEABLE);
-        ResourceId ap = a.getResourceId(3); // textAppearance
+        ResourceId ap = a.getResourceId(4); // textAppearance
         if (ap != null) {
             appearance = new TextAppearance(context, ap);
         } else {
@@ -358,15 +359,19 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             int attr = a.getIndex(i);
 
             switch (attr) {
-                case 0: // maxWidth
+                case 0: // gravity
+                    setGravity(a.getInt(attr, -1));
+                    break;
+
+                case 1: // maxWidth
                     setMaxWidth(a.getDimensionPixelSize(attr, -1));
                     break;
 
-                case 1: // minHeight
+                case 2: // minHeight
                     setMinHeight(a.getDimensionPixelSize(attr, -1));
                     break;
 
-                case 2: // minWidth
+                case 3: // minWidth
                     setMinWidth(a.getDimensionPixelSize(attr, -1));
                     break;
             }

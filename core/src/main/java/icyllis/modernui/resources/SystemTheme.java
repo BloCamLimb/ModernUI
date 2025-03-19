@@ -63,6 +63,9 @@ public class SystemTheme {
 
     public static final int COLOR_CONTROL_ACTIVATED = 0xffcda398;
 
+    private static final float material_emphasis_disabled = 0.38f;
+    private static final float material_emphasis_disabled_background = 0.12f;
+
     public static int modulateColor(int baseColor, float alphaMod) {
         if (alphaMod == 1.0f) {
             return baseColor;
@@ -226,7 +229,7 @@ public class SystemTheme {
                 colorOnErrorContainer;
 
         ThemedCache(Resources.Theme theme) {
-            TypedValue value = new TypedValue();
+            final TypedValue value = new TypedValue();
             theme.getAttribute(R.ns, R.attr.colorPrimary, value);
             colorPrimary = value.data;
             theme.getAttribute(R.ns, R.attr.colorOnPrimary, value);
@@ -319,6 +322,97 @@ public class SystemTheme {
             colorErrorContainer = value.data;
             theme.getAttribute(R.ns, R.attr.colorOnErrorContainer, value);
             colorOnErrorContainer = value.data;
+        }
+
+        private SparseArray<ColorStateList> button_foreground_color_selector;
+        private ColorStateList button_foreground_color_selector(int colorOnContainer) {
+            if (button_foreground_color_selector == null) {
+                button_foreground_color_selector = new SparseArray<>();
+            }
+            var csl = button_foreground_color_selector.get(colorOnContainer);
+            if (csl != null) {
+                return csl;
+            }
+            csl = new ColorStateList(
+                    new int[][]{
+                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorOnContainer,
+                            modulateColor(colorOnSurface, material_emphasis_disabled)
+                    }
+            );
+            button_foreground_color_selector.put(colorOnContainer, csl);
+            return csl;
+        }
+
+        private SparseArray<ColorStateList> button_background_color_selector;
+        private ColorStateList button_background_color_selector(int colorContainer) {
+            if (button_background_color_selector == null) {
+                button_background_color_selector = new SparseArray<>();
+            }
+            var csl = button_background_color_selector.get(colorContainer);
+            if (csl != null) {
+                return csl;
+            }
+            csl = new ColorStateList(
+                    new int[][]{
+                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorContainer,
+                            modulateColor(colorOnSurface, material_emphasis_disabled_background)
+                    }
+            );
+            button_background_color_selector.put(colorContainer, csl);
+            return csl;
+        }
+
+        private SparseArray<ColorStateList> button_ripple_color_selector;
+        private ColorStateList button_ripple_color_selector(int colorOnContainer) {
+            if (button_ripple_color_selector == null) {
+                button_ripple_color_selector = new SparseArray<>();
+            }
+            var csl = button_ripple_color_selector.get(colorOnContainer);
+            if (csl != null) {
+                return csl;
+            }
+            csl = new ColorStateList(
+                    new int[][]{
+                            new int[]{R.attr.state_pressed},
+                            new int[]{R.attr.state_focused},
+                            new int[]{R.attr.state_hovered},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnContainer, 0.1f),
+                            modulateColor(colorOnContainer, 0.102f),
+                            modulateColor(colorOnContainer, 0.08f),
+                            modulateColor(colorOnContainer, 0.064f),
+                    }
+            );
+            button_ripple_color_selector.put(colorOnContainer, csl);
+            return csl;
+        }
+
+        private ColorStateList button_outline_color_selector;
+        private ColorStateList button_outline_color_selector() {
+            if (button_outline_color_selector != null) {
+                return button_outline_color_selector;
+            }
+            button_outline_color_selector = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnSurface, 0.12f),
+                            colorOutline
+                    }
+            );
+            return button_outline_color_selector;
         }
 
         private SparseArray<ColorStateList> text_button_foreground_color_selector;
@@ -430,107 +524,6 @@ public class SystemTheme {
         }
     }
 
-    private SparseArray<ColorStateList> text_button_foreground_color_selector;
-    private ColorStateList text_button_foreground_color_selector(int colorOnContainer) {
-        if (text_button_foreground_color_selector == null) {
-            text_button_foreground_color_selector = new SparseArray<>();
-        }
-        var csl = text_button_foreground_color_selector.get(colorOnContainer);
-        if (csl != null) {
-            return csl;
-        }
-        csl = new ColorStateList(
-                new int[][]{
-                        new int[]{-R.attr.state_enabled},
-                        new int[]{-R.attr.state_checkable},
-                        new int[]{R.attr.state_checked},
-                        StateSet.WILD_CARD
-                },
-                new int[]{
-                        modulateColor(colorOnSurface, 0.38f),
-                        colorOnContainer,
-                        colorOnSecondaryContainer,
-                        colorOnSurface
-                }
-        );
-        text_button_foreground_color_selector.put(colorOnContainer, csl);
-        return csl;
-    }
-
-    private SparseArray<ColorStateList> text_button_background_color_selector;
-    private ColorStateList text_button_background_color_selector(int colorContainer) {
-        if (text_button_background_color_selector == null) {
-            text_button_background_color_selector = new SparseArray<>();
-        }
-        var csl = text_button_background_color_selector.get(colorContainer);
-        if (csl != null) {
-            return csl;
-        }
-        csl = new ColorStateList(
-                new int[][]{
-                        new int[]{R.attr.state_enabled, R.attr.state_checked},
-                        StateSet.WILD_CARD
-                },
-                new int[]{
-                        colorSecondaryContainer,
-                        colorContainer
-                }
-        );
-        text_button_background_color_selector.put(colorContainer, csl);
-        return csl;
-    }
-
-    private SparseArray<ColorStateList> text_button_ripple_color_selector;
-    private ColorStateList text_button_ripple_color_selector(int colorOnContainer) {
-        if (text_button_ripple_color_selector == null) {
-            text_button_ripple_color_selector = new SparseArray<>();
-        }
-        var csl = text_button_ripple_color_selector.get(colorOnContainer);
-        if (csl != null) {
-            return csl;
-        }
-        csl = new ColorStateList(
-                new int[][]{
-                        new int[]{-R.attr.state_checkable, R.attr.state_pressed},
-                        new int[]{-R.attr.state_checkable, R.attr.state_focused},
-                        new int[]{-R.attr.state_checkable, R.attr.state_hovered},
-                        new int[]{-R.attr.state_checkable},
-
-                        new int[]{R.attr.state_checked, R.attr.state_pressed},
-                        new int[]{R.attr.state_checked, R.attr.state_focused},
-                        new int[]{R.attr.state_checked, R.attr.state_hovered},
-                        new int[]{R.attr.state_checked},
-
-                        new int[]{R.attr.state_pressed},
-                        new int[]{R.attr.state_focused},
-                        new int[]{R.attr.state_hovered},
-                        StateSet.WILD_CARD
-                },
-                new int[]{
-                        modulateColor(colorOnContainer, 0.1f),
-                        modulateColor(colorOnContainer, 0.102f),
-                        modulateColor(colorOnContainer, 0.08f),
-                        modulateColor(colorOnContainer, 0.064f),
-
-                        modulateColor(colorOnSurface, 0.1f),
-                        modulateColor(colorOnSecondaryContainer, 0.102f),
-                        modulateColor(colorOnSecondaryContainer, 0.08f),
-                        modulateColor(colorOnSecondaryContainer, 0.064f),
-
-                        modulateColor(colorOnSecondaryContainer, 0.1f),
-                        modulateColor(colorOnSurface, 0.102f),
-                        modulateColor(colorOnSurface, 0.08f),
-                        modulateColor(colorOnSurface, 0.064f),
-                }
-        );
-        text_button_ripple_color_selector.put(colorOnContainer, csl);
-        return csl;
-    }
-
-    private Drawable createButtonBackground() {
-        return null;
-    }
-
     public static void addToResources(SystemResourcesBuilder b) {
         addStylesToResources(b);
         {
@@ -563,6 +556,8 @@ public class SystemTheme {
             style.addColor(R.attr.colorButtonNormal, 0xff5a595b);
 
             style.addColor(R.attr.colorAccent, 0xFFD9E2FF);
+
+            style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
         }
     }
 
@@ -720,24 +715,78 @@ public class SystemTheme {
             style.addInteger(R.attr.textFontWeight, 500);
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_Button_TextButton.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_Button.entry(), "");
             style.addDimension(R.attr.minHeight, 32, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minWidth, 80, TypedValue.COMPLEX_UNIT_DP);
+            style.addBoolean(R.attr.focusable, true);
+            style.addBoolean(R.attr.clickable, true);
+            style.addFlags(R.attr.gravity, Gravity.CENTER);
             style.addDimension(R.attr.maxWidth, 320, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingLeft, 12, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingRight, 12, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingTop, 6, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingBottom, 6, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingLeft, 20, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingRight, 20, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingTop, 2, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingBottom, 2, TypedValue.COMPLEX_UNIT_DP);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceLabelLarge);
+            style.addColor(R.attr.textColor, (resources, theme) ->
+                    fromCache(theme, cache -> cache.button_foreground_color_selector(cache.colorOnPrimary)));
+            style.addDrawable(R.attr.background, (resources, theme) -> {
+                var backgroundTint = fromCache(theme, cache -> cache.button_background_color_selector(cache.colorPrimary));
+                var rippleColor = fromCache(theme,
+                        cache -> cache.button_ripple_color_selector(cache.colorOnPrimary));
+
+                var background = new ShapeDrawable();
+                background.setCornerRadius(1000);
+                background.setColor(backgroundTint);
+                return new RippleDrawable(rippleColor, background, null);
+            });
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_Button_TonalButton.entry(), R.style.Widget_Material3_Button.entry());
+            style.addColor(R.attr.textColor, (resources, theme) ->
+                    fromCache(theme, cache -> cache.button_foreground_color_selector(cache.colorOnSecondaryContainer)));
+            style.addDrawable(R.attr.background, (resources, theme) -> {
+                var backgroundTint = fromCache(theme, cache -> cache.button_background_color_selector(cache.colorSecondaryContainer));
+                var rippleColor = fromCache(theme,
+                        cache -> cache.button_ripple_color_selector(cache.colorOnSecondaryContainer));
+
+                var background = new ShapeDrawable();
+                background.setCornerRadius(1000);
+                background.setColor(backgroundTint);
+                return new RippleDrawable(rippleColor, background, null);
+            });
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_Button_OutlinedButton.entry(), R.style.Widget_Material3_Button.entry());
             style.addColor(R.attr.textColor, (resources, theme) ->
                     fromCache(theme, cache -> cache.text_button_foreground_color_selector(cache.colorPrimary)));
             style.addDrawable(R.attr.background, (resources, theme) -> {
                 var backgroundTint = fromCache(theme, cache -> cache.text_button_background_color_selector(0));
-                var rippleColor = fromCache(theme, cache -> cache.text_button_ripple_color_selector(cache.colorPrimary));
+                var rippleColor = fromCache(theme,
+                        cache -> cache.text_button_ripple_color_selector(cache.colorPrimary));
+                var strokeColor = fromCache(theme, ThemedCache::button_outline_color_selector);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
-                background.setTintList(backgroundTint);
+                background.setColor(backgroundTint);
+                var strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, 1, resources.getDisplayMetrics());
+                background.setStroke(Math.round(strokeWidth), strokeColor);
+                return new RippleDrawable(rippleColor, background, null);
+            });
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_Button_TextButton.entry(), R.style.Widget_Material3_Button.entry());
+            style.addDimension(R.attr.paddingLeft, 8, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingRight, 8, TypedValue.COMPLEX_UNIT_DP);
+            style.addColor(R.attr.textColor, (resources, theme) ->
+                    fromCache(theme, cache -> cache.text_button_foreground_color_selector(cache.colorPrimary)));
+            style.addDrawable(R.attr.background, (resources, theme) -> {
+                var backgroundTint = fromCache(theme, cache -> cache.text_button_background_color_selector(0));
+                var rippleColor = fromCache(theme,
+                        cache -> cache.text_button_ripple_color_selector(cache.colorPrimary));
+
+                var background = new ShapeDrawable();
+                background.setCornerRadius(1000);
+                background.setColor(backgroundTint);
                 return new RippleDrawable(rippleColor, background, null);
             });
         }
@@ -777,24 +826,6 @@ public class SystemTheme {
         tv.setHintTextColor(textColorHint);
         tv.setHighlightColor(textColorHighlight);
         tv.setLinkTextColor(textColorLink);
-    }
-
-    public void applyTextButtonStyle(Button btn) {
-        btn.setMinHeight(btn.dp(32));
-        btn.setMinWidth(btn.dp(80));
-        btn.setMaxWidth(btn.dp(320));
-        btn.setPadding(btn.dp(12), btn.dp(6), btn.dp(12), btn.dp(6));
-        applyTextAppearanceLabelLarge(btn);
-
-        btn.setTextColor(text_button_foreground_color_selector(colorPrimary));
-        var backgroundTint = text_button_background_color_selector(0);
-        var rippleColor = text_button_ripple_color_selector(colorPrimary);
-
-        var background = new ShapeDrawable();
-        background.setCornerRadius(btn.dp(20));
-        background.setTintList(backgroundTint);
-        var rippleDrawable = new RippleDrawable(rippleColor, background, null);
-        btn.setBackground(rippleDrawable);
     }
 
     private ColorStateList radioButtonTint;

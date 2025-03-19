@@ -18,8 +18,10 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -321,13 +323,15 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
             tv.setText(String.valueOf(item));
         }
 
-        var theme = SystemTheme.currentTheme();
+        final Resources.Theme theme = mContext.getTheme();
         tv.setTextSize(14);
+        final TypedValue value = new TypedValue();
         if (dropdown) {
-            tv.setTextColor(theme.textColorPrimaryDisableOnly);
+            theme.resolveAttribute(R.ns, R.attr.textColorPrimaryDisableOnly, value, true);
         } else {
-            tv.setTextColor(theme.textColorPrimary);
+            theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true);
         }
+        tv.setTextColor(theme.getResources().loadColorStateList(value, theme));
         if (!dropdown) {
             tv.setTextAlignment(View.TEXT_ALIGNMENT_INHERIT);
         } // else GRAVITY

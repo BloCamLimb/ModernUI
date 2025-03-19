@@ -45,6 +45,8 @@ import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
@@ -333,9 +335,6 @@ public class TestFragment extends Fragment {
                     "\udd99";
 
             TextView tv = new TextView(getContext());
-            tv.setTextColor(SystemTheme.currentTheme().textColorPrimary);
-            tv.setLinkTextColor(SystemTheme.currentTheme().textColorLink);
-            tv.setHighlightColor(SystemTheme.currentTheme().textColorHighlight);
             tv.setLayoutParams(new LayoutParams(tv.dp(640), WRAP_CONTENT));
             tv.setLineBreakWordStyle(LineBreakConfig.LINE_BREAK_WORD_STYLE_BREAK_ALL);
 
@@ -432,8 +431,7 @@ public class TestFragment extends Fragment {
                 View v;
                 LayoutParams p;
                 if (i == 1) {
-                    Button button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_TextButton);
-                    //SystemTheme.currentTheme().applyTextButtonStyle(button);
+                    Button button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_OutlinedButton);
                     button.setText("Play A Music!");
                     button.setOnClickListener(__ -> {
                         if (mGoodAnim != null) {
@@ -476,6 +474,7 @@ public class TestFragment extends Fragment {
                     });*/
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                    p.setMargins(0, dp(4),0, dp(4));
                 } else if (i == 0) {
                     Switch switchButton = new Switch(getContext());
                     SystemTheme.currentTheme().applySwitchStyle(switchButton);
@@ -509,7 +508,6 @@ public class TestFragment extends Fragment {
                     continue;
                 } else if (i == 3) {
                     EditText textField = new EditText(getContext());
-                    //SystemTheme.currentTheme().applyTextAppearanceLabelLarge(textField);
                     textField.setTextAppearance(R.style.TextAppearance_Material3_LabelLarge);
                     v = textField;
                     p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -587,7 +585,7 @@ public class TestFragment extends Fragment {
                     Spinner spinner = new Spinner(getContext());
                     SystemTheme.currentTheme().applySpinnerStyle(spinner);
                     v = spinner;
-                    ArrayList<String> list = new ArrayList<>(FontFamily.getSystemFontMap().keySet());
+                    List<?> list = Arrays.asList(FontFamily.getSystemFontMap().keySet().toArray());
                     list.sort(null);
                     spinner.setAdapter(new ArrayAdapter<>(getContext(), list));
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -600,9 +598,18 @@ public class TestFragment extends Fragment {
                     v = seekbar;
                     p = new LayoutParams(dp(200), WRAP_CONTENT);
                 } else {
-                    Button button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_TextButton);
-                    //SystemTheme.currentTheme().applyTextButtonStyle(button);
-                    button.setText("Text button " + i);
+                    Button button;
+                    if (i < 6) {
+                        button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_TonalButton);
+                        button.setText("Tonal button " + i);
+                    } else {
+                        button = new Button(getContext(), null);
+                        button.setText("Filled button " + i);
+                    }
+                    if ((i & 1) == 1) {
+                        button.setEnabled(false);
+                        button.setTooltipText("Disabled by intentional UI design");
+                    }
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                     p.setMargins(0, dp(4),0, dp(4));
