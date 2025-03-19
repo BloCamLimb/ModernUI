@@ -19,17 +19,22 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.SoundEffectConstants;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A button with two states, checked and unchecked. When the button is pressed
@@ -59,9 +64,43 @@ public abstract class CompoundButton extends Button implements Checkable {
 
     private OnCheckedChangeListener mOnCheckedChangeListener;
 
+    @StyleableRes
+    private static final String[] STYLEABLE = {
+            R.ns, R.attr.button,
+            R.ns, R.attr.checked,
+    };
+
     public CompoundButton(Context context) {
         super(context);
         setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+    }
+
+    public CompoundButton(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public CompoundButton(Context context, @Nullable AttributeSet attrs,
+                          @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public CompoundButton(Context context, @Nullable AttributeSet attrs,
+                          @Nullable @AttrRes ResourceId defStyleAttr,
+                          @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+
+        final Drawable d = a.getDrawable(0); // button
+        if (d != null) {
+            setButtonDrawable(d);
+        }
+
+        final boolean checked = a.getBoolean(1, false); // checked
+        setChecked(checked);
+
+        a.recycle();
     }
 
     @Override
@@ -258,7 +297,7 @@ public abstract class CompoundButton extends Button implements Checkable {
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         final Drawable buttonDrawable = mButtonDrawable;
         if (buttonDrawable != null) {
             final int verticalGravity = getGravity() & Gravity.VERTICAL_GRAVITY_MASK;
@@ -297,7 +336,7 @@ public abstract class CompoundButton extends Button implements Checkable {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected int[] onCreateDrawableState(int extraSpace) {
         final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
@@ -335,7 +374,7 @@ public abstract class CompoundButton extends Button implements Checkable {
     }
 
     @Override
-    protected boolean verifyDrawable(@Nonnull Drawable who) {
+    protected boolean verifyDrawable(@NonNull Drawable who) {
         return super.verifyDrawable(who) || who == mButtonDrawable;
     }
 

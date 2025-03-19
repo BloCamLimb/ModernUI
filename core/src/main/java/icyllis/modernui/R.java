@@ -108,10 +108,25 @@ public final class R {
         public static final String longClickable = "longClickable";
         public static final String contextClickable = "contextClickable";
 
+        public static final String layout_width = "layout_width";
+        public static final String layout_height = "layout_height";
+        public static final String layout_margin = "layout_margin";
+        public static final String layout_marginLeft = "layout_marginLeft";
+        public static final String layout_marginTop = "layout_marginTop";
+        public static final String layout_marginRight = "layout_marginRight";
+        public static final String layout_marginBottom = "layout_marginBottom";
+
+        public static final String checked = "checked";
+        public static final String button = "button";
+
         public static final String minWidth = "minWidth";
         public static final String minHeight = "minHeight";
         public static final String maxWidth = "maxWidth";
         public static final String maxHeight = "maxHeight";
+        public static final String thumb = "thumb";
+        public static final String track = "track";
+        public static final String switchMinWidth = "switchMinWidth";
+        public static final String switchPadding = "switchPadding";
 
         public static final String textDirection = "textDirection";
         public static final String textAlignment = "textAlignment";
@@ -209,9 +224,11 @@ public final class R {
         public static final String progressBarStyleLarge = "progressBarStyleLarge";
         public static final String seekBarStyle = "seekBarStyle";
         public static final String radioButtonStyle = "radioButtonStyle";
+        public static final String radioButtonStyleMenuItem = "radioButtonStyleMenuItem";
         public static final String scrollbarStyle = "scrollbarStyle";
         public static final String scrollViewStyle = "scrollViewStyle";
         public static final String spinnerStyle = "spinnerStyle";
+        public static final String switchStyle = "switchStyle";
         public static final String textViewStyle = "textViewStyle";
         public static final String dropDownItemStyle = "dropDownItemStyle";
         public static final String spinnerDropDownItemStyle = "spinnerDropDownItemStyle";
@@ -331,6 +348,7 @@ public final class R {
 
         public static final ResourceId Theme_Material3_Dark = new ResourceId(ns, type, "Theme.Material3.Dark");
 
+        public static final ResourceId TextAppearance = new ResourceId(ns, type, "TextAppearance");
         public static final ResourceId TextAppearance_Material3_DisplayLarge = new ResourceId(ns, type, "TextAppearance.Material3.DisplayLarge");
         public static final ResourceId TextAppearance_Material3_DisplayMedium = new ResourceId(ns, type, "TextAppearance.Material3.DisplayMedium");
         public static final ResourceId TextAppearance_Material3_DisplaySmall = new ResourceId(ns, type, "TextAppearance.Material3.DisplaySmall");
@@ -351,6 +369,10 @@ public final class R {
         public static final ResourceId Widget_Material3_Button_TonalButton = new ResourceId(ns, type, "Widget.Material3.Button.TonalButton");
         public static final ResourceId Widget_Material3_Button_OutlinedButton = new ResourceId(ns, type, "Widget.Material3.Button.OutlinedButton");
         public static final ResourceId Widget_Material3_Button_TextButton = new ResourceId(ns, type, "Widget.Material3.Button.TextButton");
+
+        public static final ResourceId Widget_CompoundButton = new ResourceId(ns, type, "Widget.CompoundButton");
+        public static final ResourceId Widget_Material3_CompoundButton_RadioButton = new ResourceId(ns, type, "Widget.Material3.CompoundButton.RadioButton");
+        public static final ResourceId Widget_Material3_CompoundButton_RadioButton_MenuItem = new ResourceId(ns, type, "Widget.Material3.CompoundButton.RadioButton.MenuItem");
         public static final ResourceId Widget_Material3_CompoundButton_Switch = new ResourceId(ns, type, "Widget.Material3.CompoundButton.Switch");
     }
 

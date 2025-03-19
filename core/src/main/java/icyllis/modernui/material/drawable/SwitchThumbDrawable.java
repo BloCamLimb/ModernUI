@@ -32,8 +32,9 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialDrawable;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.FloatProperty;
-import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -58,8 +59,8 @@ public class SwitchThumbDrawable extends MaterialDrawable {
     // current transition, if any
     private Animator mTransition;
 
-    public SwitchThumbDrawable(View btn, boolean animated, boolean usePressState) {
-        mSize = btn.dp(SIZE);
+    public SwitchThumbDrawable(Resources res, boolean animated, boolean usePressState) {
+        mSize = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, SIZE, res.getDisplayMetrics()));
         mAnimated = animated;
         mUsePressState = usePressState;
     }

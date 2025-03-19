@@ -35,17 +35,24 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.Gravity;
@@ -128,13 +135,89 @@ public class Switch extends CompoundButton {
 
     private final Rect mTempRect = new Rect();
 
+    @StyleableRes
+    private static final String[] STYLEABLE = {
+            R.ns, R.attr.switchMinWidth,
+            R.ns, R.attr.switchPadding,
+            R.ns, R.attr.thumb,
+            R.ns, R.attr.track,
+    };
+
+    @AttrRes
+    private static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.switchStyle);
+
     /**
      * Construct a new Switch with default styling.
      *
      * @param context The Context that will determine this widget's theming.
      */
-    public Switch(@NonNull Context context) {
-        super(context);
+    public Switch(Context context) {
+        this(context, null);
+    }
+
+    /**
+     * Construct a new Switch with default styling, overriding specific style
+     * attributes as requested.
+     *
+     * @param context The Context that will determine this widget's theming.
+     * @param attrs   Specification of attributes that should deviate from default styling.
+     */
+    public Switch(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, DEF_STYLE_ATTR);
+    }
+
+    /**
+     * Construct a new Switch with a default style determined by the given theme attribute,
+     * overriding specific style attributes as requested.
+     *
+     * @param context      The Context that will determine this widget's theming.
+     * @param attrs        Specification of attributes that should deviate from the default styling.
+     * @param defStyleAttr An attribute in the current theme that contains a
+     *                     reference to a style resource that supplies default values for
+     *                     the view. Can be null to not look for defaults.
+     */
+    public Switch(Context context, @Nullable AttributeSet attrs,
+                  @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    /**
+     * Construct a new Switch with a default style determined by the given theme
+     * attribute or style resource, overriding specific style attributes as
+     * requested.
+     *
+     * @param context      The Context that will determine this widget's theming.
+     * @param attrs        Specification of attributes that should deviate from the
+     *                     default styling.
+     * @param defStyleAttr An attribute in the current theme that contains a
+     *                     reference to a style resource that supplies default values for
+     *                     the view. Can be null to not look for defaults.
+     * @param defStyleRes  A resource identifier of a style resource that
+     *                     supplies default values for the view, used only if
+     *                     defStyleAttr is 0 or can not be found in the theme. Can be null
+     *                     to not look for defaults.
+     */
+    public Switch(Context context, @Nullable AttributeSet attrs,
+                  @Nullable @AttrRes ResourceId defStyleAttr,
+                  @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+        mThumbDrawable = a.getDrawable(2);
+        if (mThumbDrawable != null) {
+            mThumbDrawable.setCallback(this);
+        }
+        mTrackDrawable = a.getDrawable(3);
+        if (mTrackDrawable != null) {
+            mTrackDrawable.setCallback(this);
+        }
+        mSwitchMinWidth = a.getDimensionPixelSize(
+                0, 0);
+        mSwitchPadding = a.getDimensionPixelSize(
+                1, 0);
+        a.recycle();
 
         final ViewConfiguration config = ViewConfiguration.get(context);
         mTouchSlop = config.getScaledTouchSlop();
@@ -687,7 +770,7 @@ public class Switch extends CompoundButton {
                 trackDrawable.draw(canvas);
                 canvas.restoreToCount(saveCount);
             } else {*/
-                trackDrawable.draw(canvas);
+            trackDrawable.draw(canvas);
             //}
         }
 

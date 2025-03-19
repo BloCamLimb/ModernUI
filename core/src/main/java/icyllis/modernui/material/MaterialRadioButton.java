@@ -18,18 +18,17 @@
 
 package icyllis.modernui.material;
 
+import icyllis.modernui.R;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.widget.RadioButton;
 
 /**
- * @deprecated to be moved to another package, use base class instead
+ * @deprecated use base class {@link RadioButton} instead
  */
-@Deprecated
+@Deprecated(forRemoval = true)
 public class MaterialRadioButton extends RadioButton {
 
     public MaterialRadioButton(Context context) {
-        super(context);
-        SystemTheme.currentTheme().applyRadioButtonStyle(this);
+        super(context, null, null, R.style.Widget_Material3_CompoundButton_RadioButton);
     }
 }
