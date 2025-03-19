@@ -18,10 +18,11 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.R;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.widget.TextView;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -37,8 +38,12 @@ public final class TooltipPopup {
     public TooltipPopup(Context context) {
         mContext = context;
         mTextView = new TextView(context);
-        mTextView.setTextColor(SystemTheme.currentTheme().colorOnSurfaceInverse);
-        mTextView.setTextSize(14);
+        final TypedValue value = new TypedValue();
+        if (context.getTheme().resolveAttribute(R.ns, R.attr.textAppearanceBodySmall, value, true))
+            mTextView.setTextAppearance(value.getResourceId());
+        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorOnSurfaceInverse, value, true))
+            mTextView.setTextColor(value.data);
+        mTextView.setGravity(Gravity.CENTER_VERTICAL);
         mParams = new WindowManager.LayoutParams();
         mParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
         mParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -46,7 +51,8 @@ public final class TooltipPopup {
         mParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_ABOVE_SUB_PANEL;
         var background = new ShapeDrawable();
         background.setShape(ShapeDrawable.RECTANGLE);
-        background.setColor(SystemTheme.currentTheme().colorSurfaceInverse);
+        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceInverse, value, true))
+            background.setColor(value.data);
         background.setCornerRadius(mTextView.dp(4));
         mTextView.setBackground(background);
     }
@@ -59,7 +65,8 @@ public final class TooltipPopup {
 
         mTextView.setText(tooltipText);
         mTextView.setMaxWidth(Math.min(anchorView.getRootView().getMeasuredWidth() / 2, mTextView.dp(512)));
-        mTextView.setPadding(mTextView.dp(16), mTextView.dp(6.5f), mTextView.dp(16), mTextView.dp(6.5f));
+        mTextView.setMinHeight(mTextView.dp(24));
+        mTextView.setPadding(mTextView.dp(8), 0, mTextView.dp(8), 0);
 
         computePosition(anchorView, anchorX, anchorY, fromTouch, mParams);
 

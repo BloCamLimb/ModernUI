@@ -347,7 +347,11 @@ public final class R {
         public static final ResourceId TextAppearance_Material3_LabelMedium = new ResourceId(ns, type, "TextAppearance.Material3.LabelMedium");
         public static final ResourceId TextAppearance_Material3_LabelSmall = new ResourceId(ns, type, "TextAppearance.Material3.LabelSmall");
 
+        public static final ResourceId Widget_Material3_Button = new ResourceId(ns, type, "Widget.Material3.Button");
+        public static final ResourceId Widget_Material3_Button_TonalButton = new ResourceId(ns, type, "Widget.Material3.Button.TonalButton");
+        public static final ResourceId Widget_Material3_Button_OutlinedButton = new ResourceId(ns, type, "Widget.Material3.Button.OutlinedButton");
         public static final ResourceId Widget_Material3_Button_TextButton = new ResourceId(ns, type, "Widget.Material3.Button.TextButton");
+        public static final ResourceId Widget_Material3_CompoundButton_Switch = new ResourceId(ns, type, "Widget.Material3.CompoundButton.Switch");
     }
 
     static {

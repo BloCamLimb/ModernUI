@@ -18,10 +18,11 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.animation.*;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.TypedValue;
 
 import javax.annotation.Nonnull;
 
@@ -47,7 +48,9 @@ public class SwitchButton extends CompoundButton {
 
     public SwitchButton(Context context) {
         super(context);
-        mCheckedColor = SystemTheme.currentTheme().colorPrimary;
+        TypedValue value = new TypedValue();
+        context.getTheme().resolveAttribute(R.ns, R.attr.colorPrimary, value, true);
+        mCheckedColor = value.data;
         mUncheckedColor = 0xFFDDDDDD;
         mBorderWidth = dp(1.5f);
 
