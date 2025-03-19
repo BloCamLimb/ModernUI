@@ -30,11 +30,14 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialDrawable;
-import icyllis.modernui.view.View;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedValue;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
  * A button drawable for RadioButton, similar to Material Design.
+ *
+ * @hidden
  */
 @ApiStatus.Internal
 public class ButtonRadioDrawable extends MaterialDrawable {
@@ -42,7 +45,8 @@ public class ButtonRadioDrawable extends MaterialDrawable {
     private static final float SIZE = 24;
     private final int mSize; // 24dp
     private boolean mAnimated;
-    private boolean mWithRipple;
+    private boolean mLargeSize;
+    private boolean mHasOuterRing;
 
     private float mRingOuterScale = 1.0f;
     private float mRingOuterStrokeWidth = 2.0f;
@@ -55,10 +59,11 @@ public class ButtonRadioDrawable extends MaterialDrawable {
     // current transition, if any
     private Animator mTransition;
 
-    public ButtonRadioDrawable(View btn, boolean animated, boolean withRipple) {
-        mSize = btn.dp(SIZE);
+    public ButtonRadioDrawable(Resources res, boolean animated, boolean largeSize, boolean hasOuterRing) {
+        mSize = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, SIZE, res.getDisplayMetrics()));
         mAnimated = animated;
-        mWithRipple = withRipple;
+        mLargeSize = largeSize;
+        mHasOuterRing = hasOuterRing;
     }
 
     @Override
@@ -71,17 +76,20 @@ public class ButtonRadioDrawable extends MaterialDrawable {
             canvas.save();
             canvas.translate(r.exactCenterX(), r.exactCenterY());
 
-            boolean doSave = mRingOuterScale != 1;
-            if (doSave) {
-                canvas.save();
-                canvas.scale(mRingOuterScale, mRingOuterScale);
-            }
-            paint.setStyle(Paint.STROKE);
-            paint.setStrokeWidth(mRingOuterStrokeWidth * mSize * (1 / SIZE));
-            // radius 8dp
-            canvas.drawCircle(0, 0, mSize * (8 / SIZE), paint);
-            if (doSave) {
-                canvas.restore();
+            boolean doSave;
+            if (mHasOuterRing) {
+                doSave = mRingOuterScale != 1;
+                if (doSave) {
+                    canvas.save();
+                    canvas.scale(mRingOuterScale, mRingOuterScale);
+                }
+                paint.setStyle(Paint.STROKE);
+                paint.setStrokeWidth(mRingOuterStrokeWidth * mSize * (1 / SIZE));
+                // radius 8dp
+                canvas.drawCircle(0, 0, mSize * (8 / SIZE), paint);
+                if (doSave) {
+                    canvas.restore();
+                }
             }
 
             if (mDotGroupScale > 0) {
@@ -280,7 +288,7 @@ public class ButtonRadioDrawable extends MaterialDrawable {
 
     @Override
     public int getIntrinsicWidth() {
-        if (mWithRipple) {
+        if (mLargeSize) {
             return mSize * 4 / 3;
         }
         return mSize;
@@ -288,7 +296,7 @@ public class ButtonRadioDrawable extends MaterialDrawable {
 
     @Override
     public int getIntrinsicHeight() {
-        if (mWithRipple) {
+        if (mLargeSize) {
             return mSize * 4 / 3;
         }
         return mSize;

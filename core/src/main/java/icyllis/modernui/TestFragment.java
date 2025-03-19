@@ -477,7 +477,6 @@ public class TestFragment extends Fragment {
                     p.setMargins(0, dp(4),0, dp(4));
                 } else if (i == 0) {
                     Switch switchButton = new Switch(getContext());
-                    SystemTheme.currentTheme().applySwitchStyle(switchButton);
                     v = switchButton;
                     switchButton.setText("Show text block");
                     switchButton.setPadding(dp(12), 0, dp(12), 0);
@@ -557,14 +556,13 @@ public class TestFragment extends Fragment {
                     RadioGroup group = new RadioGroup(getContext());
                     v = group;
                     for (int j = 0; j < 3; j++) {
-                        RadioButton button = new RadioButton(getContext());
+                        RadioButton button = new RadioButton(getContext(), null);
                         button.setText(switch (j) {
                             case 0 -> "English";
                             case 1 -> "Chinese";
                             default -> "Spanish";
                         });
                         button.setId(9 + j);
-                        SystemTheme.currentTheme().applyRadioButtonStyle(button);
                         group.addView(button);
                     }
                     /*group.setOnCheckedChangeListener((__, checkedId) ->
@@ -619,14 +617,13 @@ public class TestFragment extends Fragment {
                     for (int z = 0; z < 20; z++) {
                         RadioGroup group = new RadioGroup(getContext());
                         for (int j = 0; j < 3; j++) {
-                            RadioButton button = new RadioButton(getContext());
+                            RadioButton button = new RadioButton(getContext(), null);
                             button.setText(switch (j) {
                                 case 0 -> "English";
                                 case 1 -> "Chinese";
                                 default -> "Spanish";
                             });
                             button.setId(9 + j);
-                            SystemTheme.currentTheme().applyRadioButtonStyle(button);
                             group.addView(button);
                         }
                         outer.addView(group, WRAP_CONTENT, WRAP_CONTENT);
