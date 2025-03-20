@@ -1170,7 +1170,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @param resId the resource identifier of the style to apply
      */
-    public void setTextAppearance(@StyleRes ResourceId resId) {
+    public void setTextAppearance(ResourceId resId) {
         if (resId != null) {
             TextAppearance textAppearance = new TextAppearance(getContext(), resId);
             applyTextAppearance(textAppearance);

@@ -21,7 +21,6 @@ package icyllis.modernui.resources;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.ColorStateList;
@@ -86,9 +85,15 @@ public class TextAppearance {
     }
 
     public TextAppearance(@NonNull Context context,
-                          @StyleRes ResourceId resId) {
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                resId, STYLEABLE);
+                          ResourceId resId) {
+        final TypedArray a;
+        if (resId != null && resId.type().equals("attr")) {
+            a = context.getTheme().obtainStyledAttributes(
+                    null, resId, null, STYLEABLE);
+        } else {
+            a = context.getTheme().obtainStyledAttributes(
+                    resId, STYLEABLE);
+        }
 
         read(a, null);
 
