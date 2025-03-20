@@ -32,6 +32,7 @@ import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.*;
@@ -142,8 +143,11 @@ public class TestFragment extends Fragment {
         }
         //base.setRotation(30);
         container.setClipChildren(true);
-        container.setBackground(new ColorDrawable(SystemTheme.currentTheme().colorSurface));
-        //container.setBackground(new ColorDrawable((SystemTheme.currentTheme().colorSurface & 0xFFFFFF) | (0x99000000)));
+        TypedValue value = new TypedValue();
+        getContext().getTheme().resolveAttribute(R.ns, R.attr.colorSurface, value, true);
+        int colorSurface = value.data;
+        container.setBackground(new ColorDrawable(colorSurface));
+        //container.setBackground(new ColorDrawable((colorSurface & 0xFFFFFF) | (0x99000000)));
         return base;
     }
 
@@ -293,7 +297,9 @@ public class TestFragment extends Fragment {
             var divider = new ShapeDrawable();
             divider.setShape(ShapeDrawable.HLINE);
             divider.setSize(-1, dp(1));
-            divider.setColor(SystemTheme.currentTheme().colorOutlineVariant);
+            TypedValue value = new TypedValue();
+            context.getTheme().resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true);
+            divider.setColor(value.data);
             setDividerDrawable(divider);
             setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
 
@@ -784,7 +790,9 @@ public class TestFragment extends Fragment {
             }
 
             Paint paint = Paint.obtain();
-            paint.setColor(SystemTheme.currentTheme().colorPrimary);
+            TypedValue value = new TypedValue();
+            getContext().getTheme().resolveAttribute(R.ns, R.attr.colorPrimary, value, true);
+            paint.setColor(value.data);
             paint.setStyle(Paint.FILL);
             canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
 

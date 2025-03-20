@@ -27,7 +27,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.resources.SystemTheme;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 import icyllis.modernui.widget.ImageView.ScaleType;
@@ -59,7 +59,9 @@ public class ListMenuItemView extends LinearLayout
         var divider = new ShapeDrawable();
         divider.setShape(ShapeDrawable.HLINE);
         divider.setSize(-1, dp(1));
-        divider.setColor(SystemTheme.currentTheme().colorOutlineVariant);
+        final TypedValue value = new TypedValue();
+        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true))
+            divider.setColor(value.data);
         setDividerDrawable(divider);
         setDividerPadding(dp(2));
 
@@ -76,7 +78,7 @@ public class ListMenuItemView extends LinearLayout
             {
                 mTitleView = new TextView(getContext());
                 mTitleView.setId(R.id.title);
-                SystemTheme.currentTheme().applyTextAppearanceBodyMedium(mTitleView);
+                mTitleView.setTextAppearance(ResourceId.attr(R.ns, R.attr.textAppearanceBodyMedium));
                 mTitleView.setSingleLine();
                 mTitleView.setDuplicateParentStateEnabled(true);
                 mTitleView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
@@ -89,7 +91,7 @@ public class ListMenuItemView extends LinearLayout
 
             {
                 mShortcutView = new TextView(getContext());
-                SystemTheme.currentTheme().applyTextAppearanceBodySmall(mShortcutView);
+                mShortcutView.setTextAppearance(ResourceId.attr(R.ns, R.attr.textAppearanceBodySmall));
                 mShortcutView.setSingleLine();
                 mShortcutView.setDuplicateParentStateEnabled(true);
                 mShortcutView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
@@ -105,7 +107,8 @@ public class ListMenuItemView extends LinearLayout
                 mSubMenuArrowView.setScaleType(ScaleType.CENTER);
                 mSubMenuArrowView.setVisibility(GONE);
                 mSubMenuArrowView.setImageDrawable(new SubMenuArrowDrawable(context));
-                mSubMenuArrowView.setImageTintList(SystemTheme.currentTheme().textColorSecondary);
+                if (context.getTheme().resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
+                    mSubMenuArrowView.setImageTintList(context.getResources().loadColorStateList(value, context.getTheme()));
 
                 var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 params.gravity = Gravity.CENTER;

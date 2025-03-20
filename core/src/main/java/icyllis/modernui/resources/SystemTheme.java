@@ -692,6 +692,7 @@ public class SystemTheme {
 
             style.addColor(R.attr.colorAccent, 0xFFD9E2FF);
 
+            style.addReference(R.attr.textAppearance, R.style.TextAppearance);
             style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
             style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
             style.addReference(R.attr.radioButtonStyleMenuItem, R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
