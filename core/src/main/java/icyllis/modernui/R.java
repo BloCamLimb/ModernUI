@@ -119,6 +119,13 @@ public final class R {
         public static final String checked = "checked";
         public static final String button = "button";
 
+        public static final String min = "min";
+        public static final String max = "max";
+        public static final String progress = "progress";
+        public static final String secondaryProgress = "secondaryProgress";
+        public static final String indeterminate = "indeterminate";
+        public static final String indeterminateDrawable = "indeterminateDrawable";
+        public static final String progressDrawable = "progressDrawable";
         public static final String minWidth = "minWidth";
         public static final String minHeight = "minHeight";
         public static final String maxWidth = "maxWidth";

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,13 +19,25 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.animation.*;
+import icyllis.modernui.animation.Animator;
+import icyllis.modernui.animation.AnimatorListener;
+import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.drawable.Animatable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.LayerDrawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.View;
@@ -35,32 +47,31 @@ import java.util.Locale;
 
 public class ProgressBar extends View {
 
-    private int mMaxWidth;
-    private int mMaxHeight;
+    private int mMaxWidth = 1000;
+    private int mMaxHeight = 1000;
 
     private int mProgress;
     private int mSecondaryProgress;
     private int mMin;
-    private boolean mMinInitialized;
-    private int mMax = 10000;
-    private boolean mMaxInitialized;
+    private int mMax;
 
     private boolean mIndeterminate;
-    private boolean mOnlyIndeterminate;
 
-    private boolean mInDrawing;
-    private boolean mAttached;
-    private boolean mRefreshIsPosted;
+    private Drawable mIndeterminateDrawable;
+    private Drawable mProgressDrawable;
+    private Drawable mCurrentDrawable;
+    private ProgressTintInfo mProgressTintInfo;
+
+    private boolean mShouldStartAnimationDrawable;
 
     /**
      * Value used to track progress animation, in the range [0..1].
      */
     private float mVisualProgress;
 
-    private Drawable mIndeterminateDrawable;
-    private Drawable mProgressDrawable;
-    private Drawable mCurrentDrawable;
-    private ProgressTintInfo mProgressTintInfo;
+    private boolean mMirrorForRtl = false;
+
+    private boolean mAggregatedIsVisible;
 
     private ObjectAnimator mLastProgressAnimator;
 
@@ -72,7 +83,7 @@ public class ProgressBar extends View {
      * handled by the {@link ProgressBar#setProgress(int, boolean)} method. This does
      * not correspond directly to the actual progress -- only the visual state.
      */
-    protected static final FloatProperty<ProgressBar> VISUAL_PROGRESS = new FloatProperty<>("visual_progress") {
+    protected static final FloatProperty<ProgressBar> VISUAL_PROGRESS = new FloatProperty<>("visualProgress") {
         @Override
         public void setValue(ProgressBar object, float value) {
             object.setVisualProgress(R.id.progress, value);
@@ -84,13 +95,75 @@ public class ProgressBar extends View {
         }
     };
 
+    @StyleableRes
+    private static final String[] STYLEABLE = {
+            /*0*/R.ns, R.attr.indeterminate,
+            /*1*/R.ns, R.attr.indeterminateDrawable,
+            /*2*/R.ns, R.attr.max,
+            /*3*/R.ns, R.attr.maxHeight,
+            /*4*/R.ns, R.attr.maxWidth,
+            /*5*/R.ns, R.attr.min,
+            /*6*/R.ns, R.attr.progress,
+            /*7*/R.ns, R.attr.progressDrawable,
+            /*8*/R.ns, R.attr.secondaryProgress,
+    };
+
+    @AttrRes
+    private static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.progressBarStyle);
+
     /**
      * Create a new progress bar with range 0...10000 and initial progress of 0.
      *
      * @param context the application environment
      */
     public ProgressBar(Context context) {
-        super(context);
+        this(context, null);
+    }
+
+    public ProgressBar(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, DEF_STYLE_ATTR);
+    }
+
+    public ProgressBar(Context context, @Nullable AttributeSet attrs,
+                       @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public ProgressBar(Context context, @Nullable AttributeSet attrs,
+                       @Nullable @AttrRes ResourceId defStyleAttr,
+                       @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+
+        final Drawable progressDrawable = a.getDrawable(7); // progressDrawable
+        if (progressDrawable != null) {
+            setProgressDrawable(progressDrawable);
+        }
+
+        mMaxWidth = a.getDimensionPixelSize(4, mMaxWidth);
+        mMaxHeight = a.getDimensionPixelSize(3, mMaxHeight);
+
+        // initialize min/max/progress/secondaryProgress
+        mMin = a.getInt(5, 0);
+        mMax = Math.max(a.getInt(2, 10000), mMin);
+        mProgress = MathUtil.clamp(0, mMin, mMax);
+        mSecondaryProgress = MathUtil.clamp(0, mMin, mMax);
+
+        setProgress(a.getInt(6, mProgress));
+
+        setSecondaryProgress(a.getInt(8, mSecondaryProgress));
+
+        final Drawable indeterminateDrawable = a.getDrawable(1);
+        if (indeterminateDrawable != null) {
+            setIndeterminateDrawable(indeterminateDrawable);
+        }
+
+        setIndeterminate(a.getBoolean(0, mIndeterminate));
+
+        a.recycle();
     }
 
     /**
@@ -168,7 +241,7 @@ public class ProgressBar extends View {
      * @param indeterminate true to enable the indeterminate mode
      */
     public void setIndeterminate(boolean indeterminate) {
-        if ((!mOnlyIndeterminate || !mIndeterminate) && indeterminate != mIndeterminate) {
+        if (indeterminate != mIndeterminate) {
             mIndeterminate = indeterminate;
 
             if (indeterminate) {
@@ -211,14 +284,9 @@ public class ProgressBar extends View {
     /**
      * Define the drawable used to draw the progress bar in indeterminate mode.
      *
-     * <p>For the Drawable to animate, it must implement {@link Animatable}, or override
-     * {@link Drawable#onLevelChange(int)}.  A Drawable that implements Animatable will be animated
-     * via that interface and therefore provides the greatest amount of customization. A Drawable
-     * that only overrides onLevelChange(int) is animated directly by ProgressBar and only the
-     * animation {@link android.R.styleable#ProgressBar_indeterminateDuration duration},
-     * {@link android.R.styleable#ProgressBar_indeterminateBehavior repeating behavior}, and
-     * {@link #setInterpolator(Interpolator) interpolator} can be modified, and only before the
-     * indeterminate animation begins.
+     * <p>For the Drawable to animate, it must implement {@link Animatable}.
+     * A Drawable that implements Animatable will be animated
+     * via that interface and therefore provides the greatest amount of customization.
      *
      * @param d the new drawable
      * @see #getIndeterminateDrawable()
@@ -484,10 +552,10 @@ public class ProgressBar extends View {
     /**
      * Applies a tint to the progress indicator, if one exists, or to the
      * entire progress drawable otherwise. Does not modify the current tint
-     * mode, which is {@link PorterDuff.Mode#SRC_IN} by default.
+     * mode, which is {@link BlendMode#SRC_IN} by default.
      * <p>
      * The progress indicator should be specified as a layer with
-     * id {@link android.R.id#progress} in a {@link LayerDrawable}
+     * id {@link R.id#progress} in a {@link LayerDrawable}
      * used as the progress drawable.
      * <p>
      * Subsequent calls to {@link #setProgressDrawable(Drawable)} will
@@ -525,11 +593,11 @@ public class ProgressBar extends View {
     /**
      * Specifies the blending mode used to apply the tint specified by
      * {@link #setProgressTintList(ColorStateList)}} to the progress
-     * indicator. The default mode is {@link PorterDuff.Mode#SRC_IN}.
+     * indicator. The default mode is {@link BlendMode#SRC_IN}.
      *
      * @param blendMode the blending mode used to apply the tint, may be
      *                  {@code null} to clear tint
-     * @see #getProgressTintMode()
+     * @see #getProgressTintBlendMode()
      * @see Drawable#setTintBlendMode(BlendMode)
      */
     public void setProgressTintBlendMode(@Nullable BlendMode blendMode) {
@@ -560,10 +628,10 @@ public class ProgressBar extends View {
     /**
      * Applies a tint to the progress background, if one exists. Does not
      * modify the current tint mode, which is
-     * {@link PorterDuff.Mode#SRC_ATOP} by default.
+     * {@link BlendMode#SRC_ATOP} by default.
      * <p>
      * The progress background must be specified as a layer with
-     * id {@link android.R.id#background} in a {@link LayerDrawable}
+     * id {@link R.id#background} in a {@link LayerDrawable}
      * used as the progress drawable.
      * <p>
      * Subsequent calls to {@link #setProgressDrawable(Drawable)} where the
@@ -633,10 +701,10 @@ public class ProgressBar extends View {
     /**
      * Applies a tint to the secondary progress indicator, if one exists.
      * Does not modify the current tint mode, which is
-     * {@link PorterDuff.Mode#SRC_ATOP} by default.
+     * {@link BlendMode#SRC_ATOP} by default.
      * <p>
      * The secondary progress indicator must be specified as a layer with
-     * id {@link android.R.id#secondaryProgress} in a {@link LayerDrawable}
+     * id {@link R.id#secondaryProgress} in a {@link LayerDrawable}
      * used as the progress drawable.
      * <p>
      * Subsequent calls to {@link #setProgressDrawable(Drawable)} where the
@@ -676,7 +744,7 @@ public class ProgressBar extends View {
      * Specifies the blending mode used to apply the tint specified by
      * {@link #setSecondaryProgressTintList(ColorStateList)}} to the secondary
      * progress indicator. The default mode is
-     * {@link PorterDuff.Mode#SRC_ATOP}.
+     * {@link BlendMode#SRC_ATOP}.
      *
      * @param blendMode the blending mode used to apply the tint, may be
      *                  {@code null} to clear tint
@@ -734,6 +802,15 @@ public class ProgressBar extends View {
         }
 
         return layer;
+    }
+
+    public boolean getMirrorForRtl() {
+        return mMirrorForRtl;
+    }
+
+    public void setMirrorForRtl(boolean mirrorForRtl) {
+        mMirrorForRtl = mirrorForRtl;
+        invalidate();
     }
 
     /**
@@ -805,13 +882,7 @@ public class ProgressBar extends View {
             return;
         }
 
-        if (secondaryProgress < mMin) {
-            secondaryProgress = mMin;
-        }
-
-        if (secondaryProgress > mMax) {
-            secondaryProgress = mMax;
-        }
+        secondaryProgress = MathUtil.clamp(secondaryProgress, mMin, mMax);
 
         if (secondaryProgress != mSecondaryProgress) {
             mSecondaryProgress = secondaryProgress;
@@ -902,13 +973,10 @@ public class ProgressBar extends View {
      * @see #setSecondaryProgress(int)
      */
     public void setMin(int min) {
-        if (mMaxInitialized) {
-            if (min > mMax) {
-                min = mMax;
-            }
+        if (min > mMax) {
+            min = mMax;
         }
-        mMinInitialized = true;
-        if (mMaxInitialized && min != mMin) {
+        if (min != mMin) {
             mMin = min;
             postInvalidate();
 
@@ -916,8 +984,6 @@ public class ProgressBar extends View {
                 mProgress = min;
             }
             doRefreshProgress(R.id.progress, mProgress, false, true, false);
-        } else {
-            mMin = min;
         }
     }
 
@@ -930,13 +996,10 @@ public class ProgressBar extends View {
      * @see #setSecondaryProgress(int)
      */
     public void setMax(int max) {
-        if (mMinInitialized) {
-            if (max < mMin) {
-                max = mMin;
-            }
+        if (max < mMin) {
+            max = mMin;
         }
-        mMaxInitialized = true;
-        if (mMinInitialized && max != mMax) {
+        if (max != mMax) {
             mMax = max;
             postInvalidate();
 
@@ -944,8 +1007,6 @@ public class ProgressBar extends View {
                 mProgress = max;
             }
             doRefreshProgress(R.id.progress, mProgress, false, true, false);
-        } else {
-            mMax = max;
         }
     }
 
@@ -1026,9 +1087,22 @@ public class ProgressBar extends View {
     }
 
     void startAnimation() {
+        if (getVisibility() != VISIBLE || getWindowVisibility() != VISIBLE) {
+            return;
+        }
+
+        if (mIndeterminateDrawable instanceof Animatable) {
+            mShouldStartAnimationDrawable = true;
+        }
+        postInvalidate();
     }
 
     void stopAnimation() {
+        if (mIndeterminateDrawable instanceof Animatable) {
+            ((Animatable) mIndeterminateDrawable).stop();
+            mShouldStartAnimationDrawable = false;
+        }
+        postInvalidate();
     }
 
     private static final class ProgressTintInfo {
@@ -1109,47 +1183,53 @@ public class ProgressBar extends View {
             // rotates properly in its animation
             final int saveCount = canvas.save();
 
-            if (isLayoutRtl()) {
+            if (isLayoutRtl() && mMirrorForRtl) {
                 canvas.translate(getWidth() - mPaddingRight, mPaddingTop);
                 canvas.scale(-1.0f, 1.0f);
             } else {
                 canvas.translate(mPaddingLeft, mPaddingTop);
             }
 
-            /*final long time = getDrawingTime();
-            if (mHasAnimation) {
-                mAnimation.getTransformation(time, mTransformation);
-                final float scale = mTransformation.getAlpha();
-                try {
-                    mInDrawing = true;
-                    d.setLevel((int) (scale * MAX_LEVEL));
-                } finally {
-                    mInDrawing = false;
-                }
-                postInvalidateOnAnimation();
-            }*/
-
             d.draw(canvas);
             canvas.restoreToCount(saveCount);
 
-            /*if (mShouldStartAnimationDrawable && d instanceof Animatable) {
+            if (mShouldStartAnimationDrawable && d instanceof Animatable) {
                 ((Animatable) d).start();
                 mShouldStartAnimationDrawable = false;
-            }*/
+            }
+        }
+    }
+
+    @Override
+    public void onVisibilityAggregated(boolean isVisible) {
+        super.onVisibilityAggregated(isVisible);
+
+        if (isVisible != mAggregatedIsVisible) {
+            mAggregatedIsVisible = isVisible;
+
+            if (mIndeterminate) {
+                // let's be nice with the UI thread
+                if (isVisible) {
+                    startAnimation();
+                } else {
+                    stopAnimation();
+                }
+            }
+
+            if (mCurrentDrawable != null) {
+                mCurrentDrawable.setVisible(isVisible, false);
+            }
         }
     }
 
     @Override
     public void invalidateDrawable(@NonNull Drawable dr) {
-        if (!mInDrawing) {
-            // fixed by Modern UI: workaround dirty rect
-            //TODO implement this and handle RTL mirror in better way
-            if (super.verifyDrawable(dr)) {
-                super.invalidateDrawable(dr);
-            } else if (verifyDrawable(dr)) {
-                // invalidate full view due to translate padding and thumb offset
-                invalidate();
-            }
+        // fixed by Modern UI: workaround dirty rect
+        if (super.verifyDrawable(dr)) {
+            super.invalidateDrawable(dr);
+        } else if (verifyDrawable(dr)) {
+            // invalidate full view due to translate padding, thumb offset and possible RTL
+            invalidate();
         }
     }
 
@@ -1170,33 +1250,6 @@ public class ProgressBar extends View {
         int left = 0;
 
         if (mIndeterminateDrawable != null) {
-            // Aspect ratio logic does not apply to AnimationDrawables
-            if (mOnlyIndeterminate) {
-                // Maintain aspect ratio. Certain kinds of animated drawables
-                // get very confused otherwise.
-                final int intrinsicWidth = mIndeterminateDrawable.getIntrinsicWidth();
-                final int intrinsicHeight = mIndeterminateDrawable.getIntrinsicHeight();
-                final float intrinsicAspect = (float) intrinsicWidth / intrinsicHeight;
-                final float boundAspect = (float) w / h;
-                if (intrinsicAspect != boundAspect) {
-                    if (boundAspect > intrinsicAspect) {
-                        // New width is larger. Make it smaller to match height.
-                        final int width = (int) (h * intrinsicAspect);
-                        left = (w - width) / 2;
-                        right = left + width;
-                    } else {
-                        // New height is larger. Make it smaller to match width.
-                        final int height = (int) (w * (1 / intrinsicAspect));
-                        top = (h - height) / 2;
-                        bottom = top + height;
-                    }
-                }
-            }
-            if (isLayoutRtl()) {
-                int tempLeft = left;
-                left = w - right;
-                right = w - tempLeft;
-            }
             mIndeterminateDrawable.setBounds(left, top, right, bottom);
         }
 
@@ -1241,5 +1294,23 @@ public class ProgressBar extends View {
         if (mIndeterminateDrawable != null) {
             mIndeterminateDrawable.setHotspot(x, y);
         }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (mIndeterminate) {
+            startAnimation();
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (mIndeterminate) {
+            stopAnimation();
+        }
+        // This should come after stopAnimation(), otherwise an invalidate message remains in the
+        // queue, which can prevent the entire view hierarchy from being GC'ed during a rotation
+        super.onDetachedFromWindow();
     }
 }
