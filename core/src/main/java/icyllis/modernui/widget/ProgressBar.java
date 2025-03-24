@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
@@ -43,8 +60,74 @@ import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.View;
 
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.util.Locale;
 
+/**
+ * <p>
+ * A user interface element that indicates the progress of an operation.
+ * Progress bar supports two modes to represent progress: determinate, and indeterminate. For
+ * a visual overview of the difference between determinate and indeterminate progress modes, see
+ * <a href="https://material.io/guidelines/components/progress-activity.html#progress-activity-types-of-indicators">
+ * Progress & activity</a>.
+ * Display progress bars to a user in a non-interruptive way.
+ * Show the progress bar in your app's user interface or in a notification
+ * instead of within a dialog.
+ * </p>
+ * <h3>Indeterminate Progress</h3>
+ * <p>
+ * Use indeterminate mode for the progress bar when you do not know how long an
+ * operation will take.
+ * Indeterminate mode shows a cyclic animation without a
+ * specific amount of progress indicated. There is no disabled state in indeterminate mode.
+ * The following example shows an indeterminate progress bar:
+ * <pre>{@code
+ * var progressBar = new ProgressBar;
+ * progressBar.setIndeterminate(true);
+ * parent.addView(progressBar, WRAP_CONTENT, WRAP_CONTENT);
+ * }</pre>
+ * </p>
+ * <h3>Determinate Progress</h3>
+ * <p>
+ * Use determinate mode for the progress bar when you want to show that a specific quantity of
+ * progress has occurred.
+ * For example, the percent remaining of a file being retrieved, the amount records in
+ * a batch written to database, or the percent remaining of an audio file that is playing.
+ * <p>
+ * <p>
+ * To indicate determinate progress, you set the amount of progress.
+ * The following example shows a determinate progress bar that is 25% complete:
+ * <pre>{@code
+ * var progressBar = new ProgressBar;
+ * progressBar.setProgress(2500);
+ * parent.addView(progressBar, WRAP_CONTENT, WRAP_CONTENT);
+ * }</pre>
+ * You can update the percentage of progress displayed by using the
+ * {@link #setProgress(int)} method, or by calling
+ * {@link #incrementProgressBy(int)} to increase the current progress completed
+ * by a specified amount.
+ * By default, the progress bar is full when the progress value reaches 10000.
+ * You can adjust this default by setting the {@link #setMax(int) modernui:max} attribute.
+ * <p>
+ * There is also a secondary progress displayable on a progress bar which is
+ * useful for displaying intermediate progress, such as the buffer level during
+ * a streaming playback progress bar. With a linear type progress bar and in
+ * determinate mode, you can set a secondary progress
+ * by using the {@link #setSecondaryProgress(int)} method, or by calling
+ * {@link #incrementSecondaryProgressBy(int)}.
+ * </p>
+ * </p>
+ * <p>Other progress bar styles provided by the system include:</p>
+ * <ul>
+ * <li>{@link R.style#Widget_Material3_ProgressBar_Horizontal Widget.Material3.ProgressBar.Horizontal}</li>
+ * <li>{@link R.style#Widget_Material3_ProgressBar_Small Widget.Material3.ProgressBar.Small}</li>
+ * <li>{@link R.style#Widget_Material3_ProgressBar_ExtraSmall Widget.Material3.ProgressBar.ExtraSmall}</li>
+ * <li>{@link R.style#Widget_Material3_ProgressBar_Vertical Widget.Material3.ProgressBar.Vertical}</li>
+ * </ul>
+ * <p>The horizontal and vertical styles provide a the linear type progress bar.
+ * The others (and the default) provide a circular type progress bar.</p>
+ */
+// Modified from Android
 public class ProgressBar extends View {
 
     private int mMaxWidth = 1000;
@@ -69,7 +152,7 @@ public class ProgressBar extends View {
      */
     private float mVisualProgress;
 
-    private boolean mMirrorForRtl = false;
+    boolean mMirrorForRtl = false;
 
     private boolean mAggregatedIsVisible;
 

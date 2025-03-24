@@ -29,7 +29,8 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialDrawable;
-import icyllis.modernui.view.View;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedValue;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -51,9 +52,9 @@ public class SeekbarThumbDrawable extends MaterialDrawable {
     // current transition, if any
     private Animator mTransition;
 
-    public SeekbarThumbDrawable(View slider) {
-        mWidth = slider.dp(4);
-        mHeight = slider.dp(28);
+    public SeekbarThumbDrawable(Resources res) {
+        mWidth = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, 4, res.getDisplayMetrics()));
+        mHeight = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, 28, res.getDisplayMetrics()));
     }
 
     @Override

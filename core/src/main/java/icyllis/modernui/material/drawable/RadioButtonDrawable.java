@@ -40,7 +40,7 @@ import org.jetbrains.annotations.ApiStatus;
  * @hidden
  */
 @ApiStatus.Internal
-public class ButtonRadioDrawable extends MaterialDrawable {
+public class RadioButtonDrawable extends MaterialDrawable {
 
     private static final float SIZE = 24;
     private final int mSize; // 24dp
@@ -59,7 +59,7 @@ public class ButtonRadioDrawable extends MaterialDrawable {
     // current transition, if any
     private Animator mTransition;
 
-    public ButtonRadioDrawable(Resources res, boolean animated, boolean largeSize, boolean hasOuterRing) {
+    public RadioButtonDrawable(Resources res, boolean animated, boolean largeSize, boolean hasOuterRing) {
         mSize = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, SIZE, res.getDisplayMetrics()));
         mAnimated = animated;
         mLargeSize = largeSize;

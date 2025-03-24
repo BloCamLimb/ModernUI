@@ -28,7 +28,7 @@ import icyllis.modernui.graphics.drawable.LayerDrawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ScaleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.material.drawable.ButtonRadioDrawable;
+import icyllis.modernui.material.drawable.RadioButtonDrawable;
 import icyllis.modernui.material.drawable.CircularIndeterminateDrawable;
 import icyllis.modernui.material.drawable.LinearIndeterminateDrawable;
 import icyllis.modernui.material.drawable.SeekbarThumbDrawable;
@@ -37,7 +37,6 @@ import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
-import icyllis.modernui.widget.SeekBar;
 import icyllis.modernui.widget.Spinner;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -761,6 +760,7 @@ public class SystemTheme {
             style.addReference(R.attr.progressBarStyleSmall, R.style.Widget_Material3_ProgressBar_Small);
             style.addReference(R.attr.progressBarStyleHorizontal, R.style.Widget_Material3_ProgressBar_Horizontal);
             style.addReference(R.attr.progressBarStyleVertical, R.style.Widget_Material3_ProgressBar_Vertical);
+            style.addReference(R.attr.seekBarStyle, R.style.Widget_Material3_SeekBar);
         }
     }
 
@@ -1021,7 +1021,7 @@ public class SystemTheme {
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
             style.addDrawable(R.attr.button, (resources, theme) -> {
                 var buttonTint = fromCache(theme, ThemedCache::radio_button_tint);
-                var button = new ButtonRadioDrawable(resources, true, true, true);
+                var button = new RadioButtonDrawable(resources, true, true, true);
                 button.setTintList(buttonTint);
                 return button;
             });
@@ -1039,7 +1039,7 @@ public class SystemTheme {
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
             style.addDrawable(R.attr.button, (resources, theme) -> {
                 var buttonTint = fromCache(theme, ThemedCache::radio_button_tint);
-                var button = new ButtonRadioDrawable(resources, false, false, false);
+                var button = new RadioButtonDrawable(resources, false, false, false);
                 button.setTintList(buttonTint);
                 return button;
             });
@@ -1130,6 +1130,51 @@ public class SystemTheme {
                 return drawable;
             });
             style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources, theme, true));
+        }
+        // Seek bars
+        {
+            var style = b.newStyle(R.style.Widget_Material3_SeekBar.entry(), "");
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> {
+                var background = new ShapeDrawable();
+                background.setShape(ShapeDrawable.HLINE);
+                background.setSize(-1, dp(10, resources));
+                background.setCornerRadius(dp(5, resources));
+                background.setColor(fromCache(theme, ThemedCache::slider_track_color_inactive));
+                var progress = new ShapeDrawable();
+                progress.setShape(ShapeDrawable.HLINE);
+                progress.setSize(-1, dp(10, resources));
+                progress.setCornerRadius(dp(5, resources));
+                progress.setColor(fromCache(theme, ThemedCache::slider_track_color_active));
+                var scaledProgress = new ScaleDrawable(progress, Gravity.LEFT, 1.0f, -1.0f);
+                var track = new LayerDrawable(background, scaledProgress);
+                track.setId(0, R.id.background);
+                track.setId(1, R.id.progress);
+                track.setLayerGravity(0, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
+                track.setLayerGravity(1, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
+                return track;
+            });
+            style.addBoolean(R.attr.splitTrack, true);
+            style.addBoolean(R.attr.mirrorForRtl, true);
+            style.addBoolean(R.attr.focusable, true);
+            style.addDrawable(R.attr.thumb, (resources, theme) -> {
+                var thumb = new SeekbarThumbDrawable(resources);
+                thumb.setTintList(fromCache(theme, ThemedCache::slider_track_color_active));
+                return thumb;
+            });
+            style.addDimension(R.attr.paddingLeft, 16, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingRight, 16, TypedValue.COMPLEX_UNIT_DP);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete.entry(), R.style.Widget_Material3_SeekBar.entry());
+            style.addDrawable(R.attr.tickMark, (resources, theme) -> {
+                var tick = new ShapeDrawable();
+                tick.setShape(ShapeDrawable.CIRCLE);
+                int size = dp(4, resources);
+                tick.setSize(size, size);
+                tick.setColor(fromCache(theme, ThemedCache::slider_track_color_inactive));
+                tick.setUseLevelForShape(false);
+                return tick;
+            });
         }
     }
 
@@ -1241,80 +1286,6 @@ public class SystemTheme {
         int dp2 = spinner.dp(2);
         popupBackground.setPadding(dp2, dp2, dp2, dp2);
         spinner.setPopupBackgroundDrawable(popupBackground);
-    }
-
-    private ColorStateList sliderTrackColorActive;
-    private ColorStateList sliderTrackColorActive() {
-        if (sliderTrackColorActive != null) {
-            return sliderTrackColorActive;
-        }
-        sliderTrackColorActive = new ColorStateList(
-                new int[][]{
-                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
-                        StateSet.WILD_CARD
-                },
-                new int[]{
-                        colorPrimary,
-                        modulateColor(colorOnSurface, 0.38f)
-                }
-        );
-        return sliderTrackColorActive;
-    }
-
-    private ColorStateList sliderTrackColorInactive;
-    private ColorStateList sliderTrackColorInactive() {
-        if (sliderTrackColorInactive != null) {
-            return sliderTrackColorInactive;
-        }
-        sliderTrackColorInactive = new ColorStateList(
-                new int[][]{
-                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
-                        StateSet.WILD_CARD
-                },
-                new int[]{
-                        colorSecondaryContainer,
-                        modulateColor(colorOnSurface, 0.12f)
-                }
-        );
-        return sliderTrackColorInactive;
-    }
-
-    public void applySeekBarStyle(SeekBar seekBar) {
-        applySeekBarStyle(seekBar, false);
-    }
-
-    public void applySeekBarStyle(SeekBar seekBar, boolean discrete) {
-        seekBar.setClickable(true);
-        var background = new ShapeDrawable();
-        background.setShape(ShapeDrawable.HLINE);
-        background.setSize(-1, seekBar.dp(10));
-        background.setCornerRadius(seekBar.dp(5));
-        background.setColor(sliderTrackColorInactive());
-        var progress = new ShapeDrawable();
-        progress.setShape(ShapeDrawable.HLINE);
-        progress.setSize(-1, seekBar.dp(10));
-        progress.setCornerRadius(seekBar.dp(5));
-        progress.setColor(sliderTrackColorActive());
-        var scaledProgress = new ScaleDrawable(progress, Gravity.LEFT, 1.0f, -1.0f);
-        var track = new LayerDrawable(background, scaledProgress);
-        track.setId(0, R.id.background);
-        track.setId(1, R.id.progress);
-        track.setLayerGravity(0, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
-        track.setLayerGravity(1, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
-        seekBar.setProgressDrawable(track);
-        seekBar.setSplitTrack(true);
-        var thumb = new SeekbarThumbDrawable(seekBar);
-        seekBar.setThumb(thumb);
-        seekBar.setThumbTintList(sliderTrackColorActive());
-        seekBar.setPadding(seekBar.dp(16), 0, seekBar.dp(16), 0);
-        if (discrete) {
-            var tick = new ShapeDrawable();
-            tick.setShape(ShapeDrawable.CIRCLE);
-            tick.setSize(seekBar.dp(4), seekBar.dp(4));
-            tick.setColor(sliderTrackColorInactive());
-            tick.setUseLevelForShape(false);
-            seekBar.setTickMark(tick);
-        }
     }
 
     public static SystemTheme createDefault(boolean isDark, int subclass) {

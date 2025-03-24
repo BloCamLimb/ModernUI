@@ -81,7 +81,7 @@ public class CircularIndeterminateDrawable extends BaseIndeterminateDrawable {
 
                 canvas.drawArc(0, 0,
                         mRadius,
-                        (mTrimPathStart + mTrimPathOffset) * 360,
+                        (mTrimPathStart + mTrimPathOffset) * 360 - 90,
                         (mTrimPathEnd - mTrimPathStart) * 360,
                         paint);
                 canvas.restore();
