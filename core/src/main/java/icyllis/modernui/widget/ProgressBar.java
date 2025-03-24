@@ -103,9 +103,10 @@ public class ProgressBar extends View {
             /*3*/R.ns, R.attr.maxHeight,
             /*4*/R.ns, R.attr.maxWidth,
             /*5*/R.ns, R.attr.min,
-            /*6*/R.ns, R.attr.progress,
-            /*7*/R.ns, R.attr.progressDrawable,
-            /*8*/R.ns, R.attr.secondaryProgress,
+            /*6*/R.ns, R.attr.mirrorForRtl,
+            /*7*/R.ns, R.attr.progress,
+            /*8*/R.ns, R.attr.progressDrawable,
+            /*9*/R.ns, R.attr.secondaryProgress,
     };
 
     @AttrRes
@@ -138,7 +139,7 @@ public class ProgressBar extends View {
         final TypedArray a = context.getTheme().obtainStyledAttributes(
                 attrs, defStyleAttr, defStyleRes, STYLEABLE);
 
-        final Drawable progressDrawable = a.getDrawable(7); // progressDrawable
+        final Drawable progressDrawable = a.getDrawable(8); // progressDrawable
         if (progressDrawable != null) {
             setProgressDrawable(progressDrawable);
         }
@@ -152,9 +153,9 @@ public class ProgressBar extends View {
         mProgress = MathUtil.clamp(0, mMin, mMax);
         mSecondaryProgress = MathUtil.clamp(0, mMin, mMax);
 
-        setProgress(a.getInt(6, mProgress));
+        setProgress(a.getInt(7, mProgress));
 
-        setSecondaryProgress(a.getInt(8, mSecondaryProgress));
+        setSecondaryProgress(a.getInt(9, mSecondaryProgress));
 
         final Drawable indeterminateDrawable = a.getDrawable(1);
         if (indeterminateDrawable != null) {
@@ -162,6 +163,8 @@ public class ProgressBar extends View {
         }
 
         setIndeterminate(a.getBoolean(0, mIndeterminate));
+
+        mMirrorForRtl = a.getBoolean(6, mMirrorForRtl);
 
         a.recycle();
     }

@@ -134,6 +134,7 @@ public final class R {
         public static final String track = "track";
         public static final String switchMinWidth = "switchMinWidth";
         public static final String switchPadding = "switchPadding";
+        public static final String mirrorForRtl = "mirrorForRtl";
 
         public static final String textDirection = "textDirection";
         public static final String textAlignment = "textAlignment";
@@ -218,6 +219,7 @@ public final class R {
         public static final String autoCompleteTextViewStyle = "autoCompleteTextViewStyle";
         public static final String buttonStyle = "buttonStyle";
         public static final String checkboxStyle = "checkboxStyle";
+        public static final String checkboxStyleMenuItem = "checkboxStyleMenuItem";
         public static final String dropDownListViewStyle = "dropDownListViewStyle";
         public static final String editTextStyle = "editTextStyle";
         public static final String expandableListViewStyle = "expandableListViewStyle";
@@ -226,9 +228,9 @@ public final class R {
         public static final String listViewStyle = "listViewStyle";
         public static final String popupWindowStyle = "popupWindowStyle";
         public static final String progressBarStyle = "progressBarStyle";
-        public static final String progressBarStyleHorizontal = "progressBarStyleHorizontal";
         public static final String progressBarStyleSmall = "progressBarStyleSmall";
-        public static final String progressBarStyleLarge = "progressBarStyleLarge";
+        public static final String progressBarStyleHorizontal = "progressBarStyleHorizontal";
+        public static final String progressBarStyleVertical = "progressBarStyleVertical";
         public static final String seekBarStyle = "seekBarStyle";
         public static final String radioButtonStyle = "radioButtonStyle";
         public static final String radioButtonStyleMenuItem = "radioButtonStyleMenuItem";
@@ -379,8 +381,21 @@ public final class R {
 
         public static final ResourceId Widget_CompoundButton = new ResourceId(ns, type, "Widget.CompoundButton");
         public static final ResourceId Widget_Material3_CompoundButton_RadioButton = new ResourceId(ns, type, "Widget.Material3.CompoundButton.RadioButton");
+        // unofficial
         public static final ResourceId Widget_Material3_CompoundButton_RadioButton_MenuItem = new ResourceId(ns, type, "Widget.Material3.CompoundButton.RadioButton.MenuItem");
+        // unofficial
         public static final ResourceId Widget_Material3_CompoundButton_Switch = new ResourceId(ns, type, "Widget.Material3.CompoundButton.Switch");
+
+        // unofficial
+        public static final ResourceId Widget_Material3_ProgressBar = new ResourceId(ns, type, "Widget.Material3.ProgressBar");
+        // unofficial
+        public static final ResourceId Widget_Material3_ProgressBar_Small = new ResourceId(ns, type, "Widget.Material3.ProgressBar.Small");
+        // unofficial
+        public static final ResourceId Widget_Material3_ProgressBar_ExtraSmall = new ResourceId(ns, type, "Widget.Material3.ProgressBar.ExtraSmall");
+        // unofficial
+        public static final ResourceId Widget_Material3_ProgressBar_Horizontal = new ResourceId(ns, type, "Widget.Material3.ProgressBar.Horizontal");
+        // unofficial
+        public static final ResourceId Widget_Material3_ProgressBar_Vertical = new ResourceId(ns, type, "Widget.Material3.ProgressBar.Vertical");
     }
 
     static {
