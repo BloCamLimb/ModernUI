@@ -651,9 +651,9 @@ public class TestFragment extends Fragment {
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                     spinner.setMinimumWidth(dp(240));
                 } else if (i == 11) {
-                    var seekbar = new SeekBar(getContext());
-                    SystemTheme.currentTheme().applySeekBarStyle(seekbar, true);
-                    seekbar.setMax(8);
+                    var seekbar = new SeekBar(getContext(), null, null,
+                            R.style.Widget_Material3_SeekBar_Discrete);
+                    seekbar.setMax(10);
                     v = seekbar;
                     p = new LayoutParams(dp(200), WRAP_CONTENT);
                 } else if (i == 12) {

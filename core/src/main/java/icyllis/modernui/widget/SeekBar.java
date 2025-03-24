@@ -18,7 +18,13 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.util.AttributeSet;
 
 /**
  * A SeekBar is an extension of ProgressBar that adds a draggable thumb. The user can touch
@@ -73,8 +79,27 @@ public class SeekBar extends AbsSeekBar {
 
     private OnSeekBarChangeListener mOnSeekBarChangeListener;
 
+    @AttrRes
+    private static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.seekBarStyle);
+
     public SeekBar(Context context) {
-        super(context);
+        this(context, null);
+    }
+
+    public SeekBar(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, DEF_STYLE_ATTR);
+    }
+
+    public SeekBar(Context context, @Nullable AttributeSet attrs,
+                   @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public SeekBar(Context context, @Nullable AttributeSet attrs,
+                   @Nullable @AttrRes ResourceId defStyleAttr,
+                   @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
     }
 
     @Override

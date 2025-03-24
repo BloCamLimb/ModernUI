@@ -131,10 +131,13 @@ public final class R {
         public static final String maxWidth = "maxWidth";
         public static final String maxHeight = "maxHeight";
         public static final String thumb = "thumb";
+        public static final String thumbOffset = "thumbOffset";
         public static final String track = "track";
         public static final String switchMinWidth = "switchMinWidth";
         public static final String switchPadding = "switchPadding";
         public static final String mirrorForRtl = "mirrorForRtl";
+        public static final String tickMark = "tickMark";
+        public static final String splitTrack = "splitTrack";
 
         public static final String textDirection = "textDirection";
         public static final String textAlignment = "textAlignment";
@@ -396,6 +399,11 @@ public final class R {
         public static final ResourceId Widget_Material3_ProgressBar_Horizontal = new ResourceId(ns, type, "Widget.Material3.ProgressBar.Horizontal");
         // unofficial
         public static final ResourceId Widget_Material3_ProgressBar_Vertical = new ResourceId(ns, type, "Widget.Material3.ProgressBar.Vertical");
+
+        // unofficial
+        public static final ResourceId Widget_Material3_SeekBar = new ResourceId(ns, type, "Widget.Material3.SeekBar");
+        // unofficial
+        public static final ResourceId Widget_Material3_SeekBar_Discrete = new ResourceId(ns, type, "Widget.Material3.SeekBar.Discrete");
     }
 
     static {

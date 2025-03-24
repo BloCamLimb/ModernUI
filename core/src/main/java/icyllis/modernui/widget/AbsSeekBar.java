@@ -36,17 +36,24 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
 
@@ -85,9 +92,6 @@ public abstract class AbsSeekBar extends ProgressBar {
      */
     private int mKeyProgressIncrement = 1;
 
-    private static final int NO_ALPHA = 0xFF;
-    private float mDisabledAlpha;
-
     private int mThumbExclusionMaxSize;
     private int mScaledTouchSlop;
     private float mTouchDownX;
@@ -97,10 +101,51 @@ public abstract class AbsSeekBar extends ProgressBar {
     private final Rect mTempRect = new Rect();
     private final Rect mThumbRect = new Rect();
 
+    @StyleableRes
+    private static final String[] STYLEABLE = {
+            /*0*/R.ns, R.attr.splitTrack,
+            /*1*/R.ns, R.attr.thumb,
+            /*2*/R.ns, R.attr.thumbOffset,
+            /*3*/R.ns, R.attr.tickMark,
+    };
+
     public AbsSeekBar(Context context) {
         super(context);
+    }
 
-        setFocusable(true);
+    public AbsSeekBar(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public AbsSeekBar(Context context, @Nullable AttributeSet attrs,
+                      @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public AbsSeekBar(Context context, @Nullable AttributeSet attrs,
+                      @Nullable @AttrRes ResourceId defStyleAttr,
+                      @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+
+        final Drawable thumb = a.getDrawable(1);
+        setThumb(thumb);
+
+        final Drawable tickMark = a.getDrawable(3);
+        setTickMark(tickMark);
+
+        mSplitTrack = a.getBoolean(0, false);
+
+        // Guess thumb offset if thumb != null, but allow layout to override.
+        final int thumbOffset = a.getDimensionPixelOffset(
+                2, getThumbOffset());
+        setThumbOffset(thumbOffset);
+
+        a.recycle();
+
+        mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     }
 
     /**
@@ -433,11 +478,6 @@ public abstract class AbsSeekBar extends ProgressBar {
     protected void drawableStateChanged() {
         super.drawableStateChanged();
 
-        final Drawable progressDrawable = getProgressDrawable();
-        if (progressDrawable != null && mDisabledAlpha < 1.0f) {
-            progressDrawable.setAlpha(isEnabled() ? NO_ALPHA : (int) (NO_ALPHA * mDisabledAlpha));
-        }
-
         final Drawable thumb = mThumb;
         if (thumb != null && thumb.isStateful()
                 && thumb.setState(getDrawableState())) {
@@ -537,7 +577,7 @@ public abstract class AbsSeekBar extends ProgressBar {
             bottom = offset + thumbHeight;
         }
 
-        final int left = isLayoutRtl() ? available - thumbPos : thumbPos;
+        final int left = (isLayoutRtl() && mMirrorForRtl) ? available - thumbPos : thumbPos;
         final int right = left + thumbWidth;
 
         final Drawable background = getBackground();
@@ -620,36 +660,43 @@ public abstract class AbsSeekBar extends ProgressBar {
 
     protected void drawTickMarks(Canvas canvas) {
         if (mTickMark != null) {
-            final int count = getMax() - getMin();
+            int count = getMax() - getMin();
+            if (count <= 1) {
+                return;
+            }
+            final int w = mTickMark.getIntrinsicWidth();
+            final int h = mTickMark.getIntrinsicHeight();
+            final int halfW = w >= 0 ? w / 2 : 1;
+            final int halfH = h >= 0 ? h / 2 : 1;
+            mTickMark.setBounds(-halfW, -halfH, halfW, halfH);
+            if (halfW == 0 || halfH == 0) {
+                return;
+            }
+
+            final int saveCount = canvas.save();
+
+            // Modern UI changed: respect thumbOffset
+            final Drawable thumb = mThumb;
+            int available = getWidth() - mPaddingLeft - mPaddingRight;
+            if (thumb != null) {
+                int thumbWidth = thumb.getIntrinsicWidth();
+                available -= thumbWidth;
+                available += mThumbOffset * 2;
+                int offset = mThumbOffset - thumbWidth / 2;
+                canvas.translate(mPaddingLeft - offset, getHeight() / 2f);
+            } else {
+                canvas.translate(mPaddingLeft, getHeight() / 2f);
+            }
+            // Modern UI changed: cannot less than 1px per tick
+            count = Math.min(count, available / w);
             if (count > 1) {
-                final int w = mTickMark.getIntrinsicWidth();
-                final int h = mTickMark.getIntrinsicHeight();
-                final int halfW = w >= 0 ? w / 2 : 1;
-                final int halfH = h >= 0 ? h / 2 : 1;
-                mTickMark.setBounds(-halfW, -halfH, halfW, halfH);
-
-                final int saveCount = canvas.save();
-
-                // Modern UI changed: respect thumbOffset
-                final Drawable thumb = mThumb;
-                int available = getWidth() - mPaddingLeft - mPaddingRight;
-                if (thumb != null) {
-                    int thumbWidth = thumb.getIntrinsicWidth();
-                    available -= thumbWidth;
-                    available += mThumbOffset * 2;
-                    int offset = mThumbOffset - thumbWidth / 2;
-                    canvas.translate(mPaddingLeft - offset, getHeight() / 2f);
-                } else {
-                    canvas.translate(mPaddingLeft, getHeight() / 2f);
-                }
-
                 final float spacing = available / (float) count;
                 for (int i = 0; i <= count; i++) {
                     mTickMark.draw(canvas);
                     canvas.translate(spacing, 0);
                 }
-                canvas.restoreToCount(saveCount);
             }
+            canvas.restoreToCount(saveCount);
         }
     }
 
@@ -768,7 +815,7 @@ public abstract class AbsSeekBar extends ProgressBar {
 
         final float scale;
         float progress = 0.0f;
-        if (isLayoutRtl()) {
+        if (isLayoutRtl() && mMirrorForRtl) {
             if (x > width - mPaddingRight) {
                 scale = 0.0f;
             } else if (x < mPaddingLeft) {
