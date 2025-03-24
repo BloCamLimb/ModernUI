@@ -22,13 +22,15 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
+import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.LayerDrawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ScaleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.drawable.ButtonRadioDrawable;
+import icyllis.modernui.material.drawable.CircularIndeterminateDrawable;
+import icyllis.modernui.material.drawable.LinearIndeterminateDrawable;
 import icyllis.modernui.material.drawable.SeekbarThumbDrawable;
 import icyllis.modernui.material.drawable.SwitchThumbDrawable;
 import icyllis.modernui.util.ColorStateList;
@@ -37,16 +39,17 @@ import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.SeekBar;
 import icyllis.modernui.widget.Spinner;
-import icyllis.modernui.widget.TextView;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Temp use.
+ * @hidden
  */
+@ApiStatus.Internal
 public class SystemTheme {
 
     public static final int COLOR_FOREGROUND = 0xFFFFFFFF;
@@ -561,12 +564,12 @@ public class SystemTheme {
             return radio_button_ripple_tint;
         }
 
-        private ColorStateList switchTrackTint;
-        private ColorStateList switchTrackTint() {
-            if (switchTrackTint != null) {
-                return switchTrackTint;
+        private ColorStateList switch_track_tint;
+        private ColorStateList switch_track_tint() {
+            if (switch_track_tint != null) {
+                return switch_track_tint;
             }
-            switchTrackTint = new ColorStateList(
+            switch_track_tint = new ColorStateList(
                     new int[][]{
                             new int[]{-R.attr.state_enabled, -R.attr.state_checked},
                             new int[]{-R.attr.state_enabled, R.attr.state_checked},
@@ -580,15 +583,15 @@ public class SystemTheme {
                             colorSurfaceContainerHighest
                     }
             );
-            return switchTrackTint;
+            return switch_track_tint;
         }
 
-        private ColorStateList switchTrackDecorationTint;
-        private ColorStateList switchTrackDecorationTint() {
-            if (switchTrackDecorationTint != null) {
-                return switchTrackDecorationTint;
+        private ColorStateList switch_track_decoration_tint;
+        private ColorStateList switch_track_decoration_tint() {
+            if (switch_track_decoration_tint != null) {
+                return switch_track_decoration_tint;
             }
-            switchTrackDecorationTint = new ColorStateList(
+            switch_track_decoration_tint = new ColorStateList(
                     new int[][]{
                             new int[]{R.attr.state_checked},
                             new int[]{-R.attr.state_enabled},
@@ -600,15 +603,15 @@ public class SystemTheme {
                             colorOutline
                     }
             );
-            return switchTrackDecorationTint;
+            return switch_track_decoration_tint;
         }
 
-        private ColorStateList switchThumbTint;
-        private ColorStateList switchThumbTint() {
-            if (switchThumbTint != null) {
-                return switchThumbTint;
+        private ColorStateList switch_thumb_tint;
+        private ColorStateList switch_thumb_tint() {
+            if (switch_thumb_tint != null) {
+                return switch_thumb_tint;
             }
-            switchThumbTint = new ColorStateList(
+            switch_thumb_tint = new ColorStateList(
                     new int[][]{
                             new int[]{-R.attr.state_enabled, -R.attr.state_checked},
                             new int[]{-R.attr.state_enabled, R.attr.state_checked},
@@ -634,7 +637,64 @@ public class SystemTheme {
                             colorOutline
                     }
             );
-            return switchThumbTint;
+            return switch_thumb_tint;
+        }
+
+        // reused for progress bar, seek bar
+        private ColorStateList slider_track_color_active;
+        private ColorStateList slider_track_color_active() {
+            if (slider_track_color_active != null) {
+                return slider_track_color_active;
+            }
+            slider_track_color_active = new ColorStateList(
+                    new int[][]{
+                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorPrimary,
+                            modulateColor(colorOnSurface, 0.38f)
+                    }
+            );
+            return slider_track_color_active;
+        }
+
+        // reused for progress bar, seek bar
+        private ColorStateList slider_track_color_inactive;
+        private ColorStateList slider_track_color_inactive() {
+            if (slider_track_color_inactive != null) {
+                return slider_track_color_inactive;
+            }
+            slider_track_color_inactive = new ColorStateList(
+                    new int[][]{
+                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorSecondaryContainer,
+                            modulateColor(colorOnSurface, 0.12f)
+                    }
+            );
+            return slider_track_color_inactive;
+        }
+
+        // added by Modern UI
+        private ColorStateList secondary_progress_tint;
+        private ColorStateList secondary_progress_tint() {
+            if (secondary_progress_tint != null) {
+                return secondary_progress_tint;
+            }
+            secondary_progress_tint = new ColorStateList(
+                    new int[][]{
+                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorPrimaryContainer,
+                            Color.TRANSPARENT
+                    }
+            );
+            return secondary_progress_tint;
         }
     }
 
@@ -697,6 +757,10 @@ public class SystemTheme {
             style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
             style.addReference(R.attr.radioButtonStyleMenuItem, R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
             style.addReference(R.attr.switchStyle, R.style.Widget_Material3_CompoundButton_Switch);
+            style.addReference(R.attr.progressBarStyle, R.style.Widget_Material3_ProgressBar);
+            style.addReference(R.attr.progressBarStyleSmall, R.style.Widget_Material3_ProgressBar_Small);
+            style.addReference(R.attr.progressBarStyleHorizontal, R.style.Widget_Material3_ProgressBar_Horizontal);
+            style.addReference(R.attr.progressBarStyleVertical, R.style.Widget_Material3_ProgressBar_Vertical);
         }
     }
 
@@ -987,8 +1051,8 @@ public class SystemTheme {
             style.addDimension(R.attr.switchMinWidth, 52, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.switchPadding, 16, TypedValue.COMPLEX_UNIT_DP);
             style.addDrawable(R.attr.track, (resources, theme) -> {
-                var tint = fromCache(theme, ThemedCache::switchTrackTint);
-                var decorationTint = fromCache(theme, ThemedCache::switchTrackDecorationTint);
+                var tint = fromCache(theme, ThemedCache::switch_track_tint);
+                var decorationTint = fromCache(theme, ThemedCache::switch_track_decoration_tint);
                 var track = new ShapeDrawable();
                 track.setShape(ShapeDrawable.RECTANGLE);
                 track.setSize(dp(52, resources), dp(32, resources));
@@ -998,48 +1062,152 @@ public class SystemTheme {
                 return track;
             });
             style.addDrawable(R.attr.thumb, (resources, theme) -> {
-                var tint = fromCache(theme, ThemedCache::switchThumbTint);
+                var tint = fromCache(theme, ThemedCache::switch_thumb_tint);
                 var thumb = new SwitchThumbDrawable(resources, true, true);
                 thumb.setTintList(tint);
                 return thumb;
             });
         }
+        // Progress bars
+        {
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar.entry(), "");
+            style.addDimension(R.attr.minWidth, 48, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.minHeight, 48, TypedValue.COMPLEX_UNIT_DP);
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+                var drawable = new CircularIndeterminateDrawable(resources, 40, 4, 4);
+                // there is no disabled color in indeterminate mode
+                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
+                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                return drawable;
+            });
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources, theme, 40, 4, 4));
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Small.entry(), "");
+            style.addDimension(R.attr.minWidth, 36, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.minHeight, 36, TypedValue.COMPLEX_UNIT_DP);
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+                var drawable = new CircularIndeterminateDrawable(resources, 28, 4, 3);
+                // there is no disabled color in indeterminate mode
+                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
+                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                return drawable;
+            });
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources, theme, 28, 4, 3));
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_ExtraSmall.entry(), "");
+            style.addDimension(R.attr.minWidth, 24, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.minHeight, 24, TypedValue.COMPLEX_UNIT_DP);
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+                var drawable = new CircularIndeterminateDrawable(resources, 20, 2, 2.5f);
+                // there is no disabled color in indeterminate mode
+                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
+                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                return drawable;
+            });
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources, theme, 20, 2, 2.5f));
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Horizontal.entry(), "");
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+                var drawable = new LinearIndeterminateDrawable(resources, false);
+                // there is no disabled color in indeterminate mode
+                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
+                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                return drawable;
+            });
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources, theme, false));
+            style.addBoolean(R.attr.mirrorForRtl, true);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Vertical.entry(), "");
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+                var drawable = new LinearIndeterminateDrawable(resources, true);
+                // there is no disabled color in indeterminate mode
+                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
+                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                return drawable;
+            });
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources, theme, true));
+        }
     }
 
-    public void applyTextAppearanceLabelLarge(TextView tv) {
-        tv.setTextStyle(Paint.BOLD);
-        tv.setTextSize(14);
-        tv.setTextColor(textColorPrimary);
-        tv.setHintTextColor(textColorHint);
-        tv.setHighlightColor(textColorHighlight);
-        tv.setLinkTextColor(textColorLink);
+    private static Drawable circular_progress_drawable(Resources resources, Resources.Theme theme,
+                                                       int size, int inset, float thickness) {
+        var background = new ShapeDrawable();
+        background.setShape(ShapeDrawable.RING);
+        background.setInnerRadius(dp((size - inset - inset) * 0.5f, resources));
+        background.setThickness(dp(thickness, resources));
+        background.setColor(fromCache(theme, ThemedCache::slider_track_color_inactive));
+        background.setUseLevelForShape(false);
+        // there is no secondary progress in circular shape
+        var progress = new ShapeDrawable();
+        progress.setShape(ShapeDrawable.RING);
+        progress.setInnerRadius(dp((size - inset - inset) * 0.5f, resources));
+        progress.setThickness(dp(thickness, resources));
+        progress.setCornerRadius(1);
+        progress.setColor(fromCache(theme, ThemedCache::slider_track_color_active));
+        var track = new LayerDrawable(background, progress);
+        track.setId(0, R.id.background);
+        track.setId(1, R.id.progress);
+        track.setLayerGravity(0, Gravity.CENTER);
+        track.setLayerGravity(1, Gravity.CENTER);
+        return track;
     }
 
-    public void applyTextAppearanceBodyLarge(TextView tv) {
-        tv.setTextStyle(Paint.NORMAL);
-        tv.setTextSize(16);
-        tv.setTextColor(textColorPrimary);
-        tv.setHintTextColor(textColorHint);
-        tv.setHighlightColor(textColorHighlight);
-        tv.setLinkTextColor(textColorLink);
-    }
-
-    public void applyTextAppearanceBodyMedium(TextView tv) {
-        tv.setTextStyle(Paint.NORMAL);
-        tv.setTextSize(14);
-        tv.setTextColor(textColorPrimary);
-        tv.setHintTextColor(textColorHint);
-        tv.setHighlightColor(textColorHighlight);
-        tv.setLinkTextColor(textColorLink);
-    }
-
-    public void applyTextAppearanceBodySmall(TextView tv) {
-        tv.setTextStyle(Paint.NORMAL);
-        tv.setTextSize(12);
-        tv.setTextColor(textColorSecondary);
-        tv.setHintTextColor(textColorHint);
-        tv.setHighlightColor(textColorHighlight);
-        tv.setLinkTextColor(textColorLink);
+    private static Drawable linear_progress_drawable(Resources resources, Resources.Theme theme,
+                                                     boolean vertical) {
+        LayerDrawable track;
+        if (vertical) {
+            var background = new ShapeDrawable();
+            background.setShape(ShapeDrawable.VLINE);
+            background.setSize(dp(4, resources), -1);
+            background.setCornerRadius(1);
+            background.setStroke(dp(4, resources), fromCache(theme, ThemedCache::slider_track_color_inactive));
+            var secondaryProgress = new ShapeDrawable();
+            secondaryProgress.setShape(ShapeDrawable.VLINE);
+            secondaryProgress.setSize(dp(4, resources), -1);
+            secondaryProgress.setCornerRadius(1);
+            secondaryProgress.setStroke(dp(4, resources), fromCache(theme, ThemedCache::secondary_progress_tint));
+            var progress = new ShapeDrawable();
+            progress.setShape(ShapeDrawable.VLINE);
+            progress.setSize(dp(4, resources), -1);
+            progress.setCornerRadius(1);
+            progress.setStroke(dp(4, resources), fromCache(theme, ThemedCache::slider_track_color_active));
+            var scaledSecondaryProgress = new ScaleDrawable(secondaryProgress, Gravity.BOTTOM, 1.0f, -1.0f);
+            var scaledProgress = new ScaleDrawable(progress, Gravity.BOTTOM, 1.0f, -1.0f);
+            track = new LayerDrawable(background, scaledSecondaryProgress, scaledProgress);
+            track.setLayerGravity(0, Gravity.CENTER_HORIZONTAL | Gravity.FILL_VERTICAL);
+            track.setLayerGravity(1, Gravity.CENTER_HORIZONTAL | Gravity.FILL_VERTICAL);
+            track.setLayerGravity(2, Gravity.CENTER_HORIZONTAL | Gravity.FILL_VERTICAL);
+        } else {
+            var background = new ShapeDrawable();
+            background.setShape(ShapeDrawable.HLINE);
+            background.setSize(-1, dp(4, resources));
+            background.setCornerRadius(1);
+            background.setStroke(dp(4, resources), fromCache(theme, ThemedCache::slider_track_color_inactive));
+            var secondaryProgress = new ShapeDrawable();
+            secondaryProgress.setShape(ShapeDrawable.HLINE);
+            secondaryProgress.setSize(-1, dp(4, resources));
+            secondaryProgress.setCornerRadius(1);
+            secondaryProgress.setStroke(dp(4, resources), fromCache(theme, ThemedCache::secondary_progress_tint));
+            var progress = new ShapeDrawable();
+            progress.setShape(ShapeDrawable.HLINE);
+            progress.setSize(-1, dp(4, resources));
+            progress.setCornerRadius(1);
+            progress.setStroke(dp(4, resources), fromCache(theme, ThemedCache::slider_track_color_active));
+            var scaledSecondaryProgress = new ScaleDrawable(secondaryProgress, Gravity.LEFT, 1.0f, -1.0f);
+            var scaledProgress = new ScaleDrawable(progress, Gravity.LEFT, 1.0f, -1.0f);
+            track = new LayerDrawable(background, scaledSecondaryProgress, scaledProgress);
+            track.setLayerGravity(0, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
+            track.setLayerGravity(1, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
+            track.setLayerGravity(2, Gravity.CENTER_VERTICAL | Gravity.FILL_HORIZONTAL);
+        }
+        track.setId(0, R.id.background);
+        track.setId(1, R.id.secondaryProgress);
+        track.setId(2, R.id.progress);
+        return track;
     }
 
     private ColorStateList colorControlHighlight;

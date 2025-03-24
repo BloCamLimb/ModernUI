@@ -18,25 +18,62 @@
 
 package icyllis.modernui;
 
-import icyllis.modernui.animation.*;
+import icyllis.modernui.animation.AnimationUtils;
+import icyllis.modernui.animation.Animator;
+import icyllis.modernui.animation.AnimatorListener;
+import icyllis.modernui.animation.LayoutTransition;
+import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.PropertyValuesHolder;
+import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.audio.*;
+import icyllis.modernui.audio.AudioManager;
+import icyllis.modernui.audio.FFT;
+import icyllis.modernui.audio.Track;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.*;
+import icyllis.modernui.graphics.AngularGradient;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.GradientShader;
+import icyllis.modernui.graphics.ImageShader;
+import icyllis.modernui.graphics.LinearGradient;
+import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.Shader;
+import icyllis.modernui.graphics.drawable.ColorDrawable;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.resources.TypedValue;
-import icyllis.modernui.text.*;
-import icyllis.modernui.text.style.*;
-import icyllis.modernui.util.*;
-import icyllis.modernui.view.*;
+import icyllis.modernui.text.Spannable;
+import icyllis.modernui.text.SpannableString;
+import icyllis.modernui.text.Spanned;
+import icyllis.modernui.text.TextDirectionHeuristics;
+import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.TextShaper;
+import icyllis.modernui.text.Typeface;
+import icyllis.modernui.text.style.ForegroundColorSpan;
+import icyllis.modernui.text.style.RelativeSizeSpan;
+import icyllis.modernui.text.style.StrikethroughSpan;
+import icyllis.modernui.text.style.StyleSpan;
+import icyllis.modernui.text.style.SuperscriptSpan;
+import icyllis.modernui.text.style.URLSpan;
+import icyllis.modernui.text.style.UnderlineSpan;
+import icyllis.modernui.util.DataSet;
+import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.LayoutInflater;
+import icyllis.modernui.view.Menu;
+import icyllis.modernui.view.MenuItem;
+import icyllis.modernui.view.SubMenu;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
 import org.apache.logging.log4j.Level;
@@ -45,7 +82,6 @@ import org.apache.logging.log4j.core.config.Configurator;
 import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -278,9 +314,14 @@ public class TestFragment extends Fragment {
 
         private boolean b;
 
+        private int colorPrimary;
+        private int colorSecondaryContainer;
+
         private int ticks;
 
         private final TextView mTextView;
+        ProgressBar mProgressBar1;
+        ProgressBar mProgressBar2;
 
         PopupWindow mPopupWindow = new PopupWindow();
 
@@ -302,6 +343,11 @@ public class TestFragment extends Fragment {
             divider.setColor(value.data);
             setDividerDrawable(divider);
             setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
+
+            getContext().getTheme().resolveAttribute(R.ns, R.attr.colorPrimary, value, true);
+            colorPrimary = value.data;
+            getContext().getTheme().resolveAttribute(R.ns, R.attr.colorSecondaryContainer, value, true);
+            colorSecondaryContainer = value.data;
 
             setPadding(dp(12), dp(12), dp(12), dp(12));
 
@@ -396,6 +442,14 @@ public class TestFragment extends Fragment {
                 anim = ObjectAnimator.ofPropertyValuesHolder(this, pvh1, pvh2, pvh3);
                 anim.setDuration(12000);
                 anim.setInterpolator(TimeInterpolator.ACCELERATE_DECELERATE);
+                anim.addListener(new AnimatorListener() {
+                    @Override
+                    public void onAnimationEnd(@NonNull Animator animation) {
+                        setRotation(0);
+                        setRotationX(0);
+                        setRotationY(0);
+                    }
+                });
                 //anim.setRepeatCount(ValueAnimator.INFINITE);
                 //anim.start();
                 mGoodAnim = anim;
@@ -433,11 +487,12 @@ public class TestFragment extends Fragment {
                     .build();
 
             long start = System.nanoTime();
-            for (int i = 0; i < 13; i++) {
+            for (int i = 0; i < 14; i++) {
                 View v;
                 LayoutParams p;
                 if (i == 1) {
-                    Button button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_OutlinedButton);
+                    Button button = new Button(getContext(), null, null,
+                            R.style.Widget_Material3_Button_OutlinedButton);
                     button.setText("Play A Music!");
                     button.setOnClickListener(__ -> {
                         if (mGoodAnim != null) {
@@ -480,7 +535,7 @@ public class TestFragment extends Fragment {
                     });*/
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                    p.setMargins(0, dp(4),0, dp(4));
+                    p.setMargins(0, dp(4), 0, dp(4));
                 } else if (i == 0) {
                     Switch switchButton = new Switch(getContext());
                     v = switchButton;
@@ -601,11 +656,33 @@ public class TestFragment extends Fragment {
                     seekbar.setMax(8);
                     v = seekbar;
                     p = new LayoutParams(dp(200), WRAP_CONTENT);
+                } else if (i == 12) {
+                    ProgressBar progressBar = new ProgressBar(context, null, null,
+                            R.style.Widget_Material3_ProgressBar_Horizontal);
+                    progressBar.setIndeterminate(true);
+                    v = progressBar;
+                    p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                    mProgressBar1 = progressBar;
+                } else if (i == 13) {
+                    ProgressBar progressBar = new ProgressBar(context);
+                    progressBar.setIndeterminate(true);
+                    v = progressBar;
+                    p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                    mProgressBar2 = progressBar;
                 } else {
                     Button button;
                     if (i < 6) {
                         button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_TonalButton);
                         button.setText("Tonal button " + i);
+                        button.setOnClickListener(__ -> {
+                            int newVisibility = mProgressBar1.getVisibility() == View.VISIBLE ? View.GONE :
+                                    View.VISIBLE;
+                            boolean newIndeterminate = !mProgressBar1.isIndeterminate();
+                            mProgressBar1.setIndeterminate(newIndeterminate);
+                            mProgressBar2.setIndeterminate(newIndeterminate);
+                            mProgressBar1.setProgress(6000);
+                            mProgressBar2.setProgress(6000);
+                        });
                     } else {
                         button = new Button(getContext(), null);
                         button.setText("Filled button " + i);
@@ -616,7 +693,7 @@ public class TestFragment extends Fragment {
                     }
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                    p.setMargins(0, dp(4),0, dp(4));
+                    p.setMargins(0, dp(4), 0, dp(4));
                     /*LinearLayout outer = new LinearLayout(getContext());
                     outer.setOrientation(LinearLayout.HORIZONTAL);
                     v = outer;
@@ -790,9 +867,7 @@ public class TestFragment extends Fragment {
             }
 
             Paint paint = Paint.obtain();
-            TypedValue value = new TypedValue();
-            getContext().getTheme().resolveAttribute(R.ns, R.attr.colorPrimary, value, true);
-            paint.setColor(value.data);
+            paint.setColor(colorPrimary);
             paint.setStyle(Paint.FILL);
             canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
 
