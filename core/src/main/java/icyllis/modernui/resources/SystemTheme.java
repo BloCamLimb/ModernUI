@@ -761,6 +761,9 @@ public class SystemTheme {
             style.addReference(R.attr.progressBarStyleHorizontal, R.style.Widget_Material3_ProgressBar_Horizontal);
             style.addReference(R.attr.progressBarStyleVertical, R.style.Widget_Material3_ProgressBar_Vertical);
             style.addReference(R.attr.seekBarStyle, R.style.Widget_Material3_SeekBar);
+            style.addReference(R.attr.popupMenuStyle, R.style.Widget_Material3_PopupMenu);
+            style.addReference(R.attr.contextPopupMenuStyle, R.style.Widget_Material3_PopupMenu_ContextMenu);
+            style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
         }
     }
 
@@ -1176,6 +1179,31 @@ public class SystemTheme {
                 return tick;
             });
         }
+        // Popup menus
+        {
+            var style = b.newStyle(R.style.Widget_Material3_PopupMenu.entry(), "");
+            style.addDimension(R.attr.popupElevation, 3, TypedValue.COMPLEX_UNIT_DP);
+            style.addDrawable(R.attr.popupBackground, (resources, theme) -> {
+                var popupBackground = new ShapeDrawable();
+                popupBackground.setShape(ShapeDrawable.RECTANGLE);
+                popupBackground.setCornerRadius(dp(4, resources));
+                int color = fromCache(theme, cache -> cache.colorSurfaceContainer);
+                popupBackground.setColor(color);
+                int pad = dp(2, resources);
+                popupBackground.setPadding(pad, pad, pad, pad);
+                return popupBackground;
+            });
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_PopupMenu_ContextMenu.entry(),
+                    R.style.Widget_Material3_PopupMenu.entry());
+            style.addBoolean(R.attr.overlapAnchor, true);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_PopupMenu_ListPopupWindow.entry(),
+                    R.style.Widget_Material3_PopupMenu.entry());
+            // see spinner
+        }
     }
 
     private static Drawable circular_progress_drawable(Resources resources, Resources.Theme theme,
@@ -1279,13 +1307,6 @@ public class SystemTheme {
         //TODO background (arrow indicator)
         var listSelector = new RippleDrawable(colorControlHighlight(), null, new ColorDrawable(~0));
         spinner.setDropDownSelector(listSelector);
-        var popupBackground = new ShapeDrawable();
-        popupBackground.setShape(ShapeDrawable.RECTANGLE);
-        popupBackground.setCornerRadius(spinner.dp(4));
-        popupBackground.setColor(colorBackground);
-        int dp2 = spinner.dp(2);
-        popupBackground.setPadding(dp2, dp2, dp2, dp2);
-        spinner.setPopupBackgroundDrawable(popupBackground);
     }
 
     public static SystemTheme createDefault(boolean isDark, int subclass) {

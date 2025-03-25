@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,27 +18,48 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.*;
-import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.core.Context;
+import icyllis.modernui.core.Core;
+import icyllis.modernui.core.Handler;
+import icyllis.modernui.core.Looper;
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
-import icyllis.modernui.resources.TypedValue;
-import icyllis.modernui.view.*;
-import icyllis.modernui.widget.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.MenuItem;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.View.OnAttachStateChangeListener;
+import icyllis.modernui.view.View.OnKeyListener;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewTreeObserver;
+import icyllis.modernui.view.ViewTreeObserver.OnGlobalLayoutListener;
+import icyllis.modernui.widget.AbsListView;
+import icyllis.modernui.widget.FrameLayout;
+import icyllis.modernui.widget.HeaderViewListAdapter;
+import icyllis.modernui.widget.ListAdapter;
+import icyllis.modernui.widget.ListView;
+import icyllis.modernui.widget.MenuItemHoverListener;
+import icyllis.modernui.widget.MenuPopupWindow;
+import icyllis.modernui.widget.PopupWindow;
+import icyllis.modernui.widget.TextView;
+import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.*;
-import icyllis.modernui.view.View.OnKeyListener;
-import icyllis.modernui.view.ViewTreeObserver.OnGlobalLayoutListener;
-import icyllis.modernui.view.View.OnAttachStateChangeListener;
-import org.intellij.lang.annotations.MagicConstant;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
@@ -46,12 +67,14 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
  * A popup for a menu which will allow multiple submenus to appear in a cascading fashion, side by
  * side.
  */
+@ApiStatus.Internal
 public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter, OnKeyListener,
         PopupWindow.OnDismissListener {
 
     @Retention(RetentionPolicy.SOURCE)
     @MagicConstant(intValues = {HORIZ_POSITION_LEFT, HORIZ_POSITION_RIGHT})
-    public @interface HorizPosition {}
+    public @interface HorizPosition {
+    }
 
     private static final int HORIZ_POSITION_LEFT = 0;
     private static final int HORIZ_POSITION_RIGHT = 1;
@@ -64,10 +87,14 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
 
     private final Context mContext;
     private final int mMenuMaxWidth;
+    private final ResourceId mPopupStyleAttr;
+    private final ResourceId mPopupStyleRes;
     private final boolean mOverflowOnly;
     private final Handler mSubMenuHoverHandler;
 
-    /** List of menus that were added before this popup was shown. */
+    /**
+     * List of menus that were added before this popup was shown.
+     */
     private final List<MenuBuilder> mPendingMenus = new LinkedList<>();
 
     /**
@@ -187,16 +214,21 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
     private ViewTreeObserver mTreeObserver;
     private PopupWindow.OnDismissListener mOnDismissListener;
 
-    /** Whether popup menus should disable exit animations when closing. */
+    /**
+     * Whether popup menus should disable exit animations when closing.
+     */
     private boolean mShouldCloseImmediately;
 
     /**
      * Initializes a new cascading-capable menu popup.
      */
     public CascadingMenuPopup(@NonNull Context context, @NonNull View anchorView,
-                              boolean overflowOnly) {
+                              @AttrRes ResourceId popupStyleAttr,
+                              @StyleRes ResourceId popupStyleRes, boolean overflowOnly) {
         mContext = Objects.requireNonNull(context);
         mAnchorView = Objects.requireNonNull(anchorView);
+        mPopupStyleAttr = popupStyleAttr;
+        mPopupStyleRes = popupStyleRes;
         mOverflowOnly = overflowOnly;
 
         mForceShowIcon = false;
@@ -216,23 +248,8 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
 
     private MenuPopupWindow createPopupWindow() {
         MenuPopupWindow popupWindow = new MenuPopupWindow(
-                mContext);
+                mContext, null, mPopupStyleAttr, mPopupStyleRes);
 
-        // from m3_popupmenu_background_overlay
-        //TODO Added by ModernUI, use Resources in the future
-        var background = new ShapeDrawable();
-        background.setShape(ShapeDrawable.RECTANGLE);
-        TypedValue value = new TypedValue();
-        mContext.getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainer,
-                value, true);
-        assert value.isColorType();
-        background.setColor(value.data);
-        float cornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
-                4, mContext.getResources().getDisplayMetrics());
-        background.setCornerRadius(cornerRadius);
-        int padding = (int) Math.ceil(cornerRadius / 2f);
-        background.setPadding(padding, padding, padding, padding);
-        popupWindow.setBackgroundDrawable(background);
         //TODO configurable
         var enter1 = new EpicenterTranslateClipReveal();
         enter1.setDuration(250);
@@ -246,8 +263,6 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
         var exitAnim = new Fade();
         exitAnim.setDuration(300);
         popupWindow.setExitTransition(exitAnim);
-        // always overlap
-        popupWindow.setOverlapAnchor(true);
 
         popupWindow.setHoverListener(mMenuItemHoverListener);
         popupWindow.setOnItemClickListener(this);
@@ -312,6 +327,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
 
     /**
      * Determines the proper initial menu position for the current LTR/RTL configuration.
+     *
      * @return The initial position.
      */
     @HorizPosition
@@ -478,10 +494,10 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
      * Returns the menu item within the specified parent menu that owns
      * specified submenu.
      *
-     * @param parent the parent menu
+     * @param parent  the parent menu
      * @param submenu the submenu for which the index should be returned
      * @return the menu item that owns the submenu, or {@code null} if not
-     *         present
+     * present
      */
     private MenuItem findMenuItemForSubmenu(
             @NonNull MenuBuilder parent, @NonNull MenuBuilder submenu) {
@@ -500,7 +516,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
      * submenu.
      *
      * @param parentInfo info for the parent menu
-     * @param submenu the submenu whose parent view should be obtained
+     * @param submenu    the submenu whose parent view should be obtained
      * @return the parent view, or {@code null} if one could not be found
      */
     @Nullable
@@ -625,7 +641,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
      */
     private int findIndexOfAddedMenu(@NonNull MenuBuilder menu) {
         for (int i = 0, count = mShowingMenus.size(); i < count; i++) {
-            final CascadingMenuInfo info  = mShowingMenus.get(i);
+            final CascadingMenuInfo info = mShowingMenus.get(i);
             if (menu == info.menu) {
                 return i;
             }

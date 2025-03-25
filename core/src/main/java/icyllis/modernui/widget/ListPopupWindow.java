@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,19 +14,42 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2010 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ShowableListMenu;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * A ListPopupWindow anchors itself to a host view and displays a
@@ -75,6 +98,7 @@ public class ListPopupWindow implements ShowableListMenu {
     private int mDropDownVerticalOffset;
     private boolean mDropDownVerticalOffsetSet;
     private boolean mOverlapAnchor;
+    private boolean mOverlapAnchorSet;
 
     private int mDropDownGravity = Gravity.NO_GRAVITY;
 
@@ -111,9 +135,28 @@ public class ListPopupWindow implements ShowableListMenu {
 
     PopupWindow mPopup;
 
+    @AttrRes
+    private static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.listPopupWindowStyle);
+
     public ListPopupWindow(@NonNull Context context) {
+        this(context, null);
+    }
+
+    public ListPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, DEF_STYLE_ATTR);
+    }
+
+    public ListPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs,
+                           @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public ListPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs,
+                           @Nullable @AttrRes ResourceId defStyleAttr,
+                           @Nullable @StyleRes ResourceId defStyleRes) {
         mContext = context;
-        mPopup = new PopupWindow();
+        mPopup = new PopupWindow(context, attrs, defStyleAttr, defStyleRes);
     }
 
     /**
@@ -432,8 +475,10 @@ public class ListPopupWindow implements ShowableListMenu {
     @Override
     public void show() {
         // Fixed by Modern UI
-        // buildDropDown() needs to know OverlapAnchor or not
-        mPopup.setOverlapAnchor(mOverlapAnchor);
+        // buildDropDown() needs to know overlapAnchor or not, if set
+        if (mOverlapAnchorSet) {
+            mPopup.setOverlapAnchor(mOverlapAnchor);
+        }
         int height = buildDropDown();
 
         if (mPopup.isShowing()) {
@@ -504,7 +549,7 @@ public class ListPopupWindow implements ShowableListMenu {
             mPopup.setOutsideTouchable(!mForceIgnoreOutsideTouch && !mDropDownAlwaysVisible);
             mPopup.setTouchInterceptor(mTouchInterceptor);
             mPopup.setEpicenterBounds(mEpicenterBounds);
-            //mPopup.setOverlapAnchor(mOverlapAnchor);
+            //mPopup.setOverlapAnchor(mOverlapAnchor); // move to head
             mPopup.showAsDropDown(mDropDownAnchorView, mDropDownHorizontalOffset,
                     mDropDownVerticalOffset, mDropDownGravity);
             mDropDownList.setSelection(ListView.INVALID_POSITION);
@@ -843,8 +888,10 @@ public class ListPopupWindow implements ShowableListMenu {
         return listContent + otherHeights;
     }
 
+    @ApiStatus.Internal
     public void setOverlapAnchor(boolean overlap) {
         mOverlapAnchor = overlap;
+        mOverlapAnchorSet = true;
     }
 
     private class PopupDataSetObserver implements DataSetObserver {

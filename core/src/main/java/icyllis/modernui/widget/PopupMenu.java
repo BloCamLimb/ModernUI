@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,11 +14,31 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2010 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.Menu;
 import icyllis.modernui.view.MenuItem;
@@ -60,12 +80,37 @@ public class PopupMenu {
      * Constructor to create a new popup menu with an anchor view and alignment
      * gravity.
      *
-     * @param anchor  Anchor view for this popup. The popup will appear below
-     *                the anchor if there is room, or above it if there is not.
+     * @param context Context the popup menu is running in, through which it
+     *        can access the current theme, resources, etc.
+     * @param anchor Anchor view for this popup. The popup will appear below
+     *        the anchor if there is room, or above it if there is not.
      * @param gravity The {@link Gravity} value for aligning the popup with its
-     *                anchor.
+     *        anchor.
      */
     public PopupMenu(Context context, View anchor, int gravity) {
+        this(context, anchor, gravity, MenuPopupHelper.DEF_STYLE_ATTR, null);
+    }
+
+    /**
+     * Constructor to create a new popup menu with a specific style.
+     *
+     * @param context Context the popup menu is running in, through which it
+     *        can access the current theme, resources, etc.
+     * @param anchor Anchor view for this popup. The popup will appear below
+     *        the anchor if there is room, or above it if there is not.
+     * @param gravity The {@link Gravity} value for aligning the popup with its
+     *        anchor.
+     * @param popupStyleAttr An attribute in the current theme that contains a
+     *        reference to a style resource that supplies default values for
+     *        the popup window. Can be null to not look for defaults.
+     * @param popupStyleRes A resource identifier of a style resource that
+     *        supplies default values for the popup window, used only if
+     *        popupStyleAttr is null or can not be found in the theme. Can be null
+     *        to not look for defaults.
+     */
+    public PopupMenu(Context context, View anchor, int gravity,
+                     @AttrRes ResourceId popupStyleAttr,
+                     @StyleRes ResourceId popupStyleRes) {
         mContext = context;
         mAnchor = anchor;
 
@@ -84,7 +129,7 @@ public class PopupMenu {
             }
         });
 
-        mPopup = new MenuPopupHelper(context, mMenu, anchor, false);
+        mPopup = new MenuPopupHelper(context, mMenu, anchor, false, popupStyleAttr, popupStyleRes);
         mPopup.setGravity(gravity);
         mPopup.setOnDismissListener(() -> {
             if (mOnDismissListener != null) {

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,19 +14,42 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2015 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.transition.Transition;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.MotionEvent;
-import icyllis.modernui.view.View;
 import icyllis.modernui.view.menu.ListMenuItemView;
 import icyllis.modernui.view.menu.MenuAdapter;
 import icyllis.modernui.view.menu.MenuBuilder;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 
@@ -36,12 +59,15 @@ import javax.annotation.Nonnull;
  * MenuPopupWindow is mostly same as ListPopupWindow, but it has customized
  * behaviors specific to menus,
  */
+@ApiStatus.Internal
 public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverListener {
 
     private MenuItemHoverListener mHoverListener;
 
-    public MenuPopupWindow(Context context) {
-        super(context);
+    public MenuPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs,
+                           @Nullable @AttrRes ResourceId defStyleAttr,
+                           @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
     }
 
     @Nonnull

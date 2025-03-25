@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.view.menu;
@@ -22,21 +39,32 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedValue;
-import icyllis.modernui.view.*;
-import icyllis.modernui.widget.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.widget.AbsListView;
+import icyllis.modernui.widget.CheckBox;
+import icyllis.modernui.widget.CompoundButton;
+import icyllis.modernui.widget.ImageView;
 import icyllis.modernui.widget.ImageView.ScaleType;
+import icyllis.modernui.widget.LinearLayout;
+import icyllis.modernui.widget.RadioButton;
+import icyllis.modernui.widget.TextView;
+import org.jetbrains.annotations.ApiStatus;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 /**
  * The item view for each item in the ListView-based MenuViews.
  */
+// Modified from Android
+@ApiStatus.Internal
 public class ListMenuItemView extends LinearLayout
         implements MenuView.ItemView, AbsListView.SelectionBoundsAdjuster {
 
@@ -108,7 +136,8 @@ public class ListMenuItemView extends LinearLayout
                 mSubMenuArrowView.setVisibility(GONE);
                 mSubMenuArrowView.setImageDrawable(new SubMenuArrowDrawable(context));
                 if (context.getTheme().resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
-                    mSubMenuArrowView.setImageTintList(context.getResources().loadColorStateList(value, context.getTheme()));
+                    mSubMenuArrowView.setImageTintList(context.getResources().loadColorStateList(value,
+                            context.getTheme()));
 
                 var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 params.gravity = Gravity.CENTER;
@@ -322,6 +351,7 @@ public class ListMenuItemView extends LinearLayout
     }
 
     private void insertCheckBox() {
+        //TODO
         mCheckBox = new MaterialCheckBox(getContext());
         mCheckBox.setFocusable(false);
         mCheckBox.setClickable(false);

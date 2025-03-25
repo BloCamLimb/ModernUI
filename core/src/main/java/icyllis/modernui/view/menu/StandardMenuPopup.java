@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,20 +14,47 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2015 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
-import icyllis.modernui.resources.TypedValue;
-import icyllis.modernui.view.*;
-import icyllis.modernui.widget.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewTreeObserver;
+import icyllis.modernui.widget.AdapterView;
+import icyllis.modernui.widget.FrameLayout;
+import icyllis.modernui.widget.ListView;
+import icyllis.modernui.widget.MenuPopupWindow;
+import icyllis.modernui.widget.PopupWindow;
+import icyllis.modernui.widget.TextView;
+import org.jetbrains.annotations.ApiStatus;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
@@ -35,6 +62,7 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
  * A standard menu popup in which when a submenu is opened, it replaces its parent menu in the
  * viewport.
  */
+@ApiStatus.Internal
 public final class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismissListener,
         AdapterView.OnItemClickListener, MenuPresenter, View.OnKeyListener {
 
@@ -44,6 +72,9 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
     private final MenuAdapter mAdapter;
     private final boolean mOverflowOnly;
     private final int mPopupMaxWidth;
+    private final ResourceId mPopupStyleAttr;
+    private final ResourceId mPopupStyleRes;
+
     // The popup window is final in order to couple its lifecycle to the lifecycle of the
     // StandardMenuPopup.
     private final MenuPopupWindow mPopup;
@@ -110,32 +141,21 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
     private boolean mShowTitle;
 
     public StandardMenuPopup(Context context, @NonNull MenuBuilder menu,
-                             @NonNull View anchorView, boolean overflowOnly) {
+                             @NonNull View anchorView, @AttrRes ResourceId popupStyleAttr,
+                             @StyleRes ResourceId popupStyleRes, boolean overflowOnly) {
         mContext = context;
         mMenu = menu;
         mOverflowOnly = overflowOnly;
         mAdapter = new MenuAdapter(context, menu, mOverflowOnly);
+        mPopupStyleAttr = popupStyleAttr;
+        mPopupStyleRes = popupStyleRes;
 
         mPopupMaxWidth = anchorView.getRootView().getMeasuredWidth() / 2;
 
         mAnchorView = anchorView;
 
-        // from m3_popupmenu_background_overlay
-        //TODO Added by ModernUI, use Resources in the future
-        mPopup = new MenuPopupWindow(context);
-        var background = new ShapeDrawable();
-        background.setShape(ShapeDrawable.RECTANGLE);
-        TypedValue value = new TypedValue();
-        mContext.getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainer,
-                value, true);
-        assert value.isColorType();
-        background.setColor(value.data);
-        float cornerRadius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
-                4, context.getResources().getDisplayMetrics());
-        background.setCornerRadius(cornerRadius);
-        int padding = (int) Math.ceil(cornerRadius / 2f);
-        background.setPadding(padding, padding, padding, padding);
-        mPopup.setBackgroundDrawable(background);
+        mPopup = new MenuPopupWindow(context, null, mPopupStyleAttr, mPopupStyleRes);
+        //TODO configurable
         var enter1 = new EpicenterTranslateClipReveal();
         enter1.setDuration(250);
         var enter2 = new Fade();
@@ -148,8 +168,6 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
         var exitAnim = new Fade();
         exitAnim.setDuration(300);
         mPopup.setExitTransition(exitAnim);
-        // always overlap
-        mPopup.setOverlapAnchor(true);
 
         // Present the menu using our context, not the menu builder's context.
         menu.addMenuPresenter(this);
@@ -285,7 +303,7 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
     public boolean onSubMenuSelected(@NonNull SubMenuBuilder subMenu) {
         if (subMenu.hasVisibleItems()) {
             final MenuPopupHelper subPopup = new MenuPopupHelper(mContext, subMenu,
-                    mShownAnchorView, mOverflowOnly);
+                    mShownAnchorView, mOverflowOnly, mPopupStyleAttr, mPopupStyleRes);
             subPopup.setPresenterCallback(mPresenterCallback);
             subPopup.setForceShowIcon(MenuPopup.shouldPreserveIconSpacing(subMenu));
 
