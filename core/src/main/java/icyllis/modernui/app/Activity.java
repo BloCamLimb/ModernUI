@@ -18,11 +18,15 @@
 
 package icyllis.modernui.app;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.view.WindowManager;
 import icyllis.modernui.widget.ToastManager;
 import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * Reserved for future use.
+ */
 @ApiStatus.Experimental
 public abstract class Activity extends Context {
 
@@ -43,6 +47,14 @@ public abstract class Activity extends Context {
 
     @ApiStatus.Internal
     public WindowManager getWindowManager() {
+        return null;
+    }
+
+    @Override
+    public Object getSystemService(@NonNull String name) {
+        if (WINDOW_SERVICE.equals(name)) {
+            return getWindowManager();
+        }
         return null;
     }
 }

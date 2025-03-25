@@ -18,11 +18,33 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.Resources;
 
+/**
+ * Interface for obtaining global information about the application environment.
+ * This is an abstract class whose implementation is provided by the framework.
+ * It allows access to application-specific resources and classes, as well as
+ * up-calls for application-level operations such as launching activities, etc.
+ */
+// WIP
 public abstract class Context {
 
     public abstract Resources getResources();
 
     public abstract Resources.Theme getTheme();
+
+    @Nullable
+    public abstract Object getSystemService(@NonNull String name);
+
+    /**
+     * Use with {@link #getSystemService(String)} to retrieve a
+     * {@link icyllis.modernui.view.WindowManager} for accessing the system's window
+     * manager.
+     *
+     * @see #getSystemService(String)
+     * @see icyllis.modernui.view.WindowManager
+     */
+    public static final String WINDOW_SERVICE = "window";
 }

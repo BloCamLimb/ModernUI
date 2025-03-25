@@ -180,9 +180,12 @@ public class TestFragment extends Fragment {
         //base.setRotation(30);
         container.setClipChildren(true);
         TypedValue value = new TypedValue();
-        getContext().getTheme().resolveAttribute(R.ns, R.attr.colorSurface, value, true);
+        requireContext().getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainerLowest, value, true);
+        int colorSurfaceContainerLowest = value.data;
+        container.setBackground(new ColorDrawable(colorSurfaceContainerLowest));
+        requireContext().getTheme().resolveAttribute(R.ns, R.attr.colorSurface, value, true);
         int colorSurface = value.data;
-        container.setBackground(new ColorDrawable(colorSurface));
+        base.setBackground(new ColorDrawable(colorSurface));
         //container.setBackground(new ColorDrawable((colorSurface & 0xFFFFFF) | (0x99000000)));
         return base;
     }

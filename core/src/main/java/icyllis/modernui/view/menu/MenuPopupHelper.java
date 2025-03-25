@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,18 +14,41 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2010 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.view.menu;
 
+import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.PopupMenu;
 import icyllis.modernui.widget.PopupWindow;
+import org.jetbrains.annotations.ApiStatus;
 
+@ApiStatus.Internal
 public class MenuPopupHelper implements MenuHelper {
 
     private static final int TOUCH_EPICENTER_SIZE_DP = 48;
@@ -35,6 +58,8 @@ public class MenuPopupHelper implements MenuHelper {
     // Immutable cached popup menu properties.
     private final MenuBuilder mMenu;
     private final boolean mOverflowOnly;
+    private final ResourceId mPopupStyleAttr;
+    private final ResourceId mPopupStyleRes;
 
     // Mutable cached popup menu properties.
     private View mAnchorView;
@@ -50,19 +75,34 @@ public class MenuPopupHelper implements MenuHelper {
      */
     private final PopupWindow.OnDismissListener mInternalOnDismissListener = this::onDismiss;
 
+    @AttrRes
+    public static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.popupMenuStyle);
+
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu) {
-        this(context, menu, null, false);
+        this(context, menu, null, false, DEF_STYLE_ATTR, null);
     }
 
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu, View anchorView) {
-        this(context, menu, anchorView, false);
+        this(context, menu, anchorView, false, DEF_STYLE_ATTR, null);
     }
 
-    public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu, View anchorView, boolean overflowOnly) {
+    public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu,
+                           View anchorView, boolean overflowOnly,
+                           @AttrRes ResourceId popupStyleAttr) {
+        this(context, menu, anchorView, overflowOnly, popupStyleAttr, null);
+    }
+
+    public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu,
+                           View anchorView, boolean overflowOnly,
+                           @AttrRes ResourceId popupStyleAttr,
+                           @StyleRes ResourceId popupStyleRes) {
         mContext = context;
         mMenu = menu;
         mAnchorView = anchorView;
         mOverflowOnly = overflowOnly;
+        mPopupStyleAttr = popupStyleAttr;
+        mPopupStyleRes = popupStyleRes;
     }
 
     public void setOnDismissListener(@Nullable PopupWindow.OnDismissListener listener) {
@@ -210,9 +250,11 @@ public class MenuPopupHelper implements MenuHelper {
 
         final MenuPopup popup;
         if (enableCascadingSubmenus) {
-            popup = new CascadingMenuPopup(mContext, mAnchorView, mOverflowOnly);
+            popup = new CascadingMenuPopup(mContext, mAnchorView, mPopupStyleAttr,
+                    mPopupStyleRes, mOverflowOnly);
         } else {
-            popup = new StandardMenuPopup(mContext, mMenu, mAnchorView, mOverflowOnly);
+            popup = new StandardMenuPopup(mContext, mMenu, mAnchorView, mPopupStyleAttr,
+                    mPopupStyleRes, mOverflowOnly);
         }
 
         // Assign immutable properties.

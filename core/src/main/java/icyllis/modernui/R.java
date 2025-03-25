@@ -108,6 +108,12 @@ public final class R {
         public static final String longClickable = "longClickable";
         public static final String contextClickable = "contextClickable";
 
+        public static final String overlapAnchor = "overlapAnchor";
+        public static final String popupBackground = "popupBackground";
+        public static final String popupElevation = "popupElevation";
+        public static final String popupEnterTransition = "popupEnterTransition";
+        public static final String popupExitTransition = "popupExitTransition";
+
         public static final String layout_width = "layout_width";
         public static final String layout_height = "layout_height";
         public static final String layout_margin = "layout_margin";
@@ -229,7 +235,6 @@ public final class R {
         public static final String gridViewStyle = "gridViewStyle";
         public static final String imageButtonStyle = "imageButtonStyle";
         public static final String listViewStyle = "listViewStyle";
-        public static final String popupWindowStyle = "popupWindowStyle";
         public static final String progressBarStyle = "progressBarStyle";
         public static final String progressBarStyleSmall = "progressBarStyleSmall";
         public static final String progressBarStyleHorizontal = "progressBarStyleHorizontal";
@@ -246,6 +251,9 @@ public final class R {
         public static final String spinnerDropDownItemStyle = "spinnerDropDownItemStyle";
         public static final String dropDownHintAppearance = "dropDownHintAppearance";
         public static final String spinnerItemStyle = "spinnerItemStyle";
+        public static final String popupMenuStyle = "popupMenuStyle";
+        public static final String contextPopupMenuStyle = "contextPopupMenuStyle";
+        public static final String listPopupWindowStyle = "listPopupWindowStyle";
 
         public static final String textSize = "textSize";
         public static final String textStyle = "textStyle";
@@ -404,6 +412,10 @@ public final class R {
         public static final ResourceId Widget_Material3_SeekBar = new ResourceId(ns, type, "Widget.Material3.SeekBar");
         // unofficial
         public static final ResourceId Widget_Material3_SeekBar_Discrete = new ResourceId(ns, type, "Widget.Material3.SeekBar.Discrete");
+
+        public static final ResourceId Widget_Material3_PopupMenu = new ResourceId(ns, type, "Widget.Material3.PopupMenu");
+        public static final ResourceId Widget_Material3_PopupMenu_ContextMenu = new ResourceId(ns, type, "Widget.Material3.PopupMenu.ContextMenu");
+        public static final ResourceId Widget_Material3_PopupMenu_ListPopupWindow = new ResourceId(ns, type, "Widget.Material3.PopupMenu.ListPopupWindow");
     }
 
     static {

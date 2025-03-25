@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,20 +14,37 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2016 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.view;
 
 import icyllis.modernui.R;
-import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.widget.TextView;
 import org.jetbrains.annotations.ApiStatus;
 
+// Modified from Android
 @ApiStatus.Internal
-public final class TooltipPopup {
+public class TooltipPopup {
 
     private final Context mContext;
 
@@ -70,7 +87,8 @@ public final class TooltipPopup {
 
         computePosition(anchorView, anchorX, anchorY, fromTouch, mParams);
 
-        WindowManager wm = ((Activity) mContext).getWindowManager();
+        WindowManager wm = (WindowManager)mContext.getSystemService(Context.WINDOW_SERVICE);
+        assert wm != null;
         wm.addView(mTextView, mParams);
     }
 
@@ -79,7 +97,8 @@ public final class TooltipPopup {
             return;
         }
 
-        WindowManager wm = ((Activity) mContext).getWindowManager();
+        WindowManager wm = (WindowManager)mContext.getSystemService(Context.WINDOW_SERVICE);
+        assert wm != null;
         wm.removeView(mTextView);
     }
 
