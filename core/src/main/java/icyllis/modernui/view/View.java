@@ -26,6 +26,7 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
@@ -5486,15 +5487,10 @@ public class View implements Drawable.Callback {
         // client control it. Until then, you can have any scroll indicator you
         // want as long as it's a 1dp foreground-colored rectangle.
         if (mScrollIndicatorDrawable == null) {
-            mScrollIndicatorDrawable = new Drawable() {
-                @Override
-                public void draw(@NonNull Canvas canvas) {
-                    Paint paint = Paint.obtain();
-                    paint.setRGBA(0, 0, 0, 0x1f);
-                    canvas.drawRect(getBounds(), paint);
-                    paint.recycle();
-                }
-            };
+            ShapeDrawable drawable = new ShapeDrawable();
+            drawable.setColor(0x1f808080);
+            drawable.setSize(dp(1), dp(1));
+            mScrollIndicatorDrawable = drawable;
         }
     }
 

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,20 +14,40 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.SoundEffectConstants;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * An AdapterView is a view whose children are determined by an {@link Adapter}.
@@ -217,7 +237,23 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
     boolean mBlockLayoutRequests = false;
 
     public AdapterView(Context context) {
-        super(context);
+        this(context, null);
+    }
+
+    public AdapterView(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public AdapterView(Context context, @Nullable AttributeSet attrs,
+                       @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public AdapterView(Context context, @Nullable AttributeSet attrs,
+                       @Nullable @AttrRes ResourceId defStyleAttr,
+                       @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
         mDesiredFocusableState = getFocusable();
         if (mDesiredFocusableState == FOCUSABLE_AUTO) {
             // Starts off without an adapter, so NOT_FOCUSABLE by default.
@@ -245,7 +281,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
          * @param position The position of the view in the adapter.
          * @param id       The row id of the item that was clicked.
          */
-        void onItemClick(@Nonnull AdapterView<?> parent, View view, int position, long id);
+        void onItemClick(@NonNull AdapterView<?> parent, View view, int position, long id);
     }
 
     /**
@@ -434,7 +470,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @throws UnsupportedOperationException Every time this method is invoked.
      */
     @Override
-    public void addView(@Nonnull View child) {
+    public void addView(@NonNull View child) {
         throw new UnsupportedOperationException("addView(View) is not supported in AdapterView");
     }
 
@@ -446,7 +482,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @throws UnsupportedOperationException Every time this method is invoked.
      */
     @Override
-    public void addView(@Nonnull View child, int index) {
+    public void addView(@NonNull View child, int index) {
         throw new UnsupportedOperationException("addView(View, int) is not supported in AdapterView");
     }
 
@@ -458,7 +494,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @throws UnsupportedOperationException Every time this method is invoked.
      */
     @Override
-    public void addView(@Nonnull View child, @Nonnull LayoutParams params) {
+    public void addView(@NonNull View child, @NonNull LayoutParams params) {
         throw new UnsupportedOperationException("addView(View, LayoutParams) "
                 + "is not supported in AdapterView");
     }
@@ -472,7 +508,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @throws UnsupportedOperationException Every time this method is invoked.
      */
     @Override
-    public void addView(@Nonnull View child, int index, @Nonnull LayoutParams params) {
+    public void addView(@NonNull View child, int index, @NonNull LayoutParams params) {
         throw new UnsupportedOperationException("addView(View, int, LayoutParams) "
                 + "is not supported in AdapterView");
     }
@@ -484,7 +520,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @throws UnsupportedOperationException Every time this method is invoked.
      */
     @Override
-    public void removeView(@Nonnull View child) {
+    public void removeView(@NonNull View child) {
         throw new UnsupportedOperationException("removeView(View) is not supported in AdapterView");
     }
 

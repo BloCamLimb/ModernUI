@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,16 +14,41 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2007 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
@@ -31,9 +56,6 @@ import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.menu.ShowableListMenu;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A view that displays one child at a time and lets the user pick among them.
@@ -49,7 +71,7 @@ public class Spinner extends AbsSpinner {
 
     private final Rect mTempRect = new Rect();
 
-    private final DropdownPopup mPopup;
+    private final DropDownPopupWindow mPopup;
     int mDropDownWidth;
 
     /**
@@ -59,10 +81,46 @@ public class Spinner extends AbsSpinner {
 
     private int mGravity;
 
+    private static final String[] STYLEABLE = {
+            /*0*/R.ns, R.attr.dropDownSelector,
+            /*1*/R.ns, R.attr.dropDownWidth,
+            /*2*/R.ns, R.attr.gravity,
+            /*3*/R.ns, R.attr.overlapAnchor,
+            /*4*/R.ns, R.attr.popupBackground,
+            /*5*/R.ns, R.attr.popupElevation,
+    };
+
+    @AttrRes
+    private static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.spinnerStyle);
+
     public Spinner(Context context) {
-        super(context);
-        mPopup = new DropdownPopup(context);
-        mDropDownWidth = LayoutParams.WRAP_CONTENT;
+        this(context, null);
+    }
+
+    public Spinner(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, DEF_STYLE_ATTR);
+    }
+
+    public Spinner(Context context, @Nullable AttributeSet attrs,
+                   @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public Spinner(Context context, @Nullable AttributeSet attrs,
+                   @Nullable @AttrRes ResourceId defStyleAttr,
+                   @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+
+        // dropdown only
+        mPopup = new DropDownPopupWindow(context, attrs, defStyleAttr, defStyleRes);
+        mDropDownWidth = a.getLayoutDimension(1, LayoutParams.WRAP_CONTENT);
+        if (a.hasValueOrEmpty(0)) {
+            mPopup.setListSelector(a.getDrawable(0));
+        }
         mForwardingListener = new ForwardingListener(this) {
             @Override
             public ShowableListMenu getPopup() {
@@ -77,8 +135,9 @@ public class Spinner extends AbsSpinner {
                 return true;
             }
         };
-        mGravity = Gravity.START | Gravity.CENTER_VERTICAL;
-        setClickable(true);
+        mGravity = a.getInt(2, Gravity.START | Gravity.CENTER_VERTICAL);
+
+        a.recycle();
     }
 
     /**
@@ -283,7 +342,7 @@ public class Spinner extends AbsSpinner {
     }
 
     @Override
-    public boolean onTouchEvent(@Nonnull MotionEvent event) {
+    public boolean onTouchEvent(@NonNull MotionEvent event) {
         if (mForwardingListener != null && mForwardingListener.onTouch(this, event)) {
             return true;
         }
@@ -413,7 +472,7 @@ public class Spinner extends AbsSpinner {
      * @param child    The view to position
      * @param addChild true if the child should be added to the Spinner during setup
      */
-    private void setUpChild(@Nonnull View child, boolean addChild) {
+    private void setUpChild(@NonNull View child, boolean addChild) {
 
         // Respect layout params that are already in the view. Otherwise
         // make some up...
@@ -554,13 +613,13 @@ public class Spinner extends AbsSpinner {
 
         @Nullable
         @Override
-        public View getView(int position, View convertView, @Nonnull ViewGroup parent) {
+        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
             return getDropDownView(position, convertView, parent);
         }
 
         @Nullable
         @Override
-        public View getDropDownView(int position, View convertView, @Nonnull ViewGroup parent) {
+        public View getDropDownView(int position, View convertView, @NonNull ViewGroup parent) {
             return mAdapter == null ? null : mAdapter.getDropDownView(position, convertView, parent);
         }
 
@@ -570,14 +629,14 @@ public class Spinner extends AbsSpinner {
         }
 
         @Override
-        public void registerDataSetObserver(@Nonnull DataSetObserver observer) {
+        public void registerDataSetObserver(@NonNull DataSetObserver observer) {
             if (mAdapter != null) {
                 mAdapter.registerDataSetObserver(observer);
             }
         }
 
         @Override
-        public void unregisterDataSetObserver(@Nonnull DataSetObserver observer) {
+        public void unregisterDataSetObserver(@NonNull DataSetObserver observer) {
             if (mAdapter != null) {
                 mAdapter.unregisterDataSetObserver(observer);
             }
@@ -627,12 +686,15 @@ public class Spinner extends AbsSpinner {
         }
     }
 
-    private class DropdownPopup extends ListPopupWindow {
+    private class DropDownPopupWindow extends ListPopupWindow {
 
         private ListAdapter mAdapter;
 
-        public DropdownPopup(Context context) {
-            super(context);
+        public DropDownPopupWindow(Context context, @Nullable AttributeSet attrs,
+                                   @Nullable @AttrRes ResourceId defStyleAttr,
+                                   @Nullable @StyleRes ResourceId defStyleRes) {
+            super(context, attrs, defStyleAttr, defStyleRes);
+
             setAnchorView(Spinner.this);
             setModal(true);
             setPromptPosition(POSITION_PROMPT_ABOVE);
@@ -643,6 +705,7 @@ public class Spinner extends AbsSpinner {
                 }
                 dismiss();
             });
+
             var enter1 = new EpicenterTranslateClipReveal();
             enter1.setDuration(250);
             var enter2 = new Fade();

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,11 +14,30 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
@@ -26,9 +45,12 @@ import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * You can use this adapter to provide views for an {@link AdapterView},
@@ -96,7 +118,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      *
      * @param objects The objects to represent in the ListView.
      */
-    public ArrayAdapter(Context context, @Nonnull T[] objects) {
+    public ArrayAdapter(Context context, @NonNull T[] objects) {
         this(context, Arrays.asList(objects));
     }
 
@@ -105,7 +127,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      *
      * @param objects The objects to represent in the ListView.
      */
-    public ArrayAdapter(Context context, @Nonnull List<T> objects) {
+    public ArrayAdapter(Context context, @NonNull List<T> objects) {
         mContext = context;
         mObjects = objects;
     }
@@ -143,7 +165,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      * @throws IllegalArgumentException      if some property of an element of the
      *                                       specified collection prevents it from being added to this list
      */
-    public void addAll(@Nonnull Collection<? extends T> collection) {
+    public void addAll(@NonNull Collection<? extends T> collection) {
         synchronized (mLock) {
             if (mOriginalValues != null) {
                 mOriginalValues.addAll(collection);
@@ -162,7 +184,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      * @param items The items to add at the end of the array.
      * @throws UnsupportedOperationException if the underlying data collection is immutable
      */
-    public void addAll(@Nonnull T[] items) {
+    public void addAll(@NonNull T[] items) {
         synchronized (mLock) {
             if (mOriginalValues != null) {
                 Collections.addAll(mOriginalValues, items);
@@ -238,7 +260,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      * @param comparator The comparator used to sort the objects contained
      *                   in this adapter.
      */
-    public void sort(@Nonnull Comparator<? super T> comparator) {
+    public void sort(@Nullable Comparator<? super T> comparator) {
         synchronized (mLock) {
             if (mOriginalValues != null) {
                 mOriginalValues.sort(comparator);
@@ -300,13 +322,13 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
         return position;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
+    public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         return createViewInner(position, convertView, false);
     }
 
-    @Nonnull
+    @NonNull
     private View createViewInner(int position, @Nullable View convertView, boolean dropdown) {
         final TextView tv;
 
@@ -346,11 +368,11 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
     }
 
     @Override
-    public View getDropDownView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
+    public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         return createViewInner(position, convertView, true);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Filter getFilter() {
         if (mFilter == null) {
@@ -366,7 +388,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      */
     private class ArrayFilter extends Filter {
 
-        @Nonnull
+        @NonNull
         @Override
         protected FilterResults performFiltering(CharSequence prefix) {
             final FilterResults results = new FilterResults();
@@ -420,7 +442,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected void publishResults(CharSequence constraint, @Nonnull FilterResults results) {
+        protected void publishResults(CharSequence constraint, @NonNull FilterResults results) {
             mObjects = (List<T>) results.values;
             if (results.count > 0) {
                 notifyDataSetChanged();

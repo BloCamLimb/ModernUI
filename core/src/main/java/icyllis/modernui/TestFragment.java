@@ -645,11 +645,11 @@ public class TestFragment extends Fragment {
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 7) {
                     Spinner spinner = new Spinner(getContext());
-                    SystemTheme.currentTheme().applySpinnerStyle(spinner);
                     v = spinner;
-                    List<?> list = Arrays.asList(FontFamily.getSystemFontMap().keySet().toArray());
-                    list.sort(null);
-                    spinner.setAdapter(new ArrayAdapter<>(getContext(), list));
+                    ArrayAdapter<?> adapter = new ArrayAdapter<>(getContext(),
+                            FontFamily.getSystemFontMap().keySet().toArray());
+                    adapter.sort(null);
+                    spinner.setAdapter(adapter);
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                     spinner.setMinimumWidth(dp(240));

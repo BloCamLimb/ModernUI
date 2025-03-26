@@ -510,6 +510,38 @@ public class TypedArray {
     }
 
     /**
+     * Special version of {@link #getDimensionPixelSize} for retrieving
+     * {@link icyllis.modernui.view.ViewGroup}'s layout_width and layout_height
+     * attributes.  This is only here for performance reasons; applications
+     * should use {@link #getDimensionPixelSize}.
+     *
+     * @param index Index of the attribute to retrieve.
+     * @param defValue The default value to return if this attribute is not
+     *                 default or contains the wrong type of data.
+     *
+     * @return Attribute dimension value multiplied by the appropriate
+     *         metric and truncated to integer pixels.
+     * @throws RuntimeException if the TypedArray has already been recycled.
+     */
+    public int getLayoutDimension(@StyleableRes int index, int defValue) {
+        if (mRecycled) {
+            throw new RuntimeException("Cannot make calls to a recycled instance!");
+        }
+
+        index *= STYLE_NUM_ENTRIES;
+        final int[] data = mData;
+        final int type = data[index + STYLE_TYPE];
+        if (type >= TypedValue.TYPE_FIRST_INT
+                && type <= TypedValue.TYPE_LAST_INT) {
+            return data[index + STYLE_DATA];
+        } else if (type == TypedValue.TYPE_DIMENSION) {
+            return TypedValue.complexToDimensionPixelSize(data[index + STYLE_DATA], mMetrics);
+        }
+
+        return defValue;
+    }
+
+    /**
      * Retrieves a fractional unit attribute at <var>index</var>.
      *
      * @param index Index of attribute to retrieve.

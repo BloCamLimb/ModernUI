@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,16 +14,37 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * A layout that lets you specify exact locations (x/y coordinates) of its
@@ -32,11 +53,27 @@ import javax.annotation.Nullable;
  *
  * @since 2.0
  */
+@ApiStatus.Obsolete(since = "3.12")
 @SuppressWarnings("unused")
 public class AbsoluteLayout extends ViewGroup {
 
     public AbsoluteLayout(Context context) {
         super(context);
+    }
+
+    public AbsoluteLayout(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public AbsoluteLayout(Context context, @Nullable AttributeSet attrs,
+                          @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public AbsoluteLayout(Context context, @Nullable AttributeSet attrs,
+                          @Nullable @AttrRes ResourceId defStyleAttr,
+                          @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
     }
 
     @Override
@@ -93,9 +130,9 @@ public class AbsoluteLayout extends ViewGroup {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams params) {
         if (params instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) params);
         }
@@ -108,7 +145,7 @@ public class AbsoluteLayout extends ViewGroup {
      * a height of {@link ViewGroup.LayoutParams#WRAP_CONTENT}
      * and with the coordinates (0, 0).
      */
-    @Nonnull
+    @NonNull
     @Override
     protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, 0, 0);
@@ -151,7 +188,7 @@ public class AbsoluteLayout extends ViewGroup {
             this.y = y;
         }
 
-        public LayoutParams(@Nonnull ViewGroup.LayoutParams source) {
+        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
             super(source);
         }
 
@@ -160,7 +197,7 @@ public class AbsoluteLayout extends ViewGroup {
          *
          * @param source The layout params to copy from.
          */
-        public LayoutParams(@Nonnull LayoutParams source) {
+        public LayoutParams(@NonNull LayoutParams source) {
             super(source);
             this.x = source.x;
             this.y = source.y;

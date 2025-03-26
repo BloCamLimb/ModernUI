@@ -113,6 +113,8 @@ public final class R {
         public static final String popupElevation = "popupElevation";
         public static final String popupEnterTransition = "popupEnterTransition";
         public static final String popupExitTransition = "popupExitTransition";
+        public static final String dropDownSelector = "dropDownSelector";
+        public static final String dropDownWidth = "dropDownWidth";
 
         public static final String layout_width = "layout_width";
         public static final String layout_height = "layout_height";
@@ -172,9 +174,7 @@ public final class R {
 
         public static final String colorControlNormal = "colorControlNormal";
         public static final String colorControlActivated = "colorControlActivated";
-        public static final String colorButtonNormal = "colorButtonNormal";
         public static final String colorControlHighlight = "colorControlHighlight";
-        public static final String colorAccent = "colorAccent";
         public static final String colorEdgeEffect = "colorEdgeEffect";
 
         public static final String colorPrimary = "colorPrimary";
@@ -416,6 +416,9 @@ public final class R {
         public static final ResourceId Widget_Material3_PopupMenu = new ResourceId(ns, type, "Widget.Material3.PopupMenu");
         public static final ResourceId Widget_Material3_PopupMenu_ContextMenu = new ResourceId(ns, type, "Widget.Material3.PopupMenu.ContextMenu");
         public static final ResourceId Widget_Material3_PopupMenu_ListPopupWindow = new ResourceId(ns, type, "Widget.Material3.PopupMenu.ListPopupWindow");
+
+        // unofficial
+        public static final ResourceId Widget_Material3_Spinner = new ResourceId(ns, type, "Widget.Material3.Spinner");
     }
 
     static {
