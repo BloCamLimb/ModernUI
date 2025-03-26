@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.view;
@@ -23,6 +40,8 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.ApiStatus;
@@ -222,11 +241,31 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     private List<View> mTransientViews = null;
 
     public ViewGroup(Context context) {
-        super(context);
-        mGroupFlags |= FLAG_CLIP_CHILDREN;
+        this(context, null);
+    }
+
+    public ViewGroup(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public ViewGroup(Context context, @Nullable AttributeSet attrs,
+                     @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public ViewGroup(Context context, @Nullable AttributeSet attrs,
+                     @Nullable @AttrRes ResourceId defStyleAttr,
+                     @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        // ViewGroup doesn't draw by default
+        setWillNotDraw(true);
+        mGroupFlags |= FLAG_CLIP_CHILDREN | FLAG_CLIP_TO_PADDING;
         setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
         mChildren = new View[ARRAY_CAPACITY_INCREMENT];
         mChildrenCount = 0;
+
+        //TODO read attributes
     }
 
     /**

@@ -37,7 +37,6 @@ import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
-import icyllis.modernui.widget.Spinner;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -744,13 +743,6 @@ public class SystemTheme {
 
             style.addAttribute(R.attr.colorEdgeEffect, R.attr.colorPrimary);
 
-            style.addAttribute(R.attr.colorControlNormal, R.attr.textColorSecondary);
-            style.addAttribute(R.attr.colorControlActivated, R.attr.colorAccent);
-            style.addColor(R.attr.colorControlHighlight, 0x33ffffff);
-            style.addColor(R.attr.colorButtonNormal, 0xff5a595b);
-
-            style.addColor(R.attr.colorAccent, 0xFFD9E2FF);
-
             style.addReference(R.attr.textAppearance, R.style.TextAppearance);
             style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
             style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
@@ -764,6 +756,7 @@ public class SystemTheme {
             style.addReference(R.attr.popupMenuStyle, R.style.Widget_Material3_PopupMenu);
             style.addReference(R.attr.contextPopupMenuStyle, R.style.Widget_Material3_PopupMenu_ContextMenu);
             style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
+            style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
         }
     }
 
@@ -824,6 +817,10 @@ public class SystemTheme {
         style.addColor(R.attr.textColorHighlight, t.textColorHighlight);
         style.addColor(R.attr.textColorHint, (resources, theme) -> t.textColorHint);
         style.addColor(R.attr.textColorLink, (resources, theme) -> t.textColorLink);
+
+        style.addColor(R.attr.colorControlNormal, t.colorOnSurfaceVariant);
+        style.addColor(R.attr.colorControlActivated, t.colorPrimaryContainer);
+        style.addColor(R.attr.colorControlHighlight, t.isDark ? 0x33ffffff : 0x1f000000);
     }
 
     private static void addStylesToResources(SystemResourcesBuilder b) {
@@ -1204,6 +1201,17 @@ public class SystemTheme {
                     R.style.Widget_Material3_PopupMenu.entry());
             // see spinner
         }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_Spinner.entry(),
+                    R.style.Widget_Material3_PopupMenu_ListPopupWindow.entry());
+            //TODO background (arrow indicator)
+            style.addBoolean(R.attr.clickable, true);
+            style.addDrawable(R.attr.dropDownSelector, (resources, theme) -> {
+                TypedValue value = new TypedValue();
+                theme.resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true);
+                return new RippleDrawable(ColorStateList.valueOf(value.data), null, new ColorDrawable(~0));
+            });
+        }
     }
 
     private static Drawable circular_progress_drawable(Resources resources, Resources.Theme theme,
@@ -1281,32 +1289,6 @@ public class SystemTheme {
         track.setId(1, R.id.secondaryProgress);
         track.setId(2, R.id.progress);
         return track;
-    }
-
-    private ColorStateList colorControlHighlight;
-    public ColorStateList colorControlHighlight() {
-        if (colorControlHighlight != null) {
-            return colorControlHighlight;
-        }
-        colorControlHighlight = new ColorStateList(
-                new int[][]{
-                        new int[]{R.attr.state_enabled, R.attr.state_checked},
-                        new int[]{R.attr.state_activated},
-                        StateSet.WILD_CARD
-                },
-                new int[]{
-                        modulateColor(colorSecondary, 0.2f),
-                        modulateColor(colorSecondary, 0.2f),
-                        isDark ? 0x33ffffff : 0x1f000000
-                }
-        );
-        return colorControlHighlight;
-    }
-
-    public void applySpinnerStyle(Spinner spinner) {
-        //TODO background (arrow indicator)
-        var listSelector = new RippleDrawable(colorControlHighlight(), null, new ColorDrawable(~0));
-        spinner.setDropDownSelector(listSelector);
     }
 
     public static SystemTheme createDefault(boolean isDark, int subclass) {
