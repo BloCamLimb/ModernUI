@@ -91,6 +91,8 @@ public final class R {
         public static final int state_empty =0x010100a9;
         public static final int state_checkable = 0x0101009f;
 
+        public static final String isLightTheme = "isLightTheme";
+
         public static final String id = "id";
         public static final String tag = "tag";
         public static final String scrollX = "scrollX";
@@ -156,21 +158,14 @@ public final class R {
         public static final String textAppearance = "textAppearance";
         public static final String textAppearanceInverse = "textAppearanceInverse";
         public static final String textColorPrimary = "textColorPrimary";
-        public static final String textColorPrimaryDisableOnly = "textColorPrimaryDisableOnly";
         public static final String textColorSecondary = "textColorSecondary";
         public static final String textColorPrimaryInverse = "textColorPrimaryInverse";
         public static final String textColorSecondaryInverse = "textColorSecondaryInverse";
-        public static final String textColorPrimaryNoDisable = "textColorPrimaryNoDisable";
-        public static final String textColorSecondaryNoDisable = "textColorSecondaryNoDisable";
-        public static final String textColorPrimaryInverseNoDisable = "textColorPrimaryInverseNoDisable";
-        public static final String textColorSecondaryInverseNoDisable = "textColorSecondaryInverseNoDisable";
+        public static final String textColorPrimaryDisableOnly = "textColorPrimaryDisableOnly";
+        public static final String textColorPrimaryInverseDisableOnly = "textColorPrimaryInverseDisableOnly";
         public static final String textColorHintInverse = "textColorHintInverse";
-        public static final String textAppearanceLarge = "textAppearanceLarge";
-        public static final String textAppearanceMedium = "textAppearanceMedium";
-        public static final String textAppearanceSmall = "textAppearanceSmall";
-        public static final String textAppearanceLargeInverse = "textAppearanceLargeInverse";
-        public static final String textAppearanceMediumInverse = "textAppearanceMediumInverse";
-        public static final String textAppearanceSmallInverse = "textAppearanceSmallInverse";
+        public static final String textColorHighlightInverse = "textColorHighlightInverse";
+        public static final String textColorLinkInverse = "textColorLinkInverse";
 
         public static final String colorControlNormal = "colorControlNormal";
         public static final String colorControlActivated = "colorControlActivated";
@@ -367,8 +362,13 @@ public final class R {
         private static final String type = "style";
 
         public static final ResourceId Theme_Material3_Dark = new ResourceId(ns, type, "Theme.Material3.Dark");
+        public static final ResourceId Theme_Material3_Light = new ResourceId(ns, type, "Theme.Material3.Light");
+
+        public static final ResourceId ThemeOverlay_Material3_Dark_Rust = new ResourceId(ns, type, "ThemeOverlay.Material3.Dark.Rust");
+        public static final ResourceId ThemeOverlay_Material3_Light_Rust = new ResourceId(ns, type, "ThemeOverlay.Material3.Light.Rust");
 
         public static final ResourceId TextAppearance = new ResourceId(ns, type, "TextAppearance");
+        public static final ResourceId TextAppearance_Inverse = new ResourceId(ns, type, "TextAppearance.Inverse");
         public static final ResourceId TextAppearance_Material3_DisplayLarge = new ResourceId(ns, type, "TextAppearance.Material3.DisplayLarge");
         public static final ResourceId TextAppearance_Material3_DisplayMedium = new ResourceId(ns, type, "TextAppearance.Material3.DisplayMedium");
         public static final ResourceId TextAppearance_Material3_DisplaySmall = new ResourceId(ns, type, "TextAppearance.Material3.DisplaySmall");

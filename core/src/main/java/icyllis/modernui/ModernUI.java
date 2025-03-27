@@ -34,7 +34,7 @@ import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.resources.SystemResourcesBuilder;
+import icyllis.modernui.resources.ResourcesBuilder;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.*;
@@ -119,9 +119,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 throw new RuntimeException("Multiple instances");
             }
         }
-        SystemResourcesBuilder sysRes = new SystemResourcesBuilder();
-        SystemTheme.addToResources(sysRes);
-        mResources = sysRes.build();
+        ResourcesBuilder rb = new ResourcesBuilder();
+        SystemTheme.addToResources(rb);
+        mResources = rb.build();
     }
 
     /**
