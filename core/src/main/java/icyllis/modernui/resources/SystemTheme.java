@@ -19,7 +19,6 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
@@ -41,7 +40,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -49,16 +47,6 @@ import java.util.function.Function;
  */
 @ApiStatus.Internal
 public class SystemTheme {
-
-    public static final int COLOR_FOREGROUND = 0xFFFFFFFF;
-    public static final int COLOR_FOREGROUND_NORMAL = 0xFFB0B0B0;
-    public static final int COLOR_FOREGROUND_DISABLED = 0xFF3F3F3F;
-
-    public static final float DISABLED_ALPHA = 0.3f;
-    public static final float PRIMARY_CONTENT_ALPHA = 1;
-    public static final float SECONDARY_CONTENT_ALPHA = 0.7f;
-
-    public static final int COLOR_CONTROL_ACTIVATED = 0xffcda398;
 
     private static final float material_emphasis_disabled = 0.38f;
     private static final float material_emphasis_disabled_background = 0.12f;
@@ -72,37 +60,6 @@ public class SystemTheme {
         final int alpha = MathUtil.clamp((int) (baseAlpha * alphaMod + 0.5f), 0, 255);
 
         return (baseColor & 0xFFFFFF) | (alpha << 24);
-    }
-
-    private static volatile SystemTheme currentTheme;
-
-    @NonNull
-    public static SystemTheme currentTheme() {
-        return currentTheme;
-    }
-
-    public static void setCurrentTheme(@NonNull SystemTheme t) {
-        currentTheme = Objects.requireNonNull(t);
-    }
-
-    public static void setToMaterialDark() {
-        setCurrentTheme(createMaterial(true));
-    }
-
-    public static void setToMaterialLight() {
-        setCurrentTheme(createMaterial(false));
-    }
-
-    public static void setToDefaultDark() {
-        setCurrentTheme(createDefault(true, 2));
-    }
-
-    public static void setToDefaultLight() {
-        setCurrentTheme(createDefault(false, 0));
-    }
-
-    static {
-        setToMaterialDark();
     }
 
     public int
@@ -717,11 +674,12 @@ public class SystemTheme {
         return -1;
     }
 
-    public static void addToResources(SystemResourcesBuilder b) {
+    public static void addToResources(ResourcesBuilder b) {
         addStylesToResources(b);
         {
             SystemTheme t = createMaterial(true);
             var style = b.newStyle(R.style.Theme_Material3_Dark.entry(), "");
+            style.addBoolean(R.attr.isLightTheme, false);
 
             addColorsToTheme(t, style);
 
@@ -744,6 +702,7 @@ public class SystemTheme {
             style.addAttribute(R.attr.colorEdgeEffect, R.attr.colorPrimary);
 
             style.addReference(R.attr.textAppearance, R.style.TextAppearance);
+            style.addReference(R.attr.textAppearanceInverse, R.style.TextAppearance_Inverse);
             style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
             style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
             style.addReference(R.attr.radioButtonStyleMenuItem, R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
@@ -758,9 +717,60 @@ public class SystemTheme {
             style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
             style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
         }
+        {
+            SystemTheme t = createMaterial(false);
+            var style = b.newStyle(R.style.Theme_Material3_Light.entry(), "");
+            style.addBoolean(R.attr.isLightTheme, true);
+
+            addColorsToTheme(t, style);
+
+            style.addReference(R.attr.textAppearanceDisplayLarge, R.style.TextAppearance_Material3_DisplayLarge);
+            style.addReference(R.attr.textAppearanceDisplayMedium, R.style.TextAppearance_Material3_DisplayMedium);
+            style.addReference(R.attr.textAppearanceDisplaySmall, R.style.TextAppearance_Material3_DisplaySmall);
+            style.addReference(R.attr.textAppearanceHeadlineLarge, R.style.TextAppearance_Material3_HeadlineLarge);
+            style.addReference(R.attr.textAppearanceHeadlineMedium, R.style.TextAppearance_Material3_HeadlineMedium);
+            style.addReference(R.attr.textAppearanceHeadlineSmall, R.style.TextAppearance_Material3_HeadlineSmall);
+            style.addReference(R.attr.textAppearanceTitleLarge, R.style.TextAppearance_Material3_TitleLarge);
+            style.addReference(R.attr.textAppearanceTitleMedium, R.style.TextAppearance_Material3_TitleMedium);
+            style.addReference(R.attr.textAppearanceTitleSmall, R.style.TextAppearance_Material3_TitleSmall);
+            style.addReference(R.attr.textAppearanceBodyLarge, R.style.TextAppearance_Material3_BodyLarge);
+            style.addReference(R.attr.textAppearanceBodyMedium, R.style.TextAppearance_Material3_BodyMedium);
+            style.addReference(R.attr.textAppearanceBodySmall, R.style.TextAppearance_Material3_BodySmall);
+            style.addReference(R.attr.textAppearanceLabelLarge, R.style.TextAppearance_Material3_LabelLarge);
+            style.addReference(R.attr.textAppearanceLabelMedium, R.style.TextAppearance_Material3_LabelMedium);
+            style.addReference(R.attr.textAppearanceLabelSmall, R.style.TextAppearance_Material3_LabelSmall);
+
+            style.addAttribute(R.attr.colorEdgeEffect, R.attr.colorPrimary);
+
+            style.addReference(R.attr.textAppearance, R.style.TextAppearance);
+            style.addReference(R.attr.textAppearanceInverse, R.style.TextAppearance_Inverse);
+            style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
+            style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
+            style.addReference(R.attr.radioButtonStyleMenuItem, R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
+            style.addReference(R.attr.switchStyle, R.style.Widget_Material3_CompoundButton_Switch);
+            style.addReference(R.attr.progressBarStyle, R.style.Widget_Material3_ProgressBar);
+            style.addReference(R.attr.progressBarStyleSmall, R.style.Widget_Material3_ProgressBar_Small);
+            style.addReference(R.attr.progressBarStyleHorizontal, R.style.Widget_Material3_ProgressBar_Horizontal);
+            style.addReference(R.attr.progressBarStyleVertical, R.style.Widget_Material3_ProgressBar_Vertical);
+            style.addReference(R.attr.seekBarStyle, R.style.Widget_Material3_SeekBar);
+            style.addReference(R.attr.popupMenuStyle, R.style.Widget_Material3_PopupMenu);
+            style.addReference(R.attr.contextPopupMenuStyle, R.style.Widget_Material3_PopupMenu_ContextMenu);
+            style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
+            style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
+        }
+        {
+            SystemTheme t = createDefault(true, 2);
+            var style = b.newStyle(R.style.ThemeOverlay_Material3_Dark_Rust.entry(), "");
+            addColorsToTheme(t, style);
+        }
+        {
+            SystemTheme t = createDefault(false, 0);
+            var style = b.newStyle(R.style.ThemeOverlay_Material3_Light_Rust.entry(), "");
+            addColorsToTheme(t, style);
+        }
     }
 
-    private static void addColorsToTheme(SystemTheme t, SystemResourcesBuilder.Style style) {
+    private static void addColorsToTheme(SystemTheme t, ResourcesBuilder.Style style) {
 
         style.addColor(R.attr.colorPrimary, t.colorPrimary);
         style.addColor(R.attr.colorOnPrimary, t.colorOnPrimary);
@@ -814,16 +824,20 @@ public class SystemTheme {
         style.addColor(R.attr.textColorSecondary, (resources, theme) -> t.textColorSecondary);
         style.addColor(R.attr.textColorSecondaryInverse, (resources, theme) -> t.textColorSecondaryInverse);
         style.addColor(R.attr.textColorPrimaryDisableOnly, (resources, theme) -> t.textColorPrimaryDisableOnly);
+        style.addColor(R.attr.textColorPrimaryInverseDisableOnly, (resources, theme) -> t.textColorPrimaryInverseDisableOnly);
         style.addColor(R.attr.textColorHighlight, t.textColorHighlight);
+        style.addColor(R.attr.textColorHighlightInverse, t.textColorHighlightInverse);
         style.addColor(R.attr.textColorHint, (resources, theme) -> t.textColorHint);
+        style.addColor(R.attr.textColorHintInverse, (resources, theme) -> t.textColorHintInverse);
         style.addColor(R.attr.textColorLink, (resources, theme) -> t.textColorLink);
+        style.addColor(R.attr.textColorLinkInverse, (resources, theme) -> t.textColorLinkInverse);
 
         style.addColor(R.attr.colorControlNormal, t.colorOnSurfaceVariant);
         style.addColor(R.attr.colorControlActivated, t.colorPrimaryContainer);
         style.addColor(R.attr.colorControlHighlight, t.isDark ? 0x33ffffff : 0x1f000000);
     }
 
-    private static void addStylesToResources(SystemResourcesBuilder b) {
+    private static void addStylesToResources(ResourcesBuilder b) {
         {
             var style = b.newStyle(R.style.TextAppearance.entry(), "");
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
@@ -831,6 +845,13 @@ public class SystemTheme {
             style.addAttribute(R.attr.textColorHighlight, R.attr.textColorHighlight);
             style.addAttribute(R.attr.textColorLink, R.attr.textColorLink);
             style.addDimension(R.attr.textSize, 16, TypedValue.COMPLEX_UNIT_SP);
+        }
+        {
+            var style = b.newStyle(R.style.TextAppearance_Inverse.entry(), R.style.TextAppearance.entry());
+            style.addAttribute(R.attr.textColor, R.attr.textColorPrimaryInverse);
+            style.addAttribute(R.attr.textColorHint, R.attr.textColorHintInverse);
+            style.addAttribute(R.attr.textColorHighlight, R.attr.textColorHighlightInverse);
+            style.addAttribute(R.attr.textColorLink, R.attr.textColorLinkInverse);
         }
         // Headline
         {

@@ -46,7 +46,7 @@ import java.util.function.ToIntFunction;
  * @hidden
  */
 @ApiStatus.Internal
-public class SystemResourcesBuilder {
+public class ResourcesBuilder {
 
     Object2IntOpenHashMap<String> mTypeStringTable = new Object2IntOpenHashMap<>();
     ArrayList<String> mTypeStringArray = new ArrayList<>();
@@ -75,7 +75,7 @@ public class SystemResourcesBuilder {
     HashMap<String, Style> mStyleTable = new HashMap<>();
     Object2IntOpenHashMap<String> mStyleToOffset = new Object2IntOpenHashMap<>();
 
-    public SystemResourcesBuilder() {
+    public ResourcesBuilder() {
         mTypeStringTable.defaultReturnValue(-1);
         mKeyStringTable.defaultReturnValue(-1);
         mGlobalObjectTable.defaultReturnValue(-1);
@@ -292,8 +292,8 @@ public class SystemResourcesBuilder {
                     storeGlobalObject(factory)));
         }
 
-        SystemResourcesBuilder getThemeBuilder() {
-            return SystemResourcesBuilder.this;
+        ResourcesBuilder getThemeBuilder() {
+            return ResourcesBuilder.this;
         }
     }
 }

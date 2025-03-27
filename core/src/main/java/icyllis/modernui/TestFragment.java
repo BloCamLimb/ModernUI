@@ -48,7 +48,6 @@ import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.material.MaterialCheckBox;
-import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.SpannableString;
@@ -82,8 +81,6 @@ import org.apache.logging.log4j.core.config.Configurator;
 import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
-import java.util.List;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
@@ -100,6 +97,8 @@ public class TestFragment extends Fragment {
         Configurator.setRootLevel(Level.DEBUG);
 
         try (ModernUI app = new ModernUI()) {
+            app.getTheme().applyStyle(R.style.Theme_Material3_Light, true);
+            app.getTheme().applyStyle(R.style.ThemeOverlay_Material3_Light_Rust, true);
             app.run(new TestFragment());
         }
         AudioManager.getInstance().close();
@@ -948,14 +947,20 @@ public class TestFragment extends Fragment {
 
             private final ObjectAnimator mAnimator;
 
+            private final int mColorBackground;
+
             public DView(Context context) {
                 super(context);
-                mTextPaint.setColor(SystemTheme.currentTheme().colorOnPrimaryContainer);
+                TypedValue value = new TypedValue();
+                context.getTheme().resolveAttribute(R.ns, R.attr.colorOnPrimaryContainer, value, true);
+                mTextPaint.setColor(value.data);
                 mTextPaint.setTextSize(13);
                 mText = TextShaper.shapeText(
                         "18:52 modernui", 0, 14,
                         TextDirectionHeuristics.FIRSTSTRONG_LTR, mTextPaint
                 );
+                context.getTheme().resolveAttribute(R.ns, R.attr.colorPrimaryContainer, value, true);
+                mColorBackground = value.data;
                 PropertyValuesHolder pvh1 = PropertyValuesHolder.ofFloat(ROTATION, 0, 360);
                 PropertyValuesHolder pvh2 = PropertyValuesHolder.ofFloat(SCALE_X, 1, 0.2f);
                 PropertyValuesHolder pvh3 = PropertyValuesHolder.ofFloat(SCALE_Y, 1, 0.2f);
@@ -972,7 +977,7 @@ public class TestFragment extends Fragment {
             @Override
             protected void onDraw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.obtain();
-                paint.setColor(SystemTheme.currentTheme().colorPrimaryContainer);
+                paint.setColor(mColorBackground);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
                 int x = getWidth() / 2 - 20;
                 canvas.drawShapedText(mText, x, offsetY + 24, mTextPaint);
