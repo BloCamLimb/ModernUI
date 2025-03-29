@@ -123,7 +123,7 @@ public abstract class CompoundButton extends Button implements Checkable {
     }
 
     @Override
-    public final boolean isChecked() {
+    public boolean isChecked() {
         return mChecked;
     }
 

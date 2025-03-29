@@ -56,6 +56,7 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.SoundEffectConstants;
 import icyllis.modernui.view.ViewConfiguration;
 
 /**
@@ -63,12 +64,15 @@ import icyllis.modernui.view.ViewConfiguration;
  * and forth to select either of two options or simply tap the switch to toggle
  * between options.
  */
-public class Switch extends CompoundButton {
+public class Switch extends Button implements Checkable {
     private static final int THUMB_ANIMATION_DURATION = 250;
 
     private static final int TOUCH_MODE_IDLE = 0;
     private static final int TOUCH_MODE_DOWN = 1;
     private static final int TOUCH_MODE_DRAGGING = 2;
+
+    private boolean mChecked;
+    private boolean mBroadcasting;
 
     private Drawable mThumbDrawable;
     private ColorStateList mThumbTintList;
@@ -81,6 +85,8 @@ public class Switch extends CompoundButton {
     private BlendMode mTrackBlendMode;
     private boolean mHasTrackTint;
     private boolean mHasTrackTintMode;
+
+    private OnCheckedChangeListener mOnCheckedChangeListener;
 
     private int mSwitchMinWidth;
     private int mSwitchPadding;
@@ -135,8 +141,11 @@ public class Switch extends CompoundButton {
 
     private final Rect mTempRect = new Rect();
 
+    //TODO add on/off text
+
     @StyleableRes
     private static final String[] STYLEABLE = {
+            R.ns, R.attr.checked,
             R.ns, R.attr.switchMinWidth,
             R.ns, R.attr.switchPadding,
             R.ns, R.attr.thumb,
@@ -205,18 +214,19 @@ public class Switch extends CompoundButton {
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
                 attrs, defStyleAttr, defStyleRes, STYLEABLE);
-        mThumbDrawable = a.getDrawable(2);
+        mThumbDrawable = a.getDrawable(3);
         if (mThumbDrawable != null) {
             mThumbDrawable.setCallback(this);
         }
-        mTrackDrawable = a.getDrawable(3);
+        mTrackDrawable = a.getDrawable(4);
         if (mTrackDrawable != null) {
             mTrackDrawable.setCallback(this);
         }
         mSwitchMinWidth = a.getDimensionPixelSize(
-                0, 0);
-        mSwitchPadding = a.getDimensionPixelSize(
                 1, 0);
+        mSwitchPadding = a.getDimensionPixelSize(
+                2, 0);
+        setChecked(a.getBoolean(0, false));
         a.recycle();
 
         final ViewConfiguration config = ViewConfiguration.get(context);
@@ -601,8 +611,39 @@ public class Switch extends CompoundButton {
     }
 
     @Override
+    public boolean performClick() {
+        toggle();
+
+        final boolean handled = super.performClick();
+        if (!handled) {
+            // View only makes a sound effect if the onClickListener was
+            // called, so we'll need to make one here instead.
+            playSoundEffect(SoundEffectConstants.CLICK);
+        }
+
+        return handled;
+    }
+
+    @Override
+    public final boolean isChecked() {
+        return mChecked;
+    }
+
+    @Override
     public void setChecked(boolean checked) {
-        super.setChecked(checked);
+        if (mChecked != checked) {
+            mChecked = checked;
+            refreshDrawableState();
+
+            if (!mBroadcasting) {
+                mBroadcasting = true;
+                if (mOnCheckedChangeListener != null) {
+                    mOnCheckedChangeListener.onCheckedChanged(this, mChecked);
+                }
+
+                mBroadcasting = false;
+            }
+        }
 
         // Calling the super method may result in setChecked() getting called
         // recursively with a different value, so load the REAL value...
@@ -615,6 +656,16 @@ public class Switch extends CompoundButton {
             cancelPositionAnimator();
             setThumbPosition(checked ? 1 : 0);
         }
+    }
+
+    /**
+     * Register a callback to be invoked when the checked state of this button
+     * changes.
+     *
+     * @param listener the callback to call on checked state change
+     */
+    public void setOnCheckedChangeListener(@Nullable OnCheckedChangeListener listener) {
+        mOnCheckedChangeListener = listener;
     }
 
     @Override
@@ -840,6 +891,16 @@ public class Switch extends CompoundButton {
         } else {
             return 0;
         }
+    }
+
+    @NonNull
+    @Override
+    protected int[] onCreateDrawableState(int extraSpace) {
+        final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
+        if (isChecked()) {
+            mergeDrawableStates(drawableState, CompoundButton.CHECKED_STATE_SET);
+        }
+        return drawableState;
     }
 
     @Override
