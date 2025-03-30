@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.graphics.drawable;
@@ -21,8 +38,13 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.*;
-import icyllis.modernui.util.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.LayoutDirection;
+import icyllis.modernui.util.SparseArray;
 
 /**
  * A helper class that contains several {@link Drawable}s and selects which one to use.
@@ -576,6 +598,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     protected static abstract class DrawableContainerState extends ConstantState {
 
         final DrawableContainer mOwner;
+        Resources mSourceRes;
 
         SparseArray<ConstantState> mDrawableFutures;
         Drawable[] mDrawables;
@@ -611,8 +634,10 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         boolean mHasTintList;
         boolean mHasTintMode;
 
-        protected DrawableContainerState(@Nullable DrawableContainerState orig, DrawableContainer owner) {
+        protected DrawableContainerState(@Nullable DrawableContainerState orig, DrawableContainer owner,
+                                         Resources res) {
             mOwner = owner;
+            mSourceRes = res != null ? res : (orig != null ? orig.mSourceRes : null);
 
             if (orig != null) {
                 mCheckedConstantState = true;
@@ -714,7 +739,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
                 for (int keyIndex = 0; keyIndex < futureCount; keyIndex++) {
                     final int index = mDrawableFutures.keyAt(keyIndex);
                     final ConstantState cs = mDrawableFutures.valueAt(keyIndex);
-                    mDrawables[index] = prepareDrawable(cs.newDrawable());
+                    mDrawables[index] = prepareDrawable(cs.newDrawable(mSourceRes));
                 }
 
                 mDrawableFutures = null;
@@ -755,7 +780,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
                 final int keyIndex = mDrawableFutures.indexOfKey(index);
                 if (keyIndex >= 0) {
                     final ConstantState cs = mDrawableFutures.valueAt(keyIndex);
-                    final Drawable prepared = prepareDrawable(cs.newDrawable());
+                    final Drawable prepared = prepareDrawable(cs.newDrawable(mSourceRes));
                     mDrawables[index] = prepared;
                     mDrawableFutures.removeAt(keyIndex);
                     if (mDrawableFutures.size() == 0) {
