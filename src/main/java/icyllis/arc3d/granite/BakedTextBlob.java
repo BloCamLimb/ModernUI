@@ -19,7 +19,11 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.Canvas;
+import icyllis.arc3d.sketch.GlyphRunList;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.StrikeCache;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 

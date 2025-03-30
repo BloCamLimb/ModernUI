@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.granite.geom;
 
-import icyllis.arc3d.core.RRect;
+import icyllis.arc3d.sketch.RRect;
 import icyllis.arc3d.core.Rect2f;
 import org.jspecify.annotations.NullMarked;
 

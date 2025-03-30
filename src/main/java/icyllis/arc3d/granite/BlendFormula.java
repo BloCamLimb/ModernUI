@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.BlendInfo;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;

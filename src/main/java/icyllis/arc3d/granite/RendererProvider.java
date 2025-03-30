@@ -19,10 +19,16 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.Vertices;
 import icyllis.arc3d.engine.Caps;
 import icyllis.arc3d.engine.Engine;
-import icyllis.arc3d.granite.geom.*;
+import icyllis.arc3d.granite.geom.AnalyticArcStep;
+import icyllis.arc3d.granite.geom.AnalyticComplexBoxStep;
+import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
+import icyllis.arc3d.granite.geom.CoverBoundsStep;
+import icyllis.arc3d.granite.geom.PerEdgeAAQuadStep;
+import icyllis.arc3d.granite.geom.RasterTextStep;
+import icyllis.arc3d.granite.geom.VerticesStep;
+import icyllis.arc3d.sketch.Vertices;
 
 /**
  * Granite defines a limited set of renderers in order to increase the likelihood of batching
@@ -49,7 +55,7 @@ public class RendererProvider {
     // arc type variant
     private final GeometryRenderer[] mArc = new GeometryRenderer[ArcShape.kTypeCount];
     // has color, has tex, vertex mode variant
-    private final GeometryRenderer[] mVertices = new GeometryRenderer[Vertices.kVertexModeCount*4];
+    private final GeometryRenderer[] mVertices = new GeometryRenderer[Vertices.kVertexModeCount * 4];
     private final GeometryRenderer mPerEdgeAAQuad;
     private final GeometryRenderer mNonAABoundsFill;
 
@@ -114,7 +120,7 @@ public class RendererProvider {
     }
 
     public GeometryRenderer getVertices(int vertexMode, boolean hasColor, boolean hasTexCoords) {
-        return mVertices[vertexMode*4 + (hasColor?2:0) + (hasTexCoords?1:0)];
+        return mVertices[vertexMode * 4 + (hasColor ? 2 : 0) + (hasTexCoords ? 1 : 0)];
     }
 
     public GeometryRenderer getPerEdgeAAQuad() {

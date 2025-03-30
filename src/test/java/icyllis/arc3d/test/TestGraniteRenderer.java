@@ -19,23 +19,37 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.Image;
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.effects.BlendModeColorFilter;
-import icyllis.arc3d.core.effects.ColorFilter;
-import icyllis.arc3d.core.j2d.Typeface_JDK;
-import icyllis.arc3d.core.shaders.*;
-import icyllis.arc3d.engine.*;
-import icyllis.arc3d.granite.*;
+import icyllis.arc3d.engine.ContextOptions;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ISurface;
+import icyllis.arc3d.engine.ImmediateContext;
+import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.granite.BlendMode;
+import icyllis.arc3d.granite.GraniteDevice;
+import icyllis.arc3d.granite.GraniteSurface;
+import icyllis.arc3d.sketch.*;
+import icyllis.arc3d.granite.RootTask;
+import icyllis.arc3d.granite.TextureUtils;
 import icyllis.arc3d.opengl.GLUtil;
+import icyllis.arc3d.sketch.effects.BlendModeColorFilter;
+import icyllis.arc3d.sketch.effects.ColorFilter;
+import icyllis.arc3d.sketch.j2d.Typeface_JDK;
+import icyllis.arc3d.sketch.shaders.ColorShader;
+import icyllis.arc3d.sketch.shaders.GradientShader;
+import icyllis.arc3d.sketch.shaders.ImageShader;
+import icyllis.arc3d.sketch.shaders.LinearGradient;
+import icyllis.arc3d.sketch.shaders.RRectShader;
+import icyllis.arc3d.sketch.shaders.Shader;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL33C;
-import org.lwjgl.opengles.*;
+import org.lwjgl.opengles.GLES;
+import org.lwjgl.opengles.GLES20;
+import org.lwjgl.opengles.GLES30;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +59,10 @@ import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -67,7 +84,7 @@ public class TestGraniteRenderer {
 
     public static final boolean TEST_OPENGL_ES = false;
 
-    public static final int TEST_SCENE = 1;
+    public static final int TEST_SCENE = 0;
     public static final boolean POST_PROCESS = false;
 
     public static final ExecutorService RECORDING_THREAD = Executors.newSingleThreadExecutor();
@@ -285,7 +302,9 @@ public class TestGraniteRenderer {
         Shader mTestShader3;
 
         @SharedPtr
-        Shader mGradShader;
+        Shader mGradShader1;
+        @SharedPtr
+        Shader mGradShader2;
 
         @SharedPtr
         Shader mRRectShader;
@@ -405,24 +424,38 @@ public class TestGraniteRenderer {
                         GradientShader.Interpolation.kShorter_HueMethod),
                 null
         );*/
-            mGradShader = LinearGradient.make(
+            mGradShader1 = LinearGradient.make(
                     400, 350, 800, 350,
                     new float[]{
-                            45 / 255f, 212 / 255f, 191 / 255f, 1,
-                            14 / 255f, 165 / 255f, 233 / 255f, 1},
+                            255 / 255f, 0 / 255f, 0 / 255f, 1,
+                            0 / 255f, 255 / 255f, 0 / 255f, 1},
                     ColorSpace.get(ColorSpace.Named.SRGB),
                     null,
                     2,
                     Shader.TILE_MODE_MIRROR,
                     GradientShader.Interpolation.make(false,
-                            GradientShader.Interpolation.kSRGBLinear_ColorSpace,
-                            GradientShader.Interpolation.kShorter_HueMethod),
+                            GradientShader.Interpolation.kHSL_ColorSpace,
+                            GradientShader.Interpolation.kIncreasing_HueMethod),
+                    null
+            );
+            mGradShader2 = LinearGradient.make(
+                    400, 350, 800, 350,
+                    new float[]{
+                            255 / 255f, 0 / 255f, 0 / 255f, 1,
+                            0 / 255f, 255 / 255f, 0 / 255f, 1},
+                    ColorSpace.get(ColorSpace.Named.SRGB),
+                    null,
+                    2,
+                    Shader.TILE_MODE_MIRROR,
+                    GradientShader.Interpolation.make(false,
+                            GradientShader.Interpolation.kHSL_ColorSpace,
+                            GradientShader.Interpolation.kDecreasing_HueMethod),
                     null
             );
             RRect rrect = new RRect();
             rrect.setRectXY(420, 480, 580, 520, 30, 30);
             mRRectShader = RRectShader.make(
-                rrect,
+                    rrect,
                     20, true, null
             );
 
@@ -539,22 +572,22 @@ public class TestGraniteRenderer {
             }
 
             mMarkPts1 = new float[]{
-                    140,182f,
-                    114f,156f,
-                    100,170,
-                    140,210,
+                    140, 182f,
+                    114f, 156f,
+                    100, 170,
+                    140, 210,
             };
             mMarkPts2 = new float[]{
-                    140,210,
-                    220,130,
-                    206f,116f,
-                    140,182f,
+                    140, 210,
+                    220, 130,
+                    206f, 116f,
+                    140, 182f,
             };
             mTriPts = new float[]{
-                    520,20,
-                    520,100,
-                    590,60,
-                    590,60,
+                    520, 20,
+                    520, 100,
+                    590, 60,
+                    590, 60,
             };
         }
 
@@ -595,9 +628,9 @@ public class TestGraniteRenderer {
                     canvas.drawRRect(rrect, paint);
                     //canvas.drawArc(cx, cy, rad, 20, 130, paint);
                     if ((i & 15) == 0) {
-                        canvas.translate(CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                        canvas.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
                         canvas.rotate(1);
-                        canvas.translate(-CANVAS_WIDTH/2, -CANVAS_HEIGHT/2);
+                        canvas.translate(-CANVAS_WIDTH / 2, -CANVAS_HEIGHT / 2);
                     }
                 }
             } else if (TEST_SCENE == 1) {
@@ -684,9 +717,13 @@ public class TestGraniteRenderer {
                 canvas.drawCircle(500, 300, 20, paint);
 
                 paint.setStyle(Paint.FILL);
-                paint.setShader(RefCnt.create(mGradShader));
+                paint.setShader(RefCnt.create(mGradShader1));
                 paint.setDither(true);
-                rrect.setRectXY(100, 650, 1500, 950, 30, 30);
+                rrect.setRectXY(100, 650, 1500, 750, 30, 30);
+                canvas.drawRRect(rrect, paint);
+
+                paint.setShader(RefCnt.create(mGradShader2));
+                rrect.setRectXY(100, 750, 1500, 850, 30, 30);
                 canvas.drawRRect(rrect, paint);
 
                 Matrix4 perspectiveMatrix = new Matrix4();
@@ -699,9 +736,9 @@ public class TestGraniteRenderer {
                 perspectiveMatrix.postTranslate(CANVAS_WIDTH / 2f, CANVAS_HEIGHT / 2f);
                 canvas.save();
                 canvas.setMatrix(perspectiveMatrix);
-                paint.setStroke(false);
-                /*paint.setStrokeJoin(Paint.JOIN_MITER);
-                paint.setStrokeWidth(1);*/
+                paint.setStroke(true);
+                paint.setStrokeJoin(Paint.JOIN_MITER);
+                paint.setStrokeWidth(1);
                 canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 400, 400, paint);
                 canvas.restore();
 
@@ -742,32 +779,35 @@ public class TestGraniteRenderer {
                 canvas.setMatrix(mat);*/
                 canvas.translate(1000, 100);
                 //canvas.translate((float) (500+500*Math.sin(System.currentTimeMillis()/1000d)), 100);
-                rrect.setRectRadii(200, 100, 600, 500, new float[]{
+                /*rrect.setRectRadii(200, 100, 600, 500, new float[]{
                         20, 20, 40, 40,
                         60, 60, 80, 80
-                });
+                });*/
+                rrect.setRectXY(200, 100, 600, 500, 40, 40);
                 paint.setShader(null);
-                float z = (float) (12*Math.sin(System.currentTimeMillis()/500d));
+                float z = (float) (12 * Math.sin(System.currentTimeMillis() / 500d));
                 if (z > 0.001f) {
-                    /*DrawShadowUtils.drawShadow(canvas,
+                    DrawShadowUtils.drawShadow(canvas,
                             rrect, 0, 0, z,
                             mSurface.getWidth() / 2f, 0, 600, 800,
-                            0x1E000000, 0x30000000);*/
+                            0x1E000000, 0x30000000);
                 }
-                paint.setColor4f(0.5f,0.5f,0.5f,1);
+                paint.setColor4f(0.5f, 0.5f, 0.5f, 1);
                 paint.setShader(RefCnt.create(mTestShader1));
                 canvas.drawRRect(rrect, paint);
 
                 paint.setShader(null);
                 canvas.translate(-1000, 0);
                 //if (!TEST_OPENGL_ES) {
-                    canvas.drawVertices(mVertices1, BlendMode.MODULATE, paint);
-                    canvas.drawVertices(mVertices2, BlendMode.MODULATE, paint);
+                canvas.drawVertices(mVertices1, BlendMode.MODULATE, paint);
+                canvas.drawVertices(mVertices2, BlendMode.MODULATE, paint);
                 //}
                 canvas.drawEdgeAAQuad(null,
-                        mMarkPts1, Canvas.QUAD_AA_FLAG_RIGHT | Canvas.QUAD_AA_FLAG_TOP | Canvas.QUAD_AA_FLAG_BOTTOM, paint);
+                        mMarkPts1, Canvas.QUAD_AA_FLAG_RIGHT | Canvas.QUAD_AA_FLAG_TOP | Canvas.QUAD_AA_FLAG_BOTTOM,
+                        paint);
                 canvas.drawEdgeAAQuad(null,
-                        mMarkPts2, Canvas.QUAD_AA_FLAG_RIGHT | Canvas.QUAD_AA_FLAG_TOP | Canvas.QUAD_AA_FLAG_BOTTOM, paint);
+                        mMarkPts2, Canvas.QUAD_AA_FLAG_RIGHT | Canvas.QUAD_AA_FLAG_TOP | Canvas.QUAD_AA_FLAG_BOTTOM,
+                        paint);
                 canvas.drawEdgeAAQuad(null,
                         mTriPts, Canvas.QUAD_AA_FLAGS_ALL, paint);
 
@@ -819,7 +859,8 @@ public class TestGraniteRenderer {
                 paint.setStrokeWidth(2);*/
                 float scale = glfwGetTime() > 6.0 ? 1.5f : 1.0f;
                 canvas.scale(scale, scale);
-                canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 400 + (System.currentTimeMillis() % 1000) / 100f, 400, paint);
+                canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2,
+                        400 + (System.currentTimeMillis() % 1000) / 100f, 400, paint);
                 //canvas.drawTextBlob(mTextBlob1 != null ? mTextBlob1 : mTextBlob2, 800, 620, paint);
             }
             paint.close();
@@ -868,7 +909,7 @@ public class TestGraniteRenderer {
             mTestShader1 = RefCnt.move(mTestShader1);
             mTestShader2 = RefCnt.move(mTestShader2);
             mTestShader3 = RefCnt.move(mTestShader3);
-            mGradShader = RefCnt.move(mGradShader);
+            mGradShader1 = RefCnt.move(mGradShader1);
             mRRectShader = RefCnt.move(mRRectShader);
             mTestImage = RefCnt.move(mTestImage);
             Arrays.fill(mBlendModeColorFilters, null);

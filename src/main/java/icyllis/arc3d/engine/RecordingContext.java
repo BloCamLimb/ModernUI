@@ -23,6 +23,9 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.task.Task;
 import icyllis.arc3d.engine.task.TaskList;
 import icyllis.arc3d.granite.*;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.sketch.Image;
+import icyllis.arc3d.sketch.Surface;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import org.jetbrains.annotations.ApiStatus;
@@ -30,7 +33,7 @@ import org.jetbrains.annotations.ApiStatus;
 /**
  * This class is a public API, except where noted.
  */
-//TODO make non-sealed
+//TODO make non-sealed, and add GraniteContext
 public final class RecordingContext extends Context {
 
     private final ImageProxyCache mImageProxyCache;
@@ -94,7 +97,7 @@ public final class RecordingContext extends Context {
     }
 
     /**
-     * Can a {@link icyllis.arc3d.core.Image} be created with the given color type.
+     * Can a {@link Image} be created with the given color type.
      *
      * @param colorType see {@link ColorInfo}
      */

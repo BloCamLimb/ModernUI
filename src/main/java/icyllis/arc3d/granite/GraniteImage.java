@@ -19,16 +19,26 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.Rect2ic;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.Context;
+import icyllis.arc3d.engine.ISurface;
+import icyllis.arc3d.engine.ImageViewProxy;
+import icyllis.arc3d.engine.RecordingContext;
 import icyllis.arc3d.engine.task.CopyImageTask;
+import icyllis.arc3d.sketch.Image;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
  * The image that is backed by GPU.
  */
-public final class GraniteImage extends icyllis.arc3d.core.Image {
+public final class GraniteImage extends Image {
 
     @RawPtr
     RecordingContext mContext;

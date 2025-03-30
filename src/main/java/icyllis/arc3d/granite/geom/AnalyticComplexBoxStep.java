@@ -53,9 +53,9 @@
 package icyllis.arc3d.granite.geom;
 
 import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.Paint;
-import icyllis.arc3d.core.Point;
-import icyllis.arc3d.core.RRect;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.Point;
+import icyllis.arc3d.sketch.RRect;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.BufferViewInfo;
 import icyllis.arc3d.engine.Engine.PrimitiveType;

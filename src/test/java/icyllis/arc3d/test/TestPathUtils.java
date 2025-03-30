@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.Path;
-import icyllis.arc3d.core.PathConsumer;
+import icyllis.arc3d.sketch.Path;
+import icyllis.arc3d.sketch.PathConsumer;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

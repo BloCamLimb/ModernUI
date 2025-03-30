@@ -22,6 +22,7 @@ package icyllis.arc3d.engine.trash.ops;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.sketch.Matrix;
 import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;

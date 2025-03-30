@@ -20,15 +20,18 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.Image;
+import icyllis.arc3d.sketch.Image;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.sketch.Canvas;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.sketch.Surface;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
  * The surface that is backed by GPU.
  */
-public final class GraniteSurface extends icyllis.arc3d.core.Surface {
+public final class GraniteSurface extends Surface {
 
     @SharedPtr
     private GraniteDevice mDevice;
@@ -156,5 +159,10 @@ public final class GraniteSurface extends icyllis.arc3d.core.Surface {
     @Override
     protected RecordingContext onGetRecordingContext() {
         return mDevice.getRecordingContext();
+    }
+
+    @RawPtr
+    public GraniteDevice getDevice() {
+        return mDevice;
     }
 }

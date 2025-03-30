@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.core;
 
+import icyllis.arc3d.sketch.Matrix;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 

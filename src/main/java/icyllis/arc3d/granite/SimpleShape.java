@@ -19,11 +19,11 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.Paint;
-import icyllis.arc3d.core.Point;
-import icyllis.arc3d.core.RRect;
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2fc;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.Point;
+import icyllis.arc3d.sketch.RRect;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked

@@ -22,9 +22,8 @@ package icyllis.arc3d.test.vulkan;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Image;
+import icyllis.arc3d.core.ColorInfo;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWVulkan;
-import org.lwjgl.vulkan.VK;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

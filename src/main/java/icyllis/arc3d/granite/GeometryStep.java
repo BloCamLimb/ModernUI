@@ -19,10 +19,10 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.Matrix;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.*;
+import icyllis.arc3d.sketch.Matrix;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 

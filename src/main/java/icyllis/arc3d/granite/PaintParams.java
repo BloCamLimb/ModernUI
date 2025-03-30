@@ -19,17 +19,15 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.BlendMode;
-import icyllis.arc3d.core.Blender;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.Paint;
+import icyllis.arc3d.sketch.Paint;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.core.effects.ColorFilter;
-import icyllis.arc3d.core.shaders.Shader;
+import icyllis.arc3d.sketch.effects.ColorFilter;
+import icyllis.arc3d.sketch.shaders.Shader;
 import icyllis.arc3d.engine.KeyBuilder;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;

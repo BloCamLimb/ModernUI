@@ -828,48 +828,6 @@ public final class Color {
                 : (float) Math.pow(lum, 1.0 / 3.0) * 116.0f - 16.0f;
     }
 
-    /**
-     * Blends the two colors using premultiplied alpha on CPU side. This is to simulate
-     * the color blending on GPU side, but this is only used for color filtering (tinting).
-     * Do NOT premultiply the src and dst colors with alpha on CPU side. The returned
-     * color is un-premultiplied by alpha. This method will not lose precision,
-     * color components are still 8-bit.
-     *
-     * @param mode the blend mode that determines blending factors
-     * @param src  the source color (straight) to be blended into the destination color
-     * @param dst  the destination color (straight) on which the source color is to be blended
-     * @return the color (straight) resulting from the color blending
-     */
-    @ColorInt
-    public static int blend(@NonNull BlendMode mode, @ColorInt int src, @ColorInt int dst) {
-        switch (mode) {
-            case CLEAR -> {
-                return TRANSPARENT;
-            }
-            case SRC -> {
-                return src;
-            }
-            case DST -> {
-                return dst;
-            }
-        }
-        float[] src4 = load_and_premul(src);
-        float[] dst4 = load_and_premul(dst);
-        mode.apply(src4, dst4, dst4);
-        float a = MathUtil.clamp(dst4[3], 0, 1);
-        int result = (int) (a * 255.0f + 0.5f) << 24;
-        if (result == 0) {
-            return TRANSPARENT;
-        }
-        // unpremul and store
-        a = 255.0f / a;
-        for (int i = 0; i < 3; i++) {
-            result |= (int) MathUtil.clamp(dst4[2 - i] * a + 0.5f, 0, 255) << (i << 3);
-        }
-        return result;
-    }
-
-
     public static float @NonNull[] load_and_premul(int col) {
         float[] col4 = new float[4];
         float a = (col4[3] = (col >>> 24) * (1 / 255.0f)) * (1 / 255.0f);

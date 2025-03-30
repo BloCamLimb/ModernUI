@@ -20,9 +20,10 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.shaders.Shader;
+import icyllis.arc3d.sketch.shaders.Shader;
 import icyllis.arc3d.engine.SamplerDesc;
 import icyllis.arc3d.granite.shading.UniformHandler;
+import icyllis.arc3d.sketch.shaders.GradientShader;
 
 import java.util.*;
 
@@ -336,7 +337,7 @@ public class ShaderCodeSource {
     /**
      * We store all polar colors with hue in the first component, so this "LCH -> Lab" transform
      * actually takes "HCL". This is also used to do the same polar transform for OkHCL to OkLAB.
-     * @see icyllis.arc3d.core.shaders.GradientShader
+     * @see GradientShader
      */
     private static final String PRIV_CSS_HCL_TO_LAB = """
             vec3 _css_hcl_to_lab(vec3 hcl) {
@@ -490,7 +491,7 @@ public class ShaderCodeSource {
             }
             """;
     /**
-     * @see icyllis.arc3d.core.shaders.GradientShader
+     * @see GradientShader
      */
     private static final String PRIV_INTERPOLATED_TO_RGB_UNPREMUL = """
             vec4 _interpolated_to_rgb_unpremul(vec4 color, int colorSpace, int doUnpremul) {
@@ -911,7 +912,7 @@ public class ShaderCodeSource {
      * <p>
      * Implementation is the same as raster pipeline, but is vectorized and eliminates branches.
      *
-     * @see icyllis.arc3d.core.BlendMode
+     * @see BlendMode
      */
     public static final String BLEND_CLEAR = """
             vec4 blend_clear(vec4 src, vec4 dst) {
@@ -1097,7 +1098,7 @@ public class ShaderCodeSource {
             }
             """;
     /**
-     * This can produce undefined results from {@link icyllis.arc3d.core.BlendMode#blend_divide}
+     * This can produce undefined results from {@link BlendMode#blend_divide}
      * if values out of range.
      */
     public static final String BLEND_DIVIDE = """

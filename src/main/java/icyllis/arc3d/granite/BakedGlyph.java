@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.Glyph;
-import icyllis.arc3d.core.Mask;
+import icyllis.arc3d.sketch.Glyph;
+import icyllis.arc3d.sketch.Mask;
 import icyllis.arc3d.engine.Engine;
 import org.jspecify.annotations.NonNull;
 

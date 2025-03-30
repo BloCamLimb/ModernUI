@@ -20,6 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.Matrixc;
 
 import java.nio.IntBuffer;
 

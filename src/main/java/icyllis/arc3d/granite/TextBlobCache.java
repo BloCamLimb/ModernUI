@@ -19,7 +19,10 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.GlyphRunList;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.TextBlob;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;

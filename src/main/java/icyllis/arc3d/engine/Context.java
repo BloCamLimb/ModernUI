@@ -20,7 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SurfaceCharacterization;
+import icyllis.arc3d.sketch.SurfaceCharacterization;
 import icyllis.arc3d.granite.RendererProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
