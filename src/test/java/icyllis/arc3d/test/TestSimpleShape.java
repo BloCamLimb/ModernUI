@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.Paint;
+import icyllis.arc3d.sketch.Paint;
 import icyllis.arc3d.granite.SimpleShape;
 
 public class TestSimpleShape {

@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jspecify.annotations.Nullable;
@@ -166,7 +165,7 @@ public final class GraphicsPipelineDesc extends PipelineDesc {
     @Override
     public BlendInfo getBlendInfo() {
         if (mFinalBlendMode != null) {
-            var info = BlendInfo.getSimpleBlendInfo(mFinalBlendMode);
+            var info = PipelineBuilder.getSimpleBlendInfo(mFinalBlendMode);
             return info != null ? info : BlendInfo.BLEND_SRC_OVER;
         } else {
             return BlendInfo.BLEND_DST;

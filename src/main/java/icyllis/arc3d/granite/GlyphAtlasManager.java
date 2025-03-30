@@ -21,6 +21,8 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.sketch.Glyph;
+import icyllis.arc3d.sketch.Mask;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
 

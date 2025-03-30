@@ -20,13 +20,14 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.sketch.Surface;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
  * The {@link GpuRenderTarget} manages all objects used by a rendering pipeline,
  * which are framebuffers, render passes and a set of attachments. This is the target
- * of {@link OpsRenderPass}, and may be associated with {@link icyllis.arc3d.core.Surface}.
+ * of {@link OpsRenderPass}, and may be associated with {@link Surface}.
  * <p>
  * A {@link GpuRenderTarget} may be associated with one or more renderable {@link Image}s
  * or a wrapped presentable object.

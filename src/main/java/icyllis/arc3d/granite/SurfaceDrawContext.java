@@ -22,6 +22,8 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.task.*;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Matrixc;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jspecify.annotations.Nullable;
 

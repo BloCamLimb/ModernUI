@@ -20,7 +20,15 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.j2d.Typeface_JDK;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Font;
+import icyllis.arc3d.sketch.Glyph;
+import icyllis.arc3d.sketch.Mask;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.Strike;
+import icyllis.arc3d.sketch.StrikeCache;
+import icyllis.arc3d.sketch.StrikeDesc;
+import icyllis.arc3d.sketch.j2d.Typeface_JDK;
 import org.lwjgl.stb.STBImageWrite;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;

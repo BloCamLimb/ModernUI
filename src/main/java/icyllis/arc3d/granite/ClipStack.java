@@ -21,6 +21,10 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.granite.geom.BoundsManager;
+import icyllis.arc3d.sketch.ClipOp;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.Quad;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;

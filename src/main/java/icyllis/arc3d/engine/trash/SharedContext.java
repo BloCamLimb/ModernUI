@@ -19,9 +19,10 @@
 
 package icyllis.arc3d.engine.trash;
 
-import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Device;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.sketch.SurfaceCharacterization;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 

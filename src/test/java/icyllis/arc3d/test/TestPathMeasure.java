@@ -19,7 +19,10 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Path;
+import icyllis.arc3d.sketch.PathConsumer;
+import icyllis.arc3d.sketch.PathMeasure;
 
 public class TestPathMeasure {
 

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.BlendMode;
+import icyllis.arc3d.granite.BlendMode;
 import icyllis.arc3d.core.Color;
 
 import java.util.Arrays;
@@ -79,7 +79,7 @@ public class TestBlendMode {
         int dst = Color.argb(233, 233, 30, 99);
         for (int i = 0; i < BlendMode.COUNT; i++) {
             var modeA = BlendMode.modeAt(i);
-            int resultA = Color.blend(modeA, src, dst);
+            int resultA = modeA.blend(src, dst);
             if (resultA == dst) {
                 System.out.println(modeA);
             }
@@ -87,7 +87,7 @@ public class TestBlendMode {
     }
 
     public static void blend(BlendMode mode, int src, int dst) {
-        int result = Color.blend(mode, src, dst);
+        int result = mode.blend(src, dst);
         int a = Color.alpha(result);
         int Ra = Color.red(result), Ga = Color.green(result), Ba = Color.blue(result);
         System.out.printf("AG %s (%d, %d, %d, %d)\n", mode,

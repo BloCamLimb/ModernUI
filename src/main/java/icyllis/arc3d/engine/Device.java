@@ -24,6 +24,7 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.trash.ops.OpsTask;
 import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.ShaderCodeSource;
+import icyllis.arc3d.sketch.SurfaceCharacterization;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;

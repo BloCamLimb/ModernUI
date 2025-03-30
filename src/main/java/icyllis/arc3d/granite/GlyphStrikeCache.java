@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.StrikeDesc;
+import icyllis.arc3d.sketch.StrikeDesc;
 import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;

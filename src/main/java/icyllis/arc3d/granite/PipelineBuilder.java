@@ -19,11 +19,12 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -362,9 +363,9 @@ public class PipelineBuilder {
         } else {
             mDesc.geomStep().emitFragmentCoverageCode(fs, null);
             fs.format("%s = %s;\n", PRIMARY_COLOR_OUTPUT_NAME, outputColor);
-            mBlendInfo = BlendInfo.getSimpleBlendInfo(blendMode);
+            mBlendInfo = getSimpleBlendInfo(blendMode);
             if (mBlendInfo == null) {
-                mBlendInfo = BlendInfo.getSimpleBlendInfo(BlendMode.SRC_OVER);
+                mBlendInfo = getSimpleBlendInfo(BlendMode.SRC_OVER);
                 assert mBlendInfo != null;
             }
         }
@@ -400,5 +401,31 @@ public class PipelineBuilder {
             default:
                 throw new AssertionError("Unsupported output type.");
         }
+    }
+
+    /**
+     * Returns the standard HW blend info for the given Porter Duff blend mode.
+     */
+    @Nullable
+    public static BlendInfo getSimpleBlendInfo(@NonNull BlendMode mode) {
+        return switch (mode) {
+            case CLEAR -> BlendInfo.BLEND_CLEAR;
+            case SRC -> BlendInfo.BLEND_SRC;
+            case DST -> BlendInfo.BLEND_DST;
+            case SRC_OVER -> BlendInfo.BLEND_SRC_OVER;
+            case DST_OVER -> BlendInfo.BLEND_DST_OVER;
+            case SRC_IN -> BlendInfo.BLEND_SRC_IN;
+            case DST_IN -> BlendInfo.BLEND_DST_IN;
+            case SRC_OUT -> BlendInfo.BLEND_SRC_OUT;
+            case DST_OUT -> BlendInfo.BLEND_DST_OUT;
+            case SRC_ATOP -> BlendInfo.BLEND_SRC_ATOP;
+            case DST_ATOP -> BlendInfo.BLEND_DST_ATOP;
+            case XOR -> BlendInfo.BLEND_XOR;
+            case PLUS, PLUS_CLAMPED -> BlendInfo.BLEND_PLUS;
+            case MINUS, MINUS_CLAMPED -> BlendInfo.BLEND_MINUS;
+            case MODULATE -> BlendInfo.BLEND_MODULATE;
+            case SCREEN -> BlendInfo.BLEND_SCREEN;
+            default -> null;
+        };
     }
 }

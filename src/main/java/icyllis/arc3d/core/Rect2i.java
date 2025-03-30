@@ -32,7 +32,7 @@ import org.jspecify.annotations.NonNull;
  * or if its bottom is less than or equal to its top, it is considered empty.
  * <p>
  * Note that the right and bottom coordinates are exclusive. This means a
- * {@link Rect2i} being drawn untransformed onto a {@link Canvas} will
+ * {@link Rect2i} being drawn untransformed onto a {@link icyllis.arc3d.sketch.Canvas} will
  * draw into the column and row described by its left and top coordinates,
  * but not those of its bottom and right.
  */

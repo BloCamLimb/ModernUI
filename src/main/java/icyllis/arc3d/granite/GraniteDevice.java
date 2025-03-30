@@ -19,11 +19,13 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.Image;
+import icyllis.arc3d.sketch.*;
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.effects.ColorFilter;
-import icyllis.arc3d.core.shaders.ImageShader;
-import icyllis.arc3d.core.shaders.Shader;
+import icyllis.arc3d.sketch.Device;
+import icyllis.arc3d.sketch.Image;
+import icyllis.arc3d.sketch.effects.ColorFilter;
+import icyllis.arc3d.sketch.shaders.ImageShader;
+import icyllis.arc3d.sketch.shaders.Shader;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.geom.BlurredBox;
 import icyllis.arc3d.granite.geom.BoundsManager;
@@ -38,7 +40,7 @@ import java.util.function.BiConsumer;
 /**
  * The device that is backed by GPU.
  */
-public final class GraniteDevice extends icyllis.arc3d.core.Device {
+public final class GraniteDevice extends Device {
 
     // raw pointer
     private RecordingContext mRC;

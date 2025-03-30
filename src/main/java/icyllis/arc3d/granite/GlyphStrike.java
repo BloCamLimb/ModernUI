@@ -19,12 +19,13 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.StrikeDesc;
+import icyllis.arc3d.sketch.StrikeDesc;
+import icyllis.arc3d.sketch.Strike;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.jspecify.annotations.NonNull;
 
 /**
- * The GPU {@link GlyphStrike} holds GPU {@link BakedGlyph Glyphs} for a CPU {@link icyllis.arc3d.core.Strike}.
+ * The GPU {@link GlyphStrike} holds GPU {@link BakedGlyph Glyphs} for a CPU {@link Strike}.
  */
 public final class GlyphStrike {
 

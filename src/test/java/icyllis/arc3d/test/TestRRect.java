@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.RRect;
+import icyllis.arc3d.sketch.RRect;
 
 import java.util.Random;
 

@@ -20,6 +20,7 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.Matrix;
 
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;

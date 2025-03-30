@@ -20,9 +20,16 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.effects.*;
-import icyllis.arc3d.core.shaders.*;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ImageViewProxy;
+import icyllis.arc3d.engine.KeyBuilder;
+import icyllis.arc3d.engine.SamplerDesc;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.effects.BlendModeColorFilter;
+import icyllis.arc3d.sketch.effects.ColorFilter;
+import icyllis.arc3d.sketch.effects.ComposeColorFilter;
+import icyllis.arc3d.sketch.shaders.*;
 import org.jspecify.annotations.Nullable;
 
 /**

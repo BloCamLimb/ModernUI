@@ -22,6 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
 import icyllis.arc3d.engine.SamplerDesc;
+import icyllis.arc3d.sketch.*;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
