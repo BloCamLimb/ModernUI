@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.StateSet;
 
 /**
@@ -34,13 +35,6 @@ public class StateListDrawable extends DrawableContainer {
 
     public StateListDrawable() {
         this(null, null);
-    }
-
-    private StateListDrawable(@Nullable StateListState state, @Nullable Object res) {
-        // Every state list drawable has its own constant state.
-        final StateListState newState = new StateListState(state, this);
-        setConstantState(newState);
-        onStateChange(getState());
     }
 
     /**
@@ -157,7 +151,7 @@ public class StateListDrawable extends DrawableContainer {
 
     @Override
     StateListState cloneConstantState() {
-        return new StateListState(mStateListState, this);
+        return new StateListState(mStateListState, this, null);
     }
 
     @Override
@@ -179,8 +173,8 @@ public class StateListDrawable extends DrawableContainer {
 
         int[][] mStateSets;
 
-        StateListState(@Nullable StateListState orig, StateListDrawable owner) {
-            super(orig, owner);
+        StateListState(@Nullable StateListState orig, StateListDrawable owner, Resources res) {
+            super(orig, owner, res);
 
             if (orig != null) {
                 // Perform a shallow copy and rely on mutate() to deep-copy.
@@ -225,6 +219,12 @@ public class StateListDrawable extends DrawableContainer {
             return new StateListDrawable(this, null);
         }
 
+        @NonNull
+        @Override
+        public Drawable newDrawable(Resources res) {
+            return new StateListDrawable(this, res);
+        }
+
         @Override
         public void growArray(int oldSize, int newSize) {
             super.growArray(oldSize, newSize);
@@ -232,5 +232,12 @@ public class StateListDrawable extends DrawableContainer {
             System.arraycopy(mStateSets, 0, newStateSets, 0, oldSize);
             mStateSets = newStateSets;
         }
+    }
+
+    private StateListDrawable(@Nullable StateListState state, @Nullable Resources res) {
+        // Every state list drawable has its own constant state.
+        final StateListState newState = new StateListState(state, this, res);
+        setConstantState(newState);
+        onStateChange(getState());
     }
 }

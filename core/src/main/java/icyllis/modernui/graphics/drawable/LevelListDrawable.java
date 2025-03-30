@@ -20,6 +20,7 @@ package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.resources.Resources;
 
 /**
  * A resource that manages a number of alternate Drawables, each assigned a maximum numerical value.
@@ -36,12 +37,6 @@ public class LevelListDrawable extends DrawableContainer {
 
     public LevelListDrawable() {
         this(null, null);
-    }
-
-    private LevelListDrawable(@Nullable LevelListState state, @Nullable Object res) {
-        final LevelListState as = new LevelListState(state, this);
-        setConstantState(as);
-        onLevelChange(getLevel());
     }
 
     public void addLevel(int low, int high, Drawable drawable) {
@@ -75,7 +70,7 @@ public class LevelListDrawable extends DrawableContainer {
 
     @Override
     LevelListState cloneConstantState() {
-        return new LevelListState(mLevelListState, this);
+        return new LevelListState(mLevelListState, this, null);
     }
 
     @Override
@@ -98,8 +93,8 @@ public class LevelListDrawable extends DrawableContainer {
         private int[] mLows;
         private int[] mHighs;
 
-        LevelListState(LevelListState orig, LevelListDrawable owner) {
-            super(orig, owner);
+        LevelListState(LevelListState orig, LevelListDrawable owner, Resources res) {
+            super(orig, owner, res);
 
             if (orig != null) {
                 // Perform a shallow copy and rely on mutate() to deep-copy.
@@ -140,6 +135,12 @@ public class LevelListDrawable extends DrawableContainer {
             return new LevelListDrawable(this, null);
         }
 
+        @NonNull
+        @Override
+        public Drawable newDrawable(Resources res) {
+            return new LevelListDrawable(this, res);
+        }
+
         @Override
         public void growArray(int oldSize, int newSize) {
             super.growArray(oldSize, newSize);
@@ -150,5 +151,11 @@ public class LevelListDrawable extends DrawableContainer {
             System.arraycopy(mHighs, 0, newInts, 0, oldSize);
             mHighs = newInts;
         }
+    }
+
+    private LevelListDrawable(@Nullable LevelListState state, @Nullable Resources res) {
+        final LevelListState as = new LevelListState(state, this, res);
+        setConstantState(as);
+        onLevelChange(getLevel());
     }
 }
