@@ -20,7 +20,7 @@
 package icyllis.arc3d.sketch.shaders;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.granite.BlendMode;
+import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.sketch.Matrix;
 import icyllis.arc3d.sketch.Matrixc;
 import icyllis.arc3d.sketch.Image;

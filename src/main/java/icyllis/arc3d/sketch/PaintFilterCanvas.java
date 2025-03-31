@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.sketch;
 
-import icyllis.arc3d.granite.Blender;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.core.RawPtr;

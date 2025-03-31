@@ -20,6 +20,7 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.sketch.shaders.Shader;
 import icyllis.arc3d.engine.SamplerDesc;
 import icyllis.arc3d.granite.shading.UniformHandler;

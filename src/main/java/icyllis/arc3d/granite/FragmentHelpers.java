@@ -24,6 +24,8 @@ import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ImageViewProxy;
 import icyllis.arc3d.engine.KeyBuilder;
 import icyllis.arc3d.engine.SamplerDesc;
+import icyllis.arc3d.sketch.BlendMode;
+import icyllis.arc3d.sketch.Blender;
 import icyllis.arc3d.sketch.Matrix;
 import icyllis.arc3d.sketch.Matrixc;
 import icyllis.arc3d.sketch.effects.BlendModeColorFilter;

@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.sketch;
 
-import icyllis.arc3d.granite.BlendMode;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.PixelUtils;
 import icyllis.arc3d.sketch.j2d.DrawBase;

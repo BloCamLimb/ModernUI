@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.sketch;
 
-import icyllis.arc3d.granite.Blender;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.Rect2fc;
 import icyllis.arc3d.core.SamplingOptions;

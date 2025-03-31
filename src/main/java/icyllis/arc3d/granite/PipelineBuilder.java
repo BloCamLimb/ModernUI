@@ -23,6 +23,7 @@ import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
+import icyllis.arc3d.sketch.BlendMode;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 

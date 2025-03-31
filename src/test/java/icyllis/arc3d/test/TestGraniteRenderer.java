@@ -25,7 +25,7 @@ import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ISurface;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.granite.BlendMode;
+import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.granite.GraniteDevice;
 import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.sketch.*;

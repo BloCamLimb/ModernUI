@@ -17,7 +17,7 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.granite;
+package icyllis.arc3d.sketch;
 
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInt;
