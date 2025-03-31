@@ -20,8 +20,6 @@
 package icyllis.arc3d.sketch;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.granite.BlendMode;
-import icyllis.arc3d.granite.Blender;
 import icyllis.arc3d.sketch.effects.ColorFilter;
 import icyllis.arc3d.sketch.shaders.Shader;
 import org.intellij.lang.annotations.MagicConstant;

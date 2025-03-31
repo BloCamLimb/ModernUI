@@ -22,6 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ShaderVar;
 import icyllis.arc3d.granite.shading.UniformHandler;
+import icyllis.arc3d.sketch.BlendMode;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;

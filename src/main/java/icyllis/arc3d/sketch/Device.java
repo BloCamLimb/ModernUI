@@ -21,7 +21,6 @@ package icyllis.arc3d.sketch;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.granite.Blender;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 

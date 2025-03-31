@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.sketch.j2d;
 
-import icyllis.arc3d.granite.Blender;
+import icyllis.arc3d.sketch.Blender;
 import icyllis.arc3d.sketch.Canvas;
 import icyllis.arc3d.sketch.Image;
 import icyllis.arc3d.sketch.Device;

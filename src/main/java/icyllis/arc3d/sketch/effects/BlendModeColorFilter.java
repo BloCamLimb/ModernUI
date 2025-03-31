@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.sketch.effects;
 
-import icyllis.arc3d.granite.BlendMode;
+import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.Size;
 import org.jetbrains.annotations.Contract;

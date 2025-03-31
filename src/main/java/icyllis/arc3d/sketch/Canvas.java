@@ -21,8 +21,6 @@ package icyllis.arc3d.sketch;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.RecordingContext;
-import icyllis.arc3d.granite.BlendMode;
-import icyllis.arc3d.granite.Blender;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;

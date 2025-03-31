@@ -22,6 +22,8 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.sketch.BlendMode;
+import icyllis.arc3d.sketch.Blender;
 import icyllis.arc3d.sketch.Paint;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCnt;

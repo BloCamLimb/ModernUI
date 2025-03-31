@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.sketch.j2d;
 
-import icyllis.arc3d.granite.BlendMode;
+import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.sketch.Matrixc;
 import icyllis.arc3d.sketch.Paint;
 import icyllis.arc3d.sketch.Path;

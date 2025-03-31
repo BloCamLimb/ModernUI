@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.sketch.shaders;
 
-import icyllis.arc3d.granite.BlendMode;
+import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
