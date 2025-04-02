@@ -22,7 +22,6 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.granite.GeometryStep;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -105,7 +104,7 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
 
     private void checkAsyncWork() {
         boolean success = mAsyncWork.join().finish(this);
-        var stats = getDevice().getSharedResourceCache().getStats();
+        var stats = getDevice().getGlobalResourceCache().getStats();
         if (success) {
             stats.incNumCompilationSuccesses();
         } else {
