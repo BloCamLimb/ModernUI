@@ -381,19 +381,19 @@ public class PathMeasure {
 
         var iter = mIterator;
         byte verb;
-        while ((verb = iter.next()) != PathIterator.VERB_DONE) {
-            if (hasMoveTo && verb == PathIterator.VERB_MOVE) {
+        while ((verb = iter.next()) != Path.VERB_DONE) {
+            if (hasMoveTo && verb == Path.VERB_MOVE) {
                 break;
             }
             switch (verb) {
-                case PathIterator.VERB_MOVE:
+                case Path.VERB_MOVE:
                     coordIndex += 2;
                     coords.add(iter.x0());
                     coords.add(iter.y0());
                     hasMoveTo = true;
                     break;
 
-                case PathIterator.VERB_LINE: {
+                case Path.VERB_LINE: {
                     assert (hasMoveTo);
                     float prevD = distance;
                     distance = compute_line_segment(
@@ -409,7 +409,7 @@ public class PathMeasure {
                     }
                 } break;
 
-                case PathIterator.VERB_QUAD: {
+                case Path.VERB_QUAD: {
                     assert (hasMoveTo);
                     float prevD = distance;
                     distance = compute_quad_segments(
@@ -429,7 +429,7 @@ public class PathMeasure {
                     }
                 } break;
 
-                case PathIterator.VERB_CUBIC: {
+                case Path.VERB_CUBIC: {
                     assert (hasMoveTo);
                     float prevD = distance;
                     distance = compute_cubic_segments(
@@ -452,7 +452,7 @@ public class PathMeasure {
                     }
                 } break;
 
-                case PathIterator.VERB_CLOSE:
+                case Path.VERB_CLOSE:
                     hasClose = true;
                     break;
             }

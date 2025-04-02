@@ -30,6 +30,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.awt.geom.AffineTransform;
+import java.awt.geom.FlatteningPathIterator;
+import java.awt.geom.PathIterator;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.invoke.MethodHandles;
@@ -54,14 +59,20 @@ import java.util.Arrays;
  * <p>
  * Note: Path lazily computes metrics likes bounds and convexity. Call
  * {@link #updateBoundsCache()} to make path thread safe.
+ * <p>
+ * Note: Path also implements AWT Shape for convenience, but only a
+ * few methods are actually implemented.
  */
-public class Path implements PathIterable, PathConsumer {
+public class Path implements Shape, java.awt.Shape, PathConsumer {
 
-    @MagicConstant(intValues = {FILL_NON_ZERO, FILL_EVEN_ODD})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface FillRule {
-    }
-
+    /**
+     * The fill rule constant for specifying an even-odd rule
+     * for determining the interior of a path.<br>
+     * The even-odd rule specifies that a point lies inside the
+     * path if a ray drawn in any direction from that point to
+     * infinity is crossed by path segments an odd number of times.
+     */
+    public static final int WIND_EVEN_ODD = PathIterator.WIND_EVEN_ODD;
     /**
      * The fill rule constant for specifying a non-zero rule
      * for determining the interior of a path.<br>
@@ -71,25 +82,20 @@ public class Path implements PathIterable, PathConsumer {
      * of times in the counter-clockwise direction than the
      * clockwise direction.
      */
-    public static final int FILL_NON_ZERO = PathIterator.FILL_NON_ZERO;
-    /**
-     * The fill rule constant for specifying an even-odd rule
-     * for determining the interior of a path.<br>
-     * The even-odd rule specifies that a point lies inside the
-     * path if a ray drawn in any direction from that point to
-     * infinity is crossed by path segments an odd number of times.
-     */
-    public static final int FILL_EVEN_ODD = PathIterator.FILL_EVEN_ODD;
+    public static final int WIND_NON_ZERO = PathIterator.WIND_NON_ZERO;
 
     /**
      * Primitive commands of path segments.
      */
     public static final byte
-            VERB_MOVE = PathIterator.VERB_MOVE,   // returns 1 point
-            VERB_LINE = PathIterator.VERB_LINE,   // returns 1 point
-            VERB_QUAD = PathIterator.VERB_QUAD,   // returns 2 points
-            VERB_CUBIC = PathIterator.VERB_CUBIC, // returns 3 points
-            VERB_CLOSE = PathIterator.VERB_CLOSE; // returns 0 points
+            VERB_MOVE = PathIterator.SEG_MOVETO,   // returns 1 point
+            VERB_LINE = PathIterator.SEG_LINETO,   // returns 1 point
+            VERB_QUAD = PathIterator.SEG_QUADTO,   // returns 2 points
+            VERB_CUBIC = PathIterator.SEG_CUBICTO, // returns 3 points
+            VERB_CLOSE = PathIterator.SEG_CLOSE; // returns 0 points
+    @ApiStatus.Internal
+    public static final byte
+            VERB_DONE = VERB_CLOSE + 1;
 
     /**
      * Clockwise direction for adding closed contours, assumes the origin is top left, y-down.
@@ -134,11 +140,10 @@ public class Path implements PathIterable, PathConsumer {
 
     private byte mConvexity;
     private byte mFirstDirection;
-    @FillRule
-    private byte mFillRule;
+    private byte mWindingRule;
 
     /**
-     * Creates an empty Path with a default fill rule of {@link #FILL_NON_ZERO}.
+     * Creates an empty Path with a default fill rule of {@link #WIND_NON_ZERO}.
      */
     public Path() {
         mPathRef = RefCnt.create(PathRef.EMPTY);
@@ -162,7 +167,7 @@ public class Path implements PathIterable, PathConsumer {
      */
     private void resetFields() {
         mLastMoveToIndex = ~0;
-        mFillRule = FILL_NON_ZERO;
+        mWindingRule = WIND_NON_ZERO;
         mConvexity = CONVEXITY_UNKNOWN;
         mFirstDirection = FIRST_DIRECTION_UNKNOWN;
     }
@@ -171,7 +176,7 @@ public class Path implements PathIterable, PathConsumer {
         mLastMoveToIndex = other.mLastMoveToIndex;
         mConvexity = other.mConvexity;
         mFirstDirection = other.mFirstDirection;
-        mFillRule = other.mFillRule;
+        mWindingRule = other.mWindingRule;
     }
 
     /**
@@ -179,21 +184,21 @@ public class Path implements PathIterable, PathConsumer {
      *
      * @return current fill rule
      */
-    @FillRule
-    public int getFillRule() {
-        return mFillRule;
+    @Override
+    public int getWindingRule() {
+        return mWindingRule;
     }
 
     /**
-     * Sets the rule used to fill path. <var>rule</var> is either {@link #FILL_NON_ZERO}
-     * or {@link #FILL_EVEN_ODD} .
+     * Sets the rule used to fill path. <var>rule</var> is either {@link #WIND_NON_ZERO}
+     * or {@link #WIND_EVEN_ODD} .
      */
-    public void setFillRule(@FillRule int rule) {
+    public void setWindingRule(int rule) {
         if ((rule & ~1) != 0) {
             throw new IllegalArgumentException();
         }
-        assert rule == FILL_NON_ZERO || rule == FILL_EVEN_ODD;
-        mFillRule = (byte) rule;
+        assert rule == WIND_NON_ZERO || rule == WIND_EVEN_ODD;
+        mWindingRule = (byte) rule;
     }
 
     /**
@@ -224,7 +229,7 @@ public class Path implements PathIterable, PathConsumer {
 
     /**
      * Resets the path to its initial state, clears points and verbs and
-     * sets fill rule to {@link #FILL_NON_ZERO}.
+     * sets fill rule to {@link #WIND_NON_ZERO}.
      * <p>
      * Preserves internal storage if it's unique, otherwise discards.
      */
@@ -239,7 +244,7 @@ public class Path implements PathIterable, PathConsumer {
 
     /**
      * Resets the path to its initial state, clears points and verbs and
-     * sets fill rule to {@link #FILL_NON_ZERO}.
+     * sets fill rule to {@link #WIND_NON_ZERO}.
      * <p>
      * Preserves internal storage if it's unique, otherwise allocates new
      * storage with the same size.
@@ -257,7 +262,7 @@ public class Path implements PathIterable, PathConsumer {
 
     /**
      * Resets the path to its initial state, clears points and verbs and
-     * sets fill rule to {@link #FILL_NON_ZERO}.
+     * sets fill rule to {@link #WIND_NON_ZERO}.
      * <p>
      * This explicitly discards the internal storage, it is recommended to
      * call when the path object will be no longer used.
@@ -544,7 +549,7 @@ public class Path implements PathIterable, PathConsumer {
 
             if (this != dst) {
                 dst.mLastMoveToIndex = mLastMoveToIndex;
-                dst.mFillRule = mFillRule;
+                dst.mWindingRule = mWindingRule;
             }
         }
     }
@@ -568,6 +573,11 @@ public class Path implements PathIterable, PathConsumer {
         return mPathRef.mCoordSize >> 1;
     }
 
+    @Override
+    public java.awt.@NonNull Rectangle getBounds() {
+        return getBounds2D().getBounds();
+    }
+
     /**
      * Returns minimum and maximum axes values of coordinates. Returns empty
      * if path contains no points or is not finite.
@@ -578,19 +588,55 @@ public class Path implements PathIterable, PathConsumer {
      * This method returns a cached result; it is recalculated only after
      * this path is altered.
      *
-     * @return bounds of all points, read-only
+     * @return bounds of all points
      * @see #isFinite()
      */
-    @NonNull
-    public Rect2fc getBounds() {
-        return mPathRef.getBounds();
+    @Override
+    public @NonNull Rectangle2D getBounds2D() {
+        var bounds = mPathRef.getBounds();
+        return new Rectangle2D.Float(bounds.x(), bounds.y(),
+                bounds.width(), bounds.height());
     }
 
     /**
      * Helper method to {@link #getBounds()}, stores the result to dst.
      */
+    @Override
     public void getBounds(@NonNull Rect2f dst) {
-        getBounds().store(dst);
+        mPathRef.getBounds().store(dst);
+    }
+
+    @Override
+    public boolean contains(double x, double y) {
+        //TODO
+        return false;
+    }
+
+    @Override
+    public boolean contains(Point2D p) {
+        return contains(p.getX(), p.getY());
+    }
+
+    @Override
+    public boolean contains(double x, double y, double w, double h) {
+        //TODO
+        return false;
+    }
+
+    @Override
+    public boolean contains(Rectangle2D r) {
+        //TODO
+        return false;
+    }
+
+    @Override
+    public boolean intersects(double x, double y, double w, double h) {
+        return false;
+    }
+
+    @Override
+    public boolean intersects(Rectangle2D r) {
+        return false;
     }
 
     /**
@@ -621,10 +667,20 @@ public class Path implements PathIterable, PathConsumer {
         return mPathRef.mSegmentMask;
     }
 
-    @NonNull
     @Override
-    public PathIterator getPathIterator() {
+    public @NonNull PathIterator getPathIterator() {
         return this.new Iterator();
+    }
+
+    @Override
+    public @NonNull PathIterator getPathIterator(@Nullable AffineTransform at) {
+        return at != null ? this.new TxIterator(at) : this.new Iterator();
+    }
+
+    @Override
+    public @NonNull PathIterator getPathIterator(@Nullable AffineTransform at,
+                                                 double flatness) {
+        return new FlatteningPathIterator(getPathIterator(at), flatness);
     }
 
     private class Iterator implements PathIterator {
@@ -634,52 +690,120 @@ public class Path implements PathIterable, PathConsumer {
         private int coordPos;
 
         @Override
-        public int getFillRule() {
-            return mFillRule;
+        public int getWindingRule() {
+            return mWindingRule;
         }
 
         @Override
-        public int next(float[] coords, int offset) {
-            if (verbPos == count) {
-                return VERB_DONE;
-            }
+        public boolean isDone() {
+            return verbPos == count;
+        }
+
+        @Override
+        public void next() {
             byte verb = mPathRef.mVerbs[verbPos++];
-            switch (verb) {
-                case VERB_MOVE -> {
-                    if (verbPos == count) {
-                        return VERB_DONE;
-                    }
-                    if (coords != null) {
-                        coords[offset] = mPathRef.mCoords[coordPos];
-                        coords[offset + 1] = mPathRef.mCoords[coordPos + 1];
-                    }
-                    coordPos += 2;
+            coordPos += switch (verb) {
+                case VERB_MOVE,VERB_LINE -> 2;
+                case VERB_QUAD -> 4;
+                case VERB_CUBIC -> 6;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public int currentSegment(float[] coords) {
+            byte verb = mPathRef.mVerbs[verbPos];
+            int numCoords = switch (verb) {
+                case VERB_MOVE,VERB_LINE -> 2;
+                case VERB_QUAD -> 4;
+                case VERB_CUBIC -> 6;
+                default -> 0;
+            };
+            if (numCoords > 0) {
+                System.arraycopy(mPathRef.mCoords, coordPos,
+                        coords, 0, numCoords);
+            }
+            return verb;
+        }
+
+        @Override
+        public int currentSegment(double[] coords) {
+            byte verb = mPathRef.mVerbs[verbPos];
+            int numCoords = switch (verb) {
+                case VERB_MOVE,VERB_LINE -> 2;
+                case VERB_QUAD -> 4;
+                case VERB_CUBIC -> 6;
+                default -> 0;
+            };
+            if (numCoords > 0) {
+                for (int i = 0; i < numCoords; i++) {
+                    coords[i] = mPathRef.mCoords[coordPos + i];
                 }
-                case VERB_LINE -> {
-                    if (coords != null) {
-                        coords[offset] = mPathRef.mCoords[coordPos];
-                        coords[offset + 1] = mPathRef.mCoords[coordPos + 1];
-                    }
-                    coordPos += 2;
-                }
-                case VERB_QUAD -> {
-                    if (coords != null) {
-                        System.arraycopy(
-                                mPathRef.mCoords, coordPos,
-                                coords, offset, 4
-                        );
-                    }
-                    coordPos += 4;
-                }
-                case VERB_CUBIC -> {
-                    if (coords != null) {
-                        System.arraycopy(
-                                mPathRef.mCoords, coordPos,
-                                coords, offset, 6
-                        );
-                    }
-                    coordPos += 6;
-                }
+            }
+            return verb;
+        }
+    }
+
+    private class TxIterator implements PathIterator {
+
+        private final AffineTransform affine;
+        private final int count = countVerbs();
+        private int verbPos;
+        private int coordPos;
+
+        private TxIterator(AffineTransform affine) {
+            this.affine = affine;
+        }
+
+        @Override
+        public int getWindingRule() {
+            return mWindingRule;
+        }
+
+        @Override
+        public boolean isDone() {
+            return verbPos == count;
+        }
+
+        @Override
+        public void next() {
+            byte verb = mPathRef.mVerbs[verbPos++];
+            coordPos += switch (verb) {
+                case VERB_MOVE,VERB_LINE -> 2;
+                case VERB_QUAD -> 4;
+                case VERB_CUBIC -> 6;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public int currentSegment(float[] coords) {
+            byte verb = mPathRef.mVerbs[verbPos++];
+            int numCoords = switch (verb) {
+                case VERB_MOVE,VERB_LINE -> 2;
+                case VERB_QUAD -> 4;
+                case VERB_CUBIC -> 6;
+                default -> 0;
+            };
+            if (numCoords > 0) {
+                affine.transform(mPathRef.mCoords, coordPos,
+                        coords, 0, numCoords / 2);
+            }
+            return verb;
+        }
+
+        @Override
+        public int currentSegment(double[] coords) {
+            byte verb = mPathRef.mVerbs[verbPos++];
+            int numCoords = switch (verb) {
+                case VERB_MOVE,VERB_LINE -> 2;
+                case VERB_QUAD -> 4;
+                case VERB_CUBIC -> 6;
+                default -> 0;
+            };
+            if (numCoords > 0) {
+                affine.transform(mPathRef.mCoords, coordPos,
+                        coords, 0, numCoords / 2);
             }
             return verb;
         }
@@ -699,7 +823,7 @@ public class Path implements PathIterable, PathConsumer {
             ITR:
             do {
                 switch (vs[vi++]) {
-                    case PathIterator.VERB_MOVE -> {
+                    case VERB_MOVE -> {
                         if (vi == n) {
                             break ITR;
                         }
@@ -707,18 +831,18 @@ public class Path implements PathIterable, PathConsumer {
                                 cs[ci++], cs[ci++]
                         );
                     }
-                    case PathIterator.VERB_LINE -> action.lineTo(
+                    case VERB_LINE -> action.lineTo(
                             cs[ci++], cs[ci++]
                     );
-                    case PathIterator.VERB_QUAD -> {
+                    case VERB_QUAD -> {
                         action.quadTo(cs, ci);
                         ci += 4;
                     }
-                    case PathIterator.VERB_CUBIC -> {
+                    case VERB_CUBIC -> {
                         action.cubicTo(cs, ci);
                         ci += 6;
                     }
-                    case PathIterator.VERB_CLOSE -> action.close();
+                    case VERB_CLOSE -> action.close();
                 }
             } while (vi < n);
         }
@@ -743,7 +867,7 @@ public class Path implements PathIterable, PathConsumer {
 
         public byte next() {
             if (verbPos == count) {
-                return PathIterator.VERB_DONE;
+                return VERB_DONE;
             }
             byte verb = mPathRef.mVerbs[verbPos++];
             coordPos += coordInc;
@@ -805,7 +929,7 @@ public class Path implements PathIterable, PathConsumer {
     @Override
     public int hashCode() {
         int hash = mPathRef.hashCode();
-        hash = 31 * hash + mFillRule;
+        hash = 31 * hash + mWindingRule;
         return hash;
     }
 
@@ -815,7 +939,7 @@ public class Path implements PathIterable, PathConsumer {
             return true;
         }
         if (obj instanceof Path other) {
-            return mFillRule == other.mFillRule && mPathRef.equals(other.mPathRef);
+            return mWindingRule == other.mWindingRule && mPathRef.equals(other.mPathRef);
         }
         return false;
     }

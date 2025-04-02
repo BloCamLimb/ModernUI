@@ -19,6 +19,7 @@
 
 package icyllis.arc3d.sketch.j2d;
 
+import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.sketch.Matrixc;
 import icyllis.arc3d.sketch.Paint;
@@ -66,23 +67,22 @@ public class DrawBase {
     private void drawDevicePath(Path path,
                                 Paint paint,
                                 boolean doFill) {
-        var bounds = path.getBounds();
+        var bounds = new Rect2f();
+        path.getBounds(bounds);
         // use ! expression so we return true if bounds contains NaN
         if (!(bounds.left() >= -MAX_FOR_MATH && bounds.top() >= -MAX_FOR_MATH &&
                 bounds.right() <= MAX_FOR_MATH && bounds.bottom() <= MAX_FOR_MATH)) {
             return;
         }
 
-        var j2dPath = J2DUtils.toPath2D(path, null);
-
         mG2D.setTransform(new AffineTransform());
         preparePaint(paint);
 
         if (doFill) {
-            mG2D.fill(j2dPath);
+            mG2D.fill(path);
         } else {
             mG2D.setStroke(sHairlineStroke);
-            mG2D.draw(j2dPath);
+            mG2D.draw(path);
         }
     }
 

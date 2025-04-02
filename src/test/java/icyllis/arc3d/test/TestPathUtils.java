@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,9 +23,7 @@ import icyllis.arc3d.sketch.Path;
 import icyllis.arc3d.sketch.PathConsumer;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.geom.GeneralPath;
-import java.awt.geom.Path2D;
+import java.awt.BasicStroke;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -63,59 +61,15 @@ public class TestPathUtils {
         }
     };
 
-    public static class J2DPathConverter implements PathConsumer {
-
-        private GeneralPath mDst;
-
-        public Path2D convert(Path src) {
-            mDst = new GeneralPath();
-            src.forEach(this);
-            Path2D ret = mDst;
-            mDst = null;
-            return ret;
-        }
-
-        @Override
-        public void moveTo(float x, float y) {
-            mDst.moveTo(x, y);
-        }
-
-        @Override
-        public void lineTo(float x, float y) {
-            mDst.lineTo(x, y);
-        }
-
-        @Override
-        public void quadTo(float x1, float y1, float x2, float y2) {
-            mDst.quadTo(x1, y1, x2, y2);
-        }
-
-        @Override
-        public void cubicTo(float x1, float y1, float x2, float y2, float x3, float y3) {
-            mDst.curveTo(x1, y1, x2, y2, x3, y3);
-        }
-
-        @Override
-        public void close() {
-            mDst.closePath();
-        }
-
-        @Override
-        public void done() {
-
-        }
-    }
-
     public static void writePath(Path src, boolean stroke, String outName) {
-        var path = new J2DPathConverter().convert(src);
         var image = new BufferedImage(256, 256, BufferedImage.TYPE_BYTE_GRAY);
         var graphics = image.createGraphics();
         //graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         if (stroke) {
             graphics.setStroke(new BasicStroke(0));
-            graphics.draw(path);
+            graphics.draw(src);
         } else {
-            graphics.fill(path);
+            graphics.fill(src);
         }
         try {
             ImageIO.write(image, "png", new File(outName));

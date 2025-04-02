@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,35 +19,49 @@
 
 package icyllis.arc3d.sketch;
 
+import icyllis.arc3d.core.Rect2f;
 import org.jspecify.annotations.NonNull;
 
-public interface PathIterable {
+import java.awt.geom.PathIterator;
+
+/**
+ * Interface for geometric shapes that have area.
+ */
+public interface Shape {
+
+    /**
+     * Similar to {@link java.awt.Shape#getBounds2D()}, but stores
+     * the result to dst.
+     *
+     * @param dest the destination rectangle to store the bounds to
+     */
+    void getBounds(@NonNull Rect2f dest);
 
     /**
      * Returns the filling rule for determining the interior of the
      * path.
      *
      * @return the winding rule.
-     * @see PathIterator#FILL_EVEN_ODD
-     * @see PathIterator#FILL_NON_ZERO
+     * @see PathIterator#WIND_EVEN_ODD
+     * @see PathIterator#WIND_NON_ZERO
      */
-    int getFillRule();
+    int getWindingRule();
 
     @NonNull
     PathIterator getPathIterator();
 
     default void forEach(@NonNull PathConsumer action) {
-        var it = getPathIterator();
-        int verb;
+        PathIterator pi = getPathIterator();
         float[] coords = new float[6];
-        while ((verb = it.next(coords, 0)) != PathIterator.VERB_DONE) {
-            switch (verb) {
-                case PathIterator.VERB_MOVE -> action.moveTo(coords[0], coords[1]);
-                case PathIterator.VERB_LINE -> action.lineTo(coords[0], coords[1]);
-                case PathIterator.VERB_QUAD -> action.quadTo(coords, 0);
-                case PathIterator.VERB_CUBIC -> action.cubicTo(coords, 0);
-                case PathIterator.VERB_CLOSE -> action.close();
+        while (!pi.isDone()) {
+            switch (pi.currentSegment(coords)) {
+                case PathIterator.SEG_MOVETO -> action.moveTo(coords[0], coords[1]);
+                case PathIterator.SEG_LINETO -> action.lineTo(coords[0], coords[1]);
+                case PathIterator.SEG_QUADTO -> action.quadTo(coords, 0);
+                case PathIterator.SEG_CUBICTO -> action.cubicTo(coords, 0);
+                case PathIterator.SEG_CLOSE -> action.close();
             }
+            pi.next();
         }
         action.done();
     }
