@@ -34,14 +34,8 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.system.MemoryUtil;
 
-import java.io.IOException;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.concurrent.CompletableFuture;
 
 import static org.lwjgl.opengl.GL20C.*;
@@ -217,10 +211,10 @@ public class GLGraphicsPipelineBuilder {
         if (mFinalizedFragGLSL != null || mFinalizedFragSPIRV != null) {
             if (mFinalizedFragSPIRV != null) {
                 frag = GLUtil.glSpecializeShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragSPIRV,
-                        "main", mDevice.getSharedResourceCache().getStats());
+                        "main", mDevice.getGlobalResourceCache().getStats());
             } else {
                 frag = GLUtil.glCompileShader(mDevice, GL_FRAGMENT_SHADER, mFinalizedFragGLSL,
-                        mDevice.getSharedResourceCache().getStats());
+                        mDevice.getGlobalResourceCache().getStats());
             }
             if (frag == 0) {
                 gl.glDeleteProgram(program);
@@ -231,10 +225,10 @@ public class GLGraphicsPipelineBuilder {
         int vert;
         if (mFinalizedVertSPIRV != null) {
             vert = GLUtil.glSpecializeShader(mDevice, GL_VERTEX_SHADER, mFinalizedVertSPIRV,
-                    "main", mDevice.getSharedResourceCache().getStats());
+                    "main", mDevice.getGlobalResourceCache().getStats());
         } else {
             vert = GLUtil.glCompileShader(mDevice, GL_VERTEX_SHADER, mFinalizedVertGLSL,
-                    mDevice.getSharedResourceCache().getStats());
+                    mDevice.getGlobalResourceCache().getStats());
         }
         if (vert == 0) {
             gl.glDeleteProgram(program);

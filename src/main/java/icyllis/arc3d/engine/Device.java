@@ -71,7 +71,7 @@ public abstract class Device implements Engine {
     private final int mContextID;
 
     private ThreadSafeCache mThreadSafeCache;
-    private SharedResourceCache mSharedResourceCache;
+    private GlobalResourceCache mGlobalResourceCache;
     private ShaderCodeSource mShaderCodeSource;
     RendererProvider mRendererProvider;
 
@@ -101,7 +101,7 @@ public abstract class Device implements Engine {
         //mContext = context;
         mCaps = caps;
         mCompiler = new ShaderCompiler();
-        mSharedResourceCache = new SharedResourceCache();
+        mGlobalResourceCache = new GlobalResourceCache();
         mShaderCodeSource = new ShaderCodeSource();
     }
 
@@ -237,8 +237,8 @@ public abstract class Device implements Engine {
 
     public abstract ResourceProvider makeResourceProvider(Context context, long maxResourceBudget);
 
-    public final SharedResourceCache getSharedResourceCache() {
-        return mSharedResourceCache;
+    public final GlobalResourceCache getGlobalResourceCache() {
+        return mGlobalResourceCache;
     }
 
     public final ShaderCodeSource getShaderCodeSource() {
@@ -258,7 +258,7 @@ public abstract class Device implements Engine {
      * Otherwise, no cleanup should be attempted, immediately cease making backend API calls.
      */
     public void disconnect(boolean cleanup) {
-        mSharedResourceCache.release();
+        mGlobalResourceCache.release();
     }
 
     /**

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Thread-safe class to get or create pipeline state objects (PSO) asynchronously.
  */
 @ThreadSafe
-public class SharedResourceCache {
+public class GlobalResourceCache {
 
     protected final Stats mStats = new Stats();
 
@@ -48,7 +48,7 @@ public class SharedResourceCache {
     private final ObjectArrayList<@SharedPtr Resource> mStaticResources =
             new ObjectArrayList<>();
 
-    public SharedResourceCache() {
+    public GlobalResourceCache() {
         //TODO configurable
         mGraphicsPipelineCache = new PipelineCache<>(256);
         mComputePipelineCache = new PipelineCache<>(128);
@@ -214,7 +214,7 @@ public class SharedResourceCache {
 
         @Override
         public String toString() {
-            return "SharedResourceCache.Stats{" +
+            return "GlobalResourceCache.Stats{" +
                     "shaderCompilations=" + mShaderCompilations +
                     ", numInlineCompilationFailures=" + mNumInlineCompilationFailures +
                     ", numPreCompilationFailures=" + mNumPreCompilationFailures +

@@ -31,7 +31,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * This can only be used on render thread. To create Surface-like resources
  * in other threads, use {@link SurfaceProxy}. To obtain Pipeline resources,
- * use {@link SharedResourceCache}.
+ * use {@link GlobalResourceCache}.
  */
 public abstract class ResourceProvider {
 
@@ -68,7 +68,7 @@ public abstract class ResourceProvider {
     public GraphicsPipeline findOrCreateGraphicsPipeline(
             PipelineDesc pipelineDesc,
             RenderPassDesc renderPassDesc) {
-        var cache = mDevice.getSharedResourceCache();
+        var cache = mDevice.getGlobalResourceCache();
         mGraphicsPipelineKey = mDevice.getCaps().makeGraphicsPipelineKey(
                 mGraphicsPipelineKey,
                 pipelineDesc,

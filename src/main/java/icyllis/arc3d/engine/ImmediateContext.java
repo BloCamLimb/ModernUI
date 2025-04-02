@@ -156,7 +156,7 @@ public final class ImmediateContext extends Context {
         var staticBufferManager = new StaticBufferManager(mResourceProvider, getCaps());
         var rendererProvider = new RendererProvider(getCaps(), staticBufferManager);
 
-        var result = staticBufferManager.flush(mQueueManager, getSharedResourceCache());
+        var result = staticBufferManager.flush(mQueueManager, getGlobalResourceCache());
         if (result == StaticBufferManager.RESULT_FAILURE) {
             return false;
         }
