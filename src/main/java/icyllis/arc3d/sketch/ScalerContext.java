@@ -21,6 +21,7 @@ package icyllis.arc3d.sketch;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.PixelUtils;
+import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.sketch.j2d.DrawBase;
 import org.jspecify.annotations.NonNull;
 import sun.misc.Unsafe;
@@ -106,7 +107,8 @@ public abstract class ScalerContext {
                     glyph.mMaskFormat = Mask.kA8_Format;
                 }
 
-                var bounds = devPath.getBounds();
+                var bounds = new Rect2f();
+                devPath.getBounds(bounds);
                 saturate_glyph_bounds(glyph,
                         bounds.left(), bounds.top(),
                         bounds.right(), bounds.bottom());

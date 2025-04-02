@@ -60,7 +60,8 @@ public class PathUtils {
         float resScale;
         if (ctm.hasPerspective()) {
             var transformedBounds = new Rect2f();
-            ctm.mapRect(src.getBounds(), transformedBounds);
+            src.getBounds(transformedBounds);
+            ctm.mapRect(transformedBounds);
             resScale = ctm.getMaxScale(
                     transformedBounds.centerX(),
                     transformedBounds.centerY()

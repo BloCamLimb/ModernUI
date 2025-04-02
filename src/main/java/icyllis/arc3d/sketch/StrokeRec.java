@@ -240,7 +240,7 @@ public class StrokeRec {
      * <p>
      * src and dst must NOT come from the same object.
      */
-    public boolean applyToPath(PathIterable src, PathConsumer dst) {
+    public boolean applyToPath(Shape src, PathConsumer dst) {
         if (mWidth <= 0) { // hairline or fill
             return false;
         }
