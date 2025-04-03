@@ -185,10 +185,16 @@ public class PopupWindow {
     private WeakReference<View> mAnchorRoot;
     private boolean mIsAnchorRootAttached;
 
-    private final ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener = this::alignToAnchor;
+    private final ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener = () -> {
+        //TODO WindowGroup is buggy, view tree will be laid out frequently. Disable aligning now.
+        //alignToAnchor();
+    };
 
     private final View.OnLayoutChangeListener mOnLayoutChangeListener =
-            (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> alignToAnchor();
+            (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                //TODO WindowGroup is buggy, view tree will be laid out frequently. Disable aligning now.
+                //alignToAnchor();
+            };
 
     private int mAnchorXOff;
     private int mAnchorYOff;
