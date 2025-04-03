@@ -831,7 +831,8 @@ public class TestGraniteRenderer {
                 paint.setShader(RefCnt.create(mRRectShader));
                 paint.setColorFilter(null);
                 paint.setAlphaF(0.4f);
-                canvas.drawRoundRect(400, 450, 600, 550, 50, paint);
+                rrect.setRectXY(400, 450, 600, 550, 50, 50);
+                canvas.drawRRect(rrect, paint);
 
             } else if (TEST_SCENE == 2) {
                 Rect2f rect = new Rect2f();
