@@ -840,6 +840,9 @@ public abstract class Canvas {
     /**
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
      * rectangle will be filled or framed based on the Style in the paint.
+     * <p>
+     * The corner radius will be clamped to {@code min(right-left, bottom-top) / 2}
+     * to fit within bounds.
      *
      * @param left   the left of the rectangular bounds
      * @param top    the top of the rectangular bounds
@@ -884,6 +887,52 @@ public abstract class Canvas {
      */
     public abstract void drawRoundRect(float left, float top, float right, float bottom,
                                        float radius, int sides, @NonNull Paint paint);
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     * <p>
+     * If any of the given corner radii is NaN or infinite, the result is a rectangle
+     * (all corners are square).<br>
+     * If corner radius is zero or less: radius are stored as zero; corner is square.
+     * If corner curves overlap, radii are proportionally scaled to fit within bounds.
+     *
+     * @param rect              The rectangular bounds of the round rect to be drawn
+     * @param topLeftRadius     the radius used to round the upper left corner
+     * @param topRightRadius    the radius used to round the upper right corner
+     * @param bottomRightRadius the radius used to round the lower right corner
+     * @param bottomLeftRadius  the radius used to round the lower left corner
+     * @param paint             the paint used to draw the round rectangle
+     */
+    public final void drawRoundRect(@NonNull RectF rect, float topLeftRadius, float topRightRadius,
+                                    float bottomRightRadius, float bottomLeftRadius, @NonNull Paint paint) {
+        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom,
+                topLeftRadius, topRightRadius, bottomRightRadius, bottomLeftRadius, paint);
+    }
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     * <p>
+     * If any of the given corner radii is NaN or infinite, the result is a rectangle
+     * (all corners are square).<br>
+     * If corner radius is zero or less: radius are stored as zero; corner is square.
+     * If corner curves overlap, radii are proportionally scaled to fit within bounds.
+     *
+     * @param left              the left of the rectangular bounds
+     * @param top               the top of the rectangular bounds
+     * @param right             the right of the rectangular bounds
+     * @param bottom            the bottom of the rectangular bounds
+     * @param topLeftRadius     the radius used to round the upper left corner
+     * @param topRightRadius    the radius used to round the upper right corner
+     * @param bottomRightRadius the radius used to round the lower right corner
+     * @param bottomLeftRadius  the radius used to round the lower left corner
+     * @param paint             the paint used to draw the round rectangle
+     */
+    public abstract void drawRoundRect(float left, float top, float right, float bottom,
+                                       float topLeftRadius, float topRightRadius,
+                                       float bottomRightRadius, float bottomLeftRadius,
+                                       @NonNull Paint paint);
 
     /**
      * Similar to {@link #drawRoundRect(float, float, float, float, float, Paint)},
@@ -1198,7 +1247,7 @@ public abstract class Canvas {
      * @param top    the position of the top side of the image being drawn
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round image
-     * @deprecated use ImageShader instead
+     * @deprecated use {@link ImageShader} and {@link #drawRoundRect} instead
      */
     @Deprecated
     public abstract void drawRoundImage(Image image, float left, float top,
