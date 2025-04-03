@@ -115,8 +115,6 @@ public class Canvas implements AutoCloseable {
     // a temp rect that used with arguments
     private final Rect2f mTmpRect = new Rect2f();
     private final Rect2f mTmpRect2 = new Rect2f();
-    private final RRect mTmpRRect = new RRect();
-    private final float[] mTmpRadii = new float[8];
     private final Rect2f mTmpQuickBounds = new Rect2f();
     private final Rect2f mTmpQuickBounds2 = new Rect2f();
     private final Matrix mTmpMatrix = new Matrix();
@@ -1262,85 +1260,6 @@ public class Canvas implements AutoCloseable {
     }
 
     /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
-     * @param rect   The rectangular bounds of the round rect to be drawn
-     * @param radius the radius used to round the corners
-     * @param paint  the paint used to draw the round rectangle
-     */
-    public final void drawRoundRect(Rect2fc rect, float radius, Paint paint) {
-        mTmpRRect.setRectXY(rect, radius, radius);
-        onDrawRRect(mTmpRRect, paint);
-    }
-
-    /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
-     * @param left   the left of the rectangular bounds
-     * @param top    the top of the rectangular bounds
-     * @param right  the right of the rectangular bounds
-     * @param bottom the bottom of the rectangular bounds
-     * @param radius the radius used to round the corners
-     * @param paint  the paint used to draw the round rectangle
-     */
-    public final void drawRoundRect(float left, float top, float right, float bottom,
-                                    float radius, Paint paint) {
-        mTmpRRect.setRectXY(left, top, right, bottom, radius, radius);
-        onDrawRRect(mTmpRRect, paint);
-    }
-
-    /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
-     * @param rect  The rectangular bounds of the round rect to be drawn
-     * @param upperLeftRadius  the radius used to round the upper left corner
-     * @param upperRightRadius the radius used to round the upper right corner
-     * @param lowerRightRadius the radius used to round the lower right corner
-     * @param lowerLeftRadius  the radius used to round the lower left corner
-     * @param paint the paint used to draw the round rectangle
-     */
-    public final void drawRoundRect(Rect2fc rect, float upperLeftRadius, float upperRightRadius,
-                                    float lowerRightRadius, float lowerLeftRadius, Paint paint) {
-        var radii = mTmpRadii;
-        radii[RRect.kUpperLeftX] = radii[RRect.kUpperLeftY] = upperLeftRadius;
-        radii[RRect.kUpperRightX] = radii[RRect.kUpperRightY] = upperRightRadius;
-        radii[RRect.kLowerRightX] = radii[RRect.kLowerRightY] = lowerRightRadius;
-        radii[RRect.kLowerLeftX] = radii[RRect.kLowerLeftY] = lowerLeftRadius;
-        mTmpRRect.setRectRadii(rect, radii);
-        onDrawRRect(mTmpRRect, paint);
-    }
-
-    /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
-     * @param left             the left of the rectangular bounds
-     * @param top              the top of the rectangular bounds
-     * @param right            the right of the rectangular bounds
-     * @param bottom           the bottom of the rectangular bounds
-     * @param upperLeftRadius  the radius used to round the upper left corner
-     * @param upperRightRadius the radius used to round the upper right corner
-     * @param lowerRightRadius the radius used to round the lower right corner
-     * @param lowerLeftRadius  the radius used to round the lower left corner
-     * @param paint            the paint used to draw the round rectangle
-     */
-    public final void drawRoundRect(float left, float top, float right, float bottom,
-                                    float upperLeftRadius, float upperRightRadius,
-                                    float lowerRightRadius, float lowerLeftRadius,
-                                    Paint paint) {
-        var radii = mTmpRadii;
-        radii[RRect.kUpperLeftX] = radii[RRect.kUpperLeftY] = upperLeftRadius;
-        radii[RRect.kUpperRightX] = radii[RRect.kUpperRightY] = upperRightRadius;
-        radii[RRect.kLowerRightX] = radii[RRect.kLowerRightY] = lowerRightRadius;
-        radii[RRect.kLowerLeftX] = radii[RRect.kLowerLeftY] = lowerLeftRadius;
-        mTmpRRect.setRectRadii(left, top, right, bottom, radii);
-        onDrawRRect(mTmpRRect, paint);
-    }
-
-    /**
      * Draws RRect using the current matrix, clip and specified paint.
      * In paint: Style determines if rrect is stroked or filled;
      * if stroked, Paint stroke width describes the line thickness.
@@ -1786,7 +1705,7 @@ public class Canvas implements AutoCloseable {
         internalRestore(); // restore the last, since we're going away
         mRootDevice = RefCnt.move(mRootDevice);
         if (mSurface != null) {
-            throw new IllegalStateException("Surface-created canvas is owned by Surface, use Surface#close instead");
+            throw new IllegalStateException("Surface-created canvas is owned by Surface, use Surface#unref instead");
         }
     }
 
