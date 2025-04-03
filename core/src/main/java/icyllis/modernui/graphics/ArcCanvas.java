@@ -246,6 +246,14 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
+    public void drawRoundRect(float left, float top, float right, float bottom,
+                              float topLeftRadius, float topRightRadius,
+                              float bottomRightRadius, float bottomLeftRadius,
+                              @NonNull Paint paint) {
+        //TODO 3.12, waiting for Arc3D to be merged
+    }
+
+    @Override
     public void drawRoundRectGradient(float left, float top, float right, float bottom,
                                       int colorUL, int colorUR, int colorLR, int colorLL, float radius, Paint paint) {
         //TODO per-corner radius not supported yet

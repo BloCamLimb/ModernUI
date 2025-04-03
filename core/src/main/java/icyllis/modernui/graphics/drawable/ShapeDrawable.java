@@ -18,8 +18,19 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.Px;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.BlendModeColorFilter;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.ColorFilter;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.RectF;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import org.intellij.lang.annotations.MagicConstant;
@@ -193,14 +204,28 @@ public class ShapeDrawable extends Drawable {
             final RectF r = mRect;
             switch (st.mShape) {
                 case RECTANGLE -> {
-                    if (st.mRadius > 0.0f) {
-                        float rad = Math.min(st.mRadius,
-                                Math.min(r.width(), r.height()) * 0.5f);
-                        if (haveFill) {
-                            canvas.drawRoundRect(r, rad, mFillPaint);
-                        }
-                        if (haveStroke) {
-                            canvas.drawRoundRect(r, rad, mStrokePaint);
+                    if (st.mTopLeftRadius > 0.0f || st.mTopRightRadius > 0.0f ||
+                            st.mBottomRightRadius > 0.0f || st.mBottomLeftRadius > 0.0f) {
+                        if (st.mTopLeftRadius == st.mTopRightRadius &&
+                                st.mTopLeftRadius == st.mBottomRightRadius &&
+                                st.mTopLeftRadius == st.mBottomLeftRadius) {
+                            float rad = Math.min(st.mTopLeftRadius,
+                                    Math.min(r.width(), r.height()) * 0.5f);
+                            if (haveFill) {
+                                canvas.drawRoundRect(r, rad, mFillPaint);
+                            }
+                            if (haveStroke) {
+                                canvas.drawRoundRect(r, rad, mStrokePaint);
+                            }
+                        } else {
+                            if (haveFill) {
+                                canvas.drawRoundRect(r, st.mTopLeftRadius, st.mTopRightRadius,
+                                        st.mBottomRightRadius, st.mBottomLeftRadius, mFillPaint);
+                            }
+                            if (haveStroke) {
+                                canvas.drawRoundRect(r, st.mTopLeftRadius, st.mTopRightRadius,
+                                        st.mBottomRightRadius, st.mBottomLeftRadius, mStrokePaint);
+                            }
                         }
                     } else {
                         if (haveFill) {
@@ -241,7 +266,7 @@ public class ShapeDrawable extends Drawable {
                             st.mInnerRadius : Math.min(r.width(), r.height()) / st.mInnerRadiusRatio;
                     float radius = innerRadius + thickness * 0.5f;
                     float sweep = st.mUseLevelForShape ? (360.0f * getLevel() / MAX_LEVEL) : 360f;
-                    Paint.Cap cap = st.mRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
+                    Paint.Cap cap = st.mTopLeftRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
                     if (haveFill) {
                         canvas.drawArc(cx, cy, radius, -90, sweep,
                                 cap, thickness, mFillPaint);
@@ -253,7 +278,7 @@ public class ShapeDrawable extends Drawable {
                 }
                 case HLINE -> {
                     float y = r.centerY();
-                    Paint.Cap cap = st.mRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
+                    Paint.Cap cap = st.mTopLeftRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
                     if (haveStroke) {
                         mStrokePaint.setStrokeCap(cap);
                         canvas.drawLine(r.left, y, r.right, y, mStrokePaint);
@@ -264,7 +289,7 @@ public class ShapeDrawable extends Drawable {
                 }
                 case VLINE -> {
                     float x = r.centerX();
-                    Paint.Cap cap = st.mRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
+                    Paint.Cap cap = st.mTopLeftRadius > 0 ? Paint.Cap.ROUND : Paint.Cap.BUTT;
                     if (haveStroke) {
                         mStrokePaint.setStrokeCap(cap);
                         canvas.drawLine(x, r.top, x, r.bottom, mStrokePaint);
@@ -382,7 +407,7 @@ public class ShapeDrawable extends Drawable {
      * Specifies the radius for the corners of the gradient. If this is > 0,
      * then the drawable is drawn in a round-rectangle, rather than a
      * rectangle. This property is honored only when the shape is of type
-     * {@link #RECTANGLE}. Specifically, if this is > 0, the line ends are
+     * {@link #RECTANGLE}. Specifically, if this is > 0, the line ends are also
      * rounded when the shape is of type {@link #HLINE}, {@link #VLINE} or
      * {@link #RING}.
      * <p>
@@ -407,7 +432,47 @@ public class ShapeDrawable extends Drawable {
      * @see #setCornerRadius
      */
     public float getCornerRadius() {
-        return mShapeState.mRadius;
+        return mShapeState.mTopLeftRadius;
+    }
+
+    /**
+     * Specifies the radius for each of the 4 corners. The corners are
+     * ordered top-left, top-right, bottom-right, bottom-left. This property
+     * is honored only when the shape is of type {@link #RECTANGLE}.
+     * Specifically, if top left radius is > 0, the line ends are also
+     * rounded when the shape is of type {@link #HLINE}, {@link #VLINE} or
+     * {@link #RING}.
+     * <p>
+     * <strong>Note</strong>: changing this property will affect all instances
+     * of a drawable loaded from a resource. It is recommended to invoke
+     * {@link #mutate()} before changing this property.
+     *
+     * @param topLeftRadius     the radius in pixels of the top-left corner
+     * @param topRightRadius    the radius in pixels of the top-right corner
+     * @param bottomRightRadius the radius in pixels of the bottom-right corner
+     * @param bottomLeftRadius  the radius in pixels of the bottom-left corner
+     * @see #mutate()
+     * @see #setShape(int)
+     * @see #setCornerRadius(float)
+     */
+    public void setCornerRadii(float topLeftRadius, float topRightRadius,
+                               float bottomRightRadius, float bottomLeftRadius) {
+        mShapeState.setCornerRadii(topLeftRadius, topRightRadius, bottomRightRadius, bottomLeftRadius);
+        invalidateSelf();
+    }
+
+    /**
+     * Returns the radii for each of the 4 corners. The corners are
+     * ordered top-left, top-right, bottom-right, bottom-left.
+     *
+     * @return an array containing the radii for each of the 4 corners
+     * @see #setCornerRadii(float, float, float, float)
+     */
+    public float[] getCornerRadii() {
+        final ShapeState st = mShapeState;
+        return new float[]{
+                st.mTopLeftRadius, st.mTopRightRadius, st.mBottomRightRadius, st.mBottomLeftRadius
+        };
     }
 
     /**
@@ -767,7 +832,10 @@ public class ShapeDrawable extends Drawable {
 
         public int mStrokeWidth = -1; // if >= 0 use stroking.
 
-        public float mRadius = 0.0f;
+        public float mTopLeftRadius = 0.0f;
+        public float mTopRightRadius = 0.0f;
+        public float mBottomRightRadius = 0.0f;
+        public float mBottomLeftRadius = 0.0f;
 
         public Rect mPadding = null;
 
@@ -793,7 +861,10 @@ public class ShapeDrawable extends Drawable {
             mSolidColors = orig.mSolidColors;
             mStrokeColors = orig.mStrokeColors;
             mStrokeWidth = orig.mStrokeWidth;
-            mRadius = orig.mRadius;
+            mTopLeftRadius = orig.mTopLeftRadius;
+            mTopRightRadius = orig.mTopRightRadius;
+            mBottomRightRadius = orig.mBottomRightRadius;
+            mBottomLeftRadius = orig.mBottomLeftRadius;
             if (orig.mPadding != null) {
                 mPadding = new Rect(orig.mPadding);
             }
@@ -824,9 +895,40 @@ public class ShapeDrawable extends Drawable {
 
         public void setCornerRadius(float radius) {
             if (radius >= 0) {
-                mRadius = radius;
+                mTopLeftRadius = radius;
+                mTopRightRadius = radius;
+                mBottomRightRadius = radius;
+                mBottomLeftRadius = radius;
             } else {
-                mRadius = 0;
+                // negative or NaN
+                mTopLeftRadius = 0;
+                mTopRightRadius = 0;
+                mBottomRightRadius = 0;
+                mBottomLeftRadius = 0;
+            }
+        }
+
+        public void setCornerRadii(float topLeftRadius, float topRightRadius,
+                                   float bottomRightRadius, float bottomLeftRadius) {
+            if (topLeftRadius >= 0) {
+                mTopLeftRadius = topLeftRadius;
+            } else {
+                mTopLeftRadius = 0;
+            }
+            if (topRightRadius >= 0) {
+                mTopRightRadius = topRightRadius;
+            } else {
+                mTopRightRadius = 0;
+            }
+            if (bottomRightRadius >= 0) {
+                mBottomRightRadius = bottomRightRadius;
+            } else {
+                mBottomRightRadius = 0;
+            }
+            if (bottomLeftRadius >= 0) {
+                mBottomLeftRadius = bottomLeftRadius;
+            } else {
+                mBottomLeftRadius = 0;
             }
         }
 
