@@ -54,7 +54,8 @@ public class ShaderCaps extends icyllis.arc3d.compiler.ShaderCaps {
     /**
      * True if either 'textureQueryLod' (GLSL 4.00) or 'textureQueryLOD' (ARB/EXT) is supported.
      */
-    public boolean mTextureQueryLod = true;
+    //TODO currently no support for ARB/EXT on ES
+    public boolean mTextureQueryLod = false;
 
     /**
      * True if either OpenGL 4.2 or OpenGL ES 3.1 is supported.
