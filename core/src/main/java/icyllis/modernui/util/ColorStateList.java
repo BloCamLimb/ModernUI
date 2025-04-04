@@ -19,22 +19,24 @@
 package icyllis.modernui.util;
 
 import icyllis.modernui.R;
-import icyllis.modernui.view.View;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.MathUtil;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
 /**
- * Lets you map {@link View} state sets to colors.
+ * Lets you map {@link icyllis.modernui.view.View} state sets to colors.
  * <p>
  * This defines a set of state spec / color pairs where each state spec specifies a set of
  * states that a view must either be in or not be in and the color specifies the color associated
  * with that spec.
  */
+// low-priority: this class should be moved to resources package in 4.0
 public class ColorStateList {
 
     private static final int DEFAULT_COLOR = 0xFFFF0000;
@@ -43,19 +45,19 @@ public class ColorStateList {
     /**
      * Thread-safe cache of single-color ColorStateLists.
      */
-    @GuardedBy("sCache")
+    @GuardedBy("itself")
     private static final SparseArray<WeakReference<ColorStateList>> sCache = new SparseArray<>();
 
-    private int[][] mStateSpecs;
-    private int[] mColors;
+    private final int[][] mStateSpecs;
+    private final int[] mColors;
     private int mDefaultColor;
     private boolean mIsOpaque;
 
     /**
      * Creates a ColorStateList that returns the specified mapping from
-     * states to colors.
+     * states to colors. The given arrays should not be modified after construction.
      */
-    public ColorStateList(int[][] states, int[] colors) {
+    public ColorStateList(@NonNull int[][] states, @NonNull int[] colors) {
         mStateSpecs = states;
         mColors = colors;
 
@@ -65,8 +67,8 @@ public class ColorStateList {
     /**
      * @return A ColorStateList containing a single color.
      */
-    @Nonnull
-    public static ColorStateList valueOf(int color) {
+    @NonNull
+    public static ColorStateList valueOf(@ColorInt int color) {
         synchronized (sCache) {
             final int index = sCache.indexOfKey(color);
             if (index >= 0) {
@@ -94,33 +96,13 @@ public class ColorStateList {
     }
 
     /**
-     * Creates a ColorStateList with the same properties as another
-     * ColorStateList.
-     * <p>
-     * The properties of the new ColorStateList can be modified without
-     * affecting the source ColorStateList.
-     *
-     * @param orig the source color state list
-     */
-    private ColorStateList(@Nullable ColorStateList orig) {
-        if (orig != null) {
-            mStateSpecs = orig.mStateSpecs;
-            mDefaultColor = orig.mDefaultColor;
-            mIsOpaque = orig.mIsOpaque;
-
-            // do not deep copy for now, since we don't have themes
-            mColors = orig.mColors;
-        }
-    }
-
-    /**
      * Creates a new ColorStateList that has the same states and colors as this
      * one but where each color has the specified alpha value (0-255).
      *
      * @param alpha The new alpha channel value (0-255).
      * @return A new color state list.
      */
-    @Nonnull
+    @NonNull
     public ColorStateList withAlpha(int alpha) {
         final int[] colors = new int[mColors.length];
         final int len = colors.length;
@@ -129,6 +111,24 @@ public class ColorStateList {
         }
 
         return new ColorStateList(mStateSpecs, colors);
+    }
+
+    /**
+     * Apply alpha modulation to base color.
+     *
+     * @param baseColor base color
+     * @param alphaMod  alpha multiplier applied to the base color
+     * @return modulated color
+     */
+    public static int modulateColor(int baseColor, float alphaMod) {
+        if (alphaMod == 1.0f) {
+            return baseColor;
+        }
+
+        final int baseAlpha = Color.alpha(baseColor);
+        final int alpha = MathUtil.clamp((int) (baseAlpha * alphaMod + 0.5f), 0, 255);
+
+        return (baseColor & 0xFFFFFF) | (alpha << 24);
     }
 
     /**
@@ -164,9 +164,9 @@ public class ColorStateList {
 
     /**
      * Return the color associated with the given set of
-     * {@link View} states.
+     * {@link icyllis.modernui.view.View} states.
      *
-     * @param stateSet     an array of {@link View} states
+     * @param stateSet     an array of {@link icyllis.modernui.view.View} states
      * @param defaultColor the color to return if there's no matching state
      *                     spec in this {@link ColorStateList} that matches the
      *                     stateSet.
@@ -188,6 +188,7 @@ public class ColorStateList {
      *
      * @return the default color in this {@link ColorStateList}.
      */
+    @ColorInt
     public int getDefaultColor() {
         return mDefaultColor;
     }
@@ -197,6 +198,7 @@ public class ColorStateList {
      * should not be modified.
      *
      * @return the states in this {@link ColorStateList}
+     * @hidden
      */
     @ApiStatus.Internal
     public int[][] getStates() {
@@ -208,6 +210,7 @@ public class ColorStateList {
      * should not be modified.
      *
      * @return the colors in this {@link ColorStateList}
+     * @hidden
      */
     @ApiStatus.Internal
     public int[] getColors() {
@@ -227,8 +230,7 @@ public class ColorStateList {
      */
     @ApiStatus.Internal
     public boolean hasState(int state) {
-        final int[][] stateSpecs = mStateSpecs;
-        for (final int[] states : stateSpecs) {
+        for (final int[] states : mStateSpecs) {
             for (int i : states) {
                 if (i == state || i == ~state) {
                     return true;
