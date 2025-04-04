@@ -83,7 +83,7 @@ public class TooltipPopup {
         mTextView.setText(tooltipText);
         mTextView.setMaxWidth(Math.min(anchorView.getRootView().getMeasuredWidth() / 2, mTextView.dp(512)));
         mTextView.setMinHeight(mTextView.dp(24));
-        mTextView.setPadding(mTextView.dp(8), 0, mTextView.dp(8), 0);
+        mTextView.setPadding(mTextView.dp(8), mTextView.dp(4), mTextView.dp(8), mTextView.dp(4));
 
         computePosition(anchorView, anchorX, anchorY, fromTouch, mParams);
 

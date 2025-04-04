@@ -177,15 +177,10 @@ public class TestFragment extends Fragment {
             base.setLayoutParams(params);
         }
         //base.setRotation(30);
-        container.setClipChildren(true);
         TypedValue value = new TypedValue();
-        requireContext().getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainerLowest, value, true);
-        int colorSurfaceContainerLowest = value.data;
-        container.setBackground(new ColorDrawable(colorSurfaceContainerLowest));
         requireContext().getTheme().resolveAttribute(R.ns, R.attr.colorSurface, value, true);
         int colorSurface = value.data;
         base.setBackground(new ColorDrawable(colorSurface));
-        //container.setBackground(new ColorDrawable((colorSurface & 0xFFFFFF) | (0x99000000)));
         return base;
     }
 
