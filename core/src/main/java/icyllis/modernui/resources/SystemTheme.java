@@ -20,7 +20,6 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.R;
 import icyllis.modernui.graphics.Color;
-import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.LayerDrawable;
@@ -42,6 +41,8 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.function.Function;
 
+import static icyllis.modernui.util.ColorStateList.modulateColor;
+
 /**
  * @hidden
  */
@@ -50,17 +51,6 @@ public class SystemTheme {
 
     private static final float material_emphasis_disabled = 0.38f;
     private static final float material_emphasis_disabled_background = 0.12f;
-
-    public static int modulateColor(int baseColor, float alphaMod) {
-        if (alphaMod == 1.0f) {
-            return baseColor;
-        }
-
-        final int baseAlpha = Color.alpha(baseColor);
-        final int alpha = MathUtil.clamp((int) (baseAlpha * alphaMod + 0.5f), 0, 255);
-
-        return (baseColor & 0xFFFFFF) | (alpha << 24);
-    }
 
     public int
             colorPrimary,

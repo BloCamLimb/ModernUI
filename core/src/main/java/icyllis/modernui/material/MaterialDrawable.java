@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,15 +18,16 @@
 
 package icyllis.modernui.material;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Base drawable that used for blending with white vectors.
  */
+@ApiStatus.Internal
 public abstract class MaterialDrawable extends Drawable {
 
     protected ColorStateList mTint;
@@ -47,7 +48,7 @@ public abstract class MaterialDrawable extends Drawable {
     }
 
     @Override
-    protected boolean onStateChange(@Nonnull int[] stateSet) {
+    protected boolean onStateChange(@NonNull int[] stateSet) {
         if (mTint != null) {
             mColor = mTint.getColorForState(stateSet, ~0);
             return true;
