@@ -30,11 +30,13 @@ import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.resources.ResourcesBuilder;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.*;
@@ -324,6 +326,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 }
             }
         }, Core.getUiThreadExecutor());*/
+        TypedValue value = new TypedValue();
+        getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainerLowest, value, true);
+        int colorSurfaceContainerLowest = value.data;
+        mDecor.setBackground(new ColorDrawable(colorSurfaceContainerLowest));
 
         mFragmentContainerView = new FragmentContainerView(this);
         mFragmentContainerView.setLayoutParams(new WindowManager.LayoutParams());
