@@ -45,8 +45,8 @@ public class RadioButtonDrawable extends MaterialDrawable {
     private static final float SIZE = 24;
     private final int mSize; // 24dp
     private boolean mAnimated;
-    private boolean mLargeSize;
-    private boolean mHasOuterRing;
+    private boolean mHasStateLayer;
+    private boolean mHasOuterLayer;
 
     private float mRingOuterScale = 1.0f;
     private float mRingOuterStrokeWidth = 2.0f;
@@ -59,11 +59,11 @@ public class RadioButtonDrawable extends MaterialDrawable {
     // current transition, if any
     private Animator mTransition;
 
-    public RadioButtonDrawable(Resources res, boolean animated, boolean largeSize, boolean hasOuterRing) {
+    public RadioButtonDrawable(Resources res, boolean animated, boolean hasStateLayer, boolean hasOuterLayer) {
         mSize = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, SIZE, res.getDisplayMetrics()));
         mAnimated = animated;
-        mLargeSize = largeSize;
-        mHasOuterRing = hasOuterRing;
+        mHasStateLayer = hasStateLayer;
+        mHasOuterLayer = hasOuterLayer;
     }
 
     @Override
@@ -77,7 +77,7 @@ public class RadioButtonDrawable extends MaterialDrawable {
             canvas.translate(r.exactCenterX(), r.exactCenterY());
 
             boolean doSave;
-            if (mHasOuterRing) {
+            if (mHasOuterLayer) {
                 doSave = mRingOuterScale != 1;
                 if (doSave) {
                     canvas.save();
@@ -85,8 +85,8 @@ public class RadioButtonDrawable extends MaterialDrawable {
                 }
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeWidth(mRingOuterStrokeWidth * mSize * (1 / SIZE));
-                // radius 8dp
-                canvas.drawCircle(0, 0, mSize * (8 / SIZE), paint);
+                // radius 9dp
+                canvas.drawCircle(0, 0, mSize * (9 / SIZE), paint);
                 if (doSave) {
                     canvas.restore();
                 }
@@ -99,8 +99,8 @@ public class RadioButtonDrawable extends MaterialDrawable {
                     canvas.scale(mDotGroupScale, mDotGroupScale);
                 }
                 paint.setStyle(Paint.FILL);
-                // radius 4.5dp
-                canvas.drawCircle(0, 0, mSize * (4.5f / SIZE), paint);
+                // radius 5dp
+                canvas.drawCircle(0, 0, mSize * (5 / SIZE), paint);
                 if (doSave) {
                     canvas.restore();
                 }
@@ -288,16 +288,16 @@ public class RadioButtonDrawable extends MaterialDrawable {
 
     @Override
     public int getIntrinsicWidth() {
-        if (mLargeSize) {
-            return mSize * 4 / 3;
+        if (mHasStateLayer) {
+            return mSize * 3 / 2;
         }
         return mSize;
     }
 
     @Override
     public int getIntrinsicHeight() {
-        if (mLargeSize) {
-            return mSize * 4 / 3;
+        if (mHasStateLayer) {
+            return mSize * 3 / 2;
         }
         return mSize;
     }

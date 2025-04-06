@@ -939,7 +939,7 @@ public class SystemTheme {
         // Buttons
         {
             var style = b.newStyle(R.style.Widget_Material3_Button.entry(), "");
-            style.addDimension(R.attr.minHeight, 32, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.minHeight, 36, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minWidth, 80, TypedValue.COMPLEX_UNIT_DP);
             style.addBoolean(R.attr.focusable, true);
             style.addBoolean(R.attr.clickable, true);
@@ -947,8 +947,8 @@ public class SystemTheme {
             style.addDimension(R.attr.maxWidth, 320, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.paddingLeft, 20, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.paddingRight, 20, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingTop, 2, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingBottom, 2, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingTop, 4, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingBottom, 4, TypedValue.COMPLEX_UNIT_DP);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceLabelLarge);
             style.addColor(R.attr.textColor, (resources, theme) ->
                     fromCache(theme, cache -> cache.button_foreground_color_selector(cache.colorOnPrimary)));
@@ -984,8 +984,8 @@ public class SystemTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_TextButton.entry(),
                     R.style.Widget_Material3_Button.entry());
-            style.addDimension(R.attr.paddingLeft, 8, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingRight, 8, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingLeft, 10, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingRight, 10, TypedValue.COMPLEX_UNIT_DP);
             style.addColor(R.attr.textColor, (resources, theme) ->
                     fromCache(theme, cache -> cache.text_button_foreground_color_selector(cache.colorPrimary)));
             style.addDrawable(R.attr.background, (resources, theme) -> {
@@ -1039,7 +1039,7 @@ public class SystemTheme {
             style.addDrawable(R.attr.background, (resources, theme) -> {
                 var rippleTint = fromCache(theme, ThemedCache::radio_button_ripple_tint);
                 var ripple = new RippleDrawable(rippleTint, null, null);
-                var radius = dp(16, resources);
+                var radius = dp(18, resources);
                 ripple.setRadius(radius);
                 return ripple;
             });
