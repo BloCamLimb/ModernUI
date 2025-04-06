@@ -50,7 +50,7 @@ public class RadioButton extends CompoundButton {
             ResourceId.attr(R.ns, R.attr.radioButtonStyle);
 
     public RadioButton(Context context) {
-        super(context);
+        this(context, null);
     }
 
     public RadioButton(Context context, @Nullable AttributeSet attrs) {
