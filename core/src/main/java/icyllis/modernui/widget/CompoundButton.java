@@ -147,9 +147,13 @@ public abstract class CompoundButton extends Button implements Checkable2 {
             }
 
             mBroadcasting = true;
+            // Modern UI changed: the internal listener is called first, since it may
+            // alter the checked state.
             if (mOnCheckedChangeListenerInternal != null) {
                 mOnCheckedChangeListenerInternal.onCheckedChanged(this, mChecked);
             }
+            // Then reads mChecked field again to get the correct state.
+            // Even though the final state may not change, we still call the listener.
             if (mOnCheckedChangeListener != null) {
                 mOnCheckedChangeListener.onCheckedChanged(this, mChecked);
             }

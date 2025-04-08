@@ -64,7 +64,7 @@ public class RelativeRadioGroup extends RelativeLayout {
                 setCheckedId(button.getId());
             }
 
-            button.setOnCheckedChangeListener(mChildOnCheckedChangeListener);
+            button.setInternalOnCheckedChangeListener(mChildOnCheckedChangeListener);
         }
     }
 
@@ -72,7 +72,7 @@ public class RelativeRadioGroup extends RelativeLayout {
     protected void onViewRemoved(View child) {
         super.onViewRemoved(child);
         if (child instanceof RadioButton) {
-            ((RadioButton) child).setOnCheckedChangeListener(null);
+            ((RadioButton) child).setInternalOnCheckedChangeListener(null);
         }
     }
 
