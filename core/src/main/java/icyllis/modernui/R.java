@@ -149,6 +149,9 @@ public final class R {
         public static final String tickMark = "tickMark";
         public static final String splitTrack = "splitTrack";
 
+        public static final String alpha = "alpha";
+        public static final String elevation = "elevation";
+
         public static final String textDirection = "textDirection";
         public static final String textAlignment = "textAlignment";
         public static final String layoutDirection = "layoutDirection";
@@ -389,6 +392,7 @@ public final class R {
         public static final ResourceId Widget_Material3_Button_TonalButton = new ResourceId(ns, type, "Widget.Material3.Button.TonalButton");
         public static final ResourceId Widget_Material3_Button_OutlinedButton = new ResourceId(ns, type, "Widget.Material3.Button.OutlinedButton");
         public static final ResourceId Widget_Material3_Button_TextButton = new ResourceId(ns, type, "Widget.Material3.Button.TextButton");
+        public static final ResourceId Widget_Material3_Button_ElevatedButton = new ResourceId(ns, type, "Widget.Material3.Button.ElevatedButton");
 
         public static final ResourceId Widget_CompoundButton = new ResourceId(ns, type, "Widget.CompoundButton");
         public static final ResourceId Widget_Material3_CompoundButton_RadioButton = new ResourceId(ns, type, "Widget.Material3.CompoundButton.RadioButton");
