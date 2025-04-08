@@ -1018,6 +1018,24 @@ public class SystemTheme {
                 return new RippleDrawable(rippleColor, background, null);
             });
         }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_Button_ElevatedButton.entry(),
+                    R.style.Widget_Material3_Button.entry());
+            style.addDimension(R.attr.elevation, 1, TypedValue.COMPLEX_UNIT_DP);
+            style.addColor(R.attr.textColor, (resources, theme) ->
+                    fromCache(theme, cache -> cache.text_button_foreground_color_selector(cache.colorPrimary)));
+            style.addDrawable(R.attr.background, (resources, theme) -> {
+                var backgroundTint = fromCache(theme,
+                        cache -> cache.button_background_color_selector(cache.colorSurfaceContainerLow));
+                var rippleColor = fromCache(theme,
+                        cache -> cache.button_ripple_color_selector(cache.colorPrimary));
+
+                var background = new ShapeDrawable();
+                background.setCornerRadius(1000);
+                background.setColor(backgroundTint);
+                return new RippleDrawable(rippleColor, background, null);
+            });
+        }
         // Compound buttons
         {
             var style = b.newStyle(R.style.Widget_CompoundButton.entry(), "");

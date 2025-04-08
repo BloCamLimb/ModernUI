@@ -2422,26 +2422,27 @@ public class View implements Drawable.Callback {
     private HandlerActionQueue mRunQueue;
 
     private static final String[] STYLEABLE = {
-            R.ns, R.attr.background,
-            R.ns, R.attr.clickable,
-            R.ns, R.attr.contextClickable,
-            R.ns, R.attr.focusable,
-            R.ns, R.attr.focusableInTouchMode,
-            R.ns, R.attr.id,
-            R.ns, R.attr.layoutDirection,
-            R.ns, R.attr.longClickable,
-            R.ns, R.attr.minHeight,
-            R.ns, R.attr.minWidth,
-            R.ns, R.attr.padding,
-            R.ns, R.attr.paddingBottom,
-            R.ns, R.attr.paddingEnd,
-            R.ns, R.attr.paddingLeft,
-            R.ns, R.attr.paddingRight,
-            R.ns, R.attr.paddingStart,
-            R.ns, R.attr.paddingTop,
-            R.ns, R.attr.tag,
-            R.ns, R.attr.textAlignment,
-            R.ns, R.attr.textDirection,
+            /*0*/ R.ns, R.attr.background,
+            /*1*/ R.ns, R.attr.clickable,
+            /*2*/ R.ns, R.attr.contextClickable,
+            /*3*/ R.ns, R.attr.elevation,
+            /*4*/ R.ns, R.attr.focusable,
+            /*5*/ R.ns, R.attr.focusableInTouchMode,
+            /*6*/ R.ns, R.attr.id,
+            /*7*/ R.ns, R.attr.layoutDirection,
+            /*8*/ R.ns, R.attr.longClickable,
+            /*9*/ R.ns, R.attr.minHeight,
+            /*10*/R.ns, R.attr.minWidth,
+            /*11*/R.ns, R.attr.padding,
+            /*12*/R.ns, R.attr.paddingBottom,
+            /*13*/R.ns, R.attr.paddingEnd,
+            /*14*/R.ns, R.attr.paddingLeft,
+            /*15*/R.ns, R.attr.paddingRight,
+            /*16*/R.ns, R.attr.paddingStart,
+            /*17*/R.ns, R.attr.paddingTop,
+            /*18*/R.ns, R.attr.tag,
+            /*19*/R.ns, R.attr.textAlignment,
+            /*20*/R.ns, R.attr.textDirection,
     };
 
     /**
@@ -2569,6 +2570,9 @@ public class View implements Drawable.Callback {
         int viewFlagValues = 0;
         int viewFlagMasks = 0;
 
+        float elevation = 0;
+        boolean transformSet = false;
+
         boolean startPaddingDefined = false;
         boolean endPaddingDefined = false;
         boolean leftPaddingDefined = false;
@@ -2597,7 +2601,11 @@ public class View implements Drawable.Callback {
                         viewFlagMasks |= CONTEXT_CLICKABLE;
                     }
                     break;
-                case 3: {
+                case 3:
+                    elevation = a.getDimension(attr, 0);
+                    transformSet = true;
+                    break;
+                case 4: {
                     TypedValue val = a.peekValue(attr);
                     int focusable;
                     if (val != null) {
@@ -2615,7 +2623,7 @@ public class View implements Drawable.Callback {
                     }
                     break;
                 }
-                case 4:
+                case 5:
                     if (a.getBoolean(attr, false)) {
                         // unset auto focus since focusableInTouchMode implies explicit focusable
                         viewFlagValues &= ~FOCUSABLE_AUTO;
@@ -2623,10 +2631,10 @@ public class View implements Drawable.Callback {
                         viewFlagMasks |= FOCUSABLE_IN_TOUCH_MODE | FOCUSABLE_MASK;
                     }
                     break;
-                case 5:
+                case 6:
                     mID = a.getInteger(attr, NO_ID);
                     break;
-                case 6:
+                case 7:
                     // Clear any layout direction flags (included resolved bits) already set
                     mPrivateFlags2 &=
                             ~(PFLAG2_LAYOUT_DIRECTION_MASK | PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK);
@@ -2636,60 +2644,60 @@ public class View implements Drawable.Callback {
                             LAYOUT_DIRECTION_FLAGS[layoutDirection] : LAYOUT_DIRECTION_DEFAULT;
                     mPrivateFlags2 |= (value << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT);
                     break;
-                case 7:
+                case 8:
                     if (a.getBoolean(attr, false)) {
                         viewFlagValues |= LONG_CLICKABLE;
                         viewFlagMasks |= LONG_CLICKABLE;
                     }
                     break;
-                case 8:
+                case 9:
                     mMinHeight = a.getDimensionPixelSize(attr, 0);
                     break;
-                case 9:
+                case 10:
                     mMinWidth = a.getDimensionPixelSize(attr, 0);
                     break;
-                case 10:
+                case 11:
                     padding = a.getDimensionPixelSize(attr, -1);
                     mUserPaddingLeftInitial = padding;
                     mUserPaddingRightInitial = padding;
                     leftPaddingDefined = true;
                     rightPaddingDefined = true;
                     break;
-                case 11:
+                case 12:
                     bottomPadding = a.getDimensionPixelSize(attr, -1);
                     break;
-                case 12:
+                case 13:
                     endPadding = a.getDimensionPixelSize(attr, UNDEFINED_PADDING);
                     endPaddingDefined = (endPadding != UNDEFINED_PADDING);
                     break;
-                case 13:
+                case 14:
                     leftPadding = a.getDimensionPixelSize(attr, -1);
                     mUserPaddingLeftInitial = leftPadding;
                     leftPaddingDefined = true;
                     break;
-                case 14:
+                case 15:
                     rightPadding = a.getDimensionPixelSize(attr, -1);
                     mUserPaddingRightInitial = rightPadding;
                     rightPaddingDefined = true;
                     break;
-                case 15:
+                case 16:
                     startPadding = a.getDimensionPixelSize(attr, UNDEFINED_PADDING);
                     startPaddingDefined = (startPadding != UNDEFINED_PADDING);
                     break;
-                case 16:
+                case 17:
                     topPadding = a.getDimensionPixelSize(attr, -1);
                     break;
-                /*case 17:
+                /*case 18:
                     mTag = a.getText(attr);
                     break;*/
-                case 18:
+                case 19:
                     // Clear any text alignment flag already set
                     mPrivateFlags2 &= ~PFLAG2_TEXT_ALIGNMENT_MASK;
                     // Set the text alignment flag depending on the value of the attribute
                     final int textAlignment = a.getInt(attr, TEXT_ALIGNMENT_DEFAULT);
                     mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_FLAGS[textAlignment];
                     break;
-                case 19:
+                case 20:
                     // Clear any text direction flag already set
                     mPrivateFlags2 &= ~PFLAG2_TEXT_DIRECTION_MASK;
                     // Set the text direction flags depending on the value of the attribute
@@ -2759,6 +2767,10 @@ public class View implements Drawable.Callback {
         }
 
         a.recycle();
+
+        if (transformSet) {
+            setElevation(elevation);
+        }
     }
 
     /**
