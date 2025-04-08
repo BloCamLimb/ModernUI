@@ -18,17 +18,38 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.StateListDrawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.util.AttributeSet;
 
 /**
  * <p>
  * Displays a button with an image (instead of text) that can be pressed
- * or clicked by the user. By default, an ImageButton looks like a regular
- * {@link Button}, with the standard button background
- * that changes color during different button states.
+ * or clicked by the user. The image on the surface of the button is defined
+ * by the {@link #setImage(Image)} method.
  *
- * <p>To remove the standard button background image, define your own
- * background image or set the background color to be transparent.</p>
+ * <p>To indicate the different button states (focused, selected, etc.), you can
+ * define a different image for each state. E.g., a blue image by default, an
+ * orange one for when focused, and a yellow one for when pressed.
+ * An easy way to do this is with {@link StateListDrawable} and
+ * {@link #setImageDrawable(Drawable)}. For example:</p>
+ *
+ * <pre>{@code
+ * StateListDrawable selector = new StateListDrawable();
+ * selector.addState(new int[]{-R.attr.state_enabled}, disabledIcon);
+ * selector.addState(new int[]{R.attr.state_checkable, R.attr.state_checked}, checkedIcon);
+ * selector.addState(new int[]{R.attr.state_checkable}, uncheckedIcon);
+ * selector.addState(StateSet.WILD_CARD, uncheckableIcon);
+ * imageButton.setImageDrawable(selector);
+ * }</pre>
+ *
+ * <p>See {@link CheckableImageButton} for checkable image buttons.</p>
  *
  * <p>See the <a href="https://developer.android.com/guide/topics/ui/controls/button">Buttons</a>
  * guide.</p>
@@ -39,5 +60,21 @@ public class ImageButton extends ImageView {
         super(context);
         setFocusable(true);
         setClickable(true);
+    }
+
+    public ImageButton(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public ImageButton(Context context, @Nullable AttributeSet attrs,
+                       @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public ImageButton(Context context, @Nullable AttributeSet attrs,
+                       @Nullable @AttrRes ResourceId defStyleAttr,
+                       @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+        setFocusable(true);
     }
 }

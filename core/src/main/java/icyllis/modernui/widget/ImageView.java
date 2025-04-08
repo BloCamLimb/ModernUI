@@ -18,11 +18,24 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.drawable.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.ColorFilter;
+import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.Matrix;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.graphics.drawable.LevelListDrawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
@@ -31,8 +44,8 @@ import icyllis.modernui.view.View;
  * Displays image resources, for example {@link icyllis.modernui.graphics.Image}
  * or {@link icyllis.modernui.graphics.drawable.Drawable} resources.
  * ImageView is also commonly used to
- * <a href="#setImageTintMode(android.graphics.PorterDuff.Mode)">apply tints to an image</a> and
- * handle <a href="#setScaleType(android.widget.ImageView.ScaleType)">image scaling</a>.
+ * {@link #setImageTintBlendMode(BlendMode) apply tints to an image} and
+ * handle {@link #setScaleType(ScaleType) image scaling}.
  *
  * <p>
  * To learn more about Drawables, see:
@@ -74,8 +87,37 @@ public class ImageView extends View {
     private int mBaseline = -1;
     private boolean mBaselineAlignBottom = false;
 
+    @StyleableRes
+    private static final String[] STYLEABLE = {
+            R.ns, R.attr.maxHeight,
+            R.ns, R.attr.maxWidth,
+    }; //TODO other attributes
+
     public ImageView(Context context) {
         super(context);
+    }
+
+    public ImageView(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public ImageView(Context context, @Nullable AttributeSet attrs,
+                     @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public ImageView(Context context, @Nullable AttributeSet attrs,
+                     @Nullable @AttrRes ResourceId defStyleAttr,
+                     @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+
+        setMaxWidth(a.getDimensionPixelSize(1, Integer.MAX_VALUE));
+        setMaxHeight(a.getDimensionPixelSize(0, Integer.MAX_VALUE));
+
+        a.recycle();
     }
 
     @Override
@@ -470,7 +512,7 @@ public class ImageView extends View {
 
     @NonNull
     @Override
-    public int[] onCreateDrawableState(int extraSpace) {
+    protected int[] onCreateDrawableState(int extraSpace) {
         if (mState == null) {
             return super.onCreateDrawableState(extraSpace);
         } else if (!mMergeState) {
