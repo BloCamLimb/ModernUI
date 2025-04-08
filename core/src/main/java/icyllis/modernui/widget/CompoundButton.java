@@ -49,6 +49,13 @@ public abstract class CompoundButton extends Button implements Checkable {
      * @hidden
      */
     @ApiStatus.Internal
+    public static final int[] CHECKABLE_STATE_SET = {
+            R.attr.state_checkable
+    };
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
     public static final int[] CHECKED_STATE_SET = {
             R.attr.state_checked
     };
