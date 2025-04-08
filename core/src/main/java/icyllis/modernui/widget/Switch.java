@@ -64,7 +64,7 @@ import icyllis.modernui.view.ViewConfiguration;
  * and forth to select either of two options or simply tap the switch to toggle
  * between options.
  */
-public class Switch extends Button implements Checkable {
+public class Switch extends Button implements Checkable2 {
     private static final int THUMB_ANIMATION_DURATION = 250;
 
     private static final int TOUCH_MODE_IDLE = 0;
