@@ -29,6 +29,8 @@ import org.jetbrains.annotations.ApiStatus;
  */
 public interface Checkable2 extends Checkable {
 
+    int getId();
+
     /**
      * Register a callback to be invoked when the checked state of this button
      * changes.
