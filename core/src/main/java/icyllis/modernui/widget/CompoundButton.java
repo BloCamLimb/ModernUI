@@ -43,7 +43,7 @@ import org.jetbrains.annotations.ApiStatus;
  * Note that all events are handled on UI thread, this means your listener code
  * must execute quickly to avoid delaying your UI response to further actions.
  */
-public abstract class CompoundButton extends Button implements Checkable {
+public abstract class CompoundButton extends Button implements Checkable2 {
 
     /**
      * @hidden
@@ -70,6 +70,7 @@ public abstract class CompoundButton extends Button implements Checkable {
     private boolean mHasButtonBlendMode;
 
     private OnCheckedChangeListener mOnCheckedChangeListener;
+    private OnCheckedChangeListener mOnCheckedChangeListenerInternal;
 
     @StyleableRes
     private static final String[] STYLEABLE = {
@@ -140,11 +141,15 @@ public abstract class CompoundButton extends Button implements Checkable {
             mChecked = checked;
             refreshDrawableState();
 
+            // Avoid infinite recursions if setChecked() is called from a listener
             if (mBroadcasting) {
                 return;
             }
 
             mBroadcasting = true;
+            if (mOnCheckedChangeListenerInternal != null) {
+                mOnCheckedChangeListenerInternal.onCheckedChanged(this, mChecked);
+            }
             if (mOnCheckedChangeListener != null) {
                 mOnCheckedChangeListener.onCheckedChanged(this, mChecked);
             }
@@ -161,6 +166,18 @@ public abstract class CompoundButton extends Button implements Checkable {
      */
     public void setOnCheckedChangeListener(@Nullable OnCheckedChangeListener listener) {
         mOnCheckedChangeListener = listener;
+    }
+
+    /**
+     * Register a callback to be invoked when the checked state of this button
+     * changes. This callback is used for internal purpose only.
+     *
+     * @param listener the callback to call on checked state change
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public void setInternalOnCheckedChangeListener(@Nullable OnCheckedChangeListener listener) {
+        mOnCheckedChangeListenerInternal = listener;
     }
 
     /**
@@ -346,7 +363,9 @@ public abstract class CompoundButton extends Button implements Checkable {
     @NonNull
     @Override
     protected int[] onCreateDrawableState(int extraSpace) {
-        final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
+        final int[] drawableState = super.onCreateDrawableState(extraSpace + 2);
+        // Modern UI changed: always add checkable state
+        mergeDrawableStates(drawableState, CHECKABLE_STATE_SET);
         if (isChecked()) {
             mergeDrawableStates(drawableState, CHECKED_STATE_SET);
         }

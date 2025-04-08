@@ -25,19 +25,26 @@ import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * An extension to {@link ImageButton} that implements {@link Checkable} interface
- * and is optionally checkable, see {@link #setCheckable(boolean)}. The checked
+ * and is conditionally checkable, see {@link #setCheckable(boolean)}. The checked
  * state is toggled on click.
+ * <p>
+ * This class is more lightweight than {@link CompoundButton} or ToggleButton
+ * in implementing icon-only toggle buttons.
+ *
+ * @since 3.12
  */
-public class CheckableImageButton extends ImageButton implements Checkable {
+public class CheckableImageButton extends ImageButton implements Checkable2 {
 
     private boolean mChecked;
     private boolean mCheckable = true;
     private boolean mBroadcasting;
 
     private OnCheckedChangeListener mOnCheckedChangeListener;
+    private OnCheckedChangeListener mOnCheckedChangeListenerInternal;
 
     public CheckableImageButton(Context context) {
         super(context);
@@ -76,7 +83,7 @@ public class CheckableImageButton extends ImageButton implements Checkable {
 
     @Override
     public void setChecked(boolean checked) {
-        if (isCheckable() && isEnabled() && mChecked != checked) {
+        if (isCheckable() && mChecked != checked) {
             mChecked = checked;
             refreshDrawableState();
 
@@ -86,6 +93,9 @@ public class CheckableImageButton extends ImageButton implements Checkable {
             }
 
             mBroadcasting = true;
+            if (mOnCheckedChangeListenerInternal != null) {
+                mOnCheckedChangeListenerInternal.onCheckedChanged(this, mChecked);
+            }
             if (mOnCheckedChangeListener != null) {
                 mOnCheckedChangeListener.onCheckedChanged(this, mChecked);
             }
@@ -121,6 +131,18 @@ public class CheckableImageButton extends ImageButton implements Checkable {
      */
     public void setOnCheckedChangeListener(@Nullable OnCheckedChangeListener listener) {
         mOnCheckedChangeListener = listener;
+    }
+
+    /**
+     * Register a callback to be invoked when the checked state of this button
+     * changes. This callback is used for internal purpose only.
+     *
+     * @param listener the callback to call on checked state change
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public void setInternalOnCheckedChangeListener(@Nullable OnCheckedChangeListener listener) {
+        mOnCheckedChangeListenerInternal = listener;
     }
 
     @NonNull
