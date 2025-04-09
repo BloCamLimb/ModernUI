@@ -63,6 +63,8 @@ import icyllis.modernui.view.ViewConfiguration;
  * A Switch is a two-state toggle widget. Users can drag the switch "thumb" back
  * and forth to select either of two options or simply tap the switch to toggle
  * between options.
+ *
+ * @since 3.12
  */
 public class Switch extends Button implements Checkable2 {
     private static final int THUMB_ANIMATION_DURATION = 250;
@@ -141,7 +143,8 @@ public class Switch extends Button implements Checkable2 {
 
     private final Rect mTempRect = new Rect();
 
-    //TODO add on/off text
+    private CharSequence mTextOn;
+    private CharSequence mTextOff;
 
     @StyleableRes
     private static final String[] STYLEABLE = {
@@ -494,6 +497,52 @@ public class Switch extends Button implements Checkable2 {
         return mSplitTrack;
     }
 
+    /**
+     * Returns the text for when the button is in the checked state.
+     *
+     * @return The text.
+     */
+    @Nullable
+    public CharSequence getTextOn() {
+        return mTextOn;
+    }
+
+    /**
+     * Sets the text for when the button is in the checked state.
+     * If not null, it overrides the text previously set by {@link Button#setText}.
+     *
+     * @param textOn The text.
+     */
+    public void setTextOn(@Nullable CharSequence textOn) {
+        mTextOn = textOn;
+        if (isChecked() && mTextOn != null) {
+            setText(mTextOn);
+        }
+    }
+
+    /**
+     * Returns the text for when the button is not in the checked state.
+     *
+     * @return The text.
+     */
+    @Nullable
+    public CharSequence getTextOff() {
+        return mTextOff;
+    }
+
+    /**
+     * Sets the text for when the button is not in the checked state.
+     * If not null, it overrides the text previously set by {@link Button#setText}.
+     *
+     * @param textOff The text.
+     */
+    public void setTextOff(@Nullable CharSequence textOff) {
+        mTextOff = textOff;
+        if (!isChecked() && mTextOff != null) {
+            setText(mTextOff);
+        }
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         final Rect padding = mTempRect;
@@ -635,26 +684,32 @@ public class Switch extends Button implements Checkable2 {
             mChecked = checked;
             refreshDrawableState();
 
-            if (!mBroadcasting) {
-                mBroadcasting = true;
-                if (mOnCheckedChangeListener != null) {
-                    mOnCheckedChangeListener.onCheckedChanged(this, mChecked);
-                }
-
-                mBroadcasting = false;
+            if (mBroadcasting) {
+                return;
             }
-        }
 
-        // Calling the super method may result in setChecked() getting called
-        // recursively with a different value, so load the REAL value...
-        checked = isChecked();
+            mBroadcasting = true;
+            if (mOnCheckedChangeListener != null) {
+                mOnCheckedChangeListener.onCheckedChanged(this, mChecked);
+            }
 
-        if (isAttachedToWindow() && isLaidOut()) {
-            animateThumbToCheckedState(checked);
-        } else {
-            // Immediately move the thumb to the new position.
-            cancelPositionAnimator();
-            setThumbPosition(checked ? 1 : 0);
+            mBroadcasting = false;
+
+            // Calling the listener may result in setChecked() getting called
+            // recursively with a different value, so load the REAL value...
+            if (isAttachedToWindow() && isLaidOut()) {
+                animateThumbToCheckedState(mChecked);
+            } else {
+                // Immediately move the thumb to the new position.
+                cancelPositionAnimator();
+                setThumbPosition(mChecked ? 1 : 0);
+            }
+
+            if (mChecked && mTextOn != null) {
+                setText(mTextOn);
+            } else if (!mChecked && mTextOff != null) {
+                setText(mTextOff);
+            }
         }
     }
 
