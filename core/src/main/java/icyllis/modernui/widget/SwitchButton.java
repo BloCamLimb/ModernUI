@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
 /**
  * @deprecated use {@link Switch} instead
  */
-@Deprecated
+@Deprecated(forRemoval = true)
 public class SwitchButton extends CompoundButton {
 
     private final RectF mButtonRect = new RectF();
