@@ -26,6 +26,7 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.LayoutInflater;
 
 /**
  * A user interface element the user can tap or click to perform an action.
@@ -60,11 +61,15 @@ import icyllis.modernui.view.Gravity;
 public class Button extends TextView {
 
     @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
+    static final ResourceId DEF_STYLE_ATTR =
             ResourceId.attr(R.ns, R.attr.buttonStyle);
 
     /**
      * Simple constructor to use when creating a button from code.
+     * <p>
+     * Note that this constructor will only initialize the text colors based on
+     * the current theme, with no background or padding. You may call
+     * {@link #Button(Context, AttributeSet)} with null attributes to use the default style.
      *
      * @param context The Context the Button is running in, through which it can
      *                access the current theme, resources, etc.
@@ -77,6 +82,21 @@ public class Button extends TextView {
         setGravity(Gravity.CENTER);
     }
 
+    /**
+     * {@link LayoutInflater} calls this constructor when inflating a Button from XML.
+     * The attributes defined by the current theme's
+     * {@link R.attr#buttonStyle modernui:buttonStyle}
+     * override base view attributes.
+     * <p>
+     * You may call this constructor to create your own button instance in code.
+     * In addition, you must override this constructor when creating custom views.
+     *
+     * @param context The Context the view is running in, through which it can
+     *                access the current theme, resources, etc.
+     * @param attrs   The attributes of the XML Button tag being used to inflate the view.
+     * @see #Button(Context, AttributeSet, ResourceId)
+     * @see icyllis.modernui.view.View#View(Context, AttributeSet)
+     */
     public Button(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, DEF_STYLE_ATTR);
     }

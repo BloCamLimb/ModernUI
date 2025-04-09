@@ -30,14 +30,18 @@ import icyllis.modernui.util.AttributeSet;
  * <p>
  * A radio button is a two-states button that can be either checked or
  * unchecked. When the radio button is unchecked, the user can press or click it
- * to check it. However, contrary to a {@link CheckBox}, a radio
- * button cannot be unchecked by the user once checked.
+ * to check it. However, contrary to a {@link CheckBox} or {@link ToggleButton},
+ * a radio button cannot be unchecked by the user once checked.
  * </p>
  *
  * <p>
  * Radio buttons are normally used together in a
  * {@link RadioGroup}. When several radio buttons live inside
  * a radio group, checking one radio button unchecks all the others.
+ * </p>
+ *
+ * <p>
+ * For a radio button with only a custom icon, use {@link CheckableImageButton}.
  * </p>
  *
  * <p>See the <a href="https://developer.android.com/guide/topics/ui/controls/radiobutton.html">Radio Buttons</a>
