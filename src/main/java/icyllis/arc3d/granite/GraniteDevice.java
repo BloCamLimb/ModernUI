@@ -188,7 +188,7 @@ public final class GraniteDevice extends Device {
 
     @NonNull
     @Override
-    public RecordingContext getRecordingContext() {
+    public RecordingContext getCommandContext() {
         assert mRC != null;
         return mRC;
     }

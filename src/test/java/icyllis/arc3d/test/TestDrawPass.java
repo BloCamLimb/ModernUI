@@ -23,6 +23,7 @@ import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
+import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.arc3d.opengl.*;
 import icyllis.arc3d.sketch.Matrix;
@@ -88,7 +89,9 @@ public class TestDrawPass {
         if (immediateContext == null) {
             throw new RuntimeException();
         }
-        RecordingContext recordingContext = immediateContext.makeRecordingContext();
+        RecordingContext recordingContext = RecordingContext.makeRecordingContext(
+                immediateContext, new RecordingContext.Options()
+        );
         if (recordingContext == null) {
             throw new RuntimeException();
         }

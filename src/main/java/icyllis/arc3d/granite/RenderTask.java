@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,10 +17,18 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.GpuSurface;
+import icyllis.arc3d.engine.ImageViewProxy;
+import icyllis.arc3d.engine.RenderTargetProxy;
+import icyllis.arc3d.engine.SurfaceAllocator;
+import icyllis.arc3d.engine.SurfaceProxy;
+import icyllis.arc3d.engine.TopologicalSort;
+import icyllis.arc3d.granite.trash.OpFlushState;
+import icyllis.arc3d.granite.trash.TextureResolveTask;
 import org.jspecify.annotations.NonNull;
 
 import java.util.*;

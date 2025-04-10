@@ -19,8 +19,16 @@
 
 package icyllis.arc3d.sketch;
 
-import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.Matrix4c;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.Rect2fc;
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.Rect2ic;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SamplingOptions;
+import icyllis.arc3d.engine.Context;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -169,7 +177,7 @@ public abstract class Device extends RefCnt {
     }
 
     @Nullable
-    public RecordingContext getRecordingContext() {
+    public Context getCommandContext() {
         return null;
     }
 

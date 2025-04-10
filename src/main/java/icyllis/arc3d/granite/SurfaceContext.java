@@ -122,10 +122,6 @@ public class SurfaceContext implements AutoCloseable {
         return mContext.getCaps();
     }
 
-    protected final RenderTaskManager getDrawingManager() {
-        return mContext.getRenderTaskManager();
-    }
-
     /**
      * Destructs this context.
      */

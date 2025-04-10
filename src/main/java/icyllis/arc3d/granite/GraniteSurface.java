@@ -19,11 +19,16 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
-import icyllis.arc3d.sketch.Image;
-import icyllis.arc3d.engine.*;
-import icyllis.arc3d.sketch.Canvas;
 import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.Rect2ic;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ISurface;
+import icyllis.arc3d.sketch.Canvas;
+import icyllis.arc3d.sketch.Image;
 import icyllis.arc3d.sketch.Surface;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -151,14 +156,14 @@ public final class GraniteSurface extends Surface {
     public GraniteImage makeImageCopy(@Nullable Rect2ic subset, boolean mipmapped) {
         assert !hasCachedImage();
         if (subset == null) {
-            subset = new Rect2i(0,0,getWidth(),getHeight());
+            subset = new Rect2i(0, 0, getWidth(), getHeight());
         }
         return mDevice.makeImageCopy(subset, false, mipmapped, false);
     }
 
     @Override
-    protected RecordingContext onGetRecordingContext() {
-        return mDevice.getRecordingContext();
+    protected RecordingContext onGetCommandContext() {
+        return mDevice.getCommandContext();
     }
 
     @RawPtr

@@ -23,6 +23,7 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.ClipStack;
 import icyllis.arc3d.granite.GraniteDevice;
+import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.arc3d.sketch.ClipOp;
 import icyllis.arc3d.core.ColorInfo;
@@ -62,7 +63,9 @@ public class TestClipStack {
         if (immediateContext == null) {
             throw new RuntimeException();
         }
-        RecordingContext recordingContext = immediateContext.makeRecordingContext();
+        RecordingContext recordingContext = RecordingContext.makeRecordingContext(
+                immediateContext, new RecordingContext.Options()
+        );
 
         var drawDevice = GraniteDevice.make(
                 recordingContext,

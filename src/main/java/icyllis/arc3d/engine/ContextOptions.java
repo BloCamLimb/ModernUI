@@ -35,7 +35,12 @@ import org.slf4j.helpers.NOPLogger;
  * <p>
  * This class is part of public API.
  */
-public final class ContextOptions extends BaseContextOptions {
+public final class ContextOptions {
+
+    /**
+     * The budgeted in bytes for GPU resources allocated and held by the Context.
+     */
+    public long mMaxResourceBudget = 1 << 28;
 
     /**
      * Controls whether we check for GL errors after functions that allocate resources (e.g.

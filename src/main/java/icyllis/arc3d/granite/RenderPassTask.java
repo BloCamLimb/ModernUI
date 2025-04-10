@@ -22,7 +22,7 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.task.Task;
+import icyllis.arc3d.granite.task.Task;
 
 import java.util.Arrays;
 import java.util.Objects;

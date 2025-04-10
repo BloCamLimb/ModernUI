@@ -20,7 +20,6 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.engine.task.Task;
 
 import java.util.ArrayDeque;
 

@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.granite.trash.Mesh;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;

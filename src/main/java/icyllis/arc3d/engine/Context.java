@@ -20,7 +20,6 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.sketch.SurfaceCharacterization;
 import icyllis.arc3d.granite.RendererProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
@@ -29,8 +28,7 @@ import org.slf4j.Logger;
 /**
  * This class is a public API, except where noted.
  */
-public abstract sealed class Context extends RefCnt
-        permits ImmediateContext, RecordingContext {
+public abstract class Context extends RefCnt {
 
     protected final Device mDevice;
     protected final Thread mOwnerThread;
@@ -206,11 +204,6 @@ public abstract sealed class Context extends RefCnt
 
     public final Logger getLogger() {
         return mDevice.getLogger();
-    }
-
-    protected boolean init(BaseContextOptions options) {
-        mResourceProvider = mDevice.makeResourceProvider(this, options.mMaxResourceBudget);
-        return mDevice.isValid();
     }
 
     @Override

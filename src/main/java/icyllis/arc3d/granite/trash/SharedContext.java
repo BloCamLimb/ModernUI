@@ -22,7 +22,6 @@ package icyllis.arc3d.granite.trash;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Device;
 import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.sketch.SurfaceCharacterization;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
@@ -66,120 +65,6 @@ public final class SharedContext {
         mBackend = backend;
         mOptions = options;
         mContextID = createUniqueID();
-    }
-
-    /**
-     * Create a surface characterization for a DDL that will be replayed into the {@link Context}
-     * that created this proxy. On failure the resulting characterization will be null.
-     *
-     * @param cacheMaxResourceBytes    The max resource bytes limit that will be in effect when
-     *                                 the DDL created with this characterization is replayed.
-     *                                 Note: the contract here is that the DDL will be created as
-     *                                 if it had a full 'cacheMaxResourceBytes' to use. If
-     *                                 replayed into a {@link Context} that already has locked
-     *                                 GPU memory, the replay can exceed the budget. To rephrase,
-     *                                 all resource allocation decisions are made at record time
-     *                                 and at playback time the budget limits will be ignored.
-     * @param imageInfo                The image info specifying properties of the
-     *                                 {@link GpuSurface} that the DDL created
-     *                                 with this characterization will be replayed into.
-     *                                 Note: Engine doesn't make use of the
-     *                                 {@link ImageInfo#alphaType()}.
-     * @param backendFormat            Information about the format of the GPU surface that
-     *                                 will back the {@link GpuSurface} upon
-     *                                 replay.
-     * @param origin                   The origin of the {@link GpuSurface} that
-     *                                 the DDL created with this characterization will be
-     *                                 replayed into.
-     * @param sampleCount              The sample count of the {@link GpuSurface}
-     *                                 that the DDL created with this characterization will be
-     *                                 replayed into.
-     * @param texturable               Will the surface be able to act as a texture?
-     * @param mipmapped                Will the surface the DDL will be replayed into have space
-     *                                 allocated for mipmaps?
-     * @param glWrapDefaultFramebuffer Will the surface the DDL will be replayed into be backed
-     *                                 by GL FBO 0. This flag is only valid if using an GL backend.
-     * @param vkSupportInputAttachment Can the vulkan surface be used as in input attachment?
-     * @param vkSecondaryCommandBuffer Will the surface be wrapping a vulkan secondary command
-     *                                 buffer via a VkSecondaryCBDrawContext? If
-     *                                 this is true then the following is required:
-     *                                 texturable = false
-     *                                 mipmapped = false
-     *                                 glWrapDefaultFramebuffer = false
-     *                                 vkSupportInputAttachment = false
-     * @param isProtected              Will the (Vulkan) surface be DRM protected?
-     */
-    @Nullable
-    public SurfaceCharacterization createCharacterization(
-            long cacheMaxResourceBytes,
-            ImageInfo imageInfo,
-            BackendFormat backendFormat,
-            int origin,
-            int sampleCount,
-            boolean texturable,
-            boolean mipmapped,
-            boolean glWrapDefaultFramebuffer,
-            boolean vkSupportInputAttachment,
-            boolean vkSecondaryCommandBuffer,
-            boolean isProtected) {
-        assert mCaps != null;
-
-        if (!texturable && mipmapped) {
-            return null;
-        }
-
-        if (mBackend != backendFormat.getBackend()) {
-            return null;
-        }
-
-        if (backendFormat.getBackend() != BackendApi.kOpenGL && glWrapDefaultFramebuffer) {
-            // The flag can only be used for a OpenGL backend.
-            return null;
-        }
-
-        if (backendFormat.getBackend() != BackendApi.kVulkan &&
-                (vkSupportInputAttachment || vkSecondaryCommandBuffer)) {
-            // The flags can only be used for a Vulkan backend.
-            return null;
-        }
-
-        if (imageInfo.width() < 1 || imageInfo.width() > mCaps.maxRenderTargetSize() ||
-                imageInfo.height() < 1 || imageInfo.height() > mCaps.maxRenderTargetSize()) {
-            return null;
-        }
-
-        int colorType = imageInfo.colorType();
-
-        if (!mCaps.isFormatCompatible(colorType, backendFormat)) {
-            return null;
-        }
-
-        if (!mCaps.isFormatRenderable(colorType, backendFormat, sampleCount)) {
-            return null;
-        }
-
-        sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, backendFormat);
-        assert sampleCount > 0;
-
-        if (glWrapDefaultFramebuffer && texturable) {
-            return null;
-        }
-
-        if (texturable && !mCaps.isFormatTexturable(backendFormat)) {
-            // Engine doesn't agree that this is texturable.
-            return null;
-        }
-
-        if (vkSecondaryCommandBuffer &&
-                (texturable || glWrapDefaultFramebuffer || vkSupportInputAttachment)) {
-            return null;
-        }
-
-        return new SurfaceCharacterization(this,
-                cacheMaxResourceBytes, imageInfo, backendFormat,
-                origin, sampleCount, texturable, mipmapped,
-                glWrapDefaultFramebuffer, vkSupportInputAttachment,
-                vkSecondaryCommandBuffer, isProtected);
     }
 
     /**

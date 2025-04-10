@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,21 +17,16 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.task;
+package icyllis.arc3d.granite.task;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.RecordingContext;
 
-public abstract class Task extends RefCnt {
-
-    public static final int RESULT_SUCCESS = 0;
-    public static final int RESULT_FAILURE = 1;
-    public static final int RESULT_DISCARD = 2;
+public abstract class Task extends RefCnt implements icyllis.arc3d.engine.Task {
 
     /**
      * Prepare resources on {@link RecordingContext} using its {@link ResourceProvider}.
-     * <p>
-     * If the task is directly added to the {@link ImmediateContext}, then this method will not be called.
      */
     public abstract int prepare(RecordingContext context);
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,11 +17,17 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.sketch;
+package icyllis.arc3d.engine;
 
-/**
- * This class contains pre-processed graphics operations that can be replayed into
- * a {@link Surface} via Surface::draw(DeferredDisplayList*).
- */
-public class DisplayList {
+public interface Task {
+
+    public static final int RESULT_SUCCESS = 0;
+    public static final int RESULT_FAILURE = 1;
+    public static final int RESULT_DISCARD = 2;
+
+    /**
+     * Add commands to command buffer on {@link ImmediateContext}.
+     * The {@link ResourceProvider} of {@link ImmediateContext} can also be used to create resources.
+     */
+    public abstract int execute(ImmediateContext context, CommandBuffer commandBuffer);
 }

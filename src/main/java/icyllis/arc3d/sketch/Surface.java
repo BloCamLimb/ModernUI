@@ -27,7 +27,11 @@ import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.core.Rect2ic;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.BackendFormat;
+import icyllis.arc3d.engine.BackendImage;
+import icyllis.arc3d.engine.Caps;
+import icyllis.arc3d.engine.Context;
+import icyllis.arc3d.granite.RecordingContext;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -249,13 +253,13 @@ public abstract class Surface extends RefCnt {
     }
 
     /**
-     * Returns the recording context being used by the Surface.
+     * Returns the GPU context being used by the Surface.
      *
-     * @return the recording context, if available; null otherwise
+     * @return the GPU context, if available; null otherwise
      */
     @RawPtr
-    public final RecordingContext getRecordingContext() {
-        return onGetRecordingContext();
+    public final Context getCommandContext() {
+        return onGetCommandContext();
     }
 
     /**
@@ -340,7 +344,7 @@ public abstract class Surface extends RefCnt {
 
     @ApiStatus.Internal
     @RawPtr
-    protected RecordingContext onGetRecordingContext() {
+    protected Context onGetCommandContext() {
         return null;
     }
 
