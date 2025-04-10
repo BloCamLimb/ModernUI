@@ -56,17 +56,26 @@ import org.apache.logging.log4j.MarkerManager;
  * state. If at least one of the non-radio buttons must be selected, use
  * {@link #setSelectionRequired(boolean)}.</p>
  *
- * <p>The selection is identified by the unique id of the radio button as defined
- * by {@link View#setId(int)}.</p>
+ * <p>The selection is identified by the unique id of the checkable view as defined
+ * by {@link View#setId(int)}. Therefore, all the checkable children must have a
+ * valid unique id. Otherwise this class generates an id for it.</p>
  *
  * <p>On version 3.12 and above, all {@link Checkable2} subclasses can be added to
- * a radio group and will behave like radio buttons, such as ToggleButton,
- * {@link CheckableImageButton}, and even {@link CheckBox}. However, it is most
- * optimal to add {@link RadioButton} to this group.</p>
+ * a radio group and will behave like radio buttons. However it is recommended to
+ * add {@link RadioButton} (with text) or {@link CheckableImageButton} (icon only)
+ * to this group, as they are optimized.</p>
+ *
+ * <p>On version 3.12 and above, you can nest radio groups by adding them to
+ * an outer radio group, and you can add/remove radio buttons or radio groups
+ * to any level of radio groups at any time. This class will ensure that the
+ * outermost radio group is working. Once the inner radio group is removed from the
+ * outer radio group, the inner radio group will start working. For a working radio
+ * group, if a button is selected, {@link #getCheckedId} is guaranteed to return the
+ * unique id of that button, but not necessarily vice versa.</p>
  *
  * @see RadioButton
  */
-// Based on Android and optimized by Modern UI
+// Based on Android and optimized & improved by Modern UI
 public class RadioGroup extends LinearLayout {
 
     private static final Marker MARKER = MarkerManager.getMarker("RadioGroup");
@@ -106,6 +115,15 @@ public class RadioGroup extends LinearLayout {
     @Override
     protected void onViewAdded(View child) {
         super.onViewAdded(child);
+        RadioGroup outermost = this;
+        while (outermost.getParent() instanceof RadioGroup radioGroup) {
+            outermost = radioGroup;
+        }
+        // set up the child using the outermost radio group
+        outermost.setupForChild(child);
+    }
+
+    private void setupForChild(View child) {
         if (child instanceof Checkable2 button) {
             // generates an id if it's missing
             int buttonId = child.getId();
@@ -119,14 +137,41 @@ public class RadioGroup extends LinearLayout {
             }
 
             button.setInternalOnCheckedChangeListener(mChildOnCheckedChangeListener);
+        } else if (child instanceof RadioGroup radioGroup) {
+            for (int i = 0; i < radioGroup.getChildCount(); i++) {
+                setupForChild(radioGroup.getChildAt(i));
+            }
         }
     }
 
     @Override
     protected void onViewRemoved(View child) {
         super.onViewRemoved(child);
+        clearForChild(child, null);
+    }
+
+    private void clearForChild(View child, @Nullable RadioGroup innerGroup) {
         if (child instanceof Checkable2) {
-            ((Checkable2) child).setInternalOnCheckedChangeListener(null);
+            if (innerGroup == null) {
+                // direct child has no listener
+                ((Checkable2) child).setInternalOnCheckedChangeListener(null);
+            } else {
+                // restore the inner child's internal listener
+                ((Checkable2) child).setInternalOnCheckedChangeListener(innerGroup.mChildOnCheckedChangeListener);
+            }
+        } else if (child instanceof RadioGroup radioGroup) {
+            int checkedId = NO_ID;
+            for (int i = 0; i < radioGroup.getChildCount(); i++) {
+                View innerChild = radioGroup.getChildAt(i);
+                clearForChild(innerChild, radioGroup);
+                if (innerChild instanceof Checkable2 button &&
+                        button.isChecked()) {
+                    assert checkedId == NO_ID;
+                    checkedId = innerChild.getId();
+                }
+            }
+            // validate the inner group's checked id
+            radioGroup.setCheckedId(checkedId);
         }
     }
 

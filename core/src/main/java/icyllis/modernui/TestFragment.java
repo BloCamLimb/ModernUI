@@ -81,6 +81,8 @@ import org.apache.logging.log4j.core.config.Configurator;
 import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.Iterator;
+import java.util.List;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
@@ -489,7 +491,7 @@ public class TestFragment extends Fragment {
                 LayoutParams p;
                 if (i == 1) {
                     Button button = new Button(getContext(), null, null,
-                            R.style.Widget_Material3_Button_OutlinedButton);
+                            R.style.Widget_Material3_Button_ElevatedButton);
                     button.setText("Play A Music!");
                     button.setOnClickListener(__ -> {
                         if (mGoodAnim != null) {
@@ -611,21 +613,31 @@ public class TestFragment extends Fragment {
                     v = layout;
                     p = params;
                 } else if (i == 5) {
-                    RadioGroup group = new RadioGroup(getContext());
-                    v = group;
-                    for (int j = 0; j < 3; j++) {
-                        RadioButton button = new RadioButton(getContext(), null);
-                        button.setText(switch (j) {
-                            case 0 -> "English";
-                            case 1 -> "Chinese";
-                            default -> "Spanish";
-                        });
-                        button.setId(9 + j);
-                        group.addView(button);
+                    RadioGroup outerGroup = new RadioGroup(getContext());
+                    Iterator<String> options = List.of(
+                            "English","Chinese","Spanish","Hindi","Arabic","French","Bengali","Portuguese","Russian"
+                    ).iterator();
+                    for (int k = 0; k < 3; k++) {
+                        RadioGroup innerGroup = new RadioGroup(getContext());
+                        innerGroup.setOrientation(LinearLayout.HORIZONTAL);
+                        for (int j = 0; j < 3; j++) {
+                            RadioButton button = new RadioButton(getContext());
+                            button.setText(options.next());
+                            button.setId(1 + k * 3 + j);
+                            innerGroup.addView(button);
+                        }
+                        outerGroup.addView(innerGroup);
+                        if (k == 0) {
+                            RadioButton button = new RadioButton(getContext());
+                            button.setText("Esperanto");
+                            button.setId(99);
+                            outerGroup.addView(button);
+                        }
                     }
-                    /*group.setOnCheckedChangeListener((__, checkedId) ->
+                    outerGroup.setOnCheckedChangeListener((__, checkedId) ->
                             Toast.makeText(context, "You checked " + checkedId, Toast.LENGTH_SHORT)
-                                    .show());*/
+                                    .show());
+                    v = outerGroup;
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 6) {
