@@ -28,6 +28,7 @@ import org.lwjgl.system.MemoryUtil;
  * <p>
  * This is only used as "staging buffers" in OpenGL and may not be used for other purposes.
  */
+@Deprecated
 public final class CpuBuffer extends RefCnt {
 
     private final long mSize;

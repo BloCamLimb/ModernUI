@@ -29,10 +29,7 @@ import org.jspecify.annotations.NonNull;
  * This is invoked when a {@link Path} is drawn in a canvas with the
  * {@link Paint#STROKE} bit set in the paint. The new path consists of
  * closed contours, and the style change from thick stroke to fill.
- *
- * @author BloCamLimb
  */
-//TODO review tangent, implement inside and outside stroke for closed paths
 public class PathStroker implements PathConsumer {
 
     private static final boolean DEBUG = false;

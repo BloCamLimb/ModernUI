@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,27 +17,30 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine;
+package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.task.Task;
-import icyllis.arc3d.engine.task.TaskList;
-import icyllis.arc3d.granite.*;
+import icyllis.arc3d.engine.Context;
+import icyllis.arc3d.engine.Device;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ImmediateContext;
+import icyllis.arc3d.engine.Resource;
+import icyllis.arc3d.engine.UploadBufferManager;
+import icyllis.arc3d.granite.task.Task;
+import icyllis.arc3d.granite.task.TaskList;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.sketch.Image;
 import icyllis.arc3d.sketch.Surface;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 /**
- * This class is a public API, except where noted.
+ * A command recording context for Granite Renderer.
  */
-//TODO make non-sealed, and add GraniteContext
 public final class RecordingContext extends Context {
 
-    private final ImageProxyCache mImageProxyCache;
-    private RenderTaskManager mRenderTaskManager;
     private DrawBufferManager mDrawBufferManager;
     private UploadBufferManager mUploadBufferManager;
 
@@ -52,9 +55,8 @@ public final class RecordingContext extends Context {
     private final ReferenceArrayList<@SharedPtr GraniteDevice> mTrackedDevices =
             new ReferenceArrayList<>();
 
-    protected RecordingContext(Device device) {
+    private RecordingContext(Device device) {
         super(device);
-        mImageProxyCache = new ImageProxyCache(this);
 
         mRootTaskList = new TaskList();
 
@@ -63,6 +65,26 @@ public final class RecordingContext extends Context {
         mAtlasTokenTracker = new DrawAtlas.AtlasTokenTracker();
         mGlyphStrikeCache = new GlyphStrikeCache();
         mTextBlobCache = new TextBlobCache();
+    }
+
+    @Nullable
+    @SharedPtr
+    public static RecordingContext makeRecordingContext(ImmediateContext context,
+                                                        Options options) {
+        RecordingContext rContext = new RecordingContext(context.getDevice());
+        if (rContext.init(options)) {
+            return rContext;
+        }
+        rContext.unref();
+        return null;
+    }
+
+    public static class Options {
+
+        /**
+         * The budgeted in bytes for GPU resources allocated and held by the Context.
+         */
+        public long mMaxResourceBudget = 1 << 28;
     }
 
     @Override
@@ -123,16 +145,6 @@ public final class RecordingContext extends Context {
         }
 
         return getMaxSurfaceSampleCount(colorType) > 0;
-    }
-
-    @ApiStatus.Internal
-    public final ImageProxyCache getSurfaceProvider() {
-        return mImageProxyCache;
-    }
-
-    @ApiStatus.Internal
-    public final RenderTaskManager getRenderTaskManager() {
-        return mRenderTaskManager;
     }
 
     /*@ApiStatus.Internal
@@ -243,7 +255,7 @@ public final class RecordingContext extends Context {
         while (it.hasNext()) {
             @RawPtr
             GraniteDevice device = it.next();
-            if (device == null || device.getRecordingContext() == null || device.unique()) {
+            if (device == null || device.getCommandContext() == null || device.unique()) {
                 if (device != null) {
                     device.discardRC();
                     device.unref();
@@ -253,36 +265,19 @@ public final class RecordingContext extends Context {
         }
     }
 
-    public boolean init(RecordingContextOptions options) {
-        if (!super.init(options)) {
+    public boolean init(Options options) {
+        mResourceProvider = mDevice.makeResourceProvider(this, options.mMaxResourceBudget);
+        if (!mDevice.isValid()) {
             return false;
         }
-        if (mRenderTaskManager != null) {
-            mRenderTaskManager.destroy();
-        }
-        mRenderTaskManager = new RenderTaskManager(this);
         mDrawBufferManager = new DrawBufferManager(getCaps(), getResourceProvider());
         mUploadBufferManager = new UploadBufferManager(getResourceProvider());
         return true;
     }
 
-    protected void discard() {
-        if (mDevice.discard() && mRenderTaskManager != null) {
-            throw new AssertionError();
-        }
-        if (mRenderTaskManager != null) {
-            mRenderTaskManager.destroy();
-        }
-        mRenderTaskManager = null;
-    }
-
     @Override
     protected void deallocate() {
         super.deallocate();
-        if (mRenderTaskManager != null) {
-            mRenderTaskManager.destroy();
-        }
-        mRenderTaskManager = null;
 
         mAtlasProvider.close();
 

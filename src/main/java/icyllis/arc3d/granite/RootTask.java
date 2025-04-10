@@ -22,8 +22,8 @@ package icyllis.arc3d.granite;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.task.Task;
-import icyllis.arc3d.engine.task.TaskList;
+import icyllis.arc3d.granite.task.Task;
+import icyllis.arc3d.granite.task.TaskList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 public class RootTask extends Task {

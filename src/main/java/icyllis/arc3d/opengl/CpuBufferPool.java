@@ -31,6 +31,7 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * <b>NOTE:</b> You must call {@link #releaseAll()} when this cache is no longer used.
  */
+@Deprecated
 public class CpuBufferPool {
 
     private final CpuBuffer[] mBuffers;

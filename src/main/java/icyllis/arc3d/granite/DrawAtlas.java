@@ -21,7 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.task.ImageUploadTask;
+import icyllis.arc3d.granite.task.ImageUploadTask;
 import icyllis.arc3d.core.ColorInfo;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jspecify.annotations.NonNull;

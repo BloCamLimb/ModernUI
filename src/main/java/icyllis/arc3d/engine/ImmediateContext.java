@@ -20,13 +20,10 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.task.Task;
 import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.StaticBufferManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Immediate context is used for command list execution and queue submission.
@@ -43,23 +40,6 @@ public final class ImmediateContext extends Context {
     public ImmediateContext(Device device, QueueManager queueManager) {
         super(device);
         mQueueManager = queueManager;
-    }
-
-    @Nullable
-    @SharedPtr
-    public RecordingContext makeRecordingContext() {
-        return makeRecordingContext(new RecordingContextOptions());
-    }
-
-    @Nullable
-    @SharedPtr
-    public RecordingContext makeRecordingContext(RecordingContextOptions options) {
-        RecordingContext rContext = new RecordingContext(mDevice);
-        if (rContext.init(options)) {
-            return rContext;
-        }
-        rContext.unref();
-        return null;
     }
 
     /**
@@ -149,7 +129,8 @@ public final class ImmediateContext extends Context {
         }
 
         //mContextInfo.init(mDevice);
-        if (!super.init(mDevice.getOptions())) {
+        mResourceProvider = mDevice.makeResourceProvider(this, mDevice.getOptions().mMaxResourceBudget);
+        if (!mDevice.isValid()) {
             return false;
         }
         mQueueManager.mContext = this;

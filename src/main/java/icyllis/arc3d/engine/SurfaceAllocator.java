@@ -20,6 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.granite.RenderTask;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import org.jspecify.annotations.NonNull;

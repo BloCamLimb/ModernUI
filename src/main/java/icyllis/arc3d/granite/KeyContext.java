@@ -23,7 +23,6 @@ import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.engine.Caps;
-import icyllis.arc3d.engine.RecordingContext;
 import org.jspecify.annotations.Nullable;
 
 public class KeyContext {

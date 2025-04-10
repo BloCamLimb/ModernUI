@@ -21,6 +21,8 @@ package icyllis.arc3d.granite.trash.ops;
 
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.trash.OpFlushState;
+import icyllis.arc3d.granite.RecordingContext;
 import org.jspecify.annotations.NonNull;
 
 @Deprecated

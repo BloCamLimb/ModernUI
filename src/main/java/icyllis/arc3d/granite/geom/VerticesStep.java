@@ -21,6 +21,7 @@ package icyllis.arc3d.granite.geom;
 
 import icyllis.arc3d.core.PixelUtils;
 import icyllis.arc3d.core.SLDataType;
+import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.sketch.Vertices;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Engine.PrimitiveType;
