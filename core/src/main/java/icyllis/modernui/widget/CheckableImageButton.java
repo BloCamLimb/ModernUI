@@ -32,8 +32,11 @@ import org.jetbrains.annotations.ApiStatus;
  * and is conditionally checkable, see {@link #setCheckable(boolean)}. The checked
  * state is toggled on click.
  * <p>
- * This class is more lightweight than {@link CompoundButton} or ToggleButton
- * in implementing icon-only toggle buttons.
+ * This class is more lightweight than {@link ToggleButton} or {@link RadioButton}
+ * in implementing icon-only toggle buttons or radio buttons.
+ * <p>
+ * When used in a RadioGroup, set {@link RadioGroup#setSelectionRequired} to true
+ * and this class can work like a RadioButton.
  *
  * @since 3.12
  */
@@ -45,6 +48,9 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
 
     private OnCheckedChangeListener mOnCheckedChangeListener;
     private OnCheckedChangeListener mOnCheckedChangeListenerInternal;
+
+    private CharSequence mTooltipTextOn;
+    private CharSequence mTooltipTextOff;
 
     public CheckableImageButton(Context context) {
         super(context);
@@ -67,6 +73,21 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
 
     @Override
     public void toggle() {
+        if (getParent() instanceof RadioGroup radioGroup) {
+            while (radioGroup.getParent() instanceof RadioGroup outer) {
+                radioGroup = outer;
+            }
+            if (radioGroup.isSelectionRequired()) {
+                // In strict single-selection mode, toggle() behaves the same as RadioButton
+                if (!mChecked) {
+                    setCheckable(true);
+                }
+                return;
+            }
+            // Otherwise, RadioGroup will ensure that there is at most one selection, but it
+            // will uncheck this first and then check this again, which has some extra overhead,
+            // so the above path is just an optimization.
+        }
         setChecked(!mChecked);
     }
 
@@ -93,6 +114,7 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
             }
 
             mBroadcasting = true;
+            // See CompoundButton
             if (mOnCheckedChangeListenerInternal != null) {
                 mOnCheckedChangeListenerInternal.onCheckedChanged(this, mChecked);
             }
@@ -100,6 +122,12 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
                 mOnCheckedChangeListener.onCheckedChanged(this, mChecked);
             }
             mBroadcasting = false;
+
+            if (mChecked && mTooltipTextOn != null) {
+                setTooltipText(mTooltipTextOn);
+            } else if (!mChecked && mTooltipTextOff != null) {
+                setTooltipText(mTooltipTextOff);
+            }
         }
     }
 
@@ -121,6 +149,46 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
      */
     public void setCheckable(boolean checkable) {
         mCheckable = checkable;
+    }
+
+    /**
+     * Returns the tooltip text for when the button is in the checked state.
+     *
+     * @return The tooltip text.
+     */
+    @Nullable
+    public CharSequence getTooltipTextOn() {
+        return mTooltipTextOn;
+    }
+
+    /**
+     * Sets the tooltip text for when the button is in the checked state.
+     * If not null, it overrides the tooltip text previously set by {@link ImageButton#setTooltipText}.
+     *
+     * @param tooltipTextOn The tooltip text.
+     */
+    public void setTooltipTextOn(@Nullable CharSequence tooltipTextOn) {
+        mTooltipTextOn = tooltipTextOn;
+    }
+
+    /**
+     * Returns the tooltip text for when the button is not in the checked state.
+     *
+     * @return The tooltip text.
+     */
+    @Nullable
+    public CharSequence getTooltipTextOff() {
+        return mTooltipTextOff;
+    }
+
+    /**
+     * Sets the tooltip text for when the button is not in the checked state.
+     * If not null, it overrides the tooltip text previously set by {@link ImageButton#setTooltipText}.
+     *
+     * @param tooltipTextOff The tooltip text.
+     */
+    public void setTooltipTextOff(@Nullable CharSequence tooltipTextOff) {
+        mTooltipTextOff = tooltipTextOff;
     }
 
     /**
