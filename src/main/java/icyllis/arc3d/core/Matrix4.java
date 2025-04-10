@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.core;
 
-import icyllis.arc3d.sketch.Matrix;
-import icyllis.arc3d.sketch.Matrixc;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
@@ -46,7 +44,6 @@ import java.nio.FloatBuffer;
  * elements in memory.
  *
  * @author BloCamLimb
- * @see Matrix
  */
 //TODO replace with Vector API and Primitive Classes
 @SuppressWarnings("unused")
@@ -611,23 +608,23 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * matrix, then the new matrix will be <code>L * M</code> (row-major). So when transforming
      * a vector <code>v</code> with the new matrix by using <code>v * L * M</code>, the
      * transformation of the left-hand side matrix will be applied first.
-     *
-     * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat2D(@NonNull Matrixc lhs) {
+    public void preConcat2D(float l11, float l12, float l14,
+                            float l21, float l22, float l24,
+                            float l41, float l42, float l44) {
         // 36 multiplications
-        final float f11 = lhs.m11() * m11 + lhs.m12() * m21 + lhs.m14() * m41;
-        final float f12 = lhs.m11() * m12 + lhs.m12() * m22 + lhs.m14() * m42;
-        final float f13 = lhs.m11() * m13 + lhs.m12() * m23 + lhs.m14() * m43;
-        final float f14 = lhs.m11() * m14 + lhs.m12() * m24 + lhs.m14() * m44;
-        final float f21 = lhs.m21() * m11 + lhs.m22() * m21 + lhs.m24() * m41;
-        final float f22 = lhs.m21() * m12 + lhs.m22() * m22 + lhs.m24() * m42;
-        final float f23 = lhs.m21() * m13 + lhs.m22() * m23 + lhs.m24() * m43;
-        final float f24 = lhs.m21() * m14 + lhs.m22() * m24 + lhs.m24() * m44;
-        final float f41 = lhs.m41() * m11 + lhs.m42() * m21 + lhs.m44() * m41;
-        final float f42 = lhs.m41() * m12 + lhs.m42() * m22 + lhs.m44() * m42;
-        final float f43 = lhs.m41() * m13 + lhs.m42() * m23 + lhs.m44() * m43;
-        final float f44 = lhs.m41() * m14 + lhs.m42() * m24 + lhs.m44() * m44;
+        final float f11 = l11 * m11 + l12 * m21 + l14 * m41;
+        final float f12 = l11 * m12 + l12 * m22 + l14 * m42;
+        final float f13 = l11 * m13 + l12 * m23 + l14 * m43;
+        final float f14 = l11 * m14 + l12 * m24 + l14 * m44;
+        final float f21 = l21 * m11 + l22 * m21 + l24 * m41;
+        final float f22 = l21 * m12 + l22 * m22 + l24 * m42;
+        final float f23 = l21 * m13 + l22 * m23 + l24 * m43;
+        final float f24 = l21 * m14 + l22 * m24 + l24 * m44;
+        final float f41 = l41 * m11 + l42 * m21 + l44 * m41;
+        final float f42 = l41 * m12 + l42 * m22 + l44 * m42;
+        final float f43 = l41 * m13 + l42 * m23 + l44 * m43;
+        final float f44 = l41 * m14 + l42 * m24 + l44 * m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -655,23 +652,23 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * matrix, then the new matrix will be <code>M * R</code> (row-major). So when transforming
      * a vector <code>v</code> with the new matrix by using <code>v * M * R</code>, the
      * transformation of <code>this</code> matrix will be applied first.
-     *
-     * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat2D(@NonNull Matrixc rhs) {
+    public void postConcat2D(float r11, float r12, float r14,
+                             float r21, float r22, float r24,
+                             float r41, float r42, float r44) {
         // 36 multiplications
-        final float f11 = m11 * rhs.m11() + m12 * rhs.m21() + m14 * rhs.m41();
-        final float f12 = m11 * rhs.m12() + m12 * rhs.m22() + m14 * rhs.m42();
-        final float f14 = m11 * rhs.m14() + m12 * rhs.m24() + m14 * rhs.m44();
-        final float f21 = m21 * rhs.m11() + m22 * rhs.m21() + m24 * rhs.m41();
-        final float f22 = m21 * rhs.m12() + m22 * rhs.m22() + m24 * rhs.m42();
-        final float f24 = m21 * rhs.m14() + m22 * rhs.m24() + m24 * rhs.m44();
-        final float f31 = m31 * rhs.m11() + m32 * rhs.m21() + m34 * rhs.m41();
-        final float f32 = m31 * rhs.m12() + m32 * rhs.m22() + m34 * rhs.m42();
-        final float f34 = m31 * rhs.m14() + m32 * rhs.m24() + m34 * rhs.m44();
-        final float f41 = m41 * rhs.m11() + m42 * rhs.m21() + m44 * rhs.m41();
-        final float f42 = m41 * rhs.m12() + m42 * rhs.m22() + m44 * rhs.m42();
-        final float f44 = m41 * rhs.m14() + m42 * rhs.m24() + m44 * rhs.m44();
+        final float f11 = m11 * r11 + m12 * r21 + m14 * r41;
+        final float f12 = m11 * r12 + m12 * r22 + m14 * r42;
+        final float f14 = m11 * r14 + m12 * r24 + m14 * r44;
+        final float f21 = m21 * r11 + m22 * r21 + m24 * r41;
+        final float f22 = m21 * r12 + m22 * r22 + m24 * r42;
+        final float f24 = m21 * r14 + m22 * r24 + m24 * r44;
+        final float f31 = m31 * r11 + m32 * r21 + m34 * r41;
+        final float f32 = m31 * r12 + m32 * r22 + m34 * r42;
+        final float f34 = m31 * r14 + m32 * r24 + m34 * r44;
+        final float f41 = m41 * r11 + m42 * r21 + m44 * r41;
+        final float f42 = m41 * r12 + m42 * r22 + m44 * r42;
+        final float f44 = m41 * r14 + m42 * r24 + m44 * r44;
         m11 = f11;
         m12 = f12;
         m14 = f14;
@@ -1148,8 +1145,6 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     /**
      * Store this matrix as 2D matrix into the given address in GLSL column-major or
      * HLSL row-major order, NOT vec4 aligned.
-     * <p>
-     * Equivalent to call {@link #toMatrix()} and {@link Matrix#store(long)}.
      *
      * @param p the pointer of the array to store
      */
@@ -1168,8 +1163,6 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     /**
      * Store this matrix as 2D matrix into the given address in GLSL column-major or
      * HLSL row-major order, NOT vec4 aligned.
-     * <p>
-     * Equivalent to call {@link #toMatrix()} and {@link Matrix#storeAligned(long)}.
      *
      * @param p the pointer of the array to store
      */
@@ -3345,41 +3338,6 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         } else {
             return Float.POSITIVE_INFINITY;
         }
-    }
-
-    /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
-     * <pre>{@code
-     * [ a b x c ]      [ a b c ]
-     * [ d e x f ]  ->  [ d e f ]
-     * [ x x x x ]      [ g h i ]
-     * [ g h x i ]
-     * }</pre>
-     */
-    public void toMatrix(@NonNull Matrix dest) {
-        dest.set(
-                m11, m12, m14,
-                m21, m22, m24,
-                m41, m42, m44
-        );
-    }
-
-    /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
-     * <pre>{@code
-     * [ a b x c ]      [ a b c ]
-     * [ d e x f ]  ->  [ d e f ]
-     * [ x x x x ]      [ g h i ]
-     * [ g h x i ]
-     * }</pre>
-     */
-    @NonNull
-    public Matrix toMatrix() {
-        return new Matrix(
-                m11, m12, m14,
-                m21, m22, m24,
-                m41, m42, m44
-        );
     }
 
     /**

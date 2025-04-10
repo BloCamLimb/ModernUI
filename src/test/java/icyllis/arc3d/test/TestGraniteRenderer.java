@@ -84,7 +84,7 @@ public class TestGraniteRenderer {
 
     public static final boolean TEST_OPENGL_ES = false;
 
-    public static final int TEST_SCENE = 0;
+    public static final int TEST_SCENE = 1;
     public static final boolean POST_PROCESS = false;
 
     public static final ExecutorService RECORDING_THREAD = Executors.newSingleThreadExecutor();

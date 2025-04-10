@@ -22,6 +22,7 @@ package icyllis.arc3d.sketch;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Matrix3;
 import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.Matrix4c;
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2fc;
 import icyllis.arc3d.core.Rect2i;
@@ -117,6 +118,32 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
                   float shearX, float scaleY, float persp1,
                   float transX, float transY, float persp2) {
         set(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
+    }
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    public Matrix(@NonNull Matrix4 m) {
+        set(m);
+    }
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    public Matrix(@NonNull Matrix4c m) {
+        set(m);
     }
 
     /**
@@ -813,6 +840,36 @@ public non-sealed class Matrix implements Matrixc, Cloneable {
         m42 = transY;
         m44 = persp2;
         mTypeMask = kUnknown_Mask;
+    }
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    public void set(@NonNull Matrix4 m) {
+        set(m.m11, m.m12, m.m14,
+                m.m21, m.m22, m.m24,
+                m.m41, m.m42, m.m44);
+    }
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    public void set(@NonNull Matrix4c m) {
+        set(m.m11(), m.m12(), m.m14(),
+                m.m21(), m.m22(), m.m24(),
+                m.m41(), m.m42(), m.m44());
     }
 
     /**

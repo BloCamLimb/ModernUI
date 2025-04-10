@@ -20,8 +20,8 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
+import icyllis.arc3d.granite.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.trash.PipelineKey_old;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -59,7 +59,7 @@ public class GLPipelineCache {
             final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         if (desc.isEmpty()) {
             final Caps caps = mDevice.getCaps();
-            caps.makeDesc(desc, /*renderTarget*/null, graphicsPipelineDesc);
+            PipelineKey_old.build(desc, graphicsPipelineDesc, caps);
         }
         assert (!desc.isEmpty());
         return findOrCreateGraphicsPipelineImpl(desc, graphicsPipelineDesc);

@@ -21,7 +21,7 @@ package icyllis.arc3d.sketch;
 
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.SharedContext;
+import icyllis.arc3d.granite.trash.SharedContext;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,12 +17,13 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.engine.trash.ops;
+package icyllis.arc3d.granite.trash.ops;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.trash.GraphicsPipelineDesc_Old;
 import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Matrixc;
 import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
 import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
@@ -30,7 +31,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 
 @Deprecated
-public class RoundRectOp extends MeshDrawOp {
+public class RectOp extends MeshDrawOp {
 
     private Buffer mVertexBuffer;
     private int mBaseVertex;
@@ -38,30 +39,49 @@ public class RoundRectOp extends MeshDrawOp {
     private Buffer mInstanceBuffer;
     private int mBaseInstance;
 
-    private float[] mColor;
-    private Rect2f mLocalRect;
-    private float mCornerRadius;
-    private float mStrokeRadius;
-    private Matrix mViewMatrix;
-    private boolean mStroke;
+    private final int mColor;
+    private final Rect2f mLocalRect;
+    private final float mStrokeRadius;
+    private final float mStrokePos;
+    private final Matrix mViewMatrix;
+    private final int mGPFlags;
 
     private int mNumInstances = 1;
 
-    public RoundRectOp(float[] color, Rect2f localRect, float cornerRadius, float strokeRadius, Matrix viewMatrix,
-                       boolean stroke) {
-        mColor = color;
+    public RectOp(int argb, Rect2f localRect, float strokeRadius, float strokePos,
+                  Matrixc viewMatrix, boolean stroke, boolean aa) {
+        mColor = argb;
         mLocalRect = localRect;
-        mCornerRadius = cornerRadius;
         mStrokeRadius = strokeRadius;
-        mViewMatrix = viewMatrix;
-        mStroke = stroke;
-        viewMatrix.mapRect(localRect, this);
+        mStrokePos = strokePos;
+        if (!viewMatrix.isIdentity()) {
+            mViewMatrix = new Matrix(viewMatrix);
+        } else {
+            mViewMatrix = null;
+        }
+        int gpFlags = 0;
+        /*if (aa) {
+            gpFlags |= SDFRectGeoProc.FLAG_ANTIALIASING;
+        }
+        if (stroke) {
+            gpFlags |= SDFRectGeoProc.FLAG_STROKE;
+        }
+        if (mViewMatrix != null) {
+            gpFlags |= SDFRectGeoProc.FLAG_INSTANCED_MATRIX;
+        }*/
+        mGPFlags = gpFlags;
+        if (mViewMatrix != null) {
+            mViewMatrix.mapRect(localRect, this);
+        } else {
+            set(localRect);
+        }
+        setBoundsFlags(aa, false);
     }
 
     @Override
     protected boolean onMayChain(@NonNull Op __) {
-        var op = (RoundRectOp) __;
-        if (op.mStroke == mStroke) {
+        var op = (RectOp) __;
+        if (op.mGPFlags == mGPFlags) {
             mNumInstances++;
             return true;
         }
@@ -115,8 +135,6 @@ public class RoundRectOp extends MeshDrawOp {
         if (vertexData == null) {
             return;
         }
-        // x = float(VertexID & 1)-0.5*2.0
-        // y = float(VertexID >> 1)-0.5*2.0
         vertexData.putFloat(-1).putFloat(1); // LL
         vertexData.putFloat(1).putFloat(1); // LR
         vertexData.putFloat(-1).putFloat(-1); // UL
@@ -126,20 +144,25 @@ public class RoundRectOp extends MeshDrawOp {
             return;
         }
         for (Op it = this; it != null; it = it.nextInChain()) {
-            var op = (RoundRectOp) it;
-            instanceData.putFloat(op.mColor[0]);
-            instanceData.putFloat(op.mColor[1]);
-            instanceData.putFloat(op.mColor[2]);
-            instanceData.putFloat(op.mColor[3]);
+            var op = (RectOp) it;
+            int color = op.mColor;
+            instanceData.put((byte) (color >> 16));
+            instanceData.put((byte) (color >> 8));
+            instanceData.put((byte) (color));
+            instanceData.put((byte) (color >> 24));
             // local rect
             instanceData.putFloat(op.mLocalRect.width() / 2f);
             instanceData.putFloat(op.mLocalRect.centerX());
             instanceData.putFloat(op.mLocalRect.height() / 2f);
             instanceData.putFloat(op.mLocalRect.centerY());
             // radii
-            instanceData.putFloat(op.mCornerRadius).putFloat(op.mStrokeRadius);
-            op.mViewMatrix.store(MemoryUtil.memAddress(instanceData));
-            instanceData.position(instanceData.position() + 36);
+            //if ((op.mGPFlags & SDFRectGeoProc.FLAG_STROKE) != 0) {
+                instanceData.putFloat(op.mStrokeRadius).putFloat(op.mStrokePos);
+            //}
+            //if ((op.mGPFlags & SDFRectGeoProc.FLAG_INSTANCED_MATRIX) != 0) {
+                op.mViewMatrix.store(MemoryUtil.memAddress(instanceData));
+                instanceData.position(instanceData.position() + 36);
+            //}
         }
     }
 }

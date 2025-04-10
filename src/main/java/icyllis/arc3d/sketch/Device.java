@@ -160,12 +160,12 @@ public abstract class Device extends RefCnt {
         mLocalToDevice.normalizePerspective();
         // Map from the global CTM state to this device's coordinate system.
         mLocalToDevice.postConcat(mGlobalToDevice);
-        mLocalToDevice.toMatrix(mLocalToDevice33);
+        mLocalToDevice33.set(mLocalToDevice);
     }
 
     public final void setLocalToDevice(@NonNull Matrix4c localToDevice) {
         mLocalToDevice.set(localToDevice);
-        mLocalToDevice.toMatrix(mLocalToDevice33);
+        mLocalToDevice33.set(mLocalToDevice);
     }
 
     @Nullable
@@ -209,7 +209,7 @@ public abstract class Device extends RefCnt {
             mGlobalToDevice.postTranslate(-bufferOriginX, -bufferOriginY);
             mLocalToDevice.postTranslate(-bufferOriginX, -bufferOriginY);
         }
-        mLocalToDevice.toMatrix(mLocalToDevice33);
+        mLocalToDevice33.set(mLocalToDevice);
     }
 
     /**

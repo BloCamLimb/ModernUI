@@ -510,12 +510,12 @@ public class TestManagedResource {
         Matrix4 transform = new Matrix4();
         transform.m34 = 1 / 4096f;
         transform.preRotateX(MathUtil.PI_O_3);
-        Matrix matrix3 = transform.toMatrix();
+        Matrix matrix3 = new Matrix(transform);
         pw.println(matrix3);
 
         Matrix4 mat = new Matrix4();
         mat.preRotateZ(MathUtil.PI_O_2 * 29);
-        Matrix m3 = mat.toMatrix();
+        Matrix m3 = new Matrix(mat);
         pw.println(m3);
         pw.println(m3.getType());
         pw.println("Similarity: " + m3.isSimilarity());
