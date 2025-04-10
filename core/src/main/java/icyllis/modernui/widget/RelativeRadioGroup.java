@@ -36,7 +36,9 @@ import javax.annotation.Nullable;
  *
  * @see RadioButton
  * @see RadioGroup
+ * @deprecated no longer supported, consider using nested {@link RadioGroup radio groups}
  */
+@Deprecated(forRemoval = true)
 public class RelativeRadioGroup extends RelativeLayout {
 
     // holds the checked id; the selection is empty by default
