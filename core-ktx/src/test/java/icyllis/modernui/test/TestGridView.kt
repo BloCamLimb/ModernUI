@@ -26,6 +26,8 @@ import icyllis.modernui.util.Log
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup
+import icyllis.modernui.widget.AdapterView
+import icyllis.modernui.widget.AdapterView.OnItemSelectedListener
 import icyllis.modernui.widget.ArrayAdapter
 import icyllis.modernui.widget.GridView
 
@@ -42,12 +44,24 @@ class TestGridView : Fragment() {
         container: ViewGroup?,
         savedInstanceState: DataSet?
     ): View {
-        val view = GridView(context)
-        view.numColumns = 3
+        val gridView = GridView(context)
+        gridView.numColumns = 3
         val list = FontFamily.getSystemFontMap().keys.toMutableList()
         list.sort()
-        view.adapter = ArrayAdapter(context, list)
+        gridView.adapter = ArrayAdapter(context, list)
+        gridView.setOnItemClickListener { parent, view, position, id ->
+            val gv = parent as GridView
+            Log.info(null, "Item clicked {}, is checked {}", position, gv.isItemChecked(position))
+        }
+        gridView.onItemSelectedListener = object : OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
+                Log.info(null , "Item selected {}", position)
+            }
 
-        return view
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+        }
+
+        return gridView
     }
 }
