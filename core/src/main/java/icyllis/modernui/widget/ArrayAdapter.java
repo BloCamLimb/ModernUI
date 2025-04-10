@@ -297,6 +297,17 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
         mNotifyOnChange = notifyOnChange;
     }
 
+    /**
+     * Returns the context associated with this array adapter. The context is used
+     * to create views from the resource passed to the constructor.
+     *
+     * @return The Context associated with this adapter.
+     */
+    @NonNull
+    public Context getContext() {
+        return mContext;
+    }
+
     @Override
     public int getCount() {
         return mObjects.size();
