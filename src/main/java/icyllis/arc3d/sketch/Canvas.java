@@ -882,8 +882,7 @@ public class Canvas implements AutoCloseable {
             bounds.setEmpty();
             return false;
         } else {
-            Matrix inverse = new Matrix();
-            top().mMatrix.toMatrix(inverse);
+            Matrix inverse = new Matrix(top().mMatrix);
             // if we can't invert the matrix, we can't return local clip bounds
             if (!inverse.invert()) {
                 bounds.setEmpty();
@@ -1692,7 +1691,7 @@ public class Canvas implements AutoCloseable {
      * @param storage transformation from local coordinates to device / pixels.
      */
     public final void getLocalToDevice(@NonNull Matrix storage) {
-        top().mMatrix.toMatrix(storage);
+        storage.set(top().mMatrix);
     }
 
     /**

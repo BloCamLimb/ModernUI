@@ -21,8 +21,8 @@ package icyllis.arc3d.granite.shading;
 
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
+import icyllis.arc3d.granite.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.trash.PipelineKey_old;
 import icyllis.arc3d.granite.GeometryStep;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jspecify.annotations.NonNull;

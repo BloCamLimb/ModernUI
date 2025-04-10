@@ -25,6 +25,7 @@ import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.arc3d.opengl.*;
+import icyllis.arc3d.sketch.Matrix;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
@@ -128,7 +129,7 @@ public class TestDrawPass {
             transform.preTranslate(cx, cy);
             transform.preRotateZ(i);
             transform.preTranslate(-cx, -cy);
-            Draw draw = new Draw(transform.toMatrix(), rrect);
+            Draw draw = new Draw(new Matrix(transform), rrect);
             int stroke = (int) (Math.random() * 50);
             draw.mHalfWidth = stroke < 25 ? -1 : stroke - 20;
             float[] col = {(float) Math.random(), (float) Math.random(), (float) Math.random(), 1.0f};

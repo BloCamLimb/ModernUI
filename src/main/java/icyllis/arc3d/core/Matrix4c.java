@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.core;
 
-import icyllis.arc3d.sketch.Matrix;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -114,26 +113,6 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * @param p the pointer of the array to store
      */
     void store(long p);
-
-    /**
-     * Store this matrix as 2D matrix into the given address in GLSL column-major or
-     * HLSL row-major order, NOT vec4 aligned.
-     * <p>
-     * Equivalent to call {@link #toMatrix()} and {@link Matrix#store(long)}.
-     *
-     * @param p the pointer of the array to store
-     */
-    void storeAs2D(long p);
-
-    /**
-     * Store this matrix as 2D matrix into the given address in GLSL column-major or
-     * HLSL row-major order, NOT vec4 aligned.
-     * <p>
-     * Equivalent to call {@link #toMatrix()} and {@link Matrix#storeAligned(long)}.
-     *
-     * @param p the pointer of the array to store
-     */
-    void storeAs2DAligned(long p);
 
     /**
      * Return the determinant of this matrix.
@@ -249,29 +228,6 @@ public sealed interface Matrix4c extends Cloneable permits Matrix4 {
      * return positive infinity.
      */
     float localAARadius(float left, float top, float right, float bottom);
-
-    /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
-     * <pre>{@code
-     * [ a b x c ]      [ a b c ]
-     * [ d e x f ]  ->  [ d e f ]
-     * [ x x x x ]      [ g h i ]
-     * [ g h x i ]
-     * }</pre>
-     */
-    void toMatrix(@NonNull Matrix dest);
-
-    /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
-     * <pre>{@code
-     * [ a b x c ]      [ a b c ]
-     * [ d e x f ]  ->  [ d e f ]
-     * [ x x x x ]      [ g h i ]
-     * [ g h x i ]
-     * }</pre>
-     */
-    @NonNull
-    Matrix toMatrix();
 
     /**
      * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are discarded.

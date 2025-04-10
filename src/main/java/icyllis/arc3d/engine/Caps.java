@@ -21,8 +21,6 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -738,11 +736,6 @@ public abstract class Caps {
 
     @Nullable
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
-
-    @NonNull
-    public abstract PipelineKey_old makeDesc(PipelineKey_old desc,
-                                             GpuRenderTarget renderTarget,
-                                             final GraphicsPipelineDesc_Old graphicsPipelineDesc);
 
     @NonNull
     public abstract PipelineKey makeGraphicsPipelineKey(

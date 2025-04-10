@@ -23,8 +23,6 @@ import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.ShaderCaps;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import org.jspecify.annotations.NonNull;
@@ -290,12 +288,6 @@ public class VulkanCaps extends Caps {
     @Nullable
     @Override
     public BackendFormat getCompressedBackendFormat(int compressionType) {
-        return null;
-    }
-
-    @NonNull
-    @Override
-    public PipelineKey_old makeDesc(PipelineKey_old desc, GpuRenderTarget renderTarget, GraphicsPipelineDesc_Old graphicsPipelineDesc) {
         return null;
     }
 

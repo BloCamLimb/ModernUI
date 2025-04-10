@@ -22,8 +22,8 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
+import icyllis.arc3d.granite.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.trash.PipelineKey_old;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.NativeType;
@@ -1285,14 +1285,6 @@ public abstract class GLCaps extends Caps {
     @Override
     public BackendFormat getCompressedBackendFormat(int compressionType) {
         return mCompressionTypeToBackendFormat[compressionType];
-    }
-
-    @NonNull
-    @Override
-    public PipelineKey_old makeDesc(PipelineKey_old desc,
-                                    GpuRenderTarget renderTarget,
-                                    final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
-        return PipelineKey_old.build(desc, graphicsPipelineDesc, this);
     }
 
     @NonNull

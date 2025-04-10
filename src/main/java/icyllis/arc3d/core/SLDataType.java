@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.core;
 
-import icyllis.arc3d.compiler.BuiltinTypes;
-import icyllis.arc3d.compiler.tree.Type;
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -385,7 +383,7 @@ public final class SLDataType {
         throw new IllegalArgumentException(String.valueOf(type));
     }
 
-    public static Type toType(byte type, BuiltinTypes types) {
+    /*public static Type toType(byte type, BuiltinTypes types) {
         return switch (type) {
             case kVoid -> types.mVoid;
             case kBool -> types.mBool;
@@ -411,7 +409,7 @@ public final class SLDataType {
             case kTexture2D -> types.mTexture2D;
             default -> types.mInvalid;
         };
-    }
+    }*/
 
     @NonNull
     public static String typeString(byte type) {
