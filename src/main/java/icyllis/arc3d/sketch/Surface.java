@@ -20,7 +20,6 @@
 package icyllis.arc3d.sketch;
 
 import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.GenerationID;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.Rect2i;
@@ -48,7 +47,7 @@ public abstract class Surface extends RefCnt {
 
     private final int mWidth;
     private final int mHeight;
-    private GenerationID mGenerationID;
+    private Object mGenerationID;
 
     // unique ptr
     private Canvas mCachedCanvas;
@@ -232,10 +231,10 @@ public abstract class Surface extends RefCnt {
      *
      * @return unique content identifier
      */
-    public final GenerationID getGenerationID() {
+    public final Object getGenerationID() {
         if (mGenerationID == null) {
             assert mCachedCanvas == null || mCachedCanvas.mSurface == this;
-            mGenerationID = new GenerationID();
+            mGenerationID = new Object();
         }
         return mGenerationID;
     }

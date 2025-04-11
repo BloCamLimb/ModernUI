@@ -19,7 +19,6 @@
 
 package icyllis.arc3d.sketch;
 
-import icyllis.arc3d.core.UniqueID;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
@@ -34,14 +33,7 @@ import java.util.Objects;
  */
 public abstract class Typeface {
 
-    private final UniqueID mUniqueID;
-
     public Typeface() {
-        mUniqueID = new UniqueID();
-    }
-
-    public final UniqueID getUniqueID() {
-        return mUniqueID;
     }
 
     @NonNull
@@ -53,17 +45,4 @@ public abstract class Typeface {
     protected abstract ScalerContext onCreateScalerContext(StrikeDesc desc);
 
     protected abstract void onFilterStrikeDesc(StrikeDesc.Lookup desc);
-
-    @Override
-    public final int hashCode() {
-        return mUniqueID.hashCode();
-    }
-
-    @Override
-    public final boolean equals(Object o) {
-        if (o instanceof Typeface t) {
-            return mUniqueID.equals(t.mUniqueID);
-        }
-        return false;
-    }
 }

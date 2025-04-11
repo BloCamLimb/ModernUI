@@ -25,7 +25,6 @@ import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.UniqueID;
 import icyllis.arc3d.engine.Context;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
@@ -49,14 +48,14 @@ import org.jspecify.annotations.Nullable;
 public abstract class Image extends RefCnt {
 
     protected final ImageInfo mInfo;
-    protected final UniqueID mUniqueID;
+    protected final Object mUniqueID;
 
     protected Image(@NonNull ImageInfo info) {
         if (info.isEmpty()) {
             throw new IllegalArgumentException();
         }
         mInfo = info;
-        mUniqueID = new UniqueID();
+        mUniqueID = new Object();
     }
 
     @NonNull
@@ -98,7 +97,7 @@ public abstract class Image extends RefCnt {
      * @return unique identifier
      */
     @NonNull
-    public final UniqueID getUniqueID() {
+    public final Object getUniqueID() {
         return mUniqueID;
     }
 

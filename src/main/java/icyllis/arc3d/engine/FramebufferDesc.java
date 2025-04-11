@@ -21,7 +21,6 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.Size;
-import icyllis.arc3d.core.UniqueID;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.jetbrains.annotations.ApiStatus;
