@@ -26,7 +26,6 @@ import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.engine.Resource;
 import icyllis.arc3d.engine.UploadBufferManager;
-import icyllis.arc3d.granite.task.RootTask;
 import icyllis.arc3d.granite.task.Task;
 import icyllis.arc3d.granite.task.TaskList;
 import icyllis.arc3d.core.ColorInfo;
@@ -205,7 +204,7 @@ public final class RecordingContext extends Context {
         mRootTaskList.appendTask(task);
     }
 
-    public @Nullable RootTask snap() {
+    public @Nullable Recording snap() {
         assert isOwnerThread();
         flushTrackedDevices();
 
@@ -226,7 +225,7 @@ public final class RecordingContext extends Context {
         mDrawBufferManager.flush(finalTaskList, extraResourceRefs);
         mUploadBufferManager.flush(extraResourceRefs);
         finalTaskList.appendTasks(mRootTaskList);
-        var recording = new RootTask(finalTaskList, extraResourceRefs);
+        var recording = new Recording(finalTaskList, extraResourceRefs);
         mRootTaskList.reset();
         return recording;
     }

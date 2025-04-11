@@ -17,22 +17,28 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.granite.task;
+package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.CommandBuffer;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.engine.Resource;
+import icyllis.arc3d.engine.Task;
+import icyllis.arc3d.granite.task.TaskList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
-public class RootTask implements icyllis.arc3d.engine.Task, AutoCloseable {
+/**
+ * The task of rendering a frame, created by {@link RecordingContext},
+ * will replay on {@link ImmediateContext}.
+ */
+public final class Recording implements Task, AutoCloseable {
 
     private final TaskList mRootTaskList;
     private final ObjectArrayList<@SharedPtr Resource> mExtraResourceRefs;
 
-    public RootTask(TaskList rootTaskList,
-                    ObjectArrayList<@SharedPtr Resource> extraResourceRefs) {
+    public Recording(TaskList rootTaskList,
+                     ObjectArrayList<@SharedPtr Resource> extraResourceRefs) {
         mRootTaskList = rootTaskList;
         mExtraResourceRefs = extraResourceRefs;
     }
@@ -40,8 +46,9 @@ public class RootTask implements icyllis.arc3d.engine.Task, AutoCloseable {
     @Override
     public int execute(ImmediateContext context,
                        CommandBuffer commandBuffer) {
-        for (var resource : mExtraResourceRefs) {
-            commandBuffer.trackResource(RefCnt.create(resource));
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < mExtraResourceRefs.size(); i++) {
+            commandBuffer.trackResource(RefCnt.create(mExtraResourceRefs.get(i)));
         }
         return mRootTaskList.execute(context, commandBuffer);
     }

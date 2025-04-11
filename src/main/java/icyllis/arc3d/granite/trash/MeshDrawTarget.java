@@ -20,6 +20,7 @@
 package icyllis.arc3d.granite.trash;
 
 import icyllis.arc3d.engine.Buffer;
+import icyllis.arc3d.engine.Mesh;
 import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;

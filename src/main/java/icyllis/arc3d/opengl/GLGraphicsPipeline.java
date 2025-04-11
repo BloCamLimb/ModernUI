@@ -21,7 +21,6 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.granite.trash.GraphicsPipelineDesc_Old;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -131,10 +130,10 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
 
     @Deprecated
     public boolean bindUniforms(GLCommandBuffer commandBuffer,
-                                GraphicsPipelineDesc_Old graphicsPipelineDesc,
+                                /*GraphicsPipelineDesc_Old graphicsPipelineDesc,*/
                                 int width, int height) {
-        mDataManager.setProjection(0, width, height,
-                graphicsPipelineDesc.origin() == Engine.SurfaceOrigin.kLowerLeft);
+        /*mDataManager.setProjection(0, width, height,
+                graphicsPipelineDesc.origin() == Engine.SurfaceOrigin.kLowerLeft);*/
         //mGPImpl.setData(mDataManager, graphicsPipelineDesc.geomProc());
         //TODO FP and upload
 
@@ -146,16 +145,16 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
      */
     @Deprecated
     public boolean bindTextures(GLCommandBuffer commandBuffer,
-                                GraphicsPipelineDesc_Old graphicsPipelineDesc,
+                                /*GraphicsPipelineDesc_Old graphicsPipelineDesc,*/
                                 ImageViewProxy[] geomTextures) {
         int unit = 0;
-        for (int i = 0, n = graphicsPipelineDesc.geomProc().numTextureSamplers(); i < n; i++) {
+        /*for (int i = 0, n = graphicsPipelineDesc.geomProc().numTextureSamplers(); i < n; i++) {
             GLTexture texture = (GLTexture) geomTextures[i].getImage();
-            /*commandBuffer.bindTextureSampler(unit++, texture,
+            commandBuffer.bindTextureSampler(unit++, texture,
                     graphicsPipelineDesc.geomProc().textureSamplerState(i),
-                    graphicsPipelineDesc.geomProc().textureSamplerSwizzle(i));*/
+                    graphicsPipelineDesc.geomProc().textureSamplerSwizzle(i));
         }
-        //TODO bind FP textures
+         */
 
         assert unit == mNumTextureSamplers;
         return true;

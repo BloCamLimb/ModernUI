@@ -21,11 +21,11 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.granite.trash.GraphicsPipelineDesc_Old;
 
 import static icyllis.arc3d.engine.Engine.PrimitiveType;
 import static org.lwjgl.opengl.GL11C.*;
 
+@Deprecated
 public final class GLOpsRenderPass extends OpsRenderPass {
 
     private final GLDevice mDevice;
@@ -94,7 +94,7 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected boolean onBindPipeline(GraphicsPipelineDesc_Old graphicsPipelineDesc,
+    protected boolean onBindPipeline(/*GraphicsPipelineDesc_Old graphicsPipelineDesc,*/
                                      GraphicsPipeline pipeline,
                                      Rect2fc drawBounds) {
         mActiveIndexBuffer = RefCnt.move(mActiveIndexBuffer);
@@ -105,21 +105,21 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         if (mPipelineState == null) {
             return false;
         }
-        mPrimitiveType = switch (graphicsPipelineDesc.primitiveType()) {
+        /*mPrimitiveType = switch (graphicsPipelineDesc.primitiveType()) {
             case PrimitiveType.kPointList -> GL_POINTS;
             case PrimitiveType.kLineList -> GL_LINES;
             case PrimitiveType.kLineStrip -> GL_LINE_STRIP;
             case PrimitiveType.kTriangleList -> GL_TRIANGLES;
             case PrimitiveType.kTriangleStrip -> GL_TRIANGLE_STRIP;
             default -> throw new AssertionError();
-        };
+        };*/
 
         //TODO flush RT again?
         /*if (!mPipelineState.bindPipeline(mCmdBuffer)) {
             return false;
         }*/
 
-        return mPipelineState.bindUniforms(mCmdBuffer, graphicsPipelineDesc,
+        return mPipelineState.bindUniforms(mCmdBuffer, /*graphicsPipelineDesc,*/
                 mRenderTarget.getWidth(), mRenderTarget.getHeight());
     }
 

@@ -21,7 +21,7 @@ package icyllis.arc3d.granite.trash.ops;
 
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.granite.trash.Mesh;
+import icyllis.arc3d.engine.Mesh;
 import icyllis.arc3d.granite.trash.MeshDrawTarget;
 import icyllis.arc3d.granite.trash.OpFlushState;
 import icyllis.arc3d.granite.RecordingContext;

@@ -58,6 +58,7 @@ public final class GLDevice extends Device {
     private final GpuBufferPool mIndexPool;*/
 
     // unique ptr
+    @Deprecated
     private GLOpsRenderPass mCachedOpsRenderPass;
 
     private final ArrayDeque<FlushInfo.FinishedCallback> mFinishedCallbacks = new ArrayDeque<>();
@@ -214,7 +215,7 @@ public final class GLDevice extends Device {
                     glInterface = impl;
                 }
                 default -> {
-                    options.mLogger.error("Failed to create GLDevice: invalid capabilities");
+                    options.mLogger.error("Failed to create GLDevice: invalid capabilities {}", capabilities);
                     return null;
                 }
             }
@@ -978,6 +979,7 @@ public final class GLDevice extends Device {
         return false;
     }
 
+    @Deprecated
     @Override
     protected OpsRenderPass onGetOpsRenderPass(ImageProxyView writeView,
                                                Rect2i contentBounds,

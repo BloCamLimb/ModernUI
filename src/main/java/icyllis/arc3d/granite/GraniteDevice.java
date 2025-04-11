@@ -29,6 +29,7 @@ import icyllis.arc3d.granite.geom.BoundsManager;
 import icyllis.arc3d.granite.geom.EdgeAAQuad;
 import icyllis.arc3d.granite.geom.HybridBoundsManager;
 import icyllis.arc3d.granite.task.DrawTask;
+import icyllis.arc3d.granite.task.RenderPassTask;
 import icyllis.arc3d.sketch.*;
 import icyllis.arc3d.sketch.effects.ColorFilter;
 import icyllis.arc3d.sketch.shaders.ImageShader;
