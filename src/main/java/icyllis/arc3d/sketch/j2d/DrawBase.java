@@ -57,7 +57,7 @@ public class DrawBase {
         path.transform(mCTM, tmpPath);
 
         drawDevicePath(tmpPath, paint, doFill);
-        tmpPath.recycle();
+        tmpPath.release();
     }
 
     private static final float MAX_FOR_MATH = Float.MAX_VALUE * 0.25f;

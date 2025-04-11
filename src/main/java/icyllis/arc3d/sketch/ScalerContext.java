@@ -255,11 +255,11 @@ public abstract class ScalerContext {
 
             // transform into device space
             localPath.transform(matrix, path);
-            localPath.recycle();
+            localPath.release();
         }
         path.trimToSize();
         glyph.setPath(path);
-        path.recycle();
+        path.release();
     }
 
     public static class GlyphMetrics {
