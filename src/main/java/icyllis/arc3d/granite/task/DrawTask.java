@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,14 +17,13 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.granite;
+package icyllis.arc3d.granite.task;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.engine.CommandBuffer;
 import icyllis.arc3d.engine.ImageViewProxy;
 import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.granite.task.Task;
-import icyllis.arc3d.granite.task.TaskList;
+import icyllis.arc3d.granite.RecordingContext;
 
 public final class DrawTask extends Task {
 

@@ -19,18 +19,20 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.sketch.*;
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.sketch.Device;
-import icyllis.arc3d.sketch.Image;
-import icyllis.arc3d.sketch.effects.ColorFilter;
-import icyllis.arc3d.sketch.shaders.ImageShader;
-import icyllis.arc3d.sketch.shaders.Shader;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ISurface;
+import icyllis.arc3d.engine.ImageDesc;
+import icyllis.arc3d.engine.ImageViewProxy;
 import icyllis.arc3d.granite.geom.BlurredBox;
 import icyllis.arc3d.granite.geom.BoundsManager;
 import icyllis.arc3d.granite.geom.EdgeAAQuad;
 import icyllis.arc3d.granite.geom.HybridBoundsManager;
+import icyllis.arc3d.granite.task.DrawTask;
+import icyllis.arc3d.sketch.*;
+import icyllis.arc3d.sketch.effects.ColorFilter;
+import icyllis.arc3d.sketch.shaders.ImageShader;
+import icyllis.arc3d.sketch.shaders.Shader;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;

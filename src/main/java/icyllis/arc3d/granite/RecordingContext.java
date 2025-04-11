@@ -26,6 +26,7 @@ import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.engine.Resource;
 import icyllis.arc3d.engine.UploadBufferManager;
+import icyllis.arc3d.granite.task.RootTask;
 import icyllis.arc3d.granite.task.Task;
 import icyllis.arc3d.granite.task.TaskList;
 import icyllis.arc3d.core.ColorInfo;
@@ -204,7 +205,7 @@ public final class RecordingContext extends Context {
         mRootTaskList.appendTask(task);
     }
 
-    public RootTask snap() {
+    public @Nullable RootTask snap() {
         assert isOwnerThread();
         flushTrackedDevices();
 
@@ -216,7 +217,7 @@ public final class RecordingContext extends Context {
             // Leaving 'mTrackedDevices' alone since they were flushed earlier and could still be
             // attached to extant Surfaces.
             mAtlasProvider.invalidateAtlases();
-            mRootTaskList.clear();
+            mRootTaskList.reset();
             return null;
         }
 
@@ -226,7 +227,7 @@ public final class RecordingContext extends Context {
         mUploadBufferManager.flush(extraResourceRefs);
         finalTaskList.appendTasks(mRootTaskList);
         var recording = new RootTask(finalTaskList, extraResourceRefs);
-        mRootTaskList.clear();
+        mRootTaskList.reset();
         return recording;
     }
 
