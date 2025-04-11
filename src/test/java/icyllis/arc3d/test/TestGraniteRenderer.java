@@ -24,14 +24,13 @@ import icyllis.arc3d.engine.ContextOptions;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ISurface;
 import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.granite.RecordingContext;
-import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.granite.GraniteDevice;
 import icyllis.arc3d.granite.GraniteSurface;
-import icyllis.arc3d.sketch.*;
-import icyllis.arc3d.granite.task.RootTask;
+import icyllis.arc3d.granite.Recording;
+import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.granite.TextureUtils;
 import icyllis.arc3d.opengl.GLUtil;
+import icyllis.arc3d.sketch.*;
 import icyllis.arc3d.sketch.effects.BlendModeColorFilter;
 import icyllis.arc3d.sketch.effects.ColorFilter;
 import icyllis.arc3d.sketch.j2d.Typeface_JDK;
@@ -191,18 +190,18 @@ public class TestGraniteRenderer {
 
             if (true) {
                 @SharedPtr
-                RootTask rootTask = CompletableFuture.supplyAsync(
+                Recording recording = CompletableFuture.supplyAsync(
                         painter::paint,
                         RECORDING_THREAD
                 ).join();
 
                 double time4 = GLFW.glfwGetTime();
 
-                if (!immediateContext.addTask(rootTask)) {
-                    LOGGER.error("Failed to add recording: {}", rootTask);
+                if (!immediateContext.addTask(recording)) {
+                    LOGGER.error("Failed to add recording: {}", recording);
                 }
-                if (rootTask != null) {
-                    rootTask.close();
+                if (recording != null) {
+                    recording.close();
                 }
 
                 double time5 = GLFW.glfwGetTime();
@@ -872,7 +871,7 @@ public class TestGraniteRenderer {
             canvas.restore();
         }
 
-        public RootTask paint() {
+        public Recording paint() {
             double time1 = GLFW.glfwGetTime();
 
             if (POST_PROCESS) {
@@ -900,14 +899,14 @@ public class TestGraniteRenderer {
                 drawScene(canvas);
             }
 
-            RootTask rootTask = mRC.snap();
+            Recording recording = mRC.snap();
 
             double time2 = GLFW.glfwGetTime();
 
             /*LOGGER.info("Painting: {}",
                     formatMicroseconds(time2, time1));*/
 
-            return rootTask;
+            return recording;
         }
 
         public void close() {

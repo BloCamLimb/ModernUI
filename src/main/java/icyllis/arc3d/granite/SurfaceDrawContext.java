@@ -23,6 +23,7 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.task.DrawTask;
 import icyllis.arc3d.granite.task.ImageUploadTask;
+import icyllis.arc3d.granite.task.RenderPassTask;
 import icyllis.arc3d.granite.task.Task;
 import icyllis.arc3d.granite.task.TaskList;
 import icyllis.arc3d.sketch.Matrix;

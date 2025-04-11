@@ -23,6 +23,7 @@ import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.engine.Device;
 import icyllis.arc3d.engine.GraphicsPipeline;
 import icyllis.arc3d.engine.ImageProxyView;
+import icyllis.arc3d.engine.Mesh;
 import icyllis.arc3d.engine.OpsRenderPass;
 import icyllis.arc3d.engine.ResourceProvider;
 import icyllis.arc3d.engine.SurfaceProxy;

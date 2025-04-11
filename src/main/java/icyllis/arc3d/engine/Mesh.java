@@ -17,11 +17,9 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.granite.trash;
+package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.engine.Buffer;
-import icyllis.arc3d.engine.GpuBufferPool;
 
 /**
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}

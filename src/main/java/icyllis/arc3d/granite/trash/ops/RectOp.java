@@ -93,7 +93,7 @@ public class RectOp extends MeshDrawOp {
     @Override
     public void onExecute(OpFlushState state, Rect2f chainBounds) {
         OpsRenderPass opsRenderPass = state.getOpsRenderPass();
-        opsRenderPass.bindPipeline(getPipelineInfo(), getPipelineState(), chainBounds);
+        opsRenderPass.bindPipeline(/*getPipelineInfo(), */getPipelineState(), chainBounds);
         opsRenderPass.bindTextures(null);
         opsRenderPass.bindBuffers(null, Engine.IndexType.kUByte, mVertexBuffer, 0, mInstanceBuffer, 0);
         opsRenderPass.drawInstanced(getInstanceCount(), mBaseInstance, getVertexCount(), mBaseVertex);
