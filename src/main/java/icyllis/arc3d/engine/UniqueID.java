@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,12 +17,25 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.core;
+package icyllis.arc3d.engine;
 
-//TODO
-public final class ArcData extends RefCnt {
+import org.jspecify.annotations.NonNull;
 
+/**
+ * An object with identity. This can be used to track state changes through
+ * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
+ * Compared to using int or long, this will never conflict on runtime.
+ *
+ * @see System#identityHashCode(Object)
+ */
+public final class UniqueID {
+
+    public UniqueID() {
+    }
+
+    @NonNull
     @Override
-    protected void deallocate() {
+    public String toString() {
+        return "UniqueID@" + Integer.toHexString(hashCode());
     }
 }

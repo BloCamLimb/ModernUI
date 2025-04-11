@@ -27,6 +27,7 @@ import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.engine.SurfaceAllocator;
 import icyllis.arc3d.engine.SurfaceProxy;
 import icyllis.arc3d.engine.TopologicalSort;
+import icyllis.arc3d.engine.UniqueID;
 import icyllis.arc3d.granite.trash.OpFlushState;
 import icyllis.arc3d.granite.trash.ops.OpsTask;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;

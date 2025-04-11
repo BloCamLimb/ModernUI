@@ -26,6 +26,7 @@ import icyllis.arc3d.core.Rect2ic;
  * Produced by {@link Clip_old}. It provides a set of modifications to the drawing state that
  * implements the clip.
  */
+@Deprecated
 public final class ClipResult_old implements Cloneable {
 
     private int mStencilSeq;

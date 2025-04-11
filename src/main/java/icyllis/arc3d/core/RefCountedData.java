@@ -19,23 +19,10 @@
 
 package icyllis.arc3d.core;
 
-import org.jspecify.annotations.NonNull;
+//TODO
+public final class RefCountedData extends RefCnt {
 
-/**
- * An object with identity. This can be used to track state changes through
- * reference equality '==', and as keys of {@link java.util.IdentityHashMap}.
- * Compared to using int or long, this will never conflict on runtime.
- *
- * @see System#identityHashCode(Object)
- */
-public final class UniqueID {
-
-    public UniqueID() {
-    }
-
-    @NonNull
     @Override
-    public String toString() {
-        return "UniqueID@" + Integer.toHexString(hashCode());
+    protected void deallocate() {
     }
 }
