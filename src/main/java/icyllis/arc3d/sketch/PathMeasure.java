@@ -126,7 +126,7 @@ public class PathMeasure {
      */
     public void reset() {
         // mPath is a fast copy of the given path, we would like to recycle it
-        mPath.recycle();
+        mPath.release();
 
         mIterator = null;
         // just clear segments, because we check against it
