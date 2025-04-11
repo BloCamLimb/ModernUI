@@ -20,27 +20,30 @@
 package icyllis.arc3d.granite.task;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.CommandBuffer;
+import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.RecordingContext;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.jspecify.annotations.NonNull;
 
-import java.util.List;
 import java.util.function.Consumer;
 
-public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
-
-    private final ObjectArrayList<@SharedPtr Task> mTasks = new ObjectArrayList<>();
+/**
+ * List of ref-counted tasks, only methods defined in this class can be called.
+ */
+public class TaskList extends ObjectArrayList<@SharedPtr Task>
+        implements Consumer<@SharedPtr Task>, AutoCloseable {
 
     public TaskList() {
     }
 
     public void appendTask(@SharedPtr Task task) {
-        mTasks.add(task);
+        add(task);
     }
 
     public void prependTask(@SharedPtr Task task) {
-        mTasks.add(0, task);
+        add(0, task);
     }
 
     /**
@@ -48,47 +51,35 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
      */
     @Override
     public void accept(@SharedPtr Task task) {
-        mTasks.add(task);
+        add(task);
     }
 
     /**
      * This method moves the given task list.
      */
-    public void appendTasks(@NonNull TaskList tasks) {
+    public void appendTasks(@NonNull ObjectList<@SharedPtr ? extends Task> tasks) {
         assert tasks != this;
-        mTasks.addAll(tasks.mTasks);
-        tasks.mTasks.clear();
-    }
-
-    /**
-     * This method moves the given task list.
-     */
-    public void appendTasks(@NonNull List<@SharedPtr ? extends Task> tasks) {
-        mTasks.addAll(tasks);
+        addAll(tasks);
         tasks.clear();
     }
 
-    public int size() {
-        return mTasks.size();
-    }
-
-    public boolean isEmpty() {
-        return mTasks.isEmpty();
-    }
-
-    public void clear() {
-        for (var task : mTasks) {
+    public void reset() {
+        final Object[] a = this.a;
+        for (int i = 0; i < size; i++) {
+            var task = (Task) a[i];
             if (task != null) {
                 task.unref();
+                a[i] = null;
             }
         }
-        mTasks.clear();
+        size = 0;
     }
 
     public int prepare(RecordingContext context) {
         int discardCount = 0;
-        for (var it = mTasks.listIterator(); it.hasNext(); ) {
-            var task = it.next();
+        final Object[] a = this.a;
+        for (int i = 0; i < size; i++) {
+            var task = (Task) a[i];
             if (task == null) {
                 discardCount++;
                 continue;
@@ -99,19 +90,20 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
                 return Task.RESULT_FAILURE;
             } else if (result == Task.RESULT_DISCARD) {
                 task.unref();
-                it.set(null);
+                a[i] = null;
                 discardCount++;
             }
         }
 
-        return discardCount == mTasks.size() ? Task.RESULT_DISCARD : Task.RESULT_SUCCESS;
+        return discardCount == size ? Task.RESULT_DISCARD : Task.RESULT_SUCCESS;
     }
 
     public int execute(ImmediateContext context,
                        CommandBuffer commandBuffer) {
         int discardCount = 0;
-        for (var it = mTasks.listIterator(); it.hasNext(); ) {
-            var task = it.next();
+        final Object[] a = this.a;
+        for (int i = 0; i < size; i++) {
+            var task = (Task) a[i];
             if (task == null) {
                 discardCount++;
                 continue;
@@ -122,16 +114,16 @@ public class TaskList implements Consumer<@SharedPtr Task>, AutoCloseable {
                 return Task.RESULT_FAILURE;
             } else if (result == Task.RESULT_DISCARD) {
                 task.unref();
-                it.set(null);
+                a[i] = null;
                 discardCount++;
             }
         }
 
-        return discardCount == mTasks.size() ? Task.RESULT_DISCARD : Task.RESULT_SUCCESS;
+        return discardCount == size ? Task.RESULT_DISCARD : Task.RESULT_SUCCESS;
     }
 
     @Override
     public void close() {
-        clear();
+        reset();
     }
 }

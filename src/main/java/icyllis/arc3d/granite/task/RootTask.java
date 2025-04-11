@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,16 +17,16 @@
  * License along with Arc3D. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arc3d.granite;
+package icyllis.arc3d.granite.task;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.*;
-import icyllis.arc3d.granite.task.Task;
-import icyllis.arc3d.granite.task.TaskList;
+import icyllis.arc3d.engine.CommandBuffer;
+import icyllis.arc3d.engine.ImmediateContext;
+import icyllis.arc3d.engine.Resource;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
-public class RootTask extends Task {
+public class RootTask implements icyllis.arc3d.engine.Task, AutoCloseable {
 
     private final TaskList mRootTaskList;
     private final ObjectArrayList<@SharedPtr Resource> mExtraResourceRefs;
@@ -38,13 +38,8 @@ public class RootTask extends Task {
     }
 
     @Override
-    public int prepare(RecordingContext context) {
-        return RESULT_SUCCESS;
-    }
-
-    @Override
     public int execute(ImmediateContext context,
-                           CommandBuffer commandBuffer) {
+                       CommandBuffer commandBuffer) {
         for (var resource : mExtraResourceRefs) {
             commandBuffer.trackResource(RefCnt.create(resource));
         }
@@ -52,7 +47,7 @@ public class RootTask extends Task {
     }
 
     @Override
-    protected void deallocate() {
+    public void close() {
         mRootTaskList.close();
         mExtraResourceRefs.forEach(Resource::unref);
         mExtraResourceRefs.clear();

@@ -21,6 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.task.DrawTask;
 import icyllis.arc3d.granite.task.ImageUploadTask;
 import icyllis.arc3d.granite.task.Task;
 import icyllis.arc3d.granite.task.TaskList;

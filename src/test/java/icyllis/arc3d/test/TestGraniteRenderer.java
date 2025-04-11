@@ -29,7 +29,7 @@ import icyllis.arc3d.sketch.BlendMode;
 import icyllis.arc3d.granite.GraniteDevice;
 import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.sketch.*;
-import icyllis.arc3d.granite.RootTask;
+import icyllis.arc3d.granite.task.RootTask;
 import icyllis.arc3d.granite.TextureUtils;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.arc3d.sketch.effects.BlendModeColorFilter;
@@ -201,7 +201,9 @@ public class TestGraniteRenderer {
                 if (!immediateContext.addTask(rootTask)) {
                     LOGGER.error("Failed to add recording: {}", rootTask);
                 }
-                RefCnt.move(rootTask);
+                if (rootTask != null) {
+                    rootTask.close();
+                }
 
                 double time5 = GLFW.glfwGetTime();
 
