@@ -37,10 +37,10 @@ import java.util.StringJoiner;
  */
 public final class FunctionCall extends Expression {
 
-    private final FunctionDecl mFunction;
+    private final FunctionDeclaration mFunction;
     private final Expression[] mArguments;
 
-    private FunctionCall(int position, Type type, FunctionDecl function,
+    private FunctionCall(int position, Type type, FunctionDeclaration function,
                          Expression... arguments) {
         super(position, type);
         mFunction = function;
@@ -56,14 +56,14 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    private static FunctionDecl findBestCandidate(@NonNull FunctionDecl chain,
-                                                  @NonNull List<Expression> arguments) {
+    private static FunctionDeclaration findBestCandidate(@NonNull FunctionDeclaration chain,
+                                                         @NonNull List<Expression> arguments) {
         if (chain.getNextOverload() == null) {
             return chain;
         }
         long bestCost = Type.CoercionCost.saturate();
-        FunctionDecl best = null;
-        for (FunctionDecl f = chain; f != null; f = f.getNextOverload()) {
+        FunctionDeclaration best = null;
+        for (FunctionDeclaration f = chain; f != null; f = f.getNextOverload()) {
             final long cost;
             if (f.getParameters().size() != arguments.size()) {
                 cost = Type.CoercionCost.saturate();
@@ -103,7 +103,7 @@ public final class FunctionCall extends Expression {
             }
             case FUNCTION_REFERENCE -> {
                 FunctionReference ref = (FunctionReference) identifier;
-                FunctionDecl best = findBestCandidate(ref.getOverloadChain(), arguments);
+                FunctionDeclaration best = findBestCandidate(ref.getOverloadChain(), arguments);
                 if (best != null) {
                     yield FunctionCall.convert(context, pos, best, arguments);
                 }
@@ -125,7 +125,7 @@ public final class FunctionCall extends Expression {
 
     @Nullable
     public static Expression convert(@NonNull Context context,
-                                     int pos, @NonNull FunctionDecl function,
+                                     int pos, @NonNull FunctionDeclaration function,
                                      @NonNull List<Expression> arguments) {
         if (function.getParameters().size() != arguments.size()) {
             String msg = "call to '" + function.getName() + "' expected " +
@@ -174,7 +174,7 @@ public final class FunctionCall extends Expression {
     }
 
     public static Expression make(int pos, Type returnType,
-                                  FunctionDecl function,
+                                  FunctionDeclaration function,
                                   List<Expression> arguments) {
         assert function.getParameters().size() == arguments.size();
 
@@ -188,7 +188,7 @@ public final class FunctionCall extends Expression {
         return ExpressionKind.FUNCTION_CALL;
     }
 
-    public FunctionDecl getFunction() {
+    public FunctionDeclaration getFunction() {
         return mFunction;
     }
 

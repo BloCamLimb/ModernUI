@@ -25,21 +25,21 @@ import org.jspecify.annotations.NonNull;
  * A variable declaration appearing at global scope. A global declaration like 'int x, y;' produces
  * two GlobalVariableDecl elements, each containing the declaration of one variable.
  */
-public final class GlobalVariableDecl extends TopLevelElement {
+public final class GlobalVariable extends TopLevelElement {
 
-    private VariableDecl mVariableDecl;
+    private VariableDeclaration mDeclaration;
 
-    public GlobalVariableDecl(@NonNull VariableDecl decl) {
+    public GlobalVariable(@NonNull VariableDeclaration decl) {
         super(decl.mPosition);
-        mVariableDecl = decl;
+        mDeclaration = decl;
     }
 
-    public VariableDecl getVariableDecl() {
-        return mVariableDecl;
+    public VariableDeclaration getDeclaration() {
+        return mDeclaration;
     }
 
-    public void setVariableDecl(Statement decl) {
-        mVariableDecl = (VariableDecl) decl;
+    public void setDeclaration(Statement decl) {
+        mDeclaration = (VariableDeclaration) decl;
     }
 
     @Override
@@ -50,6 +50,6 @@ public final class GlobalVariableDecl extends TopLevelElement {
     @NonNull
     @Override
     public String toString() {
-        return mVariableDecl.toString();
+        return mDeclaration.toString();
     }
 }

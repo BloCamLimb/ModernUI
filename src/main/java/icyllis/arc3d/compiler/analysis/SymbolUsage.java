@@ -55,7 +55,7 @@ public final class SymbolUsage {
     }
 
     public final IdentityHashMap<Type, Count> mStructCounts = new IdentityHashMap<>();
-    public final IdentityHashMap<FunctionDecl, Count> mFunctionCounts = new IdentityHashMap<>();
+    public final IdentityHashMap<FunctionDeclaration, Count> mFunctionCounts = new IdentityHashMap<>();
     public final IdentityHashMap<Variable, VariableCounts> mVariableCounts = new IdentityHashMap<>();
 
     private int mDelta;
@@ -64,7 +64,7 @@ public final class SymbolUsage {
         @Override
         public boolean visitTopLevelElement(@NonNull TopLevelElement e) {
             if (e instanceof FunctionDefinition definition) {
-                for (var param : definition.getFunctionDecl().getParameters()) {
+                for (var param : definition.getDeclaration().getParameters()) {
                     // Ensure function-parameter variables exist in the variable usage map. They aren't
                     // otherwise declared, but ProgramUsage::get() should be able to find them, even if
                     // they are unread and unwritten.
@@ -111,7 +111,7 @@ public final class SymbolUsage {
 
         @Override
         public boolean visitStatement(@NonNull Statement stmt) {
-            if (stmt instanceof VariableDecl decl) {
+            if (stmt instanceof VariableDeclaration decl) {
                 // Add all declared variables to the usage map (even if never otherwise accessed).
                 VariableCounts counts = computeVariableCounts(decl.getVariable());
                 counts.decl += mDelta;
@@ -145,16 +145,16 @@ public final class SymbolUsage {
     }
 
     @NonNull
-    public Count computeFunctionCount(FunctionDecl functionSymbol) {
+    public Count computeFunctionCount(FunctionDeclaration functionSymbol) {
         return mFunctionCounts.computeIfAbsent(functionSymbol, __ -> new Count());
     }
 
     @Nullable
-    public Count findFunctionCount(FunctionDecl functionSymbol) {
+    public Count findFunctionCount(FunctionDeclaration functionSymbol) {
         return mFunctionCounts.get(functionSymbol);
     }
 
-    public int getFunctionCount(FunctionDecl functionSymbol) {
+    public int getFunctionCount(FunctionDeclaration functionSymbol) {
         Count count = findFunctionCount(functionSymbol);
         if (count != null) {
             return count.use;

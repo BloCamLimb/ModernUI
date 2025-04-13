@@ -47,8 +47,8 @@ public abstract class TreeWriter {
                 yield visitStatementPtr(f::getBody, f::setBody);
             }
             case GLOBAL_VARIABLE -> {
-                var g = (GlobalVariableDecl) e;
-                yield visitStatementPtr(g::getVariableDecl, g::setVariableDecl);
+                var g = (GlobalVariable) e;
+                yield visitStatementPtr(g::getDeclaration, g::setDeclaration);
             }
         };
     }
@@ -80,11 +80,11 @@ public abstract class TreeWriter {
                  CONSTRUCTOR_ARRAY_CAST,
                  CONSTRUCTOR_COMPOUND,
                  CONSTRUCTOR_COMPOUND_CAST,
-                 CONSTRUCTOR_DIAGONAL_MATRIX,
+                 CONSTRUCTOR_DIAGONAL,
                  CONSTRUCTOR_MATRIX_RESIZE,
                  CONSTRUCTOR_SCALAR_CAST,
                  CONSTRUCTOR_STRUCT,
-                 CONSTRUCTOR_VECTOR_SPLAT -> {
+                 CONSTRUCTOR_SPLAT -> {
                 var args = ((ConstructorCall) expr).getArguments();
                 for (int i = 0; i < args.length; i++) {
                     int that = i;
@@ -146,7 +146,7 @@ public abstract class TreeWriter {
                 return false;
             }
             case BLOCK -> {
-                var statements = ((BlockStatement) stmt).getStatements();
+                var statements = ((Block) stmt).getStatements();
                 for (int i = 0; i < statements.size(); i++) {
                     int that = i;
                     if (visitStatementPtr(() -> statements.get(that), newS -> statements.set(that, newS))) {
@@ -159,8 +159,8 @@ public abstract class TreeWriter {
                 var e = (ExpressionStatement) stmt;
                 return visitExpressionPtr(e::getExpression, e::setExpression);
             }
-            case FOR_LOOP -> {
-                var f = (ForLoop) stmt;
+            case FOR -> {
+                var f = (ForStatement) stmt;
                 return (f.getInit() != null && visitStatementPtr(f::getInit, f::setInit)) ||
                         (f.getCondition() != null && visitExpressionPtr(f::getCondition, f::setCondition)) ||
                         (f.getStep() != null && visitExpressionPtr(f::getStep, f::setStep)) ||
@@ -185,8 +185,8 @@ public abstract class TreeWriter {
                 var s = (SwitchCase) stmt;
                 return visitStatementPtr(s::getStatement, s::setStatement);
             }
-            case VARIABLE_DECL -> {
-                var v = (VariableDecl) stmt;
+            case VARIABLE_DECLARATION -> {
+                var v = (VariableDeclaration) stmt;
                 return v.getInit() != null && visitExpressionPtr(v::getInit, v::setInit);
             }
             default -> throw new AssertionError();

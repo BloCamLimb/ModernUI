@@ -42,10 +42,10 @@ public final class Analysis {
                             false;
                     case CONSTRUCTOR_ARRAY,
                          CONSTRUCTOR_COMPOUND,
-                         CONSTRUCTOR_DIAGONAL_MATRIX,
+                         CONSTRUCTOR_DIAGONAL,
                          CONSTRUCTOR_MATRIX_RESIZE,
                          CONSTRUCTOR_STRUCT,
-                         CONSTRUCTOR_VECTOR_SPLAT ->
+                         CONSTRUCTOR_SPLAT ->
                         // Constructors might be compile-time constants, if they are composed entirely
                         // of literals and constructors. (Casting constructors are intentionally omitted
                         // here. If the value inside was a compile-time constant, we would have not
@@ -106,8 +106,8 @@ public final class Analysis {
             }
             case CONSTRUCTOR_COMPOUND_CAST,
                  CONSTRUCTOR_SCALAR_CAST,
-                 CONSTRUCTOR_VECTOR_SPLAT,
-                 CONSTRUCTOR_DIAGONAL_MATRIX -> {
+                 CONSTRUCTOR_SPLAT,
+                 CONSTRUCTOR_DIAGONAL -> {
                 ConstructorCall ctor = (ConstructorCall) expr;
                 // Single-argument constructors are trivial when their inner expression is trivial.
                 assert (ctor.getArguments().length == 1);
@@ -143,11 +143,11 @@ public final class Analysis {
             case CONSTRUCTOR_ARRAY_CAST:
             case CONSTRUCTOR_COMPOUND:
             case CONSTRUCTOR_COMPOUND_CAST:
-            case CONSTRUCTOR_DIAGONAL_MATRIX:
+            case CONSTRUCTOR_DIAGONAL:
             case CONSTRUCTOR_MATRIX_RESIZE:
             case CONSTRUCTOR_SCALAR_CAST:
             case CONSTRUCTOR_STRUCT:
-            case CONSTRUCTOR_VECTOR_SPLAT: {
+            case CONSTRUCTOR_SPLAT: {
                 if (left.getKind() != right.getKind()) {
                     return false;
                 }

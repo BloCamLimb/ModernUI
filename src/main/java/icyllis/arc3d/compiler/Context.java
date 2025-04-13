@@ -188,8 +188,8 @@ public final class Context {
             return null;
         }
         return switch (result.getKind()) {
-            case FUNCTION_DECL -> {
-                var overloadChain = (FunctionDecl) result;
+            case FUNCTION_DECLARATION -> {
+                var overloadChain = (FunctionDeclaration) result;
                 yield FunctionReference.make(this, position, overloadChain);
             }
             case VARIABLE -> {

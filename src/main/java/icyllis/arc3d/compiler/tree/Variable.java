@@ -125,30 +125,30 @@ public final class Variable extends Symbol {
 
     @Nullable
     public Expression initialValue() {
-        VariableDecl decl = getVariableDecl();
+        VariableDeclaration decl = getDeclaration();
         return decl != null ? decl.getInit() : null;
     }
 
     @Nullable
-    public VariableDecl getVariableDecl() {
-        if (mDecl instanceof VariableDecl) {
-            return (VariableDecl) mDecl;
+    public VariableDeclaration getDeclaration() {
+        if (mDecl instanceof VariableDeclaration) {
+            return (VariableDeclaration) mDecl;
         }
-        if (mDecl instanceof GlobalVariableDecl) {
-            return ((GlobalVariableDecl) mDecl).getVariableDecl();
+        if (mDecl instanceof GlobalVariable) {
+            return ((GlobalVariable) mDecl).getDeclaration();
         }
         return null;
     }
 
     @Nullable
-    public GlobalVariableDecl getGlobalVariableDecl() {
-        if (mDecl instanceof GlobalVariableDecl) {
-            return (GlobalVariableDecl) mDecl;
+    public GlobalVariable getGlobalVariable() {
+        if (mDecl instanceof GlobalVariable) {
+            return (GlobalVariable) mDecl;
         }
         return null;
     }
 
-    public void setVariableDecl(VariableDecl decl) {
+    public void setDeclaration(VariableDeclaration decl) {
         if (mDecl != null && decl.getVariable() != this) {
             throw new AssertionError();
         }
@@ -157,11 +157,11 @@ public final class Variable extends Symbol {
         }
     }
 
-    public void setGlobalVariableDecl(GlobalVariableDecl globalDecl) {
-        if (mDecl != null && globalDecl.getVariableDecl().getVariable() != this) {
+    public void setGlobalVariable(GlobalVariable global) {
+        if (mDecl != null && global.getDeclaration().getVariable() != this) {
             throw new AssertionError();
         }
-        mDecl = globalDecl;
+        mDecl = global;
     }
 
     @Nullable

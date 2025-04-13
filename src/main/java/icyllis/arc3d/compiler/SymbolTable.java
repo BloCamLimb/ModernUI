@@ -157,11 +157,11 @@ public final class SymbolTable {
         }
 
         // If this is a function declaration, we need to keep the overload chain in sync.
-        if (symbol instanceof FunctionDecl) {
+        if (symbol instanceof FunctionDeclaration) {
             // If we have a function with the same name...
-            if (find(key) instanceof FunctionDecl next) {
+            if (find(key) instanceof FunctionDeclaration next) {
                 // The new definition is at the top
-                ((FunctionDecl) symbol).setNextOverload(next);
+                ((FunctionDeclaration) symbol).setNextOverload(next);
                 mTable.put(key, symbol);
                 return symbol;
             }

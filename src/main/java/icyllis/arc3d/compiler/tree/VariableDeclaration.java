@@ -26,12 +26,12 @@ import org.jspecify.annotations.Nullable;
 /**
  * Variable declaration.
  */
-public final class VariableDecl extends Statement {
+public final class VariableDeclaration extends Statement {
 
     private Variable mVariable;
     private Expression mInit;
 
-    public VariableDecl(Variable variable, Expression init) {
+    public VariableDeclaration(Variable variable, Expression init) {
         super(variable.mPosition);
         mVariable = variable;
         mInit = init;
@@ -52,13 +52,13 @@ public final class VariableDecl extends Statement {
     // symbol table. Performs proper error checking and type coercion; reports errors via
     // ErrorReporter.
     @Nullable
-    public static VariableDecl convert(@NonNull Context context,
-                                       int pos,
-                                       @NonNull Modifiers modifiers,
-                                       @NonNull Type type,
-                                       @NonNull String name,
-                                       byte storage,
-                                       @Nullable Expression init) {
+    public static VariableDeclaration convert(@NonNull Context context,
+                                              int pos,
+                                              @NonNull Modifiers modifiers,
+                                              @NonNull Type type,
+                                              @NonNull String name,
+                                              byte storage,
+                                              @Nullable Expression init) {
         // Parameter declaration-statements do not exist in the grammar (unlike, say, K&R C).
         assert (storage != Variable.kParameter_Storage);
 
@@ -73,13 +73,13 @@ public final class VariableDecl extends Statement {
 
         Variable variable = Variable.convert(context, pos, modifiers, type, name, storage);
 
-        return VariableDecl.convert(context, variable, init);
+        return VariableDeclaration.convert(context, variable, init);
     }
 
     @Nullable
-    public static VariableDecl convert(@NonNull Context context,
-                                       @NonNull Variable variable,
-                                       @Nullable Expression init) {
+    public static VariableDeclaration convert(@NonNull Context context,
+                                              @NonNull Variable variable,
+                                              @Nullable Expression init) {
         Type baseType = variable.getType();
         if (baseType.isArray()) {
             baseType = baseType.getElementType();
@@ -121,17 +121,17 @@ public final class VariableDecl extends Statement {
             //TODO check const expression
         }
 
-        VariableDecl variableDecl = make(variable, init);
+        VariableDeclaration variableDecl = make(variable, init);
 
         context.getSymbolTable().insert(context, variable);
         return variableDecl;
     }
 
     @NonNull
-    public static VariableDecl make(Variable variable,
-                                    Expression init) {
-        var result = new VariableDecl(variable, init);
-        variable.setVariableDecl(result);
+    public static VariableDeclaration make(Variable variable,
+                                           Expression init) {
+        var result = new VariableDeclaration(variable, init);
+        variable.setDeclaration(result);
         return result;
     }
 
@@ -153,7 +153,7 @@ public final class VariableDecl extends Statement {
 
     @Override
     public StatementKind getKind() {
-        return StatementKind.VARIABLE_DECL;
+        return StatementKind.VARIABLE_DECLARATION;
     }
 
     @NonNull

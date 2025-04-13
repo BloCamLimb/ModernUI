@@ -65,7 +65,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     // key is a pointer to symbol table, hash is based on address (reference equality)
     // struct type to SpvId[MemoryLayout.ordinal + 1], no memory layout is at [0]
     private final HashMap<Type, int[]> mStructTable = new HashMap<>();
-    private final Reference2IntOpenHashMap<FunctionDecl> mFunctionTable = new Reference2IntOpenHashMap<>();
+    private final Reference2IntOpenHashMap<FunctionDeclaration> mFunctionTable = new Reference2IntOpenHashMap<>();
     private final Reference2IntOpenHashMap<Variable> mVariableTable = new Reference2IntOpenHashMap<>();
 
     // reused arrays storing SpvId; there are nested calls, but won't be too deep
@@ -122,7 +122,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private final IntArrayList mInterfaceVariables = new IntArrayList();
 
-    private FunctionDecl mEntryPointFunction;
+    private FunctionDeclaration mEntryPointFunction;
 
     // SpvId 0 is reserved
     private int mIdCount = 1;
@@ -765,19 +765,19 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         int numStoreOps = mStoreOps.size();
 
         mVariableBuffer.clear();
-        int result = writeFunctionDecl(func.getFunctionDecl(), output);
+        int result = writeFunctionDeclaration(func.getDeclaration(), output);
         mCurrentBlock = 0;
         writeLabel(getUniqueId(), output);
         mBodyBuffer.clear();
-        writeBlockStatement(func.getBody(), mBodyBuffer);
+        writeBlock(func.getBody(), mBodyBuffer);
         output.writeWords(mVariableBuffer.elements(), mVariableBuffer.size());
-        if (func.getFunctionDecl().isEntryPoint()) {
+        if (func.getDeclaration().isEntryPoint()) {
             output.writeWords(mGlobalInitBuffer.elements(), mGlobalInitBuffer.size());
         }
         output.writeWords(mBodyBuffer.elements(), mBodyBuffer.size());
 
         if (mCurrentBlock != 0) {
-            if (func.getFunctionDecl().getReturnType().isVoid()) {
+            if (func.getDeclaration().getReturnType().isVoid()) {
                 writeInstruction(SpvOpReturn, output);
             } else {
                 writeInstruction(SpvOpUnreachable, output);
@@ -788,7 +788,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return result;
     }
 
-    private int writeFunctionDecl(@NonNull FunctionDecl decl, Output output) {
+    private int writeFunctionDeclaration(@NonNull FunctionDeclaration decl, Output output) {
         int result = mFunctionTable.getInt(decl);
         int returnTypeId = writeType(decl.getReturnType());
         int functionTypeId = writeFunctionType(decl);
@@ -813,7 +813,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return result;
     }
 
-    private int writeFunctionType(@NonNull FunctionDecl function) {
+    private int writeFunctionType(@NonNull FunctionDeclaration function) {
         int returnTypeId = writeType(function.getReturnType());
         var builder = getInstBuilder(SpvOpTypeFunction)
                 .addResult()
@@ -1255,7 +1255,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private static boolean is_compile_time_constant(VariableDecl variableDecl) {
+    private static boolean is_compile_time_constant(VariableDeclaration variableDecl) {
         return variableDecl.getVariable().getModifiers().isConst() &&
                 (variableDecl.getVariable().getType().isScalar() ||
                         variableDecl.getVariable().getType().isVector()) &&
@@ -1263,7 +1263,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                         Analysis.isCompileTimeConstant(variableDecl.getInit()));
     }
 
-    private boolean writeGlobalVariableDecl(VariableDecl variableDecl) {
+    private boolean writeGlobalVariable(VariableDeclaration variableDecl) {
         // If this global variable is a compile-time constant then we'll emit OpConstant or
         // OpConstantComposite later when the variable is referenced. Avoid declaring an OpVariable now.
         if (is_compile_time_constant(variableDecl)) {
@@ -1300,7 +1300,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return resultId;
     }
 
-    private void writeVariableDecl(VariableDecl variableDecl, Output output) {
+    private void writeVariableDeclaration(VariableDeclaration variableDecl, Output output) {
         // If this variable is a compile-time constant then we'll emit OpConstant or
         // OpConstantComposite later when the variable is referenced. Avoid declaring an OpVariable now.
         if (is_compile_time_constant(variableDecl)) {
@@ -1334,9 +1334,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
             case SWIZZLE -> writeSwizzle((Swizzle) expr, output);
             case FUNCTION_CALL -> writeFunctionCall((FunctionCall) expr, output);
             case CONSTRUCTOR_COMPOUND -> writeConstructorCompound((ConstructorCompound) expr, output);
-            case CONSTRUCTOR_VECTOR_SPLAT -> writeConstructorVectorSplat((ConstructorVectorSplat) expr, output);
-            case CONSTRUCTOR_DIAGONAL_MATRIX ->
-                    writeConstructorDiagonalMatrix((ConstructorDiagonalMatrix) expr, output);
+            case CONSTRUCTOR_SPLAT -> writeConstructorVectorSplat((ConstructorSplat) expr, output);
+            case CONSTRUCTOR_DIAGONAL ->
+                    writeConstructorDiagonalMatrix((ConstructorDiagonal) expr, output);
             case CONSTRUCTOR_SCALAR_CAST -> writeConstructorScalarCast((ConstructorScalarCast) expr, output);
             case CONSTRUCTOR_COMPOUND_CAST -> writeConstructorCompoundCast((ConstructorCompoundCast) expr, output);
             case CONSTRUCTOR_ARRAY, CONSTRUCTOR_STRUCT -> writeCompositeConstructor((ConstructorCall) expr, output);
@@ -2215,12 +2215,12 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private void writeStatement(@NonNull Statement stmt, Output output) {
         switch (stmt.getKind()) {
-            case BLOCK -> writeBlockStatement((BlockStatement) stmt, output);
+            case BLOCK -> writeBlock((Block) stmt, output);
             case RETURN -> writeReturnStatement((ReturnStatement) stmt, output);
             case IF -> writeIfStatement((IfStatement) stmt, output);
-            case FOR_LOOP -> writeForLoop((ForLoop) stmt, output);
+            case FOR -> writeForStatement((ForStatement) stmt, output);
             case SWITCH -> writeSwitchStatement((SwitchStatement) stmt, output);
-            case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt, output);
+            case VARIABLE_DECLARATION -> writeVariableDeclaration((VariableDeclaration) stmt, output);
             case EXPRESSION -> writeExpression(((ExpressionStatement) stmt).getExpression(), output);
             case BREAK -> writeInstruction(SpvOpBranch, mBreakTarget.topInt(), output);
             case CONTINUE -> writeInstruction(SpvOpBranch, mContinueTarget.topInt(), output);
@@ -2255,7 +2255,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         throw new AssertionError(type);
     }
 
-    private void writeBlockStatement(BlockStatement b, Output output) {
+    private void writeBlock(Block b, Output output) {
         for (var stmt : b.getStatements()) {
             writeStatement(stmt, output);
         }
@@ -2305,7 +2305,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         }
     }
 
-    private void writeForLoop(ForLoop f, Output output) {
+    private void writeForStatement(ForStatement f, Output output) {
         if (f.getInit() != null) {
             writeStatement(f.getInit(), output);
         }
@@ -2546,7 +2546,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
                                            int argIndex,
                                            ArrayList<OutVar> tmpOutVars,
                                            Output output) {
-        FunctionDecl funcDecl = call.getFunction();
+        FunctionDeclaration funcDecl = call.getFunction();
         Expression arg = call.getArguments()[argIndex];
         Variable param = funcDecl.getParameters().get(argIndex);
         Modifiers paramModifiers = param.getModifiers();
@@ -2783,7 +2783,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
     }
 
     private int writeIntrinsicCall(FunctionCall call, Output output) {
-        FunctionDecl funcDecl = call.getFunction();
+        FunctionDeclaration funcDecl = call.getFunction();
         assert funcDecl.isIntrinsic();
         int dataIndex = funcDecl.getIntrinsicKind() * kIntrinsicDataColumn;
         if (sIntrinsicData[dataIndex] == kInvalid_IntrinsicOpcodeKind) {
@@ -2861,7 +2861,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
     private int writeFunctionCall(FunctionCall call, Output output) {
         // Handle intrinsics.
-        FunctionDecl funcDecl = call.getFunction();
+        FunctionDeclaration funcDecl = call.getFunction();
         if (funcDecl.isIntrinsic() && funcDecl.getDefinition() == null) {
             return writeIntrinsicCall(call, output);
         }
@@ -3051,13 +3051,13 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         return writeConversion(compositeId, argType, ctorType, output);
     }
 
-    private int writeConstructorVectorSplat(ConstructorVectorSplat ctor, Output output) {
+    private int writeConstructorVectorSplat(ConstructorSplat ctor, Output output) {
         // Write the splat argument as a scalar, then broadcast it.
         int argument = writeExpression(ctor.getArgument(), output);
         return broadcast(ctor.getType(), argument, output);
     }
 
-    private int writeConstructorDiagonalMatrix(ConstructorDiagonalMatrix ctor, Output output) {
+    private int writeConstructorDiagonalMatrix(ConstructorDiagonal ctor, Output output) {
         Type type = ctor.getType();
         assert (type.isMatrix());
         assert (ctor.getArgument().getType().isScalar());
@@ -3232,7 +3232,7 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
         for (var e : translationUnit) {
             if (e instanceof FunctionDefinition funcDef) {
                 // Assign SpvIds to functions.
-                FunctionDecl function = funcDef.getFunctionDecl();
+                FunctionDeclaration function = funcDef.getDeclaration();
                 mFunctionTable.put(function, getUniqueId());
                 if (function.isEntryPoint()) {
                     mEntryPointFunction = function;
@@ -3254,9 +3254,9 @@ public final class SPIRVCodeGenerator extends CodeGenerator {
 
         // Emit global variable declarations.
         for (var e : translationUnit) {
-            if (e instanceof GlobalVariableDecl globalVariableDecl) {
-                VariableDecl variableDecl = globalVariableDecl.getVariableDecl();
-                if (!writeGlobalVariableDecl(variableDecl)) {
+            if (e instanceof GlobalVariable globalVariable) {
+                VariableDeclaration variableDecl = globalVariable.getDeclaration();
+                if (!writeGlobalVariable(variableDecl)) {
                     return;
                 }
             }

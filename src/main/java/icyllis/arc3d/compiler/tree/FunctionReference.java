@@ -28,16 +28,16 @@ import org.jspecify.annotations.NonNull;
  */
 public final class FunctionReference extends Expression {
 
-    private final FunctionDecl mOverloadChain;
+    private final FunctionDeclaration mOverloadChain;
 
-    private FunctionReference(int position, FunctionDecl overloadChain, Type type) {
+    private FunctionReference(int position, FunctionDeclaration overloadChain, Type type) {
         super(position, type);
         mOverloadChain = overloadChain;
     }
 
     @NonNull
     public static Expression make(@NonNull Context context,
-                                  int position, FunctionDecl overloadChain) {
+                                  int position, FunctionDeclaration overloadChain) {
         return new FunctionReference(position, overloadChain, context.getTypes().mInvalid);
     }
 
@@ -46,7 +46,7 @@ public final class FunctionReference extends Expression {
         return ExpressionKind.FUNCTION_REFERENCE;
     }
 
-    public FunctionDecl getOverloadChain() {
+    public FunctionDeclaration getOverloadChain() {
         return mOverloadChain;
     }
 

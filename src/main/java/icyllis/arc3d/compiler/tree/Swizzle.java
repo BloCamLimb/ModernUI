@@ -419,7 +419,7 @@ public final class Swizzle extends Expression {
         // Replace swizzles with equivalent splat constructors (`scalar.xxx` --> `half3(value)`).
         //TODO
         if (baseType.isScalar()) {
-            return ConstructorVectorSplat.make(position,
+            return ConstructorSplat.make(position,
                     baseType.toVector(context, numComponents), base);
         }
 
@@ -458,9 +458,9 @@ public final class Swizzle extends Expression {
         // `half4(scalar).zyy` can be optimized to `half3(scalar)`, and `half3(scalar).y` can be
         // optimized to just `scalar`. The swizzle components don't actually matter, as every field
         // in a splat constructor holds the same value.
-        if (value instanceof ConstructorVectorSplat ctor) {
+        if (value instanceof ConstructorSplat ctor) {
             Type ctorType = ctor.getComponentType().toVector(context, numComponents);
-            return ConstructorVectorSplat.make(
+            return ConstructorSplat.make(
                     position,
                     ctorType,
                     ctor.getArgument().copy());

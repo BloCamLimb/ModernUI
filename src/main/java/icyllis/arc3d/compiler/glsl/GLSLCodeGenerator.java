@@ -63,7 +63,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         // Write all the program elements except for functions.
         for (var e : mTranslationUnit) {
             switch (e.getKind()) {
-                case GLOBAL_VARIABLE -> writeGlobalVariableDecl(((GlobalVariableDecl) e).getVariableDecl());
+                case GLOBAL_VARIABLE -> writeGlobalVariable(((GlobalVariable) e).getDeclaration());
                 case INTERFACE_BLOCK -> writeInterfaceBlock((InterfaceBlock) e);
                 case FUNCTION_PROTOTYPE -> writeFunctionPrototype((FunctionPrototype) e);
                 case STRUCT_DEFINITION -> writeStructDefinition((StructDefinition) e);
@@ -72,7 +72,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         // Emit prototypes for every built-in function; these aren't always added in perfect order.
         for (var e : mTranslationUnit.getSharedElements()) {
             if (e instanceof FunctionDefinition functionDef) {
-                writeFunctionDecl(functionDef.getFunctionDecl());
+                writeFunctionDeclaration(functionDef.getDeclaration());
                 writeLine(';');
             }
         }
@@ -293,9 +293,9 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         write(getTypePrecision(type));
     }
 
-    private void writeGlobalVariableDecl(VariableDecl decl) {
+    private void writeGlobalVariable(VariableDeclaration decl) {
         if (decl.getVariable().getModifiers().layoutBuiltin() == -1) {
-            writeVariableDecl(decl);
+            writeVariableDeclaration(decl);
             finishLine();
         }
     }
@@ -341,7 +341,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         writeLine(';');
     }
 
-    private void writeFunctionDecl(FunctionDecl decl) {
+    private void writeFunctionDeclaration(FunctionDeclaration decl) {
         writeTypePrecision(decl.getReturnType());
         writeType(decl.getReturnType());
         write(' ');
@@ -380,7 +380,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
     }
 
     private void writeFunctionDefinition(FunctionDefinition f) {
-        writeFunctionDecl(f.getFunctionDecl());
+        writeFunctionDeclaration(f.getDeclaration());
         writeLine(" {");
         mIndentation++;
 
@@ -396,7 +396,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
     }
 
     private void writeFunctionPrototype(FunctionPrototype f) {
-        writeFunctionDecl(f.getFunctionDecl());
+        writeFunctionDeclaration(f.getDeclaration());
         writeLine(';');
     }
 
@@ -446,8 +446,8 @@ public final class GLSLCodeGenerator extends CodeGenerator {
                  CONSTRUCTOR_COMPOUND_CAST -> writeConstructorCast((ConstructorCall) expr, parentPrecedence);
             case CONSTRUCTOR_ARRAY,
                  CONSTRUCTOR_COMPOUND,
-                 CONSTRUCTOR_VECTOR_SPLAT,
-                 CONSTRUCTOR_DIAGONAL_MATRIX,
+                 CONSTRUCTOR_SPLAT,
+                 CONSTRUCTOR_DIAGONAL,
                  CONSTRUCTOR_MATRIX_RESIZE,
                  CONSTRUCTOR_STRUCT -> writeConstructorCall((ConstructorCall) expr);
             default -> getContext().error(expr.mPosition, "unsupported expression: " + expr.getKind());
@@ -656,12 +656,12 @@ public final class GLSLCodeGenerator extends CodeGenerator {
 
     private void writeStatement(Statement stmt) {
         switch (stmt.getKind()) {
-            case BLOCK -> writeBlockStatement((BlockStatement) stmt);
+            case BLOCK -> writeBlock((Block) stmt);
             case RETURN -> writeReturnStatement((ReturnStatement) stmt);
             case IF -> writeIfStatement((IfStatement) stmt);
             case SWITCH -> writeSwitchStatement((SwitchStatement) stmt);
-            case FOR_LOOP -> writeForLoop((ForLoop) stmt);
-            case VARIABLE_DECL -> writeVariableDecl((VariableDecl) stmt);
+            case FOR -> writeForStatement((ForStatement) stmt);
+            case VARIABLE_DECLARATION -> writeVariableDeclaration((VariableDeclaration) stmt);
             case EXPRESSION -> writeExpressionStatement((ExpressionStatement) stmt);
             case BREAK -> write("break;");
             case CONTINUE -> write("continue;");
@@ -670,7 +670,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         }
     }
 
-    private void writeBlockStatement(BlockStatement b) {
+    private void writeBlock(Block b) {
         boolean isScope = b.isScoped() || b.isEmpty();
         if (isScope) {
             writeLine('{');
@@ -757,7 +757,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         write('}');
     }
 
-    private void writeForLoop(ForLoop f) {
+    private void writeForStatement(ForStatement f) {
         if (f.getInit() == null && f.getCondition() != null && f.getStep() == null) {
             write("while (");
             writeExpression(f.getCondition(), Operator.PRECEDENCE_EXPRESSION);
@@ -794,7 +794,7 @@ public final class GLSLCodeGenerator extends CodeGenerator {
         writeStatement(f.getStatement());
     }
 
-    private void writeVariableDecl(VariableDecl decl) {
+    private void writeVariableDeclaration(VariableDeclaration decl) {
         var variable = decl.getVariable();
         writeModifiers(variable.getModifiers());
         Type baseType = variable.getBaseType();

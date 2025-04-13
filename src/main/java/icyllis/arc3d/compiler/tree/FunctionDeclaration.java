@@ -31,7 +31,7 @@ import java.util.StringJoiner;
  * Represents a function declaration (function symbol). If the function is overloaded,
  * it will serve as a singly linked list.
  */
-public final class FunctionDecl extends Symbol {
+public final class FunctionDeclaration extends Symbol {
 
     private final Modifiers mModifiers;
     private final List<Variable> mParameters;
@@ -41,12 +41,12 @@ public final class FunctionDecl extends Symbol {
     private boolean mEntryPoint;
     private int mIntrinsicKind;
 
-    private FunctionDecl mNextOverload;
+    private FunctionDeclaration mNextOverload;
     private FunctionDefinition mDefinition;
 
-    public FunctionDecl(int position, Modifiers modifiers, String name,
-                        List<Variable> parameters, Type returnType,
-                        boolean builtin, boolean entryPoint, int intrinsicKind) {
+    public FunctionDeclaration(int position, Modifiers modifiers, String name,
+                               List<Variable> parameters, Type returnType,
+                               boolean builtin, boolean entryPoint, int intrinsicKind) {
         super(position, name);
         mModifiers = modifiers;
         mParameters = parameters;
@@ -214,12 +214,12 @@ public final class FunctionDecl extends Symbol {
     }
 
     @Nullable
-    public static FunctionDecl convert(@NonNull Context context,
-                                       int pos,
-                                       @NonNull Modifiers modifiers,
-                                       @NonNull String name,
-                                       @NonNull List<Variable> parameters,
-                                       @NonNull Type returnType) {
+    public static FunctionDeclaration convert(@NonNull Context context,
+                                              int pos,
+                                              @NonNull Modifiers modifiers,
+                                              @NonNull String name,
+                                              @NonNull List<Variable> parameters,
+                                              @NonNull Type returnType) {
         int intrinsicKind = context.isBuiltin()
                 ? IntrinsicList.findIntrinsicKind(name)
                 : IntrinsicList.kNotIntrinsic;
@@ -240,19 +240,19 @@ public final class FunctionDecl extends Symbol {
 
         Symbol entry = context.getSymbolTable().find(name);
         if (entry != null) {
-            if (!(entry instanceof FunctionDecl chain)) {
+            if (!(entry instanceof FunctionDeclaration chain)) {
                 context.error(pos, "symbol '" + name + "' was already defined");
                 return null;
             }
-            FunctionDecl existingDecl = null;
-            for (FunctionDecl other = chain;
+            FunctionDeclaration existingDecl = null;
+            for (FunctionDeclaration other = chain;
                  other != null;
                  other = other.getNextOverload()) {
                 if (!parametersMatch(parameters, other.getParameters())) {
                     continue;
                 }
                 if (!typeMatches(returnType, other.getReturnType())) {
-                    var invalidDecl = new FunctionDecl(pos, modifiers, name, parameters, returnType,
+                    var invalidDecl = new FunctionDeclaration(pos, modifiers, name, parameters, returnType,
                             context.isBuiltin(), isEntryPoint, intrinsicKind);
                     context.error(pos, "functions '" + invalidDecl + "' and '" +
                             other + "' differ only in return type");
@@ -269,7 +269,7 @@ public final class FunctionDecl extends Symbol {
                 }
                 if (other.getDefinition() != null || other.isIntrinsic() ||
                         !modifiers.equals(other.getModifiers())) {
-                    var invalidDecl = new FunctionDecl(pos, modifiers, name, parameters, returnType,
+                    var invalidDecl = new FunctionDeclaration(pos, modifiers, name, parameters, returnType,
                             context.isBuiltin(), isEntryPoint, intrinsicKind);
                     context.error(pos, "redefinition of '" + invalidDecl + "'");
                     return null;
@@ -288,7 +288,7 @@ public final class FunctionDecl extends Symbol {
 
         return context.getSymbolTable().insert(
                 context,
-                new FunctionDecl(
+                new FunctionDeclaration(
                         pos,
                         modifiers,
                         name,
@@ -304,7 +304,7 @@ public final class FunctionDecl extends Symbol {
     @NonNull
     @Override
     public SymbolKind getKind() {
-        return SymbolKind.FUNCTION_DECL;
+        return SymbolKind.FUNCTION_DECLARATION;
     }
 
     @NonNull
@@ -351,14 +351,14 @@ public final class FunctionDecl extends Symbol {
     }
 
     @Nullable
-    public FunctionDecl getNextOverload() {
+    public FunctionDeclaration getNextOverload() {
         return mNextOverload;
     }
 
     /**
      * Sets the previously defined function symbol with the same function name.
      */
-    public void setNextOverload(FunctionDecl overload) {
+    public void setNextOverload(FunctionDeclaration overload) {
         assert (overload == null || overload.getName().equals(getName()));
         mNextOverload = overload;
     }
