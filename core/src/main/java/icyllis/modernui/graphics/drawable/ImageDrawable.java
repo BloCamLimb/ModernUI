@@ -38,8 +38,6 @@ import java.io.InputStream;
  */
 public class ImageDrawable extends Drawable {
 
-    // lazily init
-    private Rect mSrcRect;
     private final Rect mDstRect = new Rect();
 
     private ImageState mImageState;
@@ -47,7 +45,6 @@ public class ImageDrawable extends Drawable {
 
     private int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
 
-    private boolean mFullImage = true;
     private boolean mDstRectAndInsetsDirty = true;
     private boolean mMutated;
 
@@ -130,16 +127,15 @@ public class ImageDrawable extends Drawable {
 
     /**
      * Switch to a new Image object. Calling this method will also reset
-     * the subset to the full image, see {@link #setSubset(Rect)}.
+     * the subset to the full image, see {@link #setSrcRect(Rect)}.
      */
     public void setImage(@Nullable Image image) {
         if (mImageState.mImage != image) {
             mImageState.mImage = image;
             // Added by Modern UI
-            if (mSrcRect != null && image != null) {
-                mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+            if (image != null) {
+                mImageState.mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
             }
-            mFullImage = true;
             // Added by Modern UI
             mDstRectAndInsetsDirty = true;
             invalidateSelf();
@@ -189,18 +185,17 @@ public class ImageDrawable extends Drawable {
 
     /**
      * Specifies the subset of the image to draw. To draw the full image,
-     * call {@link #setSubset(Rect)} with null.
+     * call {@link #setSrcRect(Rect)} with null.
      * <p>
      * Calling this method when there's no image has no effect. Next call
      * to {@link #setImage(Image)} will reset the subset to the full image.
      */
-    @Deprecated
     public void setSrcRect(int left, int top, int right, int bottom) {
         final Image image = mImageState.mImage;
         if (image == null) {
             return;
         }
-        setSubset(new Rect(left, top, right, bottom));
+        setSrcRect(new Rect(left, top, right, bottom));
     }
 
     /**
@@ -209,49 +204,42 @@ public class ImageDrawable extends Drawable {
      * Calling this method when there's no image has no effect. Next call
      * to {@link #setImage(Image)} will reset the subset to the full image.
      *
-     * @param srcRect the subset of the image
+     * @param subset the subset of the image, in pixels
      */
-    @Deprecated
-    public void setSrcRect(@Nullable Rect srcRect) {
-        setSubset(srcRect);
-    }
-
-    /**
-     * Specifies the subset of the image to draw. Null for the full image.
-     * <p>
-     * Calling this method when there's no image has no effect. Next call
-     * to {@link #setImage(Image)} will reset the subset to the full image.
-     *
-     * @param subset the subset of the image
-     */
-    public void setSubset(@Nullable Rect subset) {
+    public void setSrcRect(@Nullable Rect subset) {
         final Image image = mImageState.mImage;
         if (image == null) {
             return;
         }
-        int imageWidth = image.getWidth();
-        int imageHeight = image.getHeight();
-        if (subset == null || subset.contains(0, 0, imageWidth, imageHeight)) {
-            if (!mFullImage) {
-                invalidateSelf();
+        final Rect srcRect = mImageState.mSrcRect;
+        if (subset == null) {
+            srcRect.set(0, 0, image.getWidth(), image.getWidth());
+            invalidateSelf();
+        } else if (!srcRect.equals(subset)) {
+            srcRect.set(0, 0, image.getWidth(), image.getWidth());
+            if (!srcRect.intersect(subset)) {
+                srcRect.setEmpty();
             }
-            mFullImage = true;
-        } else {
-            if (mSrcRect == null) {
-                mSrcRect = new Rect(0, 0, imageWidth, imageHeight);
-                if (!mSrcRect.intersect(subset)) {
-                    mSrcRect.setEmpty();
-                }
-                invalidateSelf();
-            } else if (!mSrcRect.equals(subset)) {
-                mSrcRect.set(0, 0, imageWidth, imageHeight);
-                if (!mSrcRect.intersect(subset)) {
-                    mSrcRect.setEmpty();
-                }
-                invalidateSelf();
-            }
-            mFullImage = false;
+            invalidateSelf();
         }
+    }
+
+    private int computeSrcWidth() {
+        Image image = mImageState.mImage;
+        if (image == null) {
+            return -1;
+        }
+        int width = Math.min(mImageState.mSrcRect.width(), image.getWidth());
+        return Image.scaleFromDensity(width, image.getDensity(), mTargetDensity);
+    }
+
+    private int computeSrcHeight() {
+        Image image = mImageState.mImage;
+        if (image == null) {
+            return -1;
+        }
+        int height = Math.min(mImageState.mSrcRect.height(), image.getHeight());
+        return Image.scaleFromDensity(height, image.getDensity(), mTargetDensity);
     }
 
     /**
@@ -497,7 +485,7 @@ public class ImageDrawable extends Drawable {
                 canvas.scale(-1.0f, 1.0f);
             }
 
-            canvas.drawImage(image, mFullImage ? null : mSrcRect, mDstRect, paint);
+            canvas.drawImage(image, state.mSrcRect, mDstRect, paint);
 
             if (needMirroring) {
                 canvas.restore();
@@ -551,7 +539,7 @@ public class ImageDrawable extends Drawable {
         if (mDstRectAndInsetsDirty) {
             if (mImageState.mTileModeX == null && mImageState.mTileModeY == null) {
                 final int layoutDirection = getLayoutDirection();
-                Gravity.apply(mImageState.mGravity, getIntrinsicWidth(), getIntrinsicHeight(),
+                Gravity.apply(mImageState.mGravity, computeSrcWidth(), computeSrcHeight(),
                         getBounds(), mDstRect, layoutDirection);
             } else {
                 copyBounds(mDstRect);
@@ -654,32 +642,12 @@ public class ImageDrawable extends Drawable {
 
     @Override
     public int getIntrinsicWidth() {
-        Image image = mImageState.mImage;
-        if (image == null) {
-            return super.getIntrinsicWidth();
-        }
-        int width;
-        if (mFullImage) {
-            width = image.getWidth();
-        } else {
-            width = Math.min(mSrcRect.width(), image.getWidth());
-        }
-        return Image.scaleFromDensity(width, image.getDensity(), mTargetDensity);
+        return computeSrcWidth();
     }
 
     @Override
     public int getIntrinsicHeight() {
-        Image image = mImageState.mImage;
-        if (image == null) {
-            return super.getIntrinsicHeight();
-        }
-        int height;
-        if (mFullImage) {
-            height = image.getHeight();
-        } else {
-            height = Math.min(mSrcRect.height(), image.getHeight());
-        }
-        return Image.scaleFromDensity(height, image.getDensity(), mTargetDensity);
+        return computeSrcHeight();
     }
 
     @Override
@@ -702,6 +670,8 @@ public class ImageDrawable extends Drawable {
 
         int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
 
+        final Rect mSrcRect;
+
         boolean mAutoMirrored = false;
 
         boolean mRebuildShader;
@@ -709,6 +679,10 @@ public class ImageDrawable extends Drawable {
         ImageState(Image image) {
             mImage = image;
             mPaint = new Paint();
+            mSrcRect = new Rect();
+            if (image != null) {
+                mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+            }
         }
 
         @SuppressWarnings("IncompleteCopyConstructor")
@@ -724,6 +698,7 @@ public class ImageDrawable extends Drawable {
             mPaint = new Paint(imageState.mPaint);
             mRebuildShader = imageState.mRebuildShader;
             mAutoMirrored = imageState.mAutoMirrored;
+            mSrcRect = new Rect(imageState.mSrcRect);
         }
 
         @NonNull

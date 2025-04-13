@@ -50,13 +50,11 @@ public class RoundedImageDrawable extends Drawable {
     private int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
     private float mCornerRadius;
 
-    // lazily init
-    private Rect mSrcRect;
+    private final Rect mSrcRect = new Rect();
     private final Rect mDstRect = new Rect();
 
     private BlendModeColorFilter mBlendModeFilter;
 
-    private boolean mFullImage = true;
     private boolean mDstRectDirty = true;
     private boolean mIsCircular;
 
@@ -67,6 +65,9 @@ public class RoundedImageDrawable extends Drawable {
     public RoundedImageDrawable(Resources res, Image image) {
         mImage = image;
         mTargetDensity = resolveDensity(res, mTargetDensity);
+        if (image != null) {
+            mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+        }
     }
 
     /**
@@ -88,6 +89,9 @@ public class RoundedImageDrawable extends Drawable {
         } finally {
             mImage = image;
             mTargetDensity = resolveDensity(res, mTargetDensity);
+            if (image != null) {
+                mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+            }
         }
     }
 
@@ -109,7 +113,7 @@ public class RoundedImageDrawable extends Drawable {
 
     /**
      * Switch to a new Image object. Calling this method will also reset
-     * the subset to the full image, see {@link #setSubset(Rect)}.
+     * the subset to the full image, see {@link #setSrcRect(Rect)}.
      */
     public void setImage(@Nullable Image image) {
         if (mImage != image) {
@@ -117,10 +121,9 @@ public class RoundedImageDrawable extends Drawable {
             if (mIsCircular) {
                 updateCircularSubset();
             } else {
-                if (mSrcRect != null && image != null) {
+                if (image != null) {
                     mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
                 }
-                mFullImage = true;
             }
             mDstRectDirty = true;
             invalidateSelf();
@@ -178,37 +181,41 @@ public class RoundedImageDrawable extends Drawable {
      *
      * @param subset the subset of the image
      */
-    public void setSubset(@Nullable Rect subset) {
+    public void setSrcRect(@Nullable Rect subset) {
         final Image image = mImage;
         if (image == null) {
             return;
         }
-        int imageWidth = image.getWidth();
-        int imageHeight = image.getHeight();
-        if (subset == null || subset.contains(0, 0, imageWidth, imageHeight)) {
-            if (!mFullImage) {
-                mDstRectDirty = true;
-                invalidateSelf();
+        if (subset == null) {
+            mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+            mDstRectDirty = true;
+            invalidateSelf();
+        } else if (!mSrcRect.equals(subset)) {
+            mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+            if (!mSrcRect.intersect(subset)) {
+                mSrcRect.setEmpty();
             }
-            mFullImage = true;
-        } else {
-            if (mSrcRect == null) {
-                mSrcRect = new Rect(0, 0, imageWidth, imageHeight);
-                if (!mSrcRect.intersect(subset)) {
-                    mSrcRect.setEmpty();
-                }
-                mDstRectDirty = true;
-                invalidateSelf();
-            } else if (!mSrcRect.equals(subset)) {
-                mSrcRect.set(0, 0, imageWidth, imageHeight);
-                if (!mSrcRect.intersect(subset)) {
-                    mSrcRect.setEmpty();
-                }
-                mDstRectDirty = true;
-                invalidateSelf();
-            }
-            mFullImage = false;
+            mDstRectDirty = true;
+            invalidateSelf();
         }
+    }
+
+    private int computeSrcWidth() {
+        Image image = mImage;
+        if (image == null) {
+            return -1;
+        }
+        int width = Math.min(mSrcRect.width(), image.getWidth());
+        return Image.scaleFromDensity(width, image.getDensity(), mTargetDensity);
+    }
+
+    private int computeSrcHeight() {
+        Image image = mImage;
+        if (image == null) {
+            return -1;
+        }
+        int height = Math.min(mSrcRect.height(), image.getHeight());
+        return Image.scaleFromDensity(height, image.getDensity(), mTargetDensity);
     }
 
     /**
@@ -337,7 +344,7 @@ public class RoundedImageDrawable extends Drawable {
         }
 
         if (!useShader) {
-            canvas.drawImage(image, mFullImage ? null : mSrcRect, mDstRect, paint);
+            canvas.drawImage(image, mSrcRect, mDstRect, paint);
         } else {
             if (rebuildShader) {
                 paint.setShader(new ImageShader(image,
@@ -361,10 +368,10 @@ public class RoundedImageDrawable extends Drawable {
         Matrix matrix = new Matrix();
 
         // src to dst
-        float srcLeft = mFullImage ? 0 : mSrcRect.left;
-        float srcTop = mFullImage ? 0 : mSrcRect.top;
-        float srcWidth = mFullImage ? image.getWidth() : mSrcRect.width();
-        float srcHeight = mFullImage ? image.getHeight() : mSrcRect.height();
+        float srcLeft = mSrcRect.left;
+        float srcTop = mSrcRect.top;
+        float srcWidth = Math.min(image.getWidth(), mSrcRect.width());
+        float srcHeight = Math.min(image.getHeight(), mSrcRect.height());
         float sx = mDstRect.width() / srcWidth;
         float sy = mDstRect.height() / srcHeight;
         float tx = mDstRect.left - srcLeft * sx;
@@ -377,7 +384,7 @@ public class RoundedImageDrawable extends Drawable {
     private boolean updateDstRect() {
         if (mDstRectDirty) {
             if (mIsCircular) {
-                final int minDimen = Math.min(getIntrinsicWidth(), getIntrinsicHeight());
+                final int minDimen = Math.min(computeSrcWidth(), computeSrcHeight());
                 final int layoutDirection = getLayoutDirection();
                 Gravity.apply(mGravity, minDimen, minDimen,
                         getBounds(), mDstRect, layoutDirection);
@@ -391,7 +398,7 @@ public class RoundedImageDrawable extends Drawable {
                 mCornerRadius = 0.5f * minDrawDimen;
             } else {
                 final int layoutDirection = getLayoutDirection();
-                Gravity.apply(mGravity, getIntrinsicWidth(), getIntrinsicHeight(),
+                Gravity.apply(mGravity, computeSrcWidth(), computeSrcHeight(),
                         getBounds(), mDstRect, layoutDirection);
             }
 
@@ -473,20 +480,16 @@ public class RoundedImageDrawable extends Drawable {
         if (image == null) {
             return;
         }
-        if (mSrcRect == null) {
-            mSrcRect = new Rect(0, 0, image.getWidth(), image.getHeight());
-        }
         final int minDrawDimen = Math.min(mSrcRect.width(), mSrcRect.height());
         final int insetX = Math.max(0, (mSrcRect.width() - minDrawDimen) / 2);
         final int insetY = Math.max(0, (mSrcRect.height() - minDrawDimen) / 2);
         mSrcRect.inset(insetX, insetY);
-        mFullImage = false;
     }
 
     /**
      * Sets the image shape to circular.
      * <p>This overwrites any calls made to {@link #setCornerRadius(float)} so far.</p>
-     * <p>If true, this overwrites any calls made to {@link #setSubset(Rect)} so far.</p>
+     * <p>If true, this overwrites any calls made to {@link #setSrcRect(Rect)} so far.</p>
      */
     public void setCircular(boolean circular) {
         mIsCircular = circular;
@@ -528,31 +531,13 @@ public class RoundedImageDrawable extends Drawable {
 
     @Override
     public int getIntrinsicWidth() {
-        Image image = mImage;
-        if (image == null) {
-            return super.getIntrinsicWidth();
-        }
-        int width;
-        if (mFullImage) {
-            width = image.getWidth();
-        } else {
-            width = Math.min(mSrcRect.width(), image.getWidth());
-        }
-        return Image.scaleFromDensity(width, image.getDensity(), mTargetDensity);
+        return computeSrcWidth();
     }
 
     @Override
     public int getIntrinsicHeight() {
-        Image image = mImage;
-        if (image == null) {
-            return super.getIntrinsicHeight();
-        }
-        int height;
-        if (mFullImage) {
-            height = image.getHeight();
-        } else {
-            height = Math.min(mSrcRect.height(), image.getHeight());
-        }
-        return Image.scaleFromDensity(height, image.getDensity(), mTargetDensity);
+        return computeSrcHeight();
     }
+
+    //TODO add constant state
 }
