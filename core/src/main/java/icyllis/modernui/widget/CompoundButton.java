@@ -60,8 +60,8 @@ public abstract class CompoundButton extends Button implements Checkable2 {
             R.attr.state_checked
     };
 
-    private boolean mChecked;
-    private boolean mBroadcasting;
+    boolean mChecked;
+    boolean mBroadcasting;
 
     private Drawable mButtonDrawable;
     private ColorStateList mButtonTintList;
@@ -69,7 +69,7 @@ public abstract class CompoundButton extends Button implements Checkable2 {
     private boolean mHasButtonTint;
     private boolean mHasButtonBlendMode;
 
-    private OnCheckedChangeListener mOnCheckedChangeListener;
+    OnCheckedChangeListener mOnCheckedChangeListener;
     private OnCheckedChangeListener mOnCheckedChangeListenerInternal;
 
     @StyleableRes
