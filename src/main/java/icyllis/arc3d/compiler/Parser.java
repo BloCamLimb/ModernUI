@@ -824,7 +824,7 @@ public class Parser {
         }
         expect(Token.TK_RPAREN, "')' to complete parameter list");
 
-        FunctionDecl decl = FunctionDecl.convert(
+        FunctionDeclaration decl = FunctionDeclaration.convert(
                 mContext,
                 rangeFrom(start),
                 modifiers,
@@ -853,7 +853,7 @@ public class Parser {
                 }
 
                 long blockStart = peek();
-                BlockStatement block = ScopedBlock();
+                Block block = ScopedBlock();
 
                 if (decl == null) {
                     return false;
@@ -910,13 +910,13 @@ public class Parser {
         );
     }
 
-    private BlockStatement ScopedBlock() {
+    private Block ScopedBlock() {
         long start = expect(Token.TK_LBRACE, "'{'");
         ArrayList<Statement> statements = new ArrayList<>();
         for (;;) {
             if (checkNext(Token.TK_RBRACE)) {
                 int pos = rangeFrom(start);
-                return BlockStatement.makeBlock(pos, statements);
+                return Block.makeBlock(pos, statements);
             } else if (peek(Token.TK_END_OF_FILE)) {
                 error(peek(), "expected '}', but found end of file");
                 return null;
@@ -952,7 +952,7 @@ public class Parser {
                 }
             }
 
-            VariableDecl variableDecl = VariableDecl.convert(
+            VariableDeclaration variableDecl = VariableDeclaration.convert(
                     mContext,
                     rangeFrom(pos),
                     modifiers,
@@ -962,7 +962,7 @@ public class Parser {
                     init);
             if (variableDecl != null) {
                 mUniqueElements.add(
-                        new GlobalVariableDecl(variableDecl)
+                        new GlobalVariable(variableDecl)
                 );
             }
         } while (checkNext(Token.TK_COMMA));
@@ -1901,7 +1901,7 @@ public class Parser {
                 return null;
             }
         }
-        Statement result = VariableDecl.convert(
+        Statement result = VariableDeclaration.convert(
                 mContext,
                 rangeFrom(name),
                 modifiers,
@@ -1924,7 +1924,7 @@ public class Parser {
                     break;
                 }
             }
-            Statement next = VariableDecl.convert(
+            Statement next = VariableDeclaration.convert(
                     mContext,
                     rangeFrom(name),
                     modifiers,
@@ -1934,7 +1934,7 @@ public class Parser {
                     init
             );
 
-            result = BlockStatement.makeCompound(result, next);
+            result = Block.makeCompound(result, next);
         }
         expect(Token.TK_SEMICOLON, "';' to complete local variable declaration");
         pos = rangeFrom(pos);
@@ -2153,7 +2153,7 @@ public class Parser {
             statements.add(s);
         }
         values.add(caseValue);
-        caseBlocks.add(BlockStatement.make(Position.NO_POS,
+        caseBlocks.add(Block.make(Position.NO_POS,
                 statements, false));
         return true;
     }
@@ -2259,7 +2259,7 @@ public class Parser {
 
             int pos = rangeFrom(start);
 
-            return statementOrEmpty(pos, ForLoop.convert(
+            return statementOrEmpty(pos, ForStatement.convert(
                     mContext,
                     pos,
                     init,

@@ -28,12 +28,12 @@ import java.util.List;
 /**
  * A block of multiple statements functioning as a single statement.
  */
-public final class BlockStatement extends Statement {
+public final class Block extends Statement {
 
     private List<Statement> mStatements;
     private boolean mScoped;
 
-    public BlockStatement(int position, List<Statement> statements, boolean scoped) {
+    public Block(int position, List<Statement> statements, boolean scoped) {
         super(position);
         mStatements = statements;
         mScoped = scoped;
@@ -41,7 +41,7 @@ public final class BlockStatement extends Statement {
 
     public static Statement make(int pos, List<Statement> statements, boolean scoped) {
         if (scoped) {
-            return new BlockStatement(pos, statements, true);
+            return new Block(pos, statements, true);
         }
 
         if (statements.isEmpty()) {
@@ -56,7 +56,7 @@ public final class BlockStatement extends Statement {
                         foundStatement = stmt;
                         continue;
                     }
-                    return new BlockStatement(pos, statements, scoped);
+                    return new Block(pos, statements, scoped);
                 }
             }
 
@@ -68,9 +68,9 @@ public final class BlockStatement extends Statement {
         return statements.get(0);
     }
 
-    public static BlockStatement makeBlock(int pos,
-                                           List<Statement> statements) {
-        return new BlockStatement(pos, statements, true);
+    public static Block makeBlock(int pos,
+                                  List<Statement> statements) {
+        return new Block(pos, statements, true);
     }
 
     public static Statement makeCompound(Statement before, Statement after) {
@@ -81,7 +81,7 @@ public final class BlockStatement extends Statement {
             return before;
         }
 
-        if (before instanceof BlockStatement block && !block.isScoped()) {
+        if (before instanceof Block block && !block.isScoped()) {
             block.getStatements().add(after);
             return before;
         }

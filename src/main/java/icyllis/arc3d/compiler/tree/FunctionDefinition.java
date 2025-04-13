@@ -27,65 +27,65 @@ import org.jspecify.annotations.NonNull;
  */
 public final class FunctionDefinition extends TopLevelElement {
 
-    private final FunctionDecl mFunctionDecl;
+    private final FunctionDeclaration mDeclaration;
     private final boolean mBuiltin;
-    private BlockStatement mBody;
+    private Block mBody;
 
-    private FunctionDefinition(int position, FunctionDecl functionDecl, boolean builtin, BlockStatement body) {
+    private FunctionDefinition(int position, FunctionDeclaration declaration, boolean builtin, Block body) {
         super(position);
-        mFunctionDecl = functionDecl;
+        mDeclaration = declaration;
         mBuiltin = builtin;
         mBody = body;
     }
 
     public static FunctionDefinition convert(@NonNull Context context,
                                              int pos,
-                                             FunctionDecl functionDecl,
+                                             FunctionDeclaration functionDeclaration,
                                              boolean builtin,
                                              Statement body) {
-        if (functionDecl.isIntrinsic()) {
+        if (functionDeclaration.isIntrinsic()) {
             context.error(pos, "Intrinsic function '" +
-                    functionDecl.getName() +
+                    functionDeclaration.getName() +
                     "' should not have a definition");
             return null;
         }
 
-        if (body == null || !(body instanceof BlockStatement block) || !block.isScoped()) {
-            context.error(pos, "function body '" + functionDecl +
+        if (body == null || !(body instanceof Block block) || !block.isScoped()) {
+            context.error(pos, "function body '" + functionDeclaration +
                     "' must be a braced block");
             return null;
         }
 
-        if (functionDecl.getDefinition() != null) {
-            context.error(pos, "function '" + functionDecl +
+        if (functionDeclaration.getDefinition() != null) {
+            context.error(pos, "function '" + functionDeclaration +
                     "' was already defined");
             return null;
         }
 
-        return make(pos, functionDecl, builtin, block);
+        return make(pos, functionDeclaration, builtin, block);
     }
 
     public static FunctionDefinition make(int pos,
-                                          FunctionDecl functionDecl,
+                                          FunctionDeclaration functionDeclaration,
                                           boolean builtin,
-                                          BlockStatement body) {
-        return new FunctionDefinition(pos, functionDecl, builtin, body);
+                                          Block body) {
+        return new FunctionDefinition(pos, functionDeclaration, builtin, body);
     }
 
-    public FunctionDecl getFunctionDecl() {
-        return mFunctionDecl;
+    public FunctionDeclaration getDeclaration() {
+        return mDeclaration;
     }
 
     public boolean isBuiltin() {
         return mBuiltin;
     }
 
-    public BlockStatement getBody() {
+    public Block getBody() {
         return mBody;
     }
 
     public void setBody(Statement body) {
-        mBody = (BlockStatement) body;
+        mBody = (Block) body;
     }
 
     @Override
@@ -96,6 +96,6 @@ public final class FunctionDefinition extends TopLevelElement {
     @NonNull
     @Override
     public String toString() {
-        return mFunctionDecl.toString() + " " + mBody.toString();
+        return mDeclaration.toString() + " " + mBody.toString();
     }
 }

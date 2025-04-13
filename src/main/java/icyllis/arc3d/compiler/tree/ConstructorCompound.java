@@ -84,8 +84,8 @@ public final class ConstructorCompound extends ConstructorCall {
 
                 // Matrix-from-scalar creates a diagonal matrix; vector-from-scalar creates a splat.
                 return type.isMatrix()
-                        ? ConstructorDiagonalMatrix.make(pos, type, typecast)
-                        : ConstructorVectorSplat.make(pos, type, typecast);
+                        ? ConstructorDiagonal.make(pos, type, typecast)
+                        : ConstructorSplat.make(pos, type, typecast);
             } else if (argument.getType().isVector()) {
                 // A vector constructor containing a single vector with the same number of columns is a
                 // cast (e.g. float3 -> int3).

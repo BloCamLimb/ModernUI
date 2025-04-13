@@ -54,8 +54,8 @@ public abstract class TreeVisitor {
                 yield visitStatement(f.getBody());
             }
             case GLOBAL_VARIABLE -> {
-                var g = (GlobalVariableDecl) e;
-                yield visitStatement(g.getVariableDecl());
+                var g = (GlobalVariable) e;
+                yield visitStatement(g.getDeclaration());
             }
         };
     }
@@ -87,11 +87,11 @@ public abstract class TreeVisitor {
                  CONSTRUCTOR_ARRAY_CAST,
                  CONSTRUCTOR_COMPOUND,
                  CONSTRUCTOR_COMPOUND_CAST,
-                 CONSTRUCTOR_DIAGONAL_MATRIX,
+                 CONSTRUCTOR_DIAGONAL,
                  CONSTRUCTOR_MATRIX_RESIZE,
                  CONSTRUCTOR_SCALAR_CAST,
                  CONSTRUCTOR_STRUCT,
-                 CONSTRUCTOR_VECTOR_SPLAT -> {
+                 CONSTRUCTOR_SPLAT -> {
                 var c = (ConstructorCall) expr;
                 for (var arg : c.getArguments()) {
                     if (visitExpression(arg)) {
@@ -145,7 +145,7 @@ public abstract class TreeVisitor {
                 return false;
             }
             case BLOCK -> {
-                var b = (BlockStatement) stmt;
+                var b = (Block) stmt;
                 for (var s : b.getStatements()) {
                     if (visitStatement(s)) {
                         return true;
@@ -157,8 +157,8 @@ public abstract class TreeVisitor {
                 var e = (ExpressionStatement) stmt;
                 return visitExpression(e.getExpression());
             }
-            case FOR_LOOP -> {
-                var f = (ForLoop) stmt;
+            case FOR -> {
+                var f = (ForStatement) stmt;
                 return (f.getInit() != null && visitStatement(f.getInit())) ||
                         (f.getCondition() != null && visitExpression(f.getCondition())) ||
                         (f.getStep() != null && visitExpression(f.getStep())) ||
@@ -182,8 +182,8 @@ public abstract class TreeVisitor {
                 var s = (SwitchCase) stmt;
                 return visitStatement(s.getStatement());
             }
-            case VARIABLE_DECL -> {
-                var v = (VariableDecl) stmt;
+            case VARIABLE_DECLARATION -> {
+                var v = (VariableDeclaration) stmt;
                 return v.getInit() != null && visitExpression(v.getInit());
             }
             default -> throw new AssertionError();

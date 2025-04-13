@@ -88,7 +88,7 @@ public final class SwitchStatement extends Statement {
 
         Statement switchStmt = SwitchStatement.make(context,
                 position, init,
-                BlockStatement.makeBlock(position, cases));
+                Block.makeBlock(position, cases));
         return switchStmt;
     }
 
@@ -137,7 +137,7 @@ public final class SwitchStatement extends Statement {
     }
 
     public List<Statement> getCases() {
-        return ((BlockStatement) mCaseBlock).getStatements();
+        return ((Block) mCaseBlock).getStatements();
     }
 
     @Override

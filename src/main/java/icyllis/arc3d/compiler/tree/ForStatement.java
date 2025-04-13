@@ -29,14 +29,14 @@ import org.jspecify.annotations.Nullable;
  *     loop-statement
  * </pre>
  */
-public final class ForLoop extends Statement {
+public final class ForStatement extends Statement {
 
     private Statement mInit;
     private Expression mCondition;
     private Expression mStep;
     private Statement mStatement;
 
-    public ForLoop(int position, Statement init, Expression condition, Expression step, Statement statement) {
+    public ForStatement(int position, Statement init, Expression condition, Expression step, Statement statement) {
         super(position);
         mInit = init;
         mCondition = condition;
@@ -70,12 +70,12 @@ public final class ForLoop extends Statement {
                                  Expression cond,
                                  Expression step,
                                  Statement statement) {
-        return new ForLoop(pos, init, cond, step, statement);
+        return new ForStatement(pos, init, cond, step, statement);
     }
 
     @Override
     public StatementKind getKind() {
-        return StatementKind.FOR_LOOP;
+        return StatementKind.FOR;
     }
 
     public Statement getInit() {

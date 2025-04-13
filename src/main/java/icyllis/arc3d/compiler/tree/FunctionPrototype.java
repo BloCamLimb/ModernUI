@@ -26,17 +26,17 @@ import org.jspecify.annotations.NonNull;
  */
 public final class FunctionPrototype extends TopLevelElement {
 
-    private final FunctionDecl mFunctionDecl;
+    private final FunctionDeclaration mDeclaration;
     private final boolean mBuiltin;
 
-    public FunctionPrototype(int position, FunctionDecl functionDecl, boolean builtin) {
+    public FunctionPrototype(int position, FunctionDeclaration declaration, boolean builtin) {
         super(position);
-        mFunctionDecl = functionDecl;
+        mDeclaration = declaration;
         mBuiltin = builtin;
     }
 
-    public FunctionDecl getFunctionDecl() {
-        return mFunctionDecl;
+    public FunctionDeclaration getDeclaration() {
+        return mDeclaration;
     }
 
     public boolean isBuiltin() {
@@ -51,6 +51,6 @@ public final class FunctionPrototype extends TopLevelElement {
     @NonNull
     @Override
     public String toString() {
-        return mFunctionDecl.toString() + ";";
+        return mDeclaration.toString() + ";";
     }
 }

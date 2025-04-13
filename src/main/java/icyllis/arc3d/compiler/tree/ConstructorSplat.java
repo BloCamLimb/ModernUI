@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,52 +25,52 @@ import org.jspecify.annotations.NonNull;
 import java.util.OptionalDouble;
 
 /**
- * Represents the construction of a diagonal matrix, such as {@literal `mat4x4(n)`}.
+ * Represents the construction of a vector splat (broadcast), such as `float3(n)`.
  * <p>
  * These always contain exactly 1 scalar.
  */
-public final class ConstructorDiagonalMatrix extends ConstructorCall {
+public final class ConstructorSplat extends ConstructorCall {
 
-    private ConstructorDiagonalMatrix(int position, Type type, Expression... arguments) {
+    private ConstructorSplat(int position, Type type, Expression... arguments) {
         super(position, type, arguments);
         assert arguments.length == 1;
     }
 
+    // The input argument must be scalar. A "splat" to a scalar type will be optimized into a no-op.
     @NonNull
     public static Expression make(int position, @NonNull Type type, @NonNull Expression arg) {
-        assert (type.isMatrix());
-        assert (arg.getType().isScalar());
+        assert (type.isScalar() || type.isVector());
         assert (arg.getType().matches(type.getComponentType()));
+        assert (arg.getType().isScalar());
 
-        // Look up the value of constant variables. This allows constant-expressions like `mat4(five)`
-        // to be replaced with `mat4(5.0)`.
+        // A "splat" to a scalar type is a no-op and can be eliminated.
+        if (type.isScalar()) {
+            arg.mPosition = position;
+            return arg;
+        }
+
+        // Replace constant variables with their corresponding values, so `float3(five)` can compile
+        // down to `float3(5.0)` (the latter is a compile-time constant).
         arg = ConstantFolder.makeConstantValueForVariable(position, arg);
 
-        return new ConstructorDiagonalMatrix(position, type, arg);
+        assert (type.isVector());
+        return new ConstructorSplat(position, type, arg);
     }
 
     @Override
     public ExpressionKind getKind() {
-        return ExpressionKind.CONSTRUCTOR_DIAGONAL_MATRIX;
+        return ExpressionKind.CONSTRUCTOR_SPLAT;
     }
 
     @Override
     public @NonNull OptionalDouble getConstantValue(int i) {
-        int rows = getType().getRows();
-        int row = i % rows;
-        int col = i / rows;
-
-        assert (col >= 0);
-        assert (row >= 0);
-        assert (col < getType().getCols());
-        assert (row < getType().getRows());
-
-        return (col == row) ? getArgument().getConstantValue(0) : OptionalDouble.of(0.0);
+        assert (i >= 0 && i < getType().getRows());
+        return getArgument().getConstantValue(0);
     }
 
     @NonNull
     @Override
     public Expression copy(int position) {
-        return new ConstructorDiagonalMatrix(position, getType(), cloneArguments());
+        return new ConstructorSplat(position, getType(), cloneArguments());
     }
 }
