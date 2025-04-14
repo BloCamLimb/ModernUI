@@ -1074,6 +1074,7 @@ public class Paint {
                 ? icyllis.arc3d.sketch.Font.kAntiAlias_Edging
                 : icyllis.arc3d.sketch.Font.kAlias_Edging);
         nativeFont.setLinearMetrics(isLinearText());
+        nativeFont.setSubpixel(isLinearText());
     }
 
     @Override
