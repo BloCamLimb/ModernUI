@@ -18,13 +18,17 @@
 
 package icyllis.modernui.text;
 
-import icyllis.arc3d.core.TextBlob;
+import icyllis.arc3d.sketch.TextBlob;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.text.*;
-import icyllis.modernui.text.style.*;
+import icyllis.modernui.graphics.text.FontMetricsInt;
+import icyllis.modernui.graphics.text.GraphemeBreak;
+import icyllis.modernui.graphics.text.ShapedText;
+import icyllis.modernui.text.style.CharacterStyle;
+import icyllis.modernui.text.style.MetricAffectingSpan;
+import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
 

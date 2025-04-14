@@ -103,7 +103,7 @@ public class RenderProperties {
         matrix.preScale(mScaleX, mScaleY);
         matrix.preTranslate(-mPivotX, -mPivotY);
         matrix.postTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY, mTranslationZ);
-        matrix.toMatrix(mMatrix);
+        mMatrix.set(matrix);
     }
 
     /**

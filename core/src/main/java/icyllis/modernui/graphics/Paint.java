@@ -54,12 +54,12 @@ public class Paint {
          * Geometry and text drawn with this style will be filled, ignoring all
          * stroke-related settings in the paint.
          */
-        FILL            (icyllis.arc3d.core.Paint.FILL),
+        FILL            (icyllis.arc3d.sketch.Paint.FILL),
         /**
          * Geometry and text drawn with this style will be stroked, respecting
          * the stroke-related fields on the paint.
          */
-        STROKE          (icyllis.arc3d.core.Paint.STROKE),
+        STROKE          (icyllis.arc3d.sketch.Paint.STROKE),
         /**
          * Geometry and text drawn with this style will be both filled and
          * stroked at the same time, respecting the stroke-related fields on
@@ -67,7 +67,7 @@ public class Paint {
          * is oriented counter-clockwise. This restriction does not apply to
          * either FILL or STROKE.
          */
-        FILL_AND_STROKE (icyllis.arc3d.core.Paint.FILL_AND_STROKE);
+        FILL_AND_STROKE (icyllis.arc3d.sketch.Paint.FILL_AND_STROKE);
 
         final int nativeInt;
 
@@ -109,17 +109,17 @@ public class Paint {
         /**
          * The stroke ends with the path, and does not project beyond it.
          */
-        BUTT    (icyllis.arc3d.core.Paint.CAP_BUTT),
+        BUTT    (icyllis.arc3d.sketch.Paint.CAP_BUTT),
         /**
          * The stroke projects out as a semicircle, with the center at the
          * end of the path.
          */
-        ROUND   (icyllis.arc3d.core.Paint.CAP_ROUND),
+        ROUND   (icyllis.arc3d.sketch.Paint.CAP_ROUND),
         /**
          * The stroke projects out as a square, with the center at the end
          * of the path.
          */
-        SQUARE  (icyllis.arc3d.core.Paint.CAP_SQUARE);
+        SQUARE  (icyllis.arc3d.sketch.Paint.CAP_SQUARE);
 
         final int nativeInt;
 
@@ -167,15 +167,15 @@ public class Paint {
         /**
          * The outer edges of a join meet at a sharp angle
          */
-        MITER   (icyllis.arc3d.core.Paint.JOIN_MITER),
+        MITER   (icyllis.arc3d.sketch.Paint.JOIN_MITER),
         /**
          * The outer edges of a join meet in a circular arc.
          */
-        ROUND   (icyllis.arc3d.core.Paint.JOIN_ROUND),
+        ROUND   (icyllis.arc3d.sketch.Paint.JOIN_ROUND),
         /**
          * The outer edges of a join meet with a straight line
          */
-        BEVEL   (icyllis.arc3d.core.Paint.JOIN_BEVEL);
+        BEVEL   (icyllis.arc3d.sketch.Paint.JOIN_BEVEL);
 
         final int nativeInt;
 
@@ -212,15 +212,15 @@ public class Paint {
         /**
          * The stroke is aligned to center.
          */
-        CENTER   (icyllis.arc3d.core.Paint.ALIGN_CENTER),
+        CENTER   (icyllis.arc3d.sketch.Paint.ALIGN_CENTER),
         /**
          * The stroke is aligned to inside.
          */
-        INSIDE   (icyllis.arc3d.core.Paint.ALIGN_INSIDE),
+        INSIDE   (icyllis.arc3d.sketch.Paint.ALIGN_INSIDE),
         /**
          * The stroke is aligned to outside.
          */
-        OUTSIDE  (icyllis.arc3d.core.Paint.ALIGN_OUTSIDE);
+        OUTSIDE  (icyllis.arc3d.sketch.Paint.ALIGN_OUTSIDE);
 
         final int nativeInt;
 
@@ -302,7 +302,7 @@ public class Paint {
     private static int sPoolSize;
 
     // closed by cleaner
-    private final icyllis.arc3d.core.Paint mPaint;
+    private final icyllis.arc3d.sketch.Paint mPaint;
 
     private ColorFilter     mColorFilter;
 
@@ -316,7 +316,7 @@ public class Paint {
      * @see #obtain()
      */
     public Paint() {
-        mPaint = new icyllis.arc3d.core.Paint();
+        mPaint = new icyllis.arc3d.sketch.Paint();
         internalReset();
         Core.registerNativeResource(this, mPaint);
     }
@@ -331,10 +331,10 @@ public class Paint {
     @SuppressWarnings("IncompleteCopyConstructor")
     public Paint(@Nullable Paint paint) {
         if (paint == null) {
-            mPaint = new icyllis.arc3d.core.Paint();
+            mPaint = new icyllis.arc3d.sketch.Paint();
             internalReset();
         } else {
-            mPaint = new icyllis.arc3d.core.Paint(paint.mPaint);
+            mPaint = new icyllis.arc3d.sketch.Paint(paint.mPaint);
             internalSetFrom(paint);
         }
         Core.registerNativeResource(this, mPaint);
@@ -664,7 +664,7 @@ public class Paint {
      * @param stroke true to stroke shapes, false to fill shapes
      */
     public void setStroke(boolean stroke) {
-        setStyle(stroke ? icyllis.arc3d.core.Paint.STROKE : icyllis.arc3d.core.Paint.FILL);
+        setStyle(stroke ? icyllis.arc3d.sketch.Paint.STROKE : icyllis.arc3d.sketch.Paint.FILL);
     }
 
     /**
@@ -856,7 +856,7 @@ public class Paint {
         if (mColorFilter != colorFilter) {
             mColorFilter = colorFilter;
             mPaint.setColorFilter(colorFilter != null
-                    ? RefCnt.create(colorFilter.getNativeColorFilter())
+                    ? colorFilter.getNativeColorFilter()
                     : null);
         }
     }
@@ -1058,7 +1058,7 @@ public class Paint {
      * @hidden
      */
     @ApiStatus.Internal
-    public icyllis.arc3d.core.Paint getNativePaint() {
+    public icyllis.arc3d.sketch.Paint getNativePaint() {
         return mPaint;
     }
 
@@ -1068,11 +1068,11 @@ public class Paint {
      * @hidden
      */
     @ApiStatus.Internal
-    public void getNativeFont(@NonNull icyllis.arc3d.core.Font nativeFont) {
+    public void getNativeFont(@NonNull icyllis.arc3d.sketch.Font nativeFont) {
         nativeFont.setSize(FontPaint.getCanonicalFontSize(getTextSize()));
         nativeFont.setEdging(isTextAntiAlias()
-                ? icyllis.arc3d.core.Font.kAntiAlias_Edging
-                : icyllis.arc3d.core.Font.kAlias_Edging);
+                ? icyllis.arc3d.sketch.Font.kAntiAlias_Edging
+                : icyllis.arc3d.sketch.Font.kAlias_Edging);
         nativeFont.setLinearMetrics(isLinearText());
     }
 

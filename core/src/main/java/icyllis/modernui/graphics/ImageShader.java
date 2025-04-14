@@ -184,7 +184,7 @@ public class ImageShader extends Shader {
     private ImageShader(@NonNull Image image, @NonNull TileMode tileModeX,
                         @NonNull TileMode tileModeY, @NonNull SamplingOptions sampling,
                         @Nullable Matrix localMatrix) {
-        var shader = icyllis.arc3d.core.shaders.ImageShader.make(
+        var shader = icyllis.arc3d.sketch.shaders.ImageShader.make(
                 RefCnt.create(image.getNativeImage()),
                 tileModeX.nativeInt, tileModeY.nativeInt,
                 sampling, localMatrix

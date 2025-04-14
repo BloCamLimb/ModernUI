@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.BreakIterator;
-import icyllis.arc3d.core.Typeface;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
@@ -230,7 +229,7 @@ public final class EmojiFont implements Font {
     }
 
     @Override
-    public Typeface getNativeTypeface() {
+    public icyllis.arc3d.sketch.Typeface getNativeTypeface() {
         //TODO wait for Arc3D SVG font rendering
         return null;
     }

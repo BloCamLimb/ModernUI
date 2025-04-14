@@ -103,5 +103,5 @@ public interface Font {
                           Rect bounds, float x, float y);
 
     @ApiStatus.Internal
-    icyllis.arc3d.core.Typeface getNativeTypeface();
+    icyllis.arc3d.sketch.Typeface getNativeTypeface();
 }

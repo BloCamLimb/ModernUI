@@ -19,8 +19,10 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorSpace;
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.Size;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
 import java.util.Objects;
@@ -145,10 +147,10 @@ public class AngularGradient extends GradientShader {
                            @Nullable Matrix localMatrix) {
         this(centerX, centerY, startAngle, endAngle,
                 colors, colorSpace, positions, colors.length / 4, tileMode,
-                icyllis.arc3d.core.shaders.GradientShader.Interpolation.make(
+                icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.make(
                         true,
-                        icyllis.arc3d.core.shaders.GradientShader.Interpolation.kDestination_ColorSpace,
-                        icyllis.arc3d.core.shaders.GradientShader.Interpolation.kShorter_HueMethod
+                        icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kDestination_ColorSpace,
+                        icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kShorter_HueMethod
                 ),
                 localMatrix);
     }
@@ -165,7 +167,7 @@ public class AngularGradient extends GradientShader {
         if (colorCount < 1) {
             throw new IllegalArgumentException("needs >= 1 number of colors");
         }
-        var shader = icyllis.arc3d.core.shaders.AngularGradient.make(
+        var shader = icyllis.arc3d.sketch.shaders.AngularGradient.make(
                 centerX, centerY,
                 startAngle, endAngle,
                 colors,
@@ -184,7 +186,8 @@ public class AngularGradient extends GradientShader {
         } else {
             mLocalMatrix = null;
         }
-        mCleanup = Core.registerNativeResource(this, shader);
+        assert shader.isTriviallyCounted();
+        //mCleanup = Core.registerNativeResource(this, shader);
         mShader = shader;
     }
 
@@ -386,7 +389,7 @@ public class AngularGradient extends GradientShader {
                     mPositions != null ? mPositions.elements() : null,
                     colorCount,
                     mTileMode,
-                    icyllis.arc3d.core.shaders.GradientShader.Interpolation.make(
+                    icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.make(
                             mInterpolationInPremul,
                             mInterpolationColorSpace.nativeByte,
                             mHueInterpolationMethod.nativeByte

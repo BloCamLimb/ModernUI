@@ -19,15 +19,21 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.Matrix4;
-import icyllis.arc3d.core.TextBlob;
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.Size;
+import icyllis.modernui.graphics.text.Font;
+import icyllis.modernui.graphics.text.OutlineFont;
+import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.nio.*;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 /**
  * A Canvas provides an interface for drawing 2D geometries, images, and how the
@@ -1290,8 +1296,9 @@ public abstract class Canvas {
                                     float x, float y,
                                     @NonNull Paint paint);
 
+    //TODO remove this once RecordingCanvas is done
     @ApiStatus.Experimental
-    public abstract void drawTextBlob(TextBlob blob, float x, float y,
+    public abstract void drawTextBlob(icyllis.arc3d.sketch.TextBlob blob, float x, float y,
                                       @NonNull Paint paint);
 
     /**
@@ -1341,11 +1348,11 @@ public abstract class Canvas {
      * Supported primitive topologies, corresponding to OpenGL and Vulkan defined values.
      */
     public enum VertexMode {
-        POINTS(icyllis.arc3d.core.Vertices.kPoints_VertexMode),
-        LINES(icyllis.arc3d.core.Vertices.kLines_VertexMode),
-        LINE_STRIP(icyllis.arc3d.core.Vertices.kLineStrip_VertexMode),
-        TRIANGLES(icyllis.arc3d.core.Vertices.kTriangles_VertexMode),
-        TRIANGLE_STRIP(icyllis.arc3d.core.Vertices.kTriangleStrip_VertexMode);
+        POINTS(icyllis.arc3d.sketch.Vertices.kPoints_VertexMode),
+        LINES(icyllis.arc3d.sketch.Vertices.kLines_VertexMode),
+        LINE_STRIP(icyllis.arc3d.sketch.Vertices.kLineStrip_VertexMode),
+        TRIANGLES(icyllis.arc3d.sketch.Vertices.kTriangles_VertexMode),
+        TRIANGLE_STRIP(icyllis.arc3d.sketch.Vertices.kTriangleStrip_VertexMode);
 
         final int nativeInt;
 

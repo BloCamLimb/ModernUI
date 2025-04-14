@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.granite.RecordingContext;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
@@ -54,12 +54,12 @@ public class Image implements AutoCloseable {
     public static final int DENSITY_NONE = 0;
 
     // managed by cleaner
-    private volatile icyllis.arc3d.core.Image mImage;
+    private volatile icyllis.arc3d.sketch.Image mImage;
     private final Cleaner.Cleanable mCleanup;
 
     int mDensity = DisplayMetrics.DENSITY_DEFAULT;
 
-    private Image(@SharedPtr icyllis.arc3d.core.Image image) {
+    private Image(@SharedPtr icyllis.arc3d.sketch.Image image) {
         mCleanup = Core.registerNativeResource(this, image);
         mImage = Objects.requireNonNull(image);
     }
@@ -116,7 +116,7 @@ public class Image implements AutoCloseable {
         recordingContext.checkOwnerThread();
         assert !bitmap.isClosed();
         @SharedPtr
-        icyllis.arc3d.core.Image nativeImage;
+        icyllis.arc3d.sketch.Image nativeImage;
         try {
             //TODO we previously make all images Mipmapped, but Arc3D currently does not support
             // Mipmapping correctly
@@ -294,7 +294,7 @@ public class Image implements AutoCloseable {
      */
     @ApiStatus.Internal
     @RawPtr
-    public icyllis.arc3d.core.Image getNativeImage() {
+    public icyllis.arc3d.sketch.Image getNativeImage() {
         return mImage;
     }
 }

@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.RawPtr;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -39,6 +38,5 @@ public abstract class ColorFilter {
      * @hidden
      */
     @ApiStatus.Internal
-    @RawPtr
-    public abstract icyllis.arc3d.core.effects.ColorFilter getNativeColorFilter();
+    public abstract icyllis.arc3d.sketch.effects.ColorFilter getNativeColorFilter();
 }

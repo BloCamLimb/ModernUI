@@ -82,7 +82,7 @@ abstract class RippleComponent {
     }
 
     private static float getTargetRadius(Rect bounds) {
-        return icyllis.arc3d.core.Point.length(bounds.width(), bounds.height()) * 0.5f;
+        return icyllis.arc3d.sketch.Point.length(bounds.width(), bounds.height()) * 0.5f;
     }
 
     /**

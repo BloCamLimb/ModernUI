@@ -42,12 +42,12 @@ public class BezierInterpolator implements TimeInterpolator {
      */
     public BezierInterpolator(float controlX, float controlY) {
         // linearize
-        int numPoints = icyllis.arc3d.engine.PathUtils.countQuadraticPoints(
+        int numPoints = icyllis.arc3d.granite.PathUtils.countQuadraticPoints(
                 0, 0, controlX, controlY, 1f, 1f,
                 PRECISION
         );
         float[] coords = new float[numPoints << 1];
-        int numCoords = icyllis.arc3d.engine.PathUtils.generateQuadraticPoints(
+        int numCoords = icyllis.arc3d.granite.PathUtils.generateQuadraticPoints(
                 0, 0, controlX, controlY, 1f, 1f,
                 PRECISION * PRECISION,
                 coords, 0, coords.length
@@ -74,12 +74,12 @@ public class BezierInterpolator implements TimeInterpolator {
      */
     public BezierInterpolator(float controlX1, float controlY1, float controlX2, float controlY2) {
         // linearize
-        int numPoints = icyllis.arc3d.engine.PathUtils.countCubicPoints(
+        int numPoints = icyllis.arc3d.granite.PathUtils.countCubicPoints(
                 0, 0, controlX1, controlY1, controlX2, controlY2, 1f, 1f,
                 PRECISION
         );
         float[] coords = new float[numPoints << 1];
-        int numCoords = icyllis.arc3d.engine.PathUtils.generateCubicPoints(
+        int numCoords = icyllis.arc3d.granite.PathUtils.generateCubicPoints(
                 0, 0, controlX1, controlY1, controlX2, controlY2, 1f, 1f,
                 PRECISION * PRECISION,
                 coords, 0, coords.length
@@ -116,21 +116,21 @@ public class BezierInterpolator implements TimeInterpolator {
                                                     float controlX4, float controlY4,
                                                     float controlX5, float controlY5) {
         // linearize
-        int numPoints1 = icyllis.arc3d.engine.PathUtils.countCubicPoints(
+        int numPoints1 = icyllis.arc3d.granite.PathUtils.countCubicPoints(
                 0, 0, controlX1, controlY1, controlX2, controlY2, controlX3, controlY3,
                 PRECISION
         );
-        int numPoints2 = icyllis.arc3d.engine.PathUtils.countCubicPoints(
+        int numPoints2 = icyllis.arc3d.granite.PathUtils.countCubicPoints(
                 controlX3, controlY3, controlX4, controlY4, controlX5, controlY5, 1f, 1f,
                 PRECISION
         );
         float[] coords = new float[(numPoints1 << 1) + (numPoints2 << 1)];
-        int numCoords1 = icyllis.arc3d.engine.PathUtils.generateCubicPoints(
+        int numCoords1 = icyllis.arc3d.granite.PathUtils.generateCubicPoints(
                 0, 0, controlX1, controlY1, controlX2, controlY2, controlX3, controlY3,
                 PRECISION * PRECISION,
                 coords, 0, numPoints1 << 1
         );
-        int numCoords2 = icyllis.arc3d.engine.PathUtils.generateCubicPoints(
+        int numCoords2 = icyllis.arc3d.granite.PathUtils.generateCubicPoints(
                 controlX3, controlY3, controlX4, controlY4, controlX5, controlY5, 1f, 1f,
                 PRECISION * PRECISION,
                 coords, numCoords1, numPoints2 << 1

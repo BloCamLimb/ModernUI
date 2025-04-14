@@ -19,12 +19,13 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.util.ULocale;
-import icyllis.arc3d.core.TextBlob;
+import icyllis.arc3d.sketch.TextBlob;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.graphics.text.FontPaint;
+import icyllis.modernui.graphics.text.LayoutPiece;
+import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
@@ -32,7 +33,11 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Formatter;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
 
 public final class TextUtils {
 
@@ -569,7 +574,7 @@ public final class TextUtils {
         if (nGlyphs == 0) {
             return;
         }
-        var nativeFont = new icyllis.arc3d.core.Font();
+        var nativeFont = new icyllis.arc3d.sketch.Font();
         paint.getNativeFont(nativeFont);
         var lastFont = piece.getFont(0);
         int lastPos = 0;

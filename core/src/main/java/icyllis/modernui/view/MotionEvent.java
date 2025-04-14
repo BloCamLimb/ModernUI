@@ -1009,7 +1009,9 @@ public final class MotionEvent extends InputEvent {
      * @param matrix The transformation matrix to apply.
      */
     public void transform(@NonNull Matrix matrix) {
-        mTransform.preConcat2D(matrix);
+        mTransform.preConcat2D(matrix.m11(), matrix.m12(), matrix.m14(),
+                matrix.m21(), matrix.m22(), matrix.m24(),
+                matrix.m41(), matrix.m42(), matrix.m44());
     }
 
     /**

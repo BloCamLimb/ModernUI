@@ -81,7 +81,7 @@ public class PointF {
      * Return the Euclidean distance from (0,0) to the point
      */
     public float length() {
-        return icyllis.arc3d.core.Point.length(x, y);
+        return icyllis.arc3d.sketch.Point.length(x, y);
     }
 
     public boolean normalize() {
@@ -91,7 +91,7 @@ public class PointF {
         double dscale = 1.0 / dmag;
         float newX = (float) (x * dscale);
         float newY = (float) (y * dscale);
-        if (icyllis.arc3d.core.Point.isDegenerate(newX, newY)) {
+        if (icyllis.arc3d.sketch.Point.isDegenerate(newX, newY)) {
             return false;
         }
         this.x = newX;

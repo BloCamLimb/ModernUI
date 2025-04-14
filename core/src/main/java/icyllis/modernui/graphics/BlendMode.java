@@ -699,7 +699,7 @@ public enum BlendMode {
     static final BlendMode[] VALUES = values();
 
     // exact mapping, interchangeable
-    private final icyllis.arc3d.core.BlendMode mBlendMode = icyllis.arc3d.core.BlendMode.modeAt(ordinal());
+    private final icyllis.arc3d.sketch.BlendMode mBlendMode = icyllis.arc3d.sketch.BlendMode.modeAt(ordinal());
 
     {
         assert mBlendMode.name().equals(name());
@@ -709,7 +709,7 @@ public enum BlendMode {
      * @hidden
      */
     @ApiStatus.Internal
-    public icyllis.arc3d.core.BlendMode getNativeBlendMode() {
+    public icyllis.arc3d.sketch.BlendMode getNativeBlendMode() {
         return mBlendMode;
     }
 }

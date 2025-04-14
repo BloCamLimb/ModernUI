@@ -44,22 +44,22 @@ public abstract class Shader {
         /**
          * Repeat the shader's image horizontally and vertically.
          */
-        REPEAT(icyllis.arc3d.core.shaders.Shader.TILE_MODE_REPEAT),
+        REPEAT(icyllis.arc3d.sketch.shaders.Shader.TILE_MODE_REPEAT),
         /**
          * Repeat the shader's image horizontally and vertically, alternating
          * mirror images so that adjacent images always seam.
          */
-        MIRROR(icyllis.arc3d.core.shaders.Shader.TILE_MODE_MIRROR),
+        MIRROR(icyllis.arc3d.sketch.shaders.Shader.TILE_MODE_MIRROR),
         /**
          * Replicate the edge color if the shader draws outside of its
          * original bounds.
          */
-        CLAMP(icyllis.arc3d.core.shaders.Shader.TILE_MODE_CLAMP),
+        CLAMP(icyllis.arc3d.sketch.shaders.Shader.TILE_MODE_CLAMP),
         /**
          * Render the shader's image pixels only within its original bounds. If the shader
          * draws outside of its original bounds, transparent black is drawn instead.
          */
-        DECAL(icyllis.arc3d.core.shaders.Shader.TILE_MODE_DECAL);
+        DECAL(icyllis.arc3d.sketch.shaders.Shader.TILE_MODE_DECAL);
 
         final int nativeInt;
 
@@ -70,7 +70,7 @@ public abstract class Shader {
 
     // closed by cleaner
     @Nullable
-    volatile icyllis.arc3d.core.shaders.Shader mShader;
+    volatile icyllis.arc3d.sketch.shaders.Shader mShader;
     Cleaner.Cleanable mCleanup;
 
     /**
@@ -83,9 +83,12 @@ public abstract class Shader {
      * do this cleanup operation.
      */
     public void release() {
+        // order is important
         mShader = null;
         // cleaner is thread safe
-        mCleanup.clean();
+        if (mCleanup != null) {
+            mCleanup.clean();
+        }
     }
 
     /**
@@ -95,7 +98,7 @@ public abstract class Shader {
      */
     @ApiStatus.Internal
     @icyllis.arc3d.core.RawPtr
-    public icyllis.arc3d.core.shaders.Shader getNativeShader() {
+    public icyllis.arc3d.sketch.shaders.Shader getNativeShader() {
         return mShader;
     }
 }
