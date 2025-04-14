@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,9 +21,10 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.sketch.Glyph;
+import icyllis.arc3d.sketch.Mask;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nonnull;
 
 /**
  * Manages all baked glyphs and their texture atlases for raster text rendering.
@@ -32,27 +33,36 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         implements AutoCloseable {
 
     // font atlas is 4096x4096 at most, governed by plot size and max plots
-    private static final int MAX_ATLAS_SIZE = 4096;
+    private static final int kMaxAtlasSize = 4096;
 
-    private static final int SMALL_PLOT_SIZE = Glyph.MAX_ATLAS_DIMENSION;
-    private static final int LARGE_PLOT_SIZE = SMALL_PLOT_SIZE * 2;
+    private static final int kSmallPlotSize = Glyph.kMaxAtlasDimension;
+    private static final int kLargePlotSize = kSmallPlotSize * 2;
 
     static {
-        int plots = MAX_ATLAS_SIZE / LARGE_PLOT_SIZE;
+        int plots = kMaxAtlasSize / kLargePlotSize;
         //noinspection ConstantValue
-        assert plots * plots <= DrawAtlas.Plot.MAX_PLOTS;
+        assert plots * plots <= DrawAtlas.Plot.kMaxPlots;
     }
 
-    private final RecordingContext mRC;
+    private final RecordingContext mRecordingContext;
 
     // managed by this
     private final DrawAtlas[] mAtlases = new DrawAtlas[Engine.MASK_FORMAT_COUNT];
 
-    private final int mMaxTextureSize;
+    // max texture size for A8 atlas
+    private final int mMaxTextureWidth;
+    private final int mMaxTextureHeight;
 
-    public GlyphAtlasManager(RecordingContext rc) {
-        mRC = rc;
-        mMaxTextureSize = Math.min(rc.getCaps().maxTextureSize(), MAX_ATLAS_SIZE);
+    public GlyphAtlasManager(@NonNull RecordingContext context) {
+        mRecordingContext = context;
+        int maxSize = Math.min(context.getCaps().maxTextureSize(), kMaxAtlasSize);
+        assert maxSize >= 1024;
+        long maxBytes = context.getOptions().mGlyphCacheTextureMaximumBytes;
+        int index = maxBytes > 0 ? MathUtil.ceilLog2(maxBytes) : 0;
+        // minimum atlas size is 512x512 = 2^18
+        index = MathUtil.clamp(index, 18, MathUtil.floorLog2(maxSize) * 2);
+        mMaxTextureWidth = 1 << (index / 2);
+        mMaxTextureHeight = 1 << (index - index / 2);
     }
 
     @Override
@@ -72,23 +82,31 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
     public boolean initAtlas(int maskFormat) {
         if (mAtlases[maskFormat] == null) {
             int ct = Engine.maskFormatToColorType(maskFormat);
-            int atlasSize;
+            int atlasWidth;
+            int atlasHeight;
+            int plotWidth;
+            int plotHeight;
             if (maskFormat == Engine.MASK_FORMAT_A8) {
-                atlasSize = mMaxTextureSize;
+                atlasWidth = mMaxTextureWidth;
+                atlasHeight = mMaxTextureHeight;
+                // plot size is 512x512 for 2048x2048 atlas or above
+                plotWidth = atlasWidth >= kMaxAtlasSize / 2
+                        ? kLargePlotSize : kSmallPlotSize;
+                plotHeight = atlasHeight >= kMaxAtlasSize / 2
+                        ? kLargePlotSize : kSmallPlotSize;
             } else {
                 // color atlas is 2048x2048 at most
-                atlasSize = Math.min(MAX_ATLAS_SIZE / 2, mMaxTextureSize);
+                atlasWidth = mMaxTextureWidth / 2;
+                atlasHeight = mMaxTextureHeight / 2;
+                // color atlas always use 256x256 plots
+                plotWidth = kSmallPlotSize;
+                plotHeight = kSmallPlotSize;
             }
-            // plot size is 512x512 for 4096x4096 atlas
-            // 256x256 for 2048x2048 atlas
-            int plotSize = atlasSize == MAX_ATLAS_SIZE
-                    ? LARGE_PLOT_SIZE
-                    : SMALL_PLOT_SIZE;
             // no multi pages
             mAtlases[maskFormat] = DrawAtlas.make(
                     ct,
-                    atlasSize, atlasSize,
-                    plotSize, plotSize,
+                    atlasWidth, atlasHeight,
+                    plotWidth, plotHeight,
                     /*generationCounter*/ this,
                     /*useMultiPages*/ false,
                     /*useStorageTextures*/ false,
@@ -105,7 +123,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         return getAtlas(maskFormat).getTexture(0);
     }
 
-    public boolean hasGlyph(int maskFormat, @Nonnull BakedGlyph glyph) {
+    public boolean hasGlyph(int maskFormat, @NonNull BakedGlyph glyph) {
         return getAtlas(maskFormat).contains(glyph);
     }
 
@@ -135,27 +153,27 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
         }
     }
 
-    public int addGlyphToAtlas(@Nonnull Glyph glyph,
-                               @Nonnull BakedGlyph bakedGlyph) {
+    public int addGlyphToAtlas(@NonNull Glyph glyph,
+                               @NonNull BakedGlyph bakedGlyph) {
         if (glyph.getImageBase() == null) {
-            return DrawAtlas.RESULT_FAILURE;
+            return DrawAtlas.kFailure_Result;
         }
 
         int maskFormat = BakedGlyph.chooseMaskFormat(glyph);
         int bytesPerPixel = Engine.maskFormatBytesPerPixel(maskFormat);
 
         // always add 1px padding
-        int width = glyph.getWidth() + 2 * Glyph.BILERP_GLYPH_BORDER;
-        int height = glyph.getHeight() + 2 * Glyph.BILERP_GLYPH_BORDER;
+        int width = glyph.getWidth() + 2 * Glyph.kBilerpGlyphBorder;
+        int height = glyph.getHeight() + 2 * Glyph.kBilerpGlyphBorder;
         long srcRB = (long) bytesPerPixel * width;
 
         DrawAtlas atlas = getAtlas(maskFormat);
         var res = atlas.addRect(
-                mRC,
+                mRecordingContext,
                 width, height,
                 bakedGlyph
         );
-        if (res == DrawAtlas.RESULT_SUCCESS) {
+        if (res == DrawAtlas.kSuccess_Result) {
             long dst = atlas.getDataAt(bakedGlyph);
             int dstRB = bytesPerPixel * atlas.getPlotWidth();
             // since there's padding, first zero out the dst
@@ -163,16 +181,16 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
                 MemoryUtil.memSet(dst + ((long) y * dstRB), 0, srcRB);
             }
             // Advance in one row and one column.
-            dst = dst + (dstRB + bytesPerPixel) * Glyph.BILERP_GLYPH_BORDER;
+            dst = dst + (dstRB + bytesPerPixel) * Glyph.kBilerpGlyphBorder;
             get_packed_glyph_image(glyph, maskFormat, dst, dstRB);
-            bakedGlyph.insetRect(Glyph.BILERP_GLYPH_BORDER);
+            bakedGlyph.insetRect(Glyph.kBilerpGlyphBorder);
         }
 
         return res;
     }
 
-    public void addGlyphAndSetLastUseToken(@Nonnull DrawAtlas.PlotBulkUseUpdater updater,
-                                           @Nonnull BakedGlyph glyph,
+    public void addGlyphAndSetLastUseToken(DrawAtlas.@NonNull PlotBulkUseUpdater updater,
+                                           @NonNull BakedGlyph glyph,
                                            int maskFormat,
                                            long token) {
         if (updater.add(glyph)) {
@@ -192,7 +210,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
 
     public boolean recordUploads(SurfaceDrawContext sdc) {
         for (var atlas : mAtlases) {
-            if (atlas != null && !atlas.recordUploads(mRC, sdc)) {
+            if (atlas != null && !atlas.recordUploads(mRecordingContext, sdc)) {
                 return false;
             }
         }
@@ -208,7 +226,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
     }
 
     public void compact() {
-        var tokenTracker = mRC.getAtlasTokenTracker();
+        var tokenTracker = mRecordingContext.getAtlasTokenTracker();
         for (var atlas : mAtlases) {
             if (atlas != null) {
                 atlas.compact(tokenTracker.nextFlushToken());
@@ -217,7 +235,7 @@ public class GlyphAtlasManager extends DrawAtlas.AtlasGenerationCounter
     }
 
     public void purge() {
-        var tokenTracker = mRC.getAtlasTokenTracker();
+        var tokenTracker = mRecordingContext.getAtlasTokenTracker();
         for (var atlas : mAtlases) {
             if (atlas != null) {
                 atlas.purge(tokenTracker.nextFlushToken());

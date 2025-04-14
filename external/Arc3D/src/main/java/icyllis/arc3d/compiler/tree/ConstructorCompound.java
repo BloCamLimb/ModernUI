@@ -21,9 +21,9 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
 import icyllis.arc3d.compiler.Context;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,10 +42,10 @@ public final class ConstructorCompound extends ConstructorCall {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int pos,
-                                     @Nonnull Type type,
-                                     @Nonnull List<Expression> args) {
+                                     @NonNull Type type,
+                                     @NonNull List<Expression> args) {
         assert (type.isVector() || type.isMatrix());
 
         // The meaning of a compound constructor containing a single argument varies significantly in
@@ -84,8 +84,8 @@ public final class ConstructorCompound extends ConstructorCall {
 
                 // Matrix-from-scalar creates a diagonal matrix; vector-from-scalar creates a splat.
                 return type.isMatrix()
-                        ? ConstructorDiagonalMatrix.make(pos, type, typecast)
-                        : ConstructorVectorSplat.make(pos, type, typecast);
+                        ? ConstructorDiagonal.make(pos, type, typecast)
+                        : ConstructorSplat.make(pos, type, typecast);
             } else if (argument.getType().isVector()) {
                 // A vector constructor containing a single vector with the same number of columns is a
                 // cast (e.g. float3 -> int3).
@@ -163,8 +163,8 @@ public final class ConstructorCompound extends ConstructorCall {
         return ConstructorCompound.make(context, pos, type, args.toArray(new Expression[0]));
     }
 
-    @Nonnull
-    public static Expression make(@Nonnull Context context,
+    @NonNull
+    public static Expression make(@NonNull Context context,
                                   int position, Type type, Expression[] arguments) {
         int n = 0;
         // All the arguments must have matching component type.
@@ -212,8 +212,8 @@ public final class ConstructorCompound extends ConstructorCall {
         return new ConstructorCompound(position, type, arguments);
     }
 
-    @Nonnull
-    public static Expression makeFromConstants(@Nonnull Context context,
+    @NonNull
+    public static Expression makeFromConstants(@NonNull Context context,
                                                int pos,
                                                Type type,
                                                double[] values) {
@@ -230,9 +230,9 @@ public final class ConstructorCompound extends ConstructorCall {
         return ExpressionKind.CONSTRUCTOR_COMPOUND;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorCompound(position, getType(), cloneArguments());
     }
 }

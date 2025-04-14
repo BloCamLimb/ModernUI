@@ -22,8 +22,8 @@ package icyllis.arc3d.compiler.lex;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
@@ -55,7 +55,7 @@ public class NFAtoDFA {
     /**
      * Returns a DFA created from the NFA.
      */
-    @Nonnull
+    @NonNull
     public DFA convert() {
         // create state 0, the "reject" state
         getOrCreate(IntList.of());
@@ -77,7 +77,7 @@ public class NFAtoDFA {
     /**
      * Returns an existing DFA state with the given NFA states, or creates a new one and returns it.
      */
-    @Nonnull
+    @NonNull
     private DFAState getOrCreate(@Unmodifiable IntList states) {
         DFAState result = mStates.get(states);
         if (result == null) {
@@ -110,7 +110,7 @@ public class NFAtoDFA {
         row.set(curr, next);
     }
 
-    private void traverse(@Nonnull DFAState curr) {
+    private void traverse(@NonNull DFAState curr) {
         curr.mScanned = true;
         for (char c = START_CHAR; c <= END_CHAR; ++c) {
             var n = new IntArrayList();

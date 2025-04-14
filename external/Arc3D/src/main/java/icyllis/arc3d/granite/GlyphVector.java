@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,30 +19,39 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.RecordingContext;
+import icyllis.arc3d.core.MathUtil;
+import icyllis.arc3d.sketch.Glyph;
+import icyllis.arc3d.sketch.Strike;
+import icyllis.arc3d.sketch.StrikeDesc;
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
+
+import java.util.Arrays;
 
 /**
- * GlyphVector provides a way to delay the lookup of {@link BakedGlyph Glyphs} until the code is running on the GPU
- * in single threaded mode. The GlyphVector is created in a multi-threaded environment, but the
- * StrikeCache is only single threaded (and must be single threaded because of the atlas).
+ * GlyphVector provides a way to delay the lookup of GPU {@link BakedGlyph Glyphs}
+ * until the code is running on the GPU in single threaded mode. The GlyphVector is created
+ * in a multi-threaded environment, but the {@link GlyphStrike} is only single threaded
+ * (and must be single threaded because of the atlas).
  */
-public class GlyphVector extends DrawAtlas.PlotBulkUseUpdater {
+public class GlyphVector
+    // this class extends BulkUseUpdater and just wants it to be treated as a value type
+        extends DrawAtlas.PlotBulkUseUpdater {
 
-    // the strikeDesc and glyphIDs
+    // the strikeDesc and packedGlyphIDs
     private final StrikeDesc mStrikeDesc;
     private final int[] mGlyphs;
     private BakedGlyph[] mBakedGlyphs;
 
-    private long mAtlasGeneration = DrawAtlas.AtlasGenerationCounter.INVALID_GENERATION;
+    private long mAtlasGeneration = DrawAtlas.AtlasGenerationCounter.kInvalidGeneration;
 
     /**
-     * The <var>strikeDesc</var> and <var>glyphs</var> must be immutable,
-     * no copy will be made.
+     * All params are read-only, copy will be made.
      */
-    public GlyphVector(StrikeDesc strikeDesc, int[] glyphs) {
-        mStrikeDesc = strikeDesc;
-        mGlyphs = glyphs;
+    @Contract(pure = true)
+    public GlyphVector(@NonNull StrikeDesc strikeDesc, int @NonNull [] glyphs, int start, int end) {
+        mStrikeDesc = strikeDesc.immutable();
+        mGlyphs = Arrays.copyOfRange(glyphs, start, end);
     }
 
     // This call is not thread safe. It should only be called from a known single-threaded env.
@@ -105,11 +114,11 @@ public class GlyphVector extends DrawAtlas.PlotBulkUseUpdater {
                     var res = atlasManager.addGlyphToAtlas(
                             glyph, bakedGlyph
                     );
-                    if (res != DrawAtlas.RESULT_SUCCESS) {
-                        assert res == DrawAtlas.RESULT_FAILURE ||
-                                res == DrawAtlas.RESULT_TRY_AGAIN;
+                    if (res != DrawAtlas.kSuccess_Result) {
+                        assert res == DrawAtlas.kFailure_Result ||
+                                res == DrawAtlas.kTryAgain_Result;
                         // try again meaning the atlas is full, it's not an error
-                        success = res != DrawAtlas.RESULT_FAILURE;
+                        success = res != DrawAtlas.kFailure_Result;
                         break;
                     }
                 }

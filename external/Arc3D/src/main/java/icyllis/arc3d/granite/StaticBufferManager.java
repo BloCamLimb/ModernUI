@@ -21,7 +21,7 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.task.CopyBufferTask;
+import icyllis.arc3d.granite.task.CopyBufferTask;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -60,7 +60,7 @@ public class StaticBufferManager {
         boolean allocateAndSetBindings(
                 ResourceProvider resourceProvider,
                 QueueManager queueManager,
-                SharedResourceCache sharedResourceCache,
+                GlobalResourceCache globalResourceCache,
                 String label
         ) {
             if (mTotalRequiredBytes == 0) {
@@ -99,7 +99,7 @@ public class StaticBufferManager {
             }
 
             assert offset == mTotalRequiredBytes;
-            sharedResourceCache.addStaticResource(buffer); // move
+            globalResourceCache.addStaticResource(buffer); // move
             return true;
         }
     }
@@ -141,7 +141,7 @@ public class StaticBufferManager {
     public static final int RESULT_NO_WORK = 2;
 
     public int flush(QueueManager queueManager,
-                     SharedResourceCache sharedResourceCache) {
+                     GlobalResourceCache globalResourceCache) {
         if (mMappingFailed) {
             return RESULT_FAILURE;
         }
@@ -152,21 +152,21 @@ public class StaticBufferManager {
             return RESULT_NO_WORK;
         }
 
+        // copy tasks hold refs, no need to own them anymore, just flush and make a clean exit
+        ObjectArrayList<@SharedPtr Resource> resourceRefs = new ObjectArrayList<>();
+        mUploadManager.flush(resourceRefs);
         if (!mVertexBuffer.allocateAndSetBindings(mResourceProvider,
                 queueManager,
-                sharedResourceCache,
+                globalResourceCache,
                 "StaticVertexBuffer")) {
             return RESULT_FAILURE;
         }
         if (!mIndexBuffer.allocateAndSetBindings(mResourceProvider,
                 queueManager,
-                sharedResourceCache,
+                globalResourceCache,
                 "StaticIndexBuffer")) {
             return RESULT_FAILURE;
         }
-        // copy tasks hold refs, no need to own them anymore, just flush and make a clean exit
-        ObjectArrayList<@SharedPtr Resource> resourceRefs = new ObjectArrayList<>();
-        mUploadManager.flush(resourceRefs);
         resourceRefs.forEach(Resource::unref);
         resourceRefs.clear();
 

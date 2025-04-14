@@ -21,9 +21,9 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.SLDataType;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
 
@@ -71,7 +71,7 @@ public final class VertexInputLayout {
          * @param srcType the data type in vertex buffer, see {@link Engine.VertexAttribType}
          * @param dstType the data type in vertex shader, see {@link SLDataType}
          */
-        public Attribute(@Nonnull String name, byte srcType, byte dstType) {
+        public Attribute(@NonNull String name, byte srcType, byte dstType) {
             if (name.isEmpty() || name.startsWith("_")) {
                 throw new IllegalArgumentException();
             }
@@ -95,7 +95,7 @@ public final class VertexInputLayout {
          * @param dstType the data type in vertex shader, see {@link SLDataType}
          * @param offset  N-aligned offset
          */
-        public Attribute(@Nonnull String name, byte srcType, byte dstType, int offset) {
+        public Attribute(@NonNull String name, byte srcType, byte dstType, int offset) {
             if (name.isEmpty() || name.startsWith("_")) {
                 throw new IllegalArgumentException();
             }
@@ -166,7 +166,7 @@ public final class VertexInputLayout {
             return size * count;
         }
 
-        @Nonnull
+        @NonNull
         public final ShaderVar asShaderVar() {
             return new ShaderVar(mName, mDstType, ShaderVar.kIn_TypeModifier);
         }
@@ -184,7 +184,7 @@ public final class VertexInputLayout {
 
         final int mAllMask;
 
-        private AttributeSet(@Nonnull Attribute[] attributes, int stride, int inputRate) {
+        private AttributeSet(Attribute @NonNull[] attributes, int stride, int inputRate) {
             int offset = 0;
             for (Attribute attr : attributes) {
                 if (attr.offset() != Attribute.IMPLICIT_OFFSET) {
@@ -210,8 +210,8 @@ public final class VertexInputLayout {
          * Note: GPU does not reorder vertex attributes, so when a vertex attribute has an
          * explicit offset, the subsequent implicit offsets will start from there.
          */
-        @Nonnull
-        public static AttributeSet makeImplicit(int inputRate, @Nonnull Attribute... attrs) {
+        @NonNull
+        public static AttributeSet makeImplicit(int inputRate, @NonNull Attribute... attrs) {
             if (attrs.length == 0 || attrs.length > Integer.SIZE) {
                 throw new IllegalArgumentException();
             }
@@ -226,8 +226,8 @@ public final class VertexInputLayout {
          * Note: GPU does not reorder vertex attributes, so when a vertex attribute has an
          * explicit offset, the subsequent implicit offsets will start from there.
          */
-        @Nonnull
-        public static AttributeSet makeExplicit(int stride, int inputRate, @Nonnull Attribute... attrs) {
+        @NonNull
+        public static AttributeSet makeExplicit(int stride, int inputRate, @NonNull Attribute... attrs) {
             if (attrs.length == 0 || attrs.length > Integer.SIZE) {
                 throw new IllegalArgumentException();
             }
@@ -270,7 +270,7 @@ public final class VertexInputLayout {
             return locations;
         }
 
-        final void appendToKey(@Nonnull KeyBuilder b, int mask) {
+        final void appendToKey(@NonNull KeyBuilder b, int mask) {
             final int rawCount = mAttributes.length;
             // max attribs is no less than 16
             b.addBits(6, rawCount, "attribute count");
@@ -307,7 +307,7 @@ public final class VertexInputLayout {
             b.addBits(16, stride, "stride");
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<Attribute> iterator() {
             return new Iter(mAllMask);
@@ -330,7 +330,7 @@ public final class VertexInputLayout {
                 return mIndex < mAttributes.length;
             }
 
-            @Nonnull
+            @NonNull
             @Override
             public Attribute next() {
                 forward();
@@ -365,7 +365,7 @@ public final class VertexInputLayout {
      *
      * @see #VertexInputLayout(AttributeSet[], int[])
      */
-    public VertexInputLayout(@Nonnull AttributeSet... attributeSets) {
+    public VertexInputLayout(@NonNull AttributeSet... attributeSets) {
         this(attributeSets, null);
     }
 
@@ -379,8 +379,8 @@ public final class VertexInputLayout {
      * <p>
      * E.g. if you want the 0, 2, 3 attributes are enabled, then mask is 0b1101.
      */
-    public VertexInputLayout(@Nonnull AttributeSet[] attributeSets,
-                             @Nullable int[] masks) {
+    public VertexInputLayout(AttributeSet @NonNull[] attributeSets,
+            int @Nullable[] masks) {
         assert attributeSets.length > 0 && attributeSets.length <= Caps.MAX_VERTEX_BINDINGS;
         assert masks == null || attributeSets.length == masks.length;
         mAttributeSets = attributeSets;
@@ -465,7 +465,7 @@ public final class VertexInputLayout {
      * <li>It always returns an attribute with a known offset.</li>
      * </ol>
      */
-    @Nonnull
+    @NonNull
     public Iterator<Attribute> getAttributes(int binding) {
         var attributes = mAttributeSets[binding];
         if (mMasks != null) {

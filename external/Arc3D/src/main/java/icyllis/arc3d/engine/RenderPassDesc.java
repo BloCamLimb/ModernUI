@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Descriptor to create a render pass.

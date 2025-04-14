@@ -21,9 +21,9 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.HashMap;
 
 public class FramebufferCache implements AutoCloseable {
@@ -33,7 +33,7 @@ public class FramebufferCache implements AutoCloseable {
 
     @Nullable
     @SharedPtr
-    public Framebuffer findFramebuffer(@Nonnull FramebufferDesc desc) {
+    public Framebuffer findFramebuffer(@NonNull FramebufferDesc desc) {
         Framebuffer framebuffer = mFramebufferMap.get(desc);
         if (framebuffer != null) {
             framebuffer.setLastUsedTime();
@@ -42,7 +42,7 @@ public class FramebufferCache implements AutoCloseable {
         return framebuffer;
     }
 
-    public void insertFramebuffer(@Nonnull FramebufferDesc desc,
+    public void insertFramebuffer(@NonNull FramebufferDesc desc,
                                   @RawPtr Framebuffer framebuffer) {
         var old = mFramebufferMap.put(desc, framebuffer);
         assert old == null;

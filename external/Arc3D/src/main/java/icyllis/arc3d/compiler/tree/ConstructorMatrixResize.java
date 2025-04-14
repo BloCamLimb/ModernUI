@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
+
 import java.util.OptionalDouble;
 
 /**
@@ -35,8 +36,8 @@ public final class ConstructorMatrixResize extends ConstructorCall {
         assert arguments.length == 1;
     }
 
-    @Nonnull
-    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression arg) {
+    @NonNull
+    public static Expression make(int position, @NonNull Type type, @NonNull Expression arg) {
         assert (type.isMatrix());
         assert (arg.getType().getComponentType().matches(type.getComponentType()));
 
@@ -54,7 +55,7 @@ public final class ConstructorMatrixResize extends ConstructorCall {
     }
 
     @Override
-    public OptionalDouble getConstantValue(int i) {
+    public @NonNull OptionalDouble getConstantValue(int i) {
         int rows = getType().getRows();
         int row = i % rows;
         int col = i / rows;
@@ -82,9 +83,9 @@ public final class ConstructorMatrixResize extends ConstructorCall {
         return OptionalDouble.of((col == row) ? 1.0 : 0.0);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorMatrixResize(position, getType(), cloneArguments());
     }
 }

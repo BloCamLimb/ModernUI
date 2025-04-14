@@ -20,6 +20,8 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Matrixc;
 
 public class SubRunData {
 

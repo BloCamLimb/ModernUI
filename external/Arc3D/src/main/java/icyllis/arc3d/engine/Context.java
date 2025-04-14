@@ -20,18 +20,15 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SurfaceCharacterization;
 import icyllis.arc3d.granite.RendererProvider;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
-
-import javax.annotation.Nullable;
 
 /**
  * This class is a public API, except where noted.
  */
-public abstract sealed class Context extends RefCnt
-        permits ImmediateContext, RecordingContext {
+public abstract class Context extends RefCnt {
 
     protected final Device mDevice;
     protected final Thread mOwnerThread;
@@ -196,8 +193,8 @@ public abstract sealed class Context extends RefCnt
     }
 
     @ApiStatus.Internal
-    public final SharedResourceCache getSharedResourceCache() {
-        return mDevice.getSharedResourceCache();
+    public final GlobalResourceCache getGlobalResourceCache() {
+        return mDevice.getGlobalResourceCache();
     }
 
     @ApiStatus.Internal
@@ -207,11 +204,6 @@ public abstract sealed class Context extends RefCnt
 
     public final Logger getLogger() {
         return mDevice.getLogger();
-    }
-
-    protected boolean init(BaseContextOptions options) {
-        mResourceProvider = mDevice.makeResourceProvider(this, options.mMaxResourceBudget);
-        return mDevice.isValid();
     }
 
     @Override

@@ -19,22 +19,23 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a symbol table entry.
  */
 public abstract class Symbol extends Node {
 
-    private String mName;
+    private @NonNull String mName;
 
-    protected Symbol(int position, String name) {
+    protected Symbol(int position, @NonNull String name) {
         super(position);
         mName = name;
     }
 
     @Override
-    public final boolean accept(@Nonnull TreeVisitor visitor) {
+    public final boolean accept(@NonNull TreeVisitor visitor) {
         // symbols will not be visited
         throw new AssertionError();
     }
@@ -42,21 +43,18 @@ public abstract class Symbol extends Node {
     /**
      * @see Node.SymbolKind
      */
-    @Nonnull
-    public abstract SymbolKind getKind();
+    public abstract @NonNull SymbolKind getKind();
 
-    @Nonnull
-    public final String getName() {
+    public final @NonNull String getName() {
         return mName;
     }
 
     /**
      * Changes the symbol's name.
      */
-    public final void setName(@Nonnull String name) {
+    public final void setName(@NonNull String name) {
         mName = name;
     }
 
-    @Nonnull
-    public abstract Type getType();
+    public abstract @NonNull Type getType();
 }

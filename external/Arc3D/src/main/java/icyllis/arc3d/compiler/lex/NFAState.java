@@ -21,8 +21,8 @@ package icyllis.arc3d.compiler.lex;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.function.IntPredicate;
 
 public interface NFAState {
@@ -33,17 +33,17 @@ public interface NFAState {
     @Unmodifiable
     IntList next();
 
-    @Nonnull
+    @NonNull
     static NFAState Accept(int token) {
         return new Accept(token);
     }
 
-    @Nonnull
+    @NonNull
     static NFAState Filter(IntPredicate filter, @Unmodifiable IntList next) {
         return new Filter(filter, next);
     }
 
-    @Nonnull
+    @NonNull
     static NFAState Replace(@Unmodifiable IntList shadow) {
         return new Replace(shadow);
     }

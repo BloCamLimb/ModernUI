@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,10 +20,10 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -83,7 +83,7 @@ public abstract class GpuBufferPool {
      *
      * @param resourceProvider the factory used to create the vertex buffers.
      */
-    @Nonnull
+    @NonNull
     public static GpuBufferPool makeVertexPool(ResourceProvider resourceProvider) {
         return new VertexPool(resourceProvider);
     }
@@ -93,7 +93,7 @@ public abstract class GpuBufferPool {
      *
      * @param resourceProvider the factory used to create the instance buffers.
      */
-    @Nonnull
+    @NonNull
     public static GpuBufferPool makeInstancePool(ResourceProvider resourceProvider) {
         return new InstancePool(resourceProvider);
     }
@@ -103,7 +103,7 @@ public abstract class GpuBufferPool {
      *
      * @param resourceProvider the factory used to create the index buffers.
      */
-    @Nonnull
+    @NonNull
     public static GpuBufferPool makeIndexPool(ResourceProvider resourceProvider) {
         return new IndexPool(resourceProvider);
     }
@@ -300,7 +300,7 @@ public abstract class GpuBufferPool {
         return mBufferPtr;
     }
 
-    @Nonnull
+    @NonNull
     private static ByteBuffer getMappedBuffer(@Nullable ByteBuffer buffer, long address, int capacity) {
         if (buffer != null && MemoryUtil.memAddress0(buffer) == address && buffer.capacity() == capacity) {
             return buffer;

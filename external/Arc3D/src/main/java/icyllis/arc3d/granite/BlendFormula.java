@@ -19,11 +19,10 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.BlendInfo;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.arc3d.sketch.BlendMode;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Wraps the shader outputs and HW blend state that comprise a Porter Duff blend mode with coverage.
@@ -160,7 +159,7 @@ public final class BlendFormula {
      * with and without an opaque input color.
      */
     @Nullable
-    public static BlendFormula getBlendFormula(boolean isOpaque, boolean hasCoverage, @Nonnull BlendMode mode) {
+    public static BlendFormula getBlendFormula(boolean isOpaque, boolean hasCoverage, @NonNull BlendMode mode) {
         if (!hasCoverage) {
             // No coverage, input color unknown
             switch (mode) {

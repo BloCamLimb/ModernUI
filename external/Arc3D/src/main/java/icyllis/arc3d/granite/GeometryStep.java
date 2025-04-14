@@ -19,13 +19,13 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.Matrix;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.*;
+import icyllis.arc3d.sketch.Matrix;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.util.Formatter;
 import java.util.Iterator;
@@ -60,12 +60,12 @@ import static icyllis.arc3d.granite.shading.UniformHandler.SamplerHandle;
 @Immutable
 public abstract class GeometryStep {
 
+
     /**
      * GPs that need to use either float or ubyte colors can just call this to get a correctly
      * configured Attribute struct
      */
-    @Nonnull
-    protected static VertexInputLayout.Attribute makeColorAttribute(String name, boolean wideColor) {
+    protected static VertexInputLayout.@NonNull Attribute makeColorAttribute(String name, boolean wideColor) {
         return new VertexInputLayout.Attribute(
                 name,
                 wideColor
@@ -155,9 +155,9 @@ public abstract class GeometryStep {
     private final byte mPrimitiveType;
     private final DepthStencilSettings mDepthStencilSettings;
 
-    protected GeometryStep(@Nonnull String className, @Nonnull String variantName,
-                           @Nullable VertexInputLayout.AttributeSet vertexAttributes,
-                           @Nullable VertexInputLayout.AttributeSet instanceAttributes,
+    protected GeometryStep(@NonNull String className, @NonNull String variantName,
+            VertexInputLayout.@Nullable AttributeSet vertexAttributes,
+            VertexInputLayout.@Nullable AttributeSet instanceAttributes,
                            int flags,
                            byte primitiveType,
                            DepthStencilSettings depthStencilSettings) {
@@ -207,7 +207,7 @@ public abstract class GeometryStep {
      * Human-meaningful string to identify this processor; may be embedded in generated shader
      * code and must be a legal AkSL identifier prefix.
      */
-    @Nonnull
+    @NonNull
     public final String name() {
         return mName;
     }
@@ -302,7 +302,7 @@ public abstract class GeometryStep {
      * <li>It always returns an attribute with a known offset.</li>
      * </ol>
      */
-    @Nonnull
+    @NonNull
     public final Iterator<VertexInputLayout.Attribute> vertexAttributes() {
         return mInputLayout.getAttributes(mVertexBinding);
     }
@@ -358,7 +358,7 @@ public abstract class GeometryStep {
      * <li>It always returns an attribute with a known offset.</li>
      * </ol>
      */
-    @Nonnull
+    @NonNull
     public final Iterator<VertexInputLayout.Attribute> instanceAttributes() {
         return mInputLayout.getAttributes(mInstanceBinding);
     }
@@ -407,9 +407,9 @@ public abstract class GeometryStep {
      *
      * @see #makeProgramImpl(ShaderCaps)
      */
-    public abstract void appendToKey(@Nonnull KeyBuilder b);
+    public abstract void appendToKey(@NonNull KeyBuilder b);
 
-    public final void appendAttributesToKey(@Nonnull KeyBuilder b) {
+    public final void appendAttributesToKey(@NonNull KeyBuilder b) {
         /*VertexInputLayout.AttributeSet vertexAttributes = allVertexAttributes();
         if (vertexAttributes != null) {
             vertexAttributes.appendToKey(b, mVertexAttributesMask);
@@ -427,7 +427,7 @@ public abstract class GeometryStep {
      *
      * @see #appendToKey(KeyBuilder)
      */
-    @Nonnull
+    @NonNull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
 
     public void emitVaryings(VaryingHandler varyingHandler,
@@ -441,6 +441,9 @@ public abstract class GeometryStep {
     public void emitSamplers(UniformHandler uniformHandler) {
     }
 
+    public void emitVertexDefinitions(Formatter vs) {
+    }
+
     /**
      * Emits the geometry code into the vertex shader.
      * Implementation must define "vec4 worldPosVar" with the given name
@@ -448,9 +451,12 @@ public abstract class GeometryStep {
      * write geometry's local pos to it.
      */
     public void emitVertexGeomCode(Formatter vs,
-                                   @Nonnull String worldPosVar,
+                                   @NonNull String worldPosVar,
                                    @Nullable String localPosVar,
                                    boolean usesFastSolidColor) {
+    }
+
+    public void emitFragmentDefinitions(Formatter fs) {
     }
 
     /**
@@ -473,7 +479,7 @@ public abstract class GeometryStep {
     }
 
     public void writeMesh(MeshDrawWriter writer, Draw draw,
-                          @Nullable float[] solidColor,
+            float @Nullable[] solidColor,
                           boolean mayRequireLocalCoords) {
     }
 
@@ -501,9 +507,9 @@ public abstract class GeometryStep {
          * @return new state, eiter matrix or state
          */
         //TODO move to other places
-        protected static Matrix setTransform(@Nonnull UniformDataManager pdm,
+        protected static Matrix setTransform(@NonNull UniformDataManager pdm,
                                              @UniformHandler.UniformHandle int uniform,
-                                             @Nonnull Matrix matrix,
+                                             @NonNull Matrix matrix,
                                              @Nullable Matrix state) {
             if (uniform == Engine.INVALID_RESOURCE_HANDLE ||
                     (state != null && state.equals(matrix))) {

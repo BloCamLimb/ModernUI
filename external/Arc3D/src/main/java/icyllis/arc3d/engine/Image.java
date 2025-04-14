@@ -21,8 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents GPU image resources, which may be 2D or 3D. This class also represents a
@@ -58,16 +57,15 @@ public abstract class Image extends Resource {
     private ReleaseCallback mReleaseCallback;
 
     protected Image(Context context,
-                    boolean budgeted,
                     boolean wrapped,
                     ImageDesc desc,
                     ImageMutableState mutableState) {
-        super(context, budgeted, wrapped, DataUtils.computeSize(desc));
+        super(context, wrapped, DataUtils.computeSize(desc));
         mDesc = desc;
         mMutableState = mutableState;
     }
 
-    @Nonnull
+    @NonNull
     public final ImageDesc getDesc() {
         return mDesc;
     }
@@ -286,7 +284,7 @@ public abstract class Image extends Resource {
          *
          * @return this
          */
-        @Nonnull
+        @NonNull
         public ResourceKey compute(BackendFormat format,
                                    int width, int height,
                                    int sampleCount,

@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Position;
-
-import javax.annotation.Nonnull;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a node in the AST. The AST is a fully-resolved version of the program
@@ -33,7 +33,7 @@ public abstract class Node {
         EXTENSION(TopLevelElement.class),
         FUNCTION_DEFINITION(FunctionDefinition.class),
         FUNCTION_PROTOTYPE(FunctionPrototype.class),
-        GLOBAL_VARIABLE(GlobalVariableDecl.class),
+        GLOBAL_VARIABLE(GlobalVariable.class),
         INTERFACE_BLOCK(InterfaceBlock.class),
         MODIFIERS(TopLevelElement.class),
         STRUCT_DEFINITION(StructDefinition.class);
@@ -51,7 +51,7 @@ public abstract class Node {
 
     public enum SymbolKind {
         ANONYMOUS_FIELD(AnonymousField.class),
-        FUNCTION_DECL(FunctionDecl.class),
+        FUNCTION_DECLARATION(FunctionDeclaration.class),
         TYPE(Type.class),
         VARIABLE(Variable.class);
 
@@ -67,19 +67,19 @@ public abstract class Node {
     }
 
     public enum StatementKind {
-        BLOCK(BlockStatement.class),
+        BLOCK(Block.class),
         BREAK(BreakStatement.class),
         CONTINUE(ContinueStatement.class),
         DISCARD(DiscardStatement.class),
-        DO_LOOP(Statement.class),
+        DO(Statement.class),
         EMPTY(EmptyStatement.class),
         EXPRESSION(ExpressionStatement.class),
-        FOR_LOOP(ForLoop.class),
+        FOR(ForStatement.class),
         IF(IfStatement.class),
         RETURN(ReturnStatement.class),
         SWITCH(SwitchStatement.class),
         SWITCH_CASE(SwitchCase.class),
-        VARIABLE_DECL(VariableDecl.class);
+        VARIABLE_DECLARATION(VariableDeclaration.class);
 
         private final Class<? extends Statement> mType;
 
@@ -99,11 +99,11 @@ public abstract class Node {
         CONSTRUCTOR_ARRAY_CAST(ConstructorArrayCast.class),
         CONSTRUCTOR_COMPOUND(ConstructorCompound.class),
         CONSTRUCTOR_COMPOUND_CAST(ConstructorCompoundCast.class),
-        CONSTRUCTOR_DIAGONAL_MATRIX(ConstructorDiagonalMatrix.class),
+        CONSTRUCTOR_DIAGONAL(ConstructorDiagonal.class),
         CONSTRUCTOR_MATRIX_RESIZE(ConstructorMatrixResize.class),
         CONSTRUCTOR_SCALAR_CAST(ConstructorScalarCast.class),
+        CONSTRUCTOR_SPLAT(ConstructorSplat.class),
         CONSTRUCTOR_STRUCT(ConstructorStruct.class),
-        CONSTRUCTOR_VECTOR_SPLAT(ConstructorVectorSplat.class),
         FIELD_ACCESS(FieldAccess.class),
         FUNCTION_CALL(FunctionCall.class),
         FUNCTION_REFERENCE(FunctionReference.class),
@@ -153,12 +153,12 @@ public abstract class Node {
      *
      * @return true to stop recursion and propagate true up the stack, false to continue
      */
-    public abstract boolean accept(@Nonnull TreeVisitor visitor);
+    public abstract boolean accept(@NonNull TreeVisitor visitor);
 
     /**
      * @return a string representation of this AST node
      */
-    @Nonnull
+    @NonNull
     @Override
     public abstract String toString();
 }

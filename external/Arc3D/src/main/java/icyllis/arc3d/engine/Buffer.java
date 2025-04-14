@@ -52,7 +52,7 @@ public abstract class Buffer extends Resource {
     protected Buffer(Context context,
                      long size,
                      int usage) {
-        super(context, /*budgeted*/true, /*wrapped*/false, size);
+        super(context, /*wrapped*/false, size);
         assert (size > 0);
         mSize = size;
         mUsage = usage;

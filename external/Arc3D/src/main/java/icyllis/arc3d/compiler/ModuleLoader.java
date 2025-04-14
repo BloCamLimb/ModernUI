@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.compiler;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
+
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,15 +58,15 @@ public class ModuleLoader {
         symbols.insert(types.mBool3);
         symbols.insert(types.mBool4);
 
-        symbols.insert(types.mShort);
-        symbols.insert(types.mShort2);
-        symbols.insert(types.mShort3);
-        symbols.insert(types.mShort4);
+        symbols.insert(types.mMin16Int);
+        symbols.insert(types.mMin16Int2);
+        symbols.insert(types.mMin16Int3);
+        symbols.insert(types.mMin16Int4);
 
-        symbols.insert(types.mUShort);
-        symbols.insert(types.mUShort2);
-        symbols.insert(types.mUShort3);
-        symbols.insert(types.mUShort4);
+        symbols.insert(types.mMin16UInt);
+        symbols.insert(types.mMin16UInt2);
+        symbols.insert(types.mMin16UInt3);
+        symbols.insert(types.mMin16UInt4);
 
         symbols.insert(types.mInt);
         symbols.insert(types.mInt2);
@@ -77,25 +78,25 @@ public class ModuleLoader {
         symbols.insert(types.mUInt3);
         symbols.insert(types.mUInt4);
 
-        symbols.insert(types.mHalf);
-        symbols.insert(types.mHalf2);
-        symbols.insert(types.mHalf3);
-        symbols.insert(types.mHalf4);
+        symbols.insert(types.mMin16Float);
+        symbols.insert(types.mMin16Float2);
+        symbols.insert(types.mMin16Float3);
+        symbols.insert(types.mMin16Float4);
 
         symbols.insert(types.mFloat);
         symbols.insert(types.mFloat2);
         symbols.insert(types.mFloat3);
         symbols.insert(types.mFloat4);
 
-        symbols.insert(types.mHalf2x2);
-        symbols.insert(types.mHalf2x3);
-        symbols.insert(types.mHalf2x4);
-        symbols.insert(types.mHalf3x2);
-        symbols.insert(types.mHalf3x3);
-        symbols.insert(types.mHalf3x4);
-        symbols.insert(types.mHalf4x2);
-        symbols.insert(types.mHalf4x3);
-        symbols.insert(types.mHalf4x4);
+        symbols.insert(types.mMin16Float2x2);
+        symbols.insert(types.mMin16Float2x3);
+        symbols.insert(types.mMin16Float2x4);
+        symbols.insert(types.mMin16Float3x2);
+        symbols.insert(types.mMin16Float3x3);
+        symbols.insert(types.mMin16Float3x4);
+        symbols.insert(types.mMin16Float4x2);
+        symbols.insert(types.mMin16Float4x3);
+        symbols.insert(types.mMin16Float4x4);
 
         symbols.insert(types.mFloat2x2);
         symbols.insert(types.mFloat2x3);
@@ -188,20 +189,10 @@ public class ModuleLoader {
         symbols.insert(types.mUVec3);
         symbols.insert(types.mUVec4);
 
-        symbols.insert(types.mMin16Int);
-        symbols.insert(types.mMin16Int2);
-        symbols.insert(types.mMin16Int3);
-        symbols.insert(types.mMin16Int4);
-
-        symbols.insert(types.mMin16UInt);
-        symbols.insert(types.mMin16UInt2);
-        symbols.insert(types.mMin16UInt3);
-        symbols.insert(types.mMin16UInt4);
-
-        symbols.insert(types.mMin16Float);
-        symbols.insert(types.mMin16Float2);
-        symbols.insert(types.mMin16Float3);
-        symbols.insert(types.mMin16Float4);
+        symbols.insert(types.mHalf);
+        symbols.insert(types.mHalf2);
+        symbols.insert(types.mHalf3);
+        symbols.insert(types.mHalf4);
 
         symbols.insert(types.mInt32);
         symbols.insert(types.mI32Vec2);
@@ -217,6 +208,16 @@ public class ModuleLoader {
         symbols.insert(types.mF32Vec2);
         symbols.insert(types.mF32Vec3);
         symbols.insert(types.mF32Vec4);
+
+        symbols.insert(types.mHalf2x2);
+        symbols.insert(types.mHalf2x3);
+        symbols.insert(types.mHalf2x4);
+        symbols.insert(types.mHalf3x2);
+        symbols.insert(types.mHalf3x3);
+        symbols.insert(types.mHalf3x4);
+        symbols.insert(types.mHalf4x2);
+        symbols.insert(types.mHalf4x3);
+        symbols.insert(types.mHalf4x4);
 
         symbols.insert(types.mMat2);
         symbols.insert(types.mMat3);
@@ -262,7 +263,7 @@ public class ModuleLoader {
         return mRootModule;
     }
 
-    @Nonnull
+    @NonNull
     private ModuleUnit loadModule(ShaderCompiler compiler,
                                   CharSequence source,
                                   ShaderKind kind,
@@ -292,7 +293,7 @@ public class ModuleLoader {
         return module;
     }
 
-    @Nonnull
+    @NonNull
     public String loadModuleSource(String name) {
         final InputStream in = ModuleLoader.class
                 .getResourceAsStream("/assets/arc3d/shaders/" + name);
@@ -306,7 +307,7 @@ public class ModuleLoader {
         }
     }
 
-    @Nonnull
+    @NonNull
     public ModuleUnit loadCommonModule(ShaderCompiler compiler) {
         if (mCommonModule != null) {
             return mCommonModule;
@@ -323,7 +324,7 @@ public class ModuleLoader {
         return mCommonModule;
     }
 
-    @Nonnull
+    @NonNull
     public ModuleUnit loadGLSLVertModule(ShaderCompiler compiler) {
         if (mGLSLVertModule != null) {
             return mGLSLVertModule;
@@ -341,7 +342,7 @@ public class ModuleLoader {
         return mGLSLVertModule;
     }
 
-    @Nonnull
+    @NonNull
     public ModuleUnit loadGLSLFragModule(ShaderCompiler compiler) {
         if (mGLSLFragModule != null) {
             return mGLSLFragModule;

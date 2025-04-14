@@ -20,8 +20,7 @@
 package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.BackendRenderTarget;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
 
@@ -73,7 +72,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
         return true;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public GLBackendFormat getBackendFormat() {
         if (mBackendFormat == null) {

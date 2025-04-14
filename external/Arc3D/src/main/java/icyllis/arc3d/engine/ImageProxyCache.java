@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,16 +19,20 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Pixels;
+import icyllis.arc3d.core.Pixmap;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
  * A factory for creating {@link SurfaceProxy}-derived objects. This class may be used on
- * the creating thread of {@link RecordingContext}.
+ * the creating thread of {@link Context}.
  */
 //TODO still WIP
 public final class ImageProxyCache {
@@ -39,7 +43,7 @@ public final class ImageProxyCache {
     // on these proxies, but they must send a message to the resourceCache when they are deleted.
     private final Object2ObjectOpenHashMap<IUniqueKey, ImageViewProxy> mUniquelyKeyedProxies;
 
-    ImageProxyCache(RecordingContext context) {
+    public ImageProxyCache(Context context) {
         mContext = context;
         /*if (context instanceof ImmediateContext) {
             mDirect = (ImmediateContext) context;
@@ -138,8 +142,8 @@ public final class ImageProxyCache {
     /**
      * Creates a lazy {@link ImageViewProxy} for the pixel map.
      *
-     * @param pixmap     pixel map
-     * @param pixels     raw ptr to pixel ref, must be immutable
+     * @param pixmap       pixel map
+     * @param pixels       raw ptr to pixel ref, must be immutable
      * @param dstColorType a color type for surface usage, see {@link ImageDesc}
      * @param surfaceFlags flags described as follows
      * @see ISurface#FLAG_BUDGETED
@@ -149,8 +153,8 @@ public final class ImageProxyCache {
     @Deprecated
     @Nullable
     @SharedPtr
-    public ImageViewProxy createTextureFromPixels(@Nonnull Pixmap pixmap,
-                                                  @Nonnull @RawPtr Pixels pixels,
+    public ImageViewProxy createTextureFromPixels(@NonNull Pixmap pixmap,
+                                                  @NonNull @RawPtr Pixels pixels,
                                                   int dstColorType,
                                                   int surfaceFlags) {
         mContext.checkOwnerThread();

@@ -20,9 +20,11 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.shaders.Shader;
+import icyllis.arc3d.sketch.BlendMode;
+import icyllis.arc3d.sketch.shaders.Shader;
 import icyllis.arc3d.engine.SamplerDesc;
 import icyllis.arc3d.granite.shading.UniformHandler;
+import icyllis.arc3d.sketch.shaders.GradientShader;
 
 import java.util.*;
 
@@ -34,9 +36,9 @@ import static icyllis.arc3d.granite.FragmentStage.*;
 public class ShaderCodeSource {
 
     // common uniform definitions
-    private static final Uniform[] PAINT_COLOR_UNIFORMS = {
+    private static final List<Uniform> PAINT_COLOR_UNIFORMS = List.of(
             new Uniform(SLDataType.kFloat4, UniformHandler.PAINT_COLOR_NAME)
-    };
+    );
     private static final Uniform INV_IMAGE_SIZE =
             new Uniform(SLDataType.kFloat2, "u_InvImageSize");
     private static final Uniform SUBSET =
@@ -336,7 +338,7 @@ public class ShaderCodeSource {
     /**
      * We store all polar colors with hue in the first component, so this "LCH -> Lab" transform
      * actually takes "HCL". This is also used to do the same polar transform for OkHCL to OkLAB.
-     * @see icyllis.arc3d.core.shaders.GradientShader
+     * @see GradientShader
      */
     private static final String PRIV_CSS_HCL_TO_LAB = """
             vec3 _css_hcl_to_lab(vec3 hcl) {
@@ -490,7 +492,7 @@ public class ShaderCodeSource {
             }
             """;
     /**
-     * @see icyllis.arc3d.core.shaders.GradientShader
+     * @see GradientShader
      */
     private static final String PRIV_INTERPOLATED_TO_RGB_UNPREMUL = """
             vec4 _interpolated_to_rgb_unpremul(vec4 color, int colorSpace, int doUnpremul) {
@@ -873,7 +875,7 @@ public class ShaderCodeSource {
             vec4 arc_dither_shader(vec4 color,
                                    float range) {
                 // Unrolled 8x8 Bayer matrix
-                vec2 A = gl_FragCoord.xy;
+                vec2 A = SV_FragCoord.xy;
                 vec2 B = floor(A);
                 float U = fract(B.x * 0.5 + B.y * B.y * 0.75);
                 vec2 C = A * 0.5;
@@ -888,12 +890,30 @@ public class ShaderCodeSource {
                 return vec4(clamp(color.rgb + dithering * range, 0.0, color.a), color.a);
             }
             """;
+    public static final String ARC_ANALYTIC_RRECT_SHADER = """
+            float4 arc_analytic_rrect_shader(float2 coords,
+                                             float4 rect,
+                                             float4 radii,
+                                             float4 fields) {
+                float2 r2 = coords.x>fields.x ? radii.yz : radii.xw;
+                float r = coords.y>fields.y ? r2.y : r2.x;
+                float2 b = (rect.zw - rect.xy) * 0.5;
+                float2 p = coords - (rect.xy + rect.zw) * 0.5;
+                float2 q = abs(p)-b+r;
+                float dis = min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r;
+                float smoothRad = fields.z;
+                float alpha = smoothRad>0.0
+                    ? smoothstep(-smoothRad, 0.0, dis)
+                    : saturate(0.5 + dis/fwidth(dis));
+                return float4(0.5 + fields.w * (-alpha + 0.5));
+            }
+            """;
     /**
      * Public blend functions, these are pure functions.
      * <p>
      * Implementation is the same as raster pipeline, but is vectorized and eliminates branches.
      *
-     * @see icyllis.arc3d.core.BlendMode
+     * @see BlendMode
      */
     public static final String BLEND_CLEAR = """
             vec4 blend_clear(vec4 src, vec4 dst) {
@@ -998,7 +1018,7 @@ public class ShaderCodeSource {
                                 mix(sa * da - 2 * (sa - s) * (da - d),
                                     2 * s * d,
                                     lessThanEqual(2 * d, da)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_DARKEN = """
@@ -1020,7 +1040,7 @@ public class ShaderCodeSource {
                                     greaterThanEqual(s, sa)),
                                 s * (1 - da),
                                 lessThanEqual(d, vec3(0))),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_COLOR_BURN = """
@@ -1032,7 +1052,7 @@ public class ShaderCodeSource {
                                     lessThanEqual(s, vec3(0))),
                                 sa * da + s * (1 - da) + d * (1 - sa),
                                 greaterThanEqual(d, da)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_HARD_LIGHT = """
@@ -1043,7 +1063,7 @@ public class ShaderCodeSource {
                                 mix(sa * da - 2 * (sa - s) * (da - d),
                                     2 * s * d,
                                     lessThanEqual(2 * s, sa)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_SOFT_LIGHT = """
@@ -1057,7 +1077,7 @@ public class ShaderCodeSource {
                                     lessThanEqual(4 * d, da)),
                                 d * d * (sa - 2 * s) / da + s * (1 - da) + d * (2 * s + 1 - sa),
                                 lessThanEqual(2 * s, sa)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_DIFFERENCE = """
@@ -1079,7 +1099,7 @@ public class ShaderCodeSource {
             }
             """;
     /**
-     * This can produce undefined results from {@link icyllis.arc3d.core.BlendMode#blend_divide}
+     * This can produce undefined results from {@link BlendMode#blend_divide}
      * if values out of range.
      */
     public static final String BLEND_DIVIDE = """
@@ -1118,7 +1138,7 @@ public class ShaderCodeSource {
                                     d * (1 - sa),
                                     lessThanEqual(s, vec3(0))),
                                 lessThan(2 * s, sa)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_LINEAR_LIGHT = """
@@ -1127,7 +1147,7 @@ public class ShaderCodeSource {
                 vec3 sa = vec3(src.a),  da = vec3(dst.a);
                 return vec4(clamp(2 * s * da + d * sa - sa * da, vec3(0), sa * da) +
                                   s * (1 - da) + d * (1 - sa),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_PIN_LIGHT = """
@@ -1143,7 +1163,7 @@ public class ShaderCodeSource {
                                     vec3(0),
                                     lessThan(2 * s, sa)),
                                 greaterThan(y, z)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     public static final String BLEND_HARD_MIX = """
@@ -1153,7 +1173,7 @@ public class ShaderCodeSource {
                 vec3 b = s * da + d * sa;
                 vec3 c = sa * da;
                 return vec4(s + d - b + mix(c, vec3(0), lessThan(b, c)),
-                            sa + da * (1 - sa));
+                            src.a + dst.a * (1 - src.a));
             }
             """;
     // single function declarations
@@ -1417,7 +1437,7 @@ public class ShaderCodeSource {
                 "Error",
                 kLocalCoords_ReqFlag,
                 "arc_error",
-                new String[]{ARC_ERROR},
+                List.of(ARC_ERROR),
                 NO_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1427,7 +1447,7 @@ public class ShaderCodeSource {
                 "Passthrough",
                 kPriorStageOutput_ReqFlag,
                 "arc_passthrough",
-                new String[]{ARC_PASSTHROUGH},
+                List.of(ARC_PASSTHROUGH),
                 NO_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1437,13 +1457,13 @@ public class ShaderCodeSource {
                 "SolidColor",
                 kNone_ReqFlag,
                 "arc_solid_color",
-                new String[]{ARC_SOLID_COLOR},
-                new Uniform[]{
+                List.of(ARC_SOLID_COLOR),
+                List.of(
                         new Uniform(
                                 SLDataType.kFloat4,
                                 "u_Color"
                         )
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1452,7 +1472,7 @@ public class ShaderCodeSource {
                 "RGBOpaquePaintColor",
                 kNone_ReqFlag,
                 "arc_rgb_opaque",
-                new String[]{ARC_RGB_OPAQUE},
+                List.of(ARC_RGB_OPAQUE),
                 PAINT_COLOR_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1462,7 +1482,7 @@ public class ShaderCodeSource {
                 "AlphaOnlyPaintColor",
                 kNone_ReqFlag,
                 "arc_alpha_only",
-                new String[]{ARC_ALPHA_ONLY},
+                List.of(ARC_ALPHA_ONLY),
                 PAINT_COLOR_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1472,19 +1492,21 @@ public class ShaderCodeSource {
                 "LinearGradient4",
                 kLocalCoords_ReqFlag,
                 "arc_linear_grad_4_shader",
-                new String[]{PRIV_TILE_GRAD, PRIV_LINEAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                List.of(
+                        PRIV_TILE_GRAD, PRIV_LINEAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
                         PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
                         PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
                         PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
                         PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
-                        ARC_LINEAR_GRAD_4_SHADER},
-                new Uniform[]{
+                        ARC_LINEAR_GRAD_4_SHADER
+                ),
+                List.of(
                         GRAD_4_COLORS,
                         GRAD_4_OFFSETS,
                         TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1493,19 +1515,21 @@ public class ShaderCodeSource {
                 "LinearGradient8",
                 kLocalCoords_ReqFlag,
                 "arc_linear_grad_8_shader",
-                new String[]{PRIV_TILE_GRAD, PRIV_LINEAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                List.of(
+                        PRIV_TILE_GRAD, PRIV_LINEAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
                         PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
                         PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
                         PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
                         PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
-                        ARC_LINEAR_GRAD_8_SHADER},
-                new Uniform[]{
+                        ARC_LINEAR_GRAD_8_SHADER
+                ),
+                List.of(
                         GRAD_8_COLORS,
                         GRAD_8_OFFSETS,
                         TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1514,19 +1538,21 @@ public class ShaderCodeSource {
                 "RadialGradient4",
                 kLocalCoords_ReqFlag,
                 "arc_radial_grad_4_shader",
-                new String[]{PRIV_TILE_GRAD, PRIV_RADIAL_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                List.of(
+                        PRIV_TILE_GRAD, PRIV_RADIAL_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
                         PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
                         PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
                         PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
                         PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
-                        ARC_RADIAL_GRAD_4_SHADER},
-                new Uniform[]{
+                        ARC_RADIAL_GRAD_4_SHADER
+                ),
+                List.of(
                         GRAD_4_COLORS,
                         GRAD_4_OFFSETS,
                         TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1535,19 +1561,21 @@ public class ShaderCodeSource {
                 "RadialGradient8",
                 kLocalCoords_ReqFlag,
                 "arc_radial_grad_8_shader",
-                new String[]{PRIV_TILE_GRAD, PRIV_RADIAL_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                List.of(
+                        PRIV_TILE_GRAD, PRIV_RADIAL_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
                         PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
                         PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
                         PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
                         PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
-                        ARC_RADIAL_GRAD_8_SHADER},
-                new Uniform[]{
+                        ARC_RADIAL_GRAD_8_SHADER
+                ),
+                List.of(
                         GRAD_8_COLORS,
                         GRAD_8_OFFSETS,
                         TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1556,13 +1584,15 @@ public class ShaderCodeSource {
                 "AngularGradient4",
                 kLocalCoords_ReqFlag,
                 "arc_angular_grad_4_shader",
-                new String[]{PRIV_TILE_GRAD, PRIV_ANGULAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
+                List.of(
+                        PRIV_TILE_GRAD, PRIV_ANGULAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_4,
                         PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
                         PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
                         PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
                         PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
-                        ARC_ANGULAR_GRAD_4_SHADER},
-                new Uniform[]{
+                        ARC_ANGULAR_GRAD_4_SHADER
+                ),
+                List.of(
                         GRAD_4_COLORS,
                         GRAD_4_OFFSETS,
                         GRAD_BIAS,
@@ -1570,7 +1600,7 @@ public class ShaderCodeSource {
                         TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1579,13 +1609,15 @@ public class ShaderCodeSource {
                 "AngularGradient8",
                 kLocalCoords_ReqFlag,
                 "arc_angular_grad_8_shader",
-                new String[]{PRIV_TILE_GRAD, PRIV_ANGULAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
+                List.of(
+                        PRIV_TILE_GRAD, PRIV_ANGULAR_GRAD_LAYOUT, PRIV_COLORIZE_GRAD_8,
                         PRIV_CSS_LAB_TO_XYZ, PRIV_CSS_HCL_TO_LAB,
                         PRIV_CSS_OKLAB_TO_LINEAR_SRGB, PRIV_OKLAB_GAMUT_MAP_TO_LINEAR_SRGB,
                         PRIV_CSS_HSL_TO_SRGB, PRIV_CSS_HWB_TO_SRGB,
                         PRIV_INTERPOLATED_TO_RGB_UNPREMUL,
-                        ARC_ANGULAR_GRAD_8_SHADER},
-                new Uniform[]{
+                        ARC_ANGULAR_GRAD_8_SHADER
+                ),
+                List.of(
                         GRAD_8_COLORS,
                         GRAD_8_OFFSETS,
                         GRAD_BIAS,
@@ -1593,7 +1625,7 @@ public class ShaderCodeSource {
                         TILE_MODE_X,
                         GRAD_COLOR_SPACE,
                         GRAD_DO_UNPREMUL
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1603,20 +1635,20 @@ public class ShaderCodeSource {
                 kLocalCoords_ReqFlag | kPriorStageOutput_ReqFlag,
                 "LocalMatrix",
                 NO_FUNCTIONS,
-                new Uniform[]{
+                List.of(
                         new Uniform(
                                 SLDataType.kFloat3x3,
                                 "u_LocalMatrix"
                         )
-                },
+                ),
                 NO_SAMPLERS,
                 (node, localCoords, priorStageOutput, blenderDstColor, output, code) -> {
-                    assert node.codeID() == kLocalMatrixShader_BuiltinStageID;
+                    assert node.stageID() == kLocalMatrixShader_BuiltinStageID;
                     assert node.numChildren() == 1;
 
                     String newPerspCoordsName = getMangledName("newPerspCoords", node.stageIndex());
                     String newLocalCoordsName = getMangledName("newLocalCoords", node.stageIndex());
-                    String localMatrixName = getMangledName(node.stage().mUniforms[0].name(), node.stageIndex());
+                    String localMatrixName = getMangledName(node.stage().mUniforms.get(0).name(), node.stageIndex());
                     code.format("""
                                     {
                                     vec3 %1$s = %3$s * vec3(%4$s, 1);
@@ -1643,18 +1675,18 @@ public class ShaderCodeSource {
                 "ImageShader",
                 kLocalCoords_ReqFlag,
                 "arc_image_shader",
-                new String[]{
+                List.of(
                         PRIV_TILE, PRIV_SAMPLE_IMAGE_SUBSET,
                         ARC_IMAGE_SHADER
-                },
-                new Uniform[]{
+                ),
+                List.of(
                         INV_IMAGE_SIZE, SUBSET,
                         new Uniform(SLDataType.kInt, "u_FilterMode"),
                         TILE_MODE_X, TILE_MODE_Y
-                },
-                new Sampler[]{
+                ),
+                List.of(
                         new Sampler(SLDataType.kSampler2D, "u_Sampler")
-                },
+                ),
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
@@ -1662,19 +1694,19 @@ public class ShaderCodeSource {
                 "CubicImageShader",
                 kLocalCoords_ReqFlag,
                 "arc_cubic_image_shader",
-                new String[]{
+                List.of(
                         PRIV_TILE, PRIV_SAMPLE_CUBIC_IMAGE_SUBSET,
                         PRIV_CUBIC_FILTER_IMAGE, ARC_CUBIC_IMAGE_SHADER
-                },
-                new Uniform[]{
+                ),
+                List.of(
                         SUBSET,
                         new Uniform(SLDataType.kFloat4x4, "u_CubicCoeffs"),
                         new Uniform(SLDataType.kInt, "u_CubicClamp"),
                         TILE_MODE_X, TILE_MODE_Y
-                },
-                new Sampler[]{
+                ),
+                List.of(
                         new Sampler(SLDataType.kSampler2D, "u_Sampler")
-                },
+                ),
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
@@ -1682,15 +1714,25 @@ public class ShaderCodeSource {
                 "HardwareImageShader",
                 kLocalCoords_ReqFlag,
                 "arc_hw_image_shader",
-                new String[]{
-                        ARC_HW_IMAGE_SHADER
-                },
-                new Uniform[]{
-                        INV_IMAGE_SIZE
-                },
-                new Sampler[]{
+                List.of(ARC_HW_IMAGE_SHADER),
+                List.of(INV_IMAGE_SIZE),
+                List.of(
                         new Sampler(SLDataType.kSampler2D, "u_Sampler")
-                },
+                ),
+                ShaderCodeSource::generateDefaultExpression,
+                0
+        );
+        mBuiltinCodeSnippets[kAnalyticRRectShader_BuiltinStageID] = new FragmentStage(
+                "AnalyticRRectShader",
+                kLocalCoords_ReqFlag,
+                "arc_analytic_rrect_shader",
+                List.of(ARC_ANALYTIC_RRECT_SHADER),
+                List.of(
+                        new Uniform(SLDataType.kFloat4, "u_Rect"),
+                        new Uniform(SLDataType.kFloat4, "u_Radii"),
+                        new Uniform(SLDataType.kFloat4, "u_Fields")
+                ),
+                NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
         );
@@ -1698,12 +1740,10 @@ public class ShaderCodeSource {
                 "DitherShader",
                 kPriorStageOutput_ReqFlag,
                 "arc_dither_shader",
-                new String[]{
-                        ARC_DITHER_SHADER
-                },
-                new Uniform[]{
+                List.of(ARC_DITHER_SHADER),
+                List.of(
                         new Uniform(SLDataType.kFloat, "u_Range")
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1712,13 +1752,13 @@ public class ShaderCodeSource {
                 "ColorSpaceTransform",
                 kPriorStageOutput_ReqFlag,
                 "arc_color_space_transform",
-                new String[]{
+                List.of(
                         PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
                         ARC_COLOR_SPACE_TRANSFORM
-                },
-                new Uniform[]{
+                ),
+                List.of(
                         XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1737,7 +1777,7 @@ public class ShaderCodeSource {
                 "BlendModeBlender",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                 "arc_blend",
-                new String[]{
+                List.of(
                         PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, PRIV_BLEND_SET_LUM_SAT,
                         BLEND_CLEAR, BLEND_SRC, BLEND_DST, BLEND_SRC_OVER, BLEND_DST_OVER,
                         BLEND_SRC_IN, BLEND_DST_IN, BLEND_SRC_OUT, BLEND_DST_OUT,
@@ -1750,10 +1790,10 @@ public class ShaderCodeSource {
                         BLEND_PIN_LIGHT, BLEND_HARD_MIX, BLEND_DARKER_COLOR, BLEND_LIGHTER_COLOR,
                         BLEND_HUE, BLEND_SATURATION, BLEND_COLOR, BLEND_LUMINOSITY,
                         ARC_BLEND
-                },
-                new Uniform[]{
+                ),
+                List.of(
                         new Uniform(SLDataType.kInt, "u_BlendMode")
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1762,10 +1802,10 @@ public class ShaderCodeSource {
                 "PorterDuffBlender",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                 "arc_porter_duff_blend",
-                new String[]{ARC_PORTER_DUFF_BLEND},
-                new Uniform[]{
+                List.of(ARC_PORTER_DUFF_BLEND),
+                List.of(
                         new Uniform(SLDataType.kFloat4, "u_Coeffs")
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1774,13 +1814,13 @@ public class ShaderCodeSource {
                 "PrimitiveColor",
                 kPrimitiveColor_ReqFlag,
                 "arc_color_space_transform",
-                new String[]{
+                List.of(
                         PRIV_TRANSFER_FUNCTION, PRIV_INV_TRANSFER_FUNCTION,
                         ARC_COLOR_SPACE_TRANSFORM
-                },
-                new Uniform[]{
+                ),
+                List.of(
                         XFORM_FLAGS, XFORM_SRC_TF, XFORM_GAMUT_TRANSFORM, XFORM_DST_TF
-                },
+                ),
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
                 0
@@ -1800,10 +1840,10 @@ public class ShaderCodeSource {
             String function = BLEND_MODE_FUNCTIONS.get(mode);
             if (function != null) {
                 mBuiltinCodeSnippets[kFirstFixedBlend_BuiltinStageID + i] = new FragmentStage(
-                        mode.name(),
+                        mode.getPrettyName(),
                         kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                         mode.getBlendFuncName(),
-                        new String[]{function},
+                        List.of(function),
                         NO_UNIFORMS,
                         NO_SAMPLERS,
                         ShaderCodeSource::generateDefaultExpression,
@@ -1815,7 +1855,7 @@ public class ShaderCodeSource {
                 "DarkerColor",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                 "blend_darker_color",
-                new String[]{PRIV_BLEND_GET_LUM, BLEND_DARKER_COLOR},
+                List.of(PRIV_BLEND_GET_LUM, BLEND_DARKER_COLOR),
                 NO_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1825,7 +1865,7 @@ public class ShaderCodeSource {
                 "LighterColor",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                 "blend_lighter_color",
-                new String[]{PRIV_BLEND_GET_LUM, BLEND_LIGHTER_COLOR},
+                List.of(PRIV_BLEND_GET_LUM, BLEND_LIGHTER_COLOR),
                 NO_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1835,7 +1875,7 @@ public class ShaderCodeSource {
                 "Hue",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                 "blend_hue",
-                new String[]{PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, PRIV_BLEND_SET_LUM_SAT, BLEND_HUE},
+                List.of(PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, PRIV_BLEND_SET_LUM_SAT, BLEND_HUE),
                 NO_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1845,7 +1885,7 @@ public class ShaderCodeSource {
                 "Saturation",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                 "blend_saturation",
-                new String[]{PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, PRIV_BLEND_SET_LUM_SAT, BLEND_SATURATION},
+                List.of(PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, PRIV_BLEND_SET_LUM_SAT, BLEND_SATURATION),
                 NO_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1855,7 +1895,7 @@ public class ShaderCodeSource {
                 "Color",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                 "blend_color",
-                new String[]{PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, BLEND_COLOR},
+                List.of(PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, BLEND_COLOR),
                 NO_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -1865,7 +1905,7 @@ public class ShaderCodeSource {
                 "Luminosity",
                 kPriorStageOutput_ReqFlag | kBlenderDstColor_ReqFlag,
                 "blend_luminosity",
-                new String[]{PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, BLEND_LUMINOSITY},
+                List.of(PRIV_BLEND_GET_LUM, PRIV_BLEND_SET_LUM, BLEND_LUMINOSITY),
                 NO_UNIFORMS,
                 NO_SAMPLERS,
                 ShaderCodeSource::generateDefaultExpression,
@@ -2077,7 +2117,9 @@ public class ShaderCodeSource {
                 emitDefinitions(node.children(), added, code);
             }
 
-            for (String function : node.stage().mRequiredFunctions) {
+            List<String> functions = node.stage().mRequiredFunctions;
+            for (int i = 0, e = functions.size(); i < e; i++) {
+                String function = functions.get(i);
                 if (added.put(function, function) == null) {
                     code.format(function);
                 }

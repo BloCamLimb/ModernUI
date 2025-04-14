@@ -21,13 +21,13 @@ package icyllis.arc3d.granite.shading;
 
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
+import icyllis.arc3d.granite.trash.GraphicsPipelineDesc_Old;
+import icyllis.arc3d.granite.trash.PipelineKey_old;
 import icyllis.arc3d.granite.GeometryStep;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 import static icyllis.arc3d.engine.Engine.*;
@@ -157,7 +157,7 @@ public abstract class GraphicsPipelineBuilder {
         mFS.nextStage();
     }
 
-    @Nonnull
+    @NonNull
     private String getMangleSuffix() {
         assert mStageIndex >= 0;
         StringBuilder suffix = new StringBuilder("_S").append(mStageIndex);

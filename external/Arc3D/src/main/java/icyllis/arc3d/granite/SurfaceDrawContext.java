@@ -21,10 +21,16 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.task.*;
+import icyllis.arc3d.granite.task.DrawTask;
+import icyllis.arc3d.granite.task.ImageUploadTask;
+import icyllis.arc3d.granite.task.RenderPassTask;
+import icyllis.arc3d.granite.task.Task;
+import icyllis.arc3d.granite.task.TaskList;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Matrixc;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
@@ -171,7 +177,7 @@ public final class SurfaceDrawContext implements AutoCloseable {
     /**
      * @param clearColor premultiplied RGBA color, null means (0,0,0,0)
      */
-    public void clear(@Nullable float[] clearColor) {
+    public void clear(float @Nullable[] clearColor) {
         discard();
 
         mPendingLoadOp = Engine.LoadOp.kClear;

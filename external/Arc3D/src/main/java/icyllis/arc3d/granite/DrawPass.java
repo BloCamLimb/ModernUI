@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,10 +21,11 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.sketch.BlendMode;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.function.Function;
@@ -115,8 +116,7 @@ public class DrawPass implements AutoCloseable {
             return index;
         };
 
-        var passBounds = new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
-                Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+        var passBounds = Rect2f.makeInfiniteInverted();
         int depthStencilFlags = Engine.DepthStencilFlags.kNone;
 
         var geometryUniformTracker = new UniformTracker();
@@ -581,7 +581,7 @@ public class DrawPass implements AutoCloseable {
         }
 
         @Override
-        public int compareTo(@Nonnull SortKey o) {
+        public int compareTo(@NonNull SortKey o) {
             int res = Integer.compareUnsigned(mOrderKey, o.mOrderKey);
             if (res != 0) return res;
             res = Long.compareUnsigned(mPipelineKey, o.mPipelineKey);

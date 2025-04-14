@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a three-dimensional vector.
@@ -69,7 +69,7 @@ public class Vector3 {
      *
      * @param v the vector to copy from
      */
-    public void set(@Nonnull Vector3 v) {
+    public void set(@NonNull Vector3 v) {
         x = v.x;
         y = v.y;
         z = v.z;
@@ -80,7 +80,7 @@ public class Vector3 {
      *
      * @param v the vector to add
      */
-    public void add(@Nonnull Vector3 v) {
+    public void add(@NonNull Vector3 v) {
         x += v.x;
         y += v.y;
         z += v.z;
@@ -91,7 +91,7 @@ public class Vector3 {
      *
      * @param v the vector to subtract
      */
-    public void subtract(@Nonnull Vector3 v) {
+    public void subtract(@NonNull Vector3 v) {
         x -= v.x;
         y -= v.y;
         z -= v.z;
@@ -126,7 +126,7 @@ public class Vector3 {
      *
      * @param v the vector to multiply with
      */
-    public void multiply(@Nonnull Vector3 v) {
+    public void multiply(@NonNull Vector3 v) {
         x *= v.x;
         y *= v.y;
         z *= v.z;
@@ -158,7 +158,7 @@ public class Vector3 {
      *
      * @param v the vector to dot product with.
      */
-    public float dot(@Nonnull Vector3 v) {
+    public float dot(@NonNull Vector3 v) {
         return x * v.x + y * v.y + z * v.z;
     }
 
@@ -179,7 +179,7 @@ public class Vector3 {
      *
      * @param v the vector to cross product with.
      */
-    public void cross(@Nonnull Vector3 v) {
+    public void cross(@NonNull Vector3 v) {
         if (this == v) {
             // same direction, sin = 0
             setZero();
@@ -196,7 +196,7 @@ public class Vector3 {
     /**
      * Calculate component-wise minimum of this and the given vector.
      */
-    public void minComponent(@Nonnull Vector3 v) {
+    public void minComponent(@NonNull Vector3 v) {
         x = Math.min(x, v.x);
         y = Math.min(y, v.y);
         z = Math.min(z, v.z);
@@ -205,7 +205,7 @@ public class Vector3 {
     /**
      * Calculate component-wise maximum of this and the given vector.
      */
-    public void maxComponent(@Nonnull Vector3 v) {
+    public void maxComponent(@NonNull Vector3 v) {
         x = Math.max(x, v.x);
         y = Math.max(y, v.y);
         z = Math.max(z, v.z);
@@ -299,7 +299,7 @@ public class Vector3 {
      *
      * @param v the vector to project on
      */
-    public void projection(@Nonnull Vector3 v) {
+    public void projection(@NonNull Vector3 v) {
         final float sq = lengthSq();
         if (sq < 1.0e-6f) {
             setZero();
@@ -318,7 +318,7 @@ public class Vector3 {
      * @param angle rotation angle in radians
      * @return a quaternion represents the rotation
      */
-    @Nonnull
+    @NonNull
     public Quaternion rotation(float angle) {
         return Quaternion.makeAxisAngle(this, angle);
     }
@@ -328,7 +328,7 @@ public class Vector3 {
      *
      * @param mat the matrix to transform from
      */
-    public void transform(@Nonnull Matrix4 mat) {
+    public void transform(@NonNull Matrix4 mat) {
         mat.preTransform(this);
     }
 
@@ -337,7 +337,7 @@ public class Vector3 {
      *
      * @param mat the matrix to transform from
      */
-    public void preTransform(@Nonnull Matrix4 mat) {
+    public void preTransform(@NonNull Matrix4 mat) {
         mat.postTransform(this);
     }
 
@@ -346,7 +346,7 @@ public class Vector3 {
      *
      * @param q the quaternion to rotate the vector by
      */
-    public void transform(@Nonnull Quaternion q) {
+    public void transform(@NonNull Quaternion q) {
         // formula quat * vec * quat^-1, 32 multiplications
         // since this vector is 3-dimensional, we can optimize it as follows:
         // vec + 2.0 * cross(quat.xyz, cross(quat.xyz, vec) + quat.w * vec)
@@ -396,7 +396,7 @@ public class Vector3 {
      * @param v the quaternion to compare.
      * @return {@code true} if this vector is equivalent to other.
      */
-    public boolean equivalent(@Nonnull Vector3 v) {
+    public boolean equivalent(@NonNull Vector3 v) {
         if (this == v) return true;
         return MathUtil.isApproxEqual(x, v.x) &&
                 MathUtil.isApproxEqual(y, v.y) &&
@@ -431,7 +431,7 @@ public class Vector3 {
                 ')';
     }
 
-    @Nonnull
+    @NonNull
     public Vector3 copy() {
         return new Vector3(x, y, z);
     }

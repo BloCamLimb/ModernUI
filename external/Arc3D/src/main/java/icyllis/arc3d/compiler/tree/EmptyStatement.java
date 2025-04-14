@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A no-op statement ";".
@@ -36,16 +36,11 @@ public final class EmptyStatement extends Statement {
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitEmpty(this);
-    }
-
-    @Override
     public boolean isEmpty() {
         return true;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return ";";

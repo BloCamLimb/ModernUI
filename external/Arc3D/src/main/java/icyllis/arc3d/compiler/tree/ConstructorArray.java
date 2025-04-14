@@ -20,9 +20,9 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -40,8 +40,8 @@ public final class ConstructorArray extends ConstructorCall {
      * Perform explicit check and report errors via ErrorHandler; returns null on error.
      */
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int position, @Nonnull Type type, @Nonnull List<Expression> arguments) {
+    public static Expression convert(@NonNull Context context,
+                                     int position, @NonNull Type type, @NonNull List<Expression> arguments) {
         assert type.isArray();
 
         // If there is a single argument containing an array of matching size and the types are
@@ -94,8 +94,8 @@ public final class ConstructorArray extends ConstructorCall {
      * <p>
      * No explicit check, assuming that the input array is immutable.
      */
-    @Nonnull
-    public static Expression make(int position, @Nonnull Type type, @Nonnull Expression[] arguments) {
+    @NonNull
+    public static Expression make(int position, @NonNull Type type, Expression @NonNull[] arguments) {
         assert type.getArraySize() == arguments.length;
         for (Expression arg : arguments) {
             assert type.getElementType().matches(arg.getType());
@@ -108,9 +108,9 @@ public final class ConstructorArray extends ConstructorCall {
         return ExpressionKind.CONSTRUCTOR_ARRAY;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorArray(position, getType(), cloneArguments());
     }
 }

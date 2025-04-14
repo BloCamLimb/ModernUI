@@ -22,8 +22,7 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link SurfaceAllocator} explicitly distributes {@link GpuSurface} at flush time.
@@ -71,6 +70,7 @@ import javax.annotation.Nonnull;
  * <p>
  * The task manager will drop the flush if any proxies fail to instantiate.
  */
+@Deprecated
 public final class SurfaceAllocator {
 
     private final ImmediateContext mContext;
@@ -126,7 +126,7 @@ public final class SurfaceAllocator {
      * @param start the start op
      * @param end   the end op
      */
-    public void addInterval(@Nonnull @RawPtr SurfaceProxy proxy, int start, int end, boolean actualUse) {
+    public void addInterval(@NonNull @RawPtr SurfaceProxy proxy, int start, int end, boolean actualUse) {
         assert (start <= end);
         // We shouldn't be adding any intervals after (or during) allocation
         assert (!mAllocated);
@@ -290,7 +290,7 @@ public final class SurfaceAllocator {
         }
     }
 
-    private Register findOrCreateRegister(@Nonnull SurfaceProxy proxy,
+    private Register findOrCreateRegister(@NonNull SurfaceProxy proxy,
                                           ResourceProvider provider) {
         Register r;
         // Handle uniquely keyed proxies
@@ -407,7 +407,7 @@ public final class SurfaceAllocator {
 
             // Make texture budgeted if this proxy is budgeted.
             if (proxy.isBudgeted() && surface.isBudgeted()) {
-                surface.makeBudgeted(true);
+                surface.setBudgeted(true);
             }
 
             // Propagate the proxy unique key to the texture if we have one.
@@ -521,7 +521,7 @@ public final class SurfaceAllocator {
             return temp;
         }
 
-        public void insertByIncreasingStart(@Nonnull Interval interval) {
+        public void insertByIncreasingStart(@NonNull Interval interval) {
             assert (interval.mNext == null);
 
             if (mHead == null) {
@@ -549,7 +549,7 @@ public final class SurfaceAllocator {
             }
         }
 
-        public void insertByIncreasingEnd(@Nonnull Interval interval) {
+        public void insertByIncreasingEnd(@NonNull Interval interval) {
             assert (interval.mNext == null);
 
             if (mHead == null) {
@@ -586,7 +586,7 @@ public final class SurfaceAllocator {
     private final Interval[] mIntervalPool = new Interval[128];
     private int mIntervalPoolSize;
 
-    private Register makeRegister(@Nonnull SurfaceProxy proxy,
+    private Register makeRegister(@NonNull SurfaceProxy proxy,
                                   ResourceProvider provider,
                                   IResourceKey scratchKey) {
         if (mRegisterPoolSize == 0)
@@ -594,19 +594,19 @@ public final class SurfaceAllocator {
         return mRegisterPool[--mRegisterPoolSize].init(proxy, provider, scratchKey);
     }
 
-    private void freeRegister(@Nonnull Register register) {
+    private void freeRegister(@NonNull Register register) {
         if (mRegisterPoolSize == mRegisterPool.length)
             return;
         mRegisterPool[mRegisterPoolSize++] = register;
     }
 
-    private Interval makeInterval(@Nonnull SurfaceProxy proxy, int start, int end) {
+    private Interval makeInterval(@NonNull SurfaceProxy proxy, int start, int end) {
         if (mIntervalPoolSize == 0)
             return new Interval(proxy, start, end);
         return mIntervalPool[--mIntervalPoolSize].init(proxy, start, end);
     }
 
-    private void freeInterval(@Nonnull Interval interval) {
+    private void freeInterval(@NonNull Interval interval) {
         if (mIntervalPoolSize == mIntervalPool.length)
             return;
         mIntervalPool[mIntervalPoolSize++] = interval;

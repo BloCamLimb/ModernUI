@@ -20,8 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.StringJoiner;
 
 /**
@@ -119,7 +119,7 @@ public final class Layout {
         return mLayoutFlags;
     }
 
-    public void setLayoutFlag(@Nonnull Context context,
+    public void setLayoutFlag(@NonNull Context context,
                               int mask, String name, int pos) {
         if ((mLayoutFlags & mask) != 0) {
             context.error(pos, "layout qualifier '" + name +
@@ -132,7 +132,7 @@ public final class Layout {
         mLayoutFlags &= ~mask;
     }
 
-    public boolean checkLayoutFlags(@Nonnull Context context,
+    public boolean checkLayoutFlags(@NonNull Context context,
                                     int pos, int permittedLayoutFlags) {
         boolean success = true;
 
@@ -180,55 +180,99 @@ public final class Layout {
         return mBuiltin == layout.mBuiltin;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
-        StringJoiner joiner = new StringJoiner(", ", "layout(", ") ");
+        return toString(true);
+    }
+
+    public @NonNull String toString(boolean pretty) {
+        StringBuilder b = new StringBuilder("layout(");
+        String eq = pretty ? " = " : "=";
+        String separator = pretty ? ", " : ",";
+        String sep = "";
         if (mLocation >= 0) {
-            joiner.add("location = " + mLocation);
+            b.append(sep)
+                    .append("location")
+                    .append(eq).append(mLocation);
+            sep = separator;
         }
         if (mComponent >= 0) {
-            joiner.add("component = " + mComponent);
+            b.append(sep)
+                    .append("component")
+                    .append(eq)
+                    .append(mComponent);
+            sep = separator;
         }
         if (mIndex >= 0) {
-            joiner.add("index = " + mIndex);
+            b.append(sep)
+                    .append("index")
+                    .append(eq)
+                    .append(mIndex);
+            sep = separator;
         }
         if (mBinding >= 0) {
-            joiner.add("binding = " + mBinding);
+            b.append(sep)
+                    .append("binding")
+                    .append(eq)
+                    .append(mBinding);
+            sep = separator;
         }
         if (mOffset >= 0) {
-            joiner.add("offset = " + mOffset);
+            b.append(sep)
+                    .append("offset")
+                    .append(eq)
+                    .append(mOffset);
+            sep = separator;
         }
         if (mSet >= 0) {
-            joiner.add("set = " + mSet);
+            b.append(sep)
+                    .append("set")
+                    .append(eq)
+                    .append(mSet);
+            sep = separator;
         }
         if (mInputAttachmentIndex >= 0) {
-            joiner.add("input_attachment_index = " + mInputAttachmentIndex);
+            b.append(sep)
+                    .append("input_attachment_index")
+                    .append(eq)
+                    .append(mInputAttachmentIndex);
+            sep = separator;
         }
         if (mBuiltin >= 0) {
-            joiner.add("builtin = " + mBuiltin);
+            b.append(sep)
+                    .append("builtin")
+                    .append(eq)
+                    .append(mBuiltin);
+            sep = separator;
         }
         if ((mLayoutFlags & kOriginUpperLeft_LayoutFlag) != 0) {
-            joiner.add("origin_upper_left");
+            b.append(sep).append("origin_upper_left");
+            sep = separator;
         }
         if ((mLayoutFlags & kPixelCenterInteger_LayoutFlag) != 0) {
-            joiner.add("pixel_center_integer");
+            b.append(sep).append("pixel_center_integer");
+            sep = separator;
         }
         if ((mLayoutFlags & kEarlyFragmentTests_LayoutFlag) != 0) {
-            joiner.add("early_fragment_tests");
+            b.append(sep).append("early_fragment_tests");
+            sep = separator;
         }
         if ((mLayoutFlags & kBlendSupportAllEquations_LayoutFlag) != 0) {
-            joiner.add("blend_support_all_equations");
+            b.append(sep).append("blend_support_all_equations");
+            sep = separator;
         }
         if ((mLayoutFlags & kPushConstant_LayoutFlag) != 0) {
-            joiner.add("push_constant");
+            b.append(sep).append("push_constant");
+            sep = separator;
         }
         if ((mLayoutFlags & kStd140_LayoutFlag) != 0) {
-            joiner.add("std140");
+            b.append(sep).append("std140");
+            sep = separator;
         }
         if ((mLayoutFlags & kStd430_LayoutFlag) != 0) {
-            joiner.add("std430");
+            b.append(sep).append("std430");
         }
-        return joiner.toString();
+        return b.append(") ").toString();
     }
 }

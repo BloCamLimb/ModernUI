@@ -26,6 +26,7 @@ import icyllis.arc3d.core.*;
  * clip mask if necessary, and fills out a {@link ClipResult_old} instructing the
  * caller on how to set up the draw state.
  */
+@Deprecated
 public abstract class Clip_old {
 
     public static final int CLIPPED = 0;

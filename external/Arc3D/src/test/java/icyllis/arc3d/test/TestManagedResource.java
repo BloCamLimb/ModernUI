@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,7 +27,9 @@ import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.sketch.Matrix;
 import icyllis.arc3d.opengl.*;
+import icyllis.arc3d.core.ColorInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
@@ -126,10 +128,10 @@ public class TestManagedResource {
             ModuleLoader moduleLoader = ModuleLoader.getInstance();
             ShaderCompiler compiler = new ShaderCompiler();
             compiler.startContext(ShaderKind.BASE, new CompileOptions(), moduleLoader.getRootModule(),
-                    false, false, null, 0, 0);
+                    false, false, null);
             Type[] types = new Type[3];
             boolean success = Operator.MUL.determineBinaryType(compiler.getContext(),
-                    moduleLoader.getBuiltinTypes().mHalf3x4,
+                    moduleLoader.getBuiltinTypes().mMin16Float3x4,
                     moduleLoader.getBuiltinTypes().mFloat3, types);
             LOGGER.info("Operator types: " + success + ", " + Arrays.toString(types));
             success = Operator.ADD.determineBinaryType(compiler.getContext(),
@@ -337,7 +339,7 @@ public class TestManagedResource {
                     col = 1.0 - exp(-col*0.5);
                     FragColor0 = col;
                 }
-                """.toCharArray());
+                """);
         long token;
         int kind;
         while ((kind = Token.kind(token = lexer.next())) != Token.TK_END_OF_FILE) {
@@ -413,7 +415,6 @@ public class TestManagedResource {
 
             Image texture = context.getResourceProvider().createNewImage(
                     desc,
-                    true,
                     "MyTexture");
             if (texture != null) {
                 LOGGER.info(texture.toString());
@@ -509,12 +510,12 @@ public class TestManagedResource {
         Matrix4 transform = new Matrix4();
         transform.m34 = 1 / 4096f;
         transform.preRotateX(MathUtil.PI_O_3);
-        Matrix matrix3 = transform.toMatrix();
+        Matrix matrix3 = new Matrix(transform);
         pw.println(matrix3);
 
         Matrix4 mat = new Matrix4();
         mat.preRotateZ(MathUtil.PI_O_2 * 29);
-        Matrix m3 = mat.toMatrix();
+        Matrix m3 = new Matrix(mat);
         pw.println(m3);
         pw.println(m3.getType());
         pw.println("Similarity: " + m3.isSimilarity());

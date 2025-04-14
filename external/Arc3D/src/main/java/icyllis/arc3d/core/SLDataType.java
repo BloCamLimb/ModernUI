@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Types of shader-language-specific boxed variables we can create, shared constants.
@@ -383,7 +383,35 @@ public final class SLDataType {
         throw new IllegalArgumentException(String.valueOf(type));
     }
 
-    @Nonnull
+    /*public static Type toType(byte type, BuiltinTypes types) {
+        return switch (type) {
+            case kVoid -> types.mVoid;
+            case kBool -> types.mBool;
+            case kBool2 -> types.mBool2;
+            case kBool3 -> types.mBool3;
+            case kBool4 -> types.mBool4;
+            case kInt -> types.mInt;
+            case kInt2 -> types.mInt2;
+            case kInt3 -> types.mInt3;
+            case kInt4 -> types.mInt4;
+            case kUInt -> types.mUInt;
+            case kUInt2 -> types.mUInt2;
+            case kUInt3 -> types.mUInt3;
+            case kUInt4 -> types.mUInt4;
+            case kFloat ->  types.mFloat;
+            case kFloat2 -> types.mFloat2;
+            case kFloat3 -> types.mFloat3;
+            case kFloat4 -> types.mFloat4;
+            case kFloat2x2 -> types.mFloat2x2;
+            case kFloat3x3 -> types.mFloat3x3;
+            case kFloat4x4 -> types.mFloat4x4;
+            case kSampler2D -> types.mSampler2D;
+            case kTexture2D -> types.mTexture2D;
+            default -> types.mInvalid;
+        };
+    }*/
+
+    @NonNull
     public static String typeString(byte type) {
         switch (type) {
             case kVoid:
@@ -391,41 +419,41 @@ public final class SLDataType {
             case kBool:
                 return "bool";
             case kBool2:
-                return "bvec2";
+                return "bool2";
             case kBool3:
-                return "bvec3";
+                return "bool3";
             case kBool4:
-                return "bvec4";
+                return "bool4";
             case kInt:
                 return "int";
             case kInt2:
-                return "ivec2";
+                return "int2";
             case kInt3:
-                return "ivec3";
+                return "int3";
             case kInt4:
-                return "ivec4";
+                return "int4";
             case kUInt:
                 return "uint";
             case kUInt2:
-                return "uvec2";
+                return "uint2";
             case kUInt3:
-                return "uvec3";
+                return "uint3";
             case kUInt4:
-                return "uvec4";
+                return "uint4";
             case kFloat:
                 return "float";
             case kFloat2:
-                return "vec2";
+                return "float2";
             case kFloat3:
-                return "vec3";
+                return "float3";
             case kFloat4:
-                return "vec4";
+                return "float4";
             case kFloat2x2:
-                return "mat2";
+                return "float2x2";
             case kFloat3x3:
-                return "mat3";
+                return "float3x3";
             case kFloat4x4:
-                return "mat4";
+                return "float4x4";
             case kSampler2D:
                 return "sampler2D";
             case kTexture2D:

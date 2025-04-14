@@ -20,8 +20,8 @@
 package icyllis.arc3d.engine;
 
 import it.unimi.dsi.fastutil.ints.IntArrays;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 /**
@@ -39,7 +39,7 @@ public non-sealed class KeyBuilder extends Key {
     }
 
     @SuppressWarnings("IncompleteCopyConstructor")
-    public KeyBuilder(@Nonnull KeyBuilder other) {
+    public KeyBuilder(@NonNull KeyBuilder other) {
         assert (other.mCurValue == 0 && other.mBitsUsed == 0);
         int size = other.mSize;
         mData = size == 0 ? IntArrays.EMPTY_ARRAY : Arrays.copyOf(other.mData, size);

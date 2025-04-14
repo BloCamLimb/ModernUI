@@ -20,14 +20,12 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.trash.ops.Op;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
 
 import static icyllis.arc3d.engine.Engine.SurfaceOrigin;
 
 /**
  * The {@code OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
- * same render target. {@link Op Ops} execute into a {@code OpsRenderPass}.
+ * same render target.
  */
 @Deprecated
 public abstract class OpsRenderPass {
@@ -85,13 +83,12 @@ public abstract class OpsRenderPass {
      * Updates the internal pipeline state for drawing. Enters an internal "bad" state if
      * the pipeline could not be set.
      *
-     * @param graphicsPipelineDesc  the pipeline info used to update uniforms
      * @param pipeline the pipeline state object
      * @param drawBounds    the sub-area of render target for subsequent draw calls
      */
-    public void bindPipeline(GraphicsPipelineDesc_Old graphicsPipelineDesc, GraphicsPipeline pipeline, Rect2fc drawBounds) {
-        assert (graphicsPipelineDesc.origin() == mSurfaceOrigin);
-        if (!onBindPipeline(graphicsPipelineDesc, pipeline, drawBounds)) {
+    public void bindPipeline(/*GraphicsPipelineDesc_Old graphicsPipelineDesc, */GraphicsPipeline pipeline, Rect2fc drawBounds) {
+        //assert (graphicsPipelineDesc.origin() == mSurfaceOrigin);
+        if (!onBindPipeline(/*graphicsPipelineDesc, */pipeline, drawBounds)) {
             mDrawPipelineStatus = kFailedToBind_DrawPipelineStatus;
             return;
         }
@@ -233,7 +230,7 @@ public abstract class OpsRenderPass {
 
     protected abstract Device getDevice();
 
-    protected abstract boolean onBindPipeline(GraphicsPipelineDesc_Old graphicsPipelineDesc,
+    protected abstract boolean onBindPipeline(/*GraphicsPipelineDesc_Old graphicsPipelineDesc,*/
                                               GraphicsPipeline pipeline,
                                               Rect2fc drawBounds);
 

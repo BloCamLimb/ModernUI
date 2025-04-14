@@ -23,12 +23,12 @@ import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.engine.ShaderCaps;
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 
-import javax.annotation.Nullable;
 import java.nio.*;
 import java.util.Objects;
 
@@ -266,7 +266,7 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
                 mProgramBinarySupport = false;
             }
         }
-        if (mShaderBinarySupport && (caps.OpenGL46 || caps.GL_ARB_gl_spirv)) {
+        if (mShaderBinarySupport && (caps.OpenGL46 || caps.GL_ARB_gl_spirv) && options.mAllowGLSPIRV) {
             int count = GL11C.glGetInteger(GL_NUM_SHADER_BINARY_FORMATS);
             if (count > 0) {
                 int[] shaderBinaryFormats = new int[count];

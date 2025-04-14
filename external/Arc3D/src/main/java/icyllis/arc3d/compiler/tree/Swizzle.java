@@ -21,9 +21,9 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
 import icyllis.arc3d.compiler.analysis.Analysis;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -41,7 +41,7 @@ public final class Swizzle extends Expression {
             ZERO = 16,  // custom swizzle
             ONE  = 17;  // custom swizzle
 
-    private final Expression mBase;
+    private Expression mBase;
     private final byte[] mComponents; // contains only X, Y, Z and W
 
     private Swizzle(int position, Type type, Expression base, byte[] components) {
@@ -80,9 +80,9 @@ public final class Swizzle extends Expression {
     }
 
     @Nullable
-    private static Expression optimizeSwizzle(@Nonnull Context context,
+    private static Expression optimizeSwizzle(@NonNull Context context,
                                               int pos,
-                                              @Nonnull ConstructorCompound base,
+                                              @NonNull ConstructorCompound base,
                                               byte[] components,
                                               int numComponents) {
         Expression[] baseArguments = base.getArguments();
@@ -196,7 +196,7 @@ public final class Swizzle extends Expression {
         Expression[] newArgs = new Expression[numComponents];
         for (int i = 0; i < reorderedArgs.size(); i++) {
             ReorderedArgument reorderedArg = reorderedArgs.get(i);
-            Expression newArg = baseArguments[reorderedArg.mArgIndex].clone();
+            Expression newArg = baseArguments[reorderedArg.mArgIndex].copy();
 
             if (reorderedArg.mNumComponents == 0) {
                 newArgs[i] = newArg;
@@ -225,9 +225,9 @@ public final class Swizzle extends Expression {
      * combines constructors and native swizzles (comprised solely of X/Y/W/Z).
      */
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int position, @Nonnull Expression base,
-                                     int maskPosition, @Nonnull String maskString) {
+    public static Expression convert(@NonNull Context context,
+                                     int position, @NonNull Expression base,
+                                     int maskPosition, @NonNull String maskString) {
         if (maskString.length() > 4) {
             context.error(maskPosition,
                     "too many components in swizzle mask");
@@ -398,9 +398,9 @@ public final class Swizzle extends Expression {
     }
 
     // input array must be immutable
-    @Nonnull
-    public static Expression make(@Nonnull Context context,
-                                  int position, @Nonnull Expression base,
+    @NonNull
+    public static Expression make(@NonNull Context context,
+                                  int position, @NonNull Expression base,
                                   byte[] components, int numComponents) {
         Type baseType = base.getType();
         assert baseType.isVector() || baseType.isScalar();
@@ -419,7 +419,7 @@ public final class Swizzle extends Expression {
         // Replace swizzles with equivalent splat constructors (`scalar.xxx` --> `half3(value)`).
         //TODO
         if (baseType.isScalar()) {
-            return ConstructorVectorSplat.make(position,
+            return ConstructorSplat.make(position,
                     baseType.toVector(context, numComponents), base);
         }
 
@@ -458,19 +458,19 @@ public final class Swizzle extends Expression {
         // `half4(scalar).zyy` can be optimized to `half3(scalar)`, and `half3(scalar).y` can be
         // optimized to just `scalar`. The swizzle components don't actually matter, as every field
         // in a splat constructor holds the same value.
-        if (value instanceof ConstructorVectorSplat ctor) {
+        if (value instanceof ConstructorSplat ctor) {
             Type ctorType = ctor.getComponentType().toVector(context, numComponents);
-            return ConstructorVectorSplat.make(
+            return ConstructorSplat.make(
                     position,
                     ctorType,
-                    ctor.getArgument().clone());
+                    ctor.getArgument().copy());
         }
 
         // Swizzles on casts, like `half4(myFloat4).zyy`, can optimize to `half3(myFloat4.zyy)`.
         if (value instanceof ConstructorCompoundCast ctor) {
             Type ctorType = ctor.getComponentType().toVector(context, numComponents);
             Expression swizzled = make(context,
-                    position, ctor.getArgument().clone(), components, numComponents);
+                    position, ctor.getArgument().copy(), components, numComponents);
             Objects.requireNonNull(swizzled);
             return (ctorType.getRows() > 1)
                     ? ConstructorCompoundCast.make(position, ctorType, swizzled)
@@ -497,16 +497,12 @@ public final class Swizzle extends Expression {
         return ExpressionKind.SWIZZLE;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitSwizzle(this)) {
-            return true;
-        }
-        return mBase != null && mBase.accept(visitor);
-    }
-
     public Expression getBase() {
         return mBase;
+    }
+
+    public void setBase(Expression base) {
+        mBase = base;
     }
 
     // **immutable**
@@ -514,13 +510,13 @@ public final class Swizzle extends Expression {
         return mComponents;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
-        return new Swizzle(position, getType(), mBase.clone(), mComponents);
+    public Expression copy(int position) {
+        return new Swizzle(position, getType(), mBase.copy(), mComponents);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         StringBuilder result = new StringBuilder(

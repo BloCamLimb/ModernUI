@@ -22,8 +22,7 @@ package icyllis.arc3d.vulkan;
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.BackendImage;
 import icyllis.arc3d.engine.Engine.BackendApi;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static org.lwjgl.vulkan.VK11.*;
 
@@ -97,7 +96,7 @@ public final class VulkanBackendImage extends BackendImage {
         mState.setQueueFamilyIndex(queueFamilyIndex);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public BackendFormat getBackendFormat() {
         return mBackendFormat;

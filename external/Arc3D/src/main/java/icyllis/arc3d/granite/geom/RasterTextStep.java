@@ -28,9 +28,11 @@ import icyllis.arc3d.engine.VertexInputLayout.AttributeSet;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
+import icyllis.arc3d.granite.RecordingContext;
+import icyllis.arc3d.sketch.Matrix;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Formatter;
 
 /**
@@ -80,11 +82,11 @@ public class RasterTextStep extends GeometryStep {
     }
 
     @Override
-    public void appendToKey(@Nonnull KeyBuilder b) {
+    public void appendToKey(@NonNull KeyBuilder b) {
 
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return null;
@@ -118,13 +120,13 @@ public class RasterTextStep extends GeometryStep {
 
     @Override
     public void emitVertexGeomCode(Formatter vs,
-                                   @Nonnull String worldPosVar,
+                                   @NonNull String worldPosVar,
                                    @Nullable String localPosVar,
                                    boolean usesFastSolidColor) {
         assert !usesFastSolidColor;
         // {(0,0), (0,1), (1,0), (1,1)}
         // corner selector, CCW
-        vs.format("vec2 position = vec2(gl_VertexID >> 1, gl_VertexID & 1) * vec2(%s);\n",
+        vs.format("vec2 position = vec2(SV_VertexID >> 1, SV_VertexID & 1) * vec2(%s);\n",
                 SIZE.name());
 
         vs.format("""
@@ -173,7 +175,7 @@ public class RasterTextStep extends GeometryStep {
 
     @Override
     public void writeMesh(MeshDrawWriter writer, Draw draw,
-                          @Nullable float[] solidColor,
+            float @Nullable[] solidColor,
                           boolean mayRequireLocalCoords) {
         assert solidColor == null;
         var subRunData = (SubRunData) draw.mGeometry;

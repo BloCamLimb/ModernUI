@@ -19,6 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
+import org.jspecify.annotations.NonNull;
+
 /**
  * Represents a top-level element (e.g. function or global variable) in a program.
  */
@@ -32,4 +35,9 @@ public abstract class TopLevelElement extends Node {
      * @see Node.ElementKind
      */
     public abstract ElementKind getKind();
+
+    @Override
+    public final boolean accept(@NonNull TreeVisitor visitor) {
+        return visitor.visitTopLevelElement(this);
+    }
 }

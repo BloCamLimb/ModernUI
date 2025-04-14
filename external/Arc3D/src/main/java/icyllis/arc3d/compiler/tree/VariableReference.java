@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A reference to a variable, through which it can be read or written.
@@ -44,7 +44,7 @@ public final class VariableReference extends Expression {
         mReferenceKind = referenceKind;
     }
 
-    @Nonnull
+    @NonNull
     public static Expression make(int position, Variable variable, int referenceKind) {
         return new VariableReference(position, variable, referenceKind);
     }
@@ -52,11 +52,6 @@ public final class VariableReference extends Expression {
     @Override
     public ExpressionKind getKind() {
         return ExpressionKind.VARIABLE_REFERENCE;
-    }
-
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitVariableReference(this);
     }
 
     public Variable getVariable() {
@@ -75,13 +70,13 @@ public final class VariableReference extends Expression {
         mReferenceKind = referenceKind;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new VariableReference(position, mVariable, mReferenceKind);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         return mVariable.getName();

@@ -24,9 +24,9 @@ import icyllis.arc3d.engine.Device;
 import icyllis.arc3d.engine.Image;
 import icyllis.arc3d.engine.*;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
@@ -58,6 +58,7 @@ public final class GLDevice extends Device {
     private final GpuBufferPool mIndexPool;*/
 
     // unique ptr
+    @Deprecated
     private GLOpsRenderPass mCachedOpsRenderPass;
 
     private final ArrayDeque<FlushInfo.FinishedCallback> mFinishedCallbacks = new ArrayDeque<>();
@@ -214,7 +215,7 @@ public final class GLDevice extends Device {
                     glInterface = impl;
                 }
                 default -> {
-                    options.mLogger.error("Failed to create GLDevice: invalid capabilities");
+                    options.mLogger.error("Failed to create GLDevice: invalid capabilities {}", capabilities);
                     return null;
                 }
             }
@@ -394,7 +395,7 @@ public final class GLDevice extends Device {
 
     @Nullable
     @SharedPtr
-    public GLFramebuffer findOrCreateFramebuffer(@Nonnull FramebufferDesc framebufferDesc) {
+    public GLFramebuffer findOrCreateFramebuffer(@NonNull FramebufferDesc framebufferDesc) {
         var framebufferCache = mFramebufferCache;
         @SharedPtr
         GLFramebuffer existing = (GLFramebuffer) framebufferCache.findFramebuffer(
@@ -413,7 +414,7 @@ public final class GLDevice extends Device {
 
     @Nullable
     @SharedPtr
-    public GLVertexArray findOrCreateVertexArray(@Nonnull VertexInputLayout inputLayout,
+    public GLVertexArray findOrCreateVertexArray(@NonNull VertexInputLayout inputLayout,
                                                  String label) {
         GLVertexArray existing = mVertexArrayCache.get(inputLayout);
         if (existing != null) {
@@ -506,9 +507,9 @@ public final class GLDevice extends Device {
     protected GpuRenderTarget onCreateRenderTarget(int width, int height,
                                                    int sampleCount,
                                                    int numColorTargets,
-                                                   @Nullable Image[] colorTargets,
-                                                   @Nullable Image[] resolveTargets,
-                                                   @Nullable int[] mipLevels,
+            Image @Nullable[] colorTargets,
+            Image @Nullable[] resolveTargets,
+            int @Nullable[] mipLevels,
                                                    @Nullable Image depthStencilTarget,
                                                    int surfaceFlags) {
         return null;
@@ -978,6 +979,7 @@ public final class GLDevice extends Device {
         return false;
     }
 
+    @Deprecated
     @Override
     protected OpsRenderPass onGetOpsRenderPass(ImageProxyView writeView,
                                                Rect2i contentBounds,

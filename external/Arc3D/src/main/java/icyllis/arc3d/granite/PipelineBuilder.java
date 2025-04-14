@@ -19,11 +19,13 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.core.SLDataType;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
+import icyllis.arc3d.sketch.BlendMode;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -59,8 +61,8 @@ public class PipelineBuilder {
     // depth only pass will disable blend, then default is DST
     private BlendInfo mBlendInfo = BlendInfo.BLEND_DST;
 
-    private StringBuilder mVertCode;
-    private StringBuilder mFragCode;
+    private String mVertCode;
+    private String mFragCode;
     private final String mFragLabel;
 
     private int mGeometryBlockVisibility;
@@ -165,10 +167,12 @@ public class PipelineBuilder {
     public void buildVertexShader() {
         StringBuilder out = new StringBuilder();
         out.append(mCaps.shaderCaps().mGLSLVersion.mVersionDecl);
-        if (mCaps.shaderCaps().mUsePrecisionModifiers) {
+        /*if (mCaps.shaderCaps().mUsePrecisionModifiers) {
             out.append("precision highp float;\n");
             out.append("precision highp sampler2D;\n");
-        }
+        }*/
+        out.append("layout(position) out float4 SV_Position;\n");
+        out.append("layout(vertex_id) in int SV_VertexID;\n");
         Formatter vs = new Formatter(out, Locale.ROOT);
 
         //// Uniforms
@@ -209,6 +213,8 @@ public class PipelineBuilder {
         //// Varyings
         mVaryings.getVertDecls(out);
 
+        mDesc.geomStep().emitVertexDefinitions(vs);
+
         //// Entry Point
         out.append("void main() {\n");
 
@@ -224,26 +230,26 @@ public class PipelineBuilder {
         if (mCaps.depthClipNegativeOneToOne()) {
             // [0,1] -> [-1,1]
             vs.format("""
-                    gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, (%1$s.z * 2.0 - 1.0) * %1$s.w, %1$s.w);
+                    SV_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, (%1$s.z * 2.0 - 1.0) * %1$s.w, %1$s.w);
                     """, WORLD_POS_VAR_NAME, UniformHandler.PROJECTION_NAME);
         } else {
             // zero to one, default behavior
             vs.format("""
-                    gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, %1$s.z * %1$s.w, %1$s.w);
+                    SV_Position = vec4(%1$s.xy * %2$s.xz + %1$s.ww * %2$s.yw, %1$s.z * %1$s.w, %1$s.w);
                     """, WORLD_POS_VAR_NAME, UniformHandler.PROJECTION_NAME);
         }
 
         out.append("}");
-        mVertCode = out;
+        mVertCode = out.toString();
     }
 
     public void buildFragmentShader() {
-        StringBuilder out = new StringBuilder();
         if (mDesc.isDepthOnlyPass()) {
             // Depth-only draw so no fragment shader to compile
-            mFragCode = out;
+            mFragCode = "";
             return;
         }
+        StringBuilder out = new StringBuilder();
 
         BlendMode blendMode = mDesc.getFinalBlendMode();
         assert blendMode != null;
@@ -264,10 +270,11 @@ public class PipelineBuilder {
         }
 
         out.append(mCaps.shaderCaps().mGLSLVersion.mVersionDecl);
-        if (mCaps.shaderCaps().mUsePrecisionModifiers) {
+        /*if (mCaps.shaderCaps().mUsePrecisionModifiers) {
             out.append("precision highp float;\n");
             out.append("precision highp sampler2D;\n");
-        }
+        }*/
+        out.append("layout(frag_coord) in float4 SV_FragCoord;\n");
         Formatter fs = new Formatter(out, Locale.ROOT);
         // If we're doing analytic coverage, we must also be doing shading.
         assert !mDesc.geomStep().emitsCoverage() || mDesc.geomStep().performsShading();
@@ -308,6 +315,8 @@ public class PipelineBuilder {
                 out.append(";\n");
             }
         }
+
+        mDesc.geomStep().emitFragmentDefinitions(fs);
 
         ShaderCodeSource.emitDefinitions(mRootNodes, new IdentityHashMap<>(), fs);
 
@@ -355,15 +364,15 @@ public class PipelineBuilder {
         } else {
             mDesc.geomStep().emitFragmentCoverageCode(fs, null);
             fs.format("%s = %s;\n", PRIMARY_COLOR_OUTPUT_NAME, outputColor);
-            mBlendInfo = BlendInfo.getSimpleBlendInfo(blendMode);
+            mBlendInfo = getSimpleBlendInfo(blendMode);
             if (mBlendInfo == null) {
-                mBlendInfo = BlendInfo.getSimpleBlendInfo(BlendMode.SRC_OVER);
+                mBlendInfo = getSimpleBlendInfo(BlendMode.SRC_OVER);
                 assert mBlendInfo != null;
             }
         }
 
         out.append("}");
-        mFragCode = out;
+        mFragCode = out.toString();
     }
 
     private static void appendColorOutput(Formatter fs,
@@ -393,5 +402,31 @@ public class PipelineBuilder {
             default:
                 throw new AssertionError("Unsupported output type.");
         }
+    }
+
+    /**
+     * Returns the standard HW blend info for the given Porter Duff blend mode.
+     */
+    @Nullable
+    public static BlendInfo getSimpleBlendInfo(@NonNull BlendMode mode) {
+        return switch (mode) {
+            case CLEAR -> BlendInfo.BLEND_CLEAR;
+            case SRC -> BlendInfo.BLEND_SRC;
+            case DST -> BlendInfo.BLEND_DST;
+            case SRC_OVER -> BlendInfo.BLEND_SRC_OVER;
+            case DST_OVER -> BlendInfo.BLEND_DST_OVER;
+            case SRC_IN -> BlendInfo.BLEND_SRC_IN;
+            case DST_IN -> BlendInfo.BLEND_DST_IN;
+            case SRC_OUT -> BlendInfo.BLEND_SRC_OUT;
+            case DST_OUT -> BlendInfo.BLEND_DST_OUT;
+            case SRC_ATOP -> BlendInfo.BLEND_SRC_ATOP;
+            case DST_ATOP -> BlendInfo.BLEND_DST_ATOP;
+            case XOR -> BlendInfo.BLEND_XOR;
+            case PLUS, PLUS_CLAMPED -> BlendInfo.BLEND_PLUS;
+            case MINUS, MINUS_CLAMPED -> BlendInfo.BLEND_MINUS;
+            case MODULATE -> BlendInfo.BLEND_MODULATE;
+            case SCREEN -> BlendInfo.BLEND_SCREEN;
+            default -> null;
+        };
     }
 }

@@ -20,15 +20,15 @@
 package icyllis.arc3d.compiler.analysis;
 
 import icyllis.arc3d.compiler.tree.*;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.IdentityHashMap;
 
 /**
  * Counts the number of usages of a symbol.
  */
-public final class SymbolUsage extends TreeVisitor {
+public final class SymbolUsage {
 
     public static class Count {
         int use;
@@ -55,12 +55,78 @@ public final class SymbolUsage extends TreeVisitor {
     }
 
     public final IdentityHashMap<Type, Count> mStructCounts = new IdentityHashMap<>();
-    public final IdentityHashMap<FunctionDecl, Count> mFunctionCounts = new IdentityHashMap<>();
+    public final IdentityHashMap<FunctionDeclaration, Count> mFunctionCounts = new IdentityHashMap<>();
     public final IdentityHashMap<Variable, VariableCounts> mVariableCounts = new IdentityHashMap<>();
 
     private int mDelta;
 
-    @Nonnull
+    private final TreeVisitor mVisitor = new TreeVisitor() {
+        @Override
+        public boolean visitTopLevelElement(@NonNull TopLevelElement e) {
+            if (e instanceof FunctionDefinition definition) {
+                for (var param : definition.getDeclaration().getParameters()) {
+                    // Ensure function-parameter variables exist in the variable usage map. They aren't
+                    // otherwise declared, but ProgramUsage::get() should be able to find them, even if
+                    // they are unread and unwritten.
+                    VariableCounts counts = computeVariableCounts(param);
+                    counts.decl += mDelta;
+
+                    visitType(param.getType());
+                }
+            } else if (e instanceof InterfaceBlock interfaceBlock) {
+                // Ensure interface-block variables exist in the variable usage map.
+                computeVariableCounts(interfaceBlock.getVariable());
+
+                visitType(interfaceBlock.getVariable().getType());
+            } else if (e instanceof StructDefinition definition) {
+                // Ensure that structs referenced as nested types in other structs are counted as used.
+                for (var field : definition.getType().getFields()) {
+                    visitType(field.type());
+                }
+            }
+            return super.visitTopLevelElement(e);
+        }
+
+        @Override
+        public boolean visitExpression(@NonNull Expression expr) {
+            visitType(expr.getType());
+            if (expr instanceof FunctionCall call) {
+                Count count = computeFunctionCount(call.getFunction());
+                count.use += mDelta;
+                assert count.use >= 0;
+            } else if (expr instanceof VariableReference ref) {
+                VariableCounts counts = computeVariableCounts(ref.getVariable());
+                switch (ref.getReferenceKind()) {
+                    case VariableReference.kRead_ReferenceKind -> counts.read += mDelta;
+                    case VariableReference.kWrite_ReferenceKind -> counts.write += mDelta;
+                    case VariableReference.kReadWrite_ReferenceKind, VariableReference.kPointer_ReferenceKind -> {
+                        counts.read += mDelta;
+                        counts.write += mDelta;
+                    }
+                }
+                assert counts.read >= 0 && counts.write >= 0;
+            }
+            return super.visitExpression(expr);
+        }
+
+        @Override
+        public boolean visitStatement(@NonNull Statement stmt) {
+            if (stmt instanceof VariableDeclaration decl) {
+                // Add all declared variables to the usage map (even if never otherwise accessed).
+                VariableCounts counts = computeVariableCounts(decl.getVariable());
+                counts.decl += mDelta;
+                assert counts.decl == 0 || counts.decl == 1;
+                if (decl.getInit() != null) {
+                    // The initial-value expression, when present, counts as a write.
+                    counts.write += mDelta;
+                }
+                visitType(decl.getVariable().getType());
+            }
+            return super.visitStatement(stmt);
+        }
+    };
+
+    @NonNull
     public Count computeStructCount(Type typeSymbol) {
         return mStructCounts.computeIfAbsent(typeSymbol, __ -> new Count());
     }
@@ -78,17 +144,17 @@ public final class SymbolUsage extends TreeVisitor {
         return 0;
     }
 
-    @Nonnull
-    public Count computeFunctionCount(FunctionDecl functionSymbol) {
+    @NonNull
+    public Count computeFunctionCount(FunctionDeclaration functionSymbol) {
         return mFunctionCounts.computeIfAbsent(functionSymbol, __ -> new Count());
     }
 
     @Nullable
-    public Count findFunctionCount(FunctionDecl functionSymbol) {
+    public Count findFunctionCount(FunctionDeclaration functionSymbol) {
         return mFunctionCounts.get(functionSymbol);
     }
 
-    public int getFunctionCount(FunctionDecl functionSymbol) {
+    public int getFunctionCount(FunctionDeclaration functionSymbol) {
         Count count = findFunctionCount(functionSymbol);
         if (count != null) {
             return count.use;
@@ -96,7 +162,7 @@ public final class SymbolUsage extends TreeVisitor {
         return 0;
     }
 
-    @Nonnull
+    @NonNull
     public VariableCounts computeVariableCounts(Variable varSymbol) {
         return mVariableCounts.computeIfAbsent(varSymbol, __ -> new VariableCounts());
     }
@@ -106,72 +172,14 @@ public final class SymbolUsage extends TreeVisitor {
         return mVariableCounts.get(varSymbol);
     }
 
-    public void add(@Nonnull Node node) {
+    public void add(@NonNull Node node) {
         mDelta = 1;
-        node.accept(this);
+        node.accept(mVisitor);
     }
 
-    public void remove(@Nonnull Node node) {
+    public void remove(@NonNull Node node) {
         mDelta = -1;
-        node.accept(this);
-    }
-
-    @Override
-    public boolean visitFunctionDefinition(FunctionDefinition definition) {
-        for (var param : definition.getFunctionDecl().getParameters()) {
-            VariableCounts counts = computeVariableCounts(param);
-            counts.decl += mDelta;
-            visitType(param.getType());
-        }
-        return super.visitFunctionDefinition(definition);
-    }
-
-    @Override
-    public boolean visitInterfaceBlock(InterfaceBlock interfaceBlock) {
-        computeVariableCounts(interfaceBlock.getVariable());
-        visitType(interfaceBlock.getVariable().getType());
-        return super.visitInterfaceBlock(interfaceBlock);
-    }
-
-    @Override
-    public boolean visitFunctionCall(FunctionCall expr) {
-        Count count = computeFunctionCount(expr.getFunction());
-        count.use += mDelta;
-        assert count.use >= 0;
-        return super.visitFunctionCall(expr);
-    }
-
-    @Override
-    public boolean visitVariableReference(VariableReference expr) {
-        VariableCounts counts = computeVariableCounts(expr.getVariable());
-        switch (expr.getReferenceKind()) {
-            case VariableReference.kRead_ReferenceKind -> counts.read += mDelta;
-            case VariableReference.kWrite_ReferenceKind -> counts.write += mDelta;
-            case VariableReference.kReadWrite_ReferenceKind, VariableReference.kPointer_ReferenceKind -> {
-                counts.read += mDelta;
-                counts.write += mDelta;
-            }
-        }
-        assert counts.read >= 0 && counts.write >= 0;
-        return super.visitVariableReference(expr);
-    }
-
-    @Override
-    protected boolean visitExpression(Expression expr) {
-        visitType(expr.getType());
-        return super.visitExpression(expr);
-    }
-
-    @Override
-    public boolean visitVariableDecl(VariableDecl variableDecl) {
-        VariableCounts counts = computeVariableCounts(variableDecl.getVariable());
-        counts.decl += mDelta;
-        assert counts.decl == 0 || counts.decl == 1;
-        if (variableDecl.getInit() != null) {
-            counts.write += mDelta;
-        }
-        visitType(variableDecl.getVariable().getType());
-        return super.visitVariableDecl(variableDecl);
+        node.accept(mVisitor);
     }
 
     private void visitType(Type t) {
@@ -189,7 +197,7 @@ public final class SymbolUsage extends TreeVisitor {
 
     @Override
     public String toString() {
-        return "ModuleUsage{" +
+        return "SymbolUsage{" +
                 "mStructCounts=" + mStructCounts +
                 ", mFunctionCounts=" + mFunctionCounts +
                 ", mVariableCounts=" + mVariableCounts +

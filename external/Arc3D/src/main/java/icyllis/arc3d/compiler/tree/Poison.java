@@ -19,10 +19,9 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.ShaderCompiler;
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
+import icyllis.arc3d.compiler.ShaderCompiler;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents an ill-formed expression. This is needed so that parser can go further.
@@ -33,8 +32,8 @@ public final class Poison extends Expression {
         super(position, type);
     }
 
-    @Nonnull
-    public static Expression make(@Nonnull Context context, int position) {
+    @NonNull
+    public static Expression make(@NonNull Context context, int position) {
         return new Poison(position, context.getTypes().mPoison);
     }
 
@@ -43,18 +42,13 @@ public final class Poison extends Expression {
         return ExpressionKind.POISON;
     }
 
+    @NonNull
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return false;
-    }
-
-    @Nonnull
-    @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new Poison(position, getType());
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         return ShaderCompiler.POISON_TAG;

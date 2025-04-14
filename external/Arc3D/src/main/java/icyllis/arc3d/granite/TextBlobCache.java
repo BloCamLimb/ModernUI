@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,11 +19,14 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.GlyphRunList;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.TextBlob;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.*;
 import java.util.Collection;
 import java.util.HashMap;
@@ -51,6 +54,8 @@ public final class TextBlobCache {
         private float mScaleY;
         private float mShearX;
         private float mShearY;
+        private float mTransX;
+        private float mTransY;
 
         private float mFrameWidth;
         private float mMiterLimit;
@@ -68,6 +73,8 @@ public final class TextBlobCache {
             mScaleY = other.mScaleY;
             mShearX = other.mShearX;
             mShearY = other.mShearY;
+            mTransX = other.mTransX;
+            mTransY = other.mTransY;
             mFrameWidth = other.mFrameWidth;
             mMiterLimit = other.mMiterLimit;
             mHasDirectSubRuns = other.mHasDirectSubRuns;
@@ -93,29 +100,45 @@ public final class TextBlobCache {
                 mMiterLimit = 0;
             }
 
-            //TODO try to avoid use direct sub runs for animations
-
-            //TODO keep sync with SubRunContainer factory method
             mHasDirectSubRuns = !positionMatrix.hasPerspective();
+            if (mHasDirectSubRuns) {
+                mHasDirectSubRuns = false;
+                float centerX = glyphRunList.getSourceBounds().centerX();
+                float centerY = glyphRunList.getSourceBounds().centerY();
+                for (int i = 0; i < glyphRunList.mGlyphRunCount; i++) {
+                    float approximateDeviceTextSize = glyphRunList.mGlyphRuns[i].font()
+                            .approximateTransformedFontSize(positionMatrix, centerX, centerY);
+                    if (SubRunContainer.isDirect(approximateDeviceTextSize)) {
+                        mHasDirectSubRuns = true;
+                        break;
+                    }
+                }
+            }
             if (mHasDirectSubRuns) {
                 int typeMask = positionMatrix.getType();
                 if ((typeMask & Matrixc.kScale_Mask) != 0) {
-                    mScaleX = StrikeDesc.round_mat_elem(positionMatrix.getScaleX());
-                    mScaleY = StrikeDesc.round_mat_elem(positionMatrix.getScaleY());
+                    mScaleX = positionMatrix.getScaleX();
+                    mScaleY = positionMatrix.getScaleY();
                 } else {
                     mScaleX = mScaleY = 1;
                 }
                 if ((typeMask & Matrixc.kAffine_Mask) != 0) {
-                    mShearX = StrikeDesc.round_mat_elem(positionMatrix.getShearX());
-                    mShearY = StrikeDesc.round_mat_elem(positionMatrix.getShearY());
+                    mShearX = positionMatrix.getShearX();
+                    mShearY = positionMatrix.getShearY();
                 } else {
                     mShearX = mShearY = 0;
                 }
+                mTransX = positionMatrix.getTranslateX();
+                mTransY = positionMatrix.getTranslateY();
+                mTransX = mTransX - (float) Math.floor(mTransX);
+                mTransY = mTransY - (float) Math.floor(mTransY);
             } else {
                 mScaleX = 1;
                 mScaleY = 1;
                 mShearX = 0;
                 mShearY = 0;
+                mTransX = 0;
+                mTransY = 0;
             }
         }
 
@@ -125,6 +148,8 @@ public final class TextBlobCache {
             h = 31 * h + Float.floatToIntBits(mScaleY);
             h = 31 * h + Float.floatToIntBits(mShearX);
             h = 31 * h + Float.floatToIntBits(mShearY);
+            h = 31 * h + Float.floatToIntBits(mTransX);
+            h = 31 * h + Float.floatToIntBits(mTransY);
             h = 31 * h + Float.floatToIntBits(mFrameWidth);
             h = 31 * h + Float.floatToIntBits(mMiterLimit);
             h = 31 * h + (mHasDirectSubRuns ? 1 : 0);
@@ -137,15 +162,17 @@ public final class TextBlobCache {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o instanceof FeatureKey that) {
-                return mHasDirectSubRuns == that.mHasDirectSubRuns &&
+                return mStyle == that.mStyle &&
+                        mStrokeJoin == that.mStrokeJoin &&
+                        mHasDirectSubRuns == that.mHasDirectSubRuns &&
                         mScaleX == that.mScaleX &&
                         mScaleY == that.mScaleY &&
                         mShearX == that.mShearX &&
                         mShearY == that.mShearY &&
+                        mTransX == that.mTransX &&
+                        mTransY == that.mTransY &&
                         mFrameWidth == that.mFrameWidth &&
-                        mMiterLimit == that.mMiterLimit &&
-                        mStyle == that.mStyle &&
-                        mStrokeJoin == that.mStrokeJoin;
+                        mMiterLimit == that.mMiterLimit;
             }
             return false;
         }
@@ -194,7 +221,7 @@ public final class TextBlobCache {
     private long mCurrentSize;
 
     @Nullable
-    public BakedTextBlob find(@Nonnull TextBlob blob, @Nonnull FeatureKey key) {
+    public BakedTextBlob find(@NonNull TextBlob blob, @NonNull FeatureKey key) {
         synchronized (mLock) {
             Bucket bucket = mMap.get(blob);
             if (bucket == null) {
@@ -208,15 +235,15 @@ public final class TextBlobCache {
         }
     }
 
-    @Nonnull
-    public BakedTextBlob insert(@Nonnull TextBlob blob, @Nonnull FeatureKey key,
-                                @Nonnull BakedTextBlob entry) {
+    @NonNull
+    public BakedTextBlob insert(@NonNull TextBlob blob, @NonNull FeatureKey key,
+                                @NonNull BakedTextBlob entry) {
         synchronized (mLock) {
             return internalInsert(blob, key, entry);
         }
     }
 
-    public void remove(@Nonnull BakedTextBlob entry) {
+    public void remove(@NonNull BakedTextBlob entry) {
         synchronized (mLock) {
             internalRemove(entry);
         }
@@ -228,9 +255,9 @@ public final class TextBlobCache {
         }
     }
 
-    @Nonnull
-    private BakedTextBlob internalInsert(@Nonnull TextBlob blob, @Nonnull FeatureKey key,
-                                         @Nonnull BakedTextBlob entry) {
+    @NonNull
+    private BakedTextBlob internalInsert(@NonNull TextBlob blob, @NonNull FeatureKey key,
+                                         @NonNull BakedTextBlob entry) {
         Bucket bucket = mMap.get(blob);
         if (bucket == null) {
             PrimaryKey primaryKey = new PrimaryKey(blob, mQueue);
@@ -255,7 +282,7 @@ public final class TextBlobCache {
         return entry;
     }
 
-    private void internalRemove(@Nonnull BakedTextBlob entry) {
+    private void internalRemove(@NonNull BakedTextBlob entry) {
         Bucket bucket = mMap.get(entry.mPrimaryKey);
 
         if (bucket != null) {
@@ -295,7 +322,7 @@ public final class TextBlobCache {
         }
     }
 
-    private void unlink(@Nonnull BakedTextBlob entry) {
+    private void unlink(@NonNull BakedTextBlob entry) {
         BakedTextBlob prev = entry.mPrev;
         BakedTextBlob next = entry.mNext;
 
@@ -314,7 +341,7 @@ public final class TextBlobCache {
         entry.mNext = null;
     }
 
-    private void addToHead(@Nonnull BakedTextBlob entry) {
+    private void addToHead(@NonNull BakedTextBlob entry) {
         entry.mPrev = null;
         entry.mNext = mHead;
         if (mHead != null) {
@@ -326,7 +353,7 @@ public final class TextBlobCache {
         }
     }
 
-    private void moveToHead(@Nonnull BakedTextBlob entry) {
+    private void moveToHead(@NonNull BakedTextBlob entry) {
         assert mHead != null && mTail != null;
         if (mHead == entry) {
             return;
@@ -370,7 +397,7 @@ public final class TextBlobCache {
         }
 
         @Nullable
-        BakedTextBlob find(@Nonnull FeatureKey key) {
+        BakedTextBlob find(@NonNull FeatureKey key) {
             if (mMap != null) {
                 return mMap.get(key);
             } else {
@@ -383,7 +410,7 @@ public final class TextBlobCache {
             }
         }
 
-        void insertEntry(@Nonnull BakedTextBlob entry) {
+        void insertEntry(@NonNull BakedTextBlob entry) {
             if (mMap != null) {
                 mMap.put(entry.mFeatureKey, entry);
             } else if (mList.size() >= 8) {
@@ -398,7 +425,7 @@ public final class TextBlobCache {
             }
         }
 
-        void removeEntry(@Nonnull BakedTextBlob entry) {
+        void removeEntry(@NonNull BakedTextBlob entry) {
             if (mMap != null) {
                 var old = mMap.remove(entry.mFeatureKey);
                 assert old == entry;

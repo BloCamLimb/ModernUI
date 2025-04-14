@@ -19,9 +19,9 @@
 
 package icyllis.arc3d.core;
 
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nullable;
 import java.util.function.LongConsumer;
 
 /**

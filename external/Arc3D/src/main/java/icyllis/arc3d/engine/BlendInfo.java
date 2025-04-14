@@ -19,11 +19,6 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.BlendMode;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 /**
  * BlendInfo is an immutable object holding info for setting-up GPU blend states.
  */
@@ -225,30 +220,4 @@ public final class BlendInfo {
             BlendInfo.FACTOR_ONE, BlendInfo.FACTOR_ONE_MINUS_SRC_COLOR,
             true
     );
-
-    /**
-     * Returns the standard HW blend info for the given Porter Duff blend mode.
-     */
-    @Nullable
-    public static BlendInfo getSimpleBlendInfo(@Nonnull BlendMode mode) {
-        return switch (mode) {
-            case CLEAR -> BLEND_CLEAR;
-            case SRC -> BLEND_SRC;
-            case DST -> BLEND_DST;
-            case SRC_OVER -> BLEND_SRC_OVER;
-            case DST_OVER -> BLEND_DST_OVER;
-            case SRC_IN -> BLEND_SRC_IN;
-            case DST_IN -> BLEND_DST_IN;
-            case SRC_OUT -> BLEND_SRC_OUT;
-            case DST_OUT -> BLEND_DST_OUT;
-            case SRC_ATOP -> BLEND_SRC_ATOP;
-            case DST_ATOP -> BLEND_DST_ATOP;
-            case XOR -> BLEND_XOR;
-            case PLUS, PLUS_CLAMPED -> BLEND_PLUS;
-            case MINUS, MINUS_CLAMPED -> BLEND_MINUS;
-            case MODULATE -> BLEND_MODULATE;
-            case SCREEN -> BLEND_SCREEN;
-            default -> null;
-        };
-    }
 }

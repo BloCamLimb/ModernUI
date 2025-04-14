@@ -22,9 +22,8 @@ package icyllis.arc3d.engine;
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Factory class used to obtain GPU resources with cache. A subclass can
@@ -32,7 +31,7 @@ import javax.annotation.Nullable;
  * <p>
  * This can only be used on render thread. To create Surface-like resources
  * in other threads, use {@link SurfaceProxy}. To obtain Pipeline resources,
- * use {@link SharedResourceCache}.
+ * use {@link GlobalResourceCache}.
  */
 public abstract class ResourceProvider {
 
@@ -69,7 +68,7 @@ public abstract class ResourceProvider {
     public GraphicsPipeline findOrCreateGraphicsPipeline(
             PipelineDesc pipelineDesc,
             RenderPassDesc renderPassDesc) {
-        var cache = mDevice.getSharedResourceCache();
+        var cache = mDevice.getGlobalResourceCache();
         mGraphicsPipelineKey = mDevice.getCaps().makeGraphicsPipelineKey(
                 mGraphicsPipelineKey,
                 pipelineDesc,
@@ -208,18 +207,17 @@ public abstract class ResourceProvider {
         }
         mImageScratchKey = key;
 
-        Image image = findAndRefScratchImage(key, budgeted, label);
+        Image image = findAndRefScratchImage(key, budgeted, false, label);
         if (image != null) {
             return image;
         }
 
-        image = createNewImage(desc, budgeted, label);
+        image = createNewImage(desc, label);
         if (image == null) {
             return null;
         }
 
-        image.setKey(key.copy());
-        mResourceCache.insertResource(image);
+        mResourceCache.insertResource(image, key.copy(), budgeted, false);
 
         return image;
     }
@@ -240,12 +238,11 @@ public abstract class ResourceProvider {
     @Nullable
     @SharedPtr
     public final Image createNewImage(ImageDesc desc,
-                                      boolean budgeted,
                                       @Nullable String label) {
         if (desc.isCompressed()) {
             return null;
         }
-        final Image image = onCreateNewImage(desc, budgeted);
+        final Image image = onCreateNewImage(desc);
         if (image != null) {
             assert image.getDesc() == desc;
             if (label != null) {
@@ -268,8 +265,7 @@ public abstract class ResourceProvider {
     @ApiStatus.OverrideOnly
     @Nullable
     @SharedPtr
-    protected abstract Image onCreateNewImage(ImageDesc desc,
-                                              boolean budgeted);
+    protected abstract Image onCreateNewImage(ImageDesc desc);
 
     /**
      * Search the cache for a scratch texture matching the provided arguments. Failing that
@@ -282,11 +278,12 @@ public abstract class ResourceProvider {
     @SharedPtr
     public final Image findAndRefScratchImage(IResourceKey key,
                                               boolean budgeted,
+                                              boolean shareable,
                                               @Nullable String label) {
         assert mContext.isOwnerThread();
         assert !mDevice.isDeviceLost();
 
-        Resource resource = mResourceCache.findAndRefResource(key, budgeted);
+        Resource resource = mResourceCache.findAndRefResource(key, budgeted, shareable);
         if (resource != null) {
             mDevice.getStats().incNumScratchTexturesReused();
             if (label != null) {
@@ -311,6 +308,7 @@ public abstract class ResourceProvider {
     @SharedPtr
     public final Image findAndRefScratchImage(ImageDesc desc,
                                               boolean budgeted,
+                                              boolean shareable,
                                               @Nullable String label) {
         assert mContext.isOwnerThread();
         assert !mDevice.isDeviceLost();
@@ -322,7 +320,7 @@ public abstract class ResourceProvider {
         }
         mImageScratchKey = key;
 
-        return findAndRefScratchImage(key, budgeted, label);
+        return findAndRefScratchImage(key, budgeted, shareable, label);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -474,10 +472,10 @@ public abstract class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public final Sampler findOrCreateCompatibleSampler(@Nonnull SamplerDesc desc) {
+    public final Sampler findOrCreateCompatibleSampler(@NonNull SamplerDesc desc) {
         @SharedPtr
         Sampler sampler = (Sampler) mResourceCache.findAndRefResource(
-                desc, /*budgeted*/true
+                desc, /*budgeted*/true, /*shareable*/true
         );
         if (sampler != null) {
             return sampler;
@@ -488,8 +486,7 @@ public abstract class ResourceProvider {
             return null;
         }
 
-        sampler.setKey(desc);
-        mResourceCache.insertResource(sampler);
+        mResourceCache.insertResource(sampler, desc, /*budgeted*/true, /*shareable*/true);
 
         return sampler;
     }
@@ -591,7 +588,7 @@ public abstract class ResourceProvider {
                 sampleCount, surfaceFlags, label);
         if (renderTarget != null) {
             if ((surfaceFlags & ISurface.FLAG_BUDGETED) == 0) {
-                renderTarget.makeBudgeted(false);
+                renderTarget.setBudgeted(false);
             }
             return renderTarget;
         }
@@ -671,9 +668,9 @@ public abstract class ResourceProvider {
     @Nullable
     @SharedPtr
     public final GpuRenderTarget createRenderTarget(int numColorTargets,
-                                                    @Nullable Image[] colorTargets,
-                                                    @Nullable Image[] resolveTargets,
-                                                    @Nullable int[] mipLevels,
+            Image @Nullable[] colorTargets,
+            Image @Nullable[] resolveTargets,
+            int @Nullable[] mipLevels,
                                                     @Nullable Image depthStencilTarget,
                                                     int surfaceFlags) {
         return mDevice.createRenderTarget(numColorTargets,
@@ -697,14 +694,14 @@ public abstract class ResourceProvider {
         assert !mDevice.isDeviceLost();
         assert key instanceof GpuRenderTarget.ResourceKey;
 
-        Resource resource = mResourceCache.findAndRefResource(key, true);
+        /*Resource resource = mResourceCache.findAndRefResource(key, true);
         if (resource != null) {
             mDevice.getStats().incNumScratchRenderTargetsReused();
             if (label != null) {
                 resource.setLabel(label);
             }
             return (GpuRenderTarget) resource;
-        }
+        }*/
         return null;
     }
 
@@ -818,7 +815,7 @@ public abstract class ResourceProvider {
         @SharedPtr
         Buffer buffer = (Buffer) mResourceCache.findAndRefResource(
                 mBufferKey.set(usage, size),
-                true
+                /*budgeted*/true, /*shareable*/false
         );
         if (buffer != null) {
             buffer.setLabel(label);
@@ -828,9 +825,8 @@ public abstract class ResourceProvider {
         if (buffer == null) {
             return null;
         }
-        buffer.setKey(mBufferKey.copy());
         buffer.setLabel(label);
-        mResourceCache.insertResource(buffer);
+        mResourceCache.insertResource(buffer, mBufferKey.copy(), /*budgeted*/true, /*shareable*/false);
         return buffer;
     }
 

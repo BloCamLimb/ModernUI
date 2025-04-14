@@ -19,6 +19,8 @@
 
 package icyllis.arc3d.compiler;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Limited set of GLSL versions we generate shaders for. Caller should round
  * down the GLSL version to one of these enums.
@@ -71,7 +73,7 @@ public enum GLSLVersion {
         mVersionDecl = versionDecl;
     }
 
-    public boolean isAtLeast(GLSLVersion other) {
+    public boolean isAtLeast(@NonNull GLSLVersion other) {
         return compareTo(other) >= 0;
     }
 
@@ -79,7 +81,7 @@ public enum GLSLVersion {
         return compareTo(GLSL_330) >= 0;
     }
 
-    public boolean isEsProfile() {
-        return compareTo(GLSL_310_ES) <= 0;
+    public boolean isESProfile() {
+        return compareTo(GLSL_320_ES) <= 0;
     }
 }

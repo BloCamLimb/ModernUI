@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link Rect2i} holds four integer coordinates describing the upper and
@@ -32,7 +32,7 @@ import javax.annotation.Nonnull;
  * or if its bottom is less than or equal to its top, it is considered empty.
  * <p>
  * Note that the right and bottom coordinates are exclusive. This means a
- * {@link Rect2i} being drawn untransformed onto a {@link Canvas} will
+ * {@link Rect2i} being drawn untransformed onto a {@link icyllis.arc3d.sketch.Canvas} will
  * draw into the column and row described by its left and top coordinates,
  * but not those of its bottom and right.
  */
@@ -76,7 +76,7 @@ public non-sealed class Rect2i implements Rect2ic {
      * @param r the rectangle whose coordinates are copied into the new
      *          rectangle
      */
-    public Rect2i(@Nonnull Rect2ic r) {
+    public Rect2i(@NonNull Rect2ic r) {
         r.store(this);
     }
 
@@ -87,7 +87,7 @@ public non-sealed class Rect2i implements Rect2ic {
      * @param r the rectangle whose coordinates are copied into the new
      *          rectangle
      */
-    public Rect2i(@Nonnull Rect2fc r) {
+    public Rect2i(@NonNull Rect2fc r) {
         r.store(this);
     }
 
@@ -96,7 +96,7 @@ public non-sealed class Rect2i implements Rect2ic {
      *
      * @return an empty rect
      */
-    @Nonnull
+    @NonNull
     public static Rect2ic empty() {
         return EMPTY;
     }
@@ -194,7 +194,7 @@ public non-sealed class Rect2i implements Rect2ic {
      * @param dst the rectangle to store
      */
     @Override
-    public void store(@Nonnull Rect2i dst) {
+    public void store(@NonNull Rect2i dst) {
         dst.mLeft = mLeft;
         dst.mTop = mTop;
         dst.mRight = mRight;
@@ -207,7 +207,7 @@ public non-sealed class Rect2i implements Rect2ic {
      * @param dst the rectangle to store
      */
     @Override
-    public void store(@Nonnull Rect2f dst) {
+    public void store(@NonNull Rect2f dst) {
         dst.mLeft = mLeft;
         dst.mTop = mTop;
         dst.mRight = mRight;
@@ -237,7 +237,7 @@ public non-sealed class Rect2i implements Rect2ic {
      * @param src the rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public final void set(@Nonnull Rect2ic src) {
+    public final void set(@NonNull Rect2ic src) {
         src.store(this);
     }
 
@@ -306,7 +306,7 @@ public non-sealed class Rect2i implements Rect2ic {
      *
      * @param insets the rectangle specifying the insets on all side.
      */
-    public final void inset(@Nonnull Rect2ic insets) {
+    public final void inset(@NonNull Rect2ic insets) {
         mLeft += insets.left();
         mTop += insets.top();
         mRight -= insets.right();
@@ -333,7 +333,7 @@ public non-sealed class Rect2i implements Rect2ic {
      *
      * @param adjusts the rectangle specifying the adjusts on all side.
      */
-    public final void adjust(@Nonnull Rect2ic adjusts) {
+    public final void adjust(@NonNull Rect2ic adjusts) {
         mLeft += adjusts.left();
         mTop += adjusts.top();
         mRight += adjusts.right();

@@ -3124,22 +3124,11 @@ public class Lexer {
     }
 
     // current parse stream
-    private final char[] mSource;
-    private final int mStart;
-    private final int mLimit;
+    private final String mSource;
     private int mScanOffset;
 
-    public Lexer(char[] source) {
+    public Lexer(String source) {
         mSource = source;
-        mStart = 0;
-        mLimit = source.length;
-    }
-
-    public Lexer(char[] source, int offset, int length) {
-        mSource = source;
-        mStart = offset;
-        mLimit = offset + length;
-        mScanOffset = offset;
     }
 
     // @formatter:off
@@ -3148,13 +3137,13 @@ public class Lexer {
         final int offset = mScanOffset;
         int state = 1;
         for (;;) {
-            if (mScanOffset >= mLimit) {
-                if (offset == mLimit || ACCEPTS[state] == DFA.INVALID) {
-                    return Token.make(Token.TK_END_OF_FILE, offset - mStart, 0);
+            if (mScanOffset >= mSource.length()) {
+                if (offset == mSource.length() || ACCEPTS[state] == DFA.INVALID) {
+                    return Token.make(Token.TK_END_OF_FILE, offset, 0);
                 }
                 break;
             }
-            int c = (mSource[mScanOffset] - NFAtoDFA.START_CHAR);
+            int c = (mSource.charAt(mScanOffset) - NFAtoDFA.START_CHAR);
             if (c < 0 || c > NFAtoDFA.END_CHAR - NFAtoDFA.START_CHAR) {
                 // Choose '\e' as invalid char which is greater than start char,
                 // and should not appear in actual input.
@@ -3167,15 +3156,15 @@ public class Lexer {
             state = newState;
             ++mScanOffset;
         }
-        return Token.make(ACCEPTS[state] & 0xFF, offset - mStart, mScanOffset - offset);
+        return Token.make(ACCEPTS[state] & 0xFF, offset, mScanOffset - offset);
     }
     // @formatter:on
 
     public int offset() {
-        return mScanOffset - mStart;
+        return mScanOffset;
     }
 
     public void offset(int offset) {
-        mScanOffset = offset + mStart;
+        mScanOffset = offset;
     }
 }

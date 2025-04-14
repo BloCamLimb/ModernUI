@@ -75,7 +75,7 @@ public final class GeometryRenderer {
             case 0 -> mStep0;
             case 1 -> mStep1;
             case 2 -> mStep2;
-            default -> null;
+            default -> throw new IndexOutOfBoundsException(i);
         };
     }
 

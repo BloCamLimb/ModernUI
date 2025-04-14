@@ -19,12 +19,13 @@
 
 package icyllis.arc3d.compiler;
 
+import icyllis.arc3d.compiler.glsl.GLSLCodeGenerator;
 import icyllis.arc3d.compiler.spirv.SPIRVCodeGenerator;
 import icyllis.arc3d.compiler.tree.Node;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.util.*;
@@ -46,61 +47,57 @@ public class ShaderCompiler {
     private final ErrorHandler mErrorHandler = new ErrorHandler() {
         private void log(int start, int end, String msg) {
             boolean showLocation = false;
-            char[] source = mSource;
-            int sourceStart = mOffset;
-            int sourceLimit = mOffset + mLength;
+            final String source = mSource;
             if (start != -1 && source != null) {
-                start += sourceStart;
-                end += sourceStart;
-                int offset = Math.min(start, sourceLimit);
+                int offset = Math.min(start, source.length());
                 int line = 1;
-                for (int i = sourceStart; i < offset; ++i) {
-                    boolean isCR = source[i] == '\r';
-                    if (isCR || source[i] == '\n') {
+                for (int i = 0; i < offset; ++i) {
+                    boolean isCR = source.charAt(i) == '\r';
+                    if (isCR || source.charAt(i) == '\n') {
                         ++line;
                         if (isCR && i + 1 < offset &&
-                                source[i + 1] == '\n') {
+                                source.charAt(i + 1) == '\n') {
                             ++i;
                         }
                     }
                 }
-                showLocation = start < sourceLimit;
+                showLocation = start < source.length();
                 mErrorBuilder.append(line).append(": ");
             }
             mErrorBuilder.append(msg).append('\n');
             if (showLocation) {
                 // Find the beginning of the line
                 int lineStart = start;
-                while (lineStart > sourceStart && start - lineStart < 128) {
-                    if (source[lineStart - 1] == '\n') {
+                while (lineStart > 0 && start - lineStart < 128) {
+                    if (source.charAt(lineStart - 1) == '\n') {
                         break;
                     }
                     --lineStart;
                 }
 
                 // echo the line
-                for (int i = lineStart; i < sourceLimit; i++) {
-                    switch (source[i]) {
+                for (int i = lineStart; i < source.length(); i++) {
+                    switch (source.charAt(i)) {
                         case '\t' -> mErrorBuilder.append("    ");
                         case '\0' -> mErrorBuilder.append(" ");
-                        case '\n' -> i = sourceLimit;
-                        default -> mErrorBuilder.append(source[i]);
+                        case '\n' -> i = source.length();
+                        default -> mErrorBuilder.append(source.charAt(i));
                     }
                 }
                 mErrorBuilder.append('\n');
 
                 // print the carets underneath it, pointing to the range in question
-                for (int i = lineStart; i < sourceLimit; i++) {
+                for (int i = lineStart; i < source.length(); i++) {
                     if (i >= end) {
                         break;
                     }
-                    switch (source[i]) {
+                    switch (source.charAt(i)) {
                         case '\t' -> mErrorBuilder.append((i >= start) ? "^^^^" : "    ");
                         case '\n' -> {
                             assert (i >= start);
                             // use an ellipsis if the error continues past the end of the line
                             mErrorBuilder.append((end > i + 1) ? "..." : "^");
-                            i = sourceLimit;
+                            i = source.length();
                         }
                         default -> mErrorBuilder.append((i >= start) ? '^' : ' ');
                     }
@@ -139,11 +136,6 @@ public class ShaderCompiler {
 
     /**
      * Parse the source into an abstract syntax tree.
-     * If the source is a {@link CharBuffer} and backed by a heap array, then
-     * the array is used directly. Otherwise, a copy will be made.
-     * Typically, if you want to compile a UTF-8 encoded file, you map the file
-     * and call {@link java.nio.charset.CharsetDecoder#decode(ByteBuffer)} to
-     * obtain the CharBuffer, and directly pass it to here. No copy will be made.
      *
      * @param source  the source text
      * @param kind    the shader kind
@@ -152,52 +144,35 @@ public class ShaderCompiler {
      * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public TranslationUnit parse(@Nonnull CharSequence source,
-                                 @Nonnull ShaderKind kind,
-                                 @Nonnull CompileOptions options,
-                                 @Nonnull ModuleUnit parent) {
-        final char[] chars;
-        final int offset, length;
-        if (source instanceof CharBuffer buffer &&
-                buffer.hasArray()) {
-            chars = buffer.array();
-            offset = buffer.arrayOffset() + buffer.position();
-            length = buffer.remaining();
-        } else {
-            chars = toChars(source);
-            offset = 0;
-            length = chars.length;
-        }
-        return parse(chars, offset, length, kind, options, parent);
+    public TranslationUnit parse(@NonNull CharSequence source,
+                                 @NonNull ShaderKind kind,
+                                 @NonNull CompileOptions options,
+                                 @NonNull ModuleUnit parent) {
+        return parse(source.toString(), kind, options, parent);
     }
 
     /**
      * Parse the source into an abstract syntax tree.
+     * The whole source string will be kept by TranslationUnit.
      *
-     * @param source  the source text, must be immutable
-     * @param offset  the offset to the first char as the first line
-     * @param length  the effective number of chars of the source
+     * @param source  the source text
      * @param kind    the shader kind
      * @param options the compile options
      * @param parent  the parent module that contains common declarations
      * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public TranslationUnit parse(@Nonnull char[] source,
-                                 int offset, int length,
-                                 @Nonnull ShaderKind kind,
-                                 @Nonnull CompileOptions options,
-                                 @Nonnull ModuleUnit parent) {
+    public TranslationUnit parse(@NonNull String source,
+                                 @NonNull ShaderKind kind,
+                                 @NonNull CompileOptions options,
+                                 @NonNull ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        Objects.checkFromIndexSize(offset, length, source.length);
-        startContext(kind, options, parent, false, false, source, offset, length);
+        startContext(kind, options, parent, false, false, source);
         try {
-            Parser parser = new Parser(this, kind,
+            Parser parser = new Parser(getContext(), kind,
                     options,
-                    source,
-                    offset,
-                    length);
+                    source);
             if (options.mPreprocess) {
                 List<Map.Entry<String, Boolean>> includes = parser.preprocess();
                 if (includes == null) {
@@ -223,23 +198,11 @@ public class ShaderCompiler {
      * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public ModuleUnit parseModule(@Nonnull CharSequence source,
-                                  @Nonnull ShaderKind kind,
-                                  @Nonnull ModuleUnit parent,
+    public ModuleUnit parseModule(@NonNull CharSequence source,
+                                  @NonNull ShaderKind kind,
+                                  @NonNull ModuleUnit parent,
                                   boolean builtin) {
-        final char[] chars;
-        final int offset, length;
-        if (source instanceof CharBuffer buffer &&
-                buffer.hasArray()) {
-            chars = buffer.array();
-            offset = buffer.arrayOffset() + buffer.position();
-            length = buffer.remaining();
-        } else {
-            chars = toChars(source);
-            offset = 0;
-            length = chars.length;
-        }
-        return parseModule(chars, offset, length, kind, parent, builtin);
+        return parseModule(source.toString(), kind, parent, builtin);
     }
 
     /**
@@ -254,27 +217,41 @@ public class ShaderCompiler {
      * @return the parsed result, or null if there's an error
      */
     @Nullable
-    public ModuleUnit parseModule(@Nonnull char[] source,
-                                  int offset, int length,
-                                  @Nonnull ShaderKind kind,
-                                  @Nonnull ModuleUnit parent,
+    public ModuleUnit parseModule(@NonNull String source,
+                                  @NonNull ShaderKind kind,
+                                  @NonNull ModuleUnit parent,
                                   boolean builtin) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        Objects.checkFromIndexSize(offset, length, source.length);
         CompileOptions options = new CompileOptions();
-        startContext(kind, options, parent, builtin, true, source, offset, length);
+        startContext(kind, options, parent, builtin, true, source);
         try {
-            Parser parser = new Parser(this, kind,
+            Parser parser = new Parser(getContext(), kind,
                     options,
-                    source,
-                    offset,
-                    length);
+                    source);
             List<Map.Entry<String, Boolean>> includes = parser.preprocess();
             if (includes == null) {
                 return null;
             }
             return parser.parseModule(parent);
+        } finally {
+            endContext();
+        }
+    }
+
+    @Nullable
+    public ByteBuffer generateGLSL(@NonNull TranslationUnit translationUnit,
+                                   @NonNull ShaderCaps shaderCaps) {
+        startContext(translationUnit.getKind(),
+                translationUnit.getOptions(),
+                null,
+                false,
+                false,
+                translationUnit.getSource());
+        try {
+            CodeGenerator generator = new GLSLCodeGenerator(
+                    getContext(), translationUnit, shaderCaps);
+            return generator.generateCode();
         } finally {
             endContext();
         }
@@ -295,19 +272,17 @@ public class ShaderCompiler {
      * @return the translated shader code (uint32_t *), or null if there's an error
      */
     @Nullable
-    public ByteBuffer generateSPIRV(@Nonnull TranslationUnit translationUnit,
-                                    @Nonnull ShaderCaps shaderCaps) {
+    public ByteBuffer generateSPIRV(@NonNull TranslationUnit translationUnit,
+                                    @NonNull ShaderCaps shaderCaps) {
         startContext(translationUnit.getKind(),
                 translationUnit.getOptions(),
                 null,
                 false,
                 false,
-                translationUnit.getSource(),
-                translationUnit.getSourceOffset(),
-                translationUnit.getSourceLength());
+                translationUnit.getSource());
         try {
             CodeGenerator generator = new SPIRVCodeGenerator(
-                    this, translationUnit, shaderCaps);
+                    getContext(), translationUnit, shaderCaps);
             return generator.generateCode();
         } finally {
             endContext();
@@ -324,24 +299,12 @@ public class ShaderCompiler {
      * @see #generateSPIRV(TranslationUnit, ShaderCaps)
      */
     @Nullable
-    public ByteBuffer compileIntoSPIRV(@Nonnull CharSequence source,
-                                       @Nonnull ShaderKind kind,
-                                       @Nonnull ShaderCaps shaderCaps,
-                                       @Nonnull CompileOptions options,
-                                       @Nonnull ModuleUnit parent) {
-        final char[] chars;
-        final int offset, length;
-        if (source instanceof CharBuffer buffer &&
-                buffer.hasArray()) {
-            chars = buffer.array();
-            offset = buffer.arrayOffset() + buffer.position();
-            length = buffer.remaining();
-        } else {
-            chars = toChars(source);
-            offset = 0;
-            length = chars.length;
-        }
-        return compileIntoSPIRV(chars, offset, length, kind, shaderCaps, options, parent);
+    public ByteBuffer compileIntoSPIRV(@NonNull CharSequence source,
+                                       @NonNull ShaderKind kind,
+                                       @NonNull ShaderCaps shaderCaps,
+                                       @NonNull CompileOptions options,
+                                       @NonNull ModuleUnit parent) {
+        return compileIntoSPIRV(source.toString(), kind, shaderCaps, options, parent);
     }
 
     /**
@@ -350,26 +313,22 @@ public class ShaderCompiler {
      * Use this method if you don't need parsed IR, then this method can do some
      * optimizations.
      *
-     * @see #parse(char[], int, int, ShaderKind, CompileOptions, ModuleUnit)
+     * @see #parse(String, ShaderKind, CompileOptions, ModuleUnit)
      * @see #generateSPIRV(TranslationUnit, ShaderCaps)
      */
     @Nullable
-    public ByteBuffer compileIntoSPIRV(@Nonnull char[] source,
-                                       int offset, int length,
-                                       @Nonnull ShaderKind kind,
-                                       @Nonnull ShaderCaps shaderCaps,
-                                       @Nonnull CompileOptions options,
-                                       @Nonnull ModuleUnit parent) {
+    public ByteBuffer compileIntoSPIRV(@NonNull String source,
+                                       @NonNull ShaderKind kind,
+                                       @NonNull ShaderCaps shaderCaps,
+                                       @NonNull CompileOptions options,
+                                       @NonNull ModuleUnit parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        Objects.checkFromIndexSize(offset, length, source.length);
-        startContext(kind, options, parent, false, false, source, offset, length);
+        startContext(kind, options, parent, false, false, source);
         try {
-            Parser parser = new Parser(this, kind,
+            Parser parser = new Parser(getContext(), kind,
                     options,
-                    source,
-                    offset,
-                    length);
+                    source);
             if (options.mPreprocess) {
                 List<Map.Entry<String, Boolean>> includes = parser.preprocess();
                 if (includes == null) {
@@ -382,7 +341,7 @@ public class ShaderCompiler {
                 return null;
             }
             CodeGenerator generator = new SPIRVCodeGenerator(
-                    this, translationUnit, shaderCaps);
+                    getContext(), translationUnit, shaderCaps);
             return generator.generateCode();
         } finally {
             endContext();
@@ -395,28 +354,26 @@ public class ShaderCompiler {
                              ModuleUnit parent,
                              boolean isBuiltin,
                              boolean isModule,
-                             char[] source,
-                             int offset,
-                             int length) {
+                             String source) {
         assert isModule || !isBuiltin;
         resetErrors(); // make a clean start
         mContext.start(kind, options, parent, isBuiltin, isModule);
-        mContext.getErrorHandler().setSource(source, offset, length);
+        mContext.getErrorHandler().setSource(source);
     }
 
     @ApiStatus.Internal
     public void endContext() {
         mContext.end();
-        mContext.getErrorHandler().setSource(null, 0, 0);
+        mContext.getErrorHandler().setSource(null);
     }
+
 
     /**
      * Helper method to copy a char sequence.
      *
      * @return a new char buffer copied from the given element
      */
-    @Nonnull
-    public static char[] toChars(@Nonnull CharSequence s) {
+    public static char @NonNull[] toChars(@NonNull CharSequence s) {
         if (s instanceof String) {
             return ((String) s).toCharArray();
         }
@@ -426,16 +383,17 @@ public class ShaderCompiler {
         return chars;
     }
 
+
     /**
      * Helper method to copy a char sequence array. Character sequences will
      * be concatenated together.
      *
      * @return a new char buffer copied from the given elements
      */
-    @Nonnull
-    public static char[] toChars(@Nonnull CharSequence... elements) {
+    public static char @NonNull[] toChars(@NonNull CharSequence... elements) {
         return toChars(elements, 0, elements.length);
     }
+
 
     /**
      * Helper method to copy a sub-range of char sequences. Character sequences will
@@ -445,8 +403,7 @@ public class ShaderCompiler {
      * @param end   end index (exclusive) in elements
      * @return a new char buffer copied from the given elements
      */
-    @Nonnull
-    public static char[] toChars(@Nonnull CharSequence[] elements, int start, int end) {
+    public static char @NonNull[] toChars(CharSequence @NonNull[] elements, int start, int end) {
         Objects.checkFromToIndex(start, end, elements.length);
         if (start == end) {
             return new char[0];
@@ -474,14 +431,14 @@ public class ShaderCompiler {
         return chars;
     }
 
+
     /**
      * Helper method to copy a sequence of char sequences. Character sequences will
      * be concatenated together. Empty sequences will be ignored.
      *
      * @return a new char buffer copied from the given elements
      */
-    @Nonnull
-    public static char[] toChars(@Nonnull List<CharSequence> elements) {
+    public static char @NonNull[] toChars(@NonNull List<CharSequence> elements) {
         int size = elements.size();
         if (size == 0) {
             return new char[0];
@@ -509,8 +466,8 @@ public class ShaderCompiler {
         return chars;
     }
 
-    private static int getChars(@Nonnull CharSequence s,
-                                @Nonnull char[] dst, int offset, int n) {
+    private static int getChars(@NonNull CharSequence s,
+            char @NonNull[] dst, int offset, int n) {
         if (s instanceof String)
             ((String) s).getChars(0, n, dst, offset);
         else if (s instanceof StringBuffer)
@@ -530,7 +487,7 @@ public class ShaderCompiler {
      * Returns the concatenated error (and warning) message during the last parsing
      * or code generation. This may be empty or contain multiple lines.
      */
-    @Nonnull
+    @NonNull
     public String getErrorMessage() {
         return getErrorMessage(true);
     }
@@ -541,7 +498,7 @@ public class ShaderCompiler {
      *
      * @param showCount show the number of errors and warnings, if there are any
      */
-    @Nonnull
+    @NonNull
     public String getErrorMessage(boolean showCount) {
         if (!showCount) {
             return mErrorBuilder.toString();

@@ -20,8 +20,13 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-
-import javax.annotation.Nullable;
+import icyllis.arc3d.granite.geom.BlurredBox;
+import icyllis.arc3d.granite.geom.EdgeAAQuad;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.StrokeRec;
+import icyllis.arc3d.sketch.Vertices;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a recorded draw operation.
@@ -39,7 +44,8 @@ public final class Draw implements AutoCloseable {
      * This matrix transforms geometry's local space to device space.
      */
     public Matrixc mTransform;
-    public Object mGeometry;
+    public final Object mGeometry;
+    public boolean mInverseFill;
     /**
      * Clip params (immutable), set by {@link ClipStack}.
      * <p>
@@ -82,12 +88,37 @@ public final class Draw implements AutoCloseable {
     @Nullable
     public PaintParams mPaintParams;
 
+    public Draw(Matrixc transform, Object geometry) {
+        mTransform = transform;
+        mGeometry = geometry;
+    }
+
     @Override
     public void close() {
         if (mPaintParams != null) {
             mPaintParams.close();
         }
         mPaintParams = null;
+    }
+
+    public void getBounds(Rect2f dest) {
+        final Object g = mGeometry;
+        if (g == null)
+            dest.setEmpty();
+        else if (g instanceof SimpleShape)
+            ((SimpleShape) g).getBounds(dest);
+        else if (g instanceof EdgeAAQuad)
+            ((EdgeAAQuad) g).getBounds(dest);
+        else if (g instanceof SubRunData)
+            ((SubRunData) g).getBounds(dest);
+        else if (g instanceof BlurredBox)
+            ((BlurredBox) g).getBounds(dest);
+        else if (g instanceof Rect2f)
+            ((Rect2f) g).store(dest);
+        else if (g instanceof ArcShape)
+            ((ArcShape) g).getBounds(dest);
+        else if (g instanceof Vertices)
+            ((Vertices) g).getBounds(dest);
     }
 
     public boolean isClippedOut() {

@@ -21,11 +21,9 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.granite.GeometryStep;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -105,7 +103,7 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
 
     private void checkAsyncWork() {
         boolean success = mAsyncWork.join().finish(this);
-        var stats = getDevice().getSharedResourceCache().getStats();
+        var stats = getDevice().getGlobalResourceCache().getStats();
         if (success) {
             stats.incNumCompilationSuccesses();
         } else {
@@ -132,10 +130,10 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
 
     @Deprecated
     public boolean bindUniforms(GLCommandBuffer commandBuffer,
-                                GraphicsPipelineDesc_Old graphicsPipelineDesc,
+                                /*GraphicsPipelineDesc_Old graphicsPipelineDesc,*/
                                 int width, int height) {
-        mDataManager.setProjection(0, width, height,
-                graphicsPipelineDesc.origin() == Engine.SurfaceOrigin.kLowerLeft);
+        /*mDataManager.setProjection(0, width, height,
+                graphicsPipelineDesc.origin() == Engine.SurfaceOrigin.kLowerLeft);*/
         //mGPImpl.setData(mDataManager, graphicsPipelineDesc.geomProc());
         //TODO FP and upload
 
@@ -147,16 +145,16 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
      */
     @Deprecated
     public boolean bindTextures(GLCommandBuffer commandBuffer,
-                                GraphicsPipelineDesc_Old graphicsPipelineDesc,
+                                /*GraphicsPipelineDesc_Old graphicsPipelineDesc,*/
                                 ImageViewProxy[] geomTextures) {
         int unit = 0;
-        for (int i = 0, n = graphicsPipelineDesc.geomProc().numTextureSamplers(); i < n; i++) {
+        /*for (int i = 0, n = graphicsPipelineDesc.geomProc().numTextureSamplers(); i < n; i++) {
             GLTexture texture = (GLTexture) geomTextures[i].getImage();
-            /*commandBuffer.bindTextureSampler(unit++, texture,
+            commandBuffer.bindTextureSampler(unit++, texture,
                     graphicsPipelineDesc.geomProc().textureSamplerState(i),
-                    graphicsPipelineDesc.geomProc().textureSamplerSwizzle(i));*/
+                    graphicsPipelineDesc.geomProc().textureSamplerSwizzle(i));
         }
-        //TODO bind FP textures
+         */
 
         assert unit == mNumTextureSamplers;
         return true;
@@ -193,7 +191,7 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
      *
      * @param buffer the element buffer object, raw ptr
      */
-    public void bindIndexBuffer(@Nonnull @RawPtr GLBuffer buffer) {
+    public void bindIndexBuffer(@NonNull @RawPtr GLBuffer buffer) {
         if (mVertexArray != null) {
             mVertexArray.bindIndexBuffer(buffer);
         }
@@ -210,7 +208,7 @@ public final class GLGraphicsPipeline extends GraphicsPipeline {
      * @param buffer  the vertex buffer object, raw ptr
      * @param offset  first vertex data to the head of the buffer, in bytes
      */
-    public void bindVertexBuffer(int binding, @Nonnull @RawPtr GLBuffer buffer, long offset) {
+    public void bindVertexBuffer(int binding, @NonNull @RawPtr GLBuffer buffer, long offset) {
         if (mVertexArray != null) {
             mVertexArray.bindVertexBuffer(binding, buffer, offset);
         }

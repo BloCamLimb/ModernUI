@@ -20,8 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An identifier referring to a function name. This is an intermediate value: FunctionReferences are
@@ -29,16 +28,16 @@ import javax.annotation.Nonnull;
  */
 public final class FunctionReference extends Expression {
 
-    private final FunctionDecl mOverloadChain;
+    private final FunctionDeclaration mOverloadChain;
 
-    private FunctionReference(int position, FunctionDecl overloadChain, Type type) {
+    private FunctionReference(int position, FunctionDeclaration overloadChain, Type type) {
         super(position, type);
         mOverloadChain = overloadChain;
     }
 
-    @Nonnull
-    public static Expression make(@Nonnull Context context,
-                                  int position, FunctionDecl overloadChain) {
+    @NonNull
+    public static Expression make(@NonNull Context context,
+                                  int position, FunctionDeclaration overloadChain) {
         return new FunctionReference(position, overloadChain, context.getTypes().mInvalid);
     }
 
@@ -47,22 +46,17 @@ public final class FunctionReference extends Expression {
         return ExpressionKind.FUNCTION_REFERENCE;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitFunctionReference(this);
-    }
-
-    public FunctionDecl getOverloadChain() {
+    public FunctionDeclaration getOverloadChain() {
         return mOverloadChain;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new FunctionReference(position, mOverloadChain, getType());
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         return "<function>";

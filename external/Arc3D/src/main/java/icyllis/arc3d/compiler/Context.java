@@ -20,19 +20,20 @@
 package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.tree.*;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
  * Contains objects and state associated with {@link ShaderCompiler}
- * (i.e. {@link Parser} or CodeGenerator).
+ * (i.e. {@link Parser} or {@link CodeGenerator}).
  */
 public final class Context {
 
     // The Context holds a pointer to the configuration of the program being compiled.
-    private ShaderKind mKind;
-    private CompileOptions mOptions;
+    private @Nullable ShaderKind mKind;
+    private @Nullable CompileOptions mOptions;
     private boolean mIsBuiltin;
     private boolean mIsModule;
 
@@ -48,15 +49,15 @@ public final class Context {
 
     private boolean mActive;
 
-    Context(ErrorHandler errorHandler) {
+    public Context(ErrorHandler errorHandler) {
         mTypes = ModuleLoader.getInstance().getBuiltinTypes();
         mErrorHandler = errorHandler;
     }
 
     /**
-     * Starts the DSL on the current thread for compiling modules.
+     * Starts the DSL for compiling modules.
      */
-    void start(ShaderKind kind, CompileOptions options,
+    public void start(ShaderKind kind, CompileOptions options,
                ModuleUnit parent, boolean isBuiltin, boolean isModule) {
         if (isActive()) {
             throw new IllegalStateException("DSL is already started");
@@ -74,9 +75,9 @@ public final class Context {
     }
 
     /**
-     * Ends the DSL on the current thread.
+     * Ends the DSL.
      */
-    void end() {
+    public void end() {
         mKind = null;
         mOptions = null;
         mSymbolTable = null;
@@ -92,10 +93,13 @@ public final class Context {
     }
 
     public ShaderKind getKind() {
+        assert mKind != null;
         return mKind;
     }
 
+    @NonNull
     public CompileOptions getOptions() {
+        assert mOptions != null;
         return mOptions;
     }
 
@@ -184,8 +188,8 @@ public final class Context {
             return null;
         }
         return switch (result.getKind()) {
-            case FUNCTION_DECL -> {
-                var overloadChain = (FunctionDecl) result;
+            case FUNCTION_DECLARATION -> {
+                var overloadChain = (FunctionDeclaration) result;
                 yield FunctionReference.make(this, position, overloadChain);
             }
             case VARIABLE -> {

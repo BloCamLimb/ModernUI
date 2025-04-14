@@ -19,11 +19,11 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -31,12 +31,12 @@ import java.util.Objects;
  */
 public final class FieldAccess extends Expression {
 
-    private final Expression mBase;
+    private Expression mBase;
     private final int mFieldIndex;
     private final boolean mAnonymousBlock;
 
     private FieldAccess(int position, Expression base, int fieldIndex, boolean anonymousBlock) {
-        super(position, base.getType().getFields()[fieldIndex].type());
+        super(position, base.getType().getFields().get(fieldIndex).type());
         mBase = base;
         mFieldIndex = fieldIndex;
         mAnonymousBlock = anonymousBlock;
@@ -46,20 +46,20 @@ public final class FieldAccess extends Expression {
      * Returns a field-access expression.
      */
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int position,
-                                     @Nonnull Expression base,
+                                     @NonNull Expression base,
                                      int namePosition,
-                                     @Nonnull String name) {
+                                     @NonNull String name) {
         Type baseType = base.getType();
         if (baseType.isVector() || baseType.isScalar()) {
             return Swizzle.convert(context, position, base, namePosition, name);
         }
         //TODO length() method for vector, matrix and array
         if (baseType.isStruct()) {
-            final Type.Field[] fields = baseType.getFields();
-            for (int i = 0; i < fields.length; i++) {
-                if (fields[i].name().equals(name)) {
+            final var fields = baseType.getFields();
+            for (int i = 0; i < fields.size(); i++) {
+                if (fields.get(i).name().equals(name)) {
                     return FieldAccess.make(position, base, i, false);
                 }
             }
@@ -72,7 +72,7 @@ public final class FieldAccess extends Expression {
     /**
      * Returns a field-access expression.
      */
-    @Nonnull
+    @NonNull
     public static Expression make(int position,
                                   Expression base,
                                   int fieldIndex,
@@ -81,7 +81,7 @@ public final class FieldAccess extends Expression {
         if (!baseType.isStruct()) {
             throw new AssertionError();
         }
-        Objects.checkIndex(fieldIndex, baseType.getFields().length);
+        Objects.checkIndex(fieldIndex, baseType.getFields().size());
 
         return new FieldAccess(position, base, fieldIndex, anonymousBlock);
     }
@@ -91,16 +91,12 @@ public final class FieldAccess extends Expression {
         return ExpressionKind.FIELD_ACCESS;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitFieldAccess(this)) {
-            return true;
-        }
-        return mBase.accept(visitor);
-    }
-
     public Expression getBase() {
         return mBase;
+    }
+
+    public void setBase(Expression base) {
+        mBase = base;
     }
 
     public int getFieldIndex() {
@@ -111,22 +107,22 @@ public final class FieldAccess extends Expression {
         return mAnonymousBlock;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new FieldAccess(position,
-                mBase.clone(),
+                mBase.copy(),
                 mFieldIndex,
                 mAnonymousBlock);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         String s = mBase.toString(Operator.PRECEDENCE_POSTFIX);
         if (!s.isEmpty()) {
             s += ".";
         } // else anonymous block
-        return s + mBase.getType().getFields()[mFieldIndex].name();
+        return s + mBase.getType().getFields().get(mFieldIndex).name();
     }
 }

@@ -19,10 +19,11 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.ConstantFolder;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.analysis.Analysis;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An expression modified by a unary operator appearing before it.
@@ -34,7 +35,7 @@ import javax.annotation.Nonnull;
 public final class PrefixExpression extends Expression {
 
     private final Operator mOperator;
-    private final Expression mOperand;
+    private Expression mOperand;
 
     public PrefixExpression(int position, Operator op, Expression operand) {
         super(position, operand.getType());
@@ -42,7 +43,7 @@ public final class PrefixExpression extends Expression {
         mOperand = operand;
     }
 
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int position, Operator op, Expression base) {
         Type baseType = base.getType();
         switch (op) {
@@ -103,8 +104,8 @@ public final class PrefixExpression extends Expression {
         return result;
     }
 
-    @Nonnull
-    public static Expression make(@Nonnull Context context,
+    @NonNull
+    public static Expression make(@NonNull Context context,
                                   int position, Operator op, Expression base) {
         Expression folded = ConstantFolder.fold(context, position, op, base);
         if (folded != null) {
@@ -119,14 +120,6 @@ public final class PrefixExpression extends Expression {
         return ExpressionKind.PREFIX;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitPrefix(this)) {
-            return true;
-        }
-        return mOperand.accept(visitor);
-    }
-
     public Operator getOperator() {
         return mOperator;
     }
@@ -135,13 +128,17 @@ public final class PrefixExpression extends Expression {
         return mOperand;
     }
 
-    @Nonnull
-    @Override
-    public Expression clone(int position) {
-        return new PrefixExpression(position, mOperator, mOperand.clone());
+    public void setOperand(Expression operand) {
+        mOperand = operand;
     }
 
-    @Nonnull
+    @NonNull
+    @Override
+    public Expression copy(int position) {
+        return new PrefixExpression(position, mOperator, mOperand.copy());
+    }
+
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         boolean needsParens = (Operator.PRECEDENCE_PREFIX >= parentPrecedence);

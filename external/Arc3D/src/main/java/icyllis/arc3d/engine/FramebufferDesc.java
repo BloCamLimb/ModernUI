@@ -20,11 +20,11 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.UniqueID;
+import icyllis.arc3d.core.Size;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
@@ -133,10 +133,9 @@ public final class FramebufferDesc {
         }
     }
 
-    @Nonnull
-    public final ColorAttachmentDesc[] mColorAttachments;
+    public final @NonNull ColorAttachmentDesc @NonNull [] mColorAttachments;
 
-    public static final ColorAttachmentDesc[] NO_COLOR_ATTACHMENTS = new ColorAttachmentDesc[0];
+    public static final @NonNull ColorAttachmentDesc @NonNull [] NO_COLOR_ATTACHMENTS = new ColorAttachmentDesc[0];
 
     @Immutable
     public static final class DepthStencilAttachmentDesc {
@@ -181,7 +180,7 @@ public final class FramebufferDesc {
         }
     }
 
-    @Nonnull
+    @NonNull
     public final DepthStencilAttachmentDesc mDepthStencilAttachment;
 
     public static final DepthStencilAttachmentDesc NO_DEPTH_STENCIL_ATTACHMENT = new DepthStencilAttachmentDesc();
@@ -205,7 +204,8 @@ public final class FramebufferDesc {
     }
 
     public FramebufferDesc(int width, int height, int sampleCount,
-                           @Nullable ColorAttachmentDesc[] colorAttachments,
+                           @NonNull @Size(max = Caps.MAX_COLOR_TARGETS) ColorAttachmentDesc
+                           @Nullable [] colorAttachments,
                            @Nullable DepthStencilAttachmentDesc depthStencilAttachment) {
         mWidth = width;
         mHeight = height;

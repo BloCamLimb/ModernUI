@@ -18,6 +18,6 @@
  */
 
 /**
- * The Granite is our 2D graphics engine.
+ * The "Granite" Renderer is our 2D graphics engine.
  */
 package icyllis.arc3d.granite;

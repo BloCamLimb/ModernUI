@@ -23,8 +23,10 @@ import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
+import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.arc3d.opengl.*;
+import icyllis.arc3d.sketch.Matrix;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.*;
@@ -87,7 +89,9 @@ public class TestDrawPass {
         if (immediateContext == null) {
             throw new RuntimeException();
         }
-        RecordingContext recordingContext = immediateContext.makeRecordingContext();
+        RecordingContext recordingContext = RecordingContext.makeRecordingContext(
+                immediateContext, new RecordingContext.Options()
+        );
         if (recordingContext == null) {
             throw new RuntimeException();
         }
@@ -100,7 +104,7 @@ public class TestDrawPass {
         MeshDrawWriter drawWriter = new MeshDrawWriter(recordingContext.getDynamicBufferManager(),
                 commandList);
 
-        var step = new AnalyticSimpleBoxStep(true);
+        var step = new AnalyticSimpleBoxStep(false);
 
         drawWriter.newPipelineState(
                 step.vertexBinding(),
@@ -112,7 +116,6 @@ public class TestDrawPass {
 
         int nRects = 1000;
         for (int i = 0; i < nRects; i++) {
-            Draw draw = new Draw();
             SimpleShape rrect = new SimpleShape();
             int l = (int) (Math.random() * 910);
             int t = (int) (Math.random() * 450);
@@ -123,14 +126,13 @@ public class TestDrawPass {
                     l, t, l + w, t + h,
                     rad, rad
             );
-            draw.mGeometry = rrect;
             var transform = new Matrix4();
             float cx = rrect.centerX();
             float cy = rrect.centerY();
             transform.preTranslate(cx, cy);
             transform.preRotateZ(i);
             transform.preTranslate(-cx, -cy);
-            draw.mTransform = transform.toMatrix();
+            Draw draw = new Draw(new Matrix(transform), rrect);
             int stroke = (int) (Math.random() * 50);
             draw.mHalfWidth = stroke < 25 ? -1 : stroke - 20;
             float[] col = {(float) Math.random(), (float) Math.random(), (float) Math.random(), 1.0f};
@@ -212,6 +214,7 @@ public class TestDrawPass {
                 LOGGER.debug("Using OpenGL 4.3 for debug logging");
                 glDebugMessageCallback(TestDrawPass::glDebugMessage, NULL);
                 glEnable(GL_DEBUG_OUTPUT);
+                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             } else if (caps.GL_ARB_debug_output) {
                 LOGGER.debug("Using ARB_debug_output for debug logging");
                 GLDebugMessageARBCallback proc = new GLDebugMessageARBCallback() {

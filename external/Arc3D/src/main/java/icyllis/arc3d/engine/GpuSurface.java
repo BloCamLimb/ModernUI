@@ -20,8 +20,7 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface representing GPU surfaces.
@@ -41,7 +40,7 @@ public abstract class GpuSurface extends Resource {
                          boolean budgeted,
                          boolean wrapped,
                          long memorySize) {
-        super(context, budgeted, wrapped, memorySize);
+        super(context, wrapped, memorySize);
     }
 
     /**
@@ -59,7 +58,7 @@ public abstract class GpuSurface extends Resource {
      * <p>
      * If this is RT, returns the backend format of color attachment 0.
      */
-    @Nonnull
+    @NonNull
     public BackendFormat getBackendFormat() {
         return null;
     }

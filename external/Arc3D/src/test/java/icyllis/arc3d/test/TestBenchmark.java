@@ -20,6 +20,8 @@
 package icyllis.arc3d.test;
 
 import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.ImageInfo;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryUtil;
 import org.openjdk.jmh.annotations.*;

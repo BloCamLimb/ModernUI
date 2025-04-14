@@ -20,15 +20,15 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nullable;
 
 /**
  * A client-side buffer represents an immutable block of native CPU memory.
  * <p>
  * This is only used as "staging buffers" in OpenGL and may not be used for other purposes.
  */
+@Deprecated
 public final class CpuBuffer extends RefCnt {
 
     private final long mSize;

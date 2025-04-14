@@ -23,10 +23,10 @@ import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.Engine;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.NativeType;
 import org.lwjgl.vulkan.VK10;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
@@ -45,7 +45,7 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     //TODO cache only known formats
-    @Nonnull
+    @NonNull
     public static VkBackendFormat make(@NativeType("VkFormat") int format) {
         int key = (format);
         VkBackendFormat backendFormat = FORMATS.get(key);

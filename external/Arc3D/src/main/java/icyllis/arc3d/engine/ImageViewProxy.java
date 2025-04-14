@@ -21,9 +21,9 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -219,7 +219,7 @@ public final class ImageViewProxy extends RefCnt {
 
     @Nullable
     @SharedPtr
-    public static ImageViewProxy make(@Nonnull Context context,
+    public static ImageViewProxy make(@NonNull Context context,
                                       @Nullable ImageDesc desc,
                                       int origin, short swizzle,
                                       boolean budgeted,
@@ -241,7 +241,7 @@ public final class ImageViewProxy extends RefCnt {
 
     @Nullable
     @SharedPtr
-    public static ImageViewProxy make(@Nonnull Context context,
+    public static ImageViewProxy make(@NonNull Context context,
                                       int imageType,
                                       int colorType,
                                       int width, int height,
@@ -257,12 +257,12 @@ public final class ImageViewProxy extends RefCnt {
     }
 
     @SharedPtr
-    public static ImageViewProxy makeLazy(@Nonnull ImageDesc desc,
+    public static ImageViewProxy makeLazy(@NonNull ImageDesc desc,
                                           int origin, short swizzle,
                                           boolean budgeted,
                                           boolean isVolatile,
                                           boolean lazyDimensions,
-                                          @Nonnull LazyInstantiateCallback callback) {
+                                          @NonNull LazyInstantiateCallback callback) {
         return new ImageViewProxy(desc, origin, swizzle, budgeted, isVolatile, lazyDimensions, callback);
     }
 
@@ -366,7 +366,7 @@ public final class ImageViewProxy extends RefCnt {
         return mDesc.getSampleCount();
     }
 
-    @Nonnull
+    @NonNull
     public ImageDesc getDesc() {
         return mDesc;
     }

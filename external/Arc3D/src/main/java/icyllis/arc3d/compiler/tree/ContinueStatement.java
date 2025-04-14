@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A continue statement.
@@ -39,12 +39,7 @@ public final class ContinueStatement extends Statement {
         return StatementKind.CONTINUE;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitContinue(this);
-    }
-
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "continue;";

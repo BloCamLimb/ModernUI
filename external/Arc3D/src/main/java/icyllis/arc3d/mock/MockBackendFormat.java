@@ -22,8 +22,7 @@ package icyllis.arc3d.mock;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.BackendFormat;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
 
@@ -44,12 +43,12 @@ public final class MockBackendFormat extends BackendFormat {
         mIsStencilFormat = isStencilFormat;
     }
 
-    @Nonnull
+    @NonNull
     public static MockBackendFormat make(int colorType, int compressionType) {
         return make(colorType, compressionType, 0, false);
     }
 
-    @Nonnull
+    @NonNull
     public static MockBackendFormat make(int colorType, int compressionType, int depthBits, boolean isStencilFormat) {
         return new MockBackendFormat(colorType, compressionType, (short) depthBits, isStencilFormat);
     }

@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a four-dimensional vector.
@@ -38,7 +38,7 @@ public class Vector4 {
      *
      * @param mat the matrix used as the transformation
      */
-    public void transform(@Nonnull Matrix4 mat) {
+    public void transform(@NonNull Matrix4 mat) {
         mat.preTransform(this);
     }
 }

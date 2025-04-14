@@ -21,9 +21,9 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.engine.BufferViewInfo;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nullable;
 import java.nio.IntBuffer;
 import java.util.IdentityHashMap;
 import java.util.function.Function;
