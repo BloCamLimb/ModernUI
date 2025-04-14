@@ -102,12 +102,12 @@ public final class OutlineFont implements Font {
             return mFont;
         }
         if (size <= 96) {
-            int key = (int) (size * FontPaint.INV_FONT_SIZE_GRANULARITY + 0.5f);
+            int key = (int) (size / FontPaint.FONT_SIZE_GRANULARITY + 0.5f);
             var value = mFonts.get(key);
             if (value != null) {
                 return value;
             }
-            value = mFont.deriveFont(key / FontPaint.INV_FONT_SIZE_GRANULARITY);
+            value = mFont.deriveFont(key * FontPaint.FONT_SIZE_GRANULARITY);
             mFonts.put(key, value);
             return value;
         }

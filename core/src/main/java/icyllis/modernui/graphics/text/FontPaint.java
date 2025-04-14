@@ -59,7 +59,7 @@ public class FontPaint {
      * This is also the granularity of sub-pixel positioning.
      */
     @ApiStatus.Internal
-    public static final float INV_FONT_SIZE_GRANULARITY = 3.0f;
+    public static final float FONT_SIZE_GRANULARITY = 0.25f;
 
     private static final int RENDER_FLAG_ANTI_ALIAS = 0x10;
     private static final int RENDER_FLAG_LINEAR_METRICS = 0x20;
@@ -226,11 +226,12 @@ public class FontPaint {
                 ? icyllis.arc3d.sketch.Font.kAntiAlias_Edging
                 : icyllis.arc3d.sketch.Font.kAlias_Edging);
         nativeFont.setLinearMetrics(isLinearMetrics());
+        nativeFont.setSubpixel(isLinearMetrics());
     }
 
     public static float getCanonicalFontSize(float fontSize) {
         assert fontSize >= 0;
-        return (int) (fontSize * INV_FONT_SIZE_GRANULARITY + 0.5f) / INV_FONT_SIZE_GRANULARITY;
+        return (int) (fontSize / FONT_SIZE_GRANULARITY + 0.5f) * FONT_SIZE_GRANULARITY;
     }
 
     @Override

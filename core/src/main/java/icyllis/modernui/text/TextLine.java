@@ -1035,7 +1035,7 @@ public class TextLine {
             }
 
             TextBlob blob = mTextBlobBuilder.build();
-            c.drawTextBlob(blob, Math.round(leftX), y + wp.baselineShift, wp);
+            c.drawTextBlob(blob, leftX, y + wp.baselineShift, wp);
 
             if (flags != 0) {
                 if (paint == null) {
