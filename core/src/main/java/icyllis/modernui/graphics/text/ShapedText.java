@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
-import icyllis.arc3d.core.TextBlob;
+import icyllis.arc3d.sketch.TextBlob;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
@@ -420,7 +420,7 @@ public class ShapedText {
             mTextBlob = null;
         } else if (mFontIndices == null) {
             // optimize for single font
-            var nativeFont = new icyllis.arc3d.core.Font();
+            var nativeFont = new icyllis.arc3d.sketch.Font();
             paint.getNativeFont(nativeFont);
             nativeFont.setTypeface(mFonts[0].getNativeTypeface());
             if (nativeFont.getTypeface() != null) {
@@ -432,7 +432,7 @@ public class ShapedText {
         } else {
             // theoretically, we don't need to copy the array in this case, but...
             final TextBlob.Builder builder = new TextBlob.Builder();
-            var nativeFont = new icyllis.arc3d.core.Font();
+            var nativeFont = new icyllis.arc3d.sketch.Font();
             paint.getNativeFont(nativeFont);
             var lastFont = getFont(0);
             int lastPos = 0;

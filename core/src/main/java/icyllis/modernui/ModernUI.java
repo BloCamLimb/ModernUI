@@ -22,7 +22,8 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.GraniteSurface;
-import icyllis.arc3d.granite.RootTask;
+import icyllis.arc3d.granite.Recording;
+import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.*;
@@ -590,7 +591,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         private final Rect mGlobalRect = new Rect();
 
         Surface mSurface;
-        RootTask mLastFrameTask;
+        Recording mLastFrameTask;
 
         @Override
         protected boolean dispatchTouchEvent(MotionEvent event) {
@@ -650,16 +651,22 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         @Override
         protected void endDrawLocked(@NonNull Canvas canvas) {
-            RootTask task = Core.requireUiRecordingContext().snap();
+            Recording recording = Core.requireUiRecordingContext().snap();
             synchronized (mRenderLock) {
-                mLastFrameTask = RefCnt.move(mLastFrameTask, task);
+                if (mLastFrameTask != null) {
+                    mLastFrameTask.close();
+                }
+                mLastFrameTask = recording;
                 mRenderHandler.post(this::render);
                 try {
                     mRenderLock.wait();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                mLastFrameTask = RefCnt.move(mLastFrameTask);
+                if (mLastFrameTask != null) {
+                    mLastFrameTask.close();
+                }
+                mLastFrameTask = null;
             }
         }
 
@@ -667,19 +674,19 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         private void render() {
             ImmediateContext context = Core.requireImmediateContext();
             int width, height;
-            RootTask task;
+            Recording recording;
             synchronized (mRenderLock) {
                 width = mSurface.getWidth();
                 height = mSurface.getHeight();
-                task = mLastFrameTask;
+                recording = mLastFrameTask;
                 mLastFrameTask = null;
                 mRenderLock.notifyAll();
             }
-            if (task == null) {
+            if (recording == null) {
                 return;
             }
-            boolean added = context.addTask(task);
-            RefCnt.move(task);
+            boolean added = context.addTask(recording);
+            recording.close();
             if (added) {
                 GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
                 GL33C.glBlitFramebuffer(0, 0, width, height,

@@ -26,7 +26,7 @@ import icyllis.modernui.annotation.Nullable;
  * correspond to x, y, and w of a 4x4 matrix, where z is discarded.
  */
 @SuppressWarnings("unused")
-public class Matrix extends icyllis.arc3d.core.Matrix {
+public class Matrix extends icyllis.arc3d.sketch.Matrix {
 
     /**
      * Create a new identity matrix.

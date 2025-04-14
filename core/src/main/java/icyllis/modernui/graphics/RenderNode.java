@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.core.Surface;
+import icyllis.arc3d.sketch.Surface;
 
 import javax.annotation.Nonnull;
 

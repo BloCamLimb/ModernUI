@@ -53,6 +53,12 @@ public class FontPaint {
 
     public static final int FONT_STYLE_MASK = NORMAL | BOLD | ITALIC;
 
+    /**
+     * The font sizes used in Modern UI are rounded to a multiple of 0.25 to avoid
+     * generating too many text layout cache entries and GPU font strikes.
+     * This is also the granularity of sub-pixel positioning.
+     */
+    @ApiStatus.Internal
     public static final float INV_FONT_SIZE_GRANULARITY = 3.0f;
 
     private static final int RENDER_FLAG_ANTI_ALIAS = 0x10;
@@ -214,11 +220,11 @@ public class FontPaint {
      * @hidden
      */
     @ApiStatus.Internal
-    public void getNativeFont(@NonNull icyllis.arc3d.core.Font nativeFont) {
+    public void getNativeFont(@NonNull icyllis.arc3d.sketch.Font nativeFont) {
         nativeFont.setSize(getFontSize());
         nativeFont.setEdging(isAntiAlias()
-                ? icyllis.arc3d.core.Font.kAntiAlias_Edging
-                : icyllis.arc3d.core.Font.kAlias_Edging);
+                ? icyllis.arc3d.sketch.Font.kAntiAlias_Edging
+                : icyllis.arc3d.sketch.Font.kAlias_Edging);
         nativeFont.setLinearMetrics(isLinearMetrics());
     }
 

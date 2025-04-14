@@ -19,6 +19,7 @@
 package icyllis.modernui.core;
 
 import icyllis.arc3d.engine.*;
+import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.modernui.annotation.*;
 import org.jetbrains.annotations.ApiStatus;
@@ -507,7 +508,8 @@ public final class Core {
                 sUiHandlerAsync = Handler.createAsync(looper);
 
                 if (sImmediateContext != null) {
-                    sUiRecordingContext = sImmediateContext.makeRecordingContext();
+                    sUiRecordingContext = RecordingContext.makeRecordingContext(sImmediateContext,
+                            new RecordingContext.Options());
                     Objects.requireNonNull(sUiRecordingContext);
                 } else {
                     LOGGER.warn(MARKER, "UI thread initializing without a GPU device");

@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.Canvas;
-import icyllis.arc3d.core.Paint;
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.Canvas;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.PaintFilterCanvas;
 import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 

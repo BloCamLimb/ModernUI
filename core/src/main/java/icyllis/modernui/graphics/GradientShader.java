@@ -37,15 +37,15 @@ public abstract class GradientShader extends Shader {
         /**
          * Interpolate in the color space of the render target.
          */
-        DESTINATION(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kDestination_ColorSpace),
-        SRGB(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kSRGB_ColorSpace),
-        SRGB_LINEAR(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kSRGBLinear_ColorSpace),
-        LAB(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kLab_ColorSpace),
-        OKLAB(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kOKLab_ColorSpace),
-        HSL(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kHSL_ColorSpace),
-        HWB(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kHWB_ColorSpace),
-        LCH(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kLCH_ColorSpace),
-        OKLCH(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kOKLCH_ColorSpace);
+        DESTINATION(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kDestination_ColorSpace),
+        SRGB(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kSRGB_ColorSpace),
+        SRGB_LINEAR(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kSRGBLinear_ColorSpace),
+        LAB(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kLab_ColorSpace),
+        OKLAB(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kOKLab_ColorSpace),
+        HSL(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kHSL_ColorSpace),
+        HWB(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kHWB_ColorSpace),
+        LCH(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kLCH_ColorSpace),
+        OKLCH(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kOKLCH_ColorSpace);
 
         final byte nativeByte;
 
@@ -63,12 +63,12 @@ public abstract class GradientShader extends Shader {
          * Hue angles are interpolated to take the shorter of the two arcs between the
          * starting and ending hues.
          */
-        SHORTER(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kShorter_HueMethod),
+        SHORTER(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kShorter_HueMethod),
         /**
          * Hue angles are interpolated to take the longer of the two arcs between the
          * starting and ending hues.
          */
-        LONGER(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kLonger_HueMethod),
+        LONGER(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kLonger_HueMethod),
         /**
          * Hue angles are interpolated so that, as they progress from the first color to
          * the second, the angle is always increasing. If the angle increases to 360 it
@@ -79,7 +79,7 @@ public abstract class GradientShader extends Shader {
          * and the hue angle difference passes through 180 degrees, the interpolation will
          * not flip to the other arc.
          */
-        INCREASING(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kIncreasing_HueMethod),
+        INCREASING(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kIncreasing_HueMethod),
         /**
          * Hue angles are interpolated so that, as they progress from the first color to
          * the second, the angle is always decreasing. If the angle decreases to 0 it
@@ -90,7 +90,7 @@ public abstract class GradientShader extends Shader {
          * and the hue angle difference passes through 180 degrees, the interpolation will
          * not flip to the other arc.
          */
-        DECREASING(icyllis.arc3d.core.shaders.GradientShader.Interpolation.kDecreasing_HueMethod);
+        DECREASING(icyllis.arc3d.sketch.shaders.GradientShader.Interpolation.kDecreasing_HueMethod);
 
         final byte nativeByte;
 

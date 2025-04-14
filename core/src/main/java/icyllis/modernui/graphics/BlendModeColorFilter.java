@@ -18,12 +18,12 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.MathUtil;
-import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;
@@ -41,9 +41,8 @@ public final class BlendModeColorFilter extends ColorFilter {
     private final float[] mColor;
     private final BlendMode mMode;
 
-    // closed by cleaner
     @Nullable
-    private final icyllis.arc3d.core.effects.BlendModeColorFilter mColorFilter;
+    private final icyllis.arc3d.sketch.effects.BlendModeColorFilter mColorFilter;
 
     public BlendModeColorFilter(@ColorInt int color, @NonNull BlendMode mode) {
         this(
@@ -78,12 +77,9 @@ public final class BlendModeColorFilter extends ColorFilter {
         };
         mMode = mode;
 
-        mColorFilter = icyllis.arc3d.core.effects.BlendModeColorFilter.make(
+        mColorFilter = icyllis.arc3d.sketch.effects.BlendModeColorFilter.make(
                 mColor, colorSpace, mode.getNativeBlendMode()
         );
-        if (mColorFilter != null) {
-            Core.registerNativeResource(this, mColorFilter);
-        }
     }
 
     public int getColor() {
@@ -113,9 +109,8 @@ public final class BlendModeColorFilter extends ColorFilter {
      * @hidden
      */
     @ApiStatus.Internal
-    @RawPtr
     @Override
-    public icyllis.arc3d.core.effects.ColorFilter getNativeColorFilter() {
+    public icyllis.arc3d.sketch.effects.ColorFilter getNativeColorFilter() {
         return mColorFilter;
     }
 }

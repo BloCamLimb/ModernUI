@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.Rect2f;
 import icyllis.modernui.annotation.NonNull;
 
 /**
@@ -36,10 +37,10 @@ import icyllis.modernui.annotation.NonNull;
  * outside the geometry. Path also describes the winding rule used to fill
  * overlapping contours.
  */
-public class Path extends icyllis.arc3d.core.Path {
+public class Path extends icyllis.arc3d.sketch.Path {
 
     /**
-     * Creates an empty Path with a default fill rule of {@link #FILL_NON_ZERO}.
+     * Creates an empty Path with a default fill rule of {@link #WIND_NON_ZERO}.
      */
     public Path() {
         super();
@@ -57,7 +58,7 @@ public class Path extends icyllis.arc3d.core.Path {
 
     /**
      * Resets the path to its initial state, clears points and verbs and
-     * sets fill rule to {@link #FILL_NON_ZERO}.
+     * sets fill rule to {@link #WIND_NON_ZERO}.
      * <p>
      * Preserves internal storage if it's unique, otherwise discards.
      */
@@ -68,7 +69,7 @@ public class Path extends icyllis.arc3d.core.Path {
 
     /**
      * Resets the path to its initial state, clears points and verbs and
-     * sets fill rule to {@link #FILL_NON_ZERO}.
+     * sets fill rule to {@link #WIND_NON_ZERO}.
      * <p>
      * Preserves internal storage if it's unique, otherwise allocates new
      * storage with the same size.
@@ -80,14 +81,14 @@ public class Path extends icyllis.arc3d.core.Path {
 
     /**
      * Resets the path to its initial state, clears points and verbs and
-     * sets fill rule to {@link #FILL_NON_ZERO}.
+     * sets fill rule to {@link #WIND_NON_ZERO}.
      * <p>
      * This explicitly discards the internal storage, it is recommended to
      * call when the path object will be no longer used.
      */
     @Override
-    public void recycle() {
-        super.recycle();
+    public void release() {
+        super.release();
     }
 
     /**
@@ -147,7 +148,8 @@ public class Path extends icyllis.arc3d.core.Path {
     }
 
     public final void getBounds(@NonNull RectF out) {
-        var r = super.getBounds();
+        var r = new Rect2f();
+        super.getBounds(r);
         out.set(r.left(), r.top(), r.right(), r.bottom());
     }
 }

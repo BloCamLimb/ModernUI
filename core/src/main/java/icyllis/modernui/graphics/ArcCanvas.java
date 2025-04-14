@@ -18,13 +18,23 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.Matrix4;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.Rect2f;
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.SamplingOptions;
+import icyllis.arc3d.sketch.ClipOp;
+import icyllis.arc3d.sketch.RRect;
+import icyllis.arc3d.sketch.TextBlob;
+import icyllis.arc3d.sketch.Vertices;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.text.Font;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.nio.*;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 import java.util.Objects;
 
 /**
@@ -36,14 +46,17 @@ import java.util.Objects;
 public class ArcCanvas extends Canvas {
 
     @RawPtr
-    private icyllis.arc3d.core.Canvas mCanvas;
+    private icyllis.arc3d.sketch.Canvas mCanvas;
 
-    public ArcCanvas(@RawPtr icyllis.arc3d.core.Canvas canvas) {
+    private final RRect mTmpRRect = new RRect();
+    private final float[] mTmpRadii = new float[8];
+
+    public ArcCanvas(@RawPtr icyllis.arc3d.sketch.Canvas canvas) {
         mCanvas = canvas;
     }
 
     @RawPtr
-    public icyllis.arc3d.core.Canvas getCanvas() {
+    public icyllis.arc3d.sketch.Canvas getCanvas() {
         return mCanvas;
     }
 
@@ -195,7 +208,7 @@ public class ArcCanvas extends Canvas {
     @Override
     public void drawPoints(@NonNull float[] pts, int offset, int count, @NonNull Paint paint) {
         Objects.checkFromIndexSize(offset, count, pts.length);
-        mCanvas.drawPoints(icyllis.arc3d.core.Canvas.POINT_MODE_POINTS,
+        mCanvas.drawPoints(icyllis.arc3d.sketch.Canvas.POINT_MODE_POINTS,
                 pts, offset, count >> 1, paint.getNativePaint());
     }
 
@@ -215,8 +228,8 @@ public class ArcCanvas extends Canvas {
                           @NonNull Paint paint) {
         Objects.checkFromIndexSize(offset, count, pts.length);
         mCanvas.drawPoints(connected
-                        ? icyllis.arc3d.core.Canvas.POINT_MODE_POLYGON
-                        : icyllis.arc3d.core.Canvas.POINT_MODE_LINES,
+                        ? icyllis.arc3d.sketch.Canvas.POINT_MODE_POLYGON
+                        : icyllis.arc3d.sketch.Canvas.POINT_MODE_LINES,
                 pts, offset, count >> 1, paint.getNativePaint());
     }
 
@@ -235,14 +248,15 @@ public class ArcCanvas extends Canvas {
     @Override
     public void drawRoundRect(float left, float top, float right, float bottom, float radius,
                               @NonNull Paint paint) {
-        mCanvas.drawRoundRect(left, top, right, bottom, radius, paint.getNativePaint());
+        mTmpRRect.setRectXY(left, top, right, bottom, radius, radius);
+        mCanvas.drawRRect(mTmpRRect, paint.getNativePaint());
     }
 
     @Override
     public void drawRoundRect(float left, float top, float right, float bottom, float radius,
                               int sides, @NonNull Paint paint) {
         //TODO per-corner radius not supported yet
-        mCanvas.drawRoundRect(left, top, right, bottom, radius, paint.getNativePaint());
+        drawRoundRect(left, top, right, bottom, radius, paint);
     }
 
     @Override
@@ -257,7 +271,7 @@ public class ArcCanvas extends Canvas {
     public void drawRoundRectGradient(float left, float top, float right, float bottom,
                                       int colorUL, int colorUR, int colorLR, int colorLL, float radius, Paint paint) {
         //TODO per-corner radius not supported yet
-        mCanvas.drawRoundRect(left, top, right, bottom, radius, paint.getNativePaint());
+        drawRoundRect(left, top, right, bottom, radius, paint);
     }
 
     @Override
@@ -319,7 +333,7 @@ public class ArcCanvas extends Canvas {
                         ? SamplingOptions.POINT
                         : SamplingOptions.LINEAR,
                 paint != null ? paint.getNativePaint() : null,
-                icyllis.arc3d.core.Canvas.SRC_RECT_CONSTRAINT_FAST);
+                icyllis.arc3d.sketch.Canvas.SRC_RECT_CONSTRAINT_FAST);
     }
 
     @Override
@@ -333,7 +347,7 @@ public class ArcCanvas extends Canvas {
                            @NonNull float[] positions, int positionOffset,
                            int glyphCount, @NonNull Font font,
                            float x, float y, @NonNull Paint paint) {
-        var nativeFont = new icyllis.arc3d.core.Font();
+        var nativeFont = new icyllis.arc3d.sketch.Font();
         nativeFont.setTypeface(font.getNativeTypeface());
         if (nativeFont.getTypeface() == null) {
             return;

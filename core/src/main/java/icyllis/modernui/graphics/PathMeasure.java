@@ -32,7 +32,7 @@ import java.util.Objects;
  * A {@link PathMeasure} object can be reused for measuring different {@link Path}
  * objects, by calling {@link #reset(Path, boolean, float)}.
  */
-public class PathMeasure extends icyllis.arc3d.core.PathMeasure {
+public class PathMeasure extends icyllis.arc3d.sketch.PathMeasure {
 
     /**
      * Create an empty PathMeasure object.
