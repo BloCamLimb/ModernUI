@@ -243,46 +243,21 @@ public class ImageDrawable extends Drawable {
     }
 
     /**
-     * Enables or disables the mipmap hint for this drawable's image.
-     * <p>
-     * If the image is null calling this method has no effect.
-     *
-     * @param mipmap True if the image should use mipmaps, false otherwise.
-     * @see #hasMipmap()
-     */
-    @ApiStatus.Experimental
-    public void setMipmap(boolean mipmap) {
-    }
-
-    /**
-     * Indicates whether the mipmap hint is enabled on this drawable's image.
-     *
-     * @return True if the mipmap hint is set, false otherwise. If the image
-     * is null, this method always returns false.
-     * @see #setMipmap(boolean)
-     */
-    @ApiStatus.Experimental
-    public boolean hasMipmap() {
-        return true;
-    }
-
-    /**
      * Enables or disables antialiasing for this drawable. Antialiasing affects
      * the edges of the image only so it applies only when the drawable is rotated.
-     * The default is true.
+     * The default is false.
      *
      * @param aa True if the image should be anti-aliased, false otherwise.
      * @see #isAntiAlias()
      */
     public void setAntiAlias(boolean aa) {
-        //TODO set to false by default once Arc3D is updated with a faster pipeline
         mImageState.mPaint.setAntiAlias(aa);
         invalidateSelf();
     }
 
     /**
      * Indicates whether antialiasing is enabled for this drawable.
-     * The default is true.
+     * The default is false.
      *
      * @return True if antialiasing is enabled, false otherwise.
      * @see #setAntiAlias(boolean)
@@ -328,6 +303,28 @@ public class ImageDrawable extends Drawable {
      */
     public boolean isFilter() {
         return mImageState.mPaint.isFilter();
+    }
+
+    /**
+     * Set to true to have the drawable filter texture images with their mipmap images
+     * when they are scaled down.
+     * The actual mipmap state still depends on whether the {@link Image} has mipmaps.
+     *
+     * @param mipmap true to sample image with mipmaps, false to ignore mipmaps
+     * @see #isMipmap()
+     */
+    @ApiStatus.Experimental
+    public void setMipmap(boolean mipmap) {
+    }
+
+    /**
+     * Returns the current mipmap state.
+     *
+     * @see #setMipmap(boolean)
+     */
+    @ApiStatus.Experimental
+    public boolean isMipmap() {
+        return true;
     }
 
     /**
@@ -679,6 +676,7 @@ public class ImageDrawable extends Drawable {
         ImageState(Image image) {
             mImage = image;
             mPaint = new Paint();
+            mPaint.setAntiAlias(false);
             mSrcRect = new Rect();
             if (image != null) {
                 mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
