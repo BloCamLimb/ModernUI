@@ -356,7 +356,7 @@ public class TestGraniteRenderer {
             {
                 int[] x = {0}, y = {0}, channels = {0};
                 var imgData = STBImage.stbi_load(
-                        "F:/123459857_p0.png",
+                        "F:/128359699_p0.jpg",
                         x, y, channels, 4
                 );
                 if (imgData != null) {
@@ -790,10 +790,10 @@ public class TestGraniteRenderer {
                 paint.setShader(null);
                 float z = (float) (12 * Math.sin(System.currentTimeMillis() / 500d));
                 if (z > 0.001f) {
-                    DrawShadowUtils.drawShadow(canvas,
+                    /*DrawShadowUtils.drawShadow(canvas,
                             rrect, 0, 0, z,
                             mSurface.getWidth() / 2f, 0, 600, 800,
-                            0x1E000000, 0x30000000);
+                            0x1E000000, 0x30000000);*/
                 }
                 paint.setColor4f(0.5f, 0.5f, 0.5f, 1);
                 paint.setShader(RefCnt.create(mTestShader1));
