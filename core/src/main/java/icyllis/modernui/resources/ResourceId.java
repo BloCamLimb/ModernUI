@@ -22,7 +22,6 @@ import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.Objects;
 
 /**
  * A resource identifier. This can uniquely identify a resource in the ResourceTable.
@@ -39,10 +38,11 @@ import java.util.Objects;
 public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNull String entry)
         implements Comparable<ResourceId> {
 
-    public ResourceId(@NonNull String namespace, @NonNull String type, @NonNull String entry) {
-        this.namespace = Objects.requireNonNull(namespace);
-        this.type = Objects.requireNonNull(type);
-        this.entry = Objects.requireNonNull(entry);
+    public ResourceId {
+        //noinspection ConstantValue
+        if (namespace == null | type == null | entry == null) {
+            throw new NullPointerException();
+        }
     }
 
     @NonNull
@@ -60,19 +60,24 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
         String type = null;
         int start = 0;
         int end = name.length();
-        char c;
         if (start != end && name.charAt(start) == '@') {
             start++;
         }
         int current = start;
         while (current != end) {
-            c = name.charAt(current);
+            char c = name.charAt(current);
             if (type == null && c == '/') {
                 type = name.substring(start, current);
                 start = current + 1;
+                if (namespace != null) {
+                    break;
+                }
             } else if (namespace == null && c == ':') {
                 namespace = name.substring(start, current);
                 start = current + 1;
+                if (type != null) {
+                    break;
+                }
             }
             current++;
         }
