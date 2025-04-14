@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A single case of a 'switch' statement.
@@ -37,14 +37,14 @@ public final class SwitchCase extends Statement {
         mStatement = statement;
     }
 
-    @Nonnull
+    @NonNull
     public static SwitchCase make(int position,
                                   long value,
                                   Statement statement) {
         return new SwitchCase(position, false, value, statement);
     }
 
-    @Nonnull
+    @NonNull
     public static SwitchCase makeDefault(int position,
                                          Statement statement) {
         return new SwitchCase(position, true, -1, statement);
@@ -71,15 +71,7 @@ public final class SwitchCase extends Statement {
         return StatementKind.SWITCH_CASE;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitSwitchCase(this)) {
-            return true;
-        }
-        return mStatement.accept(visitor);
-    }
-
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mIsDefault

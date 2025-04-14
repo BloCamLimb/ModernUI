@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,13 +19,21 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.effects.ColorFilter;
-import icyllis.arc3d.core.shaders.Shader;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.sketch.BlendMode;
+import icyllis.arc3d.sketch.Blender;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.sketch.effects.ColorFilter;
+import icyllis.arc3d.sketch.shaders.Shader;
 import icyllis.arc3d.engine.KeyBuilder;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
@@ -42,27 +50,24 @@ public final class PaintParams implements AutoCloseable {
     // A nullptr mPrimitiveBlender means there's no primitive color blending and it is skipped.
     // In the case where there is primitive blending, the primitive color is the source color and
     // the dest is the paint's color (or the paint's shader's computed color).
+    private final @Nullable Blender mPrimitiveBlender;
     @SharedPtr
-    private final Blender mPrimitiveBlender;
-    @SharedPtr
-    private final Shader mShader;
-    @SharedPtr
-    private final ColorFilter mColorFilter;
+    private final @Nullable Shader mShader;
+    private final @Nullable ColorFilter mColorFilter;
     // A nullptr here means SrcOver blending
-    @SharedPtr
-    private final Blender mFinalBlender;
+    private final @Nullable Blender mFinalBlender;
     private final boolean mDither;
 
-    public PaintParams(@Nonnull Paint paint,
-                       @Nullable @SharedPtr Blender primitiveBlender) {
+    public PaintParams(@NonNull Paint paint,
+                       @Nullable Blender primitiveBlender) {
         mR = paint.r();
         mG = paint.g();
         mB = paint.b();
         mA = paint.a();
         mPrimitiveBlender = primitiveBlender;
         mShader = paint.refShader();
-        mColorFilter = paint.refColorFilter();
-        mFinalBlender = paint.refBlender();
+        mColorFilter = paint.getColorFilter();
+        mFinalBlender = paint.getBlender();
         mDither = paint.isDither();
         // antialias flag is already handled
     }
@@ -70,9 +75,6 @@ public final class PaintParams implements AutoCloseable {
     @Override
     public void close() {
         RefCnt.move(mShader);
-        RefCnt.move(mColorFilter);
-        RefCnt.move(mFinalBlender);
-        RefCnt.move(mPrimitiveBlender);
     }
 
     /**
@@ -104,26 +106,26 @@ public final class PaintParams implements AutoCloseable {
     }
 
     @RawPtr
-    public Shader getShader() {
+    public @Nullable Shader getShader() {
         return mShader;
     }
 
     @RawPtr
-    public ColorFilter getColorFilter() {
+    public @Nullable ColorFilter getColorFilter() {
         return mColorFilter;
     }
 
     @RawPtr
-    public Blender getFinalBlender() {
+    public @Nullable Blender getFinalBlender() {
         return mFinalBlender;
     }
 
     @RawPtr
-    public Blender getPrimitiveBlender() {
+    public @Nullable Blender getPrimitiveBlender() {
         return mPrimitiveBlender;
     }
 
-    @Nonnull
+    @NonNull
     public BlendMode getFinalBlendMode() {
         BlendMode blendMode = mFinalBlender != null
                 ? mFinalBlender.asBlendMode()
@@ -159,7 +161,7 @@ public final class PaintParams implements AutoCloseable {
      * and stores the solid color. The color will be transformed to the
      * target's color space and premultiplied.
      */
-    public boolean getSolidColor(ImageInfo targetInfo, @Nullable float[] outColor) {
+    public boolean getSolidColor(ImageInfo targetInfo, float @Nullable [] outColor) {
         if (mShader == null && mPrimitiveBlender == null) {
             if (outColor != null) {
                 outColor[0] = mR;

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,9 +19,13 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
-
-import javax.annotation.Nonnull;
+import icyllis.arc3d.sketch.Canvas;
+import icyllis.arc3d.sketch.GlyphRunList;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.StrikeCache;
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A BakedTextBlob contains a fully processed TextBlob, suitable for nearly immediate drawing
@@ -51,18 +55,18 @@ public final class BakedTextBlob {
     private final SubRunContainer mSubRuns;
     private final long mMemorySize;
 
-    public BakedTextBlob(@Nonnull SubRunContainer subRuns) {
+    public BakedTextBlob(@NonNull SubRunContainer subRuns) {
         mSubRuns = subRuns;
         long size = subRuns.getMemorySize();
         size += 16 + 8 + 8 + 8 + 8 + 40 + 8 + 16 + 8;
         mMemorySize = size;
     }
 
-    @Nonnull
-    public static BakedTextBlob make(@Nonnull GlyphRunList glyphRunList,
-                                     @Nonnull Paint paint,
-                                     @Nonnull Matrixc positionMatrix,
-                                     @Nonnull StrikeCache strikeCache) {
+    @NonNull
+    public static BakedTextBlob make(@NonNull GlyphRunList glyphRunList,
+                                     @NonNull Paint paint,
+                                     @NonNull Matrixc positionMatrix,
+                                     @NonNull StrikeCache strikeCache) {
         var container = SubRunContainer.make(
                 glyphRunList, positionMatrix, paint,
                 strikeCache
@@ -73,6 +77,18 @@ public final class BakedTextBlob {
     public void draw(Canvas canvas, float originX, float originY,
                      Paint paint, GraniteDevice device) {
         mSubRuns.draw(canvas, originX, originY, paint, device);
+    }
+
+    @Contract(pure = true)
+    public boolean canReuse(@NonNull Paint paint, @NonNull Matrixc positionMatrix,
+                            float glyphRunListX, float glyphRunListY) {
+        // A singular matrix will create a BakedTextBlob with no SubRuns, but unknown glyphs can also
+        // cause empty runs. If there are no subRuns, then regenerate when the matrices don't match.
+        if (mSubRuns.isEmpty() && !mSubRuns.initialPosition().equals(positionMatrix)) {
+            return false;
+        }
+
+        return mSubRuns.canReuse(paint, positionMatrix, glyphRunListX, glyphRunListY);
     }
 
     public long getMemorySize() {

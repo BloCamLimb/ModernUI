@@ -19,24 +19,24 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A function prototype (a function declaration as a top-level element)
  */
 public final class FunctionPrototype extends TopLevelElement {
 
-    private final FunctionDecl mFunctionDecl;
+    private final FunctionDeclaration mDeclaration;
     private final boolean mBuiltin;
 
-    public FunctionPrototype(int position, FunctionDecl functionDecl, boolean builtin) {
+    public FunctionPrototype(int position, FunctionDeclaration declaration, boolean builtin) {
         super(position);
-        mFunctionDecl = functionDecl;
+        mDeclaration = declaration;
         mBuiltin = builtin;
     }
 
-    public FunctionDecl getFunctionDecl() {
-        return mFunctionDecl;
+    public FunctionDeclaration getDeclaration() {
+        return mDeclaration;
     }
 
     public boolean isBuiltin() {
@@ -48,14 +48,9 @@ public final class FunctionPrototype extends TopLevelElement {
         return ElementKind.FUNCTION_PROTOTYPE;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitFunctionPrototype(this);
-    }
-
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
-        return mFunctionDecl.toString() + ";";
+        return mDeclaration.toString() + ";";
     }
 }

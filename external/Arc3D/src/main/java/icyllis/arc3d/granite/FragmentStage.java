@@ -19,27 +19,32 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.BlendMode;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ShaderVar;
 import icyllis.arc3d.granite.shading.UniformHandler;
+import icyllis.arc3d.sketch.BlendMode;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import java.util.Formatter;
+import java.util.List;
 
 /**
- * Represents a substage of a fragment shader, providing custom shader code to the
+ * Represents a substage of a fragment shader, providing custom shader code snippet to the
  * Arc3D shading pipeline. Managed by {@link ShaderCodeSource}.
  */
 //TODO
 @Immutable
+@ApiStatus.Internal
 public class FragmentStage {
 
     /**
      * Builtin Code Snippet ID, most are from Skia Graphite.
      * Do not use these ID outside Granite Renderer.
      */
+    // no ABI guarantee, used internally
     public static final int
             kError_BuiltinStageID = 0,
             kPassthrough_BuiltinStageID = 1,
@@ -56,13 +61,14 @@ public class FragmentStage {
             kImageShader_BuiltinStageID = 17,
             kCubicImageShader_BuiltinStageID = 18,
             kHWImageShader_BuiltinStageID = 19,
-            kDitherShader_BuiltinStageID = 20,
-            kColorSpaceXformColorFilter_BuiltinStageID = 21,
-            kBlend_BuiltinStageID = 22,
-            kBlendModeBlender_BuiltinStageID = 23,
-            kPorterDuffBlender_BuiltinStageID = 24,
-            kPrimitiveColor_BuiltinStageID = 25,
-            kCompose_BuiltinStageID = 26;
+            kAnalyticRRectShader_BuiltinStageID = 20,
+            kDitherShader_BuiltinStageID = 21,
+            kColorSpaceXformColorFilter_BuiltinStageID = 22,
+            kBlend_BuiltinStageID = 23,
+            kBlendModeBlender_BuiltinStageID = 24,
+            kPorterDuffBlender_BuiltinStageID = 25,
+            kPrimitiveColor_BuiltinStageID = 26,
+            kCompose_BuiltinStageID = 27;
     // Fixed blend modes hard code a specific blend function into the shader tree. This can be
     // valuable when an internal effect is known to always do a certain blend and we want to
     // benefit from inlining constants. It is also important for being able to convert the final
@@ -78,7 +84,7 @@ public class FragmentStage {
     // defined last in the enum. They are ordered to match BlendMode such that:
     //     (id - kFirstFixedBlend) == BlendMode).
     public static final int
-            kFirstFixedBlend_BuiltinStageID = 27;
+            kFirstFixedBlend_BuiltinStageID = 28;
     // this is not compile-time constant
     public static final int
             kLastFixedBlend_BuiltinStageID = kFirstFixedBlend_BuiltinStageID + BlendMode.COUNT - 1;
@@ -113,9 +119,12 @@ public class FragmentStage {
     public record Sampler(byte type, String name) {
     }
 
-    public static final String[] NO_FUNCTIONS = new String[0];
-    public static final Uniform[] NO_UNIFORMS = new Uniform[0];
-    public static final Sampler[] NO_SAMPLERS = new Sampler[0];
+    @Unmodifiable
+    public static final List<String> NO_FUNCTIONS = List.of();
+    @Unmodifiable
+    public static final List<Uniform> NO_UNIFORMS = List.of();
+    @Unmodifiable
+    public static final List<Sampler> NO_SAMPLERS = List.of();
 
     /**
      * Emit assignment expression statement.
@@ -135,16 +144,19 @@ public class FragmentStage {
     public final int mRequirementFlags;
     public final String mStaticFunctionName;
     // will use String's reference identity
-    public final String[] mRequiredFunctions;
-    public final Uniform[] mUniforms;
-    public final Sampler[] mSamplers;
+    @Unmodifiable
+    public final List<String> mRequiredFunctions;
+    @Unmodifiable
+    public final List<Uniform> mUniforms;
+    @Unmodifiable
+    public final List<Sampler> mSamplers;
     public final GenerateExpression mExpressionGenerator;
     public final int mNumChildren;
 
     public FragmentStage(String name, int requirementFlags,
                          String staticFunctionName,
-                         String[] requiredFunctions, // will use String's reference identity
-                         Uniform[] uniforms, Sampler[] samplers,
+                         List<String> requiredFunctions, // will use String's reference identity
+                         List<Uniform> uniforms, List<Sampler> samplers,
                          GenerateExpression expressionGenerator,
                          int numChildren) {
         mName = name;
@@ -157,13 +169,14 @@ public class FragmentStage {
         mNumChildren = numChildren;
     }
 
-    @Nonnull
+    @NonNull
     public String name() {
         return mName;
     }
 
     public void generateUniforms(UniformHandler uniformHandler, int stageIndex) {
-        for (var uniform : mUniforms) {
+        for (int i = 0, e = mUniforms.size(); i < e; i++) {
+            var uniform = mUniforms.get(i);
             uniformHandler.addUniformArray(
                     Engine.ShaderFlags.kFragment,
                     uniform.type,
@@ -172,7 +185,8 @@ public class FragmentStage {
                     stageIndex
             );
         }
-        for (var sampler : mSamplers) {
+        for (int i = 0, e = mSamplers.size(); i < e; i++) {
+            var sampler = mSamplers.get(i);
             uniformHandler.addSampler(
                     sampler.type,
                     sampler.name,

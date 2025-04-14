@@ -22,12 +22,10 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
@@ -70,6 +68,7 @@ public abstract class GLCaps extends Caps {
     boolean mViewCompatibilityClassSupport = false;
     boolean mTexStorageSupport;
     boolean mInvalidateFramebufferSupport;
+    boolean mUseStagingBuffers = false;
     final boolean mVolatileContext;
 
     int[] mProgramBinaryFormats;
@@ -1014,6 +1013,10 @@ public abstract class GLCaps extends Caps {
         return mProgramBinarySupport;
     }
 
+    public boolean useStagingBuffers() {
+        return mUseStagingBuffers;
+    }
+
     public boolean hasVolatileContext() {
         return mVolatileContext;
     }
@@ -1022,8 +1025,8 @@ public abstract class GLCaps extends Caps {
         return mInvalidateFramebufferSupport;
     }
 
-    @Nullable
-    public int[] getProgramBinaryFormats() {
+
+    public int @Nullable[] getProgramBinaryFormats() {
         return mProgramBinarySupport ? mProgramBinaryFormats.clone() : null;
     }
 
@@ -1282,15 +1285,7 @@ public abstract class GLCaps extends Caps {
         return mCompressionTypeToBackendFormat[compressionType];
     }
 
-    @Nonnull
-    @Override
-    public PipelineKey_old makeDesc(PipelineKey_old desc,
-                                    GpuRenderTarget renderTarget,
-                                    final GraphicsPipelineDesc_Old graphicsPipelineDesc) {
-        return PipelineKey_old.build(desc, graphicsPipelineDesc, this);
-    }
-
-    @Nonnull
+    @NonNull
     @Override
     public PipelineKey makeGraphicsPipelineKey(PipelineKey old,
                                                PipelineDesc pipelineDesc,
@@ -1452,6 +1447,7 @@ public abstract class GLCaps extends Caps {
             // NVIDIA uses threaded driver then error checks can be very slow
             mSkipErrorChecks = (mDriver == GLUtil.GLDriver.NVIDIA);
         }
+        mUseStagingBuffers = options.mUseStagingBuffers;
     }
 
     /**

@@ -20,9 +20,9 @@
 package icyllis.arc3d.engine;
 
 import org.jetbrains.annotations.VisibleForTesting;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
@@ -194,35 +194,45 @@ public final class ResourceCache {
      * Find a resource that matches a key.
      */
     @Nullable
-    public Resource findAndRefResource(@Nonnull IResourceKey key,
-                                       boolean budgeted) {
+    public Resource findAndRefResource(@NonNull IResourceKey key,
+                                       boolean budgeted,
+                                       boolean shareable) {
         assert mContext.isOwnerThread();
-        Resource resource = mResourceMap.peekFirstEntry(key);
+        // If the resource is in ResourceMap then it's available, so a non-shareable state means
+        // it really has no outstanding uses and can be converted to any other shareable state.
+        // Otherwise, if it's available, it can only be reused with the same mode.
+        Resource resource = shareable
+                ? mResourceMap.find(key)
+                : mResourceMap.find(key, v -> !v.isShareable());
         if (resource == null) {
             // The main reason to call processReturnedResources in this call is to see if there are any
             // resources that we could match with the key. However, there is overhead into calling it.
             // So we only call it if we first failed to find a matching resource.
             if (processReturnedResources()) {
-                resource = mResourceMap.peekFirstEntry(key);
+                resource = shareable
+                        ? mResourceMap.find(key)
+                        : mResourceMap.find(key, v -> !v.isShareable());
             }
         }
 
         if (resource != null) {
             // All resources we pull out of the cache for use should be budgeted
             assert resource.isBudgeted();
-            if (!key.isShareable()) {
-                // If a resource is not shareable (i.e. scratch resource) then we remove it from the map
-                // so that it isn't found again.
-                mResourceMap.removeFirstEntry(key, resource);
+            if (!shareable) {
+                // If the returned resource is no longer shareable then we remove it from the map so
+                // that it isn't found again.
+                assert !resource.isShareable();
+                mResourceMap.removeEntry(key, resource);
                 if (!budgeted) {
-                    resource.makeBudgeted(false);
+                    resource.setBudgeted(false);
                     mBudgetedCount--;
                     mBudgetedBytes -= resource.getMemorySize();
                 }
                 resource.mNonShareableInCache = false;
             } else {
-                // Shareable resources should never be requested as non budgeted
+                // Shareable resources should never be requested as non-budgeted
                 assert budgeted;
+                resource.setShareable(true);
             }
             refAndMakeResourceMRU(resource);
         }
@@ -355,7 +365,7 @@ public final class ResourceCache {
 
     // This is a thread safe call. If it fails the ResourceCache is no longer valid and the
     // Resource should clean itself up if it is the last ref.
-    boolean returnResource(@Nonnull Resource resource, int refType) {
+    boolean returnResource(@NonNull Resource resource, int refType) {
         // We should never be trying to return a LastRemovedRef of kCache.
         assert refType != Resource.REF_TYPE_CACHE;
         synchronized (mReturnLock) {
@@ -447,7 +457,7 @@ public final class ResourceCache {
         return true;
     }
 
-    private void returnResourceToCache(@Nonnull Resource resource, int refType) {
+    private void returnResourceToCache(@NonNull Resource resource, int refType) {
         // A resource should not have been destroyed when placed into the return queue. Also before
         // purging any resources from the cache itself, it should always empty the queue first. When the
         // cache releases/abandons all of its resources, it first invalidates the return queue so no new
@@ -457,14 +467,26 @@ public final class ResourceCache {
         assert isInCache(resource);
 
         if (refType == Resource.REF_TYPE_USAGE) {
-            if (resource.getKey().isShareable()) {
+            if (resource.isShareable()) {
                 // Shareable resources should still be in the cache
                 assert mResourceMap.containsKey(resource.getKey());
+                // Reset the resource's sharing mode so that any shareable request can use it (e.g. now
+                // that no more usages that required it to be fully shareable are held, the underlying
+                // resource can be used in a non-shareable manner the next time it's fetched from the
+                // cache). We can only change the shareable state when there are no outstanding usage
+                // refs. Because this resource was shareable, it remained in fResourceMap and could have
+                // a new usage ref before a prior LastRemovedRef::kUsage event was processed from the
+                // return queue. However, when a shareable ref has no usage refs, this is the only
+                // thread that could add an initial usage ref so it is safe to adjust its shareable type
+                if (!resource.hasUsageRef()) {
+                    resource.setShareable(false);
+                    resource.mNonShareableInCache = true;
+                }
             } else {
                 resource.mNonShareableInCache = true;
-                mResourceMap.addFirstEntry(resource.getKey(), resource);
+                mResourceMap.insertEntry(resource.getKey(), resource);
                 if (!resource.isBudgeted()) {
-                    resource.makeBudgeted(true);
+                    resource.setBudgeted(true);
                     mBudgetedCount++;
                     mBudgetedBytes += resource.getMemorySize();
                 }
@@ -501,12 +523,15 @@ public final class ResourceCache {
         }
     }
 
-    public void insertResource(@Nonnull Resource resource) {
+    public void insertResource(@NonNull Resource resource,
+                               @NonNull IResourceKey key,
+                               boolean budgeted,
+                               boolean shareable) {
         assert mContext.isOwnerThread();
+        assert !shareable || budgeted;
         assert !isInCache(resource);
         assert !resource.isDestroyed();
         assert !resource.isPurgeable();
-        assert resource.getKey() != null;
         // All resources in the cache are owned. If we track wrapped resources in the cache we'll need
         // to update this check.
         assert !resource.isWrapped();
@@ -521,7 +546,7 @@ public final class ResourceCache {
             processReturnedResources();
         }
 
-        resource.registerWithCache(this);
+        resource.registerWithCache(this, key, budgeted, shareable);
         resource.refCache();
 
         // We must set the timestamp before adding to the array in case the timestamp wraps, and we wind
@@ -531,8 +556,8 @@ public final class ResourceCache {
 
         addToNonPurgeableArray(resource);
 
-        if (resource.getKey().isShareable()) {
-            mResourceMap.addFirstEntry(resource.getKey(), resource);
+        if (resource.isShareable()) {
+            mResourceMap.insertEntry(resource.getKey(), resource);
         }
 
         if (resource.isBudgeted()) {
@@ -543,10 +568,10 @@ public final class ResourceCache {
         purgeAsNeeded();
     }
 
-    private void purgeResource(@Nonnull Resource resource) {
+    private void purgeResource(@NonNull Resource resource) {
         assert resource.isPurgeable();
 
-        mResourceMap.removeFirstEntry(resource.getKey(), resource);
+        mResourceMap.removeEntry(resource.getKey(), resource);
 
         if (resource.isCacheable()) {
             assert isInPurgeableQueue(resource);
@@ -560,7 +585,7 @@ public final class ResourceCache {
         resource.unrefCache();
     }
 
-    private void refAndMakeResourceMRU(@Nonnull Resource resource) {
+    private void refAndMakeResourceMRU(@NonNull Resource resource) {
         assert isInCache(resource);
 
         if (isInPurgeableQueue(resource)) {
@@ -574,7 +599,7 @@ public final class ResourceCache {
         setResourceTimestamp(resource, getNextTimestamp());
     }
 
-    private void addToNonPurgeableArray(@Nonnull Resource resource) {
+    private void addToNonPurgeableArray(@NonNull Resource resource) {
         Resource[] es = mNonPurgeableList;
         final int s = mNonPurgeableSize;
         if (s == es.length) {
@@ -586,7 +611,7 @@ public final class ResourceCache {
         mNonPurgeableSize = s + 1;
     }
 
-    private void removeFromNonPurgeableArray(@Nonnull Resource resource) {
+    private void removeFromNonPurgeableArray(@NonNull Resource resource) {
         final Resource[] es = mNonPurgeableList;
         // Fill the hole we will create in the array with the tail object, adjust its index, and
         // then pop the array
@@ -600,7 +625,7 @@ public final class ResourceCache {
         resource.mCacheIndex = -1;
     }
 
-    private void removeFromPurgeableQueue(@Nonnull Resource resource) {
+    private void removeFromPurgeableQueue(@NonNull Resource resource) {
         mPurgeableQueue.removeAt(resource.mCacheIndex);
         mPurgeableBytes -= resource.getMemorySize();
         // we are using the index as a
@@ -667,7 +692,7 @@ public final class ResourceCache {
         return mTimestamp++;
     }
 
-    private void setResourceTimestamp(@Nonnull Resource resource, int timestamp) {
+    private void setResourceTimestamp(@NonNull Resource resource, int timestamp) {
         // We always set the timestamp for zero sized resources to be kMaxTimestamp
         if (resource.getMemorySize() == 0) {
             timestamp = MAX_TIMESTAMP;
@@ -675,13 +700,13 @@ public final class ResourceCache {
         resource.mTimestamp = timestamp;
     }
 
-    private boolean isInPurgeableQueue(@Nonnull Resource resource) {
+    private boolean isInPurgeableQueue(@NonNull Resource resource) {
         assert isInCache(resource);
         int index = resource.mCacheIndex;
         return index < mPurgeableQueue.size() && mPurgeableQueue.elementAt(index) == resource;
     }
 
-    private boolean isInCache(@Nonnull Resource resource) {
+    private boolean isInCache(@NonNull Resource resource) {
         int index = resource.mCacheIndex;
         if (index < 0) {
             return false;

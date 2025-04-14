@@ -20,9 +20,10 @@
 package icyllis.arc3d.compiler;
 
 import icyllis.arc3d.compiler.analysis.SymbolUsage;
+import icyllis.arc3d.compiler.analysis.TreeVisitor;
 import icyllis.arc3d.compiler.tree.*;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
@@ -30,9 +31,7 @@ import java.util.*;
  */
 public final class TranslationUnit extends Node implements Iterable<TopLevelElement> {
 
-    private final char[] mSource;
-    private final int mSourceOffset;
-    private final int mSourceLength;
+    private final String mSource;
 
     private final ShaderKind mKind;
     private final CompileOptions mOptions;
@@ -48,9 +47,7 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
 
     private final SymbolUsage mUsage;
 
-    public TranslationUnit(char[] source,
-                           int sourceOffset,
-                           int sourceLength,
+    public TranslationUnit(String source,
                            ShaderKind kind,
                            CompileOptions options,
                            BuiltinTypes types,
@@ -59,8 +56,6 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
                            List<Map.Entry<String, String>> extensions) {
         super(Position.NO_POS);
         mSource = source;
-        mSourceOffset = sourceOffset;
-        mSourceLength = sourceLength;
         mKind = kind;
         mOptions = options;
         mTypes = types;
@@ -72,16 +67,8 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         mUsage.add(this);
     }
 
-    public char[] getSource() {
+    public String getSource() {
         return mSource;
-    }
-
-    public int getSourceOffset() {
-        return mSourceOffset;
-    }
-
-    public int getSourceLength() {
-        return mSourceLength;
     }
 
     public ShaderKind getKind() {
@@ -120,14 +107,38 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         return mUsage;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Iterator<TopLevelElement> iterator() {
+        class ElementIterator implements Iterator<TopLevelElement> {
+            // shared first, then unique
+            private Iterator<TopLevelElement> mCurrIter = mSharedElements.iterator();
+            private boolean mSharedEnded = false;
+
+            @Override
+            public boolean hasNext() {
+                forward();
+                return mCurrIter.hasNext();
+            }
+
+            @Override
+            public TopLevelElement next() {
+                forward();
+                return mCurrIter.next();
+            }
+
+            private void forward() {
+                while (!mCurrIter.hasNext() && !mSharedEnded) {
+                    mCurrIter = mUniqueElements.iterator();
+                    mSharedEnded = true;
+                }
+            }
+        }
         return new ElementIterator();
     }
 
     @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
+    public boolean accept(@NonNull TreeVisitor visitor) {
         for (TopLevelElement e : this) {
             if (e.accept(visitor)) {
                 return true;
@@ -136,7 +147,7 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
         return false;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
@@ -145,31 +156,5 @@ public final class TranslationUnit extends Node implements Iterable<TopLevelElem
             s.append('\n');
         }
         return s.toString();
-    }
-
-    // shared first, then unique
-    private class ElementIterator implements Iterator<TopLevelElement> {
-
-        private Iterator<TopLevelElement> mCurrIter = mSharedElements.iterator();
-        private boolean mSharedEnded = false;
-
-        @Override
-        public boolean hasNext() {
-            forward();
-            return mCurrIter.hasNext();
-        }
-
-        @Override
-        public TopLevelElement next() {
-            forward();
-            return mCurrIter.next();
-        }
-
-        private void forward() {
-            while (!mCurrIter.hasNext() && !mSharedEnded) {
-                mCurrIter = mUniqueElements.iterator();
-                mSharedEnded = true;
-            }
-        }
     }
 }

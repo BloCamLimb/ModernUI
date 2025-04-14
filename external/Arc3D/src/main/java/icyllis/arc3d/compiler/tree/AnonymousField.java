@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A symbol which should be interpreted as a field access. Fields are added to the SymbolTable
@@ -31,33 +31,33 @@ public final class AnonymousField extends Symbol {
     private final Variable mContainer;
     private final int mFieldIndex;
 
-    public AnonymousField(int position, Variable container, int fieldIndex) {
-        super(position, container.getType().getFields()[fieldIndex].name());
+    public AnonymousField(int position, @NonNull Variable container, int fieldIndex) {
+        super(position, container.getType().getFields().get(fieldIndex).name());
         mContainer = container;
         mFieldIndex = fieldIndex;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public SymbolKind getKind() {
         return SymbolKind.ANONYMOUS_FIELD;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Type getType() {
-        return mContainer.getType().getFields()[mFieldIndex].type();
+        return mContainer.getType().getFields().get(mFieldIndex).type();
     }
 
     public int getFieldIndex() {
         return mFieldIndex;
     }
 
-    public Variable getContainer() {
+    public @NonNull Variable getContainer() {
         return mContainer;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mContainer.toString() + "." + getName();

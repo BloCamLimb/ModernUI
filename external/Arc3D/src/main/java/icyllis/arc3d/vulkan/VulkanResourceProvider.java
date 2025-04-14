@@ -20,8 +20,7 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class VulkanResourceProvider extends ResourceProvider {
 
@@ -35,11 +34,11 @@ public class VulkanResourceProvider extends ResourceProvider {
 
     @Nullable
     @Override
-    protected Image onCreateNewImage(ImageDesc desc, boolean budgeted) {
+    protected Image onCreateNewImage(ImageDesc desc) {
         if (!(desc instanceof VulkanImageDesc vulkanImageDesc)) {
             return null;
         }
-        return VulkanImage.make(mContext, vulkanImageDesc, budgeted);
+        return VulkanImage.make(mContext, vulkanImageDesc);
     }
 
     @Nullable

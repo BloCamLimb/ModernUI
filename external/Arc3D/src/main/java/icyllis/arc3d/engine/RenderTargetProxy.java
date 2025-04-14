@@ -21,15 +21,15 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
  * Deferred, lazy-callback or wrapped a render target.
  */
-//TODO
+@Deprecated
 @VisibleForTesting
 public final class RenderTargetProxy extends SurfaceProxy {
 
@@ -43,7 +43,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
 
     // Deferred version - no data
     // single color target
-    RenderTargetProxy(BackendFormat format,
+    public RenderTargetProxy(BackendFormat format,
                       int width, int height,
                       int sampleCount,
                       int surfaceFlags) {
@@ -57,7 +57,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
     }
 
     // Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
-    RenderTargetProxy(BackendFormat format,
+    public RenderTargetProxy(BackendFormat format,
                       int width, int height,
                       int sampleCount,
                       int surfaceFlags,
@@ -74,7 +74,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
     }
 
     // Wrapped
-    RenderTargetProxy(GpuRenderTarget renderTarget, int surfaceFlags) {
+    public RenderTargetProxy(GpuRenderTarget renderTarget, int surfaceFlags) {
         super(renderTarget, surfaceFlags);
         mGpuSurface = renderTarget;
         mSampleCount = renderTarget.getSampleCount();
@@ -255,7 +255,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
         return true;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     IResourceKey computeScratchKey() {
         assert mColorImageProxy != null;

@@ -19,9 +19,9 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.Font;
-import icyllis.arc3d.core.TextBlob;
-import icyllis.arc3d.core.j2d.Typeface_JDK;
+import icyllis.arc3d.sketch.Font;
+import icyllis.arc3d.sketch.TextBlob;
+import icyllis.arc3d.sketch.j2d.Typeface_JDK;
 
 public class TestTextBlob {
 

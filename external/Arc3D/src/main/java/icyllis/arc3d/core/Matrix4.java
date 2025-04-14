@@ -19,9 +19,11 @@
 
 package icyllis.arc3d.core;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.*;
+import javax.annotation.CheckReturnValue;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
@@ -42,7 +44,6 @@ import java.nio.FloatBuffer;
  * elements in memory.
  *
  * @author BloCamLimb
- * @see Matrix
  */
 //TODO replace with Vector API and Primitive Classes
 @SuppressWarnings("unused")
@@ -85,7 +86,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param m the matrix to create from
      */
-    public Matrix4(@Nonnull Matrix4c m) {
+    public Matrix4(@NonNull Matrix4c m) {
         m.store(this);
     }
 
@@ -95,7 +96,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param a the array to create from
      * @see #set(float[])
      */
-    public Matrix4(@Nonnull float... a) {
+    public Matrix4(float @NonNull ... a) {
         set(a);
     }
 
@@ -106,7 +107,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param m the matrix to copy from
      * @return a copy of the matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix4 copy(@Nullable Matrix4c m) {
         return m == null ? new Matrix4() : m.clone();
     }
@@ -116,7 +117,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @return an identity matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix4c identity() {
         return IDENTITY;
     }
@@ -129,7 +130,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param z the z-component of the translation
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix4 makeTranslate(float x, float y, float z) {
         final Matrix4 m = new Matrix4();
         m.m11 = 1.0f;
@@ -150,7 +151,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param z the z-component of the scaling
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix4 makeScale(float x, float y, float z) {
         final Matrix4 m = new Matrix4();
         m.m11 = x;
@@ -171,7 +172,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param far    the far frustum plane, must be positive
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix4 makeOrthographic(float left, float right, float bottom, float top, float near, float far) {
         final Matrix4 mat = new Matrix4();
         float invRL = 1.0f / (right - left);
@@ -198,7 +199,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param flipY  whether to flip the projection vertically
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix4 makeOrthographic(float width, float height, float near, float far, boolean flipY) {
         final Matrix4 mat = new Matrix4();
         float invNF = 1.0f / (near - far);
@@ -223,7 +224,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param far    the far frustum plane, must be positive
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix4 makePerspective(float left, float right, float bottom, float top, float near, float far) {
         final Matrix4 mat = new Matrix4();
         float invRL = 1.0f / (right - left);
@@ -249,7 +250,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param far    the far frustum plane, must be positive
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public static Matrix4 makePerspective(float fov, float aspect, float near, float far) {
         final Matrix4 mat = new Matrix4();
         float y = (float) (1.0 / Math.tan(fov * 0.5));
@@ -331,7 +332,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param m the addend
      */
-    public void add(@Nonnull Matrix4 m) {
+    public void add(@NonNull Matrix4 m) {
         m11 += m.m11;
         m12 += m.m12;
         m13 += m.m13;
@@ -355,7 +356,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param m the subtrahend
      */
-    public void subtract(@Nonnull Matrix4 m) {
+    public void subtract(@NonNull Matrix4 m) {
         m11 -= m.m11;
         m12 -= m.m12;
         m13 -= m.m13;
@@ -384,7 +385,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat(@Nonnull Matrix4c lhs) {
+    public void preConcat(@NonNull Matrix4c lhs) {
         // 64 multiplications
         final float f11 = lhs.m11() * m11 + lhs.m12() * m21 + lhs.m13() * m31 + lhs.m14() * m41;
         final float f12 = lhs.m11() * m12 + lhs.m12() * m22 + lhs.m13() * m32 + lhs.m14() * m42;
@@ -494,7 +495,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat(@Nonnull Matrix4c rhs) {
+    public void postConcat(@NonNull Matrix4c rhs) {
         // 64 multiplications
         final float f11 = m11 * rhs.m11() + m12 * rhs.m21() + m13 * rhs.m31() + m14 * rhs.m41();
         final float f12 = m11 * rhs.m12() + m12 * rhs.m22() + m13 * rhs.m32() + m14 * rhs.m42();
@@ -607,23 +608,23 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * matrix, then the new matrix will be <code>L * M</code> (row-major). So when transforming
      * a vector <code>v</code> with the new matrix by using <code>v * L * M</code>, the
      * transformation of the left-hand side matrix will be applied first.
-     *
-     * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat2D(@Nonnull Matrixc lhs) {
+    public void preConcat2D(float l11, float l12, float l14,
+                            float l21, float l22, float l24,
+                            float l41, float l42, float l44) {
         // 36 multiplications
-        final float f11 = lhs.m11() * m11 + lhs.m12() * m21 + lhs.m14() * m41;
-        final float f12 = lhs.m11() * m12 + lhs.m12() * m22 + lhs.m14() * m42;
-        final float f13 = lhs.m11() * m13 + lhs.m12() * m23 + lhs.m14() * m43;
-        final float f14 = lhs.m11() * m14 + lhs.m12() * m24 + lhs.m14() * m44;
-        final float f21 = lhs.m21() * m11 + lhs.m22() * m21 + lhs.m24() * m41;
-        final float f22 = lhs.m21() * m12 + lhs.m22() * m22 + lhs.m24() * m42;
-        final float f23 = lhs.m21() * m13 + lhs.m22() * m23 + lhs.m24() * m43;
-        final float f24 = lhs.m21() * m14 + lhs.m22() * m24 + lhs.m24() * m44;
-        final float f41 = lhs.m41() * m11 + lhs.m42() * m21 + lhs.m44() * m41;
-        final float f42 = lhs.m41() * m12 + lhs.m42() * m22 + lhs.m44() * m42;
-        final float f43 = lhs.m41() * m13 + lhs.m42() * m23 + lhs.m44() * m43;
-        final float f44 = lhs.m41() * m14 + lhs.m42() * m24 + lhs.m44() * m44;
+        final float f11 = l11 * m11 + l12 * m21 + l14 * m41;
+        final float f12 = l11 * m12 + l12 * m22 + l14 * m42;
+        final float f13 = l11 * m13 + l12 * m23 + l14 * m43;
+        final float f14 = l11 * m14 + l12 * m24 + l14 * m44;
+        final float f21 = l21 * m11 + l22 * m21 + l24 * m41;
+        final float f22 = l21 * m12 + l22 * m22 + l24 * m42;
+        final float f23 = l21 * m13 + l22 * m23 + l24 * m43;
+        final float f24 = l21 * m14 + l22 * m24 + l24 * m44;
+        final float f41 = l41 * m11 + l42 * m21 + l44 * m41;
+        final float f42 = l41 * m12 + l42 * m22 + l44 * m42;
+        final float f43 = l41 * m13 + l42 * m23 + l44 * m43;
+        final float f44 = l41 * m14 + l42 * m24 + l44 * m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -651,23 +652,23 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * matrix, then the new matrix will be <code>M * R</code> (row-major). So when transforming
      * a vector <code>v</code> with the new matrix by using <code>v * M * R</code>, the
      * transformation of <code>this</code> matrix will be applied first.
-     *
-     * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat2D(@Nonnull Matrixc rhs) {
+    public void postConcat2D(float r11, float r12, float r14,
+                             float r21, float r22, float r24,
+                             float r41, float r42, float r44) {
         // 36 multiplications
-        final float f11 = m11 * rhs.m11() + m12 * rhs.m21() + m14 * rhs.m41();
-        final float f12 = m11 * rhs.m12() + m12 * rhs.m22() + m14 * rhs.m42();
-        final float f14 = m11 * rhs.m14() + m12 * rhs.m24() + m14 * rhs.m44();
-        final float f21 = m21 * rhs.m11() + m22 * rhs.m21() + m24 * rhs.m41();
-        final float f22 = m21 * rhs.m12() + m22 * rhs.m22() + m24 * rhs.m42();
-        final float f24 = m21 * rhs.m14() + m22 * rhs.m24() + m24 * rhs.m44();
-        final float f31 = m31 * rhs.m11() + m32 * rhs.m21() + m34 * rhs.m41();
-        final float f32 = m31 * rhs.m12() + m32 * rhs.m22() + m34 * rhs.m42();
-        final float f34 = m31 * rhs.m14() + m32 * rhs.m24() + m34 * rhs.m44();
-        final float f41 = m41 * rhs.m11() + m42 * rhs.m21() + m44 * rhs.m41();
-        final float f42 = m41 * rhs.m12() + m42 * rhs.m22() + m44 * rhs.m42();
-        final float f44 = m41 * rhs.m14() + m42 * rhs.m24() + m44 * rhs.m44();
+        final float f11 = m11 * r11 + m12 * r21 + m14 * r41;
+        final float f12 = m11 * r12 + m12 * r22 + m14 * r42;
+        final float f14 = m11 * r14 + m12 * r24 + m14 * r44;
+        final float f21 = m21 * r11 + m22 * r21 + m24 * r41;
+        final float f22 = m21 * r12 + m22 * r22 + m24 * r42;
+        final float f24 = m21 * r14 + m22 * r24 + m24 * r44;
+        final float f31 = m31 * r11 + m32 * r21 + m34 * r41;
+        final float f32 = m31 * r12 + m32 * r22 + m34 * r42;
+        final float f34 = m31 * r14 + m32 * r24 + m34 * r44;
+        final float f41 = m41 * r11 + m42 * r21 + m44 * r41;
+        final float f42 = m41 * r12 + m42 * r22 + m44 * r42;
+        final float f44 = m41 * r14 + m42 * r24 + m44 * r44;
         m11 = f11;
         m12 = f12;
         m14 = f14;
@@ -698,7 +699,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param lhs the left-hand side matrix to multiply
      */
-    public void preConcat(@Nonnull Matrix3 lhs) {
+    public void preConcat(@NonNull Matrix3 lhs) {
         // 36 multiplications
         final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m31;
         final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m32;
@@ -742,7 +743,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param rhs the right-hand side matrix to multiply
      */
-    public void postConcat(@Nonnull Matrix3 rhs) {
+    public void postConcat(@NonNull Matrix3 rhs) {
         // 36 multiplications
         final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m13 * rhs.m31;
         final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m13 * rhs.m32;
@@ -819,7 +820,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrix4c m) {
+    public void set(@NonNull Matrix4c m) {
         m.store(this);
     }
 
@@ -871,7 +872,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param a the array to copy from
      */
-    public void set(@Nonnull float[] a) {
+    public void set(float @NonNull [] a) {
         m11 = a[0];
         m12 = a[1];
         m13 = a[2];
@@ -897,7 +898,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param a      the array to copy from
      * @param offset the element offset
      */
-    public void set(@Nonnull float[] a, int offset) {
+    public void set(float @NonNull [] a, int offset) {
         m11 = a[offset];
         m12 = a[offset + 1];
         m13 = a[offset + 2];
@@ -922,7 +923,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param a the array to copy from
      */
-    public void set(@Nonnull ByteBuffer a) {
+    public void set(@NonNull ByteBuffer a) {
         int offset = a.position();
         m11 = a.getFloat(offset);
         m12 = a.getFloat(offset + 4);
@@ -948,7 +949,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param a the array to copy from
      */
-    public void set(@Nonnull FloatBuffer a) {
+    public void set(@NonNull FloatBuffer a) {
         int offset = a.position();
         m11 = a.get(offset);
         m12 = a.get(offset + 1);
@@ -998,7 +999,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param m the matrix to store
      */
-    public void store(@Nonnull Matrix4 m) {
+    public void store(@NonNull Matrix4 m) {
         m.m11 = m11;
         m.m12 = m12;
         m.m13 = m13;
@@ -1022,7 +1023,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param a the array to store into
      */
-    public void store(@Nonnull float[] a) {
+    public void store(float @NonNull [] a) {
         a[0] = m11;
         a[1] = m12;
         a[2] = m13;
@@ -1047,7 +1048,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param a      the array to store into
      * @param offset the element offset
      */
-    public void store(@Nonnull float[] a, int offset) {
+    public void store(float @NonNull [] a, int offset) {
         a[offset] = m11;
         a[offset + 1] = m12;
         a[offset + 2] = m13;
@@ -1071,7 +1072,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void store(@Nonnull ByteBuffer a) {
+    public void store(@NonNull ByteBuffer a) {
         int offset = a.position();
         a.putFloat(offset, m11);
         a.putFloat(offset + 4, m12);
@@ -1096,7 +1097,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void store(@Nonnull FloatBuffer a) {
+    public void store(@NonNull FloatBuffer a) {
         int offset = a.position();
         a.put(offset, m11);
         a.put(offset + 1, m12);
@@ -1144,8 +1145,6 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     /**
      * Store this matrix as 2D matrix into the given address in GLSL column-major or
      * HLSL row-major order, NOT vec4 aligned.
-     * <p>
-     * Equivalent to call {@link #toMatrix()} and {@link Matrix#store(long)}.
      *
      * @param p the pointer of the array to store
      */
@@ -1164,8 +1163,6 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     /**
      * Store this matrix as 2D matrix into the given address in GLSL column-major or
      * HLSL row-major order, NOT vec4 aligned.
-     * <p>
-     * Equivalent to call {@link #toMatrix()} and {@link Matrix#storeAligned(long)}.
      *
      * @param p the pointer of the array to store
      */
@@ -1320,7 +1317,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param far    the far frustum plane, must be positive
      * @return this
      */
-    @Nonnull
+    @NonNull
     public Matrix4 setOrthographic(float left, float right, float bottom, float top, float near, float far) {
         float invRL = 1.0f / (right - left);
         float invTB = 1.0f / (top - bottom);
@@ -1354,7 +1351,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param flipY  whether to flip the projection vertically
      * @return this
      */
-    @Nonnull
+    @NonNull
     public Matrix4 setOrthographic(float width, float height, float near, float far, boolean flipY) {
         float invNF = 1.0f / (near - far);
         m11 = 2.0f / width;
@@ -1455,7 +1452,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param far    the far frustum plane, must be positive
      * @return this
      */
-    @Nonnull
+    @NonNull
     public Matrix4 setPerspective(float left, float right, float bottom, float top, float near, float far) {
         float invRL = 1.0f / (right - left);
         float invTB = 1.0f / (top - bottom);
@@ -1489,7 +1486,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param far    the far frustum plane, must be positive
      * @return this
      */
-    @Nonnull
+    @NonNull
     public Matrix4 setPerspective(float fov, float aspect, float near, float far) {
         float y = 1.0f / MathUtil.tan(fov * 0.5f);
         float invNF = 1.0f / (near - far);
@@ -1676,7 +1673,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param t the translation vector
      */
-    public void preTranslate(@Nonnull Vector3 t) {
+    public void preTranslate(@NonNull Vector3 t) {
         preTranslate(t.x, t.y, t.z);
     }
 
@@ -1725,7 +1722,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param t the translation vector
      */
-    public void postTranslate(@Nonnull Vector3 t) {
+    public void postTranslate(@NonNull Vector3 t) {
         postTranslate(t.x, t.y, t.z);
     }
 
@@ -1785,7 +1782,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param t the translation vector
      */
-    public void setTranslate(@Nonnull Vector3 t) {
+    public void setTranslate(@NonNull Vector3 t) {
         setTranslate(t.x, t.y, t.z);
     }
 
@@ -1899,7 +1896,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param s the scale vector
      */
-    public void preScale(@Nonnull Vector3 s) {
+    public void preScale(@NonNull Vector3 s) {
         preScale(s.x, s.y, s.z);
     }
 
@@ -1960,7 +1957,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param s the scale vector
      */
-    public void postScale(@Nonnull Vector3 s) {
+    public void postScale(@NonNull Vector3 s) {
         postScale(s.x, s.y, s.z);
     }
 
@@ -2020,7 +2017,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param s the scale vector
      */
-    public void setScale(@Nonnull Vector3 s) {
+    public void setScale(@NonNull Vector3 s) {
         setScale(s.x, s.y, s.z);
     }
 
@@ -2594,7 +2591,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @see #preRotateZ(double)
      * @see #preRotateX(double)
      */
-    public void preRotate(@Nonnull Vector3 axis, float angle) {
+    public void preRotate(@NonNull Vector3 axis, float angle) {
         preRotate(axis.x, axis.y, axis.z, angle);
     }
 
@@ -2688,7 +2685,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param q the quaternion to rotate by.
      */
-    public void preRotate(@Nonnull Quaternion q) {
+    public void preRotate(@NonNull Quaternion q) {
         final float sq = q.lengthSq();
         if (sq < 1.0e-6f) {
             return;
@@ -2841,7 +2838,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param q the quaternion to set by.
      */
-    public void setRotation(@Nonnull Quaternion q) {
+    public void setRotation(@NonNull Quaternion q) {
         q.toMatrix4(this);
     }
 
@@ -2851,7 +2848,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param vec the vector to transform
      */
-    public void preTransform(@Nonnull Vector4 vec) {
+    public void preTransform(@NonNull Vector4 vec) {
         final float x = m11 * vec.x + m21 * vec.y + m31 * vec.z + m41 * vec.w;
         final float y = m12 * vec.x + m22 * vec.y + m32 * vec.z + m42 * vec.w;
         final float z = m13 * vec.x + m23 * vec.y + m33 * vec.z + m43 * vec.w;
@@ -2868,7 +2865,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param vec the vector to transform
      */
-    public void postTransform(@Nonnull Vector4 vec) {
+    public void postTransform(@NonNull Vector4 vec) {
         final float x = m11 * vec.x + m12 * vec.y + m13 * vec.z + m14 * vec.w;
         final float y = m21 * vec.x + m22 * vec.y + m23 * vec.z + m24 * vec.w;
         final float z = m31 * vec.x + m32 * vec.y + m33 * vec.z + m34 * vec.w;
@@ -2886,7 +2883,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param vec the vector to transform
      */
-    public void preTransform(@Nonnull Vector3 vec) {
+    public void preTransform(@NonNull Vector3 vec) {
         final float x = m11 * vec.x + m21 * vec.y + m31 * vec.z + m41;
         final float y = m12 * vec.x + m22 * vec.y + m32 * vec.z + m42;
         final float z = m13 * vec.x + m23 * vec.y + m33 * vec.z + m43;
@@ -2909,7 +2906,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param vec the vector to transform
      */
-    public void postTransform(@Nonnull Vector3 vec) {
+    public void postTransform(@NonNull Vector3 vec) {
         final float x = m11 * vec.x + m12 * vec.y + m13 * vec.z + m14;
         final float y = m21 * vec.x + m22 * vec.y + m23 * vec.z + m24;
         final float z = m31 * vec.x + m32 * vec.y + m33 * vec.z + m34;
@@ -2930,7 +2927,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull Rect2f r) {
+    public void mapRect(@NonNull Rect2f r) {
         mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, r);
     }
 
@@ -2939,7 +2936,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2f dest) {
+    public void mapRect(@NonNull Rect2fc r, @NonNull Rect2f dest) {
         mapRect(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
@@ -2948,7 +2945,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2f dest) {
+    public void mapRect(float left, float top, float right, float bottom, @NonNull Rect2f dest) {
         float x1 = m11 * left + m21 * top + m41;
         float y1 = m12 * left + m22 * top + m42;
         float x2 = m11 * right + m21 * top + m41;
@@ -2984,7 +2981,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull Rect2fc r, @Nonnull Rect2i dest) {
+    public void mapRect(@NonNull Rect2fc r, @NonNull Rect2i dest) {
         mapRect(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
@@ -2993,7 +2990,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull Rect2ic r, @Nonnull Rect2i dest) {
+    public void mapRect(@NonNull Rect2ic r, @NonNull Rect2i dest) {
         mapRect(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
@@ -3002,7 +2999,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2i dest) {
+    public void mapRect(float left, float top, float right, float bottom, @NonNull Rect2i dest) {
         float x1 = m11 * left + m21 * top + m41;
         float y1 = m12 * left + m22 * top + m42;
         float x2 = m11 * right + m21 * top + m41;
@@ -3038,7 +3035,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(@Nonnull Rect2ic r, @Nonnull Rect2i dest) {
+    public void mapRectOut(@NonNull Rect2ic r, @NonNull Rect2i dest) {
         mapRectOut(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
@@ -3047,7 +3044,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(@Nonnull Rect2fc r, @Nonnull Rect2i dest) {
+    public void mapRectOut(@NonNull Rect2fc r, @NonNull Rect2i dest) {
         mapRectOut(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
@@ -3056,7 +3053,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect2i dest) {
+    public void mapRectOut(float left, float top, float right, float bottom, @NonNull Rect2i dest) {
         float x1 = m11 * left + m21 * top + m41;
         float y1 = m12 * left + m22 * top + m42;
         float x2 = m11 * right + m21 * top + m41;
@@ -3088,11 +3085,11 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     }
 
     @Override
-    public void mapRectIn(@Nonnull Rect2fc r, @Nonnull Rect2i dest) {
+    public void mapRectIn(@NonNull Rect2fc r, @NonNull Rect2i dest) {
         mapRectIn(r.left(), r.top(), r.right(), r.bottom(), dest);
     }
 
-    public void mapRectIn(float left, float top, float right, float bottom, @Nonnull Rect2i dest) {
+    public void mapRectIn(float left, float top, float right, float bottom, @NonNull Rect2i dest) {
         float x1 = m11 * left + m21 * top + m41;
         float y1 = m12 * left + m22 * top + m42;
         float x2 = m11 * right + m21 * top + m41;
@@ -3128,7 +3125,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      *
      * @param p the point to transform
      */
-    public void mapPoint(@Nonnull float[] p) {
+    public void mapPoint(float @NonNull [] p) {
         if (isAffine()) {
             final float x = m11 * p[0] + m21 * p[1] + m41;
             final float y = m12 * p[0] + m22 * p[1] + m42;
@@ -3344,41 +3341,6 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     }
 
     /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
-     * <pre>{@code
-     * [ a b x c ]      [ a b c ]
-     * [ d e x f ]  ->  [ d e f ]
-     * [ x x x x ]      [ g h i ]
-     * [ g h x i ]
-     * }</pre>
-     */
-    public void toMatrix(@Nonnull Matrix dest) {
-        dest.set(
-                m11, m12, m14,
-                m21, m22, m24,
-                m41, m42, m44
-        );
-    }
-
-    /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
-     * <pre>{@code
-     * [ a b x c ]      [ a b c ]
-     * [ d e x f ]  ->  [ d e f ]
-     * [ x x x x ]      [ g h i ]
-     * [ g h x i ]
-     * }</pre>
-     */
-    @Nonnull
-    public Matrix toMatrix() {
-        return new Matrix(
-                m11, m12, m14,
-                m21, m22, m24,
-                m41, m42, m44
-        );
-    }
-
-    /**
      * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are discarded.
      * <pre>{@code
      * [ a b c x ]      [ a b c ]
@@ -3387,7 +3349,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * [ x x x x ]
      * }</pre>
      */
-    public void toMatrix3(@Nonnull Matrix3 dest) {
+    public void toMatrix3(@NonNull Matrix3 dest) {
         dest.m11 = m11;
         dest.m12 = m12;
         dest.m13 = m13;
@@ -3408,7 +3370,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * [ x x x x ]
      * }</pre>
      */
-    @Nonnull
+    @NonNull
     public Matrix3 toMatrix3() {
         Matrix3 m = new Matrix3();
         toMatrix3(m);
@@ -3421,7 +3383,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
      * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean isApproxEqual(@Nonnull Matrix4 m) {
+    public boolean isApproxEqual(@NonNull Matrix4 m) {
         return MathUtil.isApproxEqual(m11, m.m11) &&
                 MathUtil.isApproxEqual(m12, m.m12) &&
                 MathUtil.isApproxEqual(m13, m.m13) &&
@@ -3507,9 +3469,8 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     /**
      * @return a copy of this matrix
      */
-    @Nonnull
     @Override
-    public Matrix4 clone() {
+    public @NonNull Matrix4 clone() {
         try {
             return (Matrix4) super.clone();
         } catch (CloneNotSupportedException e) {
@@ -3517,7 +3478,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
         }
     }
 
-    private static void mulMatrix(@Nonnull float[] a, @Nonnull float[] b) {
+    private static void mulMatrix(float @NonNull [] a, float @NonNull [] b) {
         float var4 = b[0];
         float var5 = b[1];
         float var6 = b[2];
@@ -3569,7 +3530,7 @@ public non-sealed class Matrix4 implements Matrix4c, Cloneable {
     }
 
     // strassen algorithm
-    private static void multiply(@Nonnull float[] a, @Nonnull float[] b, @Nonnull float[] out) {
+    private static void multiply(float @NonNull [] a, float @NonNull [] b, float @NonNull [] out) {
         float[] temp = new float[28];
 
         float x1, x2, x3, x4, x5, x6, x7;

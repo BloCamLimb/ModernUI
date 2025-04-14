@@ -22,9 +22,9 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.engine.BackendFormat;
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 import static icyllis.arc3d.engine.Engine.BackendApi;
@@ -44,7 +44,7 @@ public final class GLBackendFormat extends BackendFormat {
         mFormat = format;
     }
 
-    @Nonnull
+    @NonNull
     public static GLBackendFormat make(@NativeType("GLenum") int format) {
         if (GLUtil.glFormatIsSupported(format)) {
             assert (format > 0);

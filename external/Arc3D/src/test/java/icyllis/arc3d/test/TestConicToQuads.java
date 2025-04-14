@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.GeometryUtils;
+import icyllis.arc3d.sketch.GeometryUtils;
 import icyllis.arc3d.core.MathUtil;
 
 import java.util.Arrays;

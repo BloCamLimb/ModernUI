@@ -21,34 +21,37 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.ShaderKind;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.List;
 import java.util.Objects;
 
 /**
  * An interface block declaration & definition, as in:
  * <pre>
  * out SV_PerVertex {
- *   layout(builtin = position) out float4 SV_Position;
+ *   layout(position) out float4 SV_Position;
  * };
  * </pre>
+ * At the AST level, this is represented by a single variable of struct type.
  */
 public final class InterfaceBlock extends TopLevelElement {
 
     private final WeakReference<Variable> mVariable;
 
-    public InterfaceBlock(int position, @Nonnull Variable variable) {
+    public InterfaceBlock(int position, @NonNull Variable variable) {
         super(position);
         mVariable = new WeakReference<>(variable);
         variable.setInterfaceBlock(this);
     }
 
-    private static boolean checkBlock(@Nonnull Context context,
+    private static boolean checkBlock(@NonNull Context context,
                                       int pos,
-                                      @Nonnull Modifiers modifiers,
-                                      @Nonnull Type blockType,
+                                      @NonNull Modifiers modifiers,
+                                      @NonNull Type blockType,
                                       int blockStorage) {
         boolean success = true;
         if (blockType.isUnsizedArray()) {
@@ -80,12 +83,12 @@ public final class InterfaceBlock extends TopLevelElement {
         return success;
     }
 
-    private static boolean checkFields(@Nonnull Context context,
-                                       @Nonnull Type.Field[] fields,
+    private static boolean checkFields(@NonNull Context context,
+                                       @Unmodifiable @NonNull List<Type.Field> fields,
                                        int blockStorage) {
         boolean success = true;
-        for (int i = 0; i < fields.length; i++) {
-            Type.Field field = fields[i];
+        for (int i = 0; i < fields.size(); i++) {
+            Type.Field field = fields.get(i);
             Modifiers fieldModifiers = field.modifiers();
             int permittedFlags = Modifiers.kStorage_Flags;
             int permittedLayoutFlags = 0;
@@ -116,7 +119,7 @@ public final class InterfaceBlock extends TopLevelElement {
             }
             if (field.type().isUnsizedArray()) {
                 if (blockStorage == Modifiers.kBuffer_Flag) {
-                    if (i != fields.length - 1) {
+                    if (i != fields.size() - 1) {
                         context.error(field.position(),
                                 "runtime sized array must be the last member of a shader storage block");
                         success = false;
@@ -132,11 +135,11 @@ public final class InterfaceBlock extends TopLevelElement {
     }
 
     @Nullable
-    public static InterfaceBlock convert(@Nonnull Context context,
+    public static InterfaceBlock convert(@NonNull Context context,
                                          int pos,
-                                         @Nonnull Modifiers modifiers,
-                                         @Nonnull Type blockType,
-                                         @Nonnull String instanceName) {
+                                         @NonNull Modifiers modifiers,
+                                         @NonNull Type blockType,
+                                         @NonNull String instanceName) {
         if (!blockType.getElementType().isInterfaceBlock()) {
             context.error(pos, "type '" + blockType + "' is not an interface block");
             return null;
@@ -186,19 +189,19 @@ public final class InterfaceBlock extends TopLevelElement {
         return InterfaceBlock.make(context, pos, variable);
     }
 
-    @Nonnull
-    public static InterfaceBlock make(@Nonnull Context context,
+    @NonNull
+    public static InterfaceBlock make(@NonNull Context context,
                                       int pos,
-                                      @Nonnull Variable variable) {
+                                      @NonNull Variable variable) {
         assert variable.getType().getElementType().isInterfaceBlock();
 
         if (variable.getName().isEmpty()) {
             // This interface block is anonymous. Add each field to the top-level symbol table.
-            Type.Field[] fields = variable.getType().getFields();
-            for (int i = 0; i < fields.length; i++) {
+            var fields = variable.getType().getFields();
+            for (int i = 0; i < fields.size(); i++) {
                 context.getSymbolTable().insert(
                         context,
-                        new AnonymousField(fields[i].position(), variable, i)
+                        new AnonymousField(fields.get(i).position(), variable, i)
                 );
             }
         } else {
@@ -209,19 +212,24 @@ public final class InterfaceBlock extends TopLevelElement {
         return new InterfaceBlock(pos, variable);
     }
 
-    @Nonnull
+    @NonNull
     public Variable getVariable() {
         return Objects.requireNonNull(mVariable.get(), "your symbol table is gone");
     }
 
-    @Nonnull
+    @NonNull
     public String getBlockName() {
         return getVariable().getType().getElementType().getName();
     }
 
-    @Nonnull
+    @NonNull
     public String getInstanceName() {
         return getVariable().getName();
+    }
+
+    public int getArraySize() {
+        Type type = getVariable().getType();
+        return type.isArray() ? type.getArraySize() : 0;
     }
 
     @Override
@@ -229,12 +237,7 @@ public final class InterfaceBlock extends TopLevelElement {
         return ElementKind.INTERFACE_BLOCK;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitInterfaceBlock(this);
-    }
-
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         Variable variable = getVariable();

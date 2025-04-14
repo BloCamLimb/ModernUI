@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.compiler.lex;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -40,8 +41,8 @@ public final class RegexParser {
     public RegexParser() {
     }
 
-    @Nonnull
-    public RegexNode parse(@Nonnull String source) {
+    @NonNull
+    public RegexNode parse(@NonNull String source) {
         mSource = source;
         mOffset = 0;
         assert (mStack.size() == 0);
@@ -67,11 +68,11 @@ public final class RegexParser {
         ++mOffset;
     }
 
-    private void push(@Nonnull RegexNode node) {
+    private void push(@NonNull RegexNode node) {
         mStack.push(node);
     }
 
-    @Nonnull
+    @NonNull
     private RegexNode pop() {
         return mStack.pop();
     }

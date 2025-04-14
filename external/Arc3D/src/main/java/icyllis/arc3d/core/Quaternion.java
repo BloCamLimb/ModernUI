@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a Quaternion, mostly used for rotations.
@@ -61,7 +61,7 @@ public class Quaternion {
      * @param q the quaternion to copy from
      * @return a copy of the quaternion
      */
-    @Nonnull
+    @NonNull
     public static Quaternion copy(@Nullable Quaternion q) {
         return q == null ? identity() : q.copy();
     }
@@ -71,7 +71,7 @@ public class Quaternion {
      *
      * @return an identity quaternion
      */
-    @Nonnull
+    @NonNull
     public static Quaternion identity() {
         Quaternion q = new Quaternion();
         q.w = 1.0f;
@@ -87,7 +87,7 @@ public class Quaternion {
      * @param rotationZ the Euler roll angle in radians. (rotation about the Z axis)
      * @return the resulting quaternion
      */
-    @Nonnull
+    @NonNull
     public static Quaternion makeEulerAngles(float rotationX, float rotationY, float rotationZ) {
         Quaternion q = new Quaternion();
         q.setFromEulerAngles(rotationX, rotationY, rotationZ);
@@ -102,8 +102,8 @@ public class Quaternion {
      * @param angle rotation angle in radians
      * @return the resulting quaternion
      */
-    @Nonnull
-    public static Quaternion makeAxisAngle(@Nonnull Vector3 axis, float angle) {
+    @NonNull
+    public static Quaternion makeAxisAngle(@NonNull Vector3 axis, float angle) {
         Quaternion q = new Quaternion();
         q.setFromAxisAngle(axis, angle);
         return q;
@@ -119,7 +119,7 @@ public class Quaternion {
      * @param angle rotation angle in radians
      * @return the resulting quaternion
      */
-    @Nonnull
+    @NonNull
     public static Quaternion makeAxisAngle(float axisX, float axisY, float axisZ, float angle) {
         Quaternion q = new Quaternion();
         q.setFromAxisAngle(axisX, axisY, axisZ, angle);
@@ -146,7 +146,7 @@ public class Quaternion {
      *
      * @param q the quaternion to copy from
      */
-    public void set(@Nonnull Quaternion q) {
+    public void set(@NonNull Quaternion q) {
         x = q.x;
         y = q.y;
         z = q.z;
@@ -158,7 +158,7 @@ public class Quaternion {
      *
      * @param q the quaternion to add
      */
-    public void add(@Nonnull Quaternion q) {
+    public void add(@NonNull Quaternion q) {
         w += q.w;
         x += q.x;
         y += q.y;
@@ -170,7 +170,7 @@ public class Quaternion {
      *
      * @param q the quaternion to subtract
      */
-    public void subtract(@Nonnull Quaternion q) {
+    public void subtract(@NonNull Quaternion q) {
         w -= q.w;
         x -= q.x;
         y -= q.y;
@@ -194,7 +194,7 @@ public class Quaternion {
      *
      * @param q the quaternion to multiply with
      */
-    public void multiply(@Nonnull Quaternion q) {
+    public void multiply(@NonNull Quaternion q) {
         // 16 multiplications
         set(w * q.x + x * q.w + y * q.z - z * q.y,
                 w * q.y - x * q.z + y * q.w + z * q.x,
@@ -228,7 +228,7 @@ public class Quaternion {
      *
      * @param q the quaternion to dot product with.
      */
-    public float dot(@Nonnull Quaternion q) {
+    public float dot(@NonNull Quaternion q) {
         return x * q.x + y * q.y + z * q.z + w * q.w;
     }
 
@@ -331,7 +331,7 @@ public class Quaternion {
      * @param a the end quaternion
      * @param t a value between 0.0 and 1.0 representing interpolation
      */
-    public void slerp(@Nonnull Quaternion a, float t) {
+    public void slerp(@NonNull Quaternion a, float t) {
         slerp(this, a, t);
     }
 
@@ -344,7 +344,7 @@ public class Quaternion {
      * @param b the end quaternion
      * @param t a value between 0.0 and 1.0 representing interpolation
      */
-    public void slerp(@Nonnull Quaternion a, @Nonnull Quaternion b, float t) {
+    public void slerp(@NonNull Quaternion a, @NonNull Quaternion b, float t) {
         if (t <= 0.0f) {
             set(a);
         } else if (t >= 1.0f) {
@@ -401,7 +401,7 @@ public class Quaternion {
      * @param axis  the rotation axis
      * @param angle rotation angle in radians
      */
-    public void rotateByAxis(@Nonnull Vector3 axis, float angle) {
+    public void rotateByAxis(@NonNull Vector3 axis, float angle) {
         rotateByAxis(axis.x, axis.y, axis.z, angle);
     }
 
@@ -511,7 +511,7 @@ public class Quaternion {
      * @param axis  the rotation axis
      * @param angle rotation angle in radians
      */
-    public void setFromAxisAngle(@Nonnull Vector3 axis, float angle) {
+    public void setFromAxisAngle(@NonNull Vector3 axis, float angle) {
         setFromAxisAngle(axis.x, axis.y, axis.z, angle);
     }
 
@@ -577,7 +577,7 @@ public class Quaternion {
      * @param axis the vector for storing the axis coordinates.
      * @return the rotation angle in radians.
      */
-    public float toAxisAngle(@Nonnull Vector3 axis) {
+    public float toAxisAngle(@NonNull Vector3 axis) {
         float l = x * x + y * y + z * z;
         if (MathUtil.isApproxZero(l)) {
             axis.x = 1.0f;
@@ -598,7 +598,7 @@ public class Quaternion {
      * @param axis the array for storing the axis coordinates.
      * @return the rotation angle in radians.
      */
-    public float toAxisAngle(@Nonnull float[] axis) {
+    public float toAxisAngle(float @NonNull[] axis) {
         if (axis.length < 3)
             throw new IllegalArgumentException("The array length must be at least 3");
         float l = x * x + y * y + z * z;
@@ -620,7 +620,7 @@ public class Quaternion {
      *
      * @param result the vector for storing the result.
      */
-    public void toEulerAngles(@Nonnull Vector3 result) {
+    public void toEulerAngles(@NonNull Vector3 result) {
         final float sqx = x * x;
         final float sqy = y * y;
         final float sqz = z * z;
@@ -649,7 +649,7 @@ public class Quaternion {
      *
      * @param angles the array for storing the result.
      */
-    public void toEulerAngles(@Nonnull float[] angles) {
+    public void toEulerAngles(float @NonNull[] angles) {
         if (angles.length < 3)
             throw new IllegalArgumentException("The array length must be at least 3");
         final float sqx = x * x;
@@ -680,7 +680,7 @@ public class Quaternion {
      *
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public Matrix3 toMatrix3() {
         final float sq = lengthSq();
         if (sq < 1.0e-6f) {
@@ -726,7 +726,7 @@ public class Quaternion {
      *
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public Matrix4 toMatrix4() {
         final float sq = lengthSq();
         if (sq < 1.0e-6f) {
@@ -775,7 +775,7 @@ public class Quaternion {
      * @param out a matrix for storing the result
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public Matrix3 toMatrix3(@Nullable Matrix3 out) {
         if (out == null)
             return toMatrix3();
@@ -825,7 +825,7 @@ public class Quaternion {
      * @param out a matrix for storing the result
      * @return the resulting matrix
      */
-    @Nonnull
+    @NonNull
     public Matrix4 toMatrix4(@Nullable Matrix4 out) {
         if (out == null)
             return toMatrix4();
@@ -882,7 +882,7 @@ public class Quaternion {
      * @param q the quaternion to compare.
      * @return {@code true} if this quaternion is equivalent to other one.
      */
-    public boolean isApproxEqual(@Nonnull Quaternion q) {
+    public boolean isApproxEqual(@NonNull Quaternion q) {
         if (this == q) return true;
         return MathUtil.isApproxEqual(x, q.x) &&
                 MathUtil.isApproxEqual(y, q.y) &&
@@ -921,7 +921,7 @@ public class Quaternion {
                 ']';
     }
 
-    @Nonnull
+    @NonNull
     public Quaternion copy() {
         return new Quaternion(x, y, z, w);
     }

@@ -35,7 +35,12 @@ import org.slf4j.helpers.NOPLogger;
  * <p>
  * This class is part of public API.
  */
-public final class ContextOptions extends BaseContextOptions {
+public final class ContextOptions {
+
+    /**
+     * The budgeted in bytes for GPU resources allocated and held by the Context.
+     */
+    public long mMaxResourceBudget = 1 << 28;
 
     /**
      * Controls whether we check for GL errors after functions that allocate resources (e.g.
@@ -73,7 +78,7 @@ public final class ContextOptions extends BaseContextOptions {
     /**
      * The maximum size of cache textures used for Glyph cache.
      */
-    public long mGlyphCacheTextureMaximumBytes = 2048 * 1024 * 4;
+    public long mGlyphCacheTextureMaximumBytes = 2048 * 2048;
 
     /**
      * Can the glyph atlas use multiple textures. If allowed, each texture's size is bound by
@@ -107,6 +112,15 @@ public final class ContextOptions extends BaseContextOptions {
     public int mInternalMultisampleCount = 4;
 
     /**
+     * OpenGL backend only. Setting to true to use actual staging buffers
+     * for pixel upload and buffer upload. Otherwise use CPU staging buffer
+     * and pass the client pointer to glTexSubImage* and glBufferSubData.
+     * In most cases, this will confuse the driver and make the performance
+     * worse than traditional methods, so it is recommended to keep it false.
+     */
+    public boolean mUseStagingBuffers = false;
+
+    /**
      * Maximum number of GL programs or Vk pipelines to keep active in the runtime cache.
      */
     public int mMaxRuntimeProgramCacheSize = 256;
@@ -132,6 +146,8 @@ public final class ContextOptions extends BaseContextOptions {
      * for mixed API usage between Arc3D and other programs.
      */
     public boolean mVolatileContext = false;
+
+    public boolean mAllowGLSPIRV = true;
 
     public long mVulkanVMALargeHeapBlockSize = 0;
 

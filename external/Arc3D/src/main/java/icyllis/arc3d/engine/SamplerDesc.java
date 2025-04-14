@@ -21,7 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.SamplingOptions;
-import icyllis.arc3d.core.shaders.Shader;
+import icyllis.arc3d.sketch.shaders.Shader;
 import org.jetbrains.annotations.Contract;
 
 import javax.annotation.concurrent.Immutable;
@@ -293,11 +293,6 @@ public final class SamplerDesc implements IResourceKey {
     @Contract(pure = true)
     public SamplerDesc resetMipmapMode() {
         return new SamplerDesc(mState & ~0xF00);
-    }
-
-    @Override
-    public boolean isShareable() {
-        return true;
     }
 
     @Override

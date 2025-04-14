@@ -22,10 +22,12 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.Operator;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.*;
+import java.util.List;
+import java.util.OptionalDouble;
+import java.util.StringJoiner;
 
 /**
  * Base class representing a constructor call: type_name( args, ... ).
@@ -45,8 +47,8 @@ public abstract class ConstructorCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int pos, @Nonnull Type type, @Nonnull List<Expression> args) {
+    public static Expression convert(@NonNull Context context,
+                                     int pos, @NonNull Type type, @NonNull List<Expression> args) {
         if (args.size() == 1 &&
                 args.get(0).getType().matches(type) &&
                 !type.getElementType().isOpaque()) {
@@ -65,24 +67,11 @@ public abstract class ConstructorCall extends Expression {
         if (type.isArray()) {
             return ConstructorArray.convert(context, pos, type, args);
         }
-        if (type.isStruct() && type.getFields().length > 0) {
+        if (type.isStruct() && !type.getFields().isEmpty()) {
             return ConstructorStruct.convert(context, pos, type, args);
         }
         context.error(pos, "cannot construct '" + type + "'");
         return null;
-    }
-
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitConstructorCall(this)) {
-            return true;
-        }
-        for (Expression arg : mArguments) {
-            if (arg.accept(visitor)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override
@@ -105,7 +94,7 @@ public abstract class ConstructorCall extends Expression {
     }
 
     @Override
-    public OptionalDouble getConstantValue(int i) {
+    public @NonNull OptionalDouble getConstantValue(int i) {
         assert (i >= 0 && i < getType().getComponents());
         for (Expression arg : mArguments) {
             int components = arg.getType().getComponents();
@@ -117,7 +106,7 @@ public abstract class ConstructorCall extends Expression {
         throw new AssertionError(i);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         StringJoiner joiner = new StringJoiner(", ");
@@ -130,7 +119,7 @@ public abstract class ConstructorCall extends Expression {
     final Expression[] cloneArguments() {
         Expression[] result = mArguments.clone();
         for (int i = 0; i < result.length; i++) {
-            result[i] = result[i].clone();
+            result[i] = result[i].copy();
         }
         return result;
     }

@@ -19,8 +19,10 @@
 
 package icyllis.arc3d.granite.geom;
 
+import icyllis.arc3d.core.PixelUtils;
 import icyllis.arc3d.core.SLDataType;
-import icyllis.arc3d.core.Vertices;
+import icyllis.arc3d.granite.RecordingContext;
+import icyllis.arc3d.sketch.Vertices;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.engine.Engine.PrimitiveType;
 import icyllis.arc3d.engine.Engine.VertexAttribType;
@@ -29,10 +31,10 @@ import icyllis.arc3d.engine.VertexInputLayout.AttributeSet;
 import icyllis.arc3d.granite.*;
 import icyllis.arc3d.granite.shading.UniformHandler;
 import icyllis.arc3d.granite.shading.VaryingHandler;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Formatter;
 
 public class VerticesStep extends GeometryStep {
@@ -97,11 +99,11 @@ public class VerticesStep extends GeometryStep {
     }
 
     @Override
-    public void appendToKey(@Nonnull KeyBuilder b) {
+    public void appendToKey(@NonNull KeyBuilder b) {
 
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ProgramImpl makeProgramImpl(ShaderCaps caps) {
         return null;
@@ -128,13 +130,13 @@ public class VerticesStep extends GeometryStep {
 
     @Override
     public void emitVertexGeomCode(Formatter vs,
-                                   @Nonnull String worldPosVar,
+                                   @NonNull String worldPosVar,
                                    @Nullable String localPosVar,
                                    boolean usesFastSolidColor) {
         assert !usesFastSolidColor;
         if (mHasColor) {
             vs.format("""
-                    %1$s = vec4(%2$s.rgb * %2$s.a, %2$s.a);
+                    %1$s = vec4(%2$s.bgr * %2$s.a, %2$s.a);
                     """, "f_Color", COLOR.name());
         }
         vs.format("vec3 devicePos = %s * vec3(%s, 1.0);\n",
@@ -154,7 +156,7 @@ public class VerticesStep extends GeometryStep {
 
     @Override
     public void writeMesh(MeshDrawWriter writer, Draw draw,
-                          @Nullable float[] solidColor,
+            float @Nullable[] solidColor,
                           boolean mayRequireLocalCoords) {
         assert solidColor == null;
         Vertices vertices = (Vertices) draw.mGeometry;
@@ -162,7 +164,7 @@ public class VerticesStep extends GeometryStep {
         int indexCount = vertices.getIndexCount();
         float[] positions = vertices.getPositions();
         float[] texCoords = vertices.getTexCoords();
-        byte[] colors = vertices.getColors();
+        int[] colors = vertices.getColors();
         short[] indices = vertices.getIndices();
 
         assert (mHasColor == (colors != null));
@@ -175,37 +177,35 @@ public class VerticesStep extends GeometryStep {
             for (int i = 0; i < indexCount; i++) {
                 int index = indices[i] & 0xFFFF;
                 MemoryUtil.memPutFloat(vertexData, positions[index<<1]);
-                MemoryUtil.memPutFloat(vertexData+4, positions[(index<<1)|1]);
+                MemoryUtil.memPutFloat(vertexData+4, positions[(index<<1)+1]);
                 vertexData += 8;
                 if (mHasColor) {
-                    MemoryUtil.memPutByte(vertexData, colors[index<<2]);
-                    MemoryUtil.memPutByte(vertexData+1, colors[(index<<2)|1]);
-                    MemoryUtil.memPutByte(vertexData+2, colors[(index<<2)|2]);
-                    MemoryUtil.memPutByte(vertexData+3, colors[(index<<2)|3]);
+                    int color = colors[index];
+                    MemoryUtil.memPutInt(vertexData,
+                            PixelUtils.NATIVE_BIG_ENDIAN ? Integer.reverseBytes(color) : color);
                     vertexData += 4;
                 }
                 if (mHasTexCoords) {
                     MemoryUtil.memPutFloat(vertexData, texCoords[index<<1]);
-                    MemoryUtil.memPutFloat(vertexData+4, texCoords[(index<<1)|1]);
+                    MemoryUtil.memPutFloat(vertexData+4, texCoords[(index<<1)+1]);
                     vertexData += 8;
                 }
             }
         } else {
-            long vertexData =writer.append(vertexCount);
+            long vertexData = writer.append(vertexCount);
             for (int i = 0; i < vertexCount; i++) {
                 MemoryUtil.memPutFloat(vertexData, positions[i<<1]);
-                MemoryUtil.memPutFloat(vertexData+4, positions[(i<<1)|1]);
+                MemoryUtil.memPutFloat(vertexData+4, positions[(i<<1)+1]);
                 vertexData += 8;
                 if (mHasColor) {
-                    MemoryUtil.memPutByte(vertexData, colors[i<<2]);
-                    MemoryUtil.memPutByte(vertexData+1, colors[(i<<2)|1]);
-                    MemoryUtil.memPutByte(vertexData+2, colors[(i<<2)|2]);
-                    MemoryUtil.memPutByte(vertexData+3, colors[(i<<2)|3]);
+                    int color = colors[i];
+                    MemoryUtil.memPutInt(vertexData,
+                            PixelUtils.NATIVE_BIG_ENDIAN ? Integer.reverseBytes(color) : color);
                     vertexData += 4;
                 }
                 if (mHasTexCoords) {
                     MemoryUtil.memPutFloat(vertexData, texCoords[i<<1]);
-                    MemoryUtil.memPutFloat(vertexData+4, texCoords[(i<<1)|1]);
+                    MemoryUtil.memPutFloat(vertexData+4, texCoords[(i<<1)+1]);
                     vertexData += 8;
                 }
             }

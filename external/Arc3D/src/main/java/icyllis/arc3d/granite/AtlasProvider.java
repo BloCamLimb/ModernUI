@@ -19,8 +19,6 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.engine.*;
-
 /**
  * AtlasProvider groups various texture atlas management algorithms together.
  */

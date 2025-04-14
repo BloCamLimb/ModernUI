@@ -19,15 +19,15 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.StrikeDesc;
+import icyllis.arc3d.sketch.StrikeDesc;
+import icyllis.arc3d.sketch.Strike;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
- * The GPU GlyphStrike holds GPU {@link BakedGlyph Glyphs} for a Strike.
+ * The GPU {@link GlyphStrike} holds GPU {@link BakedGlyph Glyphs} for a CPU {@link Strike}.
  */
-public class GlyphStrike {
+public final class GlyphStrike {
 
     private final StrikeDesc mStrikeDesc;
     private final Int2ObjectOpenHashMap<BakedGlyph> mGlyphs = new Int2ObjectOpenHashMap<>();
@@ -35,20 +35,21 @@ public class GlyphStrike {
     /**
      * <var>desc</var> must be immutable, no copy will be made.
      */
-    public GlyphStrike(StrikeDesc desc) {
+    // Use GlyphStrikeCache to obtain an instance
+    public GlyphStrike(@NonNull StrikeDesc desc) {
+        assert desc.isImmutable();
         mStrikeDesc = desc;
     }
 
     /**
      * Find or create Glyph and returns a pointer to it.
      */
-    @Nonnull
-    public BakedGlyph getGlyph(int glyphID) {
+    public @NonNull BakedGlyph getGlyph(int glyphID) {
         return mGlyphs.computeIfAbsent(glyphID, __ -> new BakedGlyph());
     }
 
-    // read only!!
-    public StrikeDesc getStrikeDesc() {
+    // immutable
+    public @NonNull StrikeDesc getStrikeDesc() {
         return mStrikeDesc;
     }
 }

@@ -21,8 +21,8 @@ package icyllis.arc3d.compiler.analysis;
 
 import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.tree.*;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 public final class Analysis {
@@ -35,20 +35,17 @@ public final class Analysis {
             static final IsCompileTimeConstantVisitor visitor = new IsCompileTimeConstantVisitor();
 
             @Override
-            public boolean visitLiteral(Literal expr) {
-                // Literals are compile-time constants.
-                return false;
-            }
-
-            @Override
-            protected boolean visitExpression(Expression expr) {
+            public boolean visitExpression(@NonNull Expression expr) {
                 return switch (expr.getKind()) {
+                    case LITERAL ->
+                        // Literals are compile-time constants.
+                            false;
                     case CONSTRUCTOR_ARRAY,
                          CONSTRUCTOR_COMPOUND,
-                         CONSTRUCTOR_DIAGONAL_MATRIX,
+                         CONSTRUCTOR_DIAGONAL,
                          CONSTRUCTOR_MATRIX_RESIZE,
                          CONSTRUCTOR_STRUCT,
-                         CONSTRUCTOR_VECTOR_SPLAT ->
+                         CONSTRUCTOR_SPLAT ->
                         // Constructors might be compile-time constants, if they are composed entirely
                         // of literals and constructors. (Casting constructors are intentionally omitted
                         // here. If the value inside was a compile-time constant, we would have not
@@ -67,7 +64,7 @@ public final class Analysis {
         return true;
     }
 
-    public static boolean isTrivialExpression(@Nonnull Expression expr) {
+    public static boolean isTrivialExpression(@NonNull Expression expr) {
         switch (expr.getKind()) {
             case LITERAL, VARIABLE_REFERENCE -> {
                 return true;
@@ -109,8 +106,8 @@ public final class Analysis {
             }
             case CONSTRUCTOR_COMPOUND_CAST,
                  CONSTRUCTOR_SCALAR_CAST,
-                 CONSTRUCTOR_VECTOR_SPLAT,
-                 CONSTRUCTOR_DIAGONAL_MATRIX -> {
+                 CONSTRUCTOR_SPLAT,
+                 CONSTRUCTOR_DIAGONAL -> {
                 ConstructorCall ctor = (ConstructorCall) expr;
                 // Single-argument constructors are trivial when their inner expression is trivial.
                 assert (ctor.getArguments().length == 1);
@@ -146,11 +143,11 @@ public final class Analysis {
             case CONSTRUCTOR_ARRAY_CAST:
             case CONSTRUCTOR_COMPOUND:
             case CONSTRUCTOR_COMPOUND_CAST:
-            case CONSTRUCTOR_DIAGONAL_MATRIX:
+            case CONSTRUCTOR_DIAGONAL:
             case CONSTRUCTOR_MATRIX_RESIZE:
             case CONSTRUCTOR_SCALAR_CAST:
             case CONSTRUCTOR_STRUCT:
-            case CONSTRUCTOR_VECTOR_SPLAT: {
+            case CONSTRUCTOR_SPLAT: {
                 if (left.getKind() != right.getKind()) {
                     return false;
                 }
@@ -209,25 +206,36 @@ public final class Analysis {
     public static boolean hasSideEffects(Expression expr) {
         class HasSideEffectsVisitor extends TreeVisitor {
             @Override
-            public boolean visitFunctionCall(FunctionCall expr) {
-                return (expr.getFunction().getModifiers().flags() & Modifiers.kPure_Flag) == 0;
-            }
-
-            @Override
-            public boolean visitPrefix(PrefixExpression expr) {
-                return expr.getOperator() == Operator.INC ||
-                        expr.getOperator() == Operator.DEC;
-            }
-
-            @Override
-            public boolean visitPostfix(PostfixExpression expr) {
-                return expr.getOperator() == Operator.INC ||
-                        expr.getOperator() == Operator.DEC;
-            }
-
-            @Override
-            public boolean visitBinary(BinaryExpression expr) {
-                return expr.getOperator().isAssignment();
+            public boolean visitExpression(@NonNull Expression expr) {
+                switch (expr.getKind()) {
+                    case FUNCTION_CALL -> {
+                        var c = (FunctionCall) expr;
+                        if ((c.getFunction().getModifiers().flags() & Modifiers.kPure_Flag) == 0) {
+                            return true;
+                        }
+                    }
+                    case PREFIX -> {
+                        var p = (PrefixExpression) expr;
+                        if (p.getOperator() == Operator.INC ||
+                                p.getOperator() == Operator.DEC) {
+                            return true;
+                        }
+                    }
+                    case POSTFIX -> {
+                        var p = (PostfixExpression) expr;
+                        if (p.getOperator() == Operator.INC ||
+                                p.getOperator() == Operator.DEC) {
+                            return true;
+                        }
+                    }
+                    case BINARY -> {
+                        var b = (BinaryExpression) expr;
+                        if (b.getOperator().isAssignment()) {
+                            return true;
+                        }
+                    }
+                }
+                return super.visitExpression(expr);
             }
         }
         return expr.accept(new HasSideEffectsVisitor());

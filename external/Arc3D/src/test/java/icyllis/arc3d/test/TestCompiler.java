@@ -19,22 +19,31 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.compiler.*;
+import icyllis.arc3d.compiler.CompileOptions;
+import icyllis.arc3d.compiler.GLSLVersion;
+import icyllis.arc3d.compiler.ModuleLoader;
+import icyllis.arc3d.compiler.SPIRVVersion;
+import icyllis.arc3d.compiler.ShaderCaps;
+import icyllis.arc3d.compiler.ShaderCompiler;
+import icyllis.arc3d.compiler.ShaderKind;
+import icyllis.arc3d.compiler.TargetApi;
+import icyllis.arc3d.compiler.TranslationUnit;
 import icyllis.arc3d.compiler.lex.Lexer;
 import icyllis.arc3d.core.MathUtil;
-import static org.lwjgl.util.spvc.Spvc.*;
-
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.IOException;
-import java.nio.*;
+import java.lang.ref.Reference;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
+
+import static org.lwjgl.util.spvc.Spvc.*;
 
 public class TestCompiler {
 
@@ -42,7 +51,7 @@ public class TestCompiler {
             #version 450    core
                 # pragma deep dark # line 2
                       \s
-                      
+            
                 # extension GL_ARB_enhanced_layouts: enable /*****/ //#  line 2
             # import  <fog>  /*  */
                       using M4          \s
@@ -88,7 +97,7 @@ public class TestCompiler {
                 // M4 m = "what?";
                 float[] arr = {1,2,3,4};
                 M4 v = {{2,2,3,1},vec4(1),vec4(2),vec4(3),};
-                FragColor0 = u_Buffer0.u_Color;
+                FragColor0 = vec4(shape(u_Buffer0.u_Color.xy),1.0);
             }
             """;
 
@@ -114,6 +123,9 @@ public class TestCompiler {
         }
 
         var options = new CompileOptions();
+        options.mMinifyCode = true;
+        options.mMinifyNames = false;
+        //options.mUsePrecisionQualifiers = true;
 
         /*String file = TinyFileDialogs.tinyfd_openFileDialog("Open shader source",
                 null, null, null, false);
@@ -147,33 +159,54 @@ public class TestCompiler {
 
         ShaderCaps shaderCaps = new ShaderCaps();
         shaderCaps.mTargetApi = TargetApi.OPENGL_4_5;
+        shaderCaps.mGLSLVersion = GLSLVersion.GLSL_320_ES;
         shaderCaps.mSPIRVVersion = SPIRVVersion.SPIRV_1_0;
+
+        ByteBuffer glsl = compiler.generateGLSL(translationUnit, shaderCaps);
+        System.out.println(compiler.getErrorMessage());
+
+        if (glsl != null) {
+            try (var channel = FileChannel.open(Path.of("test_shader1.glsl"),
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING)) {
+                while (glsl.hasRemaining()) {
+                    channel.write(glsl);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // reparse to see if success
+            TranslationUnit t2 = compiler.parse(
+                    StandardCharsets.UTF_8.decode(glsl.rewind()),
+                    ShaderKind.FRAGMENT,
+                    options,
+                    ModuleLoader.getInstance().loadCommonModule(compiler)
+            );
+            Objects.requireNonNull(t2, compiler::getErrorMessage);
+        }
 
         ByteBuffer spirv = compiler.generateSPIRV(translationUnit, shaderCaps);
         System.out.print(compiler.getErrorMessage());
 
-        if (spirv == null) {
-            return;
-        }
-
-        /*System.out.println(spirv);
-        System.out.println(spirv.order());*/
-        try (var channel = FileChannel.open(Path.of("test_shader1.spv"),
-                StandardOpenOption.WRITE,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.TRUNCATE_EXISTING)) {
-            while (spirv.hasRemaining()) {
-                channel.write(spirv);
+        if (spirv != null) {
+            try (var channel = FileChannel.open(Path.of("test_shader1.spv"),
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING)) {
+                while (spirv.hasRemaining()) {
+                    channel.write(spirv);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        testCompileToGLSL(spirv.rewind());
+            testCompileToGLSL(spirv.rewind());
+        }
     }
 
     public static void testCompileToGLSL(ByteBuffer spirv) {
-        try(var stack = MemoryStack.stackPush()) {
+        try (var stack = MemoryStack.stackPush()) {
             PointerBuffer pointer = stack.mallocPointer(1);
 
             spvc_context_create(pointer);
@@ -198,6 +231,8 @@ public class TestCompiler {
             System.out.println(MemoryUtil.memUTF8(pointer.get(0)));
 
             spvc_context_destroy(context);
+        } finally {
+            Reference.reachabilityFence(spirv);
         }
     }
 }

@@ -21,9 +21,9 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.ConstantFolder;
 import icyllis.arc3d.compiler.Context;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -39,10 +39,10 @@ public final class ConstructorScalarCast extends ConstructorCall {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int pos,
-                                     @Nonnull Type type,
-                                     @Nonnull List<Expression> args) {
+                                     @NonNull Type type,
+                                     @NonNull List<Expression> args) {
         assert type.isScalar();
 
         if (args.size() != 1) {
@@ -76,7 +76,7 @@ public final class ConstructorScalarCast extends ConstructorCall {
 
     // Casts a scalar expression. Casts that can be evaluated at compile-time will do so
     // (e.g. `int(4.1)` --> `Literal(int 4)`).
-    public static Expression make(@Nonnull Context context,
+    public static Expression make(@NonNull Context context,
                                   int position, Type type, Expression arg) {
         assert type.isScalar();
         assert arg.getType().isScalar();
@@ -112,9 +112,9 @@ public final class ConstructorScalarCast extends ConstructorCall {
         return ExpressionKind.CONSTRUCTOR_SCALAR_CAST;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorScalarCast(position, getType(), cloneArguments());
     }
 }

@@ -20,9 +20,9 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -58,7 +58,7 @@ public final class ImageInfo {
      * @param height pixel row count; must be zero or greater
      * @param cs     range of colors; may be null
      */
-    @Nonnull
+    @NonNull
     public static ImageInfo make(@Size(min = 0) int width, @Size(min = 0) int height,
                                  @ColorInfo.ColorType int ct, @ColorInfo.AlphaType int at, @Nullable ColorSpace cs) {
         return new ImageInfo(width, height, ct, at, cs);
@@ -74,7 +74,7 @@ public final class ImageInfo {
      * @param width  pixel column count; must be zero or greater
      * @param height pixel row count; must be zero or greater
      */
-    @Nonnull
+    @NonNull
     public static ImageInfo makeUnknown(@Size(min = 0) int width, @Size(min = 0) int height) {
         return new ImageInfo(width, height, ColorInfo.CT_UNKNOWN, ColorInfo.AT_UNKNOWN, null);
     }
@@ -288,7 +288,7 @@ public final class ImageInfo {
      * @param newHeight pixel row count; must be zero or greater
      * @return created ImageInfo
      */
-    @Nonnull
+    @NonNull
     public ImageInfo makeWH(int newWidth, int newHeight) {
         return new ImageInfo(newWidth, newHeight, colorType, alphaType, colorSpace);
     }
@@ -299,7 +299,7 @@ public final class ImageInfo {
      *
      * @return created ImageInfo
      */
-    @Nonnull
+    @NonNull
     public ImageInfo makeAlphaType(@ColorInfo.AlphaType int newAlphaType) {
         return new ImageInfo(width, height, colorType, newAlphaType, colorSpace);
     }
@@ -310,7 +310,7 @@ public final class ImageInfo {
      *
      * @return created ImageInfo
      */
-    @Nonnull
+    @NonNull
     public ImageInfo makeColorType(@ColorInfo.ColorType int newColorType) {
         return new ImageInfo(width, height, newColorType, alphaType, colorSpace);
     }
@@ -321,7 +321,7 @@ public final class ImageInfo {
      *
      * @return created ImageInfo
      */
-    @Nonnull
+    @NonNull
     public ImageInfo makeColorSpace(@Nullable ColorSpace newColorSpace) {
         return new ImageInfo(width, height, colorType, alphaType, newColorSpace);
     }

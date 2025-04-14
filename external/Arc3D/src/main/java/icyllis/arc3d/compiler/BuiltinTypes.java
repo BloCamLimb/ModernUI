@@ -43,18 +43,18 @@ public final class BuiltinTypes {
     /**
      * A minimum 16-bit signed integer.
      */
-    public final Type mShort;
-    public final Type mShort2;
-    public final Type mShort3;
-    public final Type mShort4;
+    public final Type mMin16Int;
+    public final Type mMin16Int2;
+    public final Type mMin16Int3;
+    public final Type mMin16Int4;
 
     /**
      * A minimum 16-bit unsigned integer.
      */
-    public final Type mUShort;
-    public final Type mUShort2;
-    public final Type mUShort3;
-    public final Type mUShort4;
+    public final Type mMin16UInt;
+    public final Type mMin16UInt2;
+    public final Type mMin16UInt3;
+    public final Type mMin16UInt4;
 
     /**
      * A 32-bit signed integer.
@@ -75,10 +75,10 @@ public final class BuiltinTypes {
     /**
      * A minimum 16-bit floating point value.
      */
-    public final Type mHalf;
-    public final Type mHalf2;
-    public final Type mHalf3;
-    public final Type mHalf4;
+    public final Type mMin16Float;
+    public final Type mMin16Float2;
+    public final Type mMin16Float3;
+    public final Type mMin16Float4;
 
     /**
      * A 32-bit floating point value.
@@ -91,15 +91,15 @@ public final class BuiltinTypes {
     /**
      * A minimum 16-bit floating point matrix.
      */
-    public final Type mHalf2x2;
-    public final Type mHalf2x3;
-    public final Type mHalf2x4;
-    public final Type mHalf3x2;
-    public final Type mHalf3x3;
-    public final Type mHalf3x4;
-    public final Type mHalf4x2;
-    public final Type mHalf4x3;
-    public final Type mHalf4x4;
+    public final Type mMin16Float2x2;
+    public final Type mMin16Float2x3;
+    public final Type mMin16Float2x4;
+    public final Type mMin16Float3x2;
+    public final Type mMin16Float3x3;
+    public final Type mMin16Float3x4;
+    public final Type mMin16Float4x2;
+    public final Type mMin16Float4x3;
+    public final Type mMin16Float4x4;
 
     /**
      * A 32-bit floating point matrix.
@@ -143,28 +143,12 @@ public final class BuiltinTypes {
     public final Type mUVec4;
 
     /**
-     * HLSL aliases.
+     * SkSL aliases.
      */
-    public final Type mMin16Int;
-    public final Type mMin16Int2;
-    public final Type mMin16Int3;
-    public final Type mMin16Int4;
-
-    /**
-     * HLSL aliases.
-     */
-    public final Type mMin16UInt;
-    public final Type mMin16UInt2;
-    public final Type mMin16UInt3;
-    public final Type mMin16UInt4;
-
-    /**
-     * HLSL aliases.
-     */
-    public final Type mMin16Float;
-    public final Type mMin16Float2;
-    public final Type mMin16Float3;
-    public final Type mMin16Float4;
+    public final Type mHalf;
+    public final Type mHalf2;
+    public final Type mHalf3;
+    public final Type mHalf4;
 
     /**
      * GLSL aliases.
@@ -189,6 +173,19 @@ public final class BuiltinTypes {
     public final Type mF32Vec2;
     public final Type mF32Vec3;
     public final Type mF32Vec4;
+
+    /**
+     * SkSL aliases.
+     */
+    public final Type mHalf2x2;
+    public final Type mHalf2x3;
+    public final Type mHalf2x4;
+    public final Type mHalf3x2;
+    public final Type mHalf3x3;
+    public final Type mHalf3x4;
+    public final Type mHalf4x2;
+    public final Type mHalf4x3;
+    public final Type mHalf4x4;
 
     /**
      * GLSL aliases.
@@ -334,17 +331,17 @@ public final class BuiltinTypes {
         mBool3 = Type.makeVectorType("bool3", "b3", mBool, /*rows*/3);
         mBool4 = Type.makeVectorType("bool4", "b4", mBool, /*rows*/4);
 
-        mShort = Type.makeScalarType(
-                "short", "s", Type.kSigned_ScalarKind, /*rank=*/3, /*minWidth=*/16, /*width=*/32);
-        mShort2 = Type.makeVectorType("short2", "s2", mShort, /*rows*/2);
-        mShort3 = Type.makeVectorType("short3", "s3", mShort, /*rows*/3);
-        mShort4 = Type.makeVectorType("short4", "s4", mShort, /*rows*/4);
+        mMin16Int = Type.makeScalarType(
+                "min16int", "s", Type.kSigned_ScalarKind, /*rank=*/3, /*minWidth=*/16, /*width=*/32);
+        mMin16Int2 = Type.makeVectorType("min16int2", "s2", mMin16Int, /*rows*/2);
+        mMin16Int3 = Type.makeVectorType("min16int3", "s3", mMin16Int, /*rows*/3);
+        mMin16Int4 = Type.makeVectorType("min16int4", "s4", mMin16Int, /*rows*/4);
 
-        mUShort = Type.makeScalarType(
-                "ushort", "S", Type.kUnsigned_ScalarKind, /*rank=*/4, /*minWidth=*/16, /*width=*/32);
-        mUShort2 = Type.makeVectorType("ushort2", "S2", mUShort, /*rows*/2);
-        mUShort3 = Type.makeVectorType("ushort3", "S3", mUShort, /*rows*/3);
-        mUShort4 = Type.makeVectorType("ushort4", "S4", mUShort, /*rows*/4);
+        mMin16UInt = Type.makeScalarType(
+                "min16uint", "S", Type.kUnsigned_ScalarKind, /*rank=*/4, /*minWidth=*/16, /*width=*/32);
+        mMin16UInt2 = Type.makeVectorType("min16uint2", "S2", mMin16UInt, /*rows*/2);
+        mMin16UInt3 = Type.makeVectorType("min16uint3", "S3", mMin16UInt, /*rows*/3);
+        mMin16UInt4 = Type.makeVectorType("min16uint4", "S4", mMin16UInt, /*rows*/4);
 
         mInt = Type.makeScalarType(
                 "int", "i", Type.kSigned_ScalarKind, /*rank=*/6, /*width=*/32);
@@ -358,11 +355,11 @@ public final class BuiltinTypes {
         mUInt3 = Type.makeVectorType("uint3", "I3", mUInt, /*rows*/3);
         mUInt4 = Type.makeVectorType("uint4", "I4", mUInt, /*rows*/4);
 
-        mHalf = Type.makeScalarType(
-                "half", "h", Type.kFloat_ScalarKind, /*rank=*/9, /*minWidth=*/16, /*width=*/32);
-        mHalf2 = Type.makeVectorType("half2", "h2", mHalf, /*rows*/2);
-        mHalf3 = Type.makeVectorType("half3", "h3", mHalf, /*rows*/3);
-        mHalf4 = Type.makeVectorType("half4", "h4", mHalf, /*rows*/4);
+        mMin16Float = Type.makeScalarType(
+                "min16float", "h", Type.kFloat_ScalarKind, /*rank=*/9, /*minWidth=*/16, /*width=*/32);
+        mMin16Float2 = Type.makeVectorType("min16float2", "h2", mMin16Float, /*rows*/2);
+        mMin16Float3 = Type.makeVectorType("min16float3", "h3", mMin16Float, /*rows*/3);
+        mMin16Float4 = Type.makeVectorType("min16float4", "h4", mMin16Float, /*rows*/4);
 
         mFloat = Type.makeScalarType(
                 "float", "f", Type.kFloat_ScalarKind, /*rank=*/10, /*width=*/32);
@@ -372,15 +369,15 @@ public final class BuiltinTypes {
 
         // matrix types
 
-        mHalf2x2 = Type.makeMatrixType("half2x2", "h22", mHalf2, /*cols=*/2);
-        mHalf2x3 = Type.makeMatrixType("half2x3", "h23", mHalf3, /*cols=*/2);
-        mHalf2x4 = Type.makeMatrixType("half2x4", "h24", mHalf4, /*cols=*/2);
-        mHalf3x2 = Type.makeMatrixType("half3x2", "h32", mHalf2, /*cols=*/3);
-        mHalf3x3 = Type.makeMatrixType("half3x3", "h33", mHalf3, /*cols=*/3);
-        mHalf3x4 = Type.makeMatrixType("half3x4", "h34", mHalf4, /*cols=*/3);
-        mHalf4x2 = Type.makeMatrixType("half4x2", "h42", mHalf2, /*cols=*/4);
-        mHalf4x3 = Type.makeMatrixType("half4x3", "h43", mHalf3, /*cols=*/4);
-        mHalf4x4 = Type.makeMatrixType("half4x4", "h44", mHalf4, /*cols=*/4);
+        mMin16Float2x2 = Type.makeMatrixType("min16float2x2", "h22", mMin16Float2, /*cols=*/2);
+        mMin16Float2x3 = Type.makeMatrixType("min16float2x3", "h23", mMin16Float3, /*cols=*/2);
+        mMin16Float2x4 = Type.makeMatrixType("min16float2x4", "h24", mMin16Float4, /*cols=*/2);
+        mMin16Float3x2 = Type.makeMatrixType("min16float3x2", "h32", mMin16Float2, /*cols=*/3);
+        mMin16Float3x3 = Type.makeMatrixType("min16float3x3", "h33", mMin16Float3, /*cols=*/3);
+        mMin16Float3x4 = Type.makeMatrixType("min16float3x4", "h34", mMin16Float4, /*cols=*/3);
+        mMin16Float4x2 = Type.makeMatrixType("min16float4x2", "h42", mMin16Float2, /*cols=*/4);
+        mMin16Float4x3 = Type.makeMatrixType("min16float4x3", "h43", mMin16Float3, /*cols=*/4);
+        mMin16Float4x4 = Type.makeMatrixType("min16float4x4", "h44", mMin16Float4, /*cols=*/4);
 
         mFloat2x2 = Type.makeMatrixType("float2x2", "f22", mFloat2, /*cols=*/2);
         mFloat2x3 = Type.makeMatrixType("float2x3", "f23", mFloat3, /*cols=*/2);
@@ -410,22 +407,12 @@ public final class BuiltinTypes {
         mUVec3 = Type.makeAliasType("uvec3", mUInt3);
         mUVec4 = Type.makeAliasType("uvec4", mUInt4);
 
-        // HLSL minimum aliases
+        // SkSL medium precision aliases
 
-        mMin16Int = Type.makeAliasType("min16int", mShort);
-        mMin16Int2 = Type.makeAliasType("min16int2", mShort2);
-        mMin16Int3 = Type.makeAliasType("min16int3", mShort3);
-        mMin16Int4 = Type.makeAliasType("min16int4", mShort4);
-
-        mMin16UInt = Type.makeAliasType("min16uint", mUShort);
-        mMin16UInt2 = Type.makeAliasType("min16uint2", mUShort2);
-        mMin16UInt3 = Type.makeAliasType("min16uint3", mUShort3);
-        mMin16UInt4 = Type.makeAliasType("min16uint4", mUShort4);
-
-        mMin16Float = Type.makeAliasType("min16float", mHalf);
-        mMin16Float2 = Type.makeAliasType("min16float2", mHalf2);
-        mMin16Float3 = Type.makeAliasType("min16float3", mHalf3);
-        mMin16Float4 = Type.makeAliasType("min16float4", mHalf4);
+        mHalf = Type.makeAliasType("half", mMin16Float);
+        mHalf2 = Type.makeAliasType("half2", mMin16Float2);
+        mHalf3 = Type.makeAliasType("half3", mMin16Float3);
+        mHalf4 = Type.makeAliasType("half4", mMin16Float4);
 
         // GLSL extension scalar and vector aliases
 
@@ -443,6 +430,18 @@ public final class BuiltinTypes {
         mF32Vec2 = Type.makeAliasType("f32vec2", mFloat2);
         mF32Vec3 = Type.makeAliasType("f32vec3", mFloat3);
         mF32Vec4 = Type.makeAliasType("f32vec4", mFloat4);
+
+        // SkSL medium precision aliases
+
+        mHalf2x2 = Type.makeAliasType("half2x2", mMin16Float2x2);
+        mHalf2x3 = Type.makeAliasType("half2x3", mMin16Float2x3);
+        mHalf2x4 = Type.makeAliasType("half2x4", mMin16Float2x4);
+        mHalf3x2 = Type.makeAliasType("half3x2", mMin16Float3x2);
+        mHalf3x3 = Type.makeAliasType("half3x3", mMin16Float3x3);
+        mHalf3x4 = Type.makeAliasType("half3x4", mMin16Float3x4);
+        mHalf4x2 = Type.makeAliasType("half4x2", mMin16Float4x2);
+        mHalf4x3 = Type.makeAliasType("half4x3", mMin16Float4x3);
+        mHalf4x4 = Type.makeAliasType("half4x4", mMin16Float4x4);
 
         // GLSL matrix aliases
 
@@ -567,24 +566,24 @@ public final class BuiltinTypes {
         mGenFType = Type.makeGenericType("__genFType", mFloat, mFloat2, mFloat3, mFloat4);
         mGenIType = Type.makeGenericType("__genIType", mInt, mInt2, mInt3, mInt4);
         mGenUType = Type.makeGenericType("__genUType", mUInt, mUInt2, mUInt3, mUInt4);
-        mGenHType = Type.makeGenericType("__genHType", mHalf, mHalf2, mHalf3, mHalf4);
-        mGenSType = Type.makeGenericType("__genSType", mShort, mShort2, mShort3, mShort4);
-        mGenUSType = Type.makeGenericType("__genUSType", mUShort, mUShort2, mUShort3, mUShort4);
+        mGenHType = Type.makeGenericType("__genHType", mMin16Float, mMin16Float2, mMin16Float3, mMin16Float4);
+        mGenSType = Type.makeGenericType("__genSType", mMin16Int, mMin16Int2, mMin16Int3, mMin16Int4);
+        mGenUSType = Type.makeGenericType("__genUSType", mMin16UInt, mMin16UInt2, mMin16UInt3, mMin16UInt4);
         mGenBType = Type.makeGenericType("__genBType", mBool, mBool2, mBool3, mBool4);
 
         mMat = Type.makeGenericType("__mat", mFloat2x2, mFloat2x3, mFloat2x4,
                 mFloat3x2, mFloat3x3, mFloat3x4,
                 mFloat4x2, mFloat4x3, mFloat4x4);
-        mHMat = Type.makeGenericType("__hmat", mHalf2x2, mHalf2x3, mHalf2x4,
-                mHalf3x2, mHalf3x3, mHalf3x4,
-                mHalf4x2, mHalf4x3, mHalf4x4);
+        mHMat = Type.makeGenericType("__hmat", mMin16Float2x2, mMin16Float2x3, mMin16Float2x4,
+                mMin16Float3x2, mMin16Float3x3, mMin16Float3x4,
+                mMin16Float4x2, mMin16Float4x3, mMin16Float4x4);
 
         mVec = Type.makeGenericType("__vec", mInvalid, mFloat2, mFloat3, mFloat4);
         mIVec = Type.makeGenericType("__ivec", mInvalid, mInt2, mInt3, mInt4);
         mUVec = Type.makeGenericType("__uvec", mInvalid, mUInt2, mUInt3, mUInt4);
-        mHVec = Type.makeGenericType("__hvec", mInvalid, mHalf2, mHalf3, mHalf4);
-        mSVec = Type.makeGenericType("__svec", mInvalid, mShort2, mShort3, mShort4);
-        mUSVec = Type.makeGenericType("__usvec", mInvalid, mUShort2, mUShort3, mUShort4);
+        mHVec = Type.makeGenericType("__hvec", mInvalid, mMin16Float2, mMin16Float3, mMin16Float4);
+        mSVec = Type.makeGenericType("__svec", mInvalid, mMin16Int2, mMin16Int3, mMin16Int4);
+        mUSVec = Type.makeGenericType("__usvec", mInvalid, mMin16UInt2, mMin16UInt3, mMin16UInt4);
         mBVec = Type.makeGenericType("__bvec", mInvalid, mBool2, mBool3, mBool4);
 
         mPoison = Type.makeSpecialType(ShaderCompiler.POISON_TAG, "P", Type.kOther_TypeKind);

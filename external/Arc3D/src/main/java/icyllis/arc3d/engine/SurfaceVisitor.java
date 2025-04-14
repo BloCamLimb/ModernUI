@@ -21,6 +21,7 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.RawPtr;
 
+@Deprecated
 @FunctionalInterface
 public interface SurfaceVisitor {
 

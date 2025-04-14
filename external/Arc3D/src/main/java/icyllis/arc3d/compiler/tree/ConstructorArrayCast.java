@@ -22,8 +22,7 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.ConstantFolder;
 import icyllis.arc3d.compiler.Context;
 import icyllis.arc3d.compiler.analysis.Analysis;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the typecasting of an array.
@@ -37,9 +36,9 @@ public final class ConstructorArrayCast extends ConstructorCall {
         assert arguments.length == 1;
     }
 
-    @Nonnull
-    public static Expression make(@Nonnull Context context,
-                                  int position, @Nonnull Type type, @Nonnull Expression arg) {
+    @NonNull
+    public static Expression make(@NonNull Context context,
+                                  int position, @NonNull Type type, @NonNull Expression arg) {
         // Only arrays of the same size are allowed.
         assert (type.isArray());
         assert (arg.getType().isArray());
@@ -81,9 +80,9 @@ public final class ConstructorArrayCast extends ConstructorCall {
         return ExpressionKind.CONSTRUCTOR_ARRAY_CAST;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConstructorArrayCast(position, getType(), cloneArguments());
     }
 }

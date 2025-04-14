@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.Matrix;
+import icyllis.arc3d.sketch.Matrix;
 import icyllis.arc3d.granite.*;
 import org.openjdk.jol.info.ClassLayout;
 import org.slf4j.Logger;

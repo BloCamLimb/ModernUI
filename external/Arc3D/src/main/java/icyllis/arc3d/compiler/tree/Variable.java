@@ -20,9 +20,9 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 
 /**
@@ -54,12 +54,12 @@ public final class Variable extends Symbol {
         mBuiltin = builtin;
     }
 
-    @Nonnull
-    public static Variable convert(@Nonnull Context context,
+    @NonNull
+    public static Variable convert(@NonNull Context context,
                                    int pos,
-                                   @Nonnull Modifiers modifiers,
-                                   @Nonnull Type type,
-                                   @Nonnull String name,
+                                   @NonNull Modifiers modifiers,
+                                   @NonNull Type type,
+                                   @NonNull String name,
                                    byte storage) {
         if (context.getKind().isCompute() && (modifiers.layoutFlags() & Layout.kBuiltin_LayoutFlag) == 0) {
             if (storage == Variable.kGlobal_Storage) {
@@ -80,23 +80,23 @@ public final class Variable extends Symbol {
         return make(pos, modifiers, type, name, storage, context.isBuiltin());
     }
 
-    @Nonnull
+    @NonNull
     public static Variable make(int pos,
-                                @Nonnull Modifiers modifiers,
-                                @Nonnull Type type,
-                                @Nonnull String name,
+                                @NonNull Modifiers modifiers,
+                                @NonNull Type type,
+                                @NonNull String name,
                                 byte storage,
                                 boolean builtin) {
         return new Variable(pos, modifiers, type, name, storage, builtin);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public SymbolKind getKind() {
         return SymbolKind.VARIABLE;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Type getType() {
         return mType;
@@ -104,6 +104,15 @@ public final class Variable extends Symbol {
 
     public Modifiers getModifiers() {
         return mModifiers;
+    }
+
+    @NonNull
+    public Type getBaseType() {
+        return mType.isArray() ? mType.getElementType() : mType;
+    }
+
+    public int getArraySize() {
+        return mType.isArray() ? mType.getArraySize() : 0;
     }
 
     public boolean isBuiltin() {
@@ -116,30 +125,30 @@ public final class Variable extends Symbol {
 
     @Nullable
     public Expression initialValue() {
-        VariableDecl decl = getVariableDecl();
+        VariableDeclaration decl = getDeclaration();
         return decl != null ? decl.getInit() : null;
     }
 
     @Nullable
-    public VariableDecl getVariableDecl() {
-        if (mDecl instanceof VariableDecl) {
-            return (VariableDecl) mDecl;
+    public VariableDeclaration getDeclaration() {
+        if (mDecl instanceof VariableDeclaration) {
+            return (VariableDeclaration) mDecl;
         }
-        if (mDecl instanceof GlobalVariableDecl) {
-            return ((GlobalVariableDecl) mDecl).getVariableDecl();
+        if (mDecl instanceof GlobalVariable) {
+            return ((GlobalVariable) mDecl).getDeclaration();
         }
         return null;
     }
 
     @Nullable
-    public GlobalVariableDecl getGlobalVariableDecl() {
-        if (mDecl instanceof GlobalVariableDecl) {
-            return (GlobalVariableDecl) mDecl;
+    public GlobalVariable getGlobalVariable() {
+        if (mDecl instanceof GlobalVariable) {
+            return (GlobalVariable) mDecl;
         }
         return null;
     }
 
-    public void setVariableDecl(VariableDecl decl) {
+    public void setDeclaration(VariableDeclaration decl) {
         if (mDecl != null && decl.getVariable() != this) {
             throw new AssertionError();
         }
@@ -148,11 +157,11 @@ public final class Variable extends Symbol {
         }
     }
 
-    public void setGlobalVariableDecl(GlobalVariableDecl globalDecl) {
-        if (mDecl != null && globalDecl.getVariableDecl().getVariable() != this) {
+    public void setGlobalVariable(GlobalVariable global) {
+        if (mDecl != null && global.getDeclaration().getVariable() != this) {
             throw new AssertionError();
         }
-        mDecl = globalDecl;
+        mDecl = global;
     }
 
     @Nullable
@@ -164,7 +173,7 @@ public final class Variable extends Symbol {
         mInterfaceBlock = new WeakReference<>(interfaceBlock);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return mModifiers.toString() + mType.getName() + " " + getName();

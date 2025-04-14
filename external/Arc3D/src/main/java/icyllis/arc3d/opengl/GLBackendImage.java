@@ -21,8 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.engine.BackendFormat;
 import icyllis.arc3d.engine.BackendImage;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import static icyllis.arc3d.engine.Engine.*;
 
@@ -109,7 +108,7 @@ public final class GLBackendImage extends BackendImage {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public BackendFormat getBackendFormat() {
         return mBackendFormat;

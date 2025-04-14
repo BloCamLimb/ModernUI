@@ -22,8 +22,8 @@ package icyllis.arc3d.compiler.tree;
 import icyllis.arc3d.compiler.ConstantFolder;
 import icyllis.arc3d.compiler.Context;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public final class SwitchStatement extends Statement {
@@ -88,7 +88,7 @@ public final class SwitchStatement extends Statement {
 
         Statement switchStmt = SwitchStatement.make(context,
                 position, init,
-                BlockStatement.makeBlock(position, cases));
+                Block.makeBlock(position, cases));
         return switchStmt;
     }
 
@@ -137,7 +137,7 @@ public final class SwitchStatement extends Statement {
     }
 
     public List<Statement> getCases() {
-        return ((BlockStatement) mCaseBlock).getStatements();
+        return ((Block) mCaseBlock).getStatements();
     }
 
     @Override
@@ -145,15 +145,7 @@ public final class SwitchStatement extends Statement {
         return StatementKind.SWITCH;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitSwitch(this)) {
-            return true;
-        }
-        return mInit.accept(visitor) || mCaseBlock.accept(visitor);
-    }
-
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "switch (" + mInit + ") " + mCaseBlock;

@@ -20,9 +20,9 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.MathUtil;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 
@@ -122,7 +122,7 @@ public class UniformDataCache implements AutoCloseable {
 
     Block mTail;
 
-    IntBuffer allocate(@Nonnull IntBuffer block) {
+    IntBuffer allocate(@NonNull IntBuffer block) {
         int size = block.remaining() << 2;
         if (mTail == null) {
             int initialCapacity = MathUtil.alignTo(

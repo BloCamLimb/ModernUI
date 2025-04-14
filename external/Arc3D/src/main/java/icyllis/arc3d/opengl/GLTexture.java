@@ -22,9 +22,8 @@ package icyllis.arc3d.opengl;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.Context;
 import icyllis.arc3d.engine.ISurface;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
-
-import javax.annotation.Nullable;
 
 import static org.lwjgl.opengl.GL30C.*;
 
@@ -40,9 +39,8 @@ public final class GLTexture extends GLImage {
     GLTexture(Context context,
               GLImageDesc desc,
               GLTextureMutableState mutableState,
-              int handle,
-              boolean budgeted) {
-        super(context, budgeted, false, desc, mutableState);
+              int handle) {
+        super(context, false, desc, mutableState);
         assert GLUtil.glFormatIsSupported(desc.mFormat);
         mOwnership = true;
 
@@ -94,8 +92,7 @@ public final class GLTexture extends GLImage {
     @Nullable
     @SharedPtr
     public static GLTexture make(Context context,
-                                 GLImageDesc desc,
-                                 boolean budgeted) {
+                                 GLImageDesc desc) {
         final GLDevice device = (GLDevice) context.getDevice();
         final int handle;
         if (device.isOnExecutingThread()) {
@@ -108,8 +105,7 @@ public final class GLTexture extends GLImage {
         }
         return new GLTexture(context, desc,
                 new GLTextureMutableState(),
-                handle,
-                budgeted);
+                handle);
     }
 
     static int internalCreateTexture(GLDevice device, GLImageDesc desc) {

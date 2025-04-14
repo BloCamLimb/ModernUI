@@ -24,28 +24,16 @@ package icyllis.arc3d.compiler;
  */
 public abstract class ErrorHandler {
 
-    protected char[] mSource;
-    protected int mOffset;
-    protected int mLength;
+    protected String mSource;
     private int mErrors;
     private int mWarnings;
 
-    public final char[] getSource() {
+    public final String getSource() {
         return mSource;
     }
 
-    public final int getSourceOffset() {
-        return mOffset;
-    }
-
-    public final int getSourceLength() {
-        return mLength;
-    }
-
-    public final void setSource(char[] source, int offset, int length) {
+    public final void setSource(String source) {
         mSource = source;
-        mOffset = offset;
-        mLength = length;
     }
 
     public final int errorCount() {

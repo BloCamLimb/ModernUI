@@ -19,14 +19,16 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.analysis.Analysis;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * A function invocation: function_name( args, ... ).
@@ -35,10 +37,10 @@ import java.util.*;
  */
 public final class FunctionCall extends Expression {
 
-    private final FunctionDecl mFunction;
+    private final FunctionDeclaration mFunction;
     private final Expression[] mArguments;
 
-    private FunctionCall(int position, Type type, FunctionDecl function,
+    private FunctionCall(int position, Type type, FunctionDeclaration function,
                          Expression... arguments) {
         super(position, type);
         mFunction = function;
@@ -54,14 +56,14 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    private static FunctionDecl findBestCandidate(@Nonnull FunctionDecl chain,
-                                                  @Nonnull List<Expression> arguments) {
+    private static FunctionDeclaration findBestCandidate(@NonNull FunctionDeclaration chain,
+                                                         @NonNull List<Expression> arguments) {
         if (chain.getNextOverload() == null) {
             return chain;
         }
         long bestCost = Type.CoercionCost.saturate();
-        FunctionDecl best = null;
-        for (FunctionDecl f = chain; f != null; f = f.getNextOverload()) {
+        FunctionDeclaration best = null;
+        for (FunctionDeclaration f = chain; f != null; f = f.getNextOverload()) {
             final long cost;
             if (f.getParameters().size() != arguments.size()) {
                 cost = Type.CoercionCost.saturate();
@@ -91,9 +93,9 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int pos, @Nonnull Expression identifier,
-                                     @Nonnull List<Expression> arguments) {
+    public static Expression convert(@NonNull Context context,
+                                     int pos, @NonNull Expression identifier,
+                                     @NonNull List<Expression> arguments) {
         return switch (identifier.getKind()) {
             case TYPE_REFERENCE -> {
                 TypeReference ref = (TypeReference) identifier;
@@ -101,7 +103,7 @@ public final class FunctionCall extends Expression {
             }
             case FUNCTION_REFERENCE -> {
                 FunctionReference ref = (FunctionReference) identifier;
-                FunctionDecl best = findBestCandidate(ref.getOverloadChain(), arguments);
+                FunctionDeclaration best = findBestCandidate(ref.getOverloadChain(), arguments);
                 if (best != null) {
                     yield FunctionCall.convert(context, pos, best, arguments);
                 }
@@ -122,9 +124,9 @@ public final class FunctionCall extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
-                                     int pos, @Nonnull FunctionDecl function,
-                                     @Nonnull List<Expression> arguments) {
+    public static Expression convert(@NonNull Context context,
+                                     int pos, @NonNull FunctionDeclaration function,
+                                     @NonNull List<Expression> arguments) {
         if (function.getParameters().size() != arguments.size()) {
             String msg = "call to '" + function.getName() + "' expected " +
                     function.getParameters().size() + " argument";
@@ -154,9 +156,9 @@ public final class FunctionCall extends Expression {
             // Update the refKind on out-parameters, and ensure that they are actually assignable.
             Modifiers paramFlags = function.getParameters().get(i).getModifiers();
             if ((paramFlags.flags() & Modifiers.kOut_Flag) != 0) {
-            int refKind = (paramFlags.flags() & Modifiers.kIn_Flag) != 0
+                int refKind = (paramFlags.flags() & Modifiers.kIn_Flag) != 0
                         ? VariableReference.kReadWrite_ReferenceKind
-                : VariableReference.kPointer_ReferenceKind;
+                        : VariableReference.kPointer_ReferenceKind;
                 if (!Analysis.updateVariableRefKind(arguments.get(i), refKind)) {
                     return null;
                 }
@@ -172,7 +174,7 @@ public final class FunctionCall extends Expression {
     }
 
     public static Expression make(int pos, Type returnType,
-                                  FunctionDecl function,
+                                  FunctionDeclaration function,
                                   List<Expression> arguments) {
         assert function.getParameters().size() == arguments.size();
 
@@ -186,20 +188,7 @@ public final class FunctionCall extends Expression {
         return ExpressionKind.FUNCTION_CALL;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitFunctionCall(this)) {
-            return true;
-        }
-        for (Expression arg : mArguments) {
-            if (arg.accept(visitor)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public FunctionDecl getFunction() {
+    public FunctionDeclaration getFunction() {
         return mFunction;
     }
 
@@ -208,17 +197,17 @@ public final class FunctionCall extends Expression {
         return mArguments;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         Expression[] arguments = mArguments.clone();
         for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = arguments[i].clone();
+            arguments[i] = arguments[i].copy();
         }
         return new FunctionCall(position, getType(), mFunction, arguments);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         StringJoiner joiner = new StringJoiner(", ");

@@ -19,11 +19,10 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.Operator;
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.arc3d.compiler.Operator;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An expression modified by a unary operator appearing after it.
@@ -34,7 +33,7 @@ import javax.annotation.Nullable;
  */
 public final class PostfixExpression extends Expression {
 
-    private final Expression mOperand;
+    private Expression mOperand;
     private final Operator mOperator;
 
     private PostfixExpression(int position, Expression operand, Operator op) {
@@ -44,7 +43,7 @@ public final class PostfixExpression extends Expression {
     }
 
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int position, Expression base, Operator op) {
         Type baseType = base.getType();
         if (!baseType.isNumeric()) {
@@ -55,7 +54,7 @@ public final class PostfixExpression extends Expression {
         return make(position, base, op);
     }
 
-    @Nonnull
+    @NonNull
     public static Expression make(int position, Expression base, Operator op) {
         assert base.getType().isNumeric();
         return new PostfixExpression(position, base, op);
@@ -66,29 +65,25 @@ public final class PostfixExpression extends Expression {
         return ExpressionKind.POSTFIX;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitPostfix(this)) {
-            return true;
-        }
-        return mOperand.accept(visitor);
-    }
-
     public Expression getOperand() {
         return mOperand;
+    }
+
+    public void setOperand(Expression operand) {
+        mOperand = operand;
     }
 
     public Operator getOperator() {
         return mOperator;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
-        return new PostfixExpression(position, mOperand.clone(), mOperator);
+    public Expression copy(int position) {
+        return new PostfixExpression(position, mOperand.copy(), mOperator);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         boolean needsParens = (Operator.PRECEDENCE_POSTFIX >= parentPrecedence);

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,8 @@
 
 package icyllis.arc3d.core;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link Rect2f} holds four float coordinates describing the upper and
@@ -71,7 +72,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param r the rectangle whose coordinates are copied into the new
      *          rectangle
      */
-    public Rect2f(@Nonnull Rect2fc r) {
+    public Rect2f(@NonNull Rect2fc r) {
         r.store(this);
     }
 
@@ -82,7 +83,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param r the rectangle whose coordinates are copied into the new
      *          rectangle
      */
-    public Rect2f(@Nonnull Rect2ic r) {
+    public Rect2f(@NonNull Rect2ic r) {
         r.store(this);
     }
 
@@ -91,9 +92,18 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @return an empty rect
      */
-    @Nonnull
+    @NonNull
     public static Rect2fc empty() {
         return EMPTY;
+    }
+
+    /**
+     * Creates a new rect [inf, inf, -inf, -inf], useful for accumulating unchecked unions.
+     */
+    @NonNull
+    public static Rect2f makeInfiniteInverted() {
+        return new Rect2f(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
+                Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
     }
 
     /**
@@ -103,6 +113,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @return true if width() or height() are zero or negative
      */
+    @Contract(pure = true)
     public final boolean isEmpty() {
         // will return true if any values are NaN
         return !(mLeft < mRight && mTop < mBottom);
@@ -115,6 +126,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @return true if width() or height() are zero or positive
      */
+    @Contract(pure = true)
     public final boolean isSorted() {
         return mLeft <= mRight && mTop <= mBottom;
     }
@@ -124,6 +136,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @return true if no member is infinite or NaN
      */
+    @Contract(pure = true)
     public final boolean isFinite() {
         return MathUtil.isFinite(mLeft, mTop, mRight, mBottom);
     }
@@ -131,6 +144,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * Returns the rectangle's left.
      */
+    @Contract(pure = true)
     public final float x() {
         return mLeft;
     }
@@ -138,6 +152,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * Return the rectangle's top.
      */
+    @Contract(pure = true)
     public final float y() {
         return mTop;
     }
@@ -145,6 +160,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * Returns the rectangle's left.
      */
+    @Contract(pure = true)
     public final float left() {
         return mLeft;
     }
@@ -152,6 +168,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * Return the rectangle's top.
      */
+    @Contract(pure = true)
     public final float top() {
         return mTop;
     }
@@ -159,6 +176,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * Return the rectangle's right.
      */
+    @Contract(pure = true)
     public final float right() {
         return mRight;
     }
@@ -166,6 +184,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * Return the rectangle's bottom.
      */
+    @Contract(pure = true)
     public final float bottom() {
         return mBottom;
     }
@@ -174,6 +193,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */
+    @Contract(pure = true)
     public final float width() {
         return mRight - mLeft;
     }
@@ -182,6 +202,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return the rectangle's height. This does not check for a valid rectangle
      * (i.e. top <= bottom) so the result may be negative.
      */
+    @Contract(pure = true)
     public final float height() {
         return mBottom - mTop;
     }
@@ -190,6 +211,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return the horizontal center of the rectangle. This does not check for
      * a valid rectangle (i.e. left <= right)
      */
+    @Contract(pure = true)
     public final float centerX() {
         return (float) (((double) mLeft + mRight) * 0.5);
     }
@@ -198,6 +220,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return the vertical center of the rectangle. This does not check for
      * a valid rectangle (i.e. top <= bottom)
      */
+    @Contract(pure = true)
     public final float centerY() {
         return (float) (((double) mTop + mBottom) * 0.5);
     }
@@ -205,6 +228,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * @return width()/2 without intermediate overflow or underflow.
      */
+    @Contract(pure = true)
     public final float halfWidth() {
         return (float) (((double) -mLeft + mRight) * 0.5);
     }
@@ -212,6 +236,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * @return height()/2 without intermediate overflow or underflow.
      */
+    @Contract(pure = true)
     public final float halfHeight() {
         return (float) (((double) -mTop + mBottom) * 0.5);
     }
@@ -219,6 +244,7 @@ public non-sealed class Rect2f implements Rect2fc {
     /**
      * Set the rectangle to (0,0,0,0)
      */
+    @Contract(mutates = "this")
     public final void setEmpty() {
         mLeft = mRight = mTop = mBottom = 0;
     }
@@ -228,16 +254,16 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param dst the rectangle to store
      */
-    @Override
-    public void store(@Nonnull Rect2f dst) {
+    @Contract(mutates = "param")
+    public void store(@NonNull Rect2f dst) {
         dst.mLeft = mLeft;
         dst.mTop = mTop;
         dst.mRight = mRight;
         dst.mBottom = mBottom;
     }
 
-    @Override
-    public void store(@Nonnull Rect2i dst) {
+    @Contract(mutates = "param")
+    public void store(@NonNull Rect2i dst) {
         dst.mLeft = (int) mLeft;
         dst.mTop = (int) mTop;
         dst.mRight = (int) mRight;
@@ -254,6 +280,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param right  the X coordinate of the right side of the rectangle
      * @param bottom the Y coordinate of the bottom of the rectangle
      */
+    @Contract(mutates = "this")
     public final void set(float left, float top, float right, float bottom) {
         mLeft = left;
         mTop = top;
@@ -267,6 +294,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param src the rectangle whose coordinates are copied into this
      *            rectangle.
      */
+    @Contract(mutates = "this")
     public final void set(Rect2fc src) {
         src.store(this);
     }
@@ -277,6 +305,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param src the rectangle whose coordinates are copied into this
      *            rectangle.
      */
+    @Contract(mutates = "this")
     public final void set(Rect2ic src) {
         src.store(this);
     }
@@ -291,6 +320,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param count  number of points
      * @return true if all values are finite
      */
+    @Contract(mutates = "this")
     public final boolean setBounds(float[] pts, int offset, int count) {
         if (count <= 0) {
             setEmpty();
@@ -337,6 +367,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param offset starting offset
      * @param count  number of points
      */
+    @Contract(mutates = "this")
     public final void setBoundsNoCheck(float[] pts, int offset, int count) {
         if (!setBounds(pts, offset, count)) {
             set(Float.NaN, Float.NaN, Float.NaN, Float.NaN);
@@ -350,6 +381,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param dx the amount to add to the rectangle's left and right coordinates
      * @param dy the amount to add to the rectangle's top and bottom coordinates
      */
+    @Contract(mutates = "this")
     public final void offset(float dx, float dy) {
         mLeft += dx;
         mTop += dy;
@@ -364,6 +396,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param newLeft the new "left" coordinate for the rectangle
      * @param newTop  the new "top" coordinate for the rectangle
      */
+    @Contract(mutates = "this")
     public final void offsetTo(float newLeft, float newTop) {
         mRight += newLeft - mLeft;
         mBottom += newTop - mTop;
@@ -380,6 +413,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param dx the amount to add(subtract) from the rectangle's left(right)
      * @param dy the amount to add(subtract) from the rectangle's top(bottom)
      */
+    @Contract(mutates = "this")
     public final void inset(float dx, float dy) {
         mLeft += dx;
         mTop += dy;
@@ -393,6 +427,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param dx the amount to subtract(add) from the rectangle's left(right)
      * @param dy the amount to subtract(add) from the rectangle's top(bottom)
      */
+    @Contract(mutates = "this")
     public final void outset(float dx, float dy) {
         mLeft -= dx;
         mTop -= dy;
@@ -408,6 +443,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param right  the amount to subtract from the rectangle's right
      * @param bottom the amount to subtract from the rectangle's bottom
      */
+    @Contract(mutates = "this")
     public final void inset(float left, float top, float right, float bottom) {
         mLeft += left;
         mTop += top;
@@ -421,6 +457,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param insets the rectangle specifying the insets on all side.
      */
+    @Contract(mutates = "this")
     public final void inset(Rect2fc insets) {
         mLeft += insets.left();
         mTop += insets.top();
@@ -434,6 +471,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param insets the rectangle specifying the insets on all side.
      */
+    @Contract(mutates = "this")
     public final void inset(Rect2ic insets) {
         mLeft += insets.left();
         mTop += insets.top();
@@ -449,6 +487,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param right  the amount to add from the rectangle's right
      * @param bottom the amount to add from the rectangle's bottom
      */
+    @Contract(mutates = "this")
     public final void adjust(float left, float top, float right, float bottom) {
         mLeft += left;
         mTop += top;
@@ -461,6 +500,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param adjusts the rectangle specifying the adjusts on all side.
      */
+    @Contract(mutates = "this")
     public final void adjust(Rect2fc adjusts) {
         mLeft += adjusts.left();
         mTop += adjusts.top();
@@ -473,6 +513,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param adjusts the rectangle specifying the adjusts on all side.
      */
+    @Contract(mutates = "this")
     public final void adjust(Rect2ic adjusts) {
         mLeft += adjusts.left();
         mTop += adjusts.top();
@@ -491,6 +532,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if (x,y) are contained by the rectangle, where containment
      * means left <= x < right and top <= y < bottom
      */
+    @Contract(pure = true)
     public final boolean contains(float x, float y) {
         return x >= mLeft && x < mRight && y >= mTop && y < mBottom;
     }
@@ -507,6 +549,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the 4 specified sides of a rectangle are inside or
      * equal to this rectangle
      */
+    @Contract(pure = true)
     public final boolean contains(float left, float top, float right, float bottom) {
         // check for empty first
         return mLeft < mRight && mTop < mBottom
@@ -523,7 +566,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public final boolean contains(@Nonnull Rect2fc r) {
+    @Contract(pure = true)
+    public final boolean contains(@NonNull Rect2fc r) {
         // check for empty first
         return mLeft < mRight && mTop < mBottom
                 // now check for containment
@@ -538,7 +582,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public final boolean contains(@Nonnull Rect2ic r) {
+    @Contract(pure = true)
+    public final boolean contains(@NonNull Rect2ic r) {
         // check for empty first
         return mLeft < mRight && mTop < mBottom
                 // now check for containment
@@ -645,6 +690,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
+    @Contract(mutates = "this")
     public final boolean intersect(float left, float top, float right, float bottom) {
         float tmpL = Math.max(mLeft, left);
         float tmpT = Math.max(mTop, top);
@@ -670,6 +716,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
+    @Contract(mutates = "this")
     public final boolean intersect(Rect2fc r) {
         return intersect(r.left(), r.top(), r.right(), r.bottom());
     }
@@ -684,6 +731,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
+    @Contract(mutates = "this")
     public final boolean intersect(Rect2ic r) {
         return intersect(r.left(), r.top(), r.right(), r.bottom());
     }
@@ -694,6 +742,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
+    @Contract(mutates = "this")
     public final void intersectNoCheck(float left, float top, float right, float bottom) {
         mLeft = Math.max(mLeft, left);
         mTop = Math.max(mTop, top);
@@ -707,6 +756,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
+    @Contract(mutates = "this")
     public final void intersectNoCheck(Rect2fc r) {
         intersectNoCheck(r.left(), r.top(), r.right(), r.bottom());
     }
@@ -717,6 +767,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
+    @Contract(mutates = "this")
     public final void intersectNoCheck(Rect2ic r) {
         intersectNoCheck(r.left(), r.top(), r.right(), r.bottom());
     }
@@ -732,6 +783,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
+    @Contract(mutates = "this")
     public final boolean intersect(Rect2fc a, Rect2fc b) {
         float tmpL = Math.max(a.left(), b.left());
         float tmpT = Math.max(a.top(), b.top());
@@ -760,6 +812,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
+    @Contract(pure = true)
     public final boolean intersects(float left, float top, float right, float bottom) {
         float tmpL = Math.max(mLeft, left);
         float tmpT = Math.max(mTop, top);
@@ -777,7 +830,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public final boolean intersects(@Nonnull Rect2fc r) {
+    @Contract(pure = true)
+    public final boolean intersects(@NonNull Rect2fc r) {
         return intersects(r.left(), r.top(), r.right(), r.bottom());
     }
 
@@ -790,7 +844,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public final boolean intersects(@Nonnull Rect2ic r) {
+    @Contract(pure = true)
+    public final boolean intersects(@NonNull Rect2ic r) {
         return intersects(r.left(), r.top(), r.right(), r.bottom());
     }
 
@@ -836,7 +891,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst integer Rect by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public final void round(@Nonnull Rect2i dst) {
+    @Contract(mutates = "param")
+    public final void round(@NonNull Rect2i dst) {
         dst.set(Math.round(mLeft), Math.round(mTop),
                 Math.round(mRight), Math.round(mBottom));
     }
@@ -845,7 +901,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst integer Rect by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    public final void roundIn(@Nonnull Rect2i dst) {
+    @Contract(mutates = "param")
+    public final void roundIn(@NonNull Rect2i dst) {
         dst.set((int) Math.ceil(mLeft), (int) Math.ceil(mTop),
                 (int) Math.floor(mRight), (int) Math.floor(mBottom));
     }
@@ -854,7 +911,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst integer Rect by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public final void roundOut(@Nonnull Rect2i dst) {
+    @Contract(mutates = "param")
+    public final void roundOut(@NonNull Rect2i dst) {
         dst.set((int) Math.floor(mLeft), (int) Math.floor(mTop),
                 (int) Math.ceil(mRight), (int) Math.ceil(mBottom));
     }
@@ -863,7 +921,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst rectangle by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public final void round(@Nonnull Rect2f dst) {
+    @Contract(mutates = "param")
+    public final void round(@NonNull Rect2f dst) {
         dst.set(Math.round(mLeft), Math.round(mTop),
                 Math.round(mRight), Math.round(mBottom));
     }
@@ -872,7 +931,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst rectangle by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    public final void roundIn(@Nonnull Rect2f dst) {
+    @Contract(mutates = "param")
+    public final void roundIn(@NonNull Rect2f dst) {
         dst.set((float) Math.ceil(mLeft), (float) Math.ceil(mTop),
                 (float) Math.floor(mRight), (float) Math.floor(mBottom));
     }
@@ -881,7 +941,8 @@ public non-sealed class Rect2f implements Rect2fc {
      * Set the dst rectangle by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public final void roundOut(@Nonnull Rect2f dst) {
+    @Contract(mutates = "param")
+    public final void roundOut(@NonNull Rect2f dst) {
         dst.set((float) Math.floor(mLeft), (float) Math.floor(mTop),
                 (float) Math.ceil(mRight), (float) Math.ceil(mBottom));
     }
@@ -896,6 +957,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param right  the right edge being unioned with this rectangle
      * @param bottom the bottom edge being unioned with this rectangle
      */
+    @Contract(mutates = "this")
     public final void join(float left, float top, float right, float bottom) {
         // do nothing if the params are empty
         if (left >= right || top >= bottom) {
@@ -922,6 +984,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param r the rectangle being unioned with this rectangle
      */
+    @Contract(mutates = "this")
     public final void join(Rect2fc r) {
         join(r.left(), r.top(), r.right(), r.bottom());
     }
@@ -933,6 +996,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param r the rectangle being unioned with this rectangle
      */
+    @Contract(mutates = "this")
     public final void join(Rect2ic r) {
         join(r.left(), r.top(), r.right(), r.bottom());
     }
@@ -948,6 +1012,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param right  the right edge being unioned with this rectangle
      * @param bottom the bottom edge being unioned with this rectangle
      */
+    @Contract(mutates = "this")
     public final void joinNoCheck(float left, float top, float right, float bottom) {
         mLeft = Math.min(mLeft, left);
         mTop = Math.min(mTop, top);
@@ -963,6 +1028,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param r the rectangle being unioned with this rectangle
      */
+    @Contract(mutates = "this")
     public final void joinNoCheck(Rect2fc r) {
         joinNoCheck(r.left(), r.top(), r.right(), r.bottom());
     }
@@ -975,6 +1041,7 @@ public non-sealed class Rect2f implements Rect2fc {
      *
      * @param r the rectangle being unioned with this rectangle
      */
+    @Contract(mutates = "this")
     public final void joinNoCheck(Rect2ic r) {
         joinNoCheck(r.left(), r.top(), r.right(), r.bottom());
     }
@@ -985,6 +1052,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * @param x The x coordinate of the point to add to the rectangle
      * @param y The y coordinate of the point to add to the rectangle
      */
+    @Contract(mutates = "this")
     public final void join(float x, float y) {
         if (mLeft < mRight && mTop < mBottom) {
             if (x < mLeft) {
@@ -1011,6 +1079,7 @@ public non-sealed class Rect2f implements Rect2fc {
      * If the edges are already correct (i.e. left <= right and top <= bottom)
      * then nothing is done.
      */
+    @Contract(mutates = "this")
     public final void sort() {
         if (mLeft > mRight) {
             float temp = mLeft;

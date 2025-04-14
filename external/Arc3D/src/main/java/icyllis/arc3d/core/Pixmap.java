@@ -19,11 +19,13 @@
 
 package icyllis.arc3d.core;
 
-import org.lwjgl.system.*;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.NativeType;
 import sun.misc.Unsafe;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 
 import static icyllis.arc3d.core.PixelUtils.UNSAFE;
@@ -36,7 +38,7 @@ import static icyllis.arc3d.core.PixelUtils.UNSAFE;
  */
 public class Pixmap {
 
-    @Nonnull
+    @NonNull
     protected final ImageInfo mInfo;
     @Nullable
     protected final Object mBase;
@@ -57,7 +59,7 @@ public class Pixmap {
      * @param address  address if native buffer, or array base offset; may be NULL
      * @param rowBytes size of one row of buffer; width times bpp, or larger
      */
-    public Pixmap(@Nonnull ImageInfo info,
+    public Pixmap(@NonNull ImageInfo info,
                   @Nullable Object base,
                   @NativeType("const void *") long address,
                   int rowBytes) {
@@ -70,15 +72,15 @@ public class Pixmap {
     /**
      * Reinterprets an existing {@link Pixmap} with <var>newInfo</var>.
      */
-    public Pixmap(@Nonnull ImageInfo newInfo,
-                  @Nonnull Pixmap oldPixmap) {
+    public Pixmap(@NonNull ImageInfo newInfo,
+                  @NonNull Pixmap oldPixmap) {
         this(newInfo, oldPixmap.mBase, oldPixmap.mAddress, oldPixmap.mRowBytes);
     }
 
     /**
      * Returns width, height, AlphaType, ColorType, and ColorSpace.
      */
-    @Nonnull
+    @NonNull
     public ImageInfo getInfo() {
         return mInfo;
     }
@@ -175,7 +177,7 @@ public class Pixmap {
      * @return a pixmap if intersection of this and subset is not empty
      */
     @Nullable
-    public Pixmap makeSubset(@Nonnull Rect2ic subset) {
+    public Pixmap makeSubset(@NonNull Rect2ic subset) {
         var r = new Rect2i(0, 0, getWidth(), getHeight());
         if (!r.intersect(subset)) {
             return null;
@@ -201,7 +203,7 @@ public class Pixmap {
      * Returns (0, 0) if pixels is NULL.
      */
     public void getPixelOrigin(long pix,
-                               @Nonnull @Size(2) int[] origin) {
+                               @Size(2) int @NonNull [] origin) {
         long addr = getAddress();
         long rb = getRowBytes();
         if (pix == MemoryUtil.NULL || rb == 0) {
@@ -274,7 +276,7 @@ public class Pixmap {
      * @param y   row index, zero or greater, and less than height()
      * @param dst pixel converted to float color
      */
-    public void getColor4f(int x, int y, @Nonnull @Size(4) float[] dst) {
+    public void getColor4f(int x, int y, @Size(4) float @NonNull [] dst) {
         assert getAddress() != MemoryUtil.NULL;
         assert x < getWidth();
         assert y < getHeight();
@@ -295,7 +297,7 @@ public class Pixmap {
      * @param y   row index, zero or greater, and less than height()
      * @param src float color to set
      */
-    public void setColor4f(int x, int y, @Nonnull @Size(4) float[] src) {
+    public void setColor4f(int x, int y, @Size(4) float @NonNull [] src) {
         assert getAddress() != MemoryUtil.NULL;
         assert x < getWidth();
         assert y < getHeight();
@@ -322,7 +324,7 @@ public class Pixmap {
      * @param srcY row index whose absolute value is less than height()
      * @return true if pixels are copied to dst
      */
-    public boolean readPixels(@Nonnull Pixmap dst, int srcX, int srcY) {
+    public boolean readPixels(@NonNull Pixmap dst, int srcX, int srcY) {
         ImageInfo dstInfo = dst.getInfo();
         if (!getInfo().isValid() || !dstInfo.isValid()) {
             return false;
@@ -369,7 +371,7 @@ public class Pixmap {
      * @param dstY row index whose absolute value is less than height()
      * @return true if src pixels are copied to pixmap
      */
-    public boolean writePixels(@Nonnull Pixmap src, int dstX, int dstY) {
+    public boolean writePixels(@NonNull Pixmap src, int dstX, int dstY) {
         ImageInfo srcInfo = src.getInfo();
         if (!getInfo().isValid() || !srcInfo.isValid()) {
             return false;
@@ -407,7 +409,7 @@ public class Pixmap {
      * @param subset bounding box of pixels to write; may be null
      * @return true if pixels are changed
      */
-    public boolean clear(@Nonnull @Size(4) float[] color,
+    public boolean clear(@Size(4) float @NonNull [] color,
                          @Nullable Rect2ic subset) {
         var ct = getColorType();
         if (ct == ColorInfo.CT_UNKNOWN) {
@@ -465,7 +467,7 @@ public class Pixmap {
             boolean fast = true;
             byte v0 = UNSAFE.getByte(dst);
             for (int i = 1; i < bpp; ++i) {
-                byte v = UNSAFE.getByte(dst+i);
+                byte v = UNSAFE.getByte(dst + i);
                 if (v != v0) {
                     fast = false;
                     break;
@@ -488,14 +490,14 @@ public class Pixmap {
             } else if (ct == ColorInfo.CT_RGB_888) {
                 // RGB_888 is the only type where bpp is not a power of 2
                 assert bpp == 3;
-                byte v1 = UNSAFE.getByte(dst+1);
-                byte v2 = UNSAFE.getByte(dst+2);
+                byte v1 = UNSAFE.getByte(dst + 1);
+                byte v2 = UNSAFE.getByte(dst + 2);
                 for (int y = clip.mTop; y < clip.mBottom; ++y) {
                     long addr = getAddress(clip.x(), y);
                     for (int i = 0, e = clip.width(); i < e; ++i) {
                         UNSAFE.putByte(base, addr, v0);
-                        UNSAFE.putByte(base, addr+1, v1);
-                        UNSAFE.putByte(base, addr+2, v2);
+                        UNSAFE.putByte(base, addr + 1, v1);
+                        UNSAFE.putByte(base, addr + 2, v2);
                         addr += 3;
                     }
                 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2022-2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2022-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@ import icyllis.arc3d.core.RawPtr;
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}
  * for mesh-drawing operations.
  */
+@Deprecated
 public interface Mesh {
 
     /**

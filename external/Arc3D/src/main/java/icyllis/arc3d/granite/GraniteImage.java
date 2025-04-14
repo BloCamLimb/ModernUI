@@ -19,25 +19,33 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.*;
-import icyllis.arc3d.engine.task.CopyImageTask;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.Rect2ic;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.Context;
+import icyllis.arc3d.engine.ISurface;
+import icyllis.arc3d.engine.ImageViewProxy;
+import icyllis.arc3d.granite.task.CopyImageTask;
+import icyllis.arc3d.sketch.Image;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The image that is backed by GPU.
  */
-public final class GraniteImage extends icyllis.arc3d.core.Image {
+public final class GraniteImage extends Image {
 
     @RawPtr
     RecordingContext mContext;
     @SharedPtr
     ImageViewProxy mImageViewProxy;
 
-    public GraniteImage(@Nonnull @RawPtr RecordingContext context,
-                        @Nonnull @SharedPtr ImageViewProxy view,
+    public GraniteImage(@NonNull @RawPtr RecordingContext context,
+                        @NonNull @SharedPtr ImageViewProxy view,
                         int colorType, int alphaType,
                         @Nullable ColorSpace colorSpace) {
         super(ImageInfo.make(view.getWidth(), view.getHeight(),
@@ -50,8 +58,8 @@ public final class GraniteImage extends icyllis.arc3d.core.Image {
     @SharedPtr
     public static GraniteImage copy(@RawPtr RecordingContext rc,
                                     @RawPtr ImageViewProxy srcView,
-                                    @Nonnull ImageInfo srcInfo,
-                                    @Nonnull Rect2ic subset,
+                                    @NonNull ImageInfo srcInfo,
+                                    @NonNull Rect2ic subset,
                                     boolean budgeted,
                                     boolean mipmapped,
                                     boolean approxFit,

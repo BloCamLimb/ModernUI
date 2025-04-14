@@ -21,9 +21,8 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -116,7 +115,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
      * @param width  the effective width of framebuffer
      * @param height the effective height of framebuffer
      */
-    @Nonnull
+    @NonNull
     @SharedPtr
     public static GLRenderTarget makeWrapped(Context context,
                                              int width, int height,
@@ -218,7 +217,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         mRebindStencilBuffer = false;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public BackendFormat getBackendFormat() {
         return mBackendFormat;
@@ -244,9 +243,8 @@ public final class GLRenderTarget extends GpuRenderTarget {
     }
 
     @RawPtr
-    @Nullable
     @Override
-    public GLTexture[] getColorAttachments() {
+    public GLTexture @Nullable[] getColorAttachments() {
         return mColorAttachments;
     }
 
@@ -265,9 +263,8 @@ public final class GLRenderTarget extends GpuRenderTarget {
     }
 
     @RawPtr
-    @Nullable
     @Override
-    public GLTexture[] getResolveAttachments() {
+    public GLTexture @Nullable[] getResolveAttachments() {
         return mResolveAttachments;
     }
 
@@ -288,7 +285,7 @@ public final class GLRenderTarget extends GpuRenderTarget {
         return mDepthStencilAttachment != null ? mDepthStencilAttachment.getStencilBits() : 0;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public BackendRenderTarget getBackendRenderTarget() {
         if (mBackendRenderTarget == null) {

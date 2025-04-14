@@ -21,11 +21,8 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.engine.trash.GraphicsPipelineDesc_Old;
-import icyllis.arc3d.engine.trash.PipelineKey_old;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents the capabilities of a 3D API Context.
@@ -77,7 +74,6 @@ public abstract class Caps {
     protected boolean mTransferPixelsToRowBytesSupport = false;
     protected boolean mMustSyncGpuDuringDiscard = true;
     protected boolean mTextureBarrierSupport = false;
-    protected boolean mUseCpuStagingBuffers = false;
     protected boolean mDepthClipNegativeOneToOne = false;
     protected boolean mClampToBorderSupport = true;
 
@@ -296,10 +292,6 @@ public abstract class Caps {
 
     public final boolean reuseScratchBuffers() {
         return true;
-    }
-
-    public final boolean useCpuStagingBuffers() {
-        return mUseCpuStagingBuffers;
     }
 
     /**
@@ -745,12 +737,7 @@ public abstract class Caps {
     @Nullable
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
 
-    @Nonnull
-    public abstract PipelineKey_old makeDesc(PipelineKey_old desc,
-                                             GpuRenderTarget renderTarget,
-                                             final GraphicsPipelineDesc_Old graphicsPipelineDesc);
-
-    @Nonnull
+    @NonNull
     public abstract PipelineKey makeGraphicsPipelineKey(
             PipelineKey old,
             PipelineDesc pipelineDesc,

@@ -19,10 +19,11 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import icyllis.arc3d.compiler.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.arc3d.compiler.Context;
+import icyllis.arc3d.compiler.Operator;
+import icyllis.arc3d.compiler.Position;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A conditional expression (condition ? true-expression : false-expression).
@@ -45,7 +46,7 @@ public final class ConditionalExpression extends Expression {
     // Creates a potentially-simplified form of the ternary. Typechecks and coerces input
     // expressions; reports errors via ErrorReporter.
     @Nullable
-    public static Expression convert(@Nonnull Context context,
+    public static Expression convert(@NonNull Context context,
                                      int position, Expression condition,
                                      Expression whenTrue, Expression whenFalse) {
         condition = context.getTypes().mBool.coerceExpression(context, condition);
@@ -84,16 +85,6 @@ public final class ConditionalExpression extends Expression {
         return ExpressionKind.CONDITIONAL;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        if (visitor.visitConditional(this)) {
-            return true;
-        }
-        return mCondition.accept(visitor) ||
-                (mWhenTrue != null && mWhenTrue.accept(visitor)) ||
-                (mWhenFalse != null && mWhenFalse.accept(visitor));
-    }
-
     public Expression getCondition() {
         return mCondition;
     }
@@ -118,16 +109,16 @@ public final class ConditionalExpression extends Expression {
         mWhenFalse = whenFalse;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new ConditionalExpression(position,
-                mCondition.clone(),
-                mWhenTrue.clone(),
-                mWhenFalse.clone());
+                mCondition.copy(),
+                mWhenTrue.copy(),
+                mWhenFalse.copy());
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         boolean needsParens = (Operator.PRECEDENCE_CONDITIONAL >= parentPrecedence);

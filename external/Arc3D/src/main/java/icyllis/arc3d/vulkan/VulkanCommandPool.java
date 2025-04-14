@@ -20,11 +20,10 @@
 package icyllis.arc3d.vulkan;
 
 import icyllis.arc3d.engine.ManagedResource;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.VkCommandPoolCreateInfo;
 import org.lwjgl.vulkan.VkFenceCreateInfo;
-
-import javax.annotation.Nullable;
 
 import static org.lwjgl.vulkan.VK11.*;
 

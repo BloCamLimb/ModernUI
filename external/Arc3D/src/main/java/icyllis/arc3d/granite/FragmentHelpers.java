@@ -20,11 +20,19 @@
 package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
-import icyllis.arc3d.core.effects.*;
-import icyllis.arc3d.core.shaders.*;
-import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nullable;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ImageViewProxy;
+import icyllis.arc3d.engine.KeyBuilder;
+import icyllis.arc3d.engine.SamplerDesc;
+import icyllis.arc3d.sketch.BlendMode;
+import icyllis.arc3d.sketch.Blender;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.effects.BlendModeColorFilter;
+import icyllis.arc3d.sketch.effects.ColorFilter;
+import icyllis.arc3d.sketch.effects.ComposeColorFilter;
+import icyllis.arc3d.sketch.shaders.*;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Build {@link icyllis.arc3d.engine.Key PaintParamsKey} and collect
@@ -610,12 +618,6 @@ public class FragmentHelpers {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (ColorShader) shader);
-        } else if (shader instanceof Color4fShader) {
-            append_to_key(keyContext,
-                    keyBuilder,
-                    uniformDataGatherer,
-                    textureDataGatherer,
-                    (Color4fShader) shader);
         } else if (shader instanceof Gradient1DShader) {
             append_to_key(keyContext,
                     keyBuilder,
@@ -628,6 +630,12 @@ public class FragmentHelpers {
                     uniformDataGatherer,
                     textureDataGatherer,
                     (BlendShader) shader);
+        } else if (shader instanceof RRectShader) {
+            append_to_key(keyContext,
+                    keyBuilder,
+                    uniformDataGatherer,
+                    textureDataGatherer,
+                    (RRectShader) shader);
         } else if (shader instanceof EmptyShader) {
             append_to_key(keyContext,
                     keyBuilder,
@@ -682,39 +690,13 @@ public class FragmentHelpers {
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
                                       @RawPtr ColorShader shader) {
-        //TODO should we apply color space here?
-        int color = shader.getColor();
-        float r = ((color >> 16) & 0xff) / 255.0f;
-        float g = ((color >> 8) & 0xff) / 255.0f;
-        float b = (color & 0xff) / 255.0f;
-        float a = (color >>> 24) / 255.0f;
-        appendSolidColorShaderBlock(
-                keyContext,
-                keyBuilder,
-                uniformDataGatherer,
-                textureDataGatherer,
-                r * a, g * a, b * a, a
-        );
-    }
-
-    private static void append_to_key(KeyContext keyContext,
-                                      KeyBuilder keyBuilder,
-                                      UniformDataGatherer uniformDataGatherer,
-                                      TextureDataGatherer textureDataGatherer,
-                                      @RawPtr Color4fShader shader) {
-        float[] color = {shader.r(), shader.g(), shader.b(), shader.a()};
-        ColorSpace srcCS = shader.getColorSpace();
+        float[] color = shader.getColor();
         ColorSpace dstCS = keyContext.targetInfo().colorSpace();
-        if ((srcCS != null && !srcCS.isSrgb()) || (dstCS != null && !dstCS.isSrgb())) {
-            if (srcCS == null) {
-                srcCS = ColorSpace.get(ColorSpace.Named.SRGB);
-            }
-            if (dstCS == null) {
-                dstCS = ColorSpace.get(ColorSpace.Named.SRGB);
-            }
-            ColorSpace.connect(srcCS, dstCS)
+        if (dstCS != null && !dstCS.isSrgb()) {
+            ColorSpace.connect(ColorSpace.get(ColorSpace.Named.SRGB), dstCS)
                     .transform(color);
         }
+        // premul
         for (int i = 0; i < 3; i++) {
             color[i] *= color[3];
         }
@@ -910,6 +892,28 @@ public class FragmentHelpers {
                                       KeyBuilder keyBuilder,
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
+                                      @RawPtr RRectShader shader) {
+        uniformDataGatherer.write4f(
+                shader.getLeft(), shader.getTop(), shader.getRight(), shader.getBottom()
+        );
+        uniformDataGatherer.write4f(
+                shader.getTopLeftRadius(), shader.getTopRightRadius(),
+                shader.getBottomRightRadius(), shader.getBottomLeftRadius()
+        );
+        float smooth = shader.getSmoothRadius();
+        // smooth won't be NaN
+        uniformDataGatherer.write4f(
+                shader.getCenterX(), shader.getCenterY(),
+                Math.max(smooth, 0.0f), shader.isInverseFill() ? -1.0f : 1.0f
+        );
+
+        keyBuilder.addInt(FragmentStage.kAnalyticRRectShader_BuiltinStageID);
+    }
+
+    private static void append_to_key(KeyContext keyContext,
+                                      KeyBuilder keyBuilder,
+                                      UniformDataGatherer uniformDataGatherer,
+                                      TextureDataGatherer textureDataGatherer,
                                       @RawPtr EmptyShader shader) {
         keyBuilder.addInt(FragmentStage.kPassthrough_BuiltinStageID);
     }
@@ -919,7 +923,7 @@ public class FragmentHelpers {
                                       UniformDataGatherer uniformDataGatherer,
                                       TextureDataGatherer textureDataGatherer,
                                       @RawPtr BlendModeColorFilter colorFilter) {
-        float[] blendColor = colorFilter.getColor().clone();
+        float[] blendColor = colorFilter.getColor();
         PaintParams.prepareColorForDst(blendColor, keyContext.targetInfo(), false);
         for (int i = 0; i < 3; i++) {
             blendColor[i] *= blendColor[3];

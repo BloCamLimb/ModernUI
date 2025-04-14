@@ -20,8 +20,7 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents an identifier referring to a type. This is an intermediate value: TypeReferences are
@@ -36,9 +35,9 @@ public final class TypeReference extends Expression {
         mValue = value;
     }
 
-    @Nonnull
-    public static TypeReference make(@Nonnull Context context,
-                                     int position, @Nonnull Type value) {
+    @NonNull
+    public static TypeReference make(@NonNull Context context,
+                                     int position, @NonNull Type value) {
         return new TypeReference(position, value, context.getTypes().mInvalid);
     }
 
@@ -47,22 +46,17 @@ public final class TypeReference extends Expression {
         return ExpressionKind.TYPE_REFERENCE;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitTypeReference(this);
-    }
-
     public Type getValue() {
         return mValue;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Expression clone(int position) {
+    public Expression copy(int position) {
         return new TypeReference(position, mValue, getType());
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString(int parentPrecedence) {
         return mValue.getName();

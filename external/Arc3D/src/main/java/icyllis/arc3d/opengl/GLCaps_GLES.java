@@ -23,12 +23,12 @@ import icyllis.arc3d.compiler.GLSLVersion;
 import icyllis.arc3d.compiler.TargetApi;
 import icyllis.arc3d.engine.*;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengles.*;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 
-import javax.annotation.Nullable;
 import java.nio.*;
 import java.util.Objects;
 

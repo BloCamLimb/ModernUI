@@ -20,10 +20,10 @@
 package icyllis.arc3d.core;
 
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 
-import javax.annotation.Nonnull;
 import java.nio.ByteOrder;
 
 /**
@@ -436,7 +436,7 @@ public class PixelUtils {
     /**
      * Load a pixel value in low precision.
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     public static PixelLoad load(@ColorInfo.ColorType int ct) {
         return switch (ct) {
@@ -571,7 +571,7 @@ public class PixelUtils {
     /**
      * Store a pixel value in low precision.
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     public static PixelStore store(@ColorInfo.ColorType int ct) {
         return switch (ct) {
@@ -824,7 +824,7 @@ public class PixelUtils {
     /**
      * Load a pixel value in high precision.
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     public static PixelOp loadOp(@ColorInfo.ColorType int ct) {
         return switch (ct) {
@@ -1079,7 +1079,7 @@ public class PixelUtils {
     /**
      * Store a pixel value in high precision.
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     public static PixelOp storeOp(@ColorInfo.ColorType int ct) {
         return switch (ct) {
@@ -1123,7 +1123,7 @@ public class PixelUtils {
      * Performs color type, alpha type, and color space conversion.
      * Addresses (offsets) must be aligned to bytes-per-pixel, scaling is not allowed.
      */
-    public static boolean convertPixels(@Nonnull Pixmap src, @Nonnull Pixmap dst) {
+    public static boolean convertPixels(@NonNull Pixmap src, @NonNull Pixmap dst) {
         return convertPixels(src.getInfo(), src.getBase(), src.getAddress(), src.getRowBytes(),
                 dst.getInfo(), dst.getBase(), dst.getAddress(), dst.getRowBytes(), false);
     }
@@ -1133,7 +1133,7 @@ public class PixelUtils {
      * Addresses (offsets) must be aligned to bytes-per-pixel (except for non-power-of-two),
      * scaling is not allowed.
      */
-    public static boolean convertPixels(@Nonnull Pixmap src, @Nonnull Pixmap dst, boolean flipY) {
+    public static boolean convertPixels(@NonNull Pixmap src, @NonNull Pixmap dst, boolean flipY) {
         return convertPixels(src.getInfo(), src.getBase(), src.getAddress(), src.getRowBytes(),
                 dst.getInfo(), dst.getBase(), dst.getAddress(), dst.getRowBytes(), flipY);
     }
@@ -1142,9 +1142,9 @@ public class PixelUtils {
      * Performs color type, alpha type, and color space conversion.
      * Addresses (offsets) must be aligned to bytes-per-pixel, scaling is not allowed.
      */
-    public static boolean convertPixels(@Nonnull ImageInfo srcInfo, Object srcBase,
+    public static boolean convertPixels(@NonNull ImageInfo srcInfo, Object srcBase,
                                         long srcAddr, long srcRowBytes,
-                                        @Nonnull ImageInfo dstInfo, Object dstBase,
+                                        @NonNull ImageInfo dstInfo, Object dstBase,
                                         long dstAddr, long dstRowBytes) {
         return convertPixels(srcInfo, srcBase, srcAddr, srcRowBytes,
                 dstInfo, dstBase, dstAddr, dstRowBytes, false);
@@ -1155,9 +1155,9 @@ public class PixelUtils {
      * Addresses (offsets) must be aligned to bytes-per-pixel (except for non-power-of-two),
      * scaling is not allowed.
      */
-    public static boolean convertPixels(@Nonnull ImageInfo srcInfo, Object srcBase,
+    public static boolean convertPixels(@NonNull ImageInfo srcInfo, Object srcBase,
                                         long srcAddr, long srcRowBytes,
-                                        @Nonnull ImageInfo dstInfo, Object dstBase,
+                                        @NonNull ImageInfo dstInfo, Object dstBase,
                                         long dstAddr, long dstRowBytes,
                                         boolean flipY) {
         if (!srcInfo.isValid() || !dstInfo.isValid()) {

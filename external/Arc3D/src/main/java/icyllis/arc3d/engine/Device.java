@@ -20,16 +20,18 @@
 package icyllis.arc3d.engine;
 
 import icyllis.arc3d.compiler.ShaderCompiler;
-import icyllis.arc3d.core.*;
-import icyllis.arc3d.engine.trash.ops.OpsTask;
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.granite.RendererProvider;
 import icyllis.arc3d.granite.ShaderCodeSource;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.helpers.NOPLogger;
 
-import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,7 +58,7 @@ public abstract class Device implements Engine {
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
     private static int createUniqueID() {
-        for (;;) {
+        for (; ; ) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
@@ -70,7 +72,7 @@ public abstract class Device implements Engine {
     private final int mContextID;
 
     private ThreadSafeCache mThreadSafeCache;
-    private SharedResourceCache mSharedResourceCache;
+    private GlobalResourceCache mGlobalResourceCache;
     private ShaderCodeSource mShaderCodeSource;
     RendererProvider mRendererProvider;
 
@@ -100,7 +102,7 @@ public abstract class Device implements Engine {
         //mContext = context;
         mCaps = caps;
         mCompiler = new ShaderCompiler();
-        mSharedResourceCache = new SharedResourceCache();
+        mGlobalResourceCache = new GlobalResourceCache();
         mShaderCodeSource = new ShaderCodeSource();
     }
 
@@ -209,7 +211,7 @@ public abstract class Device implements Engine {
         return !mDiscarded.compareAndExchange(false, true);
     }
 
-    boolean isDiscarded() {
+    public boolean isDiscarded() {
         return mDiscarded.get();
     }
 
@@ -236,8 +238,8 @@ public abstract class Device implements Engine {
 
     public abstract ResourceProvider makeResourceProvider(Context context, long maxResourceBudget);
 
-    public final SharedResourceCache getSharedResourceCache() {
-        return mSharedResourceCache;
+    public final GlobalResourceCache getGlobalResourceCache() {
+        return mGlobalResourceCache;
     }
 
     public final ShaderCodeSource getShaderCodeSource() {
@@ -257,7 +259,7 @@ public abstract class Device implements Engine {
      * Otherwise, no cleanup should be attempted, immediately cease making backend API calls.
      */
     public void disconnect(boolean cleanup) {
-        mSharedResourceCache.release();
+        mGlobalResourceCache.release();
     }
 
     /**
@@ -302,12 +304,12 @@ public abstract class Device implements Engine {
     }
 
     @Deprecated
-    public GpuBufferPool getInstancePool()  {
+    public GpuBufferPool getInstancePool() {
         return null;
     }
 
     @Deprecated
-    public GpuBufferPool getIndexPool()  {
+    public GpuBufferPool getIndexPool() {
         return null;
     }
 
@@ -400,9 +402,9 @@ public abstract class Device implements Engine {
     @Deprecated
     @Nullable
     public final @SharedPtr GpuRenderTarget createRenderTarget(int numColorTargets,
-                                                               @Nullable Image[] colorTargets,
-                                                               @Nullable Image[] resolveTargets,
-                                                               @Nullable int[] mipLevels,
+                                                               Image @Nullable [] colorTargets,
+                                                               Image @Nullable [] resolveTargets,
+                                                               int @Nullable [] mipLevels,
                                                                @Nullable Image depthStencilTarget,
                                                                int surfaceFlags) {
         if (numColorTargets < 0 || numColorTargets > mCaps.maxColorAttachments()) {
@@ -494,9 +496,9 @@ public abstract class Device implements Engine {
     protected abstract GpuRenderTarget onCreateRenderTarget(int width, int height,
                                                             int sampleCount,
                                                             int numColorTargets,
-                                                            @Nullable Image[] colorTargets,
-                                                            @Nullable Image[] resolveTargets,
-                                                            @Nullable int[] mipLevels,
+                                                            Image @Nullable [] colorTargets,
+                                                            Image @Nullable [] resolveTargets,
+                                                            int @Nullable [] mipLevels,
                                                             @Nullable Image depthStencilTarget,
                                                             int surfaceFlags);
 

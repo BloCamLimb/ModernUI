@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.compiler.tree;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A break statement.
@@ -39,12 +39,7 @@ public final class BreakStatement extends Statement {
         return StatementKind.BREAK;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitBreak(this);
-    }
-
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "break;";

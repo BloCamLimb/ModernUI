@@ -20,9 +20,9 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -36,19 +36,19 @@ import java.util.List;
  */
 public final class StructDefinition extends TopLevelElement {
 
-    @Nonnull
+    @NonNull
     private final Type mType;
 
-    public StructDefinition(int position, @Nonnull Type type) {
+    public StructDefinition(int position, @NonNull Type type) {
         super(position);
         mType = type;
     }
 
     @Nullable
-    public static StructDefinition convert(@Nonnull Context context,
+    public static StructDefinition convert(@NonNull Context context,
                                            int pos,
-                                           @Nonnull String structName,
-                                           @Nonnull List<Type.Field> fields) {
+                                           @NonNull String structName,
+                                           @NonNull List<Type.Field> fields) {
         Type type = Type.makeStructType(context,
                 pos,
                 structName,
@@ -71,17 +71,12 @@ public final class StructDefinition extends TopLevelElement {
         return ElementKind.STRUCT_DEFINITION;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitStructDefinition(this);
-    }
-
-    @Nonnull
+    @NonNull
     public Type getType() {
         return mType;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder(

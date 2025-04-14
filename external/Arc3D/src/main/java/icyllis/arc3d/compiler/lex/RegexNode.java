@@ -22,8 +22,8 @@ package icyllis.arc3d.compiler.lex;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.BitSet;
 
 /**
@@ -42,7 +42,7 @@ public interface RegexNode {
     /**
      * Match a character.
      */
-    @Nonnull
+    @NonNull
     static RegexNode Char(char c) {
         return new Char(c);
     }
@@ -50,7 +50,7 @@ public interface RegexNode {
     /**
      * Match a character range.
      */
-    @Nonnull
+    @NonNull
     static RegexNode Range(char start, char end) {
         return new Range(start, end);
     }
@@ -58,7 +58,7 @@ public interface RegexNode {
     /**
      * Match a character range.
      */
-    @Nonnull
+    @NonNull
     static RegexNode Range(RegexNode start, RegexNode end) {
         try {
             return new Range(((Char) start).mChar, ((Char) end).mChar);
@@ -70,7 +70,7 @@ public interface RegexNode {
     /**
      * Match a character class.
      */
-    @Nonnull
+    @NonNull
     static RegexNode CharClass(RegexNode... clazz) {
         return new CharClass(clazz, false);
     }
@@ -78,7 +78,7 @@ public interface RegexNode {
     /**
      * Match a character class.
      */
-    @Nonnull
+    @NonNull
     static RegexNode CharClass(RegexNode[] clazz, boolean exclusive) {
         return new CharClass(clazz, exclusive);
     }
@@ -86,7 +86,7 @@ public interface RegexNode {
     /**
      * Concatenation: XY (X -> Y -> Next)
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     static RegexNode Concat(RegexNode x, RegexNode y) {
         return (nfa, next) -> x.transition(nfa, y.transition(nfa, next));
@@ -95,7 +95,7 @@ public interface RegexNode {
     /**
      * Alternation: X|Y (X -> Next, Y -> Next)
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     static RegexNode Union(RegexNode x, RegexNode y) {
         return (nfa, next) -> {
@@ -111,7 +111,7 @@ public interface RegexNode {
     /**
      * Wildcard, excluding LF and CR.
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     static RegexNode Dot() {
         return (nfa, next) -> {
@@ -124,7 +124,7 @@ public interface RegexNode {
      * Kleene closure: X -> X, X -> Next, Next -> Next.
      * Match between zero, one and unlimited times.
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     static RegexNode Star(RegexNode x) {
         return (nfa, next) -> {
@@ -144,7 +144,7 @@ public interface RegexNode {
      * X -> X, X -> Next.
      * Match between one and unlimited times.
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     static RegexNode Plus(RegexNode x) {
         return (nfa, next) -> {
@@ -161,7 +161,7 @@ public interface RegexNode {
      * X -> Next, Next -> Next.
      * Match between zero and one times.
      */
-    @Nonnull
+    @NonNull
     @Contract(pure = true)
     static RegexNode Ques(RegexNode x) {
         return (nfa, next) -> {

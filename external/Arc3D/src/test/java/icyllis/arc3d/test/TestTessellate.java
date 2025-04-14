@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.engine.PathUtils;
+import icyllis.arc3d.granite.PathUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

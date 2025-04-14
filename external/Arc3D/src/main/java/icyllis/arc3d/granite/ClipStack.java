@@ -21,10 +21,14 @@ package icyllis.arc3d.granite;
 
 import icyllis.arc3d.core.*;
 import icyllis.arc3d.granite.geom.BoundsManager;
+import icyllis.arc3d.sketch.ClipOp;
+import icyllis.arc3d.sketch.Matrix;
+import icyllis.arc3d.sketch.Matrixc;
+import icyllis.arc3d.sketch.Quad;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -98,7 +102,7 @@ public final class ClipStack {
     private final ClipElement mTmpElement = new ClipElement();
 
     public void clipRect(@Nullable Matrixc viewMatrix,
-                         @Nonnull Rect2fc localRect,
+                         @NonNull Rect2fc localRect,
                          int clipOp) {
         clip(mTmpElement.init(
                 mDeviceBounds,
@@ -213,8 +217,10 @@ public final class ClipStack {
             return true;
         }
 
-        //TODO initial value for this is inverse-fill
-        boolean infiniteBounds = false;
+        // Inverse-filled shapes always fill the entire device (restricted to the clip).
+        // Query the invertedness of the shape before any of the `setRect` calls below, which can
+        // modify it.
+        boolean infiniteBounds = draw.mInverseFill;
 
         if (!infiniteBounds && shapeBounds.isEmpty()) {
             if (!draw.isStroke()) {
@@ -917,9 +923,9 @@ public final class ClipStack {
                 long order = DrawOrder.makeFromDepthAndPaintersOrder(
                         mMaxDepth + 1, mPaintersOrder
                 );
-                Draw draw = new Draw();
-                draw.mTransform = mViewMatrix.clone();
-                draw.mGeometry = new SimpleShape(mShape);
+                //TODO maybe not need a copy of matrix
+                Draw draw = new Draw(mViewMatrix.clone(), new Rect2f(mShape));
+                draw.mInverseFill = mInverseFill;
                 draw.mDrawBounds = drawBounds;
                 draw.mTransformedShapeBounds = drawBounds;
                 draw.mScissorRect = scissor;
@@ -929,7 +935,7 @@ public final class ClipStack {
                 // draw directly.
                 assert ((mClipOp == ClipOp.CLIP_OP_DIFFERENCE && !mInverseFill) ||
                         (mClipOp == ClipOp.CLIP_OP_INTERSECT && mInverseFill));
-                device.drawClipShape(draw, mInverseFill);
+                device.drawClipShape(draw);
             }
 
             // After the clip shape is drawn, reset its state. If the clip element is being popped off the

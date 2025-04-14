@@ -20,9 +20,8 @@
 package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.Context;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A discard statement, fragment shader only.
@@ -34,7 +33,7 @@ public final class DiscardStatement extends Statement {
     }
 
     @Nullable
-    public static Statement convert(@Nonnull Context context, int pos) {
+    public static Statement convert(@NonNull Context context, int pos) {
         if (!context.getKind().isFragment()) {
             context.error(pos, "discard statement is only permitted in fragment shaders");
             return null;
@@ -42,7 +41,7 @@ public final class DiscardStatement extends Statement {
         return make(pos);
     }
 
-    @Nonnull
+    @NonNull
     public static Statement make(int pos) {
         return new DiscardStatement(pos);
     }
@@ -52,12 +51,7 @@ public final class DiscardStatement extends Statement {
         return StatementKind.DISCARD;
     }
 
-    @Override
-    public boolean accept(@Nonnull TreeVisitor visitor) {
-        return visitor.visitDiscard(this);
-    }
-
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         return "discard;";

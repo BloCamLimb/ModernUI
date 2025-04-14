@@ -63,9 +63,9 @@ public abstract class PipelineDesc {
         public VertexInputLayout mInputLayout;
         public String mInputLayoutLabel;
         //TODO replace full 'source' with IR + main() source
-        public StringBuilder mVertSource;
+        public String mVertSource;
         public String mVertLabel;
-        public StringBuilder mFragSource;
+        public String mFragSource;
         public String mFragLabel;
         public BlendInfo mBlendInfo;
         public DepthStencilSettings mDepthStencilSettings;

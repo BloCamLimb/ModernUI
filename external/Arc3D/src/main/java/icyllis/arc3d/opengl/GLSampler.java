@@ -21,8 +21,7 @@ package icyllis.arc3d.opengl;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.*;
-
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL12C.GL_TEXTURE_WRAP_R;

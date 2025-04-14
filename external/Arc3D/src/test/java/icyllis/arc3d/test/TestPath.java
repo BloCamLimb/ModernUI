@@ -19,7 +19,9 @@
 
 package icyllis.arc3d.test;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.Path;
+import icyllis.arc3d.sketch.StrokeRec;
 
 public class TestPath {
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of Arc3D.
  *
- * Copyright (C) 2024 BloCamLimb <pocamelards@gmail.com>
+ * Copyright (C) 2024-2025 BloCamLimb <pocamelards@gmail.com>
  *
  * Arc3D is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,10 +19,16 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.Vertices;
 import icyllis.arc3d.engine.Caps;
 import icyllis.arc3d.engine.Engine;
-import icyllis.arc3d.granite.geom.*;
+import icyllis.arc3d.granite.geom.AnalyticArcStep;
+import icyllis.arc3d.granite.geom.AnalyticComplexBoxStep;
+import icyllis.arc3d.granite.geom.AnalyticSimpleBoxStep;
+import icyllis.arc3d.granite.geom.CoverBoundsStep;
+import icyllis.arc3d.granite.geom.PerEdgeAAQuadStep;
+import icyllis.arc3d.granite.geom.RasterTextStep;
+import icyllis.arc3d.granite.geom.VerticesStep;
+import icyllis.arc3d.sketch.Vertices;
 
 /**
  * Granite defines a limited set of renderers in order to increase the likelihood of batching
@@ -41,14 +47,17 @@ public class RendererProvider {
         return new GeometryRenderer(name, singleStep);
     }
 
-    // AA variant
+    // blur variant
     private final GeometryRenderer[] mSimpleBox = new GeometryRenderer[2];
+    private final GeometryRenderer mComplexBox;
     // mask format variant
     private final GeometryRenderer[] mRasterText = new GeometryRenderer[Engine.MASK_FORMAT_COUNT];
     // arc type variant
     private final GeometryRenderer[] mArc = new GeometryRenderer[ArcShape.kTypeCount];
     // has color, has tex, vertex mode variant
-    private final GeometryRenderer[] mVertices = new GeometryRenderer[Vertices.kVertexModeCount*4];
+    private final GeometryRenderer[] mVertices = new GeometryRenderer[Vertices.kVertexModeCount * 4];
+    private final GeometryRenderer mPerEdgeAAQuad;
+    private final GeometryRenderer mNonAABoundsFill;
 
     public RendererProvider(Caps caps, StaticBufferManager staticBufferManager) {
         mSimpleBox[0] = makeSingleStep(
@@ -56,6 +65,9 @@ public class RendererProvider {
         );
         mSimpleBox[1] = makeSingleStep(
                 new AnalyticSimpleBoxStep(true)
+        );
+        mComplexBox = makeSingleStep(
+                new AnalyticComplexBoxStep(staticBufferManager)
         );
         for (int i = 0; i < Engine.MASK_FORMAT_COUNT; i++) {
             if (i == Engine.MASK_FORMAT_A565) continue;
@@ -83,10 +95,20 @@ public class RendererProvider {
                 );
             }
         }
+        mPerEdgeAAQuad = makeSingleStep(
+                new PerEdgeAAQuadStep(staticBufferManager)
+        );
+        mNonAABoundsFill = makeSingleStep(
+                new CoverBoundsStep("non-aa-fill", CommonDepthStencilSettings.kDirectDepthGreaterPass)
+        );
     }
 
-    public GeometryRenderer getSimpleBox(boolean aa) {
-        return mSimpleBox[aa ? 1 : 0];
+    public GeometryRenderer getSimpleBox(boolean blur) {
+        return mSimpleBox[blur ? 1 : 0];
+    }
+
+    public GeometryRenderer getComplexBox() {
+        return mComplexBox;
     }
 
     public GeometryRenderer getRasterText(int maskFormat) {
@@ -98,6 +120,15 @@ public class RendererProvider {
     }
 
     public GeometryRenderer getVertices(int vertexMode, boolean hasColor, boolean hasTexCoords) {
-        return mVertices[vertexMode*4 + (hasColor?2:0) + (hasTexCoords?1:0)];
+        return mVertices[vertexMode * 4 + (hasColor ? 2 : 0) + (hasTexCoords ? 1 : 0)];
+    }
+
+    public GeometryRenderer getPerEdgeAAQuad() {
+        return mPerEdgeAAQuad;
+    }
+
+    // Non-AA bounds filling (can handle inverse "fills" but will touch every pixel within the clip)
+    public GeometryRenderer getNonAABoundsFill() {
+        return mNonAABoundsFill;
     }
 }

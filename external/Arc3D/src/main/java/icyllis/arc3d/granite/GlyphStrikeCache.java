@@ -19,9 +19,9 @@
 
 package icyllis.arc3d.granite;
 
-import icyllis.arc3d.core.StrikeDesc;
+import icyllis.arc3d.sketch.StrikeDesc;
+import org.jspecify.annotations.NonNull;
 
-import javax.annotation.Nonnull;
 import java.util.HashMap;
 
 /**
@@ -35,8 +35,8 @@ public class GlyphStrikeCache {
     /**
      * <var>desc</var> must be immutable, no copy will be made.
      */
-    @Nonnull
-    public GlyphStrike findOrCreateStrike(StrikeDesc desc) {
+    public @NonNull GlyphStrike findOrCreateStrike(@NonNull StrikeDesc desc) {
+        assert desc.isImmutable();
         return mCache.computeIfAbsent(desc, GlyphStrike::new);
     }
 

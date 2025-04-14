@@ -23,7 +23,13 @@ import icyllis.arc3d.core.*;
 import icyllis.arc3d.engine.*;
 import icyllis.arc3d.granite.ClipStack;
 import icyllis.arc3d.granite.GraniteDevice;
+import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.opengl.GLUtil;
+import icyllis.arc3d.sketch.ClipOp;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.sketch.Paint;
+import icyllis.arc3d.sketch.RRect;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
@@ -57,7 +63,9 @@ public class TestClipStack {
         if (immediateContext == null) {
             throw new RuntimeException();
         }
-        RecordingContext recordingContext = immediateContext.makeRecordingContext();
+        RecordingContext recordingContext = RecordingContext.makeRecordingContext(
+                immediateContext, new RecordingContext.Options()
+        );
 
         var drawDevice = GraniteDevice.make(
                 recordingContext,
@@ -83,9 +91,9 @@ public class TestClipStack {
         LOGGER.info(stateToString(drawDevice.getClipStack().currentClipState()));
         drawDevice.getClipStack().elements().forEach(e -> LOGGER.info(e.toString()));
 
-        RoundRect rrect = new RoundRect();
+        RRect rrect = new RRect();
         rrect.setRect(15, 20, 35, 40);
-        drawDevice.drawRoundRect(rrect, new Paint());
+        drawDevice.drawRRect(rrect, new Paint());
 
         /*var elementsForMask = new ArrayList<ClipStack.Element>();
         var draw = new DrawOp();

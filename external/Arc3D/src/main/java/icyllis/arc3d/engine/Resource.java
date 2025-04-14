@@ -21,16 +21,14 @@ package icyllis.arc3d.engine;
 
 import icyllis.arc3d.core.*;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.Comparator;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.*;
 
 /**
  * Base class for operating GPU resources that can be kept in the {@link ResourceCache}.
@@ -68,7 +66,7 @@ public abstract class Resource implements RefCounted {
     private static final VarHandle USAGE_REF_CNT;
     private static final VarHandle COMMAND_BUFFER_REF_CNT;
     private static final VarHandle CACHE_REF_CNT;
-    private static final ConcurrentMap<Resource, Boolean> TRACKER;
+    private static final ConcurrentHashMap<Resource, Boolean> TRACKER;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -79,8 +77,7 @@ public abstract class Resource implements RefCounted {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        // tree structure will not create large arrays and we don't care about the CPU overhead
-        TRACKER = new ConcurrentSkipListMap<>(Comparator.comparingInt(System::identityHashCode));
+        TRACKER = new ConcurrentHashMap<>();
         try {
             assert false;
         } catch (AssertionError e) {
@@ -126,7 +123,7 @@ public abstract class Resource implements RefCounted {
 
     // null meaning invalid, lazy initialized
     volatile IResourceKey mKey;
-
+    // the resource key and return cache are both set at most once, during registerWithCache().
     volatile ResourceCache mReturnCache;
     // An index into the return cache so we know whether the resource is already waiting to
     // be returned or not.
@@ -140,28 +137,33 @@ public abstract class Resource implements RefCounted {
     int mTimestamp;
     private long mLastUsedTime;
 
+    // All resources created internally by Engine that are held in the ResourceCache as shared or
+    // available scratch resources are considered budgeted. Resources that back client-owned objects
+    // (e.g. Surface or Image) and wrapper objects (e.g. BackendTexture) do not count against
+    // cache limits and therefore should never be budgeted.
     private volatile boolean mBudgeted;
     private final boolean mWrapped; // non-wrapped means we have ownership
+    // All resources start out as non-shareable (the strictest mode) and revert to non-shareable
+    // when they are returned to the cache and have no more usage refs. An available resource can
+    // be returned if its shareable type matches the request, or if it was non-shareable at which
+    // point the resource is upgraded to the more permissive mode (until all shared usages are
+    // dropped at which point it can be used for any purpose again).
+    private volatile boolean mShareable;
     private volatile boolean mCacheable = true;
     boolean mNonShareableInCache = false;
 
     private final long mMemorySize;
 
-    @Nonnull
+    @NonNull
     private volatile String mLabel = "";
     private final UniqueID mUniqueID = new UniqueID();
 
     @SuppressWarnings("AssertWithSideEffects")
     protected Resource(Context context,
-                       boolean budgeted,
                        boolean wrapped,
                        long memorySize) {
         assert (context != null);
-        // If we don't own the resource that must mean its wrapped in a client object. Thus we should
-        // not be budgeted
-        assert (!budgeted || !wrapped);
         mContext = context;
-        mBudgeted = budgeted;
         mWrapped = wrapped;
         mMemorySize = memorySize;
         assert TRACKER.put(this, Boolean.TRUE) == null;
@@ -340,12 +342,22 @@ public abstract class Resource implements RefCounted {
     }
 
     /**
+     * Can the resource be held by multiple users at the same time?
+     * For example, samplers, etc.
+     *
+     * @return true if shareable, false if scratch
+     */
+    public final boolean isShareable() {
+        return mShareable;
+    }
+
+    /**
      * Gets a tag that is unique for this Resource object. It is static in that it does
      * not change when the content of the Resource object changes. It has identity and
      * never hold a reference to this Resource object, so it can be used to track state
      * changes through '=='.
      */
-    @Nonnull
+    @NonNull
     public UniqueID getUniqueID() {
         return mUniqueID;
     }
@@ -353,7 +365,7 @@ public abstract class Resource implements RefCounted {
     /**
      * @return the label for the resource, or empty
      */
-    @Nonnull
+    @NonNull
     public final String getLabel() {
         return mLabel;
     }
@@ -380,9 +392,16 @@ public abstract class Resource implements RefCounted {
      * are wrapped or already uncached. Furthermore, resources with unique keys cannot be made
      * not budgeted.
      */
-    @ApiStatus.Internal
-    final void makeBudgeted(boolean budgeted) {
+    final void setBudgeted(boolean budgeted) {
+        // If we don't own the resource that must mean its wrapped in a client object. Thus we should
+        // not be budgeted
+        assert !budgeted || !mWrapped;
         mBudgeted = budgeted;
+    }
+
+    final void setShareable(boolean shareable) {
+        assert !shareable || mBudgeted;
+        mShareable = shareable;
     }
 
     /**
@@ -401,18 +420,6 @@ public abstract class Resource implements RefCounted {
     @ApiStatus.Internal
     public final IResourceKey getKey() {
         return mKey;
-    }
-
-    /**
-     * Called before registerWithCache if the resource is available to be used as scratch.
-     * Resource subclasses should override this if the instances should be recycled as scratch
-     * resources and populate the scratchKey with the key.
-     * By default, resources are not recycled as scratch.
-     */
-    @ApiStatus.Internal
-    public final void setKey(@Nonnull IResourceKey key) {
-        assert !key.isShareable() || mBudgeted;
-        mKey = key;
     }
 
     @ApiStatus.Internal
@@ -436,11 +443,19 @@ public abstract class Resource implements RefCounted {
         return mCacheable;
     }
 
-    final void registerWithCache(ResourceCache returnCache) {
+    final void registerWithCache(ResourceCache returnCache,
+                                 IResourceKey key,
+                                 boolean initialBudgeted,
+                                 boolean initialShareable) {
         assert mReturnCache == null;
+        assert mKey == null;
         assert returnCache != null;
+        assert key != null;
 
         mReturnCache = returnCache;
+        mKey = key;
+        setBudgeted(initialBudgeted);
+        setShareable(initialShareable);
     }
 
     /**
@@ -462,7 +477,7 @@ public abstract class Resource implements RefCounted {
     }
 
     final boolean isUsableAsScratch() {
-        return !mKey.isShareable() && !hasUsageRef() && mNonShareableInCache;
+        return !mShareable && !hasUsageRef() && mNonShareableInCache;
     }
 
     /**

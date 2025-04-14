@@ -21,10 +21,10 @@ package icyllis.arc3d.compiler.tree;
 
 import icyllis.arc3d.compiler.*;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.util.spvc.Spv;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.OptionalLong;
 
@@ -41,9 +41,9 @@ public class Type extends Symbol {
      *
      * @param position see {@link Position}
      */
-    public record Field(int position, Modifiers modifiers, Type type, String name) {
+    public record Field(int position, @NonNull Modifiers modifiers, @NonNull Type type, @NonNull String name) {
 
-        @Nonnull
+        @NonNull
         @Override
         public String toString() {
             return modifiers.toString() + type.getName() + " " + name + ";";
@@ -74,14 +74,14 @@ public class Type extends Symbol {
             kBoolean_ScalarKind = 3,
             kNonScalar_ScalarKind = 4;
 
-    private final String mDesc;
+    private final @NonNull String mDesc;
     private final byte mTypeKind;
 
-    Type(String name, String desc, byte kind) {
+    Type(@NonNull String name, @NonNull String desc, byte kind) {
         this(name, desc, kind, Position.NO_POS);
     }
 
-    Type(String name, String desc, byte kind, int position) {
+    Type(@NonNull String name, @NonNull String desc, byte kind, int position) {
         super(position, name);
         mDesc = desc;
         mTypeKind = kind;
@@ -90,8 +90,7 @@ public class Type extends Symbol {
     /**
      * Creates an alias which maps to another type.
      */
-    @Nonnull
-    public static Type makeAliasType(String name, Type type) {
+    public static @NonNull Type makeAliasType(@NonNull String name, @NonNull Type type) {
         assert (type == type.resolve());
         return new AliasType(type.mPosition, name, type);
     }
@@ -99,7 +98,7 @@ public class Type extends Symbol {
     /**
      * Creates an alias which maps to another type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeAliasType(int position, String name, Type type) {
         assert (type == type.resolve());
         return new AliasType(position, name, type);
@@ -109,7 +108,7 @@ public class Type extends Symbol {
      * Create a generic type which maps to the listed types
      * (e.g. __genFType is a generic type which can match float, float2, float3 or float4).
      */
-    @Nonnull
+    @NonNull
     public static Type makeGenericType(String name, Type... types) {
         for (Type type : types) {
             assert (type == type.resolve());
@@ -122,7 +121,7 @@ public class Type extends Symbol {
      *
      * @param kind a scalar kind
      */
-    @Nonnull
+    @NonNull
     public static Type makeScalarType(String name, String desc,
                                       byte kind, int rank, int width) {
         return makeScalarType(name, desc, kind, rank, width, width);
@@ -133,7 +132,7 @@ public class Type extends Symbol {
      *
      * @param kind a scalar kind
      */
-    @Nonnull
+    @NonNull
     public static Type makeScalarType(String name, String desc,
                                       byte kind, int rank, int minWidth, int width) {
         assert minWidth == width || (width == 32 && minWidth < width);
@@ -145,7 +144,7 @@ public class Type extends Symbol {
      *
      * @param componentType a scalar type
      */
-    @Nonnull
+    @NonNull
     public static Type makeVectorType(String name, String desc,
                                       Type componentType, int rows) {
         assert (componentType == componentType.resolve());
@@ -157,7 +156,7 @@ public class Type extends Symbol {
      *
      * @param columnType a vector type
      */
-    @Nonnull
+    @NonNull
     public static Type makeMatrixType(String name, String desc,
                                       Type columnType, int cols) {
         assert (columnType == columnType.resolve());
@@ -165,8 +164,8 @@ public class Type extends Symbol {
     }
 
     /**
-     * Create a sampler/image type. Includes images, textures without sampler,
-     * textures with sampler and pure samplers.
+     * Create a sampler/image type. Includes images, subpass inputs, textures without sampler,
+     * textures with sampler, and pure samplers.
      * <ul>
      * <li>isSampled=true,isSampler=true: combined texture sampler (e.g. sampler2D)</li>
      * <li>isSampled=true,isSampler=false: pure texture (e.g. texture2D)</li>
@@ -179,7 +178,7 @@ public class Type extends Symbol {
      * @param component  e.g. texture2D has a type of half
      * @param dimensions SpvDim (e.g. {@link Spv#SpvDim1D})
      */
-    @Nonnull
+    @NonNull
     public static Type makeSamplerType(String name, String abbr, Type component, int dimensions,
                                        boolean isShadow, boolean isArrayed, boolean isMultiSampled,
                                        boolean isSampled, boolean isSampler) {
@@ -191,7 +190,7 @@ public class Type extends Symbol {
     /**
      * Create an image or subpass type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeImageType(String name, String abbr, Type component, int dimensions,
                                      boolean isArrayed, boolean isMultiSampled) {
         assert (component.isScalar());
@@ -202,7 +201,7 @@ public class Type extends Symbol {
     /**
      * Create a texture type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeTextureType(String name, String abbr, Type component, int dimensions,
                                        boolean isArrayed, boolean isMultiSampled) {
         assert (component.isScalar());
@@ -213,7 +212,7 @@ public class Type extends Symbol {
     /**
      * Create a separate sampler type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeSeparateType(String name, String abbr, Type component, boolean isShadow) {
         assert (component.isVoid());
         return makeSamplerType(name, abbr, component, /*dimensions*/-1, isShadow, /*isArrayed*/false,
@@ -223,7 +222,7 @@ public class Type extends Symbol {
     /**
      * Create a combined sampler type.
      */
-    @Nonnull
+    @NonNull
     public static Type makeCombinedType(String name, String abbr, Type component, int dimensions,
                                         boolean isShadow, boolean isArrayed, boolean isMultiSampled) {
         assert (component.isScalar());
@@ -236,7 +235,7 @@ public class Type extends Symbol {
      *
      * @param kind a type kind
      */
-    @Nonnull
+    @NonNull
     public static Type makeSpecialType(String name, String abbr, byte kind) {
         return new Type(name, abbr, kind);
     }
@@ -246,7 +245,7 @@ public class Type extends Symbol {
      *
      * @param type the element type
      */
-    @Nonnull
+    @NonNull
     public static Type makeArrayType(String name, Type type, int size) {
         assert !type.isArray();
         return new ArrayType(name, type, size);
@@ -255,9 +254,9 @@ public class Type extends Symbol {
     /**
      * Creates a struct type with the given fields. Reports an error if the struct is ill-formed.
      */
-    @Nonnull
-    public static Type makeStructType(@Nonnull Context context, int position,
-                                      @Nonnull String name, @Nonnull List<Field> fields,
+    @NonNull
+    public static Type makeStructType(@NonNull Context context, int position,
+                                      @NonNull String name, @NonNull List<Field> fields,
                                       boolean interfaceBlock) {
         String structOrBlock = interfaceBlock ? "block" : "struct";
         if (fields.isEmpty()) {
@@ -278,30 +277,27 @@ public class Type extends Symbol {
             context.error(position, structOrBlock + " '" + name +
                     "' is too deeply nested");
         }
-        return new StructType(position, name, fields.toArray(new Field[0]),
+        return new StructType(position, name, fields,
                 nestingDepth + 1, interfaceBlock);
     }
 
-    @Nonnull
     @Override
-    public SymbolKind getKind() {
+    public @NonNull SymbolKind getKind() {
         return SymbolKind.TYPE;
     }
 
     /**
      * Returns this.
      */
-    @Nonnull
     @Override
-    public final Type getType() {
+    public final @NonNull Type getType() {
         return this;
     }
 
     /**
      * If this is an alias, returns the underlying type, otherwise returns this.
      */
-    @Nonnull
-    public Type resolve() {
+    public @NonNull Type resolve() {
         return this;
     }
 
@@ -309,8 +305,7 @@ public class Type extends Symbol {
      * For arrays, returns the base type. For matrices, returns the column vector type.
      * For vectors, returns the scalar type. For all other types, returns the type itself.
      */
-    @Nonnull
-    public Type getElementType() {
+    public @NonNull Type getElementType() {
         return this;
     }
 
@@ -320,23 +315,21 @@ public class Type extends Symbol {
      * of Float). For arrays, returns the component type of their base type. For all other types,
      * returns the type itself.
      */
-    @Nonnull
-    public Type getComponentType() {
+    public @NonNull Type getComponentType() {
         return this;
     }
 
     /**
      * Returns true if these types are equal after alias resolution.
      */
-    public final boolean matches(@Nonnull Type other) {
+    public final boolean matches(@NonNull Type other) {
         return resolve().getName().equals(other.resolve().getName());
     }
 
     /**
      * Returns a descriptor of the type, meant for name-mangling. (e.g. float4x4 -> f44)
      */
-    @Nonnull
-    public final String getDesc() {
+    public final @NonNull String getDesc() {
         return mDesc;
     }
 
@@ -354,9 +347,8 @@ public class Type extends Symbol {
         return kNonScalar_ScalarKind;
     }
 
-    @Nonnull
     @Override
-    public final String toString() {
+    public final @NonNull String toString() {
         return getName();
     }
 
@@ -383,8 +375,8 @@ public class Type extends Symbol {
     public final boolean isNumeric() {
         return switch (getScalarKind()) {
             case kFloat_ScalarKind,
-                    kSigned_ScalarKind,
-                    kUnsigned_ScalarKind -> true;
+                 kSigned_ScalarKind,
+                 kUnsigned_ScalarKind -> true;
             default -> false;
         };
     }
@@ -416,7 +408,7 @@ public class Type extends Symbol {
     public final boolean isInteger() {
         return switch (getScalarKind()) {
             case kSigned_ScalarKind,
-                    kUnsigned_ScalarKind -> true;
+                 kUnsigned_ScalarKind -> true;
             default -> false;
         };
     }
@@ -530,9 +522,9 @@ public class Type extends Symbol {
             }
         }
         if (isGeneric()) {
-            final Type[] types = getCoercibleTypes();
-            for (int i = 0; i < types.length; i++) {
-                if (types[i].matches(other)) {
+            final var types = getCoercibleTypes();
+            for (int i = 0; i < types.size(); i++) {
+                if (types.get(i).matches(other)) {
                     return CoercionCost.widening(i + 1);
                 }
             }
@@ -543,8 +535,7 @@ public class Type extends Symbol {
     /**
      * For generic types, returns the types that this generic type can substitute for.
      */
-    @Nonnull
-    public Type[] getCoercibleTypes() {
+    public @Unmodifiable List<Type> getCoercibleTypes() {
         throw new AssertionError();
     }
 
@@ -553,7 +544,7 @@ public class Type extends Symbol {
      * error and returns null.
      */
     @Nullable
-    public final Expression coerceExpression(@Nonnull Context context,
+    public final Expression coerceExpression(@NonNull Context context,
                                              @Nullable Expression expr) {
         if (expr == null || expr.isIncomplete(context)) {
             return null;
@@ -636,9 +627,7 @@ public class Type extends Symbol {
         throw new AssertionError();
     }
 
-    @Unmodifiable
-    @Nonnull
-    public Field[] getFields() {
+    public @Unmodifiable List<Field> getFields() {
         throw new AssertionError();
     }
 
@@ -743,7 +732,7 @@ public class Type extends Symbol {
     /**
      * Returns the corresponding vector type with the specified number of rows.
      */
-    public final Type toVector(@Nonnull Context context, int rows) {
+    public final Type toVector(@NonNull Context context, int rows) {
         return toCompound(context, 1, rows);
     }
 
@@ -751,7 +740,7 @@ public class Type extends Symbol {
      * Returns the corresponding vector or matrix type with the specified number of columns and
      * rows.
      */
-    public final Type toCompound(@Nonnull Context context, int cols, int rows) {
+    public final Type toCompound(@NonNull Context context, int cols, int rows) {
         if (!isScalar()) {
             throw new IllegalStateException("non-scalar");
         }
@@ -787,30 +776,30 @@ public class Type extends Symbol {
                 };
                 default -> throw new AssertionError(cols);
             };
-        } else if (matches(types.mHalf)) {
+        } else if (matches(types.mMin16Float)) {
             return switch (cols) {
                 case 1 -> switch (rows) {
-                    case 2 -> types.mHalf2;
-                    case 3 -> types.mHalf3;
-                    case 4 -> types.mHalf4;
+                    case 2 -> types.mMin16Float2;
+                    case 3 -> types.mMin16Float3;
+                    case 4 -> types.mMin16Float4;
                     default -> throw new AssertionError(rows);
                 };
                 case 2 -> switch (rows) {
-                    case 2 -> types.mHalf2x2;
-                    case 3 -> types.mHalf2x3;
-                    case 4 -> types.mHalf2x4;
+                    case 2 -> types.mMin16Float2x2;
+                    case 3 -> types.mMin16Float2x3;
+                    case 4 -> types.mMin16Float2x4;
                     default -> throw new AssertionError(rows);
                 };
                 case 3 -> switch (rows) {
-                    case 2 -> types.mHalf3x2;
-                    case 3 -> types.mHalf3x3;
-                    case 4 -> types.mHalf3x4;
+                    case 2 -> types.mMin16Float3x2;
+                    case 3 -> types.mMin16Float3x3;
+                    case 4 -> types.mMin16Float3x4;
                     default -> throw new AssertionError(rows);
                 };
                 case 4 -> switch (rows) {
-                    case 2 -> types.mHalf4x2;
-                    case 3 -> types.mHalf4x3;
-                    case 4 -> types.mHalf4x4;
+                    case 2 -> types.mMin16Float4x2;
+                    case 3 -> types.mMin16Float4x3;
+                    case 4 -> types.mMin16Float4x4;
                     default -> throw new AssertionError(rows);
                 };
                 default -> throw new AssertionError(cols);
@@ -824,12 +813,12 @@ public class Type extends Symbol {
                     default -> throw new AssertionError(rows);
                 };
             }
-        } else if (matches(types.mShort)) {
+        } else if (matches(types.mMin16Int)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> types.mShort2;
-                    case 3 -> types.mShort3;
-                    case 4 -> types.mShort4;
+                    case 2 -> types.mMin16Int2;
+                    case 3 -> types.mMin16Int3;
+                    case 4 -> types.mMin16Int4;
                     default -> throw new AssertionError(rows);
                 };
             }
@@ -842,12 +831,12 @@ public class Type extends Symbol {
                     default -> throw new AssertionError(rows);
                 };
             }
-        } else if (matches(types.mUShort)) {
+        } else if (matches(types.mMin16UInt)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> types.mUShort2;
-                    case 3 -> types.mUShort3;
-                    case 4 -> types.mUShort4;
+                    case 2 -> types.mMin16UInt2;
+                    case 3 -> types.mMin16UInt3;
+                    case 4 -> types.mMin16UInt4;
                     default -> throw new AssertionError(rows);
                 };
             }
@@ -867,13 +856,19 @@ public class Type extends Symbol {
     /**
      * Converts an element type and a size (float, 10) into an array name ("float[10]").
      */
-    @Nonnull
-    public String getArrayName(int size) {
+    public @NonNull String getArrayName(int size) {
+        return getArrayName(getName(), size);
+    }
+
+    /**
+     * Converts an element type and a size (float, 10) into an array name ("float[10]").
+     */
+    public static @NonNull String getArrayName(@NonNull String baseName, int size) {
         if (size == kUnsizedArray) {
-            return getName() + "[]";
+            return baseName + "[]";
         }
         assert (size > 0);
-        return getName() + "[" + size + "]";
+        return baseName + "[" + size + "]";
     }
 
     /**
@@ -898,7 +893,7 @@ public class Type extends Symbol {
     /**
      * Reports errors and returns false if this type cannot be used as the element type for an array.
      */
-    public boolean isUsableInArray(@Nonnull Context context, int position) {
+    public boolean isUsableInArray(@NonNull Context context, int position) {
         if (isArray()) {
             // Vulkan: disallow multi-dimensional arrays
             context.error(position, "multi-dimensional arrays are not allowed");
@@ -920,7 +915,7 @@ public class Type extends Symbol {
      * Verifies that the expression is a valid constant array size for this type. Returns the array
      * size, or reports errors and returns zero if the expression isn't a valid literal value.
      */
-    public int convertArraySize(@Nonnull Context context, int position, Expression size) {
+    public int convertArraySize(@NonNull Context context, int position, @Nullable Expression size) {
         size = context.getTypes().mInt.coerceExpression(context, size);
         if (size == null) {
             return 0;
@@ -933,7 +928,7 @@ public class Type extends Symbol {
         return convertArraySize(context, position, size.mPosition, value.getAsLong());
     }
 
-    public int convertArraySize(@Nonnull Context context, int position, int sizePosition, long size) {
+    public int convertArraySize(@NonNull Context context, int position, int sizePosition, long size) {
         if (!isUsableInArray(context, position)) {
             return 0;
         }
@@ -1025,24 +1020,23 @@ public class Type extends Symbol {
 
         private final Type mUnderlyingType;
 
-        AliasType(int position, String name, Type type) {
+        AliasType(int position, String name, @NonNull Type type) {
             super(name, type.getDesc(), type.getTypeKind(), position);
             mUnderlyingType = type;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type resolve() {
             return mUnderlyingType;
         }
 
-        @Nonnull
         @Override
-        public Type getElementType() {
+        public @NonNull Type getElementType() {
             return mUnderlyingType.getElementType();
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getComponentType() {
             return mUnderlyingType.getComponentType();
@@ -1173,15 +1167,13 @@ public class Type extends Symbol {
             return mUnderlyingType.isStorageImage();
         }
 
-        @Nonnull
         @Override
-        public Type[] getCoercibleTypes() {
+        public @Unmodifiable List<Type> getCoercibleTypes() {
             return mUnderlyingType.getCoercibleTypes();
         }
 
-        @Nonnull
         @Override
-        public Field[] getFields() {
+        public @Unmodifiable List<Field> getFields() {
             return mUnderlyingType.getFields();
         }
     }
@@ -1222,13 +1214,13 @@ public class Type extends Symbol {
             return mElementType.getComponents() * mArraySize;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getElementType() {
             return mElementType;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getComponentType() {
             return mElementType.getComponentType();
@@ -1338,13 +1330,13 @@ public class Type extends Symbol {
             return true;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getElementType() {
             return mComponentType;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public ScalarType getComponentType() {
             return mComponentType;
@@ -1383,13 +1375,13 @@ public class Type extends Symbol {
             return true;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getElementType() {
             return mColumnType;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public ScalarType getComponentType() {
             return mColumnType.getComponentType();
@@ -1436,7 +1428,7 @@ public class Type extends Symbol {
             mIsShadow = isShadow;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Type getComponentType() {
             return mComponentType;
@@ -1485,17 +1477,17 @@ public class Type extends Symbol {
 
     public static final class StructType extends Type {
 
-        private final Field[] mFields;
+        private final @Unmodifiable List<Field> mFields;
         private final int mNestingDepth;
         private final boolean mInterfaceBlock;
         private final int mComponents;
 
         // name - the type name, not instance name
         // (interface block can have no instance name, but there must be type name)
-        StructType(int position, String name, Field[] fields, int nestingDepth,
+        StructType(int position, String name, List<Field> fields, int nestingDepth,
                    boolean interfaceBlock) {
             super(name, name, kStruct_TypeKind, position);
-            mFields = fields;
+            mFields = List.copyOf(fields);
             mNestingDepth = nestingDepth;
             mInterfaceBlock = interfaceBlock;
             int components = 0;
@@ -1519,9 +1511,8 @@ public class Type extends Symbol {
             return mInterfaceBlock;
         }
 
-        @Nonnull
         @Override
-        public Field[] getFields() {
+        public @Unmodifiable List<Field> getFields() {
             return mFields;
         }
 
@@ -1538,16 +1529,15 @@ public class Type extends Symbol {
 
     public static final class GenericType extends Type {
 
-        private final Type[] mCoercibleTypes;
+        private final @Unmodifiable List<Type> mCoercibleTypes;
 
         GenericType(String name, Type[] types) {
             super(name, "G", kGeneric_TypeKind);
-            mCoercibleTypes = types;
+            mCoercibleTypes = List.of(types);
         }
 
-        @Nonnull
         @Override
-        public Type[] getCoercibleTypes() {
+        public @Unmodifiable List<Type> getCoercibleTypes() {
             return mCoercibleTypes;
         }
     }
