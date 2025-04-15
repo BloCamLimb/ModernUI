@@ -255,6 +255,45 @@ public class Image implements AutoCloseable {
     }
 
     /**
+     * Copy the image's bounds to the specified Rect.
+     *
+     * @param bounds Rect to receive the image's bounds
+     */
+    public void getBounds(@NonNull Rect bounds) {
+        bounds.set(0, 0, getWidth(), getHeight());
+    }
+
+    /**
+     * Copy the image's bounds to the specified RectF.
+     *
+     * @param bounds RectF to receive the image's bounds
+     */
+    public void getBounds(@NonNull RectF bounds) {
+        bounds.set(0, 0, getWidth(), getHeight());
+    }
+
+    /**
+     * Returns whether this Image has only an alpha channel (i.e. a transparency mask).
+     * If so, then when drawn its color depends on the solid color of Paint, or
+     * Paint's shader if set.
+     *
+     * @return whether the image is alpha only
+     */
+    public boolean isAlphaMask() {
+        return mImage.isAlphaOnly();
+    }
+
+    /**
+     * Returns whether the Image is completely opaque. Returns true if this
+     * Image has no alpha channel, or is flagged to be known that all of its
+     * pixels are opaque.
+     * @return whether the image is opaque
+     */
+    public boolean isOpaque() {
+        return mImage.isOpaque();
+    }
+
+    /**
      * Returns the color space associated with this image. If the color
      * space is unknown, this method returns null.
      */

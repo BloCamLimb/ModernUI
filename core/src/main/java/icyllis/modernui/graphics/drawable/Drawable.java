@@ -807,6 +807,22 @@ public abstract class Drawable {
     }
 
     /**
+     * Called to get the drawable to populate the Outline that defines its drawing area.
+     * <p>
+     * This method is called by the default {@link icyllis.modernui.view.ViewOutlineProvider} to define
+     * the outline of the View.
+     * <p>
+     * The default behavior defines the outline to be the bounding rectangle of 0 alpha.
+     * Subclasses that wish to convey a different shape or alpha value must override this method.
+     *
+     * @see icyllis.modernui.view.View#setOutlineProvider(icyllis.modernui.view.ViewOutlineProvider)
+     */
+    public void getOutline(@NonNull Outline outline) {
+        outline.setRect(getBounds());
+        outline.setAlpha(0);
+    }
+
+    /**
      * Make this drawable mutable. This operation cannot be reversed. A mutable
      * drawable is guaranteed to not share its state with any other drawable.
      * This is especially useful when you need to modify properties of drawables

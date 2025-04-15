@@ -58,11 +58,6 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     }
 
     @Override
-    public int getAlpha() {
-        return mColorDrawable.getAlpha();
-    }
-
-    @Override
     public boolean isStateful() {
         return mState.isStateful();
     }
@@ -79,9 +74,20 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     }
 
     @Override
+    public void getOutline(@NonNull Outline outline) {
+        outline.setRect(getBounds());
+        outline.setAlpha(getAlpha() / 255.0f);
+    }
+
+    @Override
     public void setAlpha(int alpha) {
         mState.mAlpha = alpha;
         onStateChange(getState());
+    }
+
+    @Override
+    public int getAlpha() {
+        return mState.mAlpha;
     }
 
     /**

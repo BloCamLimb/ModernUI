@@ -933,12 +933,12 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
         }
     }
 
-    /*
+    /**
      * Populates <code>outline</code> with the first available (non-empty) layer outline.
      *
      * @param outline Outline in which to place the first available layer outline
      */
-    /*@Override
+    @Override
     public void getOutline(@NonNull Outline outline) {
         final ChildDrawable[] array = mLayerState.mChildren;
         final int N = mLayerState.mNumChildren;
@@ -951,7 +951,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
                 }
             }
         }
-    }*/
+    }
 
     @Override
     public void setHotspot(float x, float y) {

@@ -134,7 +134,7 @@ public class ImageDrawable extends Drawable {
             mImageState.mImage = image;
             // Added by Modern UI
             if (image != null) {
-                mImageState.mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+                image.getBounds(mImageState.mSrcRect);
             }
             // Added by Modern UI
             mDstRectAndInsetsDirty = true;
@@ -213,10 +213,10 @@ public class ImageDrawable extends Drawable {
         }
         final Rect srcRect = mImageState.mSrcRect;
         if (subset == null) {
-            srcRect.set(0, 0, image.getWidth(), image.getWidth());
+            image.getBounds(srcRect);
             invalidateSelf();
         } else if (!srcRect.equals(subset)) {
-            srcRect.set(0, 0, image.getWidth(), image.getWidth());
+            image.getBounds(srcRect);
             if (!srcRect.intersect(subset)) {
                 srcRect.setEmpty();
             }
@@ -546,6 +546,18 @@ public class ImageDrawable extends Drawable {
     }
 
     @Override
+    public void getOutline(@NonNull Outline outline) {
+        updateDstRectAndInsetsIfDirty();
+        outline.setRect(mDstRect);
+
+        // Only opaque images can report a non-0 alpha,
+        // since only they are guaranteed to fill their bounds
+        boolean opaqueOverShape = mImageState.mImage != null
+                && mImageState.mImage.isOpaque();
+        outline.setAlpha(opaqueOverShape ? getAlpha() / 255.0f : 0.0f);
+    }
+
+    @Override
     public void setAlpha(int alpha) {
         final int oldAlpha = mImageState.mPaint.getAlpha();
         if (alpha != oldAlpha) {
@@ -679,7 +691,7 @@ public class ImageDrawable extends Drawable {
             mPaint.setAntiAlias(false);
             mSrcRect = new Rect();
             if (image != null) {
-                mSrcRect.set(0, 0, image.getWidth(), image.getWidth());
+                image.getBounds(mSrcRect);
             }
         }
 

@@ -434,9 +434,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     private void loadDefaultTypeface() {
         Set<FontFamily> set = new LinkedHashSet<>();
 
-        for (String name : new String[]{"Segoe UI Variable", "Segoe UI", "San Francisco",
+        for (String name : new String[]{"Segoe UI", "San Francisco",
                 "Microsoft YaHei UI", "Noto Sans", "Source Han Sans", "Open Sans",
-                "PingFang", "STHeiti", "SimHei", "Segoe UI Symbol"}) {
+                "PingFang", "STHeiti", "SimHei", "Segoe UI Symbol", "SansSerif"}) {
             FontFamily family = FontFamily.getSystemFontWithAlias(name);
             if (family != null) {
                 set.add(family);

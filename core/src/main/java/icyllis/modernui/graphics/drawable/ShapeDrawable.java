@@ -28,6 +28,7 @@ import icyllis.modernui.graphics.BlendModeColorFilter;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.ColorFilter;
+import icyllis.modernui.graphics.Outline;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.RectF;
@@ -805,6 +806,69 @@ public class ShapeDrawable extends Drawable {
         return mShapeState;
     }
 
+    @Override
+    public void getOutline(@NonNull Outline outline) {
+        final ShapeState st = mShapeState;
+        final Rect bounds = getBounds();
+        // only report non-zero alpha if shape being drawn has consistent opacity over shape. Must
+        // either not have a stroke, or have same stroke/fill opacity
+        boolean useFillOpacity = st.mOpaqueOverShape && (mShapeState.mStrokeWidth <= 0
+                || mStrokePaint == null
+                || mStrokePaint.getAlpha() == mFillPaint.getAlpha());
+        outline.setAlpha(useFillOpacity
+                ? modulateAlpha(mFillPaint.getAlpha(), getAlpha()) / 255.0f
+                : 0.0f);
+
+        switch (st.mShape) {
+            case RECTANGLE -> {
+                if (st.mTopLeftRadius > 0.0f || st.mTopRightRadius > 0.0f ||
+                        st.mBottomRightRadius > 0.0f || st.mBottomLeftRadius > 0.0f) {
+                    if (st.mTopLeftRadius == st.mTopRightRadius &&
+                            st.mTopLeftRadius == st.mBottomRightRadius &&
+                            st.mTopLeftRadius == st.mBottomLeftRadius) {
+                        // clamp the radius based on width & height, matching behavior in draw()
+                        float rad = Math.min(st.mTopLeftRadius,
+                                Math.min(bounds.width(), bounds.height()) * 0.5f);
+                        outline.setRoundRect(bounds, rad);
+                    }
+                } else {
+                    outline.setRect(bounds);
+                }
+            }
+            case CIRCLE -> {
+                float cx = bounds.centerX();
+                float cy = bounds.centerY();
+                float radius = Math.min(bounds.width(), bounds.height()) * 0.5f;
+                int left = (int) Math.floor(cx - radius);
+                int top = (int) Math.floor(cy - radius);
+                int right = (int) Math.ceil(cx + radius);
+                int bottom = (int) Math.ceil(cy + radius);
+                outline.setRoundRect(left, top, right, bottom, radius);
+            }
+            case HLINE -> {
+                final float halfStrokeWidth = mStrokePaint != null &&
+                        mStrokePaint.getStrokeWidth() > 0 &&
+                        mStrokePaint.getColor() != Color.TRANSPARENT ?
+                        mStrokePaint.getStrokeWidth() * 0.5f : bounds.height();
+                final float centerY = bounds.centerY();
+                final int top = (int) Math.floor(centerY - halfStrokeWidth);
+                final int bottom = (int) Math.ceil(centerY + halfStrokeWidth);
+                outline.setRect(bounds.left, top, bounds.right, bottom);
+            }
+            case VLINE -> {
+                final float halfStrokeWidth = mStrokePaint != null &&
+                        mStrokePaint.getStrokeWidth() > 0 &&
+                        mStrokePaint.getColor() != Color.TRANSPARENT ?
+                        mStrokePaint.getStrokeWidth() * 0.5f : bounds.width();
+                final float centerX = bounds.centerX();
+                final int left = (int) Math.floor(centerX - halfStrokeWidth);
+                final int right = (int) Math.ceil(centerX + halfStrokeWidth);
+                outline.setRect(left, bounds.top, right, bounds.bottom);
+            }
+        }
+        // ring and complex radii rectangle are not supported
+    }
+
     @NonNull
     @Override
     public Drawable mutate() {
@@ -850,6 +914,8 @@ public class ShapeDrawable extends Drawable {
 
         boolean mUseLevelForShape = true;
 
+        boolean mOpaqueOverShape;
+
         ColorStateList mTint = null;
         BlendMode mBlendMode = DEFAULT_BLEND_MODE;
 
@@ -876,6 +942,7 @@ public class ShapeDrawable extends Drawable {
             mThickness = orig.mThickness;
             mDither = orig.mDither;
             mUseLevelForShape = orig.mUseLevelForShape;
+            mOpaqueOverShape = orig.mOpaqueOverShape;
             mTint = orig.mTint;
             mBlendMode = orig.mBlendMode;
         }
@@ -886,6 +953,19 @@ public class ShapeDrawable extends Drawable {
 
         public void setSolidColors(@Nullable ColorStateList colors) {
             mSolidColors = colors;
+            computeOpacity();
+        }
+
+        protected void computeOpacity() {
+            mOpaqueOverShape = false;
+
+            // An unfilled shape is not opaque over bounds or shape
+            if (mSolidColors == null) {
+                return;
+            }
+
+            // Colors are opaque, so opaqueOverShape=true,
+            mOpaqueOverShape = true;
         }
 
         public void setStroke(int width, @Nullable ColorStateList colors) {
@@ -985,5 +1065,7 @@ public class ShapeDrawable extends Drawable {
         mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter,
                 state.mTint, state.mBlendMode);
         mShapeIsDirty = true;
+
+        state.computeOpacity();
     }
 }
