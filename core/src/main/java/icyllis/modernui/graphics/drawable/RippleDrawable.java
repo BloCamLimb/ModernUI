@@ -489,6 +489,25 @@ public class RippleDrawable extends LayerDrawable {
     }
 
     /**
+     * Populates <code>outline</code> with the first available layer outline,
+     * excluding the mask layer.
+     *
+     * @param outline Outline in which to place the first available layer outline
+     */
+    @Override
+    public void getOutline(@NonNull Outline outline) {
+        final LayerState state = mLayerState;
+        final ChildDrawable[] children = state.mChildren;
+        final int N = state.mNumChildren;
+        for (int i = 0; i < N; i++) {
+            if (children[i].mId != R.id.mask) {
+                children[i].mDrawable.getOutline(outline);
+                if (!outline.isEmpty()) return;
+            }
+        }
+    }
+
+    /**
      * Optimized for drawing ripples with a mask layer and optional content.
      */
     @Override

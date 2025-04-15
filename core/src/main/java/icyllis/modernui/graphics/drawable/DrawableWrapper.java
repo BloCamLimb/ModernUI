@@ -251,6 +251,15 @@ public abstract class DrawableWrapper extends Drawable implements Drawable.Callb
     }
 
     @Override
+    public void getOutline(@NonNull Outline outline) {
+        if (mDrawable != null) {
+            mDrawable.getOutline(outline);
+        } else {
+            super.getOutline(outline);
+        }
+    }
+
+    @Override
     @Nullable
     public ConstantState getConstantState() {
         if (mState != null && mState.canConstantState()) {

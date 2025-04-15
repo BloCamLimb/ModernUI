@@ -197,6 +197,12 @@ public class ColorDrawable extends Drawable {
     }
 
     @Override
+    public void getOutline(@NonNull Outline outline) {
+        outline.setRect(getBounds());
+        outline.setAlpha(getAlpha() / 255.0f);
+    }
+
+    @Override
     public ConstantState getConstantState() {
         return mColorState;
     }

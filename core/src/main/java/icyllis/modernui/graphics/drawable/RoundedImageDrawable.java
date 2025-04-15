@@ -409,6 +409,13 @@ public class RoundedImageDrawable extends Drawable {
     }
 
     @Override
+    public void getOutline(@NonNull Outline outline) {
+        updateDstRect();
+        outline.setRoundRect(mDstRect, getCornerRadius());
+        outline.setAlpha(getAlpha() / 255.0f);
+    }
+
+    @Override
     public void setAlpha(int alpha) {
         final int oldAlpha = mPaint.getAlpha();
         if (alpha != oldAlpha) {

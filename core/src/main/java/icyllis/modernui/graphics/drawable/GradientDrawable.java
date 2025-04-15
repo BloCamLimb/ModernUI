@@ -598,12 +598,35 @@ public class GradientDrawable extends ShapeDrawable {
                 }
             }
             mSolidColors = null;
+            computeOpacity();
         }
 
         @Override
         public void setSolidColors(@Nullable ColorStateList colors) {
-            super.setSolidColors(colors);
             mGradientColors = null;
+            super.setSolidColors(colors);
+        }
+
+        @Override
+        protected void computeOpacity() {
+            mOpaqueOverShape = false;
+
+            if (mGradientColors != null) {
+                for (int i = 0; i < mGradientColors.length; i++) {
+                    if (mGradientColors[i] != null
+                            && (mGradientColors[i].getDefaultColor() >>> 24) != 0xff) {
+                        return;
+                    }
+                }
+            }
+
+            // An unfilled shape is not opaque over bounds or shape
+            if (mGradientColors == null && mSolidColors == null) {
+                return;
+            }
+
+            // Colors are opaque, so opaqueOverShape=true,
+            mOpaqueOverShape = true;
         }
 
         public void setGradientRadius(float gradientRadius, @RadiusType int type) {
