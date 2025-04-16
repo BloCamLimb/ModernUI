@@ -736,7 +736,7 @@ public abstract class Canvas {
      * @param count     The number of values in the array to process, after skipping "offset" of them.
      *                  Since each line uses 4 values, the number of "lines" that are drawn is really
      *                  (count >> 2) if connected, or ((count - 2) >> 1) if separate.
-     * @param connected Whether line points are connected
+     * @param connected Whether line points are connected or separate
      * @param paint     The paint used to draw the lines
      */
     public abstract void drawLines(@Size(multiple = 2) @NonNull float[] pts, int offset, int count,
@@ -812,26 +812,6 @@ public abstract class Canvas {
     public abstract void drawRect(float left, float top, float right, float bottom, @NonNull Paint paint);
 
     /**
-     * Similar to {@link #drawRect(float, float, float, float, Paint)},
-     * but paint's color and shader are ignored in this case. Instead, draw a bilinear gradient
-     * with the four given colors, in 0xAARRGGBB format, in the sRGB color space.
-     *
-     * @param left    the left side of the rectangle to be drawn
-     * @param top     the top side of the rectangle to be drawn
-     * @param right   the right side of the rectangle to be drawn
-     * @param bottom  the bottom side of the rectangle to be drawn
-     * @param colorUL the color of the upper left corner
-     * @param colorUR the color of the upper right corner
-     * @param colorLR the color of the lower right corner
-     * @param colorLL the color of the lower left corner
-     * @param paint   the paint used to draw the rect
-     */
-    @ApiStatus.Experimental
-    public abstract void drawRectGradient(float left, float top, float right, float bottom,
-                                          int colorUL, int colorUR, int colorLR, int colorLL,
-                                          Paint paint);
-
-    /**
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
      * rectangle will be filled or framed based on the Style in the paint.
      *
@@ -871,7 +851,9 @@ public abstract class Canvas {
      *               {@link Gravity#LEFT}, {@link Gravity#RIGHT}, or any
      *               combination of two adjacent sides
      * @param paint  the paint used to draw the round rectangle
+     * @deprecated use {@link #drawRoundRect(RectF, float, float, float, float, Paint)}
      */
+    @Deprecated
     public final void drawRoundRect(@NonNull RectF rect, float radius, int sides, @NonNull Paint paint) {
         drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, sides, paint);
     }
@@ -890,9 +872,53 @@ public abstract class Canvas {
      *               {@link Gravity#LEFT}, {@link Gravity#RIGHT}, or any
      *               combination of two adjacent sides
      * @param paint  the paint used to draw the round rectangle
+     * @deprecated use {@link #drawRoundRect(float, float, float, float, float, float, float, float, Paint)}
      */
-    public abstract void drawRoundRect(float left, float top, float right, float bottom,
-                                       float radius, int sides, @NonNull Paint paint);
+    @Deprecated
+    public void drawRoundRect(float left, float top, float right, float bottom,
+                              float radius, int sides, @NonNull Paint paint) {
+        if (radius <= 0) {
+            drawRect(left, top, right, bottom, paint);
+            return;
+        }
+        float topLeftRadius = 0;
+        float topRightRadius = 0;
+        float bottomRightRadius = 0;
+        float bottomLeftRadius = 0;
+        switch (sides) {
+            case Gravity.TOP -> {
+                topLeftRadius = radius;
+                topRightRadius = radius;
+            }
+            case Gravity.BOTTOM -> {
+                bottomRightRadius = radius;
+                bottomLeftRadius = radius;
+            }
+            case Gravity.LEFT -> {
+                topLeftRadius = radius;
+                bottomLeftRadius = radius;
+            }
+            case Gravity.RIGHT -> {
+                topRightRadius = radius;
+                bottomRightRadius = radius;
+            }
+            case Gravity.TOP | Gravity.LEFT -> topLeftRadius = radius;
+            case Gravity.TOP | Gravity.RIGHT -> topRightRadius = radius;
+            case Gravity.BOTTOM | Gravity.LEFT -> bottomLeftRadius = radius;
+            case Gravity.BOTTOM | Gravity.RIGHT -> bottomRightRadius = radius;
+            case 0 -> {
+                drawRoundRect(left, top, right, bottom, radius, paint);
+                return;
+            }
+            default -> {
+                drawRect(left, top, right, bottom, paint);
+                return;
+            }
+        }
+        drawRoundRect(left, top, right, bottom,
+                topLeftRadius, topRightRadius,
+                bottomRightRadius, bottomLeftRadius, paint);
+    }
 
     /**
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
@@ -909,6 +935,7 @@ public abstract class Canvas {
      * @param bottomRightRadius the radius used to round the lower right corner
      * @param bottomLeftRadius  the radius used to round the lower left corner
      * @param paint             the paint used to draw the round rectangle
+     * @since 3.12
      */
     public final void drawRoundRect(@NonNull RectF rect, float topLeftRadius, float topRightRadius,
                                     float bottomRightRadius, float bottomLeftRadius, @NonNull Paint paint) {
@@ -934,32 +961,12 @@ public abstract class Canvas {
      * @param bottomRightRadius the radius used to round the lower right corner
      * @param bottomLeftRadius  the radius used to round the lower left corner
      * @param paint             the paint used to draw the round rectangle
+     * @since 3.12
      */
     public abstract void drawRoundRect(float left, float top, float right, float bottom,
                                        float topLeftRadius, float topRightRadius,
                                        float bottomRightRadius, float bottomLeftRadius,
                                        @NonNull Paint paint);
-
-    /**
-     * Similar to {@link #drawRoundRect(float, float, float, float, float, Paint)},
-     * but paint's color and shader are ignored in this case. Instead, draw a bilinear gradient
-     * with the four given colors, in 0xAARRGGBB format, in the sRGB color space.
-     *
-     * @param left    the left of the rectangular bounds
-     * @param top     the top of the rectangular bounds
-     * @param right   the right of the rectangular bounds
-     * @param bottom  the bottom of the rectangular bounds
-     * @param colorUL the color of the upper left corner
-     * @param colorUR the color of the upper right corner
-     * @param colorLR the color of the lower right corner
-     * @param colorLL the color of the lower left corner
-     * @param radius  the radius used to round the corners
-     * @param paint   the paint used to draw the round rectangle
-     */
-    @ApiStatus.Experimental
-    public abstract void drawRoundRectGradient(float left, float top, float right, float bottom,
-                                               int colorUL, int colorUR, int colorLR, int colorLL,
-                                               float radius, Paint paint);
 
     /**
      * Draw the specified circle at (cx, cy) with radius using the specified paint.
@@ -1149,8 +1156,11 @@ public abstract class Canvas {
      * @deprecated use drawPath() instead
      */
     @Deprecated
-    public abstract void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
-                                    Paint paint);
+    public void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
+                           Paint paint) {
+        //TODO drawPath() needs to be implemented in future
+        drawLines(new float[]{x0, y0, x1, y1, x2, y2}, 0, 6, true, paint);
+    }
 
     /**
      * Draw a quadratic Bézier curve using the specified paint. The three points represent
@@ -1256,8 +1266,10 @@ public abstract class Canvas {
      * @deprecated use {@link ImageShader} and {@link #drawRoundRect} instead
      */
     @Deprecated
-    public abstract void drawRoundImage(Image image, float left, float top,
-                                        float radius, @Nullable Paint paint);
+    public void drawRoundImage(Image image, float left, float top,
+                               float radius, @Nullable Paint paint) {
+        drawImage(image, left, top, paint);
+    }
 
     /**
      * Draw array of glyphs with specified font in order <em>visually left-to-right</em>.

@@ -239,13 +239,6 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawRectGradient(float left, float top, float right, float bottom,
-                                 int colorUL, int colorUR, int colorLR, int colorLL, Paint paint) {
-        //TODO bilinear gradient not supported yet
-        mCanvas.drawRect(left, top, right, bottom, paint.getNativePaint());
-    }
-
-    @Override
     public void drawRoundRect(float left, float top, float right, float bottom, float radius,
                               @NonNull Paint paint) {
         mTmpRRect.setRectXY(left, top, right, bottom, radius, radius);
@@ -253,25 +246,17 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawRoundRect(float left, float top, float right, float bottom, float radius,
-                              int sides, @NonNull Paint paint) {
-        //TODO per-corner radius not supported yet
-        drawRoundRect(left, top, right, bottom, radius, paint);
-    }
-
-    @Override
     public void drawRoundRect(float left, float top, float right, float bottom,
                               float topLeftRadius, float topRightRadius,
                               float bottomRightRadius, float bottomLeftRadius,
                               @NonNull Paint paint) {
-        //TODO 3.12, waiting for Arc3D to be merged
-    }
-
-    @Override
-    public void drawRoundRectGradient(float left, float top, float right, float bottom,
-                                      int colorUL, int colorUR, int colorLR, int colorLL, float radius, Paint paint) {
-        //TODO per-corner radius not supported yet
-        drawRoundRect(left, top, right, bottom, radius, paint);
+        var radii = mTmpRadii;
+        radii[0] = radii[1] = topLeftRadius;
+        radii[2] = radii[3] = topRightRadius;
+        radii[4] = radii[5] = bottomRightRadius;
+        radii[6] = radii[7] = bottomLeftRadius;
+        mTmpRRect.setRectRadii(left, top, right, bottom, radii);
+        mCanvas.drawRRect(mTmpRRect, paint.getNativePaint());
     }
 
     @Override
@@ -304,11 +289,6 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2, Paint paint) {
-        //TODO not supported yet
-    }
-
-    @Override
     public void drawImage(Image image, float left, float top, @Nullable Paint paint) {
         if (image == null) {
             return;
@@ -334,12 +314,6 @@ public class ArcCanvas extends Canvas {
                         : SamplingOptions.LINEAR,
                 paint != null ? paint.getNativePaint() : null,
                 icyllis.arc3d.sketch.Canvas.SRC_RECT_CONSTRAINT_FAST);
-    }
-
-    @Override
-    public void drawRoundImage(Image image, float left, float top, float radius,
-                               @Nullable Paint paint) {
-        drawImage(image, left, top, paint);
     }
 
     @Override

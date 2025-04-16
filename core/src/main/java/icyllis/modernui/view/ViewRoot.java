@@ -344,13 +344,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                     canvas.save();
                     canvas.clipRect(dirty);
 
-                    //TODO arc3d does not implement this yet, use drawRect instead
-                    //canvas.drawColor(0, BlendMode.CLEAR);
-                    Paint p = Paint.obtain();
-                    p.setColor(0);
-                    p.setBlendMode(BlendMode.CLEAR);
-                    canvas.drawRect(dirty, p);
-                    p.recycle();
+                    canvas.drawColor(0, BlendMode.CLEAR);
 
                     dirty.setEmpty();
 
