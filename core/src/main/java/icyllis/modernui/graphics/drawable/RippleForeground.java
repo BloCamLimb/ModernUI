@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,9 +18,17 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.animation.*;
+import icyllis.modernui.animation.AnimationUtils;
+import icyllis.modernui.animation.Animator;
+import icyllis.modernui.animation.AnimatorListener;
+import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.FloatProperty;
 
 import java.util.ArrayList;
@@ -32,13 +40,15 @@ import java.util.ArrayList;
 class RippleForeground extends RippleComponent {
 
     // Time it takes for the ripple to expand
-    private static final int RIPPLE_ENTER_DURATION = 225;
+    private static final int RIPPLE_ENTER_DURATION = 450;
     // Time it takes for the ripple to slide from the touch to the center point
-    private static final int RIPPLE_ORIGIN_DURATION = 225;
+    private static final int RIPPLE_ORIGIN_DURATION = 450;
 
-    private static final int OPACITY_ENTER_DURATION = 75;
-    private static final int OPACITY_EXIT_DURATION = 150;
-    private static final int OPACITY_HOLD_DURATION = OPACITY_ENTER_DURATION + 150;
+    private static final int OPACITY_ENTER_DURATION = 150;
+    private static final int OPACITY_EXIT_DURATION = 375;
+    private static final int OPACITY_HOLD_DURATION = OPACITY_ENTER_DURATION + 300;
+
+    private static final float RIPPLE_SMOOTHNESS = 0.5f;
 
     // Parent-relative values for starting position.
     private float mStartingX;
@@ -58,12 +68,14 @@ class RippleForeground extends RippleComponent {
     private float mTweenX = 0;
     private float mTweenY = 0;
 
-    /** Whether this ripple has finished its exit animation. */
+    /**
+     * Whether this ripple has finished its exit animation.
+     */
     private boolean mHasFinishedExit;
 
     private long mEnterStartedAtMillis;
 
-    private final ArrayList<Animator> mRunningVtAnimators = new ArrayList<>();
+    private final ArrayList<Animator> mRunningAnimators = new ArrayList<>();
 
     private final float mStartRadius;
 
@@ -74,7 +86,7 @@ class RippleForeground extends RippleComponent {
         mStartingY = startingY;
 
         // Take 40% of the maximum of the width and height, then divided half to get the radius.
-        mStartRadius = Math.max(bounds.width(), bounds.height()) * 0.2f;
+        mStartRadius = 0;
         clampStartingPosition();
     }
 
@@ -84,11 +96,11 @@ class RippleForeground extends RippleComponent {
         invalidateSelf();
     }
 
-    private void pruneVtFinished() {
-        if (!mRunningVtAnimators.isEmpty()) {
-            for (int i = mRunningVtAnimators.size() - 1; i >= 0; i--) {
-                if (!mRunningVtAnimators.get(i).isRunning()) {
-                    mRunningVtAnimators.remove(i);
+    private void pruneFinished() {
+        if (!mRunningAnimators.isEmpty()) {
+            for (int i = mRunningAnimators.size() - 1; i >= 0; i--) {
+                if (!mRunningAnimators.get(i).isRunning()) {
+                    mRunningAnimators.remove(i);
                 }
             }
         }
@@ -134,44 +146,46 @@ class RippleForeground extends RippleComponent {
     /**
      * Starts a ripple enter animation.
      */
-    public final void enter() {
+    public final void enter(boolean hasMask) {
+        // use longer animation when there's mask
         mEnterStartedAtMillis = AnimationUtils.currentAnimationTimeMillis();
 
-        for (int i = 0; i < mRunningVtAnimators.size(); i++) {
-            mRunningVtAnimators.get(i).cancel();
+        for (int i = 0; i < mRunningAnimators.size(); i++) {
+            mRunningAnimators.get(i).cancel();
         }
-        mRunningVtAnimators.clear();
+        mRunningAnimators.clear();
 
         final ObjectAnimator tweenRadius = ObjectAnimator.ofFloat(this, TWEEN_RADIUS, 1);
-        tweenRadius.setDuration(RIPPLE_ENTER_DURATION);
+        tweenRadius.setDuration(hasMask ? RIPPLE_ENTER_DURATION : RIPPLE_ENTER_DURATION / 2);
         tweenRadius.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
         tweenRadius.start();
-        mRunningVtAnimators.add(tweenRadius);
+        mRunningAnimators.add(tweenRadius);
 
         final ObjectAnimator tweenOrigin = ObjectAnimator.ofFloat(this, TWEEN_ORIGIN, 1);
-        tweenOrigin.setDuration(RIPPLE_ORIGIN_DURATION);
+        tweenOrigin.setDuration(hasMask ? RIPPLE_ORIGIN_DURATION : RIPPLE_ORIGIN_DURATION / 2);
         tweenOrigin.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
         tweenOrigin.start();
-        mRunningVtAnimators.add(tweenOrigin);
+        mRunningAnimators.add(tweenOrigin);
 
         final ObjectAnimator opacity = ObjectAnimator.ofFloat(this, OPACITY, 1);
-        opacity.setDuration(OPACITY_ENTER_DURATION);
+        opacity.setDuration(hasMask ? OPACITY_ENTER_DURATION : OPACITY_ENTER_DURATION / 2);
         opacity.setInterpolator(TimeInterpolator.LINEAR);
         opacity.start();
-        mRunningVtAnimators.add(opacity);
+        mRunningAnimators.add(opacity);
     }
 
     /**
      * Starts a ripple exit animation.
      */
-    public final void exit() {
+    public final void exit(boolean hasMask) {
+        // use longer animation when there's mask
         final ObjectAnimator opacity = ObjectAnimator.ofFloat(this, OPACITY, 0);
-        opacity.setDuration(OPACITY_EXIT_DURATION);
+        opacity.setDuration(hasMask ? OPACITY_EXIT_DURATION : 150);
         opacity.setInterpolator(TimeInterpolator.LINEAR);
         opacity.addListener(mAnimationListener);
         opacity.setStartDelay(computeFadeOutDelay());
         opacity.start();
-        mRunningVtAnimators.add(opacity);
+        mRunningAnimators.add(opacity);
     }
 
     private float getCurrentX() {
@@ -193,18 +207,54 @@ class RippleForeground extends RippleComponent {
      * @param c the canvas to which the ripple should be drawn
      * @param p the paint used to draw the ripple
      */
-    public void draw(Canvas c, Paint p) {
-        pruneVtFinished();
+    public void draw(@NonNull Canvas c, float cx, float cy, @NonNull Paint p,
+                     @Nullable Rect maskRect, @Nullable float[] maskRadii) {
+        pruneFinished();
 
-        final int origAlpha = p.getAlpha();
-        final int alpha = (int) (origAlpha * mOpacity + 0.5f);
+        final float origAlpha = p.getAlphaF();
+        final float alpha = origAlpha * mOpacity;
         final float radius = getCurrentRadius();
         if (alpha > 0 && radius > 0) {
             final float x = getCurrentX();
             final float y = getCurrentY();
-            p.setAlpha(alpha);
-            c.drawCircle(x, y, radius, p);
-            p.setAlpha(origAlpha);
+            p.setAlphaF(alpha);
+            if (mTweenRadius < 1 && maskRect != null) {
+                // make soft ripple if not fully expanded, and there's mask
+                float maxRadius = radius / (1 - RIPPLE_SMOOTHNESS);
+                var rr = new icyllis.arc3d.sketch.RRect();
+                rr.setRectXY(cx + x - maxRadius - 0.001f, cy + y - maxRadius - 0.001f,
+                        cx + x + maxRadius + 0.001f, cy + y + maxRadius + 0.001f,
+                        maxRadius, maxRadius);
+                p.getNativePaint().setShader(
+                        icyllis.arc3d.sketch.shaders.RRectShader.make(
+                                rr, maxRadius * RIPPLE_SMOOTHNESS, false, null
+                        )
+                );
+            }
+            // mask is used in bounded case, where targetRadius should cover the full bounds,
+            // then we draw the mask and ignore the circle with targetRadius
+            if (maskRect != null) {
+                if (maskRadii != null) {
+                    // matching behavior in ShapeDrawable
+                    if (maskRadii[0] == maskRadii[1] &&
+                            maskRadii[0] == maskRadii[2] &&
+                            maskRadii[0] == maskRadii[3]) {
+                        float rad = Math.min(maskRadii[0],
+                                Math.min(maskRect.width(), maskRect.height()) * 0.5f);
+                        c.drawRoundRect(maskRect.left, maskRect.top, maskRect.right, maskRect.bottom,
+                                rad, p);
+                    } else {
+                        c.drawRoundRect(maskRect.left, maskRect.top, maskRect.right, maskRect.bottom,
+                                maskRadii[0], maskRadii[1], maskRadii[2], maskRadii[3], p);
+                    }
+                } else {
+                    c.drawRect(maskRect, p);
+                }
+            } else {
+                c.drawCircle(cx + x, cy + y, radius, p);
+            }
+            p.setAlphaF(origAlpha);
+            p.setShader(null);
         }
     }
 
@@ -232,10 +282,10 @@ class RippleForeground extends RippleComponent {
      * Ends all animations, jumping values to the end state.
      */
     public void end() {
-        for (int i = 0; i < mRunningVtAnimators.size(); i++) {
-            mRunningVtAnimators.get(i).end();
+        for (int i = 0; i < mRunningAnimators.size(); i++) {
+            mRunningAnimators.get(i).end();
         }
-        mRunningVtAnimators.clear();
+        mRunningAnimators.clear();
     }
 
     private void onAnimationPropertyChanged() {
@@ -246,7 +296,7 @@ class RippleForeground extends RippleComponent {
         @Override
         public void onAnimationEnd(@NonNull Animator animator) {
             mHasFinishedExit = true;
-            pruneVtFinished();
+            pruneFinished();
         }
     };
 

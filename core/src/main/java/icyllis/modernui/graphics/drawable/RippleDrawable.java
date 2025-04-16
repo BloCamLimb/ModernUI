@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -71,7 +71,6 @@ import java.util.Objects;
  * may extend outside of the Drawable bounds.
  */
 // Modified from Android
-    //TODO Use analytical methods instead of textures to implement masks
 public class RippleDrawable extends LayerDrawable {
 
     /**
@@ -79,12 +78,6 @@ public class RippleDrawable extends LayerDrawable {
      * on the size of the ripple's container.
      */
     public static final int RADIUS_AUTO = -1;
-
-    /**
-     * Ripple style where a solid circle is drawn. This is also the default style
-     * @see #setRippleStyle(int)
-     */
-    public static final int STYLE_SOLID = 0;
 
     /** The maximum number of ripples supported. */
     private static final int MAX_RIPPLES = 10;
@@ -110,8 +103,9 @@ public class RippleDrawable extends LayerDrawable {
     /** The current background. May be actively animating or pending entry. */
     private RippleBackground mBackground;
 
+    private Rect mMaskRect;
+    private float[] mMaskRadii;
     private BlendModeColorFilter mMaskColorFilter;
-    private BlendModeColorFilter mFocusColorFilter;
     private boolean mHasValidMask;
 
     /** The current ripple. May be actively animating or pending entry. */
@@ -229,26 +223,22 @@ public class RippleDrawable extends LayerDrawable {
     private void setRippleActive(boolean active) {
         if (mRippleActive != active) {
             mRippleActive = active;
-            if (mState.mRippleStyle == STYLE_SOLID) {
-                if (active) {
-                    tryRippleEnter();
-                } else {
-                    tryRippleExit();
-                }
+            if (active) {
+                tryRippleEnter();
+            } else {
+                tryRippleExit();
             }
         }
     }
 
     public void setBackgroundActive(boolean hovered, boolean focused, boolean pressed,
                                     boolean windowFocused) {
-        if (mState.mRippleStyle == STYLE_SOLID) {
-            if (mBackground == null && (hovered || focused)) {
-                mBackground = new RippleBackground(this, mHotspotBounds);
-                mBackground.setup(mState.mMaxRadius, mDensity);
-            }
-            if (mBackground != null) {
-                mBackground.setState(focused, hovered, pressed);
-            }
+        if (mBackground == null && (hovered || focused)) {
+            mBackground = new RippleBackground(this, mHotspotBounds);
+            mBackground.setup(mState.mMaxRadius, mDensity);
+        }
+        if (mBackground != null) {
+            mBackground.setState(focused, hovered, pressed);
         }
     }
 
@@ -287,11 +277,7 @@ public class RippleDrawable extends LayerDrawable {
             // If we just became visible, ensure the background and ripple
             // visibilities are consistent with their internal states.
             if (mRippleActive) {
-                if (mState.mRippleStyle == STYLE_SOLID) {
-                    tryRippleEnter();
-                } else {
-                    invalidateSelf();
-                }
+                tryRippleEnter();
             }
 
             // Skip animations, just show the correct final states.
@@ -420,7 +406,7 @@ public class RippleDrawable extends LayerDrawable {
         }
 
         mRipple.setup(mState.mMaxRadius, mDensity);
-        mRipple.enter();
+        mRipple.enter(mMaskRect != null);
     }
 
     /**
@@ -433,7 +419,7 @@ public class RippleDrawable extends LayerDrawable {
                 mExitingRipples = new RippleForeground[MAX_RIPPLES];
             }
             mExitingRipples[mExitingRipplesCount++] = mRipple;
-            mRipple.exit();
+            mRipple.exit(mMaskRect != null);
             mRipple = null;
         }
     }
@@ -465,7 +451,7 @@ public class RippleDrawable extends LayerDrawable {
     }
 
     @Override
-    public void getHotspotBounds(Rect outRect) {
+    public void getHotspotBounds(@NonNull Rect outRect) {
         outRect.set(mHotspotBounds);
     }
 
@@ -512,12 +498,6 @@ public class RippleDrawable extends LayerDrawable {
      */
     @Override
     public void draw(@NonNull Canvas canvas) {
-        if (mState.mRippleStyle == STYLE_SOLID) {
-            drawSolid(canvas);
-        }
-    }
-
-    private void drawSolid(Canvas canvas) {
         pruneRipples();
 
         // Clip to the dirty bounds, which will be the drawable bounds if we
@@ -554,6 +534,64 @@ public class RippleDrawable extends LayerDrawable {
         mExitingRipplesCount = remaining;
     }
 
+    private void updateMaskIfNeeded() {
+        if (mHasValidMask) {
+            return;
+        }
+
+        if (mRipple == null && mExitingRipplesCount <= 0
+                && (mBackground == null || !mBackground.isVisible())) {
+            // We might need a mask later.
+            return;
+        }
+
+        mHasValidMask = true;
+
+        final Rect bounds = getBounds();
+        if ((mMask == null && getNumberOfLayers() == 0) || bounds.isEmpty()) {
+            mMaskRect = null;
+            mMaskRadii = null;
+            mMaskColorFilter = null;
+            return;
+        }
+
+        Drawable mask = mMask;
+        if (mask == null) {
+            mask = getDrawable(0);
+        }
+
+        // Assuming the Drawable has opaque fill, get its outline to for analytic mask
+        Outline outline = new Outline();
+        outline.setEmpty();
+
+        mask.getOutline(outline);
+
+        if (outline.getType() == Outline.TYPE_ROUND_RECT) {
+            // Ignore alpha and treat it as opaque
+            if (mMaskRect == null) {
+                mMaskRect = new Rect();
+            }
+            outline.getRect(mMaskRect);
+            float radius = outline.getRadius();
+            if (radius > 0) {
+                mMaskRadii = new float[]{radius, radius, radius, radius};
+            } else {
+                mMaskRadii = null;
+            }
+        } else if (mask instanceof ShapeDrawable shape &&
+                shape.getShape() == ShapeDrawable.RECTANGLE) {
+            // Handle the complex radii case
+            if (mMaskRect == null) {
+                mMaskRect = new Rect();
+            }
+            shape.copyBounds(mMaskRect);
+            mMaskRadii = shape.getCornerRadii();
+        } else {
+            mMaskRect = null;
+            mMaskRadii = null;
+        }
+    }
+
     private void drawContent(Canvas canvas) {
         // Draw everything except the mask.
         final ChildDrawable[] array = mLayerState.mChildren;
@@ -576,26 +614,26 @@ public class RippleDrawable extends LayerDrawable {
 
         final float x = mHotspotBounds.exactCenterX();
         final float y = mHotspotBounds.exactCenterY();
-        canvas.translate(x, y);
 
         final Paint p = updateRipplePaint();
 
+        final Rect maskRect = mMaskRect;
+        final float[] maskRadii = mMaskRadii;
+
         if (background != null && background.isVisible()) {
-            background.draw(canvas, p);
+            background.draw(canvas, x, y, p, maskRect, maskRadii);
         }
 
         if (count > 0) {
             final RippleForeground[] ripples = mExitingRipples;
             for (int i = 0; i < count; i++) {
-                ripples[i].draw(canvas, p);
+                ripples[i].draw(canvas, x, y, p, maskRect, maskRadii);
             }
         }
 
         if (active != null) {
-            active.draw(canvas, p);
+            active.draw(canvas, x, y, p, maskRect, maskRadii);
         }
-
-        canvas.translate(-x, -y);
     }
 
     Paint updateRipplePaint() {
@@ -605,32 +643,28 @@ public class RippleDrawable extends LayerDrawable {
             mRipplePaint.setStyle(Paint.Style.FILL);
         }
 
-        final float x = mHotspotBounds.exactCenterX();
-        final float y = mHotspotBounds.exactCenterY();
+        updateMaskIfNeeded();
 
         // Grab the color for the current state and cut the alpha channel in
         // half so that the ripple and background together yield full alpha.
         final int color = mState.mColor.getColorForState(getState(), Color.BLACK);
         final Paint p = mRipplePaint;
 
-        /*if (mMaskColorFilter != null) {
+        if (mMaskRect != null) {
             // The ripple timing depends on the paint's alpha value, so we need
             // to push just the alpha channel into the paint and let the filter
             // handle the full-alpha color.
-            int maskColor = mState.mRippleStyle == STYLE_PATTERNED ? color : color | 0xFF000000;
-            if (mMaskColorFilter.getColor() != maskColor) {
-                mMaskColorFilter = new PorterDuffColorFilter(maskColor, mMaskColorFilter.getMode());
-                mFocusColorFilter = new PorterDuffColorFilter(color | 0xFF000000,
-                        mFocusColorFilter.getMode());
+            int maskColor = color | 0xFF000000;
+            if (mMaskColorFilter == null || mMaskColorFilter.getColor() != maskColor) {
+                mMaskColorFilter = new BlendModeColorFilter(maskColor, BlendMode.SRC_IN);
             }
-            p.setColor(color & 0xFF000000);
+            p.setColor(color);
             p.setColorFilter(mMaskColorFilter);
-            p.setShader(mMaskShader);
-        } else {*/
+        } else {
             p.setColor(color);
             p.setColorFilter(null);
-            p.setShader(null);
-        //}
+        }
+        p.setShader(null);
 
         return p;
     }
@@ -689,6 +723,7 @@ public class RippleDrawable extends LayerDrawable {
         return mState;
     }
 
+    @NonNull
     @Override
     public Drawable mutate() {
         super.mutate();
@@ -713,7 +748,6 @@ public class RippleDrawable extends LayerDrawable {
         ColorStateList mColor = ColorStateList.valueOf(Color.MAGENTA);
         ColorStateList mEffectColor = ColorStateList.valueOf(DEFAULT_EFFECT_COLOR);
         int mMaxRadius = RADIUS_AUTO;
-        int mRippleStyle = STYLE_SOLID;
 
         public RippleState(LayerState orig, RippleDrawable owner, Resources res) {
             super(orig, owner, res);
@@ -722,7 +756,6 @@ public class RippleDrawable extends LayerDrawable {
                 mTouchThemeAttrs = origs.mTouchThemeAttrs;
                 mColor = origs.mColor;
                 mMaxRadius = origs.mMaxRadius;
-                mRippleStyle = origs.mRippleStyle;
                 mEffectColor = origs.mEffectColor;
 
                 if (origs.mDensity != mDensity) {
@@ -752,11 +785,13 @@ public class RippleDrawable extends LayerDrawable {
                     || super.canApplyTheme();
         }
 
+        @NonNull
         @Override
         public Drawable newDrawable() {
             return new RippleDrawable(this, null);
         }
 
+        @NonNull
         @Override
         public Drawable newDrawable(Resources res) {
             return new RippleDrawable(this, res);

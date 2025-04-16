@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,8 @@ package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
@@ -48,13 +50,35 @@ class RippleBackground extends RippleComponent {
         return mOpacity > 0;
     }
 
-    public void draw(Canvas c, Paint p) {
-        final int origAlpha = p.getAlpha();
-        final int alpha = Math.min((int) (origAlpha * mOpacity + 0.5f), 255);
+    public void draw(@NonNull Canvas c, float cx, float cy, @NonNull Paint p,
+                     @Nullable Rect maskRect, @Nullable float[] maskRadii) {
+        final float origAlpha = p.getAlphaF();
+        final float alpha = origAlpha * mOpacity;
         if (alpha > 0) {
-            p.setAlpha(alpha);
-            c.drawCircle(0, 0, mTargetRadius, p);
-            p.setAlpha(origAlpha);
+            p.setAlphaF(alpha);
+            // mask is used in bounded case, where targetRadius should cover the full bounds,
+            // then we draw the mask and ignore the circle with targetRadius
+            if (maskRect != null) {
+                if (maskRadii != null) {
+                    // matching behavior in ShapeDrawable
+                    if (maskRadii[0] == maskRadii[1] &&
+                            maskRadii[0] == maskRadii[2] &&
+                            maskRadii[0] == maskRadii[3]) {
+                        float rad = Math.min(maskRadii[0],
+                                Math.min(maskRect.width(), maskRect.height()) * 0.5f);
+                        c.drawRoundRect(maskRect.left, maskRect.top, maskRect.right, maskRect.bottom,
+                                rad, p);
+                    } else {
+                        c.drawRoundRect(maskRect.left, maskRect.top, maskRect.right, maskRect.bottom,
+                                maskRadii[0], maskRadii[1], maskRadii[2], maskRadii[3], p);
+                    }
+                } else {
+                    c.drawRect(maskRect, p);
+                }
+            } else {
+                c.drawCircle(cx, cy, mTargetRadius, p);
+            }
+            p.setAlphaF(origAlpha);
         }
     }
 
