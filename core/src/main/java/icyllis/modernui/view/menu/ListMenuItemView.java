@@ -40,6 +40,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialCheckBox;
@@ -134,7 +135,10 @@ public class ListMenuItemView extends LinearLayout
                 mSubMenuArrowView = new ImageView(getContext());
                 mSubMenuArrowView.setScaleType(ScaleType.CENTER);
                 mSubMenuArrowView.setVisibility(GONE);
-                mSubMenuArrowView.setImageDrawable(new SubMenuArrowDrawable(context));
+                var icon = new BuiltinIconDrawable(context.getResources(),
+                        BuiltinIconDrawable.KEYBOARD_ARROW_RIGHT, 18);
+                icon.setAutoMirrored(true);
+                mSubMenuArrowView.setImageDrawable(icon);
                 if (context.getTheme().resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
                     mSubMenuArrowView.setImageTintList(context.getResources().loadColorStateList(value,
                             context.getTheme()));
@@ -145,7 +149,7 @@ public class ListMenuItemView extends LinearLayout
                 mContent.addView(mSubMenuArrowView, params);
             }
 
-            addView(mContent, MATCH_PARENT, WRAP_CONTENT);
+            addView(mContent, MATCH_PARENT, dp(32));
         }
 
         setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT));

@@ -29,6 +29,7 @@ import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.FloatBuffer;
@@ -1324,12 +1325,12 @@ public abstract class Canvas {
      * @param paint Paint used for drawing.
      * @see icyllis.modernui.text.TextShaper
      */
-    public final void drawShapedText(@NonNull ShapedText text,
+    public void drawShapedText(@NonNull ShapedText text,
                                      float x, float y, @NonNull Paint paint) {
         drawTextBlob(text.getTextBlob(), x, y, paint);
     }
 
-    public final void drawSimpleText(@NonNull char[] text, @NonNull Font font,
+    public void drawSimpleText(@NonNull char[] text, @NonNull Font font,
                                      float x, float y, @NonNull Paint paint) {
         if (text.length == 0) {
             return;
@@ -1349,7 +1350,7 @@ public abstract class Canvas {
         }
     }
 
-    public final void drawSimpleText(@NonNull String text, @NonNull Font font,
+    public void drawSimpleText(@NonNull String text, @NonNull Font font,
                                      float x, float y, @NonNull Paint paint) {
         if (!text.isBlank()) {
             drawSimpleText(text.toCharArray(), font, x, y, paint);
@@ -1515,6 +1516,22 @@ public abstract class Canvas {
      */
     public final void drawTriangleListMesh(@NonNull FloatBuffer pos, @Nullable IntBuffer color, @NonNull Paint paint) {
         drawMesh(VertexMode.TRIANGLES, pos, null, color, null, null, paint);
+    }
+
+    @ApiStatus.Experimental
+    public static final int
+            QUAD_AA_FLAG_LEFT = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_LEFT,
+            QUAD_AA_FLAG_TOP = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_TOP,
+            QUAD_AA_FLAG_RIGHT = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_RIGHT,
+            QUAD_AA_FLAG_BOTTOM = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_BOTTOM,
+            QUAD_AA_FLAGS_NONE = 0,
+            QUAD_AA_FLAGS_ALL = QUAD_AA_FLAG_LEFT|QUAD_AA_FLAG_TOP|QUAD_AA_FLAG_RIGHT|QUAD_AA_FLAG_BOTTOM;
+
+    // From Chromium project
+    @ApiStatus.Experimental
+    public void drawEdgeAAQuad(@Nullable RectF rect, @Nullable @Size(8) float[] clip,
+                               @MagicConstant(flags = {QUAD_AA_FLAG_LEFT, QUAD_AA_FLAG_TOP, QUAD_AA_FLAG_RIGHT,
+                                       QUAD_AA_FLAG_BOTTOM}) int edgeFlags, @Nullable Paint paint) {
     }
 
     @Deprecated

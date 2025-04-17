@@ -23,14 +23,10 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.*;
-import icyllis.modernui.material.MaterialDrawable;
-import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.ExpandableListConnector.PositionMetadata;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
-
-import java.nio.FloatBuffer;
 
 /**
  * A view that shows items in a vertically scrolling two-level list. This
@@ -200,69 +196,15 @@ public class ExpandableListView extends ListView {
     // Bounds of the indicator to be drawn
     private final Rect mIndicatorRect = new Rect();
 
-    //TODO remove this
-    private static class DefaultGroupIndicator extends MaterialDrawable {
-
-        private final boolean mDown;
-        private final int mSize;
-        private final FloatBuffer mPoints;
-
-        public DefaultGroupIndicator(Context context, boolean down) {
-            mDown = down;
-            mSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
-                    24, context.getResources().getDisplayMetrics());
-            mPoints = FloatBuffer.allocate(6);
-        }
-
-        @Override
-        public void draw(@NonNull Canvas canvas) {
-            Paint paint = Paint.obtain();
-            paint.setColor(mColor);
-            paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
-            if (paint.getAlpha() != 0) {
-                var bounds = getBounds();
-                canvas.translate(bounds.x(), bounds.y());
-                canvas.drawTriangleListMesh(mPoints, /*color*/null, paint);
-                canvas.translate(-bounds.x(), -bounds.y());
-            }
-            paint.recycle();
-        }
-
-        @Override
-        protected void onBoundsChange(@NonNull Rect bounds) {
-            buildArrowPoints(bounds.width(), bounds.height());
-        }
-
-        private void buildArrowPoints(float w, float h) {
-            if (mDown) {
-                mPoints.put(18 / 24f * w).put(8 / 24f * h)
-                        .put(6 / 24f * w).put(8 / 24f * h)
-                        .put(12 / 24f * w).put(16 / 24f * h).flip();
-            } else {
-                mPoints.put(18 / 24f * w).put(16 / 24f * h)
-                        .put(12 / 24f * w).put(8 / 24f * h)
-                        .put(6 / 24f * w).put(16 / 24f * h).flip();
-            }
-        }
-
-        @Override
-        public int getIntrinsicWidth() {
-            return mSize;
-        }
-
-        @Override
-        public int getIntrinsicHeight() {
-            return mSize;
-        }
-    }
-
     public ExpandableListView(Context context) {
         super(context);
 
         {
             StateListDrawable drawable = new StateListDrawable();
-            drawable.addState(GROUP_EXPANDED_STATE_SET, new DefaultGroupIndicator(context, false));
-            drawable.addState(StateSet.WILD_CARD, new DefaultGroupIndicator(context, true));
+            drawable.addState(GROUP_EXPANDED_STATE_SET, new BuiltinIconDrawable(context.getResources(),
+                    BuiltinIconDrawable.KEYBOARD_ARROW_UP));
+            drawable.addState(StateSet.WILD_CARD, new BuiltinIconDrawable(context.getResources(),
+                    BuiltinIconDrawable.KEYBOARD_ARROW_DOWN));
             mGroupIndicator = drawable;
         }
         mChildIndicator = null;
