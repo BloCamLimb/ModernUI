@@ -390,6 +390,15 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
+    public void drawEdgeAAQuad(@Nullable RectF rect, @Nullable float[] clip, int edgeFlags,
+                               @Nullable Paint paint) {
+        mCanvas.drawEdgeAAQuad(
+                rect != null ? new Rect2f(rect.left, rect.top, rect.right, rect.bottom) : null,
+                clip, edgeFlags, paint != null ? paint.getNativePaint() : null
+        );
+    }
+
+    @Override
     public boolean isClipEmpty() {
         return mCanvas.isClipEmpty();
     }

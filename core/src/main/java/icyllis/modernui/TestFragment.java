@@ -42,6 +42,7 @@ import icyllis.modernui.graphics.LinearGradient;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Shader;
+import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
@@ -748,7 +749,7 @@ public class TestFragment extends Fragment {
             }
             LOGGER.info((System.nanoTime() - start) / 1000000D);
             addView(new DView(getContext()), new LayoutParams(dp(120),
-                    dp(40)));
+                    dp(120)));
 
             //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
             /*cAnim = new Animation(200)
@@ -979,16 +980,26 @@ public class TestFragment extends Fragment {
                 mAnimator.setRepeatMode(ObjectAnimator.REVERSE);
                 mAnimator.setDuration(3000);
                 setClickable(true);
+                var icon = new BuiltinIconDrawable(getContext().getResources(),
+                        BuiltinIconDrawable.KEYBOARD_ARROW_UP);
+                setBackground(icon);
+            }
+
+            @Override
+            public void draw(Canvas canvas) {
+                Paint paint = Paint.obtain();
+                paint.setColor(mColorBackground);
+                canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
+                paint.recycle();
+                super.draw(canvas);
             }
 
             @Override
             protected void onDraw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.obtain();
-                paint.setColor(mColorBackground);
-                canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
+
                 int x = getWidth() / 2 - 20;
                 canvas.drawShapedText(mText, x, offsetY + 24, mTextPaint);
-                paint.recycle();
+
             }
 
             @Override
