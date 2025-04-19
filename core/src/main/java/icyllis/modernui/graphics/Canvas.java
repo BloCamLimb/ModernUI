@@ -1309,7 +1309,6 @@ public abstract class Canvas {
                                     float x, float y,
                                     @NonNull Paint paint);
 
-    //TODO remove this once RecordingCanvas is done
     @ApiStatus.Experimental
     public abstract void drawTextBlob(icyllis.arc3d.sketch.TextBlob blob, float x, float y,
                                       @NonNull Paint paint);
@@ -1326,12 +1325,12 @@ public abstract class Canvas {
      * @see icyllis.modernui.text.TextShaper
      */
     public void drawShapedText(@NonNull ShapedText text,
-                                     float x, float y, @NonNull Paint paint) {
+                               float x, float y, @NonNull Paint paint) {
         drawTextBlob(text.getTextBlob(), x, y, paint);
     }
 
     public void drawSimpleText(@NonNull char[] text, @NonNull Font font,
-                                     float x, float y, @NonNull Paint paint) {
+                               float x, float y, @NonNull Paint paint) {
         if (text.length == 0) {
             return;
         }
@@ -1351,7 +1350,7 @@ public abstract class Canvas {
     }
 
     public void drawSimpleText(@NonNull String text, @NonNull Font font,
-                                     float x, float y, @NonNull Paint paint) {
+                               float x, float y, @NonNull Paint paint) {
         if (!text.isBlank()) {
             drawSimpleText(text.toCharArray(), font, x, y, paint);
         }
@@ -1523,9 +1522,7 @@ public abstract class Canvas {
             QUAD_AA_FLAG_LEFT = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_LEFT,
             QUAD_AA_FLAG_TOP = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_TOP,
             QUAD_AA_FLAG_RIGHT = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_RIGHT,
-            QUAD_AA_FLAG_BOTTOM = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_BOTTOM,
-            QUAD_AA_FLAGS_NONE = 0,
-            QUAD_AA_FLAGS_ALL = QUAD_AA_FLAG_LEFT|QUAD_AA_FLAG_TOP|QUAD_AA_FLAG_RIGHT|QUAD_AA_FLAG_BOTTOM;
+            QUAD_AA_FLAG_BOTTOM = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_BOTTOM;
 
     // From Chromium project
     @ApiStatus.Experimental

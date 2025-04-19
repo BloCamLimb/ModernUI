@@ -18,16 +18,16 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.RefCnt;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.Size;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.text.FontPaint;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 /**
  * {@code Paint} controls options applied when drawing. {@code Paint} collects
@@ -39,7 +39,7 @@ import java.lang.annotation.RetentionPolicy;
  * transparency. For instance, {@code Paint} does not directly implement
  * dashing or blur, but contains the objects that do so.
  */
-@SuppressWarnings({"MagicConstant", "unused"})
+@SuppressWarnings("MagicConstant")
 public class Paint {
 
     /**
@@ -250,36 +250,6 @@ public class Paint {
     private static final int ALIGN_SHIFT = 6;
     private static final int ALIGN_MASK = 0xC0;
 
-    @ApiStatus.Internal
-    @MagicConstant(intValues = {
-            NORMAL,
-            BOLD,
-            ITALIC,
-            BOLD_ITALIC
-    })
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface TextStyle {
-    }
-
-    /**
-     * Font style constant to request the plain/regular/normal style
-     */
-    public static final int NORMAL = FontPaint.NORMAL;
-    /**
-     * Font style constant to request the bold style
-     */
-    public static final int BOLD = FontPaint.BOLD;
-    /**
-     * Font style constant to request the italic style
-     */
-    public static final int ITALIC = FontPaint.ITALIC;
-    /**
-     * Font style constant to request the bold and italic style
-     */
-    public static final int BOLD_ITALIC = FontPaint.BOLD_ITALIC;
-
-    static final int TEXT_STYLE_MASK = NORMAL | BOLD | ITALIC;
-
     static final int TEXT_ANTI_ALIAS_DEFAULT = 0x0;
     static final int TEXT_ANTI_ALIAS_OFF = 0x4;
     static final int TEXT_ANTI_ALIAS_ON = 0x8;
@@ -293,8 +263,8 @@ public class Paint {
     static final int MIPMAP_MODE_SHIFT = 6;
     static final int MIPMAP_MODE_MASK = 0xC0;
 
-    static final int DEFAULT_FLAGS = NORMAL | (ImageShader.FILTER_MODE_LINEAR << FILTER_MODE_SHIFT) |
-            TEXT_ANTI_ALIAS_DEFAULT | LINEAR_TEXT_FLAG;
+    static final int DEFAULT_FLAGS = (ImageShader.FILTER_MODE_LINEAR << FILTER_MODE_SHIFT) |
+            TEXT_ANTI_ALIAS_DEFAULT | LINEAR_TEXT_FLAG; // TODO make linear text configurable
 
     // the recycle bin, see obtain()
     private static final Paint[] sPool = new Paint[8];
@@ -304,11 +274,11 @@ public class Paint {
     // closed by cleaner
     private final icyllis.arc3d.sketch.Paint mPaint;
 
-    private ColorFilter     mColorFilter;
+    private ColorFilter mColorFilter;
 
-    // style + rendering hints (+ text decoration)
-    protected int mFlags;
-    private float mFontSize;
+    // rendering hints
+    private int mFlags;
+    private float mTextSize;
 
     /**
      * Creates a new Paint with defaults.
@@ -419,13 +389,13 @@ public class Paint {
     private void internalReset() {
         mColorFilter = null;
         mFlags = DEFAULT_FLAGS;
-        mFontSize = 16;
+        mTextSize = 16;
     }
 
     private void internalSetFrom(@NonNull Paint paint) {
         mColorFilter = paint.mColorFilter;
         mFlags = paint.mFlags;
-        mFontSize = paint.mFontSize;
+        mTextSize = paint.mTextSize;
     }
 
     ///// Solid Color
@@ -833,7 +803,7 @@ public class Paint {
      */
     public void setShader(@Nullable Shader shader) {
         mPaint.setShader(shader != null
-                ? RefCnt.create(shader.getNativeShader())
+                ? icyllis.arc3d.core.RefCnt.create(shader.getNativeShader())
                 : null);
     }
 
@@ -887,27 +857,7 @@ public class Paint {
         mPaint.setBlendMode(mode != null ? mode.getNativeBlendMode() : null);
     }
 
-    /**
-     * Get desired text's style, combination of NORMAL, BOLD and ITALIC.
-     *
-     * @return the desired style of the font
-     */
-    @TextStyle
-    public int getTextStyle() {
-        return mFlags & TEXT_STYLE_MASK;
-    }
-
-    /**
-     * Set desired text's style, combination of NORMAL, BOLD and ITALIC.
-     * If the font family does not support this style natively, our engine
-     * will use a simulation algorithm, also known as fake bold and fake italic.
-     * The default value is NORMAL.
-     *
-     * @param textStyle the desired style of the font
-     */
-    public void setTextStyle(@TextStyle int textStyle) {
-        mFlags = (mFlags & ~TEXT_STYLE_MASK) | (textStyle & TEXT_STYLE_MASK);
-    }
+    ///// Text Parameters
 
     /**
      * Return the paint's text size in pixel units.
@@ -918,7 +868,7 @@ public class Paint {
      * @see #setTextSize(float)
      */
     public float getTextSize() {
-        return mFontSize;
+        return mTextSize;
     }
 
     /**
@@ -936,7 +886,7 @@ public class Paint {
      */
     public void setTextSize(float textSize) {
         if (textSize >= 0) {
-            mFontSize = textSize;
+            mTextSize = textSize;
         }
     }
 
@@ -968,8 +918,8 @@ public class Paint {
      * When this flag is enabled, font hinting is disabled to prevent shape
      * deformation between scale factors, and glyph caching is disabled due to
      * the large number of glyph images that will be generated.</p>
-     * <p>
-     * The default value is false.
+     *
+     * <p>Since 3.12, enabling linear text also enables subpixel positioning.</p>
      *
      * @param linearText whether to enable linear text
      */
@@ -1081,7 +1031,7 @@ public class Paint {
     public int hashCode() {
         int result = mPaint.hashCode();
         result = 31 * result + mFlags;
-        result = 31 * result + Float.floatToIntBits(mFontSize);
+        result = 31 * result + Float.floatToIntBits(mTextSize);
         return result;
     }
 
@@ -1091,6 +1041,6 @@ public class Paint {
         if (!(o instanceof Paint paint)) return false;
         return mPaint.equals(paint.mPaint) &&
                 mFlags == paint.mFlags &&
-                mFontSize == paint.mFontSize;
+                mTextSize == paint.mTextSize;
     }
 }

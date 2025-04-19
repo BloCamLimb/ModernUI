@@ -19,13 +19,21 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.graphics.text.CharArrayIterator;
+import icyllis.modernui.graphics.text.FontMetricsInt;
+import icyllis.modernui.graphics.text.FontPaint;
+import icyllis.modernui.graphics.text.GraphemeBreak;
 import icyllis.modernui.util.Pools;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Locale;
 
 /**
@@ -33,7 +41,38 @@ import java.util.Locale;
  * For the base class {@link FontPaint}, changing any attributes will require a
  * reflow and re-layout, not just re-drawing.
  */
+@SuppressWarnings("MagicConstant")
 public class TextPaint extends Paint {
+
+    @ApiStatus.Internal
+    @MagicConstant(intValues = {
+            NORMAL,
+            BOLD,
+            ITALIC,
+            BOLD_ITALIC
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface TextStyle {
+    }
+
+    /**
+     * Font style constant to request the plain/regular/normal style
+     */
+    public static final int NORMAL = FontPaint.NORMAL;
+    /**
+     * Font style constant to request the bold style
+     */
+    public static final int BOLD = FontPaint.BOLD;
+    /**
+     * Font style constant to request the italic style
+     */
+    public static final int ITALIC = FontPaint.ITALIC;
+    /**
+     * Font style constant to request the bold and italic style
+     */
+    public static final int BOLD_ITALIC = FontPaint.BOLD_ITALIC;
+
+    private static final int TEXT_STYLE_MASK = NORMAL | BOLD | ITALIC;
 
     /**
      * Paint flag that applies an underline decoration to drawn text.
@@ -51,6 +90,7 @@ public class TextPaint extends Paint {
 
     private Typeface mTypeface;
     private Locale mLocale;
+    private int mFlags;
 
     // Special value 0 means no background paint
     @ColorInt
@@ -72,13 +112,12 @@ public class TextPaint extends Paint {
         super();
         mTypeface = ModernUI.getSelectedTypeface();
         mLocale = ModernUI.getSelectedLocale();
+        mFlags = NORMAL;
     }
 
     @ApiStatus.Internal
     public TextPaint(@NonNull TextPaint paint) {
         set(paint);
-        mTypeface = paint.mTypeface;
-        mLocale = paint.mLocale;
     }
 
     /**
@@ -111,9 +150,12 @@ public class TextPaint extends Paint {
         super.set(paint);
         mTypeface = paint.mTypeface;
         mLocale = paint.mLocale;
+        mFlags = paint.mFlags;
         bgColor = paint.bgColor;
         baselineShift = paint.baselineShift;
         linkColor = paint.linkColor;
+        density = paint.density;
+        underlineColor = paint.underlineColor;
     }
 
     /**
@@ -128,6 +170,28 @@ public class TextPaint extends Paint {
     @NonNull
     public Typeface getTypeface() {
         return mTypeface;
+    }
+
+    /**
+     * Set desired text's style, combination of NORMAL, BOLD and ITALIC.
+     * If the font family does not support this style natively, our engine
+     * will use a simulation algorithm, also known as fake bold and fake italic.
+     * The default value is NORMAL.
+     *
+     * @param textStyle the desired style of the font
+     */
+    public void setTextStyle(@TextStyle int textStyle) {
+        mFlags = (mFlags & ~TEXT_STYLE_MASK) | (textStyle & TEXT_STYLE_MASK);
+    }
+
+    /**
+     * Get desired text's style, combination of NORMAL, BOLD and ITALIC.
+     *
+     * @return the desired style of the font
+     */
+    @TextStyle
+    public int getTextStyle() {
+        return mFlags & TEXT_STYLE_MASK;
     }
 
     /**
