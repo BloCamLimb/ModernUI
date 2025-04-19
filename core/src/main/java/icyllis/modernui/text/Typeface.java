@@ -19,7 +19,6 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.FontCollection;
 import icyllis.modernui.graphics.text.FontFamily;
 
@@ -54,19 +53,19 @@ public class Typeface extends FontCollection {
     /**
      * Font style constant to request the plain/regular/normal style
      */
-    public static final int NORMAL      = Paint.NORMAL;
+    public static final int NORMAL      = TextPaint.NORMAL;
     /**
      * Font style constant to request the bold style
      */
-    public static final int BOLD        = Paint.BOLD;
+    public static final int BOLD        = TextPaint.BOLD;
     /**
      * Font style constant to request the italic style
      */
-    public static final int ITALIC      = Paint.ITALIC;
+    public static final int ITALIC      = TextPaint.ITALIC;
     /**
      * Font style constant to request the bold and italic style
      */
-    public static final int BOLD_ITALIC = Paint.BOLD_ITALIC;
+    public static final int BOLD_ITALIC = TextPaint.BOLD_ITALIC;
 
     @NonNull
     public static Typeface createTypeface(@NonNull FontFamily... families) {

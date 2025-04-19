@@ -19,7 +19,6 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.*;
 import icyllis.modernui.util.Parcel;
 
@@ -51,7 +50,7 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
      *              include bold, italic, and normal. Values are constants defined
      *              in {@link TextPaint}.
      */
-    public StyleSpan(@Paint.TextStyle int style) {
+    public StyleSpan(@TextPaint.TextStyle int style) {
         mStyle = style;
     }
 
@@ -75,7 +74,7 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
     /**
      * Returns the style constant defined in {@link TextPaint}.
      */
-    @Paint.TextStyle
+    @TextPaint.TextStyle
     public int getStyle() {
         return mStyle;
     }
