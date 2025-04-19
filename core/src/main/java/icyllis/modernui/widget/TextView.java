@@ -31,6 +31,7 @@ import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
@@ -792,6 +793,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         resetResolvedDrawables();
         resolveDrawables();
+        applyCompoundDrawableTint();
         invalidate();
         requestLayout();
     }
@@ -1040,6 +1042,107 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     public int getCompoundDrawablePadding() {
         final Drawables dr = mDrawables;
         return dr != null ? dr.mDrawablePadding : 0;
+    }
+
+    /**
+     * Applies a tint to the compound drawables. Does not modify the
+     * current tint mode, which is {@link BlendMode#SRC_IN} by default.
+     * <p>
+     * Subsequent calls to
+     * {@link #setCompoundDrawables(Drawable, Drawable, Drawable, Drawable)}
+     * and related methods will automatically mutate the drawables and apply
+     * the specified tint and tint mode using
+     * {@link Drawable#setTintList(ColorStateList)}.
+     *
+     * @param tint the tint to apply, may be {@code null} to clear tint
+     *
+     * @see #getCompoundDrawableTintList()
+     * @see Drawable#setTintList(ColorStateList)
+     */
+    public void setCompoundDrawableTintList(@Nullable ColorStateList tint) {
+        if (mDrawables == null) {
+            mDrawables = new Drawables();
+        }
+        mDrawables.mTintList = tint;
+        mDrawables.mHasTint = true;
+
+        applyCompoundDrawableTint();
+    }
+
+    /**
+     * @return the tint applied to the compound drawables
+     * @see #setCompoundDrawableTintList(ColorStateList)
+     */
+    public ColorStateList getCompoundDrawableTintList() {
+        return mDrawables != null ? mDrawables.mTintList : null;
+    }
+
+    /**
+     * Specifies the blending mode used to apply the tint specified by
+     * {@link #setCompoundDrawableTintList(ColorStateList)} to the compound
+     * drawables. The default mode is {@link BlendMode#SRC_IN}.
+     *
+     * @param blendMode the blending mode used to apply the tint, may be
+     *                 {@code null} to clear tint
+     * @see #setCompoundDrawableTintList(ColorStateList)
+     * @see Drawable#setTintBlendMode(BlendMode)
+     */
+    public void setCompoundDrawableTintBlendMode(@Nullable BlendMode blendMode) {
+        if (mDrawables == null) {
+            mDrawables = new Drawables();
+        }
+        mDrawables.mBlendMode = blendMode;
+        mDrawables.mHasTintMode = true;
+
+        applyCompoundDrawableTint();
+    }
+
+    /**
+     * Returns the blending mode used to apply the tint to the compound
+     * drawables, if specified.
+     *
+     * @return the blending mode used to apply the tint to the compound
+     *         drawables
+     * @see #setCompoundDrawableTintBlendMode(BlendMode)
+     */
+    public @Nullable BlendMode getCompoundDrawableTintBlendMode() {
+        return mDrawables != null ? mDrawables.mBlendMode : null;
+    }
+
+    private void applyCompoundDrawableTint() {
+        if (mDrawables == null) {
+            return;
+        }
+
+        if (mDrawables.mHasTint || mDrawables.mHasTintMode) {
+            final ColorStateList tintList = mDrawables.mTintList;
+            final BlendMode blendMode = mDrawables.mBlendMode;
+            final boolean hasTint = mDrawables.mHasTint;
+            final boolean hasTintMode = mDrawables.mHasTintMode;
+            final int[] state = getDrawableState();
+
+            for (Drawable dr : mDrawables.mShowing) {
+                if (dr == null) {
+                    continue;
+                }
+
+                dr.mutate();
+
+                if (hasTint) {
+                    dr.setTintList(tintList);
+                }
+
+                if (hasTintMode) {
+                    dr.setTintBlendMode(blendMode);
+                }
+
+                // The drawable (or one of its children) may not have been
+                // stateful before applying the tint, so let's try again.
+                if (dr.isStateful()) {
+                    dr.setState(state);
+                }
+            }
+        }
     }
 
     /**
@@ -1307,7 +1410,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @param style the text style to set
      * @see #getTextStyle()
      */
-    public void setTextStyle(@Paint.TextStyle int style) {
+    public void setTextStyle(@TextPaint.TextStyle int style) {
         if (style != mTextPaint.getTextStyle()) {
             mTextPaint.setTextStyle(style);
 
@@ -1325,7 +1428,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return the current text style
      * @see #setTextStyle(int)
      */
-    @Paint.TextStyle
+    @TextPaint.TextStyle
     public int getTextStyle() {
         return mTextPaint.getTextStyle();
     }
@@ -4956,7 +5059,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             if (mDrawables.resolveWithLayoutDirection(layoutDirection)) {
                 prepareDrawableForDisplay(mDrawables.mShowing[Drawables.LEFT]);
                 prepareDrawableForDisplay(mDrawables.mShowing[Drawables.RIGHT]);
-                //applyCompoundDrawableTint();
+                applyCompoundDrawableTint();
             }
         }
     }
@@ -5137,6 +5240,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         final Drawable[] mShowing = new Drawable[4];
 
+        ColorStateList mTintList;
+        BlendMode mBlendMode;
         boolean mHasTint;
         boolean mHasTintMode;
 
