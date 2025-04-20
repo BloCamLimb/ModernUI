@@ -220,6 +220,9 @@ public class ShapedText {
         return mAdvance;
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Experimental
     public TextBlob getTextBlob() {
         return mTextBlob;

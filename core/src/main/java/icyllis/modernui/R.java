@@ -423,6 +423,11 @@ public final class R {
 
         // unofficial
         public static final ResourceId Widget_Material3_Spinner = new ResourceId(ns, type, "Widget.Material3.Spinner");
+
+        // unofficial
+        public static final ResourceId Widget_Material3_EditText = new ResourceId(ns, type, "Widget.Material3.EditText");
+        // unofficial
+        public static final ResourceId Widget_Material3_EditText_OutlinedBox = new ResourceId(ns, type, "Widget.Material3.EditText.OutlinedBox");
     }
 
     static {

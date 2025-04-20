@@ -801,6 +801,7 @@ public class ShapeDrawable extends Drawable {
         return mShapeState.mHeight;
     }
 
+    @NonNull
     @Override
     public ConstantState getConstantState() {
         return mShapeState;
