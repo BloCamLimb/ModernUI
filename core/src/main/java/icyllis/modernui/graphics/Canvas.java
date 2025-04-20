@@ -1309,6 +1309,9 @@ public abstract class Canvas {
                                     float x, float y,
                                     @NonNull Paint paint);
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Experimental
     public abstract void drawTextBlob(icyllis.arc3d.sketch.TextBlob blob, float x, float y,
                                       @NonNull Paint paint);

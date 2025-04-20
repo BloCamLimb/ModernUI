@@ -18,15 +18,21 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
+import icyllis.modernui.text.method.MovementMethod;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.Gravity;
-
-import javax.annotation.Nonnull;
 
 /*
  * This is supposed to be a *very* thin veneer over TextView.
@@ -59,15 +65,45 @@ import javax.annotation.Nonnull;
  */
 public class EditText extends TextView {
 
+    @AttrRes
+    private static final ResourceId DEF_STYLE_ATTR =
+            ResourceId.attr(R.ns, R.attr.editTextStyle);
+
     public EditText(Context context) {
         super(context);
-        setText("", BufferType.EDITABLE);
-        setMovementMethod(ArrowKeyMovementMethod.getInstance());
+        setFocusable(true);
         setFocusableInTouchMode(true);
+        setClickable(true);
+        setLongClickable(true);
         setGravity(Gravity.CENTER_VERTICAL);
     }
 
-    @Nonnull
+    public EditText(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, DEF_STYLE_ATTR);
+    }
+
+    public EditText(Context context, @Nullable AttributeSet attrs,
+                    @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public EditText(Context context, @Nullable AttributeSet attrs,
+                    @Nullable @AttrRes ResourceId defStyleAttr,
+                    @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+    }
+
+    @Override
+    protected boolean getDefaultEditable() {
+        return true;
+    }
+
+    @Override
+    protected MovementMethod getDefaultMovementMethod() {
+        return ArrowKeyMovementMethod.getInstance();
+    }
+
+    @NonNull
     @Override
     public Editable getText() {
         CharSequence text = super.getText();
@@ -79,7 +115,7 @@ public class EditText extends TextView {
     }
 
     @Override
-    public void setText(@Nonnull CharSequence text, @Nonnull BufferType type) {
+    public void setText(@NonNull CharSequence text, @NonNull BufferType type) {
         super.setText(text, BufferType.EDITABLE);
     }
 

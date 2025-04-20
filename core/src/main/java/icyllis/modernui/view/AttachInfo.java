@@ -56,7 +56,7 @@ final class AttachInfo {
     /**
      * Indicates whether the view's window is currently in touch mode.
      */
-    boolean mInTouchMode = true;
+    boolean mInTouchMode = false;
 
     /**
      * Set if the visibility of any views has changed.

@@ -313,6 +313,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         // and a font size of 16sp. It does not depend on other values
         // in the Theme, so we can call the single-parameter constructor of View.
         super(context);
+        mMovement = getDefaultMovementMethod();
         setTextSize(16);
 
         final Resources.Theme theme = context.getTheme();
@@ -325,6 +326,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             setHighlightColor(value.data);
         if (theme.resolveAttribute(R.ns, R.attr.textColorLink, value, true))
             setLinkTextColor(theme.getResources().loadColorStateList(value, theme));
+
+        if (getDefaultEditable()) {
+            setText("", BufferType.EDITABLE);
+        }
     }
 
     public TextView(Context context, @Nullable AttributeSet attrs) {
@@ -341,6 +346,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
 
+        mMovement = getDefaultMovementMethod();
+
         final TextAppearance appearance;
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
@@ -351,6 +358,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         } else {
             appearance = new TextAppearance();
         }
+
+        boolean editable = getDefaultEditable();
 
         // override TextAppearance with TextView values
         appearance.read(a, sAppearanceValues);
@@ -381,6 +390,25 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         a.recycle();
 
         applyTextAppearance(appearance);
+
+        if (editable) {
+            setText("", BufferType.EDITABLE);
+        }
+    }
+
+    /**
+     * Subclasses override this to specify that they have a KeyListener
+     * by default even if not specifically called for in the XML options.
+     */
+    protected boolean getDefaultEditable() {
+        return false;
+    }
+
+    /**
+     * Subclasses override this to specify a default movement method.
+     */
+    protected MovementMethod getDefaultMovementMethod() {
+        return null;
     }
 
     /**

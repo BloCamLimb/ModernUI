@@ -19,6 +19,7 @@
 package icyllis.modernui.resources;
 
 import icyllis.arc3d.engine.TopologicalSort;
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
@@ -98,16 +99,18 @@ public class ResourcesBuilder {
         return mGlobalObjectTable.computeIfAbsent(o, mGlobalObjectMapper);
     }
 
-    public Style newStyle(@NonNull @StyleRes String name,
-                          @NonNull @StyleRes String parent) {
-        if (name.isEmpty()) {
-            throw new IllegalArgumentException();
+    public Style newStyle(@NonNull @StyleRes ResourceId id,
+                          @Nullable @StyleRes ResourceId parent) {
+        assert id.namespace().equals(R.ns) && id.type().equals("style");
+        String name = dedupKeyString(id.entry());
+        String parentName;
+        if (parent != null) {
+            assert parent.namespace().equals(R.ns) && parent.type().equals("style");
+            parentName = dedupKeyString(parent.entry());
+        } else {
+            parentName = null;
         }
-        name = dedupKeyString(name);
-        if (!parent.isEmpty()) {
-            parent = dedupKeyString(parent);
-        }
-        Style builder = new Style(name, parent);
+        Style builder = new Style(name, parentName);
         if (mStyleTable.putIfAbsent(name, builder) == null) {
             return builder;
         }
@@ -132,7 +135,7 @@ public class ResourcesBuilder {
         int dataCount = 0;
         for (int i = 0; i < styles.size(); i++) {
             var style = styles.get(i);
-            if (!style.mParent.isEmpty() && mStyleTable.get(style.mParent) == null) {
+            if (style.mParent != null && mStyleTable.get(style.mParent) == null) {
                 throw new IllegalStateException("parent style not found");
             }
             style.mEntries.sort(Style.STYLE_ENTRY_COMPARATOR);
@@ -146,7 +149,7 @@ public class ResourcesBuilder {
         for (int i = 0; i < styles.size(); i++) {
             var style = styles.get(i);
             mStyleToOffset.put(style.mName, index);
-            data[index + Resources.MAP_ENTRY_PARENT] = !style.mParent.isEmpty() ?
+            data[index + Resources.MAP_ENTRY_PARENT] = style.mParent != null ?
                     mKeyStringTable.getInt(style.mParent) : -1;
             data[index + Resources.MAP_ENTRY_COUNT] = style.mEntries.size();
             index += Resources.MAP_ENTRY_ENTRIES;
@@ -204,7 +207,7 @@ public class ResourcesBuilder {
 
             @Override
             public Collection<Style> getIncomingEdges(Style node) {
-                if (!node.mParent.isEmpty()) {
+                if (node.mParent != null) {
                     Style parent = node.getThemeBuilder().mStyleTable.get(node.mParent);
                     if (parent != null) {
                         return List.of(parent);
@@ -214,9 +217,7 @@ public class ResourcesBuilder {
             }
         };
 
-        @StyleRes
         String mName;
-        @StyleRes
         String mParent;
 
         record Entry(@AttrRes String attr, int dataType, int data) {

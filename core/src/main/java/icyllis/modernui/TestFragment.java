@@ -335,14 +335,16 @@ public class TestFragment extends Fragment {
             super(context);
             setOrientation(VERTICAL);
             setGravity(Gravity.CENTER);
-            var divider = new ShapeDrawable();
-            divider.setShape(ShapeDrawable.HLINE);
-            divider.setSize(-1, dp(1));
             TypedValue value = new TypedValue();
-            context.getTheme().resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true);
-            divider.setColor(value.data);
-            setDividerDrawable(divider);
-            setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
+            if (false) {
+                var divider = new ShapeDrawable();
+                divider.setShape(ShapeDrawable.HLINE);
+                divider.setSize(-1, dp(1));
+                context.getTheme().resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true);
+                divider.setColor(value.data);
+                setDividerDrawable(divider);
+                setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
+            }
 
             getContext().getTheme().resolveAttribute(R.ns, R.attr.colorPrimary, value, true);
             colorPrimary = value.data;
@@ -567,17 +569,15 @@ public class TestFragment extends Fragment {
                 } else if (i == 2) {
                     continue;
                 } else if (i == 3) {
-                    EditText textField = new EditText(getContext());
+                    EditText textField = new EditText(getContext(), null, null, R.style.Widget_Material3_EditText_OutlinedBox);
                     textField.setTextAppearance(R.style.TextAppearance_Material3_LabelLarge);
                     v = textField;
                     p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                     textField.setHint("Your Name");
-                    textField.setTextSize(16);
                     textField.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                     //textField.setSingleLine();
                     //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                    textField.setPadding(dp(12), 0, dp(12), 0);
                 } else if (i == 10) {
                     var layout = new LinearLayout(getContext());
                     layout.setOrientation(LinearLayout.HORIZONTAL);

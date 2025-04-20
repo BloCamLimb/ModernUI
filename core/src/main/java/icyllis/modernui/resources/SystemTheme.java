@@ -20,12 +20,14 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.R;
 import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.LayerDrawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ScaleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.material.drawable.RadioButtonDrawable;
 import icyllis.modernui.material.drawable.CircularIndeterminateDrawable;
 import icyllis.modernui.material.drawable.LinearIndeterminateDrawable;
@@ -641,6 +643,48 @@ public class SystemTheme {
             );
             return secondary_progress_tint;
         }
+
+        private ColorStateList textfield_stroke_color;
+        private ColorStateList textfield_stroke_color() {
+            if (textfield_stroke_color != null) {
+                return textfield_stroke_color;
+            }
+            textfield_stroke_color = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.get(StateSet.VIEW_STATE_FOCUSED),
+                            StateSet.get(StateSet.VIEW_STATE_HOVERED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnSurface, material_emphasis_disabled),
+                            colorPrimary,
+                            colorOnSurface,
+                            colorOutline
+                    }
+            );
+            return textfield_stroke_color;
+        }
+
+        private ColorStateList textfield_indicator_text_color;
+        private ColorStateList textfield_indicator_text_color() {
+            if (textfield_indicator_text_color != null) {
+                return textfield_indicator_text_color;
+            }
+            textfield_indicator_text_color = new ColorStateList(
+                    new int[][]{
+                            StateSet.get(StateSet.VIEW_STATE_ACTIVATED),
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorPrimary,
+modulateColor(colorOnSurface, material_emphasis_disabled),
+                            colorOnSurfaceVariant,
+                    }
+            );
+            return textfield_indicator_text_color;
+        }
     }
 
     static <T> T fromCache(Resources.Theme theme, Function<ThemedCache, T> fn) {
@@ -668,7 +712,7 @@ public class SystemTheme {
         addStylesToResources(b);
         {
             SystemTheme t = createMaterial(true);
-            var style = b.newStyle(R.style.Theme_Material3_Dark.entry(), "");
+            var style = b.newStyle(R.style.Theme_Material3_Dark, null);
             style.addBoolean(R.attr.isLightTheme, false);
 
             addColorsToTheme(t, style);
@@ -695,7 +739,8 @@ public class SystemTheme {
             style.addReference(R.attr.textAppearanceInverse, R.style.TextAppearance_Inverse);
             style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
             style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
-            style.addReference(R.attr.radioButtonStyleMenuItem, R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
+            style.addReference(R.attr.radioButtonStyleMenuItem,
+                    R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
             style.addReference(R.attr.switchStyle, R.style.Widget_Material3_CompoundButton_Switch);
             style.addReference(R.attr.progressBarStyle, R.style.Widget_Material3_ProgressBar);
             style.addReference(R.attr.progressBarStyleSmall, R.style.Widget_Material3_ProgressBar_Small);
@@ -706,10 +751,11 @@ public class SystemTheme {
             style.addReference(R.attr.contextPopupMenuStyle, R.style.Widget_Material3_PopupMenu_ContextMenu);
             style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
             style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
+            style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
         }
         {
             SystemTheme t = createMaterial(false);
-            var style = b.newStyle(R.style.Theme_Material3_Light.entry(), "");
+            var style = b.newStyle(R.style.Theme_Material3_Light, null);
             style.addBoolean(R.attr.isLightTheme, true);
 
             addColorsToTheme(t, style);
@@ -736,7 +782,8 @@ public class SystemTheme {
             style.addReference(R.attr.textAppearanceInverse, R.style.TextAppearance_Inverse);
             style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
             style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
-            style.addReference(R.attr.radioButtonStyleMenuItem, R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
+            style.addReference(R.attr.radioButtonStyleMenuItem,
+                    R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
             style.addReference(R.attr.switchStyle, R.style.Widget_Material3_CompoundButton_Switch);
             style.addReference(R.attr.progressBarStyle, R.style.Widget_Material3_ProgressBar);
             style.addReference(R.attr.progressBarStyleSmall, R.style.Widget_Material3_ProgressBar_Small);
@@ -747,15 +794,16 @@ public class SystemTheme {
             style.addReference(R.attr.contextPopupMenuStyle, R.style.Widget_Material3_PopupMenu_ContextMenu);
             style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
             style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
+            style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
         }
         {
             SystemTheme t = createDefault(true, 2);
-            var style = b.newStyle(R.style.ThemeOverlay_Material3_Dark_Rust.entry(), "");
+            var style = b.newStyle(R.style.ThemeOverlay_Material3_Dark_Rust, null);
             addColorsToTheme(t, style);
         }
         {
             SystemTheme t = createDefault(false, 0);
-            var style = b.newStyle(R.style.ThemeOverlay_Material3_Light_Rust.entry(), "");
+            var style = b.newStyle(R.style.ThemeOverlay_Material3_Light_Rust, null);
             addColorsToTheme(t, style);
         }
     }
@@ -814,7 +862,8 @@ public class SystemTheme {
         style.addColor(R.attr.textColorSecondary, (resources, theme) -> t.textColorSecondary);
         style.addColor(R.attr.textColorSecondaryInverse, (resources, theme) -> t.textColorSecondaryInverse);
         style.addColor(R.attr.textColorPrimaryDisableOnly, (resources, theme) -> t.textColorPrimaryDisableOnly);
-        style.addColor(R.attr.textColorPrimaryInverseDisableOnly, (resources, theme) -> t.textColorPrimaryInverseDisableOnly);
+        style.addColor(R.attr.textColorPrimaryInverseDisableOnly,
+         (resources, theme) -> t.textColorPrimaryInverseDisableOnly);
         style.addColor(R.attr.textColorHighlight, t.textColorHighlight);
         style.addColor(R.attr.textColorHighlightInverse, t.textColorHighlightInverse);
         style.addColor(R.attr.textColorHint, (resources, theme) -> t.textColorHint);
@@ -829,7 +878,7 @@ public class SystemTheme {
 
     private static void addStylesToResources(ResourcesBuilder b) {
         {
-            var style = b.newStyle(R.style.TextAppearance.entry(), "");
+            var style = b.newStyle(R.style.TextAppearance, null);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addAttribute(R.attr.textColorHint, R.attr.textColorHint);
             style.addAttribute(R.attr.textColorHighlight, R.attr.textColorHighlight);
@@ -837,7 +886,7 @@ public class SystemTheme {
             style.addDimension(R.attr.textSize, 16, TypedValue.COMPLEX_UNIT_SP);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Inverse.entry(), R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Inverse, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimaryInverse);
             style.addAttribute(R.attr.textColorHint, R.attr.textColorHintInverse);
             style.addAttribute(R.attr.textColorHighlight, R.attr.textColorHighlightInverse);
@@ -845,100 +894,100 @@ public class SystemTheme {
         }
         // Headline
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_DisplayLarge.entry(),
-                    R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_DisplayLarge,
+                    R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 57, TypedValue.COMPLEX_UNIT_SP);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_DisplayMedium.entry(),
-                    R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_DisplayMedium,
+                    R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 45, TypedValue.COMPLEX_UNIT_SP);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_DisplaySmall.entry(),
-                    R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_DisplaySmall,
+                    R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 36, TypedValue.COMPLEX_UNIT_SP);
         }
         // Headline
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_HeadlineLarge.entry(),
-                    R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_HeadlineLarge,
+                    R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 32, TypedValue.COMPLEX_UNIT_SP);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_HeadlineMedium.entry(),
-                    R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_HeadlineMedium,
+                    R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 28, TypedValue.COMPLEX_UNIT_SP);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_HeadlineSmall.entry(),
-                    R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_HeadlineSmall,
+                    R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 24, TypedValue.COMPLEX_UNIT_SP);
         }
         // Title
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_TitleLarge.entry(), R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_TitleLarge, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 22, TypedValue.COMPLEX_UNIT_SP);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_TitleMedium.entry(),
-                    R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_TitleMedium,
+                    R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 16, TypedValue.COMPLEX_UNIT_SP);
             style.addInteger(R.attr.textFontWeight, 500);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_TitleSmall.entry(), R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_TitleSmall, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 14, TypedValue.COMPLEX_UNIT_SP);
             style.addInteger(R.attr.textFontWeight, 500);
         }
         // Body
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_BodyLarge.entry(), R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_BodyLarge, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 16, TypedValue.COMPLEX_UNIT_SP);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_BodyMedium.entry(), R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_BodyMedium, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 14, TypedValue.COMPLEX_UNIT_SP);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_BodySmall.entry(), R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_BodySmall, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 12, TypedValue.COMPLEX_UNIT_SP);
         }
         // Label
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_LabelLarge.entry(), R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_LabelLarge, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 14, TypedValue.COMPLEX_UNIT_SP);
             style.addInteger(R.attr.textFontWeight, 500);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_LabelMedium.entry(),
-                    R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_LabelMedium,
+                    R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 12, TypedValue.COMPLEX_UNIT_SP);
             style.addInteger(R.attr.textFontWeight, 500);
         }
         {
-            var style = b.newStyle(R.style.TextAppearance_Material3_LabelSmall.entry(), R.style.TextAppearance.entry());
+            var style = b.newStyle(R.style.TextAppearance_Material3_LabelSmall, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 11, TypedValue.COMPLEX_UNIT_SP);
             style.addInteger(R.attr.textFontWeight, 500);
         }
         // Buttons
         {
-            var style = b.newStyle(R.style.Widget_Material3_Button.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_Button, null);
             style.addDimension(R.attr.minHeight, 36, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minWidth, 80, TypedValue.COMPLEX_UNIT_DP);
             style.addBoolean(R.attr.focusable, true);
@@ -965,8 +1014,8 @@ public class SystemTheme {
             });
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_Button_TonalButton.entry(),
-                    R.style.Widget_Material3_Button.entry());
+            var style = b.newStyle(R.style.Widget_Material3_Button_TonalButton,
+                    R.style.Widget_Material3_Button);
             style.addColor(R.attr.textColor, (resources, theme) ->
                     fromCache(theme, cache -> cache.button_foreground_color_selector(cache.colorOnSecondaryContainer)));
             style.addDrawable(R.attr.background, (resources, theme) -> {
@@ -982,8 +1031,8 @@ public class SystemTheme {
             });
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_Button_TextButton.entry(),
-                    R.style.Widget_Material3_Button.entry());
+            var style = b.newStyle(R.style.Widget_Material3_Button_TextButton,
+                    R.style.Widget_Material3_Button);
             style.addDimension(R.attr.paddingLeft, 10, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.paddingRight, 10, TypedValue.COMPLEX_UNIT_DP);
             style.addColor(R.attr.textColor, (resources, theme) ->
@@ -1000,8 +1049,8 @@ public class SystemTheme {
             });
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_Button_OutlinedButton.entry(),
-                    R.style.Widget_Material3_Button.entry());
+            var style = b.newStyle(R.style.Widget_Material3_Button_OutlinedButton,
+                    R.style.Widget_Material3_Button);
             style.addColor(R.attr.textColor, (resources, theme) ->
                     fromCache(theme, cache -> cache.text_button_foreground_color_selector(cache.colorPrimary)));
             style.addDrawable(R.attr.background, (resources, theme) -> {
@@ -1019,8 +1068,8 @@ public class SystemTheme {
             });
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_Button_ElevatedButton.entry(),
-                    R.style.Widget_Material3_Button.entry());
+            var style = b.newStyle(R.style.Widget_Material3_Button_ElevatedButton,
+                    R.style.Widget_Material3_Button);
             style.addDimension(R.attr.elevation, 1, TypedValue.COMPLEX_UNIT_DP);
             style.addColor(R.attr.textColor, (resources, theme) ->
                     fromCache(theme, cache -> cache.text_button_foreground_color_selector(cache.colorPrimary)));
@@ -1038,15 +1087,15 @@ public class SystemTheme {
         }
         // Compound buttons
         {
-            var style = b.newStyle(R.style.Widget_CompoundButton.entry(), "");
+            var style = b.newStyle(R.style.Widget_CompoundButton, null);
             style.addBoolean(R.attr.focusable, true);
             style.addBoolean(R.attr.clickable, true);
             style.addFlags(R.attr.gravity, Gravity.CENTER_VERTICAL | Gravity.START);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimaryDisableOnly);
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_CompoundButton_RadioButton.entry(),
-                    R.style.Widget_CompoundButton.entry());
+            var style = b.newStyle(R.style.Widget_Material3_CompoundButton_RadioButton,
+                    R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
             style.addDrawable(R.attr.button, (resources, theme) -> {
                 var buttonTint = fromCache(theme, ThemedCache::radio_button_tint);
@@ -1063,8 +1112,8 @@ public class SystemTheme {
             });
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem.entry(),
-                    R.style.Widget_CompoundButton.entry());
+            var style = b.newStyle(R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem,
+                    R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
             style.addDrawable(R.attr.button, (resources, theme) -> {
                 var buttonTint = fromCache(theme, ThemedCache::radio_button_tint);
@@ -1074,8 +1123,8 @@ public class SystemTheme {
             });
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_CompoundButton_Switch.entry(),
-                    R.style.Widget_CompoundButton.entry());
+            var style = b.newStyle(R.style.Widget_Material3_CompoundButton_Switch,
+                    R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
             style.addDimension(R.attr.switchMinWidth, 52, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.switchPadding, 16, TypedValue.COMPLEX_UNIT_DP);
@@ -1099,7 +1148,7 @@ public class SystemTheme {
         }
         // Progress bars
         {
-            var style = b.newStyle(R.style.Widget_Material3_ProgressBar.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar, null);
             style.addDimension(R.attr.minWidth, 48, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 48, TypedValue.COMPLEX_UNIT_DP);
             style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
@@ -1109,10 +1158,11 @@ public class SystemTheme {
                 drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources, theme, 40, 4, 4));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources,
+                    theme, 40, 4, 4));
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Small.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Small, null);
             style.addDimension(R.attr.minWidth, 36, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 36, TypedValue.COMPLEX_UNIT_DP);
             style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
@@ -1122,10 +1172,11 @@ public class SystemTheme {
                 drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources, theme, 28, 4, 3));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources,
+                    theme, 28, 4, 3));
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_ExtraSmall.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_ExtraSmall, null);
             style.addDimension(R.attr.minWidth, 24, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 24, TypedValue.COMPLEX_UNIT_DP);
             style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
@@ -1135,10 +1186,11 @@ public class SystemTheme {
                 drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources, theme, 20, 2, 2.5f));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources,
+             theme, 20, 2, 2.5f));
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Horizontal.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Horizontal, null);
             style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
                 var drawable = new LinearIndeterminateDrawable(resources, false);
                 // there is no disabled color in indeterminate mode
@@ -1146,11 +1198,12 @@ public class SystemTheme {
                 drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources, theme, false));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources,
+             theme, false));
             style.addBoolean(R.attr.mirrorForRtl, true);
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Vertical.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Vertical, null);
             style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
                 var drawable = new LinearIndeterminateDrawable(resources, true);
                 // there is no disabled color in indeterminate mode
@@ -1158,11 +1211,12 @@ public class SystemTheme {
                 drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources, theme, true));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources,
+             theme, true));
         }
         // Seek bars
         {
-            var style = b.newStyle(R.style.Widget_Material3_SeekBar.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_SeekBar, null);
             style.addDrawable(R.attr.progressDrawable, (resources, theme) -> {
                 var background = new ShapeDrawable();
                 background.setShape(ShapeDrawable.HLINE);
@@ -1194,7 +1248,7 @@ public class SystemTheme {
             style.addDimension(R.attr.paddingRight, 16, TypedValue.COMPLEX_UNIT_DP);
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete.entry(), R.style.Widget_Material3_SeekBar.entry());
+            var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete, R.style.Widget_Material3_SeekBar);
             style.addDrawable(R.attr.tickMark, (resources, theme) -> {
                 var tick = new ShapeDrawable();
                 tick.setShape(ShapeDrawable.CIRCLE);
@@ -1207,7 +1261,7 @@ public class SystemTheme {
         }
         // Popup menus
         {
-            var style = b.newStyle(R.style.Widget_Material3_PopupMenu.entry(), "");
+            var style = b.newStyle(R.style.Widget_Material3_PopupMenu, null);
             style.addDimension(R.attr.popupElevation, 3, TypedValue.COMPLEX_UNIT_DP);
             style.addDrawable(R.attr.popupBackground, (resources, theme) -> {
                 var popupBackground = new ShapeDrawable();
@@ -1215,32 +1269,85 @@ public class SystemTheme {
                 popupBackground.setCornerRadius(dp(4, resources));
                 int color = fromCache(theme, cache -> cache.colorSurfaceContainer);
                 popupBackground.setColor(color);
-                int pad = dp(2, resources);
+                int pad = dp(4, resources);
                 popupBackground.setPadding(pad, pad, pad, pad);
                 return popupBackground;
             });
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_PopupMenu_ContextMenu.entry(),
-                    R.style.Widget_Material3_PopupMenu.entry());
+            var style = b.newStyle(R.style.Widget_Material3_PopupMenu_ContextMenu,
+                    R.style.Widget_Material3_PopupMenu);
             style.addBoolean(R.attr.overlapAnchor, true);
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_PopupMenu_ListPopupWindow.entry(),
-                    R.style.Widget_Material3_PopupMenu.entry());
+            var style = b.newStyle(R.style.Widget_Material3_PopupMenu_ListPopupWindow,
+                    R.style.Widget_Material3_PopupMenu);
             // see spinner
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_Spinner.entry(),
-                    R.style.Widget_Material3_PopupMenu_ListPopupWindow.entry());
-            //TODO background (arrow indicator)
+            var style = b.newStyle(R.style.Widget_Material3_Spinner,
+                    R.style.Widget_Material3_PopupMenu_ListPopupWindow);
+            style.addDrawable(R.attr.background, (resources, theme) -> {
+                var background = outlined_box(resources, theme);
+                TypedValue value = new TypedValue();
+                theme.resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true);
+                var ripple = new RippleDrawable(ColorStateList.valueOf(value.data), null, null);
+                ripple.setRadius(dp(14, resources));
+                var icon = new BuiltinIconDrawable(resources, BuiltinIconDrawable.KEYBOARD_ARROW_DOWN,
+                        18);
+                icon.setTintList(fromCache(theme, ThemedCache::textfield_indicator_text_color));
+                var layers = new LayerDrawable(background, ripple, icon);
+                layers.setPaddingRelative(0, 0, dp(12 + 18 + 8, resources), 0);
+                layers.setPaddingMode(LayerDrawable.PADDING_MODE_STACK);
+                layers.setLayerWidth(1, dp(8 + 18 + 8, resources));
+                layers.setLayerGravity(1, Gravity.END | Gravity.FILL_VERTICAL);
+                layers.setLayerGravity(2, Gravity.END | Gravity.CENTER_VERTICAL);
+                layers.setLayerInsetEnd(2, dp(8, resources));
+                return layers;
+            });
             style.addBoolean(R.attr.clickable, true);
             style.addDrawable(R.attr.dropDownSelector, (resources, theme) -> {
                 TypedValue value = new TypedValue();
                 theme.resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true);
                 return new RippleDrawable(ColorStateList.valueOf(value.data), null, new ColorDrawable(~0));
             });
+            style.addDimension(R.attr.paddingStart, 4, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingEnd, 4, TypedValue.COMPLEX_UNIT_DP);
         }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_EditText, null);
+            style.addBoolean(R.attr.focusable, true);
+            style.addBoolean(R.attr.focusableInTouchMode, true);
+            style.addBoolean(R.attr.clickable, true);
+            style.addBoolean(R.attr.longClickable, true);
+            style.addFlags(R.attr.gravity, Gravity.CENTER_VERTICAL);
+            style.addDimension(R.attr.paddingStart, 12, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingEnd, 12, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingTop, 8, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingBottom, 8, TypedValue.COMPLEX_UNIT_DP);
+            style.addReference(R.attr.textAppearance, R.style.TextAppearance);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_EditText_OutlinedBox, R.style.Widget_Material3_EditText);
+            style.addDrawable(R.attr.background, SystemTheme::outlined_box);
+            style.addReference(R.attr.textAppearance, R.style.TextAppearance_Material3_BodyMedium);
+        }
+    }
+
+    private static Drawable outlined_box(Resources resources, Resources.Theme theme) {
+        var boxStrokeColor = fromCache(theme, ThemedCache::textfield_stroke_color);
+        var selector = new StateListDrawable();
+        var background = new ShapeDrawable();
+        background.setShape(ShapeDrawable.RECTANGLE);
+        background.setCornerRadius(dp(4, resources));
+        background.setStroke(dp(1, resources), boxStrokeColor);
+        background.setSize(-1, dp(36, resources));
+        var focusedBackground = (ShapeDrawable) background.getConstantState().newDrawable(resources);
+        focusedBackground.mutate();
+        focusedBackground.setStroke(dp(2, resources), boxStrokeColor);
+        selector.addState(StateSet.get(StateSet.VIEW_STATE_FOCUSED), focusedBackground);
+        selector.addState(StateSet.WILD_CARD, background);
+        return selector;
     }
 
     private static Drawable circular_progress_drawable(Resources resources, Resources.Theme theme,
