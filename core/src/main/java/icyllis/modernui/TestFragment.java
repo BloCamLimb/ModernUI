@@ -101,7 +101,7 @@ public class TestFragment extends Fragment {
 
         try (ModernUI app = new ModernUI()) {
             app.getTheme().applyStyle(R.style.Theme_Material3_Light, true);
-            app.getTheme().applyStyle(R.style.ThemeOverlay_Material3_Light_Rust, true);
+            //app.getTheme().applyStyle(R.style.ThemeOverlay_Material3_Light_Rust, true);
             app.run(new TestFragment());
         }
         AudioManager.getInstance().close();
@@ -645,8 +645,6 @@ public class TestFragment extends Fragment {
                     CheckBox checkBox = new MaterialCheckBox(getContext());
                     v = checkBox;
                     checkBox.setText("Checkbox 0");
-                    checkBox.setTextSize(16);
-                    checkBox.setGravity(Gravity.END);
                     checkBox.setTooltipText("Hello, this is a tooltip.");
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -981,7 +979,7 @@ public class TestFragment extends Fragment {
                 mAnimator.setDuration(3000);
                 setClickable(true);
                 var icon = new BuiltinIconDrawable(getContext().getResources(),
-                        BuiltinIconDrawable.KEYBOARD_ARROW_UP);
+                        BuiltinIconDrawable.RADIO_SMALL);
                 setBackground(icon);
             }
 

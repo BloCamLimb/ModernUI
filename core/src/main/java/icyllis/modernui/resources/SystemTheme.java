@@ -28,6 +28,7 @@ import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ScaleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
+import icyllis.modernui.material.drawable.CheckboxButtonDrawable;
 import icyllis.modernui.material.drawable.RadioButtonDrawable;
 import icyllis.modernui.material.drawable.CircularIndeterminateDrawable;
 import icyllis.modernui.material.drawable.LinearIndeterminateDrawable;
@@ -458,6 +459,7 @@ public class SystemTheme {
             return csl;
         }
 
+        // reused for checkbox
         private ColorStateList radio_button_tint;
         private ColorStateList radio_button_tint() {
             if (radio_button_tint != null) {
@@ -587,6 +589,24 @@ public class SystemTheme {
             return switch_thumb_tint;
         }
 
+        private ColorStateList checkbox_button_icon_tint;
+        private ColorStateList checkbox_button_icon_tint() {
+            if (checkbox_button_icon_tint != null) {
+                return checkbox_button_icon_tint;
+            }
+            checkbox_button_icon_tint = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorSurface,
+                            colorOnPrimary
+                    }
+            );
+            return checkbox_button_icon_tint;
+        }
+
         // reused for progress bar, seek bar
         private ColorStateList slider_track_color_active;
         private ColorStateList slider_track_color_active() {
@@ -679,7 +699,7 @@ public class SystemTheme {
                     },
                     new int[]{
                             colorPrimary,
-modulateColor(colorOnSurface, material_emphasis_disabled),
+                            modulateColor(colorOnSurface, material_emphasis_disabled),
                             colorOnSurfaceVariant,
                     }
             );
@@ -1144,6 +1164,26 @@ modulateColor(colorOnSurface, material_emphasis_disabled),
                 var thumb = new SwitchThumbDrawable(resources, true, true);
                 thumb.setTintList(tint);
                 return thumb;
+            });
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_CompoundButton_CheckBox,
+                    R.style.Widget_CompoundButton);
+            style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
+            style.addDrawable(R.attr.button, (resources, theme) -> {
+                var buttonTint = fromCache(theme, ThemedCache::radio_button_tint);
+                var buttonIconTint = fromCache(theme, ThemedCache::checkbox_button_icon_tint);
+                var button = new CheckboxButtonDrawable(resources, false, true);
+                button.setTintList(buttonTint);
+                button.setIconTint(buttonIconTint);
+                return button;
+            });
+            style.addDrawable(R.attr.background, (resources, theme) -> {
+                var rippleTint = fromCache(theme, ThemedCache::radio_button_ripple_tint);
+                var ripple = new RippleDrawable(rippleTint, null, null);
+                var radius = dp(18, resources);
+                ripple.setRadius(radius);
+                return ripple;
             });
         }
         // Progress bars

@@ -28,7 +28,23 @@ import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
 
+/*
+  This file incorporates <https://github.com/google/material-design-icons>
+  which is licensed under Apache License Version 2.0.
+ */
+
+/**
+ * An efficient way to draw simple scalable icons, without triggering heavy
+ * path rendering. These icons are designed to be 24x24dp with perfect
+ * pixel-grid alignment, colors may be changed via
+ * {@link #setTintList(ColorStateList)}, icons may be auto mirrored in
+ * RTL (right-to-left) layout direction via {@link #setAutoMirrored(boolean)}.
+ *
+ * @since 3.12
+ */
+@ApiStatus.Experimental
 public class BuiltinIconDrawable extends Drawable {
 
     public static final int KEYBOARD_ARROW_RIGHT = 0;
@@ -37,6 +53,10 @@ public class BuiltinIconDrawable extends Drawable {
     public static final int CHEVRON_LEFT = KEYBOARD_ARROW_LEFT;
     public static final int KEYBOARD_ARROW_DOWN = 2;
     public static final int KEYBOARD_ARROW_UP = 3;
+    public static final int CHECK = 4;
+    public static final int CHECK_SMALL = 5;
+    public static final int CHECK_INDETERMINATE_SMALL = 6;
+    public static final int RADIO_SMALL = 7; // Modern UI added
 
     public static final float SIZE = 24;
     private final int mSize;
@@ -88,6 +108,10 @@ public class BuiltinIconDrawable extends Drawable {
                 case KEYBOARD_ARROW_LEFT -> keyboard_arrow_left(canvas, paint);
                 case KEYBOARD_ARROW_DOWN -> keyboard_arrow_down(canvas, paint);
                 case KEYBOARD_ARROW_UP -> keyboard_arrow_up(canvas, paint);
+                case CHECK -> check(canvas, paint);
+                case CHECK_SMALL -> check_small(canvas, paint);
+                case CHECK_INDETERMINATE_SMALL -> check_indeterminate_small(canvas, paint);
+                case RADIO_SMALL -> radio_small(canvas, paint);
             }
             canvas.restore();
         }
@@ -148,6 +172,42 @@ public class BuiltinIconDrawable extends Drawable {
         clip[2] = 664;
         clip[4] = 720;
         c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+    }
+
+    void check(@NonNull Canvas c, @NonNull Paint p) {
+        var clip = mTmpClip;
+        // clockwise
+        clip[0] = 382; clip[1] = -240;
+        clip[2] = 154; clip[3] = -468;
+        clip[4] = 211; clip[5] = -525;
+        clip[6] = 382; clip[7] = -354;
+        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        // counter-clockwise
+        clip[2] = 806; clip[3] = -664;
+        clip[4] = 749; clip[5] = -721;
+        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+    }
+
+    void check_small(@NonNull Canvas c, @NonNull Paint p) {
+        var clip = mTmpClip;
+        // clockwise
+        clip[0] = 400; clip[1] = -304;
+        clip[2] = 240; clip[3] = -464;
+        clip[4] = 296; clip[5] = -520;
+        clip[6] = 400; clip[7] = -416;
+        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        // counter-clockwise
+        clip[2] = 720; clip[3] = -624;
+        clip[4] = 664; clip[5] = -680;
+        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+    }
+
+    void check_indeterminate_small(@NonNull Canvas c, @NonNull Paint p) {
+        c.drawRect(240, -520, 720, -440, p);
+    }
+
+    void radio_small(@NonNull Canvas c, @NonNull Paint p) {
+        c.drawCircle(480, -480, 200, p);
     }
 
     @Override

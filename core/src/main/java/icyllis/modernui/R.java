@@ -400,6 +400,7 @@ public final class R {
         public static final ResourceId Widget_Material3_CompoundButton_RadioButton_MenuItem = new ResourceId(ns, type, "Widget.Material3.CompoundButton.RadioButton.MenuItem");
         // unofficial
         public static final ResourceId Widget_Material3_CompoundButton_Switch = new ResourceId(ns, type, "Widget.Material3.CompoundButton.Switch");
+        public static final ResourceId Widget_Material3_CompoundButton_CheckBox = new ResourceId(ns, type, "Widget.Material3.CompoundButton.CheckBox");
 
         // unofficial
         public static final ResourceId Widget_Material3_ProgressBar = new ResourceId(ns, type, "Widget.Material3.ProgressBar");
