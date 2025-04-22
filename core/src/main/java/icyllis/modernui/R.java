@@ -401,6 +401,8 @@ public final class R {
         // unofficial
         public static final ResourceId Widget_Material3_CompoundButton_Switch = new ResourceId(ns, type, "Widget.Material3.CompoundButton.Switch");
         public static final ResourceId Widget_Material3_CompoundButton_CheckBox = new ResourceId(ns, type, "Widget.Material3.CompoundButton.CheckBox");
+        // unofficial
+        public static final ResourceId Widget_Material3_CompoundButton_CheckBox_MenuItem = new ResourceId(ns, type, "Widget.Material3.CompoundButton.CheckBox.MenuItem");
 
         // unofficial
         public static final ResourceId Widget_Material3_ProgressBar = new ResourceId(ns, type, "Widget.Material3.ProgressBar");

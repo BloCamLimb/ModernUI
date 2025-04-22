@@ -51,13 +51,13 @@ import icyllis.modernui.view.menu.MenuAdapter;
 import icyllis.modernui.view.menu.MenuBuilder;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-
 /**
  * A MenuPopupWindow represents the popup window for menu.
  * <p>
  * MenuPopupWindow is mostly same as ListPopupWindow, but it has customized
- * behaviors specific to menus,
+ * behaviors specific to menus.
+ *
+ * @hidden
  */
 @ApiStatus.Internal
 public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverListener {
@@ -70,12 +70,11 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
         MenuDropDownListView view = new MenuDropDownListView(context, hijackFocus);
         view.setHoverListener(this);
-        view.setPadding(0, view.dp(2), 0, view.dp(2));
         return view;
     }
 
@@ -100,7 +99,7 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
     }
 
     @Override
-    public void onItemHoverEnter(@Nonnull MenuBuilder menu, @Nonnull MenuItem item) {
+    public void onItemHoverEnter(@NonNull MenuBuilder menu, @NonNull MenuItem item) {
         // Forward up the chain
         if (mHoverListener != null) {
             mHoverListener.onItemHoverEnter(menu, item);
@@ -108,13 +107,17 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
     }
 
     @Override
-    public void onItemHoverExit(@Nonnull MenuBuilder menu, @Nonnull MenuItem item) {
+    public void onItemHoverExit(@NonNull MenuBuilder menu, @NonNull MenuItem item) {
         // Forward up the chain
         if (mHoverListener != null) {
             mHoverListener.onItemHoverExit(menu, item);
         }
     }
 
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
     public static class MenuDropDownListView extends DropDownListView {
 
         final int mAdvanceKey;
@@ -146,7 +149,7 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
         }
 
         @Override
-        public boolean onKeyDown(int keyCode, @Nonnull KeyEvent event) {
+        public boolean onKeyDown(int keyCode, @NonNull KeyEvent event) {
             ListMenuItemView selectedItem = (ListMenuItemView) getSelectedView();
             if (selectedItem != null && keyCode == mAdvanceKey) {
                 if (selectedItem.isEnabled() && selectedItem.getItemData().hasSubMenu()) {
@@ -161,14 +164,22 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
                 setNextSelectedPositionInt(INVALID_POSITION);
 
                 // Close only the top-level menu.
-                ((MenuAdapter) getAdapter()).getAdapterMenu().close(false /* closeAllMenus */);
+                final ListAdapter adapter = getAdapter();
+                final MenuAdapter menuAdapter;
+                if (adapter instanceof HeaderViewListAdapter) {
+                    menuAdapter =
+                            (MenuAdapter) ((HeaderViewListAdapter) adapter).getWrappedAdapter();
+                } else {
+                    menuAdapter = (MenuAdapter) adapter;
+                }
+                menuAdapter.getAdapterMenu().close(false /* closeAllMenus */);
                 return true;
             }
             return super.onKeyDown(keyCode, event);
         }
 
         @Override
-        public boolean onHoverEvent(@Nonnull MotionEvent ev) {
+        public boolean onHoverEvent(@NonNull MotionEvent ev) {
             // Dispatch any changes in hovered item index to the listener.
             if (mHoverListener != null) {
                 // The adapter may be wrapped. Adjust the index if necessary.

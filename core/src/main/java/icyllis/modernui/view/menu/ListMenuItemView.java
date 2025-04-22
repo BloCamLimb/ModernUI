@@ -43,7 +43,6 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.Gravity;
@@ -63,6 +62,8 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 /**
  * The item view for each item in the ListView-based MenuViews.
+ *
+ * @hidden
  */
 // Modified from Android
 @ApiStatus.Internal
@@ -83,21 +84,21 @@ public class ListMenuItemView extends LinearLayout
 
     public ListMenuItemView(Context context) {
         super(context);
-        setMinimumWidth(dp(196));
+        setMinimumWidth(dp(112));
         setOrientation(VERTICAL);
         var divider = new ShapeDrawable();
         divider.setShape(ShapeDrawable.HLINE);
-        divider.setSize(-1, dp(1));
+        divider.setSize(-1, dp(3));
         final TypedValue value = new TypedValue();
         if (context.getTheme().resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true))
-            divider.setColor(value.data);
+            divider.setStroke(dp(1), value.data);
         setDividerDrawable(divider);
         setDividerPadding(dp(2));
 
         {
             mContent = new LinearLayout(getContext());
             mContent.setDuplicateParentStateEnabled(true);
-            mContent.setPaddingRelative(dp(4), dp(2), dp(16), dp(2));
+            mContent.setPaddingRelative(dp(8), 0, dp(8), 0);
 
             // Checkbox, and/or radio button will be inserted here.
 
@@ -114,7 +115,7 @@ public class ListMenuItemView extends LinearLayout
 
                 var params = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1);
                 params.gravity = Gravity.CENTER_VERTICAL;
-                params.setMarginStart(dp(16));
+                params.setMarginStart(dp(8));
                 mContent.addView(mTitleView, params);
             }
 
@@ -332,9 +333,8 @@ public class ListMenuItemView extends LinearLayout
         mIconView = new ImageView(getContext());
         mIconView.setScaleType(ScaleType.CENTER_INSIDE);
         mIconView.setDuplicateParentStateEnabled(true);
-        var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        var params = new LinearLayout.LayoutParams(dp(18), dp(18));
         params.gravity = Gravity.CENTER_VERTICAL;
-        params.setMarginsRelative(dp(8), dp(8), dp(-8), dp(8));
         mIconView.setLayoutParams(params);
         if (mRadioButton != null || mCheckBox != null) {
             addContentView(mIconView, 1);
@@ -348,19 +348,18 @@ public class ListMenuItemView extends LinearLayout
         mRadioButton.setFocusable(false);
         mRadioButton.setClickable(false);
         mRadioButton.setDuplicateParentStateEnabled(true);
-        var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        var params = new LinearLayout.LayoutParams(dp(18), dp(18));
         params.gravity = Gravity.CENTER_VERTICAL;
         mRadioButton.setLayoutParams(params);
         addContentView(mRadioButton, 0);
     }
 
     private void insertCheckBox() {
-        //TODO
-        mCheckBox = new MaterialCheckBox(getContext());
+        mCheckBox = new CheckBox(getContext(), null, ResourceId.attr(R.ns, R.attr.checkboxStyleMenuItem));
         mCheckBox.setFocusable(false);
         mCheckBox.setClickable(false);
         mCheckBox.setDuplicateParentStateEnabled(true);
-        var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+        var params = new LinearLayout.LayoutParams(dp(18), dp(18));
         params.gravity = Gravity.CENTER_VERTICAL;
         mCheckBox.setLayoutParams(params);
         addContentView(mCheckBox, 0);
@@ -385,23 +384,21 @@ public class ListMenuItemView extends LinearLayout
         if ((getShowDividers() == SHOW_DIVIDER_NONE) == groupDividerEnabled) {
             if (groupDividerEnabled) {
                 setShowDividers(SHOW_DIVIDER_BEGINNING);
-                setPadding(0, dp(2), 0, 0);
             } else {
                 setShowDividers(SHOW_DIVIDER_NONE);
-                setPadding(0, 0, 0, 0);
             }
         }
     }
 
     @Override
     public void adjustListItemSelectionBounds(@NonNull Rect rect) {
-        rect.inset(dp(4), dp(2));
+        rect.inset(0, dp(2));
         if (getShowDividers() != SHOW_DIVIDER_NONE) {
             // groupDivider is a part of MenuItemListView.
             // If ListMenuItem with divider enabled is hovered/clicked, divider also gets selected.
             // Clipping the selector bounds from the top divider portion when divider is enabled,
             // so that divider does not get selected on hover or click.
-            rect.top += dp(1 + 4);
+            rect.top += dp(1 + 2);
         }
     }
 }
