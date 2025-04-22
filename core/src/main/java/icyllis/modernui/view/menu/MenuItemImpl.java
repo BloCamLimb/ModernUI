@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import org.lwjgl.system.Platform;
 
 public final class MenuItemImpl implements MenuItem {
 
@@ -295,9 +296,16 @@ public final class MenuItemImpl implements MenuItem {
 
         final int modifiers =
                 mMenu.isQwertyMode() ? mShortcutAlphabeticModifiers : mShortcutNumericModifiers;
-        appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "Ctrl + ");
-        appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "Alt + ");
-        appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "Shift + ");
+        //TODO localisation and deal with SUPER key
+        if (Platform.get() == Platform.MACOSX) {
+            appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "⌥");
+            appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "⇧");
+            appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "⌘");
+        } else {
+            appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "Ctrl+");
+            appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "Alt+");
+            appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "Shift+");
+        }
 
         sb.append(Character.toUpperCase(shortcut));
 

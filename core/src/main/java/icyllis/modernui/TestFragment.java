@@ -48,7 +48,6 @@ import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.ShapedText;
-import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.SpannableString;
@@ -642,7 +641,7 @@ public class TestFragment extends Fragment {
                     p = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 6) {
-                    CheckBox checkBox = new MaterialCheckBox(getContext());
+                    CheckBox checkBox = new CheckBox(getContext());
                     v = checkBox;
                     checkBox.setText("Checkbox 0");
                     checkBox.setTooltipText("Hello, this is a tooltip.");

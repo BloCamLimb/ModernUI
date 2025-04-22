@@ -772,6 +772,8 @@ public class SystemTheme {
             style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
             style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
             style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
+            style.addReference(R.attr.checkboxStyle, R.style.Widget_Material3_CompoundButton_CheckBox);
+            style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
         }
         {
             SystemTheme t = createMaterial(false);
@@ -815,6 +817,8 @@ public class SystemTheme {
             style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
             style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
             style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
+            style.addReference(R.attr.checkboxStyle, R.style.Widget_Material3_CompoundButton_CheckBox);
+            style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
         }
         {
             SystemTheme t = createDefault(true, 2);
@@ -1136,10 +1140,14 @@ public class SystemTheme {
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
             style.addDrawable(R.attr.button, (resources, theme) -> {
-                var buttonTint = fromCache(theme, ThemedCache::radio_button_tint);
-                var button = new RadioButtonDrawable(resources, false, false, false);
-                button.setTintList(buttonTint);
-                return button;
+                final TypedValue value = new TypedValue();
+                var button = new BuiltinIconDrawable(resources,
+                        BuiltinIconDrawable.RADIO_SMALL, 18);
+                if (theme.resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
+                    button.setTintList(resources.loadColorStateList(value, theme));
+                var selector = new StateListDrawable();
+                selector.addState(new int[]{R.attr.state_checked}, button);
+                return selector;
             });
         }
         {
@@ -1184,6 +1192,21 @@ public class SystemTheme {
                 var radius = dp(18, resources);
                 ripple.setRadius(radius);
                 return ripple;
+            });
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem,
+                    R.style.Widget_CompoundButton);
+            style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
+            style.addDrawable(R.attr.button, (resources, theme) -> {
+                final TypedValue value = new TypedValue();
+                var button = new BuiltinIconDrawable(resources,
+                        BuiltinIconDrawable.CHECK_SMALL, 18);
+                if (theme.resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
+                    button.setTintList(resources.loadColorStateList(value, theme));
+                var selector = new StateListDrawable();
+                selector.addState(new int[]{R.attr.state_checked}, button);
+                return selector;
             });
         }
         // Progress bars
