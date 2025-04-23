@@ -35,14 +35,19 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.drawable.ColorDrawable;
+import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.util.AttributeSet;
+import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.MotionEvent;
@@ -75,6 +80,10 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
     DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
         MenuDropDownListView view = new MenuDropDownListView(context, hijackFocus);
         view.setHoverListener(this);
+        //TODO use resources
+        TypedValue value = new TypedValue();
+        context.getTheme().resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true);
+        view.setSelector(new RippleDrawable(ColorStateList.valueOf(value.data), null, new ColorDrawable(~0)));
         return view;
     }
 
