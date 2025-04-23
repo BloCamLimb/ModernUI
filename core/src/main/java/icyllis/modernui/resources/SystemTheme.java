@@ -1360,7 +1360,7 @@ public class SystemTheme {
                         18);
                 icon.setTintList(fromCache(theme, ThemedCache::textfield_indicator_text_color));
                 var layers = new LayerDrawable(background, ripple, icon);
-                layers.setPaddingRelative(0, 0, dp(12 + 18 + 8, resources), 0);
+                layers.setPaddingRelative(dp(4, resources), 0, dp(12 + 18 + 8, resources), 0);
                 layers.setPaddingMode(LayerDrawable.PADDING_MODE_STACK);
                 layers.setLayerWidth(1, dp(8 + 18 + 8, resources));
                 layers.setLayerGravity(1, Gravity.END | Gravity.FILL_VERTICAL);
@@ -1374,8 +1374,7 @@ public class SystemTheme {
                 theme.resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true);
                 return new RippleDrawable(ColorStateList.valueOf(value.data), null, new ColorDrawable(~0));
             });
-            style.addDimension(R.attr.paddingStart, 4, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingEnd, 4, TypedValue.COMPLEX_UNIT_DP);
+            style.addBoolean(R.attr.overlapAnchor, true);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_EditText, null);

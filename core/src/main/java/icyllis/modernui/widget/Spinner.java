@@ -122,7 +122,7 @@ public class Spinner extends AbsSpinner {
             mPopup.setListSelector(a.getDrawable(0));
         }
         //TODO set vertical offset to 0 explicitly, temporarily, will be replace by Resources
-        mPopup.setVerticalOffset(0);
+        mPopup.setVerticalOffset(dp(-2));
         mForwardingListener = new ForwardingListener(this) {
             @Override
             public ShowableListMenu getPopup() {

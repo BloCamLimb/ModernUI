@@ -1789,11 +1789,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         return mSelector == dr || super.verifyDrawable(dr);
     }
 
-    /*@Override
+    @Override
     public void jumpDrawablesToCurrentState() {
         super.jumpDrawablesToCurrentState();
         if (mSelector != null) mSelector.jumpToCurrentState();
-    }*/
+    }
 
     @Override
     protected void onAttachedToWindow() {
@@ -3317,7 +3317,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
 
         void startOverfling(int initialVelocity) {
-            //mScroller.setInterpolator(null);
+            mScroller.setInterpolator(null);
             mScroller.fling(0, mScrollY, 0, initialVelocity, 0, 0,
                     Integer.MIN_VALUE, Integer.MAX_VALUE, 0, getHeight());
             mTouchMode = TOUCH_MODE_OVERFLING;
@@ -4709,16 +4709,12 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         public void markChildrenDirty() {
             if (mViewTypeCount == 1) {
                 final ArrayList<View> scrap = mCurrentScrap;
-                for (View view : scrap) {
-                    view.forceLayout();
-                }
+                scrap.forEach(View::forceLayout);
             } else {
                 final int typeCount = mViewTypeCount;
                 for (int i = 0; i < typeCount; i++) {
                     final ArrayList<View> scrap = mScrapViews[i];
-                    for (View view : scrap) {
-                        view.forceLayout();
-                    }
+                    scrap.forEach(View::forceLayout);
                 }
             }
             if (mTransientStateViews != null) {
