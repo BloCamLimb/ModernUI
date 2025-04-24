@@ -4173,9 +4173,9 @@ public class View implements Drawable.Callback {
                     && ((privateFlags & PFLAG_FOCUSED) != 0)) {
                 /* Give up focus if we are no longer focusable */
                 clearFocus();
-                /*if (mParent instanceof ViewGroup) {
+                if (mParent instanceof ViewGroup) {
                     ((ViewGroup) mParent).clearFocusedInCluster();
-                }*/
+                }
             } else if (((old & FOCUSABLE) == NOT_FOCUSABLE)
                     && ((privateFlags & PFLAG_FOCUSED) == 0)) {
                 /*
@@ -4230,9 +4230,9 @@ public class View implements Drawable.Callback {
             if (((mViewFlags & VISIBILITY_MASK) == GONE)) {
                 if (hasFocus()) {
                     clearFocus();
-                    /*if (mParent instanceof ViewGroup) {
+                    if (mParent instanceof ViewGroup) {
                         ((ViewGroup) mParent).clearFocusedInCluster();
-                    }*/
+                    }
                 }
                 if (mParent instanceof View) {
                     // GONE views noop invalidation, so invalidate the parent
@@ -4260,9 +4260,9 @@ public class View implements Drawable.Callback {
                 if (getRootView() != this) {
                     if (hasFocus()) {
                         clearFocus();
-                        /*if (mParent instanceof ViewGroup) {
+                        if (mParent instanceof ViewGroup) {
                             ((ViewGroup) mParent).clearFocusedInCluster();
-                        }*/
+                        }
                     }
                 }
             }
@@ -4382,7 +4382,7 @@ public class View implements Drawable.Callback {
     @Override
     public void invalidateDrawable(@NonNull Drawable drawable) {
         if (verifyDrawable(drawable)) {
-            final Rect dirty = drawable.getBounds();
+            final Rect dirty = drawable.getDirtyBounds();
             final int scrollX = mScrollX;
             final int scrollY = mScrollY;
 
@@ -7251,10 +7251,9 @@ public class View implements Drawable.Callback {
             if (newWidth <= 0 || newHeight <= 0) {
                 if (hasFocus()) {
                     clearFocus();
-                    //TODO
-                    /*if (mParent instanceof ViewGroup) {
+                    if (mParent instanceof ViewGroup) {
                         ((ViewGroup) mParent).clearFocusedInCluster();
-                    }*/
+                    }
                 }
             } else if (oldWidth <= 0 || oldHeight <= 0) {
                 if (mParent != null && canTakeFocus()) {
