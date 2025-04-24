@@ -203,6 +203,23 @@ public abstract class Drawable {
     }
 
     /**
+     * Return the drawable's dirty bounds Rect. Note: for efficiency, the
+     * returned object may be the same object stored in the drawable (though
+     * this is not guaranteed).
+     * <p>
+     * By default, this returns the full drawable bounds. Custom drawables may
+     * override this method to perform more precise invalidation.
+     *
+     * @return The dirty bounds of this drawable (which may change later, so caller
+     * beware). DO NOT ALTER the returned object as it may change the
+     * stored bounds of this drawable.
+     */
+    @NonNull
+    public Rect getDirtyBounds() {
+        return getBounds();
+    }
+
+    /**
      * Set a mask of the configuration parameters for which this drawable
      * may change, requiring that it be re-created.
      *

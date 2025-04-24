@@ -639,8 +639,6 @@ public class RippleDrawable extends LayerDrawable {
     Paint updateRipplePaint() {
         if (mRipplePaint == null) {
             mRipplePaint = new Paint();
-            mRipplePaint.setAntiAlias(true);
-            mRipplePaint.setStyle(Paint.Style.FILL);
         }
 
         updateMaskIfNeeded();
@@ -669,6 +667,8 @@ public class RippleDrawable extends LayerDrawable {
         return p;
     }
 
+    @NonNull
+    @Override
     public Rect getDirtyBounds() {
         if (!isBounded()) {
             final Rect drawingBounds = mDrawingBounds;
