@@ -36,7 +36,7 @@ public class LineBreaker {
 
     private static final int NOWHERE = 0xFFFFFFFF;
 
-    private static final BreakIterator sBreaker = BreakIterator.getLineInstance(Locale.ROOT);
+    //private static final BreakIterator sBreaker = BreakIterator.getLineInstance(Locale.ROOT);
 
     // This function determines whether a character is a space that disappears at end of line.
     // It is the Unicode set: [[:General_Category=Space_Separator:]-[:Line_Break=Glue:]], plus '\n'.
@@ -142,7 +142,7 @@ public class LineBreaker {
 
     // Greedy
     private void process() {
-        BreakIterator breaker = sBreaker;
+        BreakIterator breaker = null;
         final CharacterIterator iterator = new CharArrayIterator(mTextBuf);
 
         Locale locale = null;
