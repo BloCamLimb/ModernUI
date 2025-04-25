@@ -36,6 +36,8 @@ import java.util.Locale;
 //TODO the layout code is not correct, add rendering
 public final class EmojiFont implements Font {
 
+    private static final BreakIterator sBreaker = BreakIterator.getCharacterInstance(Locale.ROOT);
+
     private final String mName;
     private final IntSet mCoverage;
     private final float mBaseSize;
@@ -101,7 +103,7 @@ public final class EmojiFont implements Font {
 
     @Override
     public int calcGlyphScore(char[] buf, int start, int limit) {
-        final var breaker = BreakIterator.getCharacterInstance(Locale.ROOT);
+        final var breaker = sBreaker;
         final var iterator = new CharArrayIterator(buf, start, limit);
 
         breaker.setText(iterator);
@@ -157,7 +159,7 @@ public final class EmojiFont implements Font {
                                  float[] advances, int advanceOffset,
                                  Rect bounds, float x, float y) {
         // Measure grapheme cluster in visual order
-        final var breaker = BreakIterator.getCharacterInstance(Locale.ROOT);
+        final var breaker = sBreaker;
         // We simply ignore the context range
         final var iterator = new CharArrayIterator(buf, layoutStart, layoutLimit);
         breaker.setText(iterator);

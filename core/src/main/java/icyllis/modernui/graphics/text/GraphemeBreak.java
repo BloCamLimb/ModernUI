@@ -77,7 +77,7 @@ public final class GraphemeBreak {
     /**
      * Config value, true to use ICU GCB, otherwise this
      */
-    public static boolean sUseICU = true;
+    public static boolean sUseICU = false;
 
     private GraphemeBreak() {
     }
