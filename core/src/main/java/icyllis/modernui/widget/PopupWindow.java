@@ -834,7 +834,7 @@ public class PopupWindow {
         p.gravity = gravity;
         p.x = x;
         p.y = y;
-        preparePopup();
+        preparePopup(p);
 
         invokePopup(p);
     }
@@ -906,7 +906,7 @@ public class PopupWindow {
         mIsDropdown = true;
 
         final var p = createPopupLayoutParams();
-        preparePopup();
+        preparePopup(p);
 
         final boolean aboveAnchor = findDropDownPosition(anchor, p, xOff, yOff,
                 p.width, p.height, gravity, true);
@@ -955,8 +955,10 @@ public class PopupWindow {
      * Prepare the popup by embedding it into a new ViewGroup if the background
      * drawable is not null. If embedding is required, the layout parameters'
      * height is modified to take into account the background's padding.
+     *
+     * @param p the layout parameters of the popup's content view
      */
-    private void preparePopup() {
+    private void preparePopup(WindowManager.LayoutParams p) {
         // The old decor view may be transitioning out. Make sure it finishes
         // and cleans up before we try to create another one.
         if (mDecorView != null) {
@@ -977,6 +979,10 @@ public class PopupWindow {
 
         // The background owner should be elevated so that it casts a shadow.
         mBackgroundView.setElevation(mElevation);
+
+        // We may wrap that in another view, so we'll need to manually specify
+        // the surface insets.
+        p.setSurfaceInsets(mBackgroundView, true /*manual*/, true /*preservePrevious*/);
 
         mDecorView.setFocusable(mFocusable);
 
@@ -1023,7 +1029,9 @@ public class PopupWindow {
         }
 
         final var decorView = new DecorView(mContext);
-        decorView.addView(contentView, MATCH_PARENT, height);
+        var params = new DecorView.LayoutParams(MATCH_PARENT, height);
+        params.gravity = Gravity.CENTER;
+        decorView.addView(contentView, params);
         decorView.setClipChildren(false);
         decorView.setClipToPadding(false);
 

@@ -637,6 +637,31 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                             Engine.SurfaceOrigin.kLowerLeft,
                             null
                     ));
+
+                    //TODO make these configurable somewhere
+                    final DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+                    final float zRatio = Math.min(width, height)
+                            / (450f * displayMetrics.density);
+                    final float zWeightedAdjustment = (zRatio + 2) / 3f;
+                    final float lightZ = TypedValue.applyDimension(
+                            TypedValue.COMPLEX_UNIT_DP, 500, displayMetrics
+                    ) * zWeightedAdjustment;
+                    final float lightRadius = TypedValue.applyDimension(
+                            TypedValue.COMPLEX_UNIT_DP, 800, displayMetrics
+                    );
+                    TypedValue value = new TypedValue();
+                    boolean res = getTheme().resolveAttribute(
+                            R.ns, R.attr.isLightTheme, value, true
+                    );
+                    assert res;
+                    boolean isLightTheme = value.data != 0;
+
+                    LightingInfo.setLighting(
+                            width / 2f, 0, lightZ,
+                            lightRadius,
+                            isLightTheme ? 30 : 90,
+                            isLightTheme ? 48 : 144
+                    );
                 }
             }
         }

@@ -71,6 +71,8 @@ public class RenderProperties {
     private float mCameraDistance = 1;
     private boolean mCameraDistanceExplicitlySet = false;
 
+    private final Outline mOutline = new Outline();
+
     public RenderProperties() {
         setLayerPaint(null);
     }
@@ -118,6 +120,14 @@ public class RenderProperties {
             computeTransform();
         }
         return mMatrix;
+    }
+
+    @Nullable
+    public Matrix4 getTransform() {
+        if (mMatrixOrPivotDirty) {
+            computeTransform();
+        }
+        return mTransform;
     }
 
     /**
@@ -407,6 +417,14 @@ public class RenderProperties {
      */
     public boolean getHasOverlappingRendering() {
         return mHasOverlappingRendering;
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public Outline getOutline() {
+        return mOutline;
     }
 
     /**

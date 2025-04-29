@@ -22,6 +22,7 @@ import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.sketch.Surface;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 //TODO wip
 public final class RenderNode extends RenderProperties {
@@ -80,5 +81,22 @@ public final class RenderNode extends RenderProperties {
         mCurrentRecordingCanvas = null;
         //canvas.finishRecording(this);
         //canvas.recycle();
+    }
+
+    public void setOutline(@Nullable Outline outline) {
+        if (outline == null) {
+            getOutline().setNone();
+            return;
+        }
+        switch (outline.getType()) {
+            case Outline.TYPE_EMPTY -> getOutline().setEmpty();
+            case Outline.TYPE_ROUND_RECT -> {
+                var bounds = outline.getBounds();
+                var radius = outline.getRadius();
+                getOutline().setRoundRect(bounds.left, bounds.top, bounds.right, bounds.bottom, radius);
+                getOutline().setAlpha(outline.getAlpha());
+            }
+            default -> throw new IllegalStateException();
+        }
     }
 }

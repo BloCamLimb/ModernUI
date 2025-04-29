@@ -40,6 +40,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -2318,6 +2319,8 @@ public class View implements Drawable.Callback {
 
     private int[] mDrawableState = null;
 
+    ViewOutlineProvider mOutlineProvider = ViewOutlineProvider.BACKGROUND;
+
     /**
      * Animator that automatically runs based on state changes.
      */
@@ -2893,10 +2896,7 @@ public class View implements Drawable.Callback {
         if (background == null) {
             return;
         }
-        if (mBackgroundSizeChanged) {
-            background.setBounds(0, 0, mRight - mLeft, mBottom - mTop);
-            mBackgroundSizeChanged = false;
-        }
+        setBackgroundBounds();
 
         final int scrollX = mScrollX;
         final int scrollY = mScrollY;
@@ -2906,6 +2906,14 @@ public class View implements Drawable.Callback {
             canvas.translate(scrollX, scrollY);
             background.draw(canvas);
             canvas.translate(-scrollX, -scrollY);
+        }
+    }
+
+    void setBackgroundBounds() {
+        if (mBackgroundSizeChanged && mBackground != null) {
+            mBackground.setBounds(0, 0, mRight - mLeft, mBottom - mTop);
+            mBackgroundSizeChanged = false;
+            rebuildOutline();
         }
     }
 
@@ -4388,6 +4396,7 @@ public class View implements Drawable.Callback {
 
             invalidate(dirty.left + scrollX, dirty.top + scrollY,
                     dirty.right + scrollX, dirty.bottom + scrollY);
+            rebuildOutline();
         }
     }
 
@@ -7261,6 +7270,7 @@ public class View implements Drawable.Callback {
                 }
             }
         }
+        rebuildOutline();
     }
 
     /**
@@ -7391,6 +7401,7 @@ public class View implements Drawable.Callback {
     public void setElevation(float elevation) {
         if (mRenderNode.setElevation(elevation)) {
             invalidate();
+            mPrivateFlags |= PFLAG_DRAWN;
         }
     }
 
@@ -7766,6 +7777,7 @@ public class View implements Drawable.Callback {
         if (mAlpha != alpha) {
             mAlpha = alpha;
             invalidate();
+            mRenderNode.setAlpha(mAlpha * mTransitionAlpha);
         }
     }
 
@@ -7780,6 +7792,7 @@ public class View implements Drawable.Callback {
         if (mTransitionAlpha != alpha) {
             mTransitionAlpha = alpha;
             invalidate();
+            mRenderNode.setAlpha(mAlpha * mTransitionAlpha);
         }
     }
 
@@ -7906,6 +7919,77 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Sets the {@link ViewOutlineProvider} of the view, which generates the Outline that defines
+     * the shape of the shadow it casts, and enables outline clipping.
+     * <p>
+     * The default ViewOutlineProvider, {@link ViewOutlineProvider#BACKGROUND}, queries the Outline
+     * from the View's background drawable, via {@link Drawable#getOutline(Outline)}. Changing the
+     * outline provider with this method allows this behavior to be overridden.
+     * <p>
+     * If the ViewOutlineProvider is null, if querying it for an outline returns false,
+     * or if the produced Outline is {@link Outline#isEmpty()}, shadows will not be cast.
+     * <p>
+     * Only outlines that return true from {@link Outline#canClip()} may be used for clipping.
+     *
+     * @see #setClipToOutline(boolean)
+     * @see #getClipToOutline()
+     * @see #getOutlineProvider()
+     */
+    public void setOutlineProvider(ViewOutlineProvider provider) {
+        if (mOutlineProvider != provider) {
+            mOutlineProvider = provider;
+            invalidateOutline();
+        }
+    }
+
+    /**
+     * Returns the current {@link ViewOutlineProvider} of the view, which generates the Outline
+     * that defines the shape of the shadow it casts, and enables outline clipping.
+     *
+     * @see #setOutlineProvider(ViewOutlineProvider)
+     */
+    public ViewOutlineProvider getOutlineProvider() {
+        return mOutlineProvider;
+    }
+
+    /**
+     * Called to rebuild this View's Outline from its {@link ViewOutlineProvider outline provider}
+     *
+     * @see #setOutlineProvider(ViewOutlineProvider)
+     */
+    public void invalidateOutline() {
+        rebuildOutline();
+
+        invalidate();
+    }
+
+    /**
+     * Internal version of {@link #invalidateOutline()} which invalidates the
+     * outline without invalidating the view itself. This is intended to be called from
+     * within methods in the View class itself which are the result of the view being
+     * invalidated already. For example, when we are drawing the background of a View,
+     * we invalidate the outline in case it changed in the meantime, but we do not
+     * need to invalidate the view because we're already drawing the background as part
+     * of drawing the view in response to an earlier invalidation of the view.
+     */
+    private void rebuildOutline() {
+        // Unattached views ignore this signal, and outline is recomputed in onAttachedToWindow()
+        if (mAttachInfo == null) return;
+
+        if (mOutlineProvider == null) {
+            // no provider, remove outline
+            mRenderNode.setOutline(null);
+        } else {
+            final Outline outline = mAttachInfo.mTmpOutline;
+            outline.setEmpty();
+            outline.setAlpha(1.0f);
+
+            mOutlineProvider.getOutline(this, outline);
+            mRenderNode.setOutline(outline);
+        }
+    }
+
+    /**
      * Return the visibility value of the least visible component passed.
      */
     int combineVisibility(int vis1, int vis2) {
@@ -8022,11 +8106,15 @@ public class View implements Drawable.Callback {
      *
      * @see #onDetachedFromWindow()
      */
+    @MustBeInvokedByOverriders
     @CallSuper
     protected void onAttachedToWindow() {
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
 
         jumpDrawablesToCurrentState();
+
+        // rebuild, since Outline not maintained while View is detached
+        rebuildOutline();
     }
 
     /**
@@ -9329,6 +9417,7 @@ public class View implements Drawable.Callback {
 
         if (changed) {
             requestLayout();
+            invalidateOutline();
         }
     }
 
@@ -9762,6 +9851,7 @@ public class View implements Drawable.Callback {
 
         mBackgroundSizeChanged = true;
         invalidate();
+        invalidateOutline();
     }
 
     /**

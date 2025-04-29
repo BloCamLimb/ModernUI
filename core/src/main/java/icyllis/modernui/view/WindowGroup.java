@@ -27,7 +27,10 @@ import org.jetbrains.annotations.ApiStatus;
 /**
  * The root view of window view hierarchy, allowing for sub windows (panels),
  * such as menu popups, tooltips and toasts.
+ *
+ * @hidden
  */
+//TODO this class needs to be refactored on top of ViewRoot
 @ApiStatus.Internal
 public final class WindowGroup extends ViewGroup implements WindowManager {
 
@@ -166,8 +169,11 @@ public final class WindowGroup extends ViewGroup implements WindowManager {
 
                 // Now make sure the window fits in the overall display frame.
                 Gravity.applyDisplay(attrs.gravity, outParentFrame, outFrame);
+                Rect surfaceInsets = attrs.surfaceInsets;
 
-                child.layout(outFrame.left, outFrame.top, outFrame.right, outFrame.bottom);
+                //TODO temp solution
+                child.layout(outFrame.left - surfaceInsets.left, outFrame.top - surfaceInsets.top,
+                        outFrame.right + surfaceInsets.right, outFrame.bottom + surfaceInsets.bottom);
             }
         }
     }

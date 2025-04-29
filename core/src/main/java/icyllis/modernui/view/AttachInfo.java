@@ -56,7 +56,7 @@ final class AttachInfo {
     /**
      * Indicates whether the view's window is currently in touch mode.
      */
-    boolean mInTouchMode = false;
+    boolean mInTouchMode = true;
 
     /**
      * Set if the visibility of any views has changed.
@@ -118,6 +118,11 @@ final class AttachInfo {
      * Temporary for use in transforming invalidation rect
      */
     final Matrix mTmpMatrix = new Matrix();
+
+    /**
+     * Temporary for use in querying outlines from OutlineProviders
+     */
+    final Outline mTmpOutline = new Outline();
 
     /**
      * Show where the margins, bounds and layout bounds are for each view.
