@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -58,6 +59,23 @@ public interface WindowManager extends ViewManager {
          * among all views whose weight is greater than 0.
          */
         public float verticalWeight;
+
+        /**
+         * Positive insets between the drawing surface and window content.
+         *
+         * @hidden
+         */
+        public final Rect surfaceInsets = new Rect();
+
+        /**
+         * Whether the surface insets have been manually set. When set to
+         * {@code false}, the view root will automatically determine the
+         * appropriate surface insets.
+         *
+         * @see #surfaceInsets
+         * @hidden
+         */
+        public boolean hasManualSurfaceInsets;
 
         public int type;
 
@@ -110,6 +128,26 @@ public interface WindowManager extends ViewManager {
         @ApiStatus.Internal
         public boolean isModal() {
             return (flags & (FLAG_NOT_TOUCH_MODAL | FLAG_NOT_FOCUSABLE)) == 0;
+        }
+
+        /**
+         * Sets the surface insets based on the elevation (visual z position) of the input view.
+         * @hidden
+         */
+        public final void setSurfaceInsets(View view, boolean manual, boolean preservePrevious) {
+            //TODO
+            final int surfaceInset = (int) Math.ceil(view.getZ() * 4);
+            if (surfaceInset == 0) {
+                // OK to have 0 (this is the case for non-freeform windows).
+                surfaceInsets.set(0, 0, 0, 0);
+            } else {
+                surfaceInsets.set(
+                        Math.max(surfaceInset, surfaceInsets.left),
+                        Math.max(surfaceInset, surfaceInsets.top),
+                        Math.max(surfaceInset, surfaceInsets.right),
+                        Math.max(surfaceInset, surfaceInsets.bottom));
+            }
+            hasManualSurfaceInsets = manual;
         }
     }
 }

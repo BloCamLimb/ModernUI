@@ -40,6 +40,7 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.Pools;
@@ -390,7 +391,27 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         final ArrayList<View> preorderedList = buildOrderedChildList();
         final boolean customOrder = preorderedList == null
                 && isChildrenDrawingOrderEnabled();
-        for (int i = 0; i < childrenCount; i++) {
+        int shadowIndex = -1;
+        float lastCasterZ = 0.0f;
+        for (int i = 0; i < childrenCount; ) {
+            final int childIndex = getAndVerifyPreorderedIndex(childrenCount, i, customOrder);
+            final View child = getAndVerifyPreorderedView(preorderedList, children, childIndex);
+            if (shadowIndex < 0 && child.getZ() > 0.001f) {
+                shadowIndex = i;
+            }
+
+            if (shadowIndex >= 0 && shadowIndex < childrenCount) {
+                final int casterIndex = getAndVerifyPreorderedIndex(childrenCount, shadowIndex, customOrder);
+                final View caster = getAndVerifyPreorderedView(preorderedList, children, casterIndex);
+                final float casterZ = caster.getZ();
+                if (shadowIndex == i || casterZ - lastCasterZ < 0.1f) {
+                    drawShadow(canvas, caster);
+                    lastCasterZ = casterZ;
+                    shadowIndex++;
+                    continue;
+                }
+            }
+
             while (transientIndex >= 0 && mTransientIndices.getInt(transientIndex) == i) {
                 final View transientChild = mTransientViews.get(transientIndex);
                 if ((transientChild.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
@@ -402,11 +423,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 }
             }
 
-            final int childIndex = getAndVerifyPreorderedIndex(childrenCount, i, customOrder);
-            final View child = getAndVerifyPreorderedView(preorderedList, children, childIndex);
             if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
                 drawChild(canvas, child, 0);
             }
+            i++;
         }
         while (transientIndex >= 0) {
             // there may be additional transient views after the normal views
@@ -454,6 +474,66 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     protected void drawChild(@NonNull Canvas canvas, @NonNull View child, long drawingTime) {
         child.draw(canvas, this, (mGroupFlags & FLAG_CLIP_CHILDREN) != 0);
+    }
+
+    private void drawShadow(@NonNull Canvas canvas, @NonNull View child) {
+        var casterProperties = child.mRenderNode;
+        if (casterProperties.getScaleX() == 0 || casterProperties.getScaleY() == 0) {
+            return;
+        }
+        child.setBackgroundBounds();
+        var outline = casterProperties.getOutline();
+        if (outline.getType() != Outline.TYPE_ROUND_RECT) {
+            return;
+        }
+        float casterAlpha = casterProperties.getAlpha() * outline.getAlpha();
+        if (casterAlpha <= 0.001f) {
+            return;
+        }
+
+        if ((casterProperties.getClippingFlags() & RenderProperties.CLIP_TO_CLIP_BOUNDS) != 0) {
+            // we don't know the shape of the outline after it is clipped by the clip bounds
+            return;
+        }
+
+        int ambientColor = (int) (LightingInfo.getAmbientShadowAlpha() * casterAlpha) << 24;
+        int spotColor = (int) (LightingInfo.getSpotShadowAlpha() * casterAlpha) << 24;
+
+        canvas.save();
+        canvas.translate(child.mLeft, child.mTop);
+
+        var shadowMatrix = new icyllis.arc3d.core.Matrix4();
+
+        if (casterProperties.getAnimationMatrix() != null) {
+            casterProperties.getAnimationMatrix().toMatrix4(shadowMatrix);
+        }
+        var transform = casterProperties.getTransform();
+        if (transform != null) {
+            shadowMatrix.preConcat(transform);
+        }
+        canvas.concat(shadowMatrix);
+
+        canvas.translate(-child.mScrollX, -child.mScrollY);
+
+        float zPlane0, zPlane1, zPlane2;
+        if (shadowMatrix.hasPerspective()) {
+            zPlane0 = shadowMatrix.m13;
+            zPlane1 = shadowMatrix.m23;
+            zPlane2 = shadowMatrix.m43;
+        } else {
+            zPlane0 = 0;
+            zPlane1 = 0;
+            zPlane2 = casterProperties.getZ();
+        }
+        DrawShadowUtils.drawShadow(
+                ((ArcCanvas) canvas).getCanvas(),
+                outline.getBounds(), outline.getRadius(),
+                zPlane0, zPlane1, zPlane2,
+                LightingInfo.getLightX(), LightingInfo.getLightY(), LightingInfo.getLightZ(),
+                LightingInfo.getLightRadius(), ambientColor, spotColor
+        );
+
+        canvas.restore();
     }
 
     @Override

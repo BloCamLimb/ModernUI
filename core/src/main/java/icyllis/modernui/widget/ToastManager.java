@@ -57,7 +57,6 @@ public final class ToastManager {
 
     private final TextView mTextView;
     private final WindowManager.LayoutParams mParams;
-    private final ShapeDrawable mBackground = new ShapeDrawable();
 
     public ToastManager(Activity activity) {
         mWindowManager = activity.getWindowManager();
@@ -70,8 +69,6 @@ public final class ToastManager {
         mParams.type = WindowManager.LayoutParams.TYPE_TOAST;
         mTextView.setEllipsize(TextUtils.TruncateAt.END);
         mTextView.setMaxLines(2);
-        mBackground.setShape(ShapeDrawable.RECTANGLE);
-        mTextView.setBackground(mBackground);
     }
 
     @Nullable
@@ -101,9 +98,12 @@ public final class ToastManager {
         mTextView.setMaxWidth(mTextView.dp(300));
         mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));
         mParams.y = mTextView.dp(64);
+        ShapeDrawable bg = new ShapeDrawable();
         if (theme.resolveAttribute(R.ns, R.attr.colorBackground, value, true))
-            mBackground.setColor(value.data);
-        mBackground.setCornerRadius(mTextView.dp(28));
+            bg.setColor(value.data);
+        bg.setCornerRadius(mTextView.dp(28));
+        mTextView.setBackground(bg);
+        mTextView.setElevation(mTextView.dp(2));
         mWindowManager.addView(mTextView, mParams);
 
         int delay = r.getDuration() == Toast.LENGTH_LONG ? LONG_DELAY : SHORT_DELAY;

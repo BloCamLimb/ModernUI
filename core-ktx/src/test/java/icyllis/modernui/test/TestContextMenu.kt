@@ -19,6 +19,7 @@
 package icyllis.modernui.test
 
 import icyllis.modernui.ModernUI
+import icyllis.modernui.R
 import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.Color
 import icyllis.modernui.graphics.drawable.GradientDrawable
@@ -31,7 +32,10 @@ import icyllis.modernui.view.ViewGroup
 fun main() {
     System.setProperty("java.awt.headless", "true")
     Log.setLevel(Log.DEBUG)
-    ModernUI().use { app -> app.run(TestContextMenu()) }
+    ModernUI().use { app ->
+        app.theme.applyStyle(R.style.Theme_Material3_Light, true)
+        app.run(TestContextMenu())
+    }
 }
 
 class TestContextMenu : Fragment() {
