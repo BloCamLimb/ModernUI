@@ -34,7 +34,7 @@ import static icyllis.arc3d.core.PixelUtils.UNSAFE;
  * Immutable structure that pairs ImageInfo with pixels and row bytes.
  * <p>
  * This class does not try to manage the lifetime of pixels, unless it's backed
- * by a heap array, use {@link Pixels} to manage the native pixel memory.
+ * by a heap array, use {@link PixelRef} to manage the native pixel memory.
  */
 public class Pixmap {
 
