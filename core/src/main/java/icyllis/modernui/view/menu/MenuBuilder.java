@@ -1028,6 +1028,7 @@ public class MenuBuilder implements Menu {
         mCurrentMenuInfo = menuInfo;
     }
 
+    @Override
     public void setOptionalIconsVisible(boolean visible) {
         mOptionalIconsVisible = visible;
     }
