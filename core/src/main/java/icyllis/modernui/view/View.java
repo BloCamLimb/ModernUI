@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2020-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.view;
@@ -22,8 +39,16 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.core.*;
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.CallSuper;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.Choreographer;
+import icyllis.modernui.core.Context;
+import icyllis.modernui.core.Core;
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
@@ -33,7 +58,12 @@ import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.Transition;
-import icyllis.modernui.util.*;
+import icyllis.modernui.util.AttributeSet;
+import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.IntProperty;
+import icyllis.modernui.util.LayoutDirection;
+import icyllis.modernui.util.SparseArray;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 import icyllis.modernui.view.menu.MenuBuilder;
 import org.apache.logging.log4j.Marker;
@@ -45,7 +75,9 @@ import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -888,13 +920,6 @@ public class View implements Drawable.Callback {
                         | StateSet.VIEW_STATE_FOCUSED | StateSet.VIEW_STATE_ENABLED
                         | StateSet.VIEW_STATE_PRESSED);
     }
-
-    /**
-     * Temporary Rect currently for use in setBackground().  This will probably
-     * be extended in the future to hold our own class with more than just
-     * a Rect. :)
-     */
-    private static final ThreadLocal<Rect> sThreadLocal = ThreadLocal.withInitial(Rect::new);
 
     /**
      * @see #setId(int)
@@ -2831,8 +2856,7 @@ public class View implements Drawable.Callback {
             } else {
                 final Rect clipRect;
                 if (clip) {
-                    clipRect = sThreadLocal.get();
-                    clipRect.set(0, 0, mRight - mLeft, mBottom - mTop);
+                    clipRect = new Rect(0, 0, mRight - mLeft, mBottom - mTop);
                     clipRect.intersectUnchecked(mRenderNode.getClipBounds());
                 } else {
                     clipRect = mRenderNode.getClipBounds();
@@ -9089,11 +9113,7 @@ public class View implements Drawable.Callback {
             // left / right or right / left depending on the resolved layout direction.
             // If start / end padding are not defined, use the left / right ones.
             if (mBackground != null && (!mLeftPaddingDefined || !mRightPaddingDefined)) {
-                Rect padding = sThreadLocal.get();
-                if (padding == null) {
-                    padding = new Rect();
-                    sThreadLocal.set(padding);
-                }
+                Rect padding = new Rect();
                 mBackground.getPadding(padding);
                 if (!mLeftPaddingDefined) {
                     mUserPaddingLeftInitial = padding.left;
@@ -9780,11 +9800,7 @@ public class View implements Drawable.Callback {
         }
 
         if (background != null) {
-            Rect padding = sThreadLocal.get();
-            if (padding == null) {
-                padding = new Rect();
-                sThreadLocal.set(padding);
-            }
+            Rect padding = new Rect();
             resetResolvedDrawablesInternal();
             background.setLayoutDirection(getLayoutDirection());
             if (background.getPadding(padding)) {

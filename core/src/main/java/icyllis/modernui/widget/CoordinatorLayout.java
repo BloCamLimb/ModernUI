@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,24 +14,53 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2018 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.Matrix;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.Pools;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewParent;
+import icyllis.modernui.view.ViewTreeObserver;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * CoordinatorLayout is a super-powered {@link FrameLayout}.
@@ -63,11 +92,7 @@ import java.util.*;
  * {@link LayoutParams#dodgeInsetEdges} will be moved appropriately so that the
  * views do not overlap.</p>
  */
-@SuppressWarnings("unused")
 public class CoordinatorLayout extends ViewGroup {
-
-    private static final ThreadLocal<Matrix> sMatrix = ThreadLocal.withInitial(Matrix::new);
-    private static final ThreadLocal<RectF> sRectF = ThreadLocal.withInitial(RectF::new);
 
     private static final int TYPE_ON_INTERCEPT = 0;
     private static final int TYPE_ON_TOUCH = 1;
@@ -88,7 +113,7 @@ public class CoordinatorLayout extends ViewGroup {
 
     private static final Pools.Pool<Rect> sRectPool = Pools.newSynchronizedPool(12);
 
-    @Nonnull
+    @NonNull
     private static Rect acquireTempRect() {
         Rect rect = sRectPool.acquire();
         if (rect == null) {
@@ -97,7 +122,7 @@ public class CoordinatorLayout extends ViewGroup {
         return rect;
     }
 
-    private static void releaseTempRect(@Nonnull Rect rect) {
+    private static void releaseTempRect(@NonNull Rect rect) {
         rect.setEmpty();
         sRectPool.release(rect);
     }
@@ -201,7 +226,7 @@ public class CoordinatorLayout extends ViewGroup {
      * Populate a list with the current child views, sorted such that the topmost views
      * in z-order are at the front of the list. Useful for hit testing and event dispatch.
      */
-    private void getTopSortedChildren(@Nonnull List<View> out) {
+    private void getTopSortedChildren(@NonNull List<View> out) {
         out.clear();
 
         final boolean useCustomOrder = isChildrenDrawingOrderEnabled();
@@ -215,7 +240,7 @@ public class CoordinatorLayout extends ViewGroup {
         out.sort(TOP_SORTED_CHILDREN_COMPARATOR);
     }
 
-    private boolean performIntercept(@Nonnull final MotionEvent ev, final int type) {
+    private boolean performIntercept(@NonNull final MotionEvent ev, final int type) {
         boolean intercepted = false;
         boolean newBlock = false;
 
@@ -295,15 +320,15 @@ public class CoordinatorLayout extends ViewGroup {
         throw new IllegalArgumentException();
     }
 
-    @Nonnull
-    private MotionEvent obtainCancelEvent(@Nonnull MotionEvent other) {
+    @NonNull
+    private MotionEvent obtainCancelEvent(@NonNull MotionEvent other) {
         MotionEvent event = other.copy();
         event.setAction(MotionEvent.ACTION_CANCEL);
         return event;
     }
 
     @Override
-    public boolean onInterceptTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean onInterceptTouchEvent(@NonNull MotionEvent ev) {
         final int action = ev.getAction();
 
         // Make sure we reset in case we had missed a previous important event.
@@ -324,7 +349,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public boolean onTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean onTouchEvent(@NonNull MotionEvent ev) {
         boolean handled = false;
         boolean cancelSuper = false;
 
@@ -374,7 +399,7 @@ public class CoordinatorLayout extends ViewGroup {
         }
     }
 
-    LayoutParams getResolvedLayoutParams(@Nonnull View child) {
+    LayoutParams getResolvedLayoutParams(@NonNull View child) {
         final LayoutParams result = (LayoutParams) child.getLayoutParams();
         if (!result.mBehaviorResolved) {
             if (child instanceof AttachedBehavior) {
@@ -429,7 +454,7 @@ public class CoordinatorLayout extends ViewGroup {
      * @param descendant descendant view to reference
      * @param out        rect to set to the bounds of the descendant view
      */
-    void getDescendantRect(@Nonnull View descendant, @Nonnull Rect out) {
+    void getDescendantRect(@NonNull View descendant, @NonNull Rect out) {
         out.set(0, 0, descendant.getWidth(), descendant.getHeight());
         offsetDescendantRect(descendant, out);
     }
@@ -444,18 +469,14 @@ public class CoordinatorLayout extends ViewGroup {
      * @param rect       (in/out) the rect to offset from descendant to this view's coordinate system
      */
     void offsetDescendantRect(View descendant, Rect rect) {
-        Matrix m = sMatrix.get();
-        m.setIdentity();
+        Matrix m = new Matrix();
 
         offsetDescendantMatrix(descendant, m);
 
-        RectF rectF = sRectF.get();
-        rectF.set(rect);
-        m.mapRect(rectF);
-        rectF.round(rect);
+        m.mapRect(rect, rect);
     }
 
-    private void offsetDescendantMatrix(@Nonnull View view, Matrix m) {
+    private void offsetDescendantMatrix(@NonNull View view, Matrix m) {
         final ViewParent parent = view.getParent();
         if (parent instanceof final View vp && parent != this) {
             offsetDescendantMatrix(vp, m);
@@ -554,7 +575,7 @@ public class CoordinatorLayout extends ViewGroup {
      *                        {@link #LAYOUT_DIRECTION_LTR} or
      *                        {@link #LAYOUT_DIRECTION_RTL}.
      */
-    public void onLayoutChild(@Nonnull View child, int layoutDirection) {
+    public void onLayoutChild(@NonNull View child, int layoutDirection) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         if (lp.checkAnchorChanged()) {
             throw new IllegalStateException("An anchor may not be changed after CoordinatorLayout"
@@ -595,7 +616,7 @@ public class CoordinatorLayout extends ViewGroup {
      * @param child child view to set for
      * @param r     rect to set
      */
-    void recordLastChildRect(@Nonnull View child, Rect r) {
+    void recordLastChildRect(@NonNull View child, Rect r) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         lp.setLastChildRect(r);
     }
@@ -607,7 +628,7 @@ public class CoordinatorLayout extends ViewGroup {
      * @param child child view to retrieve from
      * @param out   rect to set to the output values
      */
-    void getLastChildRect(@Nonnull View child, @Nonnull Rect out) {
+    void getLastChildRect(@NonNull View child, @NonNull Rect out) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         out.set(lp.getLastChildRect());
     }
@@ -621,7 +642,7 @@ public class CoordinatorLayout extends ViewGroup {
      *                  only account for the base position
      * @param out       rect to set to the output values
      */
-    void getChildRect(@Nonnull View child, boolean transform, Rect out) {
+    void getChildRect(@NonNull View child, boolean transform, Rect out) {
         if (child.isLayoutRequested() || child.getVisibility() == View.GONE) {
             out.setEmpty();
             return;
@@ -634,8 +655,8 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     private void getDesiredAnchoredChildRectWithoutConstraints(
-            int layoutDirection, @Nonnull Rect anchorRect, Rect out,
-            @Nonnull LayoutParams lp, int childWidth, int childHeight) {
+            int layoutDirection, @NonNull Rect anchorRect, Rect out,
+            @NonNull LayoutParams lp, int childWidth, int childHeight) {
         final int absGravity = Gravity.getAbsoluteGravity(
                 resolveAnchoredChildGravity(lp.gravity), layoutDirection);
         final int absAnchorGravity = Gravity.getAbsoluteGravity(
@@ -695,7 +716,7 @@ public class CoordinatorLayout extends ViewGroup {
         out.set(left, top, left + childWidth, top + childHeight);
     }
 
-    private void constrainChildRect(@Nonnull LayoutParams lp, Rect out, int childWidth, int childHeight) {
+    private void constrainChildRect(@NonNull LayoutParams lp, Rect out, int childWidth, int childHeight) {
         final int width = getWidth();
         final int height = getHeight();
 
@@ -719,7 +740,7 @@ public class CoordinatorLayout extends ViewGroup {
      * @param anchorRect      rect in CoordinatorLayout coordinates of the anchor view area
      * @param out             rect to set to the output values
      */
-    void getDesiredAnchoredChildRect(@Nonnull View child, int layoutDirection, Rect anchorRect, Rect out) {
+    void getDesiredAnchoredChildRect(@NonNull View child, int layoutDirection, Rect anchorRect, Rect out) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         final int childWidth = child.getMeasuredWidth();
         final int childHeight = child.getMeasuredHeight();
@@ -755,7 +776,7 @@ public class CoordinatorLayout extends ViewGroup {
      * @param child           child view to lay out
      * @param layoutDirection ViewCompat constant for the desired layout direction
      */
-    private void layoutChild(@Nonnull View child, int layoutDirection) {
+    private void layoutChild(@NonNull View child, int layoutDirection) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         final Rect parent = acquireTempRect();
         parent.set(getPaddingLeft() + lp.leftMargin,
@@ -797,7 +818,7 @@ public class CoordinatorLayout extends ViewGroup {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected void drawChild(@Nonnull Canvas canvas, @Nonnull View child, long drawingTime) {
+    protected void drawChild(@NonNull Canvas canvas, @NonNull View child, long drawingTime) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         if (lp.mBehavior != null) {
             final float scrimAlpha = lp.mBehavior.getScrimOpacity(this, child);
@@ -924,7 +945,7 @@ public class CoordinatorLayout extends ViewGroup {
         releaseTempRect(lastDrawRect);
     }
 
-    private void offsetChildByInset(@Nonnull final View child, final Rect inset, final int layoutDirection) {
+    private void offsetChildByInset(@NonNull final View child, final Rect inset, final int layoutDirection) {
         if (!child.isLaidOut()) {
             // The view has not been laid out yet, so we can't obtain its bounds.
             return;
@@ -1005,7 +1026,7 @@ public class CoordinatorLayout extends ViewGroup {
         releaseTempRect(dodgeRect);
     }
 
-    private void setInsetOffsetX(@Nonnull View child, int offsetX) {
+    private void setInsetOffsetX(@NonNull View child, int offsetX) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         if (lp.mInsetOffsetX != offsetX) {
             final int dx = offsetX - lp.mInsetOffsetX;
@@ -1014,7 +1035,7 @@ public class CoordinatorLayout extends ViewGroup {
         }
     }
 
-    private void setInsetOffsetY(@Nonnull View child, int offsetY) {
+    private void setInsetOffsetY(@NonNull View child, int offsetY) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         if (lp.mInsetOffsetY != offsetY) {
             final int dy = offsetY - lp.mInsetOffsetY;
@@ -1033,7 +1054,7 @@ public class CoordinatorLayout extends ViewGroup {
      *
      * @param view the View to find dependents of to dispatch the call.
      */
-    public void dispatchDependentViewsChanged(@Nonnull View view) {
+    public void dispatchDependentViewsChanged(@NonNull View view) {
         final List<View> dependents = mChildDag.getIncomingEdgesInternal(view);
         if (dependents != null && !dependents.isEmpty()) {
             for (final View child : dependents) {
@@ -1053,8 +1074,8 @@ public class CoordinatorLayout extends ViewGroup {
      * @param child the view to find dependencies for
      * @return a new list of views on which {@code child} depends
      */
-    @Nonnull
-    public List<View> getDependencies(@Nonnull View child) {
+    @NonNull
+    public List<View> getDependencies(@NonNull View child) {
         List<View> result = mChildDag.getOutgoingEdges(child);
         return result == null ? Collections.emptyList() : result;
     }
@@ -1065,13 +1086,13 @@ public class CoordinatorLayout extends ViewGroup {
      * @param child the view to find dependents of
      * @return a new list of views which depend on {@code child}
      */
-    @Nonnull
-    public List<View> getDependents(@Nonnull View child) {
+    @NonNull
+    public List<View> getDependents(@NonNull View child) {
         List<View> result = mChildDag.getIncomingEdges(child);
         return result == null ? Collections.emptyList() : result;
     }
 
-    @Nonnull
+    @NonNull
     @UnmodifiableView
     @VisibleForTesting
     public final List<View> getDependencySortedChildren() {
@@ -1150,7 +1171,7 @@ public class CoordinatorLayout extends ViewGroup {
      * to be animated away from their anchor. However, if the anchor view is animated,
      * the child will be offset to match the anchor's translated position.
      */
-    void offsetChildToAnchor(@Nonnull View child, int layoutDirection) {
+    void offsetChildToAnchor(@NonNull View child, int layoutDirection) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         if (lp.mAnchorView != null) {
             final Rect anchorRect = acquireTempRect();
@@ -1201,7 +1222,7 @@ public class CoordinatorLayout extends ViewGroup {
      * @param y     Y coordinate to test, in the CoordinatorLayout's coordinate system
      * @return true if the point is within the child view's bounds, false otherwise
      */
-    public boolean isPointInChildBounds(@Nonnull View child, int x, int y) {
+    public boolean isPointInChildBounds(@NonNull View child, int x, int y) {
         final Rect r = acquireTempRect();
         offsetDescendantRectToMyCoords(child, r);
         try {
@@ -1219,7 +1240,7 @@ public class CoordinatorLayout extends ViewGroup {
      * @param second second child view to test
      * @return true if both views are visible and overlap each other
      */
-    public boolean doViewsOverlap(@Nonnull View first, @Nonnull View second) {
+    public boolean doViewsOverlap(@NonNull View first, @NonNull View second) {
         if (first.getVisibility() == VISIBLE && second.getVisibility() == VISIBLE) {
             final Rect firstRect = acquireTempRect();
             getChildRect(first, first.getParent() != this, firstRect);
@@ -1243,7 +1264,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public boolean requestChildRectangleOnScreen(@Nonnull View child, Rect rectangle, boolean immediate) {
+    public boolean requestChildRectangleOnScreen(@NonNull View child, Rect rectangle, boolean immediate) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
         final Behavior<View> behavior = lp.getBehavior();
 
@@ -1255,9 +1276,9 @@ public class CoordinatorLayout extends ViewGroup {
         return super.requestChildRectangleOnScreen(child, rectangle, immediate);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams p) {
+    protected LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams p) {
         if (p instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) p);
         } else if (p instanceof FrameLayout.LayoutParams vp) {
@@ -1273,7 +1294,7 @@ public class CoordinatorLayout extends ViewGroup {
         return new LayoutParams(p);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -1285,7 +1306,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public boolean onStartNestedScroll(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes, int type) {
         boolean handled = false;
 
         final int childCount = getChildCount();
@@ -1310,7 +1331,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public void onNestedScrollAccepted(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
         super.onNestedScrollAccepted(child, target, axes, type);
         mNestedScrollingTarget = target;
 
@@ -1331,7 +1352,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public void onStopNestedScroll(@Nonnull View target, int type) {
+    public void onStopNestedScroll(@NonNull View target, int type) {
         super.onStopNestedScroll(target, type);
 
         final int childCount = getChildCount();
@@ -1353,8 +1374,8 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public void onNestedScroll(@Nonnull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                               int dyUnconsumed, int type, @Nonnull int[] consumed) {
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
+                               int dyUnconsumed, int type, @NonNull int[] consumed) {
         final int childCount = getChildCount();
         boolean accepted = false;
         int xConsumed = 0;
@@ -1399,7 +1420,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public void onNestedPreScroll(@Nonnull View target, int dx, int dy, @Nonnull int[] consumed, int type) {
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
         int xConsumed = 0;
         int yConsumed = 0;
         boolean accepted = false;
@@ -1441,7 +1462,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public boolean onNestedFling(@Nonnull View target, float velocityX, float velocityY, boolean consumed) {
+    public boolean onNestedFling(@NonNull View target, float velocityX, float velocityY, boolean consumed) {
         boolean handled = false;
 
         final int childCount = getChildCount();
@@ -1470,7 +1491,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public boolean onNestedPreFling(@Nonnull View target, float velocityX, float velocityY) {
+    public boolean onNestedPreFling(@NonNull View target, float velocityX, float velocityY) {
         boolean handled = false;
 
         final int childCount = getChildCount();
@@ -1518,7 +1539,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @return The behavior associated with the matching {@link View} class. Must be
          * non-null.
          */
-        @Nonnull
+        @NonNull
         Behavior<?> getBehavior();
     }
 
@@ -1546,7 +1567,7 @@ public class CoordinatorLayout extends ViewGroup {
          *
          * @param params the LayoutParams instance that this Behavior has been attached to
          */
-        public void onAttachedToLayoutParams(@Nonnull CoordinatorLayout.LayoutParams params) {
+        public void onAttachedToLayoutParams(@NonNull CoordinatorLayout.LayoutParams params) {
         }
 
         /**
@@ -1582,8 +1603,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if this Behavior would like to intercept and take over the event stream.
          * The default always returns false.
          */
-        public boolean onInterceptTouchEvent(@Nonnull CoordinatorLayout parent, @Nonnull V child,
-                                             @Nonnull MotionEvent ev) {
+        public boolean onInterceptTouchEvent(@NonNull CoordinatorLayout parent, @NonNull V child,
+                                             @NonNull MotionEvent ev) {
             return false;
         }
 
@@ -1606,8 +1627,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if this Behavior handled this touch event and would like to continue
          * receiving events in this stream. The default always returns false.
          */
-        public boolean onTouchEvent(@Nonnull CoordinatorLayout parent, @Nonnull V child,
-                                    @Nonnull MotionEvent ev) {
+        public boolean onTouchEvent(@NonNull CoordinatorLayout parent, @NonNull V child,
+                                    @NonNull MotionEvent ev) {
             return false;
         }
 
@@ -1625,7 +1646,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @return the desired scrim color in 0xRRGGBB format. The default return value is black.
          * @see #getScrimOpacity(CoordinatorLayout, View)
          */
-        public int getScrimColor(@Nonnull CoordinatorLayout parent, @Nonnull V child) {
+        public int getScrimColor(@NonNull CoordinatorLayout parent, @NonNull V child) {
             return 0;
         }
 
@@ -1642,7 +1663,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @param child  the child view above the scrim
          * @return the desired scrim opacity from 0.0f to 1.0f. The default return value is 0.0f.
          */
-        public float getScrimOpacity(@Nonnull CoordinatorLayout parent, @Nonnull V child) {
+        public float getScrimOpacity(@NonNull CoordinatorLayout parent, @NonNull V child) {
             return 0.0f;
         }
 
@@ -1658,7 +1679,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if {@link #getScrimOpacity(CoordinatorLayout, View)} would
          * return > 0.0f.
          */
-        public boolean blocksInteractionBelow(@Nonnull CoordinatorLayout parent, @Nonnull V child) {
+        public boolean blocksInteractionBelow(@NonNull CoordinatorLayout parent, @NonNull V child) {
             return getScrimOpacity(parent, child) > 0.0f;
         }
 
@@ -1683,8 +1704,8 @@ public class CoordinatorLayout extends ViewGroup {
          * false otherwise
          * @see #onDependentViewChanged(CoordinatorLayout, View, View)
          */
-        public boolean layoutDependsOn(@Nonnull CoordinatorLayout parent, @Nonnull V child,
-                                       @Nonnull View dependency) {
+        public boolean layoutDependsOn(@NonNull CoordinatorLayout parent, @NonNull V child,
+                                       @NonNull View dependency) {
             return false;
         }
 
@@ -1713,8 +1734,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @param dependency the dependent view that changed
          * @return true if the Behavior changed the child view's size or position, false otherwise
          */
-        public boolean onDependentViewChanged(@Nonnull CoordinatorLayout parent, @Nonnull V child,
-                                              @Nonnull View dependency) {
+        public boolean onDependentViewChanged(@NonNull CoordinatorLayout parent, @NonNull V child,
+                                              @NonNull View dependency) {
             return false;
         }
 
@@ -1732,8 +1753,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @param child      the child view to manipulate
          * @param dependency the dependent view that has been removed
          */
-        public void onDependentViewRemoved(@Nonnull CoordinatorLayout parent, @Nonnull V child,
-                                           @Nonnull View dependency) {
+        public void onDependentViewRemoved(@NonNull CoordinatorLayout parent, @NonNull V child,
+                                           @NonNull View dependency) {
         }
 
         /**
@@ -1756,7 +1777,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if the Behavior measured the child view, false if the CoordinatorLayout
          * should perform its default measurement
          */
-        public boolean onMeasureChild(@Nonnull CoordinatorLayout parent, @Nonnull V child,
+        public boolean onMeasureChild(@NonNull CoordinatorLayout parent, @NonNull V child,
                                       int parentWidthMeasureSpec, int widthUsed,
                                       int parentHeightMeasureSpec, int heightUsed) {
             return false;
@@ -1786,7 +1807,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if the Behavior performed layout of the child view, false to request
          * default layout behavior
          */
-        public boolean onLayoutChild(@Nonnull CoordinatorLayout parent, @Nonnull V child,
+        public boolean onLayoutChild(@NonNull CoordinatorLayout parent, @NonNull V child,
                                      int layoutDirection) {
             return false;
         }
@@ -1800,7 +1821,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @param child child view to set tag with
          * @param tag   tag object to set
          */
-        public static void setTag(@Nonnull View child, @Nullable Object tag) {
+        public static void setTag(@NonNull View child, @Nullable Object tag) {
             final LayoutParams lp = (LayoutParams) child.getLayoutParams();
             lp.mBehaviorTag = tag;
         }
@@ -1813,7 +1834,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @return the previously stored tag object
          */
         @Nullable
-        public static Object getTag(@Nonnull View child) {
+        public static Object getTag(@NonNull View child) {
             final LayoutParams lp = (LayoutParams) child.getLayoutParams();
             return lp.mBehaviorTag;
         }
@@ -1839,8 +1860,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if the Behavior wishes to accept this nested scroll
          * @see ViewParent#onStartNestedScroll(View, View, int, int)
          */
-        public boolean onStartNestedScroll(@Nonnull CoordinatorLayout coordinatorLayout,
-                                           @Nonnull V child, @Nonnull View directTargetChild, @Nonnull View target,
+        public boolean onStartNestedScroll(@NonNull CoordinatorLayout coordinatorLayout,
+                                           @NonNull V child, @NonNull View directTargetChild, @NonNull View target,
                                            @ScrollAxis int axes, @NestedScrollType int type) {
             return false;
         }
@@ -1865,8 +1886,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @param type              the type of input which cause this scroll event
          * @see ViewParent#onNestedScrollAccepted(View, View, int, int)
          */
-        public void onNestedScrollAccepted(@Nonnull CoordinatorLayout coordinatorLayout,
-                                           @Nonnull V child, @Nonnull View directTargetChild, @Nonnull View target,
+        public void onNestedScrollAccepted(@NonNull CoordinatorLayout coordinatorLayout,
+                                           @NonNull V child, @NonNull View directTargetChild, @NonNull View target,
                                            @ScrollAxis int axes, @NestedScrollType int type) {
         }
 
@@ -1890,8 +1911,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @param type              the type of input which cause this scroll event
          * @see ViewParent#onStopNestedScroll(View, int)
          */
-        public void onStopNestedScroll(@Nonnull CoordinatorLayout coordinatorLayout,
-                                       @Nonnull V child, @Nonnull View target, @NestedScrollType int type) {
+        public void onStopNestedScroll(@NonNull CoordinatorLayout coordinatorLayout,
+                                       @NonNull V child, @NonNull View target, @NestedScrollType int type) {
         }
 
         /**
@@ -1924,9 +1945,9 @@ public class CoordinatorLayout extends ViewGroup {
          *                          distances consumed by this Behavior
          * @see ViewParent#onNestedScroll(View, int, int, int, int, int, int[])
          */
-        public void onNestedScroll(@Nonnull CoordinatorLayout coordinatorLayout, @Nonnull V child,
-                                   @Nonnull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                                   int dyUnconsumed, @NestedScrollType int type, @Nonnull int[] consumed) {
+        public void onNestedScroll(@NonNull CoordinatorLayout coordinatorLayout, @NonNull V child,
+                                   @NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
+                                   int dyUnconsumed, @NestedScrollType int type, @NonNull int[] consumed) {
         }
 
         /**
@@ -1957,8 +1978,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @param type              the type of input which cause this scroll event
          * @see ViewParent#onNestedPreScroll(View, int, int, int[], int)
          */
-        public void onNestedPreScroll(@Nonnull CoordinatorLayout coordinatorLayout,
-                                      @Nonnull V child, @Nonnull View target, int dx, int dy, @Nonnull int[] consumed,
+        public void onNestedPreScroll(@NonNull CoordinatorLayout coordinatorLayout,
+                                      @NonNull V child, @NonNull View target, int dx, int dy, @NonNull int[] consumed,
                                       @NestedScrollType int type) {
         }
 
@@ -1988,8 +2009,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if the Behavior consumed the fling
          * @see ViewParent#onNestedFling(View, float, float, boolean)
          */
-        public boolean onNestedFling(@Nonnull CoordinatorLayout coordinatorLayout,
-                                     @Nonnull V child, @Nonnull View target, float velocityX, float velocityY,
+        public boolean onNestedFling(@NonNull CoordinatorLayout coordinatorLayout,
+                                     @NonNull V child, @NonNull View target, float velocityX, float velocityY,
                                      boolean consumed) {
             return false;
         }
@@ -2016,8 +2037,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if the Behavior consumed the fling
          * @see ViewParent#onNestedPreFling(View, float, float)
          */
-        public boolean onNestedPreFling(@Nonnull CoordinatorLayout coordinatorLayout,
-                                        @Nonnull V child, @Nonnull View target, float velocityX, float velocityY) {
+        public boolean onNestedPreFling(@NonNull CoordinatorLayout coordinatorLayout,
+                                        @NonNull V child, @NonNull View target, float velocityX, float velocityY) {
             return false;
         }
 
@@ -2038,8 +2059,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @return true if the Behavior handled the request
          * @see ViewParent#requestChildRectangleOnScreen(View, Rect, boolean)
          */
-        public boolean onRequestChildRectangleOnScreen(@Nonnull CoordinatorLayout coordinatorLayout,
-                                                       @Nonnull V child, @Nonnull Rect rectangle, boolean immediate) {
+        public boolean onRequestChildRectangleOnScreen(@NonNull CoordinatorLayout coordinatorLayout,
+                                                       @NonNull V child, @NonNull Rect rectangle, boolean immediate) {
             return false;
         }
 
@@ -2056,8 +2077,8 @@ public class CoordinatorLayout extends ViewGroup {
          * @param rect   the rect to update with the dodge rectangle
          * @return true the rect was updated, false if we should use the child's bounds
          */
-        public boolean getInsetDodgeRect(@Nonnull CoordinatorLayout parent, @Nonnull V child,
-                                         @Nonnull Rect rect) {
+        public boolean getInsetDodgeRect(@NonNull CoordinatorLayout parent, @NonNull V child,
+                                         @NonNull Rect rect) {
             return false;
         }
     }
@@ -2348,7 +2369,7 @@ public class CoordinatorLayout extends ViewGroup {
          * Determine the anchor view for the child view this LayoutParams is assigned to.
          * Assumes mAnchorId is valid.
          */
-        private void resolveAnchorView(final View forChild, @Nonnull final CoordinatorLayout parent) {
+        private void resolveAnchorView(final View forChild, @NonNull final CoordinatorLayout parent) {
             mAnchorView = parent.findViewById(mAnchorId);
             if (mAnchorView != null) {
                 if (mAnchorView == parent) {
@@ -2404,7 +2425,7 @@ public class CoordinatorLayout extends ViewGroup {
         /**
          * Checks whether the view with this LayoutParams should dodge the specified view.
          */
-        private boolean shouldDodge(@Nonnull View other, int layoutDirection) {
+        private boolean shouldDodge(@NonNull View other, int layoutDirection) {
             LayoutParams lp = (LayoutParams) other.getLayoutParams();
             final int absInset = Gravity.getAbsoluteGravity(lp.insetEdge, layoutDirection);
             return absInset != Gravity.NO_GRAVITY && (absInset &
