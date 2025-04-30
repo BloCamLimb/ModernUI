@@ -5106,8 +5106,10 @@ public class View implements Drawable.Callback {
      *                  hierarchy
      * @param refocus   when propagate is true, specifies whether to request the
      *                  root view place new focus
+     * @hidden
      */
-    void clearFocusInternal(View focused, boolean propagate, boolean refocus) {
+    @ApiStatus.Internal
+    public void clearFocusInternal(View focused, boolean propagate, boolean refocus) {
         if ((mPrivateFlags & PFLAG_FOCUSED) != 0) {
             mPrivateFlags &= ~PFLAG_FOCUSED;
             clearParentsWantFocus();

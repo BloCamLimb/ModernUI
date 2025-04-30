@@ -600,7 +600,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 if (v instanceof TextView tv && tv.getMovementMethod() != null) {
                     v.getGlobalVisibleRect(mGlobalRect);
                     if (!mGlobalRect.contains((int) event.getRawX(), (int) event.getRawY())) {
-                        v.clearFocus();
+                        v.clearFocusInternal(null, true, false);
                     }
                 }
             }
@@ -613,7 +613,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 if (event.getKeyCode() == KeyEvent.KEY_ESCAPE) {
                     View v = mView.findFocus();
                     if (v instanceof TextView tv && tv.getMovementMethod() != null) {
-                        mView.requestFocus();
+                        v.clearFocusInternal(null, true, false);
                     } else {
                         mOnBackPressedDispatcher.onBackPressed();
                     }

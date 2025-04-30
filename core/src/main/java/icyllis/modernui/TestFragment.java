@@ -727,12 +727,12 @@ public class TestFragment extends Fragment {
                         menu.setGroupDividerEnabled(true);
                         MenuItem item;
                         item = menu.add(2, Menu.NONE, Menu.NONE, "Align start");
-                        item.setAlphabeticShortcut('s', KeyEvent.META_CTRL_ON);
+                        item.setAlphabeticShortcut('s');
                         item.setChecked(true);
                         item = menu.add(2, Menu.NONE, Menu.NONE, "Align center");
-                        item.setAlphabeticShortcut('d', KeyEvent.META_CTRL_ON);
+                        item.setAlphabeticShortcut('d');
                         item = menu.add(2, Menu.NONE, Menu.NONE, "Align end");
-                        item.setAlphabeticShortcut('f', KeyEvent.META_CTRL_ON);
+                        item.setAlphabeticShortcut('f');
                         menu.setGroupCheckable(2, true, true);
                         SubMenu subMenu = menu.addSubMenu("New");
                         subMenu.add("Document");
@@ -740,7 +740,7 @@ public class TestFragment extends Fragment {
                         menu.add(1, Menu.NONE, Menu.NONE, "Delete");
                     });
                 }
-                v.setClickable(true);
+                //v.setClickable(true);
                 p.gravity = Gravity.CENTER;
                 addView(v, p);
             }
