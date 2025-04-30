@@ -327,4 +327,11 @@ public interface Menu {
      * Enable or disable the group dividers.
      */
     void setGroupDividerEnabled(boolean groupDividerEnabled);
+
+    /**
+     * Sets the optional icon visible.
+     *
+     * @param visible true for visible, false for hidden.
+     */
+    void setOptionalIconsVisible(boolean visible);
 }
