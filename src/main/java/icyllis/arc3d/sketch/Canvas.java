@@ -28,6 +28,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.function.Consumer;
 
 /**
  * A Canvas provides an interface for drawing 2D geometries, images, and how the
@@ -639,6 +640,22 @@ public class Canvas implements AutoCloseable {
             return;
         }
         matrix.toMatrix4(mTmpMatrix44);
+        concat(mTmpMatrix44);
+    }
+
+    /**
+     * Pre-multiply the current matrix by the specified matrix.
+     * <p>
+     * This has the effect of transforming the drawn geometry by matrix, before
+     * transforming the result with the current matrix.
+     * <p>
+     * This method provides a dirty, temporary matrix to consumer, the consumer
+     * must initialize it, and do batch operations.
+     *
+     * @param matrix the matrix to premultiply with the current matrix
+     */
+    public final void concat(@NonNull Consumer<Matrix4> matrix) {
+        matrix.accept(mTmpMatrix44);
         concat(mTmpMatrix44);
     }
 
