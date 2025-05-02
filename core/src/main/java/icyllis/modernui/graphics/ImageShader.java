@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -201,6 +201,17 @@ public class ImageShader extends Shader {
         mShader = shader;
     }
 
+    private ImageShader(@NonNull icyllis.arc3d.sketch.shaders.Shader newShader,
+                        @Nullable Matrix newLocalMatrix) {
+        if (newLocalMatrix != null && !newLocalMatrix.isIdentity()) {
+            mLocalMatrix = new Matrix(newLocalMatrix);
+        } else {
+            mLocalMatrix = null;
+        }
+        mCleanup = Core.registerNativeResource(this, newShader);
+        mShader = newShader;
+    }
+
     /**
      * Return true if the shader has a non-identity local matrix.
      *
@@ -229,6 +240,31 @@ public class ImageShader extends Shader {
         } else {
             return mLocalMatrix.equals(localMatrix);
         }
+    }
+
+    /**
+     * Create a new ImageShader that replaces its local matrix with a new local matrix.
+     * This method is faster than re-creating with the constructor when you only want to
+     * modify the local matrix. Use {@link #localMatrixEquals(Matrix)} to determine if
+     * the new local matrix is different from previous one.
+     *
+     * @param newLocalMatrix the new local matrix that replaces this
+     * @param discardThis true to discard this shader, if you no longer need the old shader
+     * @return a newly created shader
+     */
+    @NonNull
+    public ImageShader copyWithLocalMatrix(@Nullable Matrix newLocalMatrix,
+                                           boolean discardThis) {
+        var shader = mShader;
+        if (shader == null) {
+            throw new IllegalStateException("ImageShader is already released");
+        }
+        var newShader = shader.makeWithLocalMatrix(newLocalMatrix != null ? newLocalMatrix :
+                icyllis.arc3d.sketch.Matrix.identity(), icyllis.arc3d.sketch.shaders.Shader.LOCAL_MATRIX_REPLACE);
+        if (discardThis) {
+            release();
+        }
+        return new ImageShader(newShader, newLocalMatrix);
     }
 
     //TODO add a builder to customize bicubic parameters

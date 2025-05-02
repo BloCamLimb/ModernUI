@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,7 +61,11 @@ public abstract class Shader {
          */
         DECAL(icyllis.arc3d.sketch.shaders.Shader.TILE_MODE_DECAL);
 
-        final int nativeInt;
+        /**
+         * @hidden
+         */
+        @ApiStatus.Internal
+        public final int nativeInt;
 
         TileMode(int nativeInt) {
             this.nativeInt = nativeInt;
