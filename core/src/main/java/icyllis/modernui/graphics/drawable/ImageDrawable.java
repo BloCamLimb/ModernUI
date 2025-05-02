@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,9 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.util.*;
+import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
@@ -489,12 +491,17 @@ public class ImageDrawable extends Drawable {
             }
         } else {
             if (rebuildShader) {
-                paint.setShader(new ImageShader(image,
-                        tileModeX == null ? Shader.TileMode.CLAMP : tileModeX,
-                        tileModeY == null ? Shader.TileMode.CLAMP : tileModeY,
-                        paint.getFilterMode(),
-                        updateShaderMatrix(image, needMirroring)
-                ));
+                paint.getNativePaint().setShader(
+                        icyllis.arc3d.sketch.shaders.ImageShader.make(
+                                icyllis.arc3d.core.RefCnt.create(image.getNativeImage()),
+                                (tileModeX == null ? Shader.TileMode.CLAMP : tileModeX).nativeInt,
+                                (tileModeY == null ? Shader.TileMode.CLAMP : tileModeY).nativeInt,
+                                paint.getFilterMode() != ImageShader.FILTER_MODE_NEAREST
+                                        ? icyllis.arc3d.core.SamplingOptions.LINEAR
+                                        : icyllis.arc3d.core.SamplingOptions.POINT,
+                                updateShaderMatrix(image, needMirroring)
+                        )
+                );
             }
             canvas.drawRect(mDstRect, paint);
         }

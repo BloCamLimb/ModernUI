@@ -347,12 +347,17 @@ public class RoundedImageDrawable extends Drawable {
             canvas.drawImage(image, mSrcRect, mDstRect, paint);
         } else {
             if (rebuildShader) {
-                paint.setShader(new ImageShader(image,
-                        Shader.TileMode.CLAMP,
-                        Shader.TileMode.CLAMP,
-                        paint.getFilterMode(),
-                        updateShaderMatrix(image)
-                ));
+                paint.getNativePaint().setShader(
+                        icyllis.arc3d.sketch.shaders.ImageShader.make(
+                                icyllis.arc3d.core.RefCnt.create(image.getNativeImage()),
+                                Shader.TileMode.CLAMP.nativeInt,
+                                Shader.TileMode.CLAMP.nativeInt,
+                                paint.getFilterMode() != ImageShader.FILTER_MODE_NEAREST
+                                        ? icyllis.arc3d.core.SamplingOptions.LINEAR
+                                        : icyllis.arc3d.core.SamplingOptions.POINT,
+                                updateShaderMatrix(image)
+                        )
+                );
             }
             canvas.drawRoundRect(mDstRect.left, mDstRect.top, mDstRect.right, mDstRect.bottom,
                     mCornerRadius, paint);
@@ -410,7 +415,9 @@ public class RoundedImageDrawable extends Drawable {
 
     @Override
     public void getOutline(@NonNull Outline outline) {
-        updateDstRect();
+        if (updateDstRect()) {
+            mDstRectDirty = true; // keep dirty to rebuild shader later
+        }
         outline.setRoundRect(mDstRect, getCornerRadius());
         outline.setAlpha(getAlpha() / 255.0f);
     }
