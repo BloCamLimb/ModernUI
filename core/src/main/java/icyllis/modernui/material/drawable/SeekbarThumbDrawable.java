@@ -18,15 +18,12 @@
 
 package icyllis.modernui.material.drawable;
 
-import icyllis.modernui.R;
-import icyllis.modernui.animation.Animator;
-import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.RadialGradient;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.Shader;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.resources.Resources;
@@ -34,27 +31,18 @@ import icyllis.modernui.resources.TypedValue;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * A thumb drawable for SeekBar, similar to Material Design, vertical bar style.
+ * A thumb drawable for SeekBar, similar to Material Design.
  */
 @ApiStatus.Internal
 public class SeekbarThumbDrawable extends MaterialDrawable {
 
-    private final int mWidth; // 4dp
-    private final int mHeight; // 28dp
+    private final int mSize; // 18dp
+    private final boolean mHasShadowLayer;
+    private Shader mShadowShader;
 
-    // actual width = width * thickness ratio
-    private float mThickness = 0.5f;
-
-    // -1: init, 0: unpressed, 1: pressed or focused
-    private int mCurState = -1;
-    private int mTransitionToState = -1;
-
-    // current transition, if any
-    private Animator mTransition;
-
-    public SeekbarThumbDrawable(Resources res) {
-        mWidth = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, 4, res.getDisplayMetrics()));
-        mHeight = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, 28, res.getDisplayMetrics()));
+    public SeekbarThumbDrawable(Resources res, boolean hasShadowLayer) {
+        mSize = Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, 18, res.getDisplayMetrics()));
+        mHasShadowLayer = hasShadowLayer;
     }
 
     @Override
@@ -64,147 +52,46 @@ public class SeekbarThumbDrawable extends MaterialDrawable {
         paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
         if (paint.getAlpha() != 0) {
             final Rect r = getBounds();
-            float cx = r.exactCenterX();
-            float thick = mWidth * mThickness;
-            canvas.drawRoundRect(cx - thick, r.top, cx + thick, r.bottom, thick, paint);
+            if (mHasShadowLayer && mShadowShader != null) {
+                paint.setShader(mShadowShader);
+                canvas.drawCircle(r.exactCenterX(), r.exactCenterY(), mSize * 0.75f, paint);
+                paint.setShader(null);
+            }
+            canvas.drawCircle(r.exactCenterX(), r.exactCenterY(), mSize * 0.5f, paint);
         }
         paint.recycle();
     }
 
     @Override
-    public boolean isStateful() {
-        return true;
-    }
-
-    @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
-        boolean changed = super.onStateChange(stateSet);
-
-        int toState = 0;
-        for (int state : stateSet) {
-            if (state == R.attr.state_pressed || state == R.attr.state_focused) {
-                toState = 1;
-                break;
-            }
-        }
-        changed |= selectTransition(toState) || selectDrawable(toState);
-
-        return changed;
-    }
-
-    @Override
-    public boolean setVisible(boolean visible, boolean restart) {
-        boolean changed = super.setVisible(visible, restart);
-
-        if (mTransition != null && (changed || restart)) {
-            if (visible) {
-                mTransition.start();
-            } else {
-                jumpToCurrentState();
-            }
-        }
-
-        return changed;
-    }
-
-    private boolean selectTransition(int toState) {
-        int fromState;
-        if (mTransition != null) {
-            if (toState == mTransitionToState) {
-                return true;
-            }
-            mTransition.cancel();
-
-            fromState = mTransitionToState;
-        } else {
-            fromState = mCurState;
-        }
-
-        mTransition = null;
-        mTransitionToState = -1;
-
-        if (fromState == -1) {
-            return false;
-        }
-        if (fromState == toState) {
-            return false;
-        }
-
-        Animator transition;
-        if (toState == 1) {
-            transition = createUnpressedToPressedAnimator();
-        } else {
-            transition = createPressedToUnpressedAnimator();
-        }
-
-        transition.start();
-
-        mTransition = transition;
-        mTransitionToState = toState;
-        return true;
-    }
-
-    private boolean selectDrawable(int toState) {
-        if (mCurState == toState) {
-            return false;
-        }
-
-        mCurState = toState;
-
-        if (toState == 1) {
-            mThickness = 0.25f;
-        } else {
-            mThickness = 0.5f;
-        }
-
-        invalidateSelf();
-
-        return true;
-    }
-
-    @Override
-    public void jumpToCurrentState() {
-        super.jumpToCurrentState();
-
-        if (mTransition != null) {
-            mTransition.cancel();
-            mTransition = null;
-
-            selectDrawable(mTransitionToState);
+    protected void onBoundsChange(@NonNull Rect bounds) {
+        super.onBoundsChange(bounds);
+        if (bounds.isEmpty()) {
+            mShadowShader = null;
+        } else if (mHasShadowLayer) {
+            float offset = mSize * (1f / 18f * 0.5f);
+            float radius = mSize * (21f / 18f * 0.5f);
+            float startRatio = 1f - (1.5f / (21f * 0.5f));
+            float midRatio = startRatio + ((1f - startRatio) / 2f);
+            //TODO I think this can be optimized by only changing the local matrix
+            mShadowShader = new RadialGradient(
+                    bounds.exactCenterX(), bounds.exactCenterY() + offset,
+                    radius,
+                    new int[]{0, 0x44000000, 0x14000000, 0},
+                    new float[]{0, startRatio, midRatio, 1},
+                    Shader.TileMode.CLAMP, null
+            );
         }
     }
-
-    private Animator createUnpressedToPressedAnimator() {
-        ValueAnimator anim = new ValueAnimator();
-        anim.setDuration(133);
-        anim.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
-        anim.addUpdateListener(animation -> {
-            mThickness = MathUtil.lerp(0.5f, 0.25f, animation.getAnimatedFraction());
-            invalidateSelf();
-        });
-        return anim;
-    }
-
-    private Animator createPressedToUnpressedAnimator() {
-        ValueAnimator anim = new ValueAnimator();
-        anim.setDuration(133);
-        anim.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
-        anim.addUpdateListener(animation -> {
-            mThickness = MathUtil.lerp(0.25f, 0.5f, animation.getAnimatedFraction());
-            invalidateSelf();
-        });
-        return anim;
-    }
-
-    //TODO returns optical insets 6dp
 
     @Override
     public int getIntrinsicWidth() {
-        return mWidth;
+        // has halo layer
+        return mSize * 2;
     }
 
     @Override
     public int getIntrinsicHeight() {
-        return mHeight;
+        // has halo layer
+        return mSize * 2;
     }
 }

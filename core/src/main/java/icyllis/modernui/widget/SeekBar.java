@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -120,6 +120,23 @@ public class SeekBar extends AbsSeekBar {
      */
     public void setOnSeekBarChangeListener(OnSeekBarChangeListener l) {
         mOnSeekBarChangeListener = l;
+    }
+
+    /**
+     * Whether this seek bar should animate progress changes from the user (by clicking
+     * or dragging).
+     *
+     * @param enabled Whether user touches should be animated.
+     */
+    public void setUserAnimationEnabled(boolean enabled) {
+        mIsUserAnimatable = enabled;
+    }
+
+    /**
+     * @see #setUserAnimationEnabled(boolean)
+     */
+    public boolean getUserAnimationEnabled() {
+        return mIsUserAnimatable;
     }
 
     @Override
