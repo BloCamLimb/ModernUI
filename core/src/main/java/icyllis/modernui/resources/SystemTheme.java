@@ -33,6 +33,7 @@ import icyllis.modernui.material.drawable.RadioButtonDrawable;
 import icyllis.modernui.material.drawable.CircularIndeterminateDrawable;
 import icyllis.modernui.material.drawable.LinearIndeterminateDrawable;
 import icyllis.modernui.material.drawable.SeekbarThumbDrawable;
+import icyllis.modernui.material.drawable.SliderThumbDrawable;
 import icyllis.modernui.material.drawable.SwitchThumbDrawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.SparseArray;
@@ -705,6 +706,24 @@ public class SystemTheme {
             );
             return textfield_indicator_text_color;
         }
+
+        private ColorStateList slider_halo_color;
+        private ColorStateList slider_halo_color() {
+            if (slider_halo_color != null) {
+                return slider_halo_color;
+            }
+            slider_halo_color = new ColorStateList(
+                    new int[][]{
+                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorPrimary, 0.1f),
+                            Color.TRANSPARENT
+                    }
+            );
+            return slider_halo_color;
+        }
     }
 
     static <T> T fromCache(Resources.Theme theme, Function<ThemedCache, T> fn) {
@@ -1262,7 +1281,7 @@ public class SystemTheme {
                 return drawable;
             });
             style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources,
-             theme, false));
+             theme, false, true));
             style.addBoolean(R.attr.mirrorForRtl, true);
         }
         {
@@ -1275,11 +1294,44 @@ public class SystemTheme {
                 return drawable;
             });
             style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources,
-             theme, true));
+             theme, true, true));
         }
         // Seek bars
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar, null);
+            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources,
+                    theme, false, false));
+            style.addBoolean(R.attr.mirrorForRtl, true);
+            style.addBoolean(R.attr.focusable, true);
+            style.addBoolean(R.attr.clickable, true);
+            style.addDrawable(R.attr.thumb, (resources, theme) -> {
+                var thumb = new SeekbarThumbDrawable(resources, true);
+                thumb.setTintList(fromCache(theme, ThemedCache::slider_track_color_active));
+                return thumb;
+            });
+            style.addDrawable(R.attr.background, (resources, theme) -> {
+                var haloColor = fromCache(theme, ThemedCache::slider_halo_color);
+                var ripple = new RippleDrawable(haloColor, null, null);
+                ripple.setRadius(dp(18, resources));
+                return ripple;
+            });
+            style.addDimension(R.attr.paddingLeft, 18, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingRight, 18, TypedValue.COMPLEX_UNIT_DP);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete, R.style.Widget_Material3_SeekBar);
+            style.addDrawable(R.attr.tickMark, (resources, theme) -> {
+                var tick = new ShapeDrawable();
+                tick.setShape(ShapeDrawable.CIRCLE);
+                int size = dp(2, resources);
+                tick.setSize(size, size);
+                tick.setColor(fromCache(theme, ThemedCache::slider_track_color_inactive));
+                tick.setUseLevelForShape(false);
+                return tick;
+            });
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_SeekBar_Slider, null);
             style.addDrawable(R.attr.progressDrawable, (resources, theme) -> {
                 var background = new ShapeDrawable();
                 background.setShape(ShapeDrawable.HLINE);
@@ -1303,15 +1355,15 @@ public class SystemTheme {
             style.addBoolean(R.attr.mirrorForRtl, true);
             style.addBoolean(R.attr.focusable, true);
             style.addDrawable(R.attr.thumb, (resources, theme) -> {
-                var thumb = new SeekbarThumbDrawable(resources);
+                var thumb = new SliderThumbDrawable(resources);
                 thumb.setTintList(fromCache(theme, ThemedCache::slider_track_color_active));
                 return thumb;
             });
-            style.addDimension(R.attr.paddingLeft, 16, TypedValue.COMPLEX_UNIT_DP);
-            style.addDimension(R.attr.paddingRight, 16, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingLeft, 5, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.paddingRight, 5, TypedValue.COMPLEX_UNIT_DP);
         }
         {
-            var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete, R.style.Widget_Material3_SeekBar);
+            var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete_Slider, R.style.Widget_Material3_SeekBar_Slider);
             style.addDrawable(R.attr.tickMark, (resources, theme) -> {
                 var tick = new ShapeDrawable();
                 tick.setShape(ShapeDrawable.CIRCLE);
@@ -1436,24 +1488,51 @@ public class SystemTheme {
     }
 
     private static Drawable linear_progress_drawable(Resources resources, Resources.Theme theme,
-                                                     boolean vertical) {
-        LayerDrawable track;
+                                                     boolean vertical, boolean stroke) {
+        final LayerDrawable track;
+        final int size = dp(4, resources);
+        final ColorStateList
+                colorInactive = fromCache(theme, ThemedCache::slider_track_color_inactive),
+                colorSecondary = fromCache(theme, ThemedCache::secondary_progress_tint),
+                colorActive = fromCache(theme, ThemedCache::slider_track_color_active);
+        final ShapeDrawable
+                background = new ShapeDrawable(),
+                secondaryProgress = new ShapeDrawable(),
+                progress = new ShapeDrawable();
         if (vertical) {
-            var background = new ShapeDrawable();
             background.setShape(ShapeDrawable.VLINE);
-            background.setSize(dp(4, resources), -1);
-            background.setCornerRadius(1);
-            background.setStroke(dp(4, resources), fromCache(theme, ThemedCache::slider_track_color_inactive));
-            var secondaryProgress = new ShapeDrawable();
+            background.setSize(size, -1);
             secondaryProgress.setShape(ShapeDrawable.VLINE);
-            secondaryProgress.setSize(dp(4, resources), -1);
-            secondaryProgress.setCornerRadius(1);
-            secondaryProgress.setStroke(dp(4, resources), fromCache(theme, ThemedCache::secondary_progress_tint));
-            var progress = new ShapeDrawable();
+            secondaryProgress.setSize(size, -1);
             progress.setShape(ShapeDrawable.VLINE);
-            progress.setSize(dp(4, resources), -1);
-            progress.setCornerRadius(1);
-            progress.setStroke(dp(4, resources), fromCache(theme, ThemedCache::slider_track_color_active));
+            progress.setSize(size, -1);
+        } else {
+            background.setShape(ShapeDrawable.HLINE);
+            background.setSize(-1, size);
+            secondaryProgress.setShape(ShapeDrawable.HLINE);
+            secondaryProgress.setSize(-1, size);
+            progress.setShape(ShapeDrawable.HLINE);
+            progress.setSize(-1, size);
+        }
+        background.setCornerRadius(1);
+        if (stroke) {
+            background.setStroke(size, colorInactive);
+        } else {
+            background.setColor(colorInactive);
+        }
+        secondaryProgress.setCornerRadius(1);
+        if (stroke) {
+            secondaryProgress.setStroke(size, colorSecondary);
+        } else {
+            secondaryProgress.setColor(colorSecondary);
+        }
+        progress.setCornerRadius(1);
+        if (stroke) {
+            progress.setStroke(size, colorActive);
+        } else {
+            progress.setColor(colorActive);
+        }
+        if (vertical) {
             var scaledSecondaryProgress = new ScaleDrawable(secondaryProgress, Gravity.BOTTOM, 1.0f, -1.0f);
             var scaledProgress = new ScaleDrawable(progress, Gravity.BOTTOM, 1.0f, -1.0f);
             track = new LayerDrawable(background, scaledSecondaryProgress, scaledProgress);
@@ -1461,21 +1540,6 @@ public class SystemTheme {
             track.setLayerGravity(1, Gravity.CENTER_HORIZONTAL | Gravity.FILL_VERTICAL);
             track.setLayerGravity(2, Gravity.CENTER_HORIZONTAL | Gravity.FILL_VERTICAL);
         } else {
-            var background = new ShapeDrawable();
-            background.setShape(ShapeDrawable.HLINE);
-            background.setSize(-1, dp(4, resources));
-            background.setCornerRadius(1);
-            background.setStroke(dp(4, resources), fromCache(theme, ThemedCache::slider_track_color_inactive));
-            var secondaryProgress = new ShapeDrawable();
-            secondaryProgress.setShape(ShapeDrawable.HLINE);
-            secondaryProgress.setSize(-1, dp(4, resources));
-            secondaryProgress.setCornerRadius(1);
-            secondaryProgress.setStroke(dp(4, resources), fromCache(theme, ThemedCache::secondary_progress_tint));
-            var progress = new ShapeDrawable();
-            progress.setShape(ShapeDrawable.HLINE);
-            progress.setSize(-1, dp(4, resources));
-            progress.setCornerRadius(1);
-            progress.setStroke(dp(4, resources), fromCache(theme, ThemedCache::slider_track_color_active));
             var scaledSecondaryProgress = new ScaleDrawable(secondaryProgress, Gravity.LEFT, 1.0f, -1.0f);
             var scaledProgress = new ScaleDrawable(progress, Gravity.LEFT, 1.0f, -1.0f);
             track = new LayerDrawable(background, scaledSecondaryProgress, scaledProgress);

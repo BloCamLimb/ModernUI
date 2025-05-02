@@ -48,6 +48,7 @@ import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.ShapedText;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.SpannableString;
@@ -99,8 +100,8 @@ public class TestFragment extends Fragment {
         Configurator.setRootLevel(Level.DEBUG);
 
         try (ModernUI app = new ModernUI()) {
-            //app.getTheme().applyStyle(R.style.Theme_Material3_Light, true);
-            app.getTheme().applyStyle(R.style.ThemeOverlay_Material3_Dark_Rust, true);
+            app.getTheme().applyStyle(R.style.Theme_Material3_Light, true);
+            //app.getTheme().applyStyle(R.style.ThemeOverlay_Material3_Dark_Rust, true);
             app.run(new TestFragment());
         }
         AudioManager.getInstance().close();
@@ -661,11 +662,13 @@ public class TestFragment extends Fragment {
                     var seekbar = new SeekBar(getContext(), null, null,
                             R.style.Widget_Material3_SeekBar_Discrete);
                     seekbar.setMax(10);
+                    seekbar.setUserAnimationEnabled(true);
                     v = seekbar;
-                    p = new LayoutParams(dp(200), WRAP_CONTENT);
+                    p = new LayoutParams(dp(236), WRAP_CONTENT);
                 } else if (i == 12) {
-                    ProgressBar progressBar = new ProgressBar(context, null, null,
-                            R.style.Widget_Material3_ProgressBar_Horizontal);
+                    ProgressBar progressBar = new ProgressBar(context, null, ResourceId.attr(
+                            R.ns, R.attr.progressBarStyleHorizontal
+                    ));
                     progressBar.setIndeterminate(true);
                     v = progressBar;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);

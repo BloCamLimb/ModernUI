@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -85,6 +85,9 @@ public abstract class AbsSeekBar extends ProgressBar {
      * Whether this is user seekable.
      */
     boolean mIsUserSeekable = true;
+
+    // Added by Modern UI
+    boolean mIsUserAnimatable = false;
 
     /**
      * On key presses (right or left), the amount to increment/decrement the
@@ -840,7 +843,14 @@ public abstract class AbsSeekBar extends ProgressBar {
         progress += scale * range + getMin();
 
         setHotspot(x, y);
-        setProgressInternal(Math.round(progress), true, mTickMark != null);
+        boolean animate;
+        if (mIsUserAnimatable) {
+            // Dragging on a continuous slider is not animated
+            animate = mTickMark != null || event.getAction() != MotionEvent.ACTION_MOVE;
+        } else {
+            animate = false;
+        }
+        setProgressInternal(Math.round(progress), true, animate);
     }
 
     /**

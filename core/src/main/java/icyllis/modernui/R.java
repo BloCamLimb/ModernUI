@@ -415,10 +415,12 @@ public final class R {
         // unofficial
         public static final ResourceId Widget_Material3_ProgressBar_Vertical = new ResourceId(ns, type, "Widget.Material3.ProgressBar.Vertical");
 
-        // unofficial
         public static final ResourceId Widget_Material3_SeekBar = new ResourceId(ns, type, "Widget.Material3.SeekBar");
-        // unofficial
         public static final ResourceId Widget_Material3_SeekBar_Discrete = new ResourceId(ns, type, "Widget.Material3.SeekBar.Discrete");
+        // unofficial
+        public static final ResourceId Widget_Material3_SeekBar_Slider = new ResourceId(ns, type, "Widget.Material3.SeekBar.Slider");
+        // unofficial
+        public static final ResourceId Widget_Material3_SeekBar_Discrete_Slider = new ResourceId(ns, type, "Widget.Material3.SeekBar.Discrete.Slider");
 
         public static final ResourceId Widget_Material3_PopupMenu = new ResourceId(ns, type, "Widget.Material3.PopupMenu");
         public static final ResourceId Widget_Material3_PopupMenu_ContextMenu = new ResourceId(ns, type, "Widget.Material3.PopupMenu.ContextMenu");
