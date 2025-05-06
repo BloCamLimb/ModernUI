@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import com.ibm.icu.lang.UCharacter;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
@@ -327,6 +328,13 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
         return isBoring(text, paint, TextDirectionHeuristics.FIRSTSTRONG_LTR, metrics);
     }
 
+    // See Bidi.requiresBidi
+    static final int RTL_MASK = 1 << UCharacter.DIRECTIONALITY_RIGHT_TO_LEFT |
+            1 << UCharacter.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC |
+            1 << UCharacter.DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING |
+            1 << UCharacter.DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE |
+            1 << UCharacter.DIRECTIONALITY_ARABIC_NUMBER;
+
     /**
      * Returns true if the text contains any RTL characters, bidi format characters, or surrogate
      * code units.
@@ -345,7 +353,8 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
                 final int len = end - start;
                 for (int i = 0; i < len; i++) {
                     final char c = buffer[i];
-                    if (c == '\n' || c == '\t' || TextUtils.couldAffectRtl(c)) {
+                    if (c == '\n' || c == '\t' ||
+                            ((1 << UCharacter.getDirection(c)) & RTL_MASK) != 0) {
                         return true;
                     }
                 }
