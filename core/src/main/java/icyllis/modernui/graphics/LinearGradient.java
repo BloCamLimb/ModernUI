@@ -23,6 +23,7 @@ import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
+import icyllis.modernui.core.Core;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
 import java.util.Objects;
@@ -145,9 +146,25 @@ public class LinearGradient extends GradientShader {
         } else {
             mLocalMatrix = null;
         }
-        assert shader.isTriviallyCounted();
-        //mCleanup = Core.registerNativeResource(this, shader);
+        if (!shader.isTriviallyCounted()) {
+            assert false;
+            mCleanup = Core.registerNativeResource(this, shader);
+        }
         mShader = shader;
+    }
+
+    private LinearGradient(@NonNull icyllis.arc3d.sketch.shaders.Shader newShader,
+                           @Nullable Matrix newLocalMatrix) {
+        if (newLocalMatrix != null && !newLocalMatrix.isIdentity()) {
+            mLocalMatrix = new Matrix(newLocalMatrix);
+        } else {
+            mLocalMatrix = null;
+        }
+        if (!newShader.isTriviallyCounted()) {
+            assert false;
+            mCleanup = Core.registerNativeResource(this, newShader);
+        }
+        mShader = newShader;
     }
 
     /**
@@ -162,6 +179,25 @@ public class LinearGradient extends GradientShader {
             return true; // presence of mLocalMatrix means it's not identity
         }
         return false;
+    }
+
+    /**
+     * Create a new LinearGradient that replaces its local matrix with a new local matrix.
+     * This method is much faster than re-creating with the constructor when you only want to
+     * modify the local matrix.
+     *
+     * @param newLocalMatrix the new local matrix that replaces this
+     * @return a newly created shader
+     */
+    @NonNull
+    public LinearGradient copyWithLocalMatrix(@Nullable Matrix newLocalMatrix) {
+        var shader = mShader;
+        if (shader == null) {
+            throw new IllegalStateException("LinearGradient is already released");
+        }
+        var newShader = shader.makeWithLocalMatrix(newLocalMatrix != null ? newLocalMatrix :
+                icyllis.arc3d.sketch.Matrix.identity(), icyllis.arc3d.sketch.shaders.Shader.LOCAL_MATRIX_REPLACE);
+        return new LinearGradient(newShader, newLocalMatrix);
     }
 
     /**
