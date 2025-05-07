@@ -121,7 +121,11 @@ public class Paint {
          */
         SQUARE  (icyllis.arc3d.sketch.Paint.CAP_SQUARE);
 
-        final int nativeInt;
+        /**
+         * @hidden
+         */
+        @ApiStatus.Internal
+        public final int nativeInt;
 
         Cap(int nativeInt) {
             this.nativeInt = nativeInt;
