@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -74,7 +74,6 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * </p>
  */
 //TODO not stable, consider swap-chain? when to schedule?
-@ApiStatus.Internal
 public final class Choreographer {
 
     private static final Marker MARKER = MarkerManager.getMarker("Choreographer");
@@ -87,9 +86,6 @@ public final class Choreographer {
 
     // Thread local storage for the choreographer.
     private static final ThreadLocal<Choreographer> sThreadInstance = ThreadLocal.withInitial(() -> {
-        if (Core.isOnRenderThread()) {
-            throw new IllegalStateException("The render thread cannot have a choreographer!");
-        }
         final Looper looper = Looper.myLooper();
         if (looper == null) {
             throw new IllegalStateException("The current thread must have a looper!");

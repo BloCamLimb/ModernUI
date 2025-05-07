@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.graphics.pipeline;
 
 import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.core.RawPtr;
@@ -29,6 +29,13 @@ import icyllis.arc3d.sketch.TextBlob;
 import icyllis.arc3d.sketch.Vertices;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.ImageShader;
+import icyllis.modernui.graphics.Matrix;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.RectF;
 import icyllis.modernui.graphics.text.Font;
 import org.jetbrains.annotations.ApiStatus;
 

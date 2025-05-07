@@ -569,7 +569,8 @@ public class TestFragment extends Fragment {
                 } else if (i == 2) {
                     continue;
                 } else if (i == 3) {
-                    EditText textField = new EditText(getContext(), null, null, R.style.Widget_Material3_EditText_OutlinedBox);
+                    EditText textField = new EditText(getContext(), null, null,
+                            R.style.Widget_Material3_EditText_OutlinedBox);
                     textField.setTextAppearance(R.style.TextAppearance_Material3_LabelLarge);
                     v = textField;
                     p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -616,7 +617,8 @@ public class TestFragment extends Fragment {
                 } else if (i == 5) {
                     RadioGroup outerGroup = new RadioGroup(getContext());
                     Iterator<String> options = List.of(
-                            "English","Chinese","Spanish","Hindi","Arabic","French","Bengali","Portuguese","Russian"
+                            "English", "Chinese", "Spanish", "Hindi",
+                            "Arabic", "French", "Bengali", "Portuguese", "Russian"
                     ).iterator();
                     for (int k = 0; k < 3; k++) {
                         RadioGroup innerGroup = new RadioGroup(getContext());

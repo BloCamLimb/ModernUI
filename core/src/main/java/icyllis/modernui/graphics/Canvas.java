@@ -1369,7 +1369,11 @@ public abstract class Canvas {
         TRIANGLES(icyllis.arc3d.sketch.Vertices.kTriangles_VertexMode),
         TRIANGLE_STRIP(icyllis.arc3d.sketch.Vertices.kTriangleStrip_VertexMode);
 
-        final int nativeInt;
+        /**
+         * @hidden
+         */
+        @ApiStatus.Internal
+        public final int nativeInt;
 
         VertexMode(int nativeInt) {
             this.nativeInt = nativeInt;

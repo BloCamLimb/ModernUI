@@ -18,7 +18,6 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
