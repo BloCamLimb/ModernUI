@@ -99,6 +99,10 @@ public abstract class GradientShader extends Shader {
         }
     }
 
+    /**
+     * @hidden
+     */
+    @NonNull
     @ApiStatus.Internal
     protected static float[] convertColors(@NonNull @ColorInt int[] colors) {
         if (colors.length < 1) {
@@ -112,9 +116,9 @@ public abstract class GradientShader extends Shader {
         for (int i = 0, j = 0; i < colors.length; i += 1, j += 4) {
             int color = colors[i];
             result[j] = ((color >> 16) & 0xff) * (1 / 255.0f);
-            result[j|1] = ((color >> 8) & 0xff) * (1 / 255.0f);
-            result[j|2] = (color & 0xff) * (1 / 255.0f);
-            result[j|3] = (color >>> 24) * (1 / 255.0f);
+            result[j+1] = ((color >> 8) & 0xff) * (1 / 255.0f);
+            result[j+2] = (color & 0xff) * (1 / 255.0f);
+            result[j+3] = (color >>> 24) * (1 / 255.0f);
         }
 
         return result;

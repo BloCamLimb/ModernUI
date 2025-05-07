@@ -83,6 +83,9 @@ public abstract class Shader {
      * this shader represents a no-op, and its GPU resource will be reclaimed
      * as soon as possible after use.
      * <p>
+     * This will not affect shaders already installed on the Paint, until the Paint
+     * is reset or closed.
+     * <p>
      * When this object becomes phantom-reachable, the system will automatically
      * do this cleanup operation.
      */
