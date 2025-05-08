@@ -30,19 +30,9 @@ public class LightingInfo {
     private static float sLightY = 0;
     private static float sLightZ = 500;
     private static float sLightRadius = 800;
-    private static int sAmbientShadowAlpha = 30;
-    private static int sSpotShadowAlpha = 48;
 
     public static float getLightRadius() {
         return sLightRadius;
-    }
-
-    public static int getAmbientShadowAlpha() {
-        return sAmbientShadowAlpha;
-    }
-
-    public static int getSpotShadowAlpha() {
-        return sSpotShadowAlpha;
     }
 
     public static float getLightX() {
@@ -63,13 +53,10 @@ public class LightingInfo {
         sLightZ = z;
     }
 
-    public static void setLighting(float x, float y, float z, float radius,
-                                   int ambientShadowAlpha, int spotShadowAlpha) {
+    public static void setLightGeometry(float x, float y, float z, float radius) {
         sLightX = x;
         sLightY = y;
         sLightZ = z;
         sLightRadius = radius;
-        sAmbientShadowAlpha = ambientShadowAlpha;
-        sSpotShadowAlpha = spotShadowAlpha;
     }
 }

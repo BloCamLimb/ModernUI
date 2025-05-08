@@ -9396,6 +9396,9 @@ public class View implements Drawable.Callback {
         internalSetPadding(left, top, right, bottom);
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     protected void internalSetPadding(int left, int top, int right, int bottom) {
         mUserPaddingLeft = left;

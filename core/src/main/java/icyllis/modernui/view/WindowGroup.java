@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,6 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
@@ -38,6 +37,8 @@ public final class WindowGroup extends ViewGroup implements WindowManager {
         super(context);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         //setLayoutTransition(new LayoutTransition());
+        setClipChildren(false);
+        setClipToPadding(false);
     }
 
     @Override
@@ -169,11 +170,8 @@ public final class WindowGroup extends ViewGroup implements WindowManager {
 
                 // Now make sure the window fits in the overall display frame.
                 Gravity.applyDisplay(attrs.gravity, outParentFrame, outFrame);
-                Rect surfaceInsets = attrs.surfaceInsets;
 
-                //TODO temp solution
-                child.layout(outFrame.left - surfaceInsets.left, outFrame.top - surfaceInsets.top,
-                        outFrame.right + surfaceInsets.right, outFrame.bottom + surfaceInsets.bottom);
+                child.layout(outFrame.left, outFrame.top, outFrame.right, outFrame.bottom);
             }
         }
     }

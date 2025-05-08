@@ -694,19 +694,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                     final float lightRadius = TypedValue.applyDimension(
                             TypedValue.COMPLEX_UNIT_DP, 800, displayMetrics
                     );
-                    TypedValue value = new TypedValue();
-                    boolean res = getTheme().resolveAttribute(
-                            R.ns, R.attr.isLightTheme, value, true
-                    );
-                    assert res;
-                    boolean isLightTheme = value.data != 0;
 
-                    LightingInfo.setLighting(
-                            width / 2f, 0, lightZ,
-                            lightRadius,
-                            isLightTheme ? 30 : 90,
-                            isLightTheme ? 48 : 144
-                    );
+                    LightingInfo.setLightGeometry(width / 2f, 0, lightZ, lightRadius);
                 }
             }
         }
