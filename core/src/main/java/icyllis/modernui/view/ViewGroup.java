@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2020-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,6 +35,7 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.R;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
@@ -43,6 +44,7 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
 import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -242,6 +244,13 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     private IntArrayList mTransientIndices = null;
     private List<View> mTransientViews = null;
 
+    private float mAmbientShadowAlpha;
+    private float mSpotShadowAlpha;
+
+    private static final String[] STYLEABLE = {
+            R.ns, R.attr.isLightTheme
+    };
+
     public ViewGroup(Context context) {
         this(context, null);
     }
@@ -267,7 +276,17 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         mChildren = new View[ARRAY_CAPACITY_INCREMENT];
         mChildrenCount = 0;
 
-        //TODO read attributes
+        //TODO read other attributes
+        final TypedArray a = context.getTheme().obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+
+        boolean isLightTheme = a.getBoolean(0, false);
+
+        a.recycle();
+
+        //TODO the default values should be provided by theme or attributes
+        mAmbientShadowAlpha = isLightTheme ? 0.118f : 0.235f;
+        mSpotShadowAlpha = isLightTheme ? 0.188f : 0.375f;
     }
 
     /**
@@ -497,8 +516,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             return;
         }
 
-        int ambientColor = (int) (LightingInfo.getAmbientShadowAlpha() * casterAlpha) << 24;
-        int spotColor = (int) (LightingInfo.getSpotShadowAlpha() * casterAlpha) << 24;
+        int ambientColor = (int) (mAmbientShadowAlpha * casterAlpha * 255) << 24;
+        int spotColor = (int) (mSpotShadowAlpha * casterAlpha * 255) << 24;
 
         canvas.save();
         canvas.translate(child.mLeft, child.mTop);
@@ -2413,6 +2432,31 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     public LayoutTransition getLayoutTransition() {
         return mTransition;
+    }
+
+    /**
+     * Configures the ambient & spot shadow alphas for children. This is the alpha used when the shadow
+     * has max alpha, and ramps down from the values provided to zero.
+     * <p>
+     * The initial values are provided by the current theme.
+     *
+     * @param ambientShadowAlpha The alpha for the ambient shadow.
+     * @param spotShadowAlpha    The alpha for the spot shadow.
+     * @since 3.12
+     */
+    @ApiStatus.Experimental
+    public void setShadowAlpha(@FloatRange(from = 0.0f, to = 1.0f) float ambientShadowAlpha,
+                               @FloatRange(from = 0.0f, to = 1.0f) float spotShadowAlpha) {
+        if (!(ambientShadowAlpha >= 0.0f && ambientShadowAlpha <= 1.0f)) {
+            throw new IllegalArgumentException("ambientShadowAlpha must be a valid alpha, "
+                    + ambientShadowAlpha + " is not in the range of 0.0f to 1.0f");
+        }
+        if (!(spotShadowAlpha >= 0.0f && spotShadowAlpha <= 1.0f)) {
+            throw new IllegalArgumentException("spotShadowAlpha must be a valid alpha, "
+                    + spotShadowAlpha + " is not in the range of 0.0f to 1.0f");
+        }
+        mAmbientShadowAlpha = ambientShadowAlpha;
+        mSpotShadowAlpha = spotShadowAlpha;
     }
 
     private void removeViewsInternal(int start, int count) {
