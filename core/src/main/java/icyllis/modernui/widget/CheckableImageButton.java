@@ -80,7 +80,7 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
             if (radioGroup.isSelectionRequired()) {
                 // In strict single-selection mode, toggle() behaves the same as RadioButton
                 if (!mChecked) {
-                    setCheckable(true);
+                    setChecked(true);
                 }
                 return;
             }
@@ -169,6 +169,9 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
      */
     public void setTooltipTextOn(@Nullable CharSequence tooltipTextOn) {
         mTooltipTextOn = tooltipTextOn;
+        if (mChecked && mTooltipTextOn != null) {
+            setTooltipText(mTooltipTextOn);
+        }
     }
 
     /**
@@ -189,6 +192,9 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
      */
     public void setTooltipTextOff(@Nullable CharSequence tooltipTextOff) {
         mTooltipTextOff = tooltipTextOff;
+        if (!mChecked && mTooltipTextOff != null) {
+            setTooltipText(mTooltipTextOff);
+        }
     }
 
     /**

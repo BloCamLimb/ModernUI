@@ -489,7 +489,7 @@ public class TestFragment extends Fragment {
                     .build();
 
             long start = System.nanoTime();
-            for (int i = 0; i < 14; i++) {
+            for (int i = 0; i < 16; i++) {
                 View v;
                 LayoutParams p;
                 if (i == 1) {
@@ -681,6 +681,15 @@ public class TestFragment extends Fragment {
                     v = progressBar;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                     mProgressBar2 = progressBar;
+                } else if (i == 14) {
+                    CheckableImageButton button = new CheckableImageButton(getContext());
+                    button.setImageDrawable(new BuiltinIconDrawable(getContext().getResources(),
+                            BuiltinIconDrawable.KEYBOARD_ARROW_LEFT));
+                    button.setTooltipTextOn("Switch to dark mode");
+                    button.setTooltipTextOff("Switch to light mode");
+                    button.setCheckable(true);
+                    v = button;
+                    p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 } else {
                     Button button;
                     if (i < 6) {
