@@ -8106,6 +8106,8 @@ public class View implements Drawable.Callback {
 
         /*cleanupDraw();*/
         if ((mViewFlags & TOOLTIP) == TOOLTIP) {
+            removeCallbacks(mTooltipInfo.mShowTooltipRunnable);
+            removeCallbacks(mTooltipInfo.mHideTooltipRunnable);
             hideTooltip();
         }
 
@@ -12498,6 +12500,16 @@ public class View implements Drawable.Callback {
                 mTooltipInfo.clearAnchorPos();
             }
             mTooltipInfo.mTooltipText = tooltipText;
+            // Modern UI changed: Reshow
+            if (mTooltipInfo.mTooltipPopup != null && !mTooltipInfo.mTooltipFromLongClick) {
+                hideTooltip();
+                // Schedule showing the tooltip after a timeout.
+                postDelayed(mTooltipInfo.mShowTooltipRunnable,
+                        ViewConfiguration.getHoverTooltipShowTimeout());
+                // Hide hover-triggered tooltip after a period of inactivity.
+                final int timeout = ViewConfiguration.getHoverTooltipHideTimeout();
+                postDelayed(mTooltipInfo.mHideTooltipRunnable, timeout);
+            }
         }
     }
 
@@ -12540,6 +12552,7 @@ public class View implements Drawable.Callback {
             return;
         }
         removeCallbacks(mTooltipInfo.mShowTooltipRunnable);
+        removeCallbacks(mTooltipInfo.mHideTooltipRunnable);
         if (mTooltipInfo.mTooltipPopup == null) {
             return;
         }
@@ -12580,8 +12593,7 @@ public class View implements Drawable.Callback {
                     }
 
                     // Hide hover-triggered tooltip after a period of inactivity.
-                    final int timeout;
-                    timeout = ViewConfiguration.getHoverTooltipHideTimeout();
+                    final int timeout = ViewConfiguration.getHoverTooltipHideTimeout();
                     removeCallbacks(mTooltipInfo.mHideTooltipRunnable);
                     postDelayed(mTooltipInfo.mHideTooltipRunnable, timeout);
                 }
