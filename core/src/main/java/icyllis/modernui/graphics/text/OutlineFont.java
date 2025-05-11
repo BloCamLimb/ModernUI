@@ -67,6 +67,7 @@ public final class OutlineFont implements Font {
 
     public OutlineFont(java.awt.Font font) {
         mFont = Objects.requireNonNull(font);
+        mFont.getFamily(); // cache Font2D field
         mTypeface = new icyllis.arc3d.sketch.j2d.Typeface_JDK(mFont);
         mIsLogicalFont = Arrays.stream(LOGICAL_FONT_NAMES)
                 .anyMatch(s -> s.equalsIgnoreCase(font.getName()));
@@ -277,5 +278,14 @@ public final class OutlineFont implements Font {
     @Override
     public icyllis.arc3d.sketch.Typeface getNativeTypeface() {
         return mTypeface;
+    }
+
+    @Override
+    public String toString() {
+        return "OutlineFont{" +
+                "mFont=" + mFont +
+                ", mTypeface=" + mTypeface +
+                ", mIsLogicalFont=" + mIsLogicalFont +
+                '}';
     }
 }

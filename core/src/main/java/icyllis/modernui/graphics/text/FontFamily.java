@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,18 +18,28 @@
 
 package icyllis.modernui.graphics.text;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 @ApiStatus.Internal
 public final class FontFamily {
+
+    static final Marker MARKER = MarkerManager.getMarker("Font");
 
     public static final FontFamily SANS_SERIF;
     public static final FontFamily SERIF;
@@ -77,7 +87,7 @@ public final class FontFamily {
 
         Locale defaultLocale = Locale.getDefault();
         Function<String, FontFamily> mapping =
-                name -> new FontFamily(new java.awt.Font(name, java.awt.Font.PLAIN, 1));
+                name -> new FontFamily(new java.awt.Font(name, java.awt.Font.PLAIN, 1), false);
         for (String name : java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getAvailableFontFamilyNames(Locale.ROOT)) {
             if (!map.containsKey(name)) {
@@ -128,18 +138,21 @@ public final class FontFamily {
         return createFamily(font, register);
     }
 
+    // JDK FontManager is not fully thread-safe, so the best is to lock the whole method
     @NonNull
-    private static FontFamily createFamily(@NonNull java.awt.Font font, boolean register) {
-        FontFamily family = new FontFamily(font);
+    private static synchronized FontFamily createFamily(@NonNull java.awt.Font font, boolean register) {
+        if (register) {
+            java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    .registerFont(font);
+        }
+        FontFamily family = new FontFamily(font, register);
         if (register) {
             String name = family.getFamilyName();
-            sSystemFontMap.putIfAbsent(name, family);
+            sSystemFontMap.put(name, family);
             String alias = family.getFamilyName(Locale.getDefault());
             if (!Objects.equals(name, alias)) {
                 sSystemFontAliases.putIfAbsent(alias, name);
             }
-            java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
-                    .registerFont(font);
         }
         return family;
     }
@@ -158,25 +171,28 @@ public final class FontFamily {
         return createFamilies(fonts, register);
     }
 
+    // JDK FontManager is not fully thread-safe, so the best is to lock the whole method
     @NonNull
-    private static FontFamily[] createFamilies(@NonNull java.awt.Font[] fonts, boolean register) {
+    private static synchronized FontFamily[] createFamilies(@NonNull java.awt.Font[] fonts, boolean register) {
+        if (register) {
+            var ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
+            for (var font : fonts) {
+                ge.registerFont(font);
+            }
+        }
         FontFamily[] families = new FontFamily[fonts.length];
         for (int i = 0; i < fonts.length; i++) {
-            families[i] = new FontFamily(fonts[i]);
+            families[i] = new FontFamily(fonts[i], register);
         }
         if (register) {
             Locale defaultLocale = Locale.getDefault();
             for (var family : families) {
                 String name = family.getFamilyName();
-                sSystemFontMap.putIfAbsent(name, family);
+                sSystemFontMap.put(name, family);
                 String alias = family.getFamilyName(defaultLocale);
                 if (!Objects.equals(name, alias)) {
                     sSystemFontAliases.putIfAbsent(alias, name);
                 }
-            }
-            var ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
-            for (var font : fonts) {
-                ge.registerFont(font);
             }
         }
         return families;
@@ -200,7 +216,19 @@ public final class FontFamily {
         mIsColorEmoji = font instanceof EmojiFont;
     }
 
-    private FontFamily(@NonNull java.awt.Font font) {
+    private FontFamily(@NonNull java.awt.Font font, boolean register) {
+        if (register) {
+            // try lookup in registered fonts, family name is in default locale
+            java.awt.Font original = font;
+            font = new java.awt.Font(original.getFamily(), java.awt.Font.PLAIN, 1);
+            if (!font.getFamily().equals(original.getFamily())) {
+                font = original;
+                // this may be due to a change in the default locale
+                ModernUI.LOGGER.warn(MARKER, "Failed to lookup in registered fonts, original font: {}, full name: {}",
+                        original, original.getFontName());
+                // in this case, we cannot use native bold/italic fonts
+            }
+        }
         mFont = new OutlineFont(font);
         mBold = new OutlineFont(font.deriveFont(java.awt.Font.BOLD));
         mItalic = new OutlineFont(font.deriveFont(java.awt.Font.ITALIC));
@@ -246,7 +274,10 @@ public final class FontFamily {
             case FontPaint.BOLD -> mBold != null ? mBold : mFont;
             case FontPaint.ITALIC -> mItalic != null ? mItalic : mFont;
             case FontPaint.BOLD | FontPaint.ITALIC -> mBoldItalic != null ? mBoldItalic : mFont;
-            default -> null;
+            default -> {
+                assert false;
+                yield mFont;
+            }
         };
     }
 
