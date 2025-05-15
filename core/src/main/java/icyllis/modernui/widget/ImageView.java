@@ -89,9 +89,15 @@ public class ImageView extends View {
 
     @StyleableRes
     private static final String[] STYLEABLE = {
-            R.ns, R.attr.maxHeight,
-            R.ns, R.attr.maxWidth,
-    }; //TODO other attributes
+            /*0*/R.ns, R.attr.adjustViewBounds,
+            /*1*/R.ns, R.attr.baselineAlignBottom,
+            /*2*/R.ns, R.attr.cropToPadding,
+            /*3*/R.ns, R.attr.maxHeight,
+            /*4*/R.ns, R.attr.maxWidth,
+            /*5*/R.ns, R.attr.scaleType,
+            /*6*/R.ns, R.attr.src,
+            /*7*/R.ns, R.attr.tint,
+    };
 
     public ImageView(Context context) {
         super(context);
@@ -114,8 +120,30 @@ public class ImageView extends View {
         final TypedArray a = context.getTheme().obtainStyledAttributes(
                 attrs, defStyleAttr, defStyleRes, STYLEABLE);
 
-        setMaxWidth(a.getDimensionPixelSize(1, Integer.MAX_VALUE));
-        setMaxHeight(a.getDimensionPixelSize(0, Integer.MAX_VALUE));
+        final Drawable d = a.getDrawable(6);
+        if (d != null) {
+            setImageDrawable(d);
+        }
+
+        mBaselineAlignBottom = a.getBoolean(1, false);
+
+        setAdjustViewBounds(a.getBoolean(0, false));
+        setMaxWidth(a.getDimensionPixelSize(4, Integer.MAX_VALUE));
+        setMaxHeight(a.getDimensionPixelSize(3, Integer.MAX_VALUE));
+
+        final int index = a.getInt(5, -1);
+        if (index >= 0) {
+            setScaleType(ScaleType.VALUES[index]);
+        }
+
+        if (a.hasValue(7)) {
+            mDrawableTintList = a.getColorStateList(7);
+            mHasDrawableTint = true;
+        }
+
+        applyImageTint();
+
+        mCropToPadding = a.getBoolean(2, false);
 
         a.recycle();
     }
@@ -1112,6 +1140,8 @@ public class ImageView extends View {
          * to or less than the corresponding dimension of the view
          * (minus padding). The image is then centered in the view.
          */
-        CENTER_INSIDE
+        CENTER_INSIDE;
+
+        static final ScaleType[] VALUES = values();
     }
 }
