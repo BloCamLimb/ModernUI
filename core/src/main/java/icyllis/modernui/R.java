@@ -149,6 +149,16 @@ public final class R {
         public static final String tickMark = "tickMark";
         public static final String splitTrack = "splitTrack";
 
+        public static final String src = "src";
+        public static final String antialias = "antialias";
+        public static final String filter = "filter";
+        public static final String dither = "dither";
+        public static final String scaleType = "scaleType";
+        public static final String adjustViewBounds = "adjustViewBounds";
+        public static final String tint = "tint";
+        public static final String baselineAlignBottom = "baselineAlignBottom";
+        public static final String cropToPadding = "cropToPadding";
+
         public static final String alpha = "alpha";
         public static final String elevation = "elevation";
 
@@ -393,6 +403,23 @@ public final class R {
         public static final ResourceId Widget_Material3_Button_OutlinedButton = new ResourceId(ns, type, "Widget.Material3.Button.OutlinedButton");
         public static final ResourceId Widget_Material3_Button_TextButton = new ResourceId(ns, type, "Widget.Material3.Button.TextButton");
         public static final ResourceId Widget_Material3_Button_ElevatedButton = new ResourceId(ns, type, "Widget.Material3.Button.ElevatedButton");
+
+        /**
+         * Icon only button filled container style, applied to ImageButton.
+         */
+        public static final ResourceId Widget_Material3_Button_IconButton = new ResourceId(ns, type, "Widget.Material3.Button.IconButton");
+        /**
+         * Icon only button in tonal container style, applied to ImageButton.
+         */
+        public static final ResourceId Widget_Material3_Button_IconButton_Tonal = new ResourceId(ns, type, "Widget.Material3.Button.IconButton.Tonal");
+        /**
+         * Icon only button with an outline style, applied to ImageButton.
+         */
+        public static final ResourceId Widget_Material3_Button_IconButton_Outlined = new ResourceId(ns, type, "Widget.Material3.Button.IconButton.Outlined");
+        /**
+         * Icon only button without a container or outline style, applied to ImageButton.
+         */
+        public static final ResourceId Widget_Material3_Button_IconButton_Standard = new ResourceId(ns, type, "Widget.Material3.Button.IconButton.Standard");
 
         public static final ResourceId Widget_CompoundButton = new ResourceId(ns, type, "Widget.CompoundButton");
         public static final ResourceId Widget_Material3_CompoundButton_RadioButton = new ResourceId(ns, type, "Widget.Material3.CompoundButton.RadioButton");
