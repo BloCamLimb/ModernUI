@@ -12566,9 +12566,14 @@ public class View implements Drawable.Callback {
     }
 
     private boolean showLongClickTooltip(int x, int y) {
-        removeCallbacks(mTooltipInfo.mShowTooltipRunnable);
-        removeCallbacks(mTooltipInfo.mHideTooltipRunnable);
-        return showTooltip(x, y, true);
+        // Modern UI changed: long click timeout is always longer than hover tooltip timeout,
+        // so this is not necessary (actually dead code)
+        if (mTooltipInfo != null && mTooltipInfo.mTooltipPopup == null) {
+            removeCallbacks(mTooltipInfo.mShowTooltipRunnable);
+            removeCallbacks(mTooltipInfo.mHideTooltipRunnable);
+            return showTooltip(x, y, true);
+        }
+        return false;
     }
 
     private void showHoverTooltip() {
