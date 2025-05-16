@@ -136,7 +136,7 @@ public interface WindowManager extends ViewManager {
          */
         public final void setSurfaceInsets(View view, boolean manual, boolean preservePrevious) {
             //TODO
-            final int surfaceInset = (int) Math.ceil(view.getZ() * 4);
+            final int surfaceInset = (int) Math.ceil(view.getZ() * 3);
             if (surfaceInset == 0) {
                 // OK to have 0 (this is the case for non-freeform windows).
                 surfaceInsets.set(0, 0, 0, 0);
