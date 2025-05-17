@@ -33,18 +33,13 @@ import icyllis.modernui.audio.Track;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.graphics.AngularGradient;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Color;
-import icyllis.modernui.graphics.GradientShader;
-import icyllis.modernui.graphics.ImageShader;
-import icyllis.modernui.graphics.LinearGradient;
-import icyllis.modernui.graphics.MathUtil;
-import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.Shader;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.ShapedText;
@@ -66,6 +61,7 @@ import icyllis.modernui.text.style.URLSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.LayoutInflater;
@@ -80,12 +76,16 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 import java.util.List;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.ModernUI.*;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 /**
@@ -494,7 +494,7 @@ public class TestFragment extends Fragment {
                 LayoutParams p;
                 if (i == 1) {
                     Button button = new Button(getContext(), null, null,
-                            R.style.Widget_Material3_Button_ElevatedButton);
+                            R.style.Widget_Material3_Button_OutlinedButton);
                     button.setText("Play A Music!");
                     button.setOnClickListener(__ -> {
                         if (mGoodAnim != null) {
@@ -682,19 +682,23 @@ public class TestFragment extends Fragment {
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                     mProgressBar2 = progressBar;
                 } else if (i == 14) {
-                    CheckableImageButton button = new CheckableImageButton(getContext());
-                    button.setImageDrawable(new BuiltinIconDrawable(getContext().getResources(),
-                            BuiltinIconDrawable.KEYBOARD_ARROW_LEFT));
-                    button.setTooltipTextOn("Switch to dark mode");
-                    button.setTooltipTextOff("Switch to light mode");
-                    button.setCheckable(true);
+                    CheckableImageButton button = new CheckableImageButton(getContext(),
+                            null, null, R.style.Widget_Material3_Button_IconButton);
+                    var icon = new StateListDrawable();
+                    icon.addState(new int[]{R.attr.state_checked}, new BuiltinIconDrawable(getContext().getResources(),
+                            BuiltinIconDrawable.KEYBOARD_ARROW_UP));
+                    icon.addState(StateSet.WILD_CARD, new BuiltinIconDrawable(getContext().getResources(),
+                            BuiltinIconDrawable.KEYBOARD_ARROW_DOWN));
+                    button.setImageDrawable(icon);
+                    button.setTooltipTextOn("Collapse this card");
+                    button.setTooltipTextOff("Expand this card");
                     v = button;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 } else {
                     Button button;
                     if (i < 6) {
-                        button = new Button(getContext(), null, null, R.style.Widget_Material3_Button_TonalButton);
-                        button.setText("Tonal button " + i);
+                        button = new ToggleButton(getContext(), null, null, R.style.Widget_Material3_Button_ElevatedButton);
+                        button.setText("Elevated button " + i);
                         button.setOnClickListener(__ -> {
                             int newVisibility = mProgressBar1.getVisibility() == View.VISIBLE ? View.GONE :
                                     View.VISIBLE;
@@ -822,6 +826,7 @@ public class TestFragment extends Fragment {
             //changeRadioButtons(9, 0);
 
             setLayoutTransition(new LayoutTransition());
+            //setWillNotDraw(false);
         }
 
         private void changeRadioButtons(int id, int count) {
