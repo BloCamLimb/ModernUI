@@ -645,6 +645,7 @@ public class TestFragment extends Fragment {
                             ViewGroup.LayoutParams.WRAP_CONTENT);
                 } else if (i == 6) {
                     CheckBox checkBox = new CheckBox(getContext());
+                    checkBox.setCheckedState(CheckBox.STATE_INDETERMINATE);
                     v = checkBox;
                     checkBox.setText("Checkbox 0");
                     checkBox.setTooltipText("Hello, this is a tooltip.");
@@ -662,7 +663,7 @@ public class TestFragment extends Fragment {
                     spinner.setMinimumWidth(dp(240));
                 } else if (i == 11) {
                     var seekbar = new SeekBar(getContext(), null, null,
-                            R.style.Widget_Material3_SeekBar_Discrete);
+                            R.style.Widget_Material3_SeekBar_Discrete_Slider);
                     seekbar.setMax(10);
                     seekbar.setUserAnimationEnabled(true);
                     v = seekbar;

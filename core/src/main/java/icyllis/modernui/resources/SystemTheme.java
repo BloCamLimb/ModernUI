@@ -665,19 +665,31 @@ public class SystemTheme {
             radio_button_tint = new ColorStateList(
                     new int[][]{
                             new int[]{-R.attr.state_enabled},
+
+                            new int[]{R.attr.state_indeterminate},
                             new int[]{R.attr.state_checked},
+
+                            new int[]{R.attr.state_pressed},
+                            new int[]{R.attr.state_focused},
+                            new int[]{R.attr.state_hovered},
                             StateSet.WILD_CARD
                     },
                     new int[]{
-                            modulateColor(colorOnSurface, material_emphasis_disabled),
+                            modulateColor(colorOnSurface, material_emphasis_disabled), // dup 1
+
                             colorPrimary,
+                            colorPrimary, // dup 3
+
+                            colorOnSurface,
+                            colorOnSurface,
+                            colorOnSurface,
                             colorOnSurfaceVariant
                     }
             );
             return radio_button_tint;
         }
 
-        // reused for checkbox
+        // reused for checkbox, switch
         private ColorStateList radio_button_ripple_tint;
         private ColorStateList radio_button_ripple_tint() {
             if (radio_button_ripple_tint != null) {
@@ -723,8 +735,8 @@ public class SystemTheme {
                             StateSet.WILD_CARD
                     },
                     new int[]{
-                            modulateColor(colorSurfaceContainerHighest, 0.12f),
-                            modulateColor(colorOnSurface, 0.12f),
+                            modulateColor(colorSurfaceContainerHighest, material_emphasis_disabled_background),
+                            modulateColor(colorOnSurface, material_emphasis_disabled_background),
                             colorPrimary,
                             colorSurfaceContainerHighest
                     }
@@ -745,7 +757,7 @@ public class SystemTheme {
                     },
                     new int[]{
                             Color.TRANSPARENT,
-                            modulateColor(colorOnSurface, 0.12f),
+                            modulateColor(colorOnSurface, material_emphasis_disabled_background),
                             colorOutline
                     }
             );
@@ -836,10 +848,28 @@ public class SystemTheme {
                     },
                     new int[]{
                             colorSecondaryContainer,
-                            modulateColor(colorOnSurface, 0.12f)
+                            modulateColor(colorOnSurface, material_emphasis_disabled_background)
                     }
             );
             return slider_track_color_inactive;
+        }
+
+        private ColorStateList slider_active_tick_color;
+        private ColorStateList slider_active_tick_color() {
+            if (slider_active_tick_color != null) {
+                return slider_active_tick_color;
+            }
+            slider_active_tick_color = new ColorStateList(
+                    new int[][]{
+                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            colorOnPrimary,
+                            colorOnSurfaceInverse
+                    }
+            );
+            return slider_active_tick_color;
         }
 
         // added by Modern UI
@@ -874,7 +904,7 @@ public class SystemTheme {
                             StateSet.WILD_CARD
                     },
                     new int[]{
-                            modulateColor(colorOnSurface, material_emphasis_disabled),
+                            modulateColor(colorOnSurface, material_emphasis_disabled_background),
                             colorPrimary,
                             colorOnSurface,
                             colorOutline
@@ -1595,7 +1625,7 @@ public class SystemTheme {
                 tick.setShape(ShapeDrawable.CIRCLE);
                 int size = dp(2, resources);
                 tick.setSize(size, size);
-                tick.setColor(fromCache(theme, ThemedCache::slider_track_color_inactive));
+                tick.setColor(fromCache(theme, ThemedCache::slider_active_tick_color));
                 tick.setUseLevelForShape(false);
                 return tick;
             });
@@ -1624,6 +1654,7 @@ public class SystemTheme {
             style.addBoolean(R.attr.splitTrack, true);
             style.addBoolean(R.attr.mirrorForRtl, true);
             style.addBoolean(R.attr.focusable, true);
+            style.addBoolean(R.attr.clickable, true);
             style.addDrawable(R.attr.thumb, (resources, theme) -> {
                 var thumb = new SliderThumbDrawable(resources);
                 thumb.setTintList(fromCache(theme, ThemedCache::slider_track_color_active));
@@ -1640,7 +1671,7 @@ public class SystemTheme {
                 tick.setShape(ShapeDrawable.CIRCLE);
                 int size = dp(4, resources);
                 tick.setSize(size, size);
-                tick.setColor(fromCache(theme, ThemedCache::slider_track_color_inactive));
+                tick.setColor(fromCache(theme, ThemedCache::slider_active_tick_color));
                 tick.setUseLevelForShape(false);
                 return tick;
             });
