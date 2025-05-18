@@ -146,7 +146,7 @@ public class ViewConfiguration {
     private final int mHoverSlop;
     private final int mMinScrollbarTouchTarget;
     private volatile int mDoubleTapTouchSlop;
-    private volatile int mPagingTouchSlop;
+    private final int mPagingTouchSlop;
     private volatile int mDoubleTapSlop;
     private volatile int mWindowTouchSlop;
     private final int mOverscrollDistance;
@@ -170,6 +170,7 @@ public class ViewConfiguration {
         mTouchSlop = (int) (density * TOUCH_SLOP + 0.5f);
         mHoverSlop = mTouchSlop;
         mMinScrollbarTouchTarget = (int) (density * MIN_SCROLLBAR_TOUCH_TARGET + 0.5f);
+        mPagingTouchSlop = mTouchSlop * 2;
 
         mMinimumFlingVelocity = (int) (density * MINIMUM_FLING_VELOCITY + 0.5f);
         mMaximumFlingVelocity = (int) (density * MAXIMUM_FLING_VELOCITY + 0.5f);
@@ -283,6 +284,14 @@ public class ViewConfiguration {
      */
     public int getScaledMinScrollbarTouchTarget() {
         return mMinScrollbarTouchTarget;
+    }
+
+    /**
+     * @return Distance in pixels a touch can wander before we think the user is scrolling a full
+     * page
+     */
+    public int getScaledPagingTouchSlop() {
+        return mPagingTouchSlop;
     }
 
     /**

@@ -27,6 +27,10 @@ import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * @deprecated test only, will be replaced by TabLayout.
+ */
+@Deprecated
 @ApiStatus.Internal
 public class LinearPagerIndicator extends View {
 
