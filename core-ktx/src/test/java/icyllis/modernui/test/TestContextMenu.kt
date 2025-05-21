@@ -45,18 +45,18 @@ class TestContextMenu : Fragment() {
         savedInstanceState: DataSet?
     ): View {
         val view = View(context)
-        val drawable = GradientDrawable()
-        drawable.shape = GradientDrawable.RING
-        drawable.gradientType = GradientDrawable.ANGULAR_GRADIENT
-        drawable.colors = intArrayOf(
-            Color.argb(255, 45, 212, 191),
-            Color.argb(255, 14, 165, 233)
-        )
-        drawable.setStroke(4, Color.argb(255, 255, 255, 255))
-        drawable.isDither = true
-        drawable.level = 9000
-        drawable.useLevel = true
-        view.background = drawable
+        view.background = GradientDrawable().apply {
+            shape = GradientDrawable.RING
+            gradientType = GradientDrawable.ANGULAR_GRADIENT
+            colors = intArrayOf(
+                Color.argb(255, 45, 212, 191),
+                Color.argb(255, 14, 165, 233)
+            )
+            setStroke(4, Color.argb(255, 255, 255, 255))
+            isDither = true
+            level = 9000
+            useLevel = true
+        }
         view.layoutParams =
             ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         view.setOnCreateContextMenuListener { menu, _, _ ->

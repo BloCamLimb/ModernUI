@@ -51,6 +51,9 @@ public final class OutlineFont implements Font {
         }
     }
 
+    // legacy code uses ceiling, new code uses rounding
+    private static final boolean USE_ROUNDING_FONT_METRICS = true;
+
     private static final String[] LOGICAL_FONT_NAMES = {
             java.awt.Font.DIALOG,
             java.awt.Font.SANS_SERIF,
@@ -135,18 +138,24 @@ public final class OutlineFont implements Font {
         int ascent; // positive
         int descent; // positive
         int leading; // positive
-        try {
-            var metrics = g.getFontMetrics(font);
-            ascent = metrics.getAscent();
-            descent = metrics.getDescent();
-            leading = metrics.getLeading();
-        } catch (HeadlessException e) {
-            // this is used in some scenarios, the results of the two methods are the same
-            // at least, in OpenJDK 21
+        if (USE_ROUNDING_FONT_METRICS) {
             var metrics = font.getLineMetrics("M", g.getFontRenderContext());
-            ascent = (int) (0.95f + metrics.getAscent());
-            descent = (int) (0.95f + metrics.getDescent());
-            leading = (int) (0.95f + metrics.getDescent() + metrics.getLeading()) - descent;
+            ascent = Math.round(metrics.getAscent());
+            descent = Math.round(metrics.getDescent());
+            leading = Math.round(metrics.getLeading());
+        } else {
+            try {
+                var metrics = g.getFontMetrics(font);
+                ascent = metrics.getAscent();
+                descent = metrics.getDescent();
+                leading = metrics.getLeading();
+            } catch (HeadlessException e) {
+                // this is used in some scenarios, the results of the two methods are the same
+                var metrics = font.getLineMetrics("M", g.getFontRenderContext());
+                ascent = (int) (0.95f + metrics.getAscent());
+                descent = (int) (0.95f + metrics.getDescent());
+                leading = (int) (0.95f + metrics.getDescent() + metrics.getLeading()) - descent;
+            }
         }
         if (fm != null) {
             fm.extendBy(-ascent, descent, leading);

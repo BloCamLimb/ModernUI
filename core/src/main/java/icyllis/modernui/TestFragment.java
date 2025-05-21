@@ -699,6 +699,13 @@ public class TestFragment extends Fragment {
                     Button button;
                     if (i < 6) {
                         button = new ToggleButton(getContext(), null, null, R.style.Widget_Material3_Button_ElevatedButton);
+                        var icon = new BuiltinIconDrawable(getContext().getResources(),
+                                BuiltinIconDrawable.CHECK, 18);
+                        icon.setTintList(button.getTextColors());
+                        button.setCompoundDrawablePadding(dp(8));
+                        button.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                                icon, null, null, null
+                        );
                         button.setText("Elevated button " + i);
                         button.setOnClickListener(__ -> {
                             int newVisibility = mProgressBar1.getVisibility() == View.VISIBLE ? View.GONE :
