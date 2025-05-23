@@ -147,7 +147,7 @@ public final class ContextOptions {
      */
     public boolean mVolatileContext = false;
 
-    public boolean mAllowGLSPIRV = true;
+    public boolean mAllowGLSPIRV = false;
 
     public long mVulkanVMALargeHeapBlockSize = 0;
 

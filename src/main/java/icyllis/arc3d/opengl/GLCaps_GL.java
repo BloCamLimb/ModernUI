@@ -266,7 +266,9 @@ public final class GLCaps_GL extends GLCaps implements GLInterface {
                 mProgramBinarySupport = false;
             }
         }
-        if (mShaderBinarySupport && (caps.OpenGL46 || caps.GL_ARB_gl_spirv) && options.mAllowGLSPIRV) {
+        if (mShaderBinarySupport &&
+                (caps.OpenGL46 || (caps.OpenGL45 && caps.GL_ARB_gl_spirv)) &&
+                options.mAllowGLSPIRV) {
             int count = GL11C.glGetInteger(GL_NUM_SHADER_BINARY_FORMATS);
             if (count > 0) {
                 int[] shaderBinaryFormats = new int[count];
