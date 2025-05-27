@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2020-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,19 +14,39 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -257,8 +277,9 @@ public class LinearLayout extends ViewGroup {
     /**
      * Get the width of the current divider drawable.
      *
-     * @hide Used internally by framework.
+     * @hidden
      */
+    @ApiStatus.Internal
     public int getDividerWidth() {
         return mDividerWidth;
     }
@@ -434,7 +455,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    protected void onDraw(@Nonnull Canvas canvas) {
+    protected void onDraw(@NonNull Canvas canvas) {
         if (mDivider == null) {
             return;
         }
@@ -553,9 +574,14 @@ public class LinearLayout extends ViewGroup {
      *
      * @param childIndex Index of child to check for preceding divider
      * @return true if there should be a divider before the child at childIndex
-     * @hide Pending API consideration. Currently only used internally by the system.
+     * @hidden
      */
+    @ApiStatus.Internal
     protected boolean hasDividerBeforeChildAt(int childIndex) {
+        if (mShowDividers == SHOW_DIVIDER_NONE) {
+            // Short-circuit to save iteration over child views.
+            return false;
+        }
         if (childIndex == getVirtualChildCount()) {
             // Check whether the end divider should draw.
             return (mShowDividers & SHOW_DIVIDER_END) != 0;
@@ -570,10 +596,42 @@ public class LinearLayout extends ViewGroup {
     }
 
     /**
+     * Determines whether or not there's a divider after a specified child index.
+     *
+     * @param childIndex Index of child to check for following divider
+     * @return true if there should be a divider after the child at childIndex
+     */
+    private boolean hasDividerAfterChildAt(int childIndex) {
+        if (mShowDividers == SHOW_DIVIDER_NONE) {
+            // Short-circuit to save iteration over child views.
+            return false;
+        }
+        if (allViewsAreGoneAfter(childIndex)) {
+            // This is the last view that's not gone, check if end divider is enabled.
+            return (mShowDividers & SHOW_DIVIDER_END) != 0;
+        }
+        return (mShowDividers & SHOW_DIVIDER_MIDDLE) != 0;
+    }
+
+    /**
      * Checks whether all (virtual) child views before the given index are gone.
      */
     private boolean allViewsAreGoneBefore(int childIndex) {
         for (int i = childIndex - 1; i >= 0; i--) {
+            final View child = getVirtualChildAt(i);
+            if (child != null && child.getVisibility() != GONE) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks whether all (virtual) child views after the given index are gone.
+     */
+    private boolean allViewsAreGoneAfter(int childIndex) {
+        final int count = getVirtualChildCount();
+        for (int i = childIndex + 1; i < count; i++) {
             final View child = getVirtualChildAt(i);
             if (child != null && child.getVisibility() != GONE) {
                 return false;
@@ -1523,15 +1581,22 @@ public class LinearLayout extends ViewGroup {
         final int[] maxDescent = mMaxDescent;
 
         final int layoutDirection = getLayoutDirection();
-        childLeft = switch (Gravity.getAbsoluteGravity(majorGravity, layoutDirection)) {
-            case Gravity.RIGHT ->
+        switch (Gravity.getAbsoluteGravity(majorGravity, layoutDirection)) {
+            case Gravity.RIGHT:
                 // mTotalLength contains the padding already
-                    mPaddingLeft + right - left - mTotalLength;
-            case Gravity.CENTER_HORIZONTAL ->
+                childLeft = mPaddingLeft + right - left - mTotalLength;
+                break;
+
+            case Gravity.CENTER_HORIZONTAL:
                 // mTotalLength contains the padding already
-                    mPaddingLeft + (right - left - mTotalLength) / 2;
-            default -> mPaddingLeft;
-        };
+                childLeft = mPaddingLeft + (right - left - mTotalLength) / 2;
+                break;
+
+            case Gravity.LEFT:
+            default:
+                childLeft = mPaddingLeft;
+                break;
+        }
 
         int start = 0;
         int dir = 1;
@@ -1551,8 +1616,8 @@ public class LinearLayout extends ViewGroup {
                 final int childHeight = child.getMeasuredHeight();
                 int childBaseline = -1;
 
-                final LayoutParams lp =
-                        (LayoutParams) child.getLayoutParams();
+                final LinearLayout.LayoutParams lp =
+                        (LinearLayout.LayoutParams) child.getLayoutParams();
 
                 if (baselineAligned && lp.height != LayoutParams.MATCH_PARENT) {
                     childBaseline = child.getBaseline();
@@ -1564,13 +1629,14 @@ public class LinearLayout extends ViewGroup {
                 }
 
                 switch (gravity & Gravity.VERTICAL_GRAVITY_MASK) {
-                    case Gravity.TOP -> {
+                    case Gravity.TOP:
                         childTop = paddingTop + lp.topMargin;
                         if (childBaseline != -1) {
                             childTop += maxAscent[INDEX_TOP] - childBaseline;
                         }
-                    }
-                    case Gravity.CENTER_VERTICAL ->
+                        break;
+
+                    case Gravity.CENTER_VERTICAL:
                         // Removed support for baseline alignment when layout_gravity or
                         // gravity == center_vertical. See bug #1038483.
                         // Keep the code around if we need to re-enable this feature
@@ -1582,19 +1648,29 @@ public class LinearLayout extends ViewGroup {
                         //         childTop = paddingTop + (childSpace - childHeight) / 2;
                         //     }
                         // } else {
-                            childTop = paddingTop + ((childSpace - childHeight) / 2)
-                                    + lp.topMargin - lp.bottomMargin;
-                    case Gravity.BOTTOM -> {
+                        childTop = paddingTop + ((childSpace - childHeight) / 2)
+                                + lp.topMargin - lp.bottomMargin;
+                        break;
+
+                    case Gravity.BOTTOM:
                         childTop = childBottom - childHeight - lp.bottomMargin;
                         if (childBaseline != -1) {
                             int descent = child.getMeasuredHeight() - childBaseline;
                             childTop -= (maxDescent[INDEX_BOTTOM] - descent);
                         }
-                    }
-                    default -> childTop = paddingTop;
+                        break;
+                    default:
+                        childTop = paddingTop;
+                        break;
                 }
 
-                if (hasDividerBeforeChildAt(childIndex)) {
+                if (isLayoutRtl) {
+                    // Because rtl rendering occurs in the reverse direction, we need to check
+                    // after the child rather than before (since after=left in this context)
+                    if (hasDividerAfterChildAt(childIndex)) {
+                        childLeft += mDividerWidth;
+                    }
+                } else if (hasDividerBeforeChildAt(childIndex)) {
                     childLeft += mDividerWidth;
                 }
 
@@ -1609,7 +1685,7 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    private void setChildFrame(@Nonnull View child, int left, int top, int width, int height) {
+    private void setChildFrame(@NonNull View child, int left, int top, int width, int height) {
         child.layout(left, top, left + width, top + height);
     }
 
@@ -1685,9 +1761,9 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams params) {
         if (params instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) params);
         } else if (params instanceof MarginLayoutParams) {
@@ -1704,7 +1780,7 @@ public class LinearLayout extends ViewGroup {
      * {@link #HORIZONTAL}, the width is set to {@link LayoutParams#WRAP_CONTENT}
      * and the height to {@link LayoutParams#WRAP_CONTENT}.
      */
-    @Nonnull
+    @NonNull
     @Override
     protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
         if (mOrientation == HORIZONTAL) {
@@ -1769,11 +1845,11 @@ public class LinearLayout extends ViewGroup {
             this.weight = weight;
         }
 
-        public LayoutParams(@Nonnull ViewGroup.LayoutParams source) {
+        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
             super(source);
         }
 
-        public LayoutParams(@Nonnull ViewGroup.MarginLayoutParams source) {
+        public LayoutParams(@NonNull ViewGroup.MarginLayoutParams source) {
             super(source);
         }
 
@@ -1783,7 +1859,7 @@ public class LinearLayout extends ViewGroup {
          *
          * @param source The layout params to copy from.
          */
-        public LayoutParams(@Nonnull LayoutParams source) {
+        public LayoutParams(@NonNull LayoutParams source) {
             super(source);
 
             this.weight = source.weight;
