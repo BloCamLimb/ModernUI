@@ -116,12 +116,12 @@ public class LinearPagerIndicator extends View {
     public void setPager(@Nullable ViewPager pager) {
         if (pager != null) {
             updateAdapter(mAdapter, pager.getAdapter());
-            pager.setInternalPageChangeListener(mPageListener);
+            pager.addOnPageChangeListener(mPageListener);
             pager.addOnAdapterChangeListener(mPageListener);
             mPager = pager;
         } else if (mPager != null) {
             updateAdapter(mAdapter, null);
-            mPager.setInternalPageChangeListener(null);
+            mPager.removeOnPageChangeListener(mPageListener);
             mPager.removeOnAdapterChangeListener(mPageListener);
             mPager = null;
         }

@@ -1538,7 +1538,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    public void onRtlPropertiesChanged(int layoutDirection) {
+    public void onRtlPropertiesChanged(@ResolvedLayoutDir int layoutDirection) {
         super.onRtlPropertiesChanged(layoutDirection);
         if (layoutDirection != mLayoutDirection) {
             mLayoutDirection = layoutDirection;
