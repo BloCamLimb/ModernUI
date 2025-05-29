@@ -8608,7 +8608,7 @@ public class View implements Drawable.Callback {
      * @see #LAYOUT_DIRECTION_LTR
      * @see #LAYOUT_DIRECTION_RTL
      */
-    protected void onRtlPropertiesChanged(int layoutDirection) {
+    protected void onRtlPropertiesChanged(@ResolvedLayoutDir int layoutDirection) {
     }
 
     /**
