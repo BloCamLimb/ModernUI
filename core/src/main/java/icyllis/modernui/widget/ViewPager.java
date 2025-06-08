@@ -73,6 +73,9 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * Layout manager that allows the user to flip left and right
  * through pages of data.<br>You supply an implementation of a
  * {@link PagerAdapter} to generate the pages that the view shows.
+ *
+ * <p>Views which are annotated with the {@link DecorView} annotation are treated as
+ * part of the view pagers 'decor'.
  */
 // Modified from Android, fixed some bugs, added RTL support
 @SuppressWarnings("ForLoopReplaceableByForEach")
