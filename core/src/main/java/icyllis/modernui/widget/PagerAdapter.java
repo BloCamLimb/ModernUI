@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2018 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
@@ -23,6 +40,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Base class providing the adapter to populate pages inside a {@link ViewPager}.
@@ -35,6 +53,8 @@ import icyllis.modernui.view.ViewGroup;
  * <li>{@link #getCount()}</li>
  * <li>{@link #isViewFromObject(View, Object)}</li>
  * </ul>
+ * Additionally, you have to override {@link #getItemPosition(Object)} method
+ * if you want to support RTL (right-to-left) direction correctly.
  *
  * <p>PagerAdapter is more general than the adapters used for
  * {@link icyllis.modernui.widget.AdapterView AdapterViews}. Instead of providing a
@@ -78,6 +98,7 @@ public abstract class PagerAdapter {
     private final DataSetObservable mObservable = new DataSetObservable();
     private DataSetObserver mViewPagerObserver;
 
+    @ApiStatus.Obsolete
     public static final int POSITION_UNCHANGED = -1;
     public static final int POSITION_NONE = -2;
 
@@ -184,7 +205,9 @@ public abstract class PagerAdapter {
      * in the adapter.
      *
      * <p>The default implementation assumes that items will never
-     * change position and always returns {@link #POSITION_UNCHANGED}.
+     * change position and always returns {@link #POSITION_UNCHANGED}. However,
+     * it will be mishandled in RTL direction, thus it is recommended to override this
+     * method and return the real position (or at least return {@link #POSITION_NONE}).
      *
      * @param object Object representing an item, previously returned by a call to
      *               {@link #instantiateItem(ViewGroup, int)}.
@@ -250,10 +273,14 @@ public abstract class PagerAdapter {
     /**
      * Returns the proportional width of a given page as a percentage of the
      * ViewPager's measured width from (0.f-1.f]
+     * <p>
+     * Use of this API is discouraged, and widths other than 1.0 may be
+     * mishandled in RTL direction.
      *
      * @param position The position of the page requested
      * @return Proportional width for the given page position
      */
+    @ApiStatus.Obsolete
     public float getPageWidth(int position) {
         return 1.f;
     }
