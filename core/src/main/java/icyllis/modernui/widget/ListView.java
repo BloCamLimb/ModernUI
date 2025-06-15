@@ -3549,15 +3549,62 @@ public class ListView extends AbsListView {
     }
 
     /**
+     * @see View#findViewWithTag(Object)
+     */
+    @Nullable
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <T extends View> T findViewWithTagTraversal(Object tag) {
+        // First look in our children, then in any header and footer views that
+        // may be scrolled off.
+        View v = super.findViewWithTagTraversal(tag);
+        if (v == null) {
+            v = findViewWithTagInHeadersOrFooters(mHeaderViewInfos, tag);
+            if (v != null) {
+                return (T) v;
+            }
+
+            v = findViewWithTagInHeadersOrFooters(mFooterViewInfos, tag);
+            if (v != null) {
+                return (T) v;
+            }
+        }
+        return (T) v;
+    }
+
+    View findViewWithTagInHeadersOrFooters(ArrayList<FixedViewInfo> where, Object tag) {
+        // Look in the passed in list of headers or footers for the view with
+        // the tag.
+        if (where != null) {
+            int len = where.size();
+            View v;
+
+            for (int i = 0; i < len; i++) {
+                v = where.get(i).view;
+
+                if (!v.isRootNamespace()) {
+                    v = v.findViewWithTag(tag);
+
+                    if (v != null) {
+                        return v;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * First look in our children, then in any header and footer views that may
      * be scrolled off.
      *
      * @see View#findViewByPredicate(Predicate)
      */
-    @SuppressWarnings("unchecked")
+    @Nullable
     @Override
+    @SuppressWarnings("unchecked")
     protected <T extends View> T findViewByPredicateTraversal(
-            @NonNull Predicate<View> predicate, View childToSkip) {
+            @NonNull Predicate<View> predicate, @Nullable View childToSkip) {
         View v = super.findViewByPredicateTraversal(predicate, childToSkip);
         if (v == null) {
             v = findViewByPredicateInHeadersOrFooters(mHeaderViewInfos, predicate, childToSkip);

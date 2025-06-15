@@ -128,7 +128,8 @@ class TestViewPager : Fragment() {
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
             Log.info(null, "Instantiate item {}", position)
             return TextView(container.context).apply {
-                text = position.toString()
+                text = "This is page $position"
+                tag = position
                 gravity = Gravity.CENTER
                 val value = TypedValue()
                 context.theme.resolveAttribute(R.ns, R.attr.colorSurface, value, true)
@@ -149,7 +150,7 @@ class TestViewPager : Fragment() {
 
         override fun getItemPosition(`object`: Any): Int {
             val tv = `object` as TextView
-            val pos = tv.text.toString().toInt()
+            val pos = tv.tag as Int
             if (pos < count)
                 return pos
             return POSITION_NONE
