@@ -3655,6 +3655,38 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
+    /**
+     * @hidden
+     */
+    @Nullable
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <T extends View> T findViewWithTagTraversal(Object tag) {
+        if (tag != null && tag.equals(mTag)) {
+            return (T) this;
+        }
+
+        final View[] where = mChildren;
+        final int len = mChildrenCount;
+
+        for (int i = 0; i < len; i++) {
+            View v = where[i];
+
+            if ((v.mPrivateFlags & PFLAG_IS_ROOT_NAMESPACE) == 0) {
+                v = v.findViewWithTag(tag);
+
+                if (v != null) {
+                    return (T) v;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @hidden
+     */
     @Nullable
     @Override
     @SuppressWarnings("unchecked")
@@ -3682,6 +3714,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return null;
     }
 
+    /**
+     * @hidden
+     */
     @Nullable
     @Override
     @SuppressWarnings("unchecked")

@@ -2065,6 +2065,15 @@ public class View implements Drawable.Callback {
     int mID = NO_ID;
 
     /**
+     * The view's tag.
+     * @hidden
+     *
+     * @see #setTag(Object)
+     * @see #getTag()
+     */
+    Object mTag = null;
+
+    /**
      * RenderNode holding View properties, potentially holding a DisplayList of View content.
      * <p>
      * When non-null and valid, this is expected to contain an up-to-date copy
@@ -2133,25 +2142,39 @@ public class View implements Drawable.Callback {
      * pixels between the left edge of this view and the left edge of its content.
      * @hidden
      */
+    @ApiStatus.Internal
     protected int mPaddingLeft = 0;
     /**
      * The final computed right padding in pixels that is used for drawing. This is the distance in
      * pixels between the right edge of this view and the right edge of its content.
      * @hidden
      */
+    @ApiStatus.Internal
     protected int mPaddingRight = 0;
     /**
      * The final computed top padding in pixels that is used for drawing. This is the distance in
      * pixels between the top edge of this view and the top edge of its content.
      * @hidden
      */
+    @ApiStatus.Internal
     protected int mPaddingTop;
     /**
      * The final computed bottom padding in pixels that is used for drawing. This is the distance in
      * pixels between the bottom edge of this view and the bottom edge of its content.
      * @hidden
      */
+    @ApiStatus.Internal
     protected int mPaddingBottom;
+
+    /**
+     * Briefly describes the state of the view and is primarily used for accessibility support.
+     */
+    private CharSequence mStateDescription;
+
+    /**
+     * Briefly describes the view and is primarily used for accessibility support.
+     */
+    private CharSequence mContentDescription;
 
     /**
      * Predicate for matching a view by its id.
@@ -2717,6 +2740,7 @@ public class View implements Drawable.Callback {
                 case 17:
                     topPadding = a.getDimensionPixelSize(attr, -1);
                     break;
+                    //TODO
                 /*case 18:
                     mTag = a.getText(attr);
                     break;*/
@@ -3744,10 +3768,8 @@ public class View implements Drawable.Callback {
      * unique in this view's hierarchy. The identifier should be a positive
      * integer.
      * <p>
-     * For manually generated identifiers, the high 8 bits should be ranged
-     * from 0x3F to 0x7F, and the next 8 bits should be 0x02. Otherwise, the
-     * high 16 bits should be zero, and low 16 bits should be ranged from
-     * 1 to 0xFFFF.
+     * Note: IDs from 0x01000000 to 0x01FFFFFF may be treated specially by
+     * the framework, which can be found in {@link R.id}.
      *
      * @param id a number used to identify the view
      * @see #NO_ID
@@ -3760,7 +3782,7 @@ public class View implements Drawable.Callback {
 
     /**
      * Generate a value suitable for use in {@link #setId(int)}.
-     * The range is from 0x10000 to 0xFFFFFF.
+     * The range is from 0x010000 to 0xFFFFFF.
      *
      * @return a generated ID value
      */
@@ -3770,12 +3792,41 @@ public class View implements Drawable.Callback {
             final int result = sNextGeneratedId.get();
             // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
             int newValue = result + 1;
-            if (newValue > 0x00FFFFFF) newValue = 0x00010000; // Roll over to 1, not 0.
+            if (newValue > 0x00FFFFFF) newValue = 0x00010000; // Roll over to 65536, not 0.
             if (sNextGeneratedId.compareAndSet(result, newValue)) {
                 return result;
             }
         }
         //@formatter:on
+    }
+
+    /**
+     * Returns this view's tag.
+     *
+     * @return the Object stored in this view as a tag, or {@code null} if not
+     *         set
+     *
+     * @see #setTag(Object)
+     * @see #getTag(int)
+     */
+    @Nullable
+    public Object getTag() {
+        return mTag;
+    }
+
+    /**
+     * Sets the tag associated with this view. A tag can be used to mark
+     * a view in its hierarchy and does not have to be unique within the
+     * hierarchy. Tags can also be used to store data within a view without
+     * resorting to another data structure.
+     *
+     * @param tag an Object to tag the view with
+     *
+     * @see #getTag()
+     * @see #setTag(int, Object)
+     */
+    public void setTag(final Object tag) {
+        mTag = tag;
     }
 
     /**
@@ -3796,16 +3847,16 @@ public class View implements Drawable.Callback {
      * to mark a view in its hierarchy and does not have to be unique within
      * the hierarchy. Tags can also be used to store data within a view
      * without resorting to another data structure.
+     * <p>
+     * The specified key should be unique within the application scope,
+     * and keys from 0x01000000 to 0x01FFFFFF are reserved by the framework.
      *
      * @param key The key identifying the tag
      * @param tag An Object to tag the view with
      * @throws IllegalArgumentException If they specified key is not valid
      * @see #getTag(int)
      */
-    public void setTag(int key, Object tag) {
-        if ((key & 0xFF000000) == 0) {
-            throw new IllegalArgumentException("The key must be a valid resource id.");
-        }
+    public void setTag(int key, final Object tag) {
         if (mKeyedTags == null) {
             mKeyedTags = new SparseArray<>(2);
         }
@@ -5483,6 +5534,119 @@ public class View implements Drawable.Callback {
         } while (current != null);
 
         return false;
+    }
+
+    /**
+     * Returns the {@link View}'s state description.
+     * <p>
+     * <strong>Note:</strong> Do not override this method, as it will have no
+     * effect on the state description presented to accessibility services.
+     * You must call {@link #setStateDescription(CharSequence)} to modify the
+     * state description.
+     *
+     * @return the state description
+     * @see #setStateDescription(CharSequence)
+     */
+    public final @Nullable CharSequence getStateDescription() {
+        return mStateDescription;
+    }
+
+    /**
+     * Returns the {@link View}'s content description.
+     * <p>
+     * <strong>Note:</strong> Do not override this method, as it will have no
+     * effect on the content description presented to accessibility services.
+     * You must call {@link #setContentDescription(CharSequence)} to modify the
+     * content description.
+     *
+     * @return the content description
+     * @see #setContentDescription(CharSequence)
+     */
+    public CharSequence getContentDescription() {
+        return mContentDescription;
+    }
+
+    /**
+     * Sets the {@link View}'s state description.
+     * <p>
+     * A state description briefly describes the states of the view and is primarily used
+     * for accessibility support to determine how the states of a view should be presented to
+     * the user. It is a supplement to the boolean states (for example, checked/unchecked) and
+     * it is used for customized state description (for example, "wifi, connected, three bars").
+     * State description changes frequently while content description should change less often.
+     * State description should be localized. For android widgets which have default state
+     * descriptions, app developers can call this method to override the state descriptions.
+     * Setting state description to null restores the default behavior.
+     *
+     * @param stateDescription The state description.
+     * @see #getStateDescription()
+     * @see #setContentDescription(CharSequence) for the difference between content and
+     * state descriptions.
+     */
+    public void setStateDescription(@Nullable CharSequence stateDescription) {
+        if (mStateDescription == null) {
+            if (stateDescription == null) {
+                return;
+            }
+        } else if (mStateDescription.equals(stateDescription)) {
+            return;
+        }
+        mStateDescription = stateDescription;
+        /*if (!TextUtils.isEmpty(stateDescription)
+                && getImportantForAccessibility() == IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
+            setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
+        }
+        if (AccessibilityManager.getInstance(mContext).isEnabled()) {
+            AccessibilityEvent event = AccessibilityEvent.obtain();
+            event.setEventType(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+            event.setContentChangeTypes(AccessibilityEvent.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION);
+            sendAccessibilityEventUnchecked(event);
+        }*/
+    }
+
+    /**
+     * Sets the {@link View}'s content description.
+     * <p>
+     * A content description briefly describes the view and is primarily used
+     * for accessibility support to determine how a view should be presented to
+     * the user. In the case of a view with no textual representation, such as
+     * {@link icyllis.modernui.widget.ImageButton}, a useful content description
+     * explains what the view does. For example, an image button with a phone
+     * icon that is used to place a call may use "Call" as its content
+     * description. An image of a floppy disk that is used to save a file may
+     * use "Save".
+     *
+     * <p>
+     * This should omit role or state. Role refers to the kind of user-interface element the View
+     * is, such as a Button or Checkbox. State refers to a frequently changing property of the View,
+     * such as an On/Off state of a button or the audio level of a volume slider.
+     *
+     * <p>
+     * Content description updates are not frequent, and are used when the semantic content - not
+     * the state - of the element changes. For example, a Play button might change to a Pause
+     * button during music playback.
+     *
+     * @param contentDescription The content description.
+     * @see #getContentDescription()
+     * @see #setStateDescription(CharSequence) for state changes.
+     */
+    public void setContentDescription(CharSequence contentDescription) {
+        if (mContentDescription == null) {
+            if (contentDescription == null) {
+                return;
+            }
+        } else if (mContentDescription.equals(contentDescription)) {
+            return;
+        }
+        mContentDescription = contentDescription;
+        /*final boolean nonEmptyDesc = contentDescription != null && contentDescription.length() > 0;
+        if (nonEmptyDesc && getImportantForAccessibility() == IMPORTANT_FOR_ACCESSIBILITY_AUTO) {
+            setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
+            notifySubtreeAccessibilityStateChangedIfNeeded();
+        } else {
+            notifyViewAccessibilityStateChangedIfNeeded(
+                    AccessibilityEvent.CONTENT_CHANGE_TYPE_CONTENT_DESCRIPTION);
+        }*/
     }
 
     /**
@@ -10298,12 +10462,43 @@ public class View implements Drawable.Callback {
     /**
      * @param id the id of the view to be found
      * @return the view of the specified id, null if cannot be found
+     * @hidden
      */
     @ApiStatus.Internal
     @Nullable
     @SuppressWarnings("unchecked")
     protected <T extends View> T findViewTraversal(int id) {
         if (id == mID) {
+            return (T) this;
+        }
+        return null;
+    }
+
+    /**
+     * Look for a child view with the given tag.  If this view has the given
+     * tag, return this view.
+     *
+     * @param tag The tag to search for, using "tag.equals(getTag())".
+     * @return The View that has the given tag in the hierarchy or null
+     */
+    @Nullable
+    public final <T extends View> T findViewWithTag(Object tag) {
+        if (tag == null) {
+            return null;
+        }
+        return findViewWithTagTraversal(tag);
+    }
+
+    /**
+     * @param tag the tag of the view to be found
+     * @return the view of specified tag, null if cannot be found
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @Nullable
+    @SuppressWarnings("unchecked")
+    protected <T extends View> T findViewWithTagTraversal(Object tag) {
+        if (tag != null && tag.equals(mTag)) {
             return (T) this;
         }
         return null;
@@ -10317,6 +10512,7 @@ public class View implements Drawable.Callback {
      * @return The first view that matches the predicate or null.
      */
     @ApiStatus.Internal
+    @Nullable
     public final <T extends View> T findViewByPredicate(@NonNull Predicate<View> predicate) {
         return findViewByPredicateTraversal(predicate, null);
     }
@@ -10325,6 +10521,7 @@ public class View implements Drawable.Callback {
      * @param predicate   The predicate to evaluate.
      * @param childToSkip If not null, ignores this child during the recursive traversal.
      * @return The first view that matches the predicate or null.
+     * @hidden
      */
     @ApiStatus.Internal
     @Nullable

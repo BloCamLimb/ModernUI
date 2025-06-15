@@ -240,7 +240,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         LOGGER.debug(MARKER, "Initializing window system");
         Monitor monitor = Monitor.getPrimary();
 
-        /*TinyFileDialogs.tinyfd_messageBox(
+        /*org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_messageBox(
                 "ModernUI Test",
                 "ModernUI starting with pid: " + ProcessHandle.current().pid(),
                 "ok",
