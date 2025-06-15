@@ -20,7 +20,7 @@ package icyllis.modernui.material.drawable;
 
 import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
-import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
@@ -177,7 +177,7 @@ public class SliderThumbDrawable extends MaterialDrawable {
     private Animator createUnpressedToPressedAnimator() {
         ValueAnimator anim = new ValueAnimator();
         anim.setDuration(133);
-        anim.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        anim.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         anim.addUpdateListener(animation -> {
             mThickness = MathUtil.lerp(0.5f, 0.25f, animation.getAnimatedFraction());
             invalidateSelf();
@@ -188,7 +188,7 @@ public class SliderThumbDrawable extends MaterialDrawable {
     private Animator createPressedToUnpressedAnimator() {
         ValueAnimator anim = new ValueAnimator();
         anim.setDuration(133);
-        anim.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        anim.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         anim.addUpdateListener(animation -> {
             mThickness = MathUtil.lerp(0.25f, 0.5f, animation.getAnimatedFraction());
             invalidateSelf();

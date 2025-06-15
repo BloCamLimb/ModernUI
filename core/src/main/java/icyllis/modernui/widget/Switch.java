@@ -36,8 +36,8 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
+import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
-import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.NonNull;
@@ -621,7 +621,7 @@ public class Switch extends Button implements Checkable2 {
         final float targetPosition = newCheckedState ? 1 : 0;
         mPositionAnimator = ObjectAnimator.ofFloat(this, THUMB_POS, targetPosition);
         mPositionAnimator.setDuration(THUMB_ANIMATION_DURATION);
-        mPositionAnimator.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        mPositionAnimator.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         mPositionAnimator.setAutoCancel(true);
         mPositionAnimator.start();
     }

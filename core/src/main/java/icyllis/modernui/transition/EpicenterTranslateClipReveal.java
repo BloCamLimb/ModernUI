@@ -38,6 +38,7 @@ package icyllis.modernui.transition;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.animation.AnimatorSet;
+import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.TypeEvaluator;
@@ -65,11 +66,11 @@ public class EpicenterTranslateClipReveal extends Visibility {
     private final TimeInterpolator mInterpolatorZ;
 
     public EpicenterTranslateClipReveal() {
-        mInterpolatorX = TimeInterpolator.LINEAR_OUT_SLOW_IN;
+        mInterpolatorX = MotionEasingUtils.LINEAR_OUT_SLOW_IN;
 
-        mInterpolatorY = TimeInterpolator.FAST_OUT_SLOW_IN;
+        mInterpolatorY = MotionEasingUtils.FAST_OUT_SLOW_IN;
 
-        mInterpolatorZ = TimeInterpolator.FAST_OUT_SLOW_IN;
+        mInterpolatorZ = MotionEasingUtils.FAST_OUT_SLOW_IN;
     }
 
     @Override
