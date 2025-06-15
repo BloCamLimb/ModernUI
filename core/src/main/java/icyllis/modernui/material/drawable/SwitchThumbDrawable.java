@@ -21,9 +21,9 @@ package icyllis.modernui.material.drawable;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorSet;
+import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.PropertyValuesHolder;
-import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
@@ -218,7 +218,7 @@ public class SwitchThumbDrawable extends MaterialDrawable {
         var pvh2 = PropertyValuesHolder.ofFloat(CIRCLE_HEIGHT, 24);
         ObjectAnimator anim = ObjectAnimator.ofPropertyValuesHolder(this, pvh1, pvh2);
         anim.setDuration(150);
-        anim.setInterpolator(TimeInterpolator.MOTION_EASING_STANDARD);
+        anim.setInterpolator(MotionEasingUtils.MOTION_EASING_STANDARD);
         return anim;
     }
 
@@ -227,7 +227,7 @@ public class SwitchThumbDrawable extends MaterialDrawable {
         var pvh2 = PropertyValuesHolder.ofFloat(CIRCLE_HEIGHT, 16);
         ObjectAnimator anim = ObjectAnimator.ofPropertyValuesHolder(this, pvh1, pvh2);
         anim.setDuration(150);
-        anim.setInterpolator(TimeInterpolator.MOTION_EASING_STANDARD);
+        anim.setInterpolator(MotionEasingUtils.MOTION_EASING_STANDARD);
         return anim;
     }
 
@@ -236,14 +236,14 @@ public class SwitchThumbDrawable extends MaterialDrawable {
         var pvh2 = PropertyValuesHolder.ofFloat(CIRCLE_HEIGHT, 28);
         ObjectAnimator anim = ObjectAnimator.ofPropertyValuesHolder(this, pvh1, pvh2);
         anim.setDuration(150);
-        anim.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        anim.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         return anim;
     }
 
     private Animator createUncheckedToCheckedAnimator() {
         ValueAnimator step1 = new ValueAnimator();
         step1.setDuration(150);
-        step1.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step1.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step1.addUpdateListener(animation -> {
             mCircleWidth = MathUtil.lerp(16, 32, animation.getAnimatedFraction());
             mCircleHeight = MathUtil.lerp(16, 22, animation.getAnimatedFraction());
@@ -252,7 +252,7 @@ public class SwitchThumbDrawable extends MaterialDrawable {
 
         ValueAnimator step2 = new ValueAnimator();
         step2.setDuration(100);
-        step2.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step2.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step2.addUpdateListener(animation -> {
             mCircleWidth = MathUtil.lerp(32, 24, animation.getAnimatedFraction());
             mCircleHeight = MathUtil.lerp(22, 24, animation.getAnimatedFraction());
@@ -267,7 +267,7 @@ public class SwitchThumbDrawable extends MaterialDrawable {
     private Animator createCheckedToUncheckedAnimator() {
         ValueAnimator step1 = new ValueAnimator();
         step1.setDuration(100);
-        step1.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step1.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step1.addUpdateListener(animation -> {
             mCircleWidth = MathUtil.lerp(24, 32, animation.getAnimatedFraction());
             mCircleHeight = MathUtil.lerp(24, 22, animation.getAnimatedFraction());
@@ -276,7 +276,7 @@ public class SwitchThumbDrawable extends MaterialDrawable {
 
         ValueAnimator step2 = new ValueAnimator();
         step2.setDuration(150);
-        step2.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step2.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step2.addUpdateListener(animation -> {
             mCircleWidth = MathUtil.lerp(32, 16, animation.getAnimatedFraction());
             mCircleHeight = MathUtil.lerp(22, 16, animation.getAnimatedFraction());

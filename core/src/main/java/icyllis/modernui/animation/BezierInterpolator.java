@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,10 @@ import icyllis.modernui.graphics.MathUtil;
  * An interpolator that can traverse a Bezier curve that extends from
  * <code>(0, 0)</code> to <code>(1, 1)</code>. The x coordinate along the curve
  * is the input value and the output is the y coordinate of the line at that point.
+ * <p>
+ * See {@link MotionEasingUtils} for commonly-used interpolators.
+ *
+ * @since 3.12
  */
 public class BezierInterpolator implements TimeInterpolator {
 

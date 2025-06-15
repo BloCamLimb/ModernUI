@@ -23,6 +23,10 @@ import icyllis.modernui.annotation.NonNull;
 /**
  * An interpolator defines the rate of change of an animation. This allows animations
  * to have non-linear motion, such as acceleration and deceleration.
+ * <p>
+ * This interface provides some constant interpolators and methods to create simple
+ * interpolators, see {@link MotionEasingUtils} for creating common bezier-based
+ * easing interpolators.
  */
 @FunctionalInterface
 public interface TimeInterpolator {
@@ -121,24 +125,6 @@ public interface TimeInterpolator {
 
     @NonNull
     TimeInterpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
-
-    @NonNull
-    TimeInterpolator FAST_OUT_SLOW_IN = new BezierInterpolator(0.4f, 0f, 0.2f, 1f);
-
-    @NonNull
-    TimeInterpolator FAST_OUT_LINEAR_IN = new BezierInterpolator(0.4f, 0f, 1f, 1f);
-
-    @NonNull
-    TimeInterpolator LINEAR_OUT_SLOW_IN = new BezierInterpolator(0f, 0f, 0.2f, 1f);
-
-    @NonNull
-    TimeInterpolator MOTION_EASING_STANDARD = new BezierInterpolator(0.2f, 0f, 0f, 1f);
-
-    @NonNull
-    TimeInterpolator MOTION_EASING_EMPHASIZED = BezierInterpolator.createTwoCubic(
-            0.05f, 0f, 0.133333f, 0.06f, 0.166666f, 0.4f,
-            0.208333f, 0.82f, 0.25f, 1f
-    );
 
     /**
      * Get interpolation value. This interpolated value is then multiplied by the change in

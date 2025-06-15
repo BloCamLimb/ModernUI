@@ -21,7 +21,7 @@ package icyllis.modernui.material.drawable;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorSet;
-import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
@@ -217,7 +217,7 @@ public class RadioButtonDrawable extends MaterialDrawable {
     private Animator createOffToOnAnimator() {
         ValueAnimator step1 = new ValueAnimator();
         step1.setDuration(166);
-        step1.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step1.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step1.addUpdateListener(animation -> {
             mRingOuterScale = MathUtil.lerp(1.0f, 0.5f, animation.getAnimatedFraction());
             mRingOuterStrokeWidth = MathUtil.lerp(2.0f, 16.0f, animation.getAnimatedFraction());
@@ -227,7 +227,7 @@ public class RadioButtonDrawable extends MaterialDrawable {
 
         ValueAnimator step2 = new ValueAnimator();
         step2.setDuration(16);
-        step2.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step2.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step2.addUpdateListener(animation -> {
             mRingOuterScale = MathUtil.lerp(0.5f, 0.9f, animation.getAnimatedFraction());
             mRingOuterStrokeWidth = MathUtil.lerp(16.0f, 2.0f, animation.getAnimatedFraction());
@@ -237,7 +237,7 @@ public class RadioButtonDrawable extends MaterialDrawable {
 
         ValueAnimator step3 = new ValueAnimator();
         step3.setDuration(316);
-        step3.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step3.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step3.addUpdateListener(animation -> {
             mRingOuterScale = MathUtil.lerp(0.9f, 1.0f, animation.getAnimatedFraction());
             mRingOuterStrokeWidth = 2.0f;
@@ -253,7 +253,7 @@ public class RadioButtonDrawable extends MaterialDrawable {
     private Animator createOnToOffAnimator() {
         ValueAnimator step1 = new ValueAnimator();
         step1.setDuration(183);
-        step1.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step1.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step1.addUpdateListener(animation -> {
             mRingOuterScale = MathUtil.lerp(1.0f, 0.9f, animation.getAnimatedFraction());
             mRingOuterStrokeWidth = 2.0f;
@@ -263,7 +263,7 @@ public class RadioButtonDrawable extends MaterialDrawable {
 
         ValueAnimator step2 = new ValueAnimator();
         step2.setDuration(16);
-        step2.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step2.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step2.addUpdateListener(animation -> {
             mRingOuterScale = MathUtil.lerp(0.9f, 0.5f, animation.getAnimatedFraction());
             mRingOuterStrokeWidth = MathUtil.lerp(2.0f, 16.0f, animation.getAnimatedFraction());
@@ -273,7 +273,7 @@ public class RadioButtonDrawable extends MaterialDrawable {
 
         ValueAnimator step3 = new ValueAnimator();
         step3.setDuration(300);
-        step3.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        step3.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         step3.addUpdateListener(animation -> {
             mRingOuterScale = MathUtil.lerp(0.5f, 1.0f, animation.getAnimatedFraction());
             mRingOuterStrokeWidth = MathUtil.lerp(16.0f, 2.0f, animation.getAnimatedFraction());

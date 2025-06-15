@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
+import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.NonNull;
@@ -157,13 +158,13 @@ class RippleForeground extends RippleComponent {
 
         final ObjectAnimator tweenRadius = ObjectAnimator.ofFloat(this, TWEEN_RADIUS, 1);
         tweenRadius.setDuration(hasMask ? RIPPLE_ENTER_DURATION : RIPPLE_ENTER_DURATION / 2);
-        tweenRadius.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        tweenRadius.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         tweenRadius.start();
         mRunningAnimators.add(tweenRadius);
 
         final ObjectAnimator tweenOrigin = ObjectAnimator.ofFloat(this, TWEEN_ORIGIN, 1);
         tweenOrigin.setDuration(hasMask ? RIPPLE_ORIGIN_DURATION : RIPPLE_ORIGIN_DURATION / 2);
-        tweenOrigin.setInterpolator(TimeInterpolator.FAST_OUT_SLOW_IN);
+        tweenOrigin.setInterpolator(MotionEasingUtils.FAST_OUT_SLOW_IN);
         tweenOrigin.start();
         mRunningAnimators.add(tweenOrigin);
 
