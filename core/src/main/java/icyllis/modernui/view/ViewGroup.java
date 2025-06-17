@@ -4601,11 +4601,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * This prevents the pressed state from appearing when the user is actually trying to scroll
      * the content.
      * <p>
-     * The default implementation returns true for compatibility reasons. Subclasses that do
-     * not scroll should generally override this method and return false.
+     * The default implementation returns false. Subclasses that do scroll should override this
+     * method and return true.
      */
     public boolean shouldDelayChildPressedState() {
-        return true;
+        return false;
     }
 
     @Override

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,18 +14,52 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.FocusFinder;
+import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.VelocityTracker;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewConfiguration;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewParent;
 
 import java.util.List;
 
@@ -42,13 +76,13 @@ import java.util.List;
  */
 public class ScrollView extends FrameLayout {
 
-    /**
+    /*
      * When flinging the stretch towards scrolling content, it should destretch quicker than the
      * fling would normally do. The visual effect of flinging the stretch looks strange as little
      * appears to happen at first and then when the stretch disappears, the content starts
      * scrolling quickly.
      */
-    private static final float FLING_DESTRETCH_FACTOR = 4f;
+    //private static final float FLING_DESTRETCH_FACTOR = 4f;
 
     private final Rect mTempRect = new Rect();
 
@@ -168,6 +202,36 @@ public class ScrollView extends FrameLayout {
         track.setCornerRadius(1);
         track.setTintList(tint);
         setVerticalScrollbarTrackDrawable(track);
+    }
+
+    public ScrollView(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public ScrollView(Context context, @Nullable AttributeSet attrs,
+                                @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public ScrollView(Context context, @Nullable AttributeSet attrs,
+                                @Nullable @AttrRes ResourceId defStyleAttr,
+                                @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+        mScroller = new OverScroller();
+        mEdgeGlowTop = new EdgeEffect(context);
+        mEdgeGlowBottom = new EdgeEffect(context);
+        setFocusable(true);
+        setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
+        setWillNotDraw(false);
+        final ViewConfiguration configuration = ViewConfiguration.get(context);
+        mTouchSlop = configuration.getScaledTouchSlop();
+        mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
+        mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
+        mOverscrollDistance = configuration.getScaledOverscrollDistance();
+        mOverflingDistance = configuration.getScaledOverflingDistance();
+        mVerticalScrollFactor = configuration.getScaledVerticalScrollFactor();
+
+        //TODO attributes
     }
 
     @Override
@@ -304,6 +368,18 @@ public class ScrollView extends FrameLayout {
     }
 
     /**
+     * @return Returns true this ScrollView can be scrolled
+     */
+    private boolean canScroll() {
+        View child = getChildAt(0);
+        if (child != null) {
+            int childHeight = child.getHeight();
+            return getHeight() < childHeight + mPaddingTop + mPaddingBottom;
+        }
+        return false;
+    }
+
+    /**
      * Indicates whether this ScrollView's content is stretched to fill the viewport.
      *
      * @return True if the content fills the viewport, false otherwise.
@@ -389,8 +465,8 @@ public class ScrollView extends FrameLayout {
     public boolean executeKeyEvent(@NonNull KeyEvent event) {
         mTempRect.setEmpty();
 
-        /*if (!canScroll()) {
-            if (isFocused() && event.getKeyCode() != KeyEvent.KEYCODE_BACK) {
+        if (!canScroll()) {
+            if (isFocused() && event.getKeyCode() != KeyEvent.KEY_ESCAPE) {
                 View currentFocused = findFocus();
                 if (currentFocused == this) currentFocused = null;
                 View nextFocused = FocusFinder.getInstance().findNextFocus(this,
@@ -400,7 +476,7 @@ public class ScrollView extends FrameLayout {
                         && nextFocused.requestFocus(View.FOCUS_DOWN);
             }
             return false;
-        }*/
+        }
 
         boolean handled = false;
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -1173,7 +1249,6 @@ public class ScrollView extends FrameLayout {
             int x = mScroller.getCurrX();
             int y = mScroller.getCurrY();
 
-            //TODO consumeFlingInStretch is buggy, do we need it? see also HorizontalScrollView
             //int deltaY = consumeFlingInStretch(y - oldY);
 
             if (oldX != x || oldY != y) {
@@ -1202,13 +1277,14 @@ public class ScrollView extends FrameLayout {
         }
     }
 
-    /**
+    // Not used by Modern UI
+    /*
      * Used by consumeFlingInHorizontalStretch() and consumeFlinInVerticalStretch() for
      * consuming deltas from EdgeEffects
-     * @param unconsumed The unconsumed delta that the EdgeEffets may consume
+     * @param unconsumed The unconsumed delta that the EdgeEffects may consume
      * @return The unconsumed delta after the EdgeEffects have had an opportunity to consume.
      */
-    private int consumeFlingInStretch(int unconsumed) {
+    /*private int consumeFlingInStretch(int unconsumed) {
         if (unconsumed > 0 && mEdgeGlowTop != null && mEdgeGlowTop.getDistance() != 0f) {
             int size = getHeight();
             float deltaDistance = -unconsumed * FLING_DESTRETCH_FACTOR / size;
@@ -1230,7 +1306,7 @@ public class ScrollView extends FrameLayout {
             return unconsumed - consumed;
         }
         return unconsumed;
-    }
+    }*/
 
     /**
      * Scrolls the view to the given child.

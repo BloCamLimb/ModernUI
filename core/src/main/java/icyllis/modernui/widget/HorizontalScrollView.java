@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,18 +14,52 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2009 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.FocusFinder;
+import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.VelocityTracker;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewConfiguration;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewParent;
 
 import java.util.List;
 
@@ -167,6 +201,36 @@ public class HorizontalScrollView extends FrameLayout {
         track.setCornerRadius(1);
         track.setTintList(tint);
         setHorizontalScrollbarTrackDrawable(track);
+    }
+
+    public HorizontalScrollView(Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, null);
+    }
+
+    public HorizontalScrollView(Context context, @Nullable AttributeSet attrs,
+                                @Nullable @AttrRes ResourceId defStyleAttr) {
+        this(context, attrs, defStyleAttr, null);
+    }
+
+    public HorizontalScrollView(Context context, @Nullable AttributeSet attrs,
+                                @Nullable @AttrRes ResourceId defStyleAttr,
+                                @Nullable @StyleRes ResourceId defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+        mScroller = new OverScroller();
+        mEdgeGlowLeft = new EdgeEffect(context);
+        mEdgeGlowRight = new EdgeEffect(context);
+        setFocusable(true);
+        setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
+        setWillNotDraw(false);
+        final ViewConfiguration configuration = ViewConfiguration.get(context);
+        mTouchSlop = configuration.getScaledTouchSlop();
+        mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
+        mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
+        mOverscrollDistance = configuration.getScaledOverscrollDistance();
+        mOverflingDistance = configuration.getScaledOverflingDistance();
+        mHorizontalScrollFactor = configuration.getScaledHorizontalScrollFactor();
+
+        //TODO attributes
     }
 
     /*@Override
@@ -1251,19 +1315,20 @@ public class HorizontalScrollView extends FrameLayout {
             int oldY = mScrollY;
             int x = mScroller.getCurrX();
             int y = mScroller.getCurrY();
-            int deltaX = consumeFlingInStretch(x - oldX);
 
-            if (deltaX != 0 || oldY != y) {
+            //int deltaX = consumeFlingInStretch(x - oldX);
+
+            if (oldX != x || oldY != y) {
                 final int range = getScrollRange();
                 final int overscrollMode = getOverScrollMode();
                 final boolean canOverscroll = overscrollMode == OVER_SCROLL_ALWAYS ||
                         (overscrollMode == OVER_SCROLL_IF_CONTENT_SCROLLS && range > 0);
 
-                overScrollBy(deltaX, y - oldY, oldX, oldY, range, 0,
+                overScrollBy(x - oldX, y - oldY, oldX, oldY, range, 0,
                         mOverflingDistance, 0, false);
                 onScrollChanged(mScrollX, mScrollY, oldX, oldY);
 
-                if (canOverscroll && deltaX != 0) {
+                if (canOverscroll) {
                     if (x < 0 && oldX >= 0) {
                         mEdgeGlowLeft.onAbsorb((int) mScroller.getCurrVelocity());
                     } else if (x > range && oldX <= range) {
@@ -1608,7 +1673,8 @@ public class HorizontalScrollView extends FrameLayout {
         if (velocity > 0) {
             return true;
         }
-        float distance = edgeEffect.getDistance() * getWidth();
+        // Not used by Modern UI, the following branch should return false
+        float distance = 0;//edgeEffect.getDistance() * getWidth();
 
         // This is flinging without the spring, so let's see if it will fling past the overscroll
         float flingDistance = (float) mScroller.getSplineFlingDistance(-velocity);
