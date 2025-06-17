@@ -28,7 +28,7 @@ import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * @deprecated test only, will be replaced by TabLayout.
+ * @deprecated test only, use {@link TabLayout}.
  */
 @Deprecated
 @ApiStatus.Internal

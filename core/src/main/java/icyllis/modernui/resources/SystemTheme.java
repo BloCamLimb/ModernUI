@@ -23,6 +23,7 @@ import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.InsetDrawable;
 import icyllis.modernui.graphics.drawable.LayerDrawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ScaleDrawable;
@@ -38,10 +39,12 @@ import icyllis.modernui.material.drawable.SwitchThumbDrawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
+import icyllis.modernui.widget.TabLayout;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static icyllis.modernui.util.ColorStateList.modulateColor;
@@ -950,6 +953,101 @@ public class SystemTheme {
             );
             return slider_halo_color;
         }
+
+        private ColorStateList tabs_text_color;
+        private ColorStateList tabs_text_color() {
+            if (tabs_text_color != null) {
+                return tabs_text_color;
+            }
+            tabs_text_color = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.get(StateSet.VIEW_STATE_SELECTED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnSurface, material_emphasis_disabled),
+                            colorPrimary,
+                            colorOnSurfaceVariant
+                    }
+            );
+            return tabs_text_color;
+        }
+
+        private ColorStateList tabs_ripple_color;
+        private ColorStateList tabs_ripple_color() {
+            if (tabs_ripple_color != null) {
+                return tabs_ripple_color;
+            }
+            tabs_ripple_color = new ColorStateList(
+                    new int[][]{
+                            // Selected
+                            new int[]{R.attr.state_selected, R.attr.state_pressed},
+                            new int[]{R.attr.state_selected, R.attr.state_focused},
+                            new int[]{R.attr.state_selected, R.attr.state_hovered},
+                            new int[]{R.attr.state_selected},
+                            // Not selected
+                            new int[]{R.attr.state_pressed},
+                            new int[]{R.attr.state_focused},
+                            new int[]{R.attr.state_hovered},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorPrimary, 0.1f),
+                            modulateColor(colorPrimary, 0.1f),
+                            modulateColor(colorPrimary, 0.08f),
+                            modulateColor(colorPrimary, 0.08f),
+
+                            modulateColor(colorPrimary, 0.1f),
+                            modulateColor(colorOnSurface, 0.1f),
+                            modulateColor(colorOnSurface, 0.08f),
+                            modulateColor(colorOnSurfaceVariant, 0.08f),
+                    }
+            );
+            return tabs_ripple_color;
+        }
+
+        private ColorStateList tabs_text_color_secondary;
+        private ColorStateList tabs_text_color_secondary() {
+            if (tabs_text_color_secondary != null) {
+                return tabs_text_color_secondary;
+            }
+            tabs_text_color_secondary = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.get(StateSet.VIEW_STATE_SELECTED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnSurface, material_emphasis_disabled),
+                            colorOnSurface,
+                            colorOnSurfaceVariant
+                    }
+            );
+            return tabs_text_color_secondary;
+        }
+
+        private ColorStateList tabs_ripple_color_secondary;
+        private ColorStateList tabs_ripple_color_secondary() {
+            if (tabs_ripple_color_secondary != null) {
+                return tabs_ripple_color_secondary;
+            }
+            tabs_ripple_color_secondary = new ColorStateList(
+                    new int[][]{
+                            new int[]{R.attr.state_pressed},
+                            new int[]{R.attr.state_focused},
+                            new int[]{R.attr.state_hovered},
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnSurface, 0.1f),
+                            modulateColor(colorOnSurface, 0.1f),
+                            modulateColor(colorOnSurface, 0.08f),
+                            modulateColor(colorOnSurfaceVariant, 0.08f),
+                    }
+            );
+            return tabs_ripple_color_secondary;
+        }
     }
 
     static <T> T fromCache(Resources.Theme theme, Function<ThemedCache, T> fn) {
@@ -1019,6 +1117,8 @@ public class SystemTheme {
             style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
             style.addReference(R.attr.checkboxStyle, R.style.Widget_Material3_CompoundButton_CheckBox);
             style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
+            style.addReference(R.attr.tabStyle, R.style.Widget_Material3_TabLayout);
+            style.addReference(R.attr.tabSecondaryStyle, R.style.Widget_Material3_TabLayout_Secondary);
         }
         {
             SystemTheme t = createMaterial(false);
@@ -1064,6 +1164,8 @@ public class SystemTheme {
             style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
             style.addReference(R.attr.checkboxStyle, R.style.Widget_Material3_CompoundButton_CheckBox);
             style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
+            style.addReference(R.attr.tabStyle, R.style.Widget_Material3_TabLayout);
+            style.addReference(R.attr.tabSecondaryStyle, R.style.Widget_Material3_TabLayout_Secondary);
         }
         {
             SystemTheme t = createDefault(true, 2);
@@ -1747,6 +1849,50 @@ public class SystemTheme {
             var style = b.newStyle(R.style.Widget_Material3_EditText_OutlinedBox, R.style.Widget_Material3_EditText);
             style.addDrawable(R.attr.background, SystemTheme::outlined_box);
             style.addReference(R.attr.textAppearance, R.style.TextAppearance_Material3_BodyMedium);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_TabLayout, null);
+            BiFunction<Resources, Resources.Theme, ColorStateList> tint = (resources, theme) ->
+                    fromCache(theme, ThemedCache::tabs_text_color);
+            style.addColor(R.attr.tabIconTint, tint);
+            style.addAttribute(R.attr.tabTextAppearance, R.attr.textAppearanceTitleSmall);
+            style.addColor(R.attr.tabTextColor, tint);
+            style.addDrawable(R.attr.tabIndicator, (resources, theme) -> {
+                // rounded top
+                ShapeDrawable indicator = new ShapeDrawable();
+                int rad = dp(3, resources);
+                indicator.setCornerRadii(rad, rad, 0, 0);
+                indicator.setSize(-1, rad);
+                int inset = dp(2, resources);
+                return new InsetDrawable(indicator, inset, 0, inset, 0);
+            });
+            style.addEnum(R.attr.tabIndicatorAnimationMode, TabLayout.INDICATOR_ANIMATION_MODE_ELASTIC);
+            style.addAttribute(R.attr.tabIndicatorColor, R.attr.colorPrimary);
+            style.addColor(R.attr.tabRippleColor, (resources, theme) -> fromCache(theme, ThemedCache::tabs_ripple_color));
+            style.addBoolean(R.attr.tabIndicatorFullWidth, false);
+            style.addInteger(R.attr.tabIndicatorAnimationDuration, 500);
+            style.addEnum(R.attr.tabGravity, TabLayout.GRAVITY_CENTER);
+            style.addDimension(R.attr.tabPaddingStart, 12, TypedValue.COMPLEX_UNIT_DP);
+            style.addDimension(R.attr.tabPaddingEnd, 12, TypedValue.COMPLEX_UNIT_DP);
+            style.addAttribute(R.attr.background, R.attr.colorSurface);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_TabLayout_OnSurface, R.style.Widget_Material3_TabLayout);
+            style.addNull(R.attr.background, true);
+        }
+        {
+            var style = b.newStyle(R.style.Widget_Material3_TabLayout_Secondary, R.style.Widget_Material3_TabLayout);
+            BiFunction<Resources, Resources.Theme, ColorStateList> tint = (resources, theme) ->
+                    fromCache(theme, ThemedCache::tabs_text_color_secondary);
+            style.addColor(R.attr.tabIconTint, tint);
+            style.addColor(R.attr.tabTextColor, tint);
+            style.addDrawable(R.attr.tabIndicator, (resources, theme) -> {
+                ShapeDrawable indicator = new ShapeDrawable();
+                indicator.setSize(-1, dp(2, resources));
+                return indicator;
+            });
+            style.addColor(R.attr.tabRippleColor, (resources, theme) -> fromCache(theme, ThemedCache::tabs_ripple_color_secondary));
+            style.addBoolean(R.attr.tabIndicatorFullWidth, true);
         }
     }
 

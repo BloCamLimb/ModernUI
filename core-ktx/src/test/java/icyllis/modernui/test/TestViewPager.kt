@@ -22,6 +22,7 @@ import icyllis.modernui.ModernUI
 import icyllis.modernui.R
 import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.drawable.ColorDrawable
+import icyllis.modernui.graphics.drawable.ShapeDrawable
 import icyllis.modernui.resources.TypedValue
 import icyllis.modernui.util.DataSet
 import icyllis.modernui.util.Log
@@ -37,7 +38,10 @@ import icyllis.modernui.widget.*
 fun main() {
     System.setProperty("java.awt.headless", "true")
     Log.setLevel(Log.DEBUG)
-    ModernUI().use { app -> app.run(TestViewPager()) }
+    ModernUI().use { app ->
+        app.theme.applyStyle(R.style.Theme_Material3_Light, true)
+        app.run(TestViewPager())
+    }
 }
 
 class TestViewPager : Fragment() {
@@ -48,10 +52,20 @@ class TestViewPager : Fragment() {
         container: ViewGroup?,
         savedInstanceState: DataSet?
     ): View {
+        container!!.layoutDirection = View.LAYOUT_DIRECTION_RTL
         return LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            addView(ViewPager(context).apply pager@{
+            addView(View(context).apply {
+                val divider = ShapeDrawable()
+                divider.shape = ShapeDrawable.HLINE
+                divider.setSize(-1, dp(1F))
+                val value = TypedValue()
+                context.theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true)
+                divider.setColor(value.data)
+                background = divider
+            }, LinearLayout.LayoutParams(dp(960F), dp(1F)))
+            addView(ViewPager(context).apply {
                 pager = this
                 adapter = MyAdapter()
                 isFocusableInTouchMode = true
@@ -60,18 +74,23 @@ class TestViewPager : Fragment() {
                 onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
                     Log.info(null, "{} focus change: {}", v, hasFocus)
                 }
-                addView(LinearPagerIndicator(context).apply {
-                    setPager(this@pager)
+                /*addView(TabLayout(context).apply {
+                    tabMode = TabLayout.MODE_AUTO
                 }, ViewPager.LayoutParams().apply {
-                    height = dp(30F)
-                    isDecor = true
-                    gravity = Gravity.CENTER_HORIZONTAL
-                })
+                    width = MATCH_PARENT
+                    height = WRAP_CONTENT
+                    gravity = Gravity.TOP
+                })*/
                 setPadding(dp(8F), 0, dp(8F), 0)
                 pageMargin = dp(16F)
-            }, LinearLayout.LayoutParams(dp(480F), dp(360F)).apply {
+            }, LinearLayout.LayoutParams(dp(960F), dp(540F)).apply {
                 gravity = Gravity.CENTER
             })
+            addView(TabLayout(context).apply {
+                setupWithViewPager(pager)
+                tabMode = TabLayout.MODE_AUTO
+                layoutParams = LinearLayout.LayoutParams(dp(960F), WRAP_CONTENT)
+            }, 0)
             addView(Button(context, null, null, R.style.Widget_Material3_Button_OutlinedButton).apply {
                 text = "Increment count"
                 setOnClickListener {
@@ -161,5 +180,9 @@ class TestViewPager : Fragment() {
                 1.0F
             else 0.5F
         }*/
+
+        override fun getPageTitle(position: Int): CharSequence {
+            return "Page $position"
+        }
     }
 }
