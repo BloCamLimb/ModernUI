@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,6 +41,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -2846,9 +2847,23 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
                         // fling further.
                         boolean flingVelocity = Math.abs(initialVelocity) > mMinimumVelocity;
                         if (flingVelocity && !mEdgeGlowTop.isFinished()) {
-                            mEdgeGlowTop.onAbsorb(initialVelocity);
+                            if (shouldAbsorb(mEdgeGlowTop, initialVelocity)) {
+                                mEdgeGlowTop.onAbsorb(initialVelocity);
+                            } else {
+                                if (mFlingRunnable == null) {
+                                    mFlingRunnable = new FlingRunnable();
+                                }
+                                mFlingRunnable.start(-initialVelocity);
+                            }
                         } else if (flingVelocity && !mEdgeGlowBottom.isFinished()) {
-                            mEdgeGlowBottom.onAbsorb(-initialVelocity);
+                            if (shouldAbsorb(mEdgeGlowBottom, -initialVelocity)) {
+                                mEdgeGlowBottom.onAbsorb(-initialVelocity);
+                            } else {
+                                if (mFlingRunnable == null) {
+                                    mFlingRunnable = new FlingRunnable();
+                                }
+                                mFlingRunnable.start(-initialVelocity);
+                            }
                         } else if (flingVelocity
                                 && !((mFirstPosition == 0
                                 && firstChildTop == contentTop - mOverscrollDistance)
@@ -2914,6 +2929,31 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         recycleVelocityTracker();
     }
 
+    /**
+     * Returns true if edgeEffect should call onAbsorb() with veclocity or false if it should
+     * animate with a fling. It will animate with a fling if the velocity will remove the
+     * EdgeEffect through its normal operation.
+     *
+     * @param edgeEffect The EdgeEffect that might absorb the velocity.
+     * @param velocity The velocity of the fling motion
+     * @return true if the velocity should be absorbed or false if it should be flung.
+     */
+    private boolean shouldAbsorb(EdgeEffect edgeEffect, int velocity) {
+        if (velocity > 0) {
+            return true;
+        }
+        // Not used by Modern UI, the following branch should return false
+        float distance = 0;//edgeEffect.getDistance() * getHeight();
+
+        // This is flinging without the spring, so let's see if it will fling past the overscroll
+        if (mFlingRunnable == null) {
+            mFlingRunnable = new FlingRunnable();
+        }
+        float flingDistance = mFlingRunnable.getSplineFlingDistance(-velocity);
+
+        return flingDistance < distance;
+    }
+
     private boolean shouldDisplayEdgeEffects() {
         return getOverScrollMode() != OVER_SCROLL_NEVER;
     }
@@ -2965,7 +3005,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
                 final float axisValue = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
                 final int delta = Math.round(axisValue * mVerticalScrollFactor);
                 if (delta != 0) {
-                    if (!trackMotionScroll(delta, delta)) {
+                    if (Math.abs(axisValue) > 0.9 && Math.abs(delta) * 6 > mMinimumVelocity) {
+                        int deltaY = MathUtil.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
+                        fling(-deltaY);
+                        return true;
+                    } else if (!trackMotionScroll(delta, delta)) {
                         return true;
                     }
                 }
@@ -3291,6 +3335,10 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             mScroller = new OverScroller();
         }
 
+        float getSplineFlingDistance(int velocity) {
+            return (float) mScroller.getSplineFlingDistance(velocity);
+        }
+
         // Use AbsListView#fling(int) instead
         void start(int initialVelocity) {
             int initialY = initialVelocity < 0 ? Integer.MAX_VALUE : 0;
@@ -3394,6 +3442,8 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
                     }
 
                     if (mItemCount == 0 || getChildCount() == 0) {
+                        mEdgeGlowBottom.onRelease();
+                        mEdgeGlowTop.onRelease();
                         endFling();
                         return;
                     }
