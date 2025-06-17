@@ -235,6 +235,13 @@ public class ResourcesBuilder {
             mParent = parent;
         }
 
+        public void addNull(@AttrRes String attr, boolean empty) {
+            attr = dedupKeyString(attr);
+            mEntries.add(new Entry(attr, TypedValue.TYPE_NULL,
+                    empty ? TypedValue.DATA_NULL_EMPTY : TypedValue.DATA_NULL_UNDEFINED)
+            );
+        }
+
         public void addDimension(@AttrRes String attr, float value, int units) {
             attr = dedupKeyString(attr);
             mEntries.add(new Entry(attr, TypedValue.TYPE_DIMENSION,

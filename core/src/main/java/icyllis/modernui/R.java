@@ -289,6 +289,31 @@ public final class R {
         public static final String textAppearanceLabelMedium = "textAppearanceLabelMedium";
         public static final String textAppearanceLabelSmall = "textAppearanceLabelSmall";
 
+        public static final String tabStyle = "tabStyle";
+        public static final String tabSecondaryStyle = "tabSecondaryStyle";
+        public static final String tabIndicator = "tabIndicator";
+        public static final String tabIndicatorColor = "tabIndicatorColor";
+        public static final String tabIndicatorGravity = "tabIndicatorGravity";
+        public static final String tabIndicatorAnimationMode = "tabIndicatorAnimationMode";
+        public static final String tabIndicatorFullWidth = "tabIndicatorFullWidth";
+        public static final String tabPadding = "tabPadding";
+        public static final String tabPaddingStart = "tabPaddingStart";
+        public static final String tabPaddingTop = "tabPaddingTop";
+        public static final String tabPaddingEnd = "tabPaddingEnd";
+        public static final String tabPaddingBottom = "tabPaddingBottom";
+        public static final String tabTextAppearance = "tabTextAppearance";
+        public static final String tabTextColor = "tabTextColor";
+        public static final String tabIconTint = "tabIconTint";
+        public static final String tabRippleColor = "tabRippleColor";
+        public static final String tabIndicatorAnimationDuration = "tabIndicatorAnimationDuration";
+        public static final String tabMinWidth = "tabMinWidth";
+        public static final String tabMaxWidth = "tabMaxWidth";
+        public static final String tabContentStart = "tabContentStart";
+        public static final String tabMode = "tabMode";
+        public static final String tabGravity = "tabGravity";
+        public static final String tabInlineLabel = "tabInlineLabel";
+        public static final String tabUnboundedRipple = "tabUnboundedRipple";
+
         /// INTERNAL BELOW \\\
 
         // Constant IDs for Material package.
@@ -309,9 +334,13 @@ public final class R {
         public static final int edit = 0x01020003;
         public static final int empty = 0x01020004;
         public static final int hint = 0x01020005;
-
+        public static final int icon = 0x01020006;
+        public static final int icon1 = 0x01020007;
+        public static final int icon2 = 0x01020008;
         public static final int input = 0x01020009;
 
+        public static final int text1 = 0x01020014;
+        public static final int text2 = 0x01020015;
         public static final int title = 0x01020016;
         public static final int toggle = 0x01020017;
 
@@ -460,6 +489,13 @@ public final class R {
         public static final ResourceId Widget_Material3_EditText = new ResourceId(ns, type, "Widget.Material3.EditText");
         // unofficial
         public static final ResourceId Widget_Material3_EditText_OutlinedBox = new ResourceId(ns, type, "Widget.Material3.EditText.OutlinedBox");
+
+        public static final ResourceId Widget_Material3_TabLayout = new ResourceId(ns, type, "Widget.Material3.TabLayout");
+        /**
+         * Similar to {@link #Widget_Material3_TabLayout}, but has no background.
+         */
+        public static final ResourceId Widget_Material3_TabLayout_OnSurface = new ResourceId(ns, type, "Widget.Material3.TabLayout.OnSurface");
+        public static final ResourceId Widget_Material3_TabLayout_Secondary = new ResourceId(ns, type, "Widget.Material3.TabLayout.Secondary");
     }
 
     static {

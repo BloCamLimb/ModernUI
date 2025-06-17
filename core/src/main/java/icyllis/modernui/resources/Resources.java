@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.StyleableRes;
+import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.AssetManager.ResolvedBag;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
@@ -245,6 +246,11 @@ public class Resources {
                     }
                 }
                 throw new NotFoundException("Resource is not a drawable: " + value);
+            }
+
+            if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                    && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+                return new ColorDrawable(value.data);
             }
 
             //TODO
