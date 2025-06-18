@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -121,6 +121,14 @@ public final class Bitmap implements AutoCloseable {
         mPixmap = new Pixmap(info, null, addr, rowBytes);
         mRequestPremultiplied = info.alphaType() == ColorInfo.AT_PREMUL;
         var pixels = new Pixels(info.width(), info.height(), null, addr, rowBytes, freeFn);
+        mCleanup = Core.registerNativeResource(this, pixels);
+        mPixels = pixels;
+    }
+
+    Bitmap(@NonNull Format format, @NonNull Pixmap pixmap, @NonNull Pixels pixels) {
+        mFormat = format;
+        mPixmap = pixmap;
+        mRequestPremultiplied = pixmap.getInfo().alphaType() == ColorInfo.AT_PREMUL;
         mCleanup = Core.registerNativeResource(this, pixels);
         mPixels = pixels;
     }
@@ -1483,6 +1491,35 @@ public final class Bitmap implements AutoCloseable {
                 ", mInfo=" + getInfo() +
                 ", mPixels=" + mPixels +
                 '}';
+    }
+
+    /**
+     * Create a shallow copy of this bitmap, this is equivalent to creating a
+     * shared owner for the pixel memory. You may reinterpret or close the
+     * returned Bitmap without affecting the original Bitmap, but modifications
+     * to the pixel memory will be reflected in all shared owners at the same time.
+     * <p>
+     * Note that since the pixel memory is shared, it is not safe for multiple
+     * owners to modify the pixel memory at the same time, which will further cause
+     * memory safety issues.
+     *
+     * @return a shallow copy of bitmap
+     * @throws IllegalStateException this bitmap is already closed
+     */
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @NonNull
+    public Bitmap clone() {
+        Pixels pixels;
+        try {
+            // this operation is not atomic
+            pixels = RefCnt.create(mPixels);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+        if (pixels == null) {
+            throw new IllegalStateException("Cannot clone a recycled bitmap!");
+        }
+        return new Bitmap(mFormat, mPixmap, pixels);
     }
 
     /**
