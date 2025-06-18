@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,6 +62,11 @@ public class Image implements AutoCloseable {
     private Image(@SharedPtr icyllis.arc3d.sketch.Image image) {
         mCleanup = Core.registerNativeResource(this, image);
         mImage = Objects.requireNonNull(image);
+    }
+
+    private Image(@SharedPtr icyllis.arc3d.sketch.Image image, int density) {
+        this(image);
+        mDensity = density;
     }
 
     /**
@@ -141,6 +146,8 @@ public class Image implements AutoCloseable {
      * Creates a new image object representing the target resource image.
      * You should use a single image as the UI texture to avoid each icon creating its own image.
      * Underlying resources are automatically released.
+     * <p>
+     * Do NOT close the returned Image.
      *
      * @param namespace the application namespace
      * @param entry     the sub path to the resource
@@ -308,6 +315,9 @@ public class Image implements AutoCloseable {
      * will not be able to operate this object, and its GPU resource will be reclaimed
      * as soon as possible after use.
      * <p>
+     * If this Image object was not created by you (for example, from Resources),
+     * then you must <em>not</em> call this method.
+     * <p>
      * When this object becomes phantom-reachable, the system will automatically
      * do this cleanup operation.
      */
@@ -326,6 +336,38 @@ public class Image implements AutoCloseable {
      */
     public boolean isClosed() {
         return mImage == null;
+    }
+
+    @Override
+    public String toString() {
+        return "Image{" +
+                "mImage=" + mImage +
+                ", mDensity=" + mDensity +
+                '}';
+    }
+
+    /**
+     * Create a shallow copy of this image, this is equivalent to creating a
+     * shared owner for the image. You may change the density or close the
+     * returned Image without affecting the original Image.
+     *
+     * @return a shallow copy of image
+     * @throws IllegalStateException this image is already closed
+     */
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @NonNull
+    public final Image clone() {
+        icyllis.arc3d.sketch.Image image;
+        try {
+            // this operation is not atomic
+            image = RefCnt.create(mImage);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+        if (image == null) {
+            throw new IllegalStateException("Cannot clone a closed image!");
+        }
+        return new Image(image, mDensity);
     }
 
     /**
