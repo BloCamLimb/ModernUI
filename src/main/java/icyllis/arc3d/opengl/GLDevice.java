@@ -215,13 +215,17 @@ public final class GLDevice extends Device {
                     glInterface = impl;
                 }
                 default -> {
-                    options.mLogger.error("Failed to create GLDevice: invalid capabilities {}", capabilities);
+                    if (options.mLogger != null) {
+                        options.mLogger.error("Failed to create GLDevice: invalid capabilities {}", capabilities);
+                    }
                     return null;
                 }
             }
             return new GLDevice(options, caps, glInterface);
         } catch (Exception e) {
-            options.mLogger.error("Failed to create GLDevice", e);
+            if (options.mLogger != null) {
+                options.mLogger.error("Failed to create GLDevice", e);
+            }
             return null;
         }
     }
