@@ -19,8 +19,8 @@
 
 package icyllis.arc3d.engine;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
-import org.slf4j.helpers.NOPLogger;
 
 /**
  * Holds the options for creating a {@link ImmediateContext}, all fields should remain unchanged
@@ -101,7 +101,8 @@ public final class ContextOptions {
      * If present, use this logger to send info/warning/error message that generated
      * by Arc3D engine.
      */
-    public Logger mLogger = NOPLogger.NOP_LOGGER;
+    @Nullable
+    public Logger mLogger;
 
     /**
      * Specifies the number of samples Engine should use when performing internal draws with MSAA
