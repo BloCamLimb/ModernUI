@@ -19,93 +19,8 @@
 
 package icyllis.arc3d.core;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
-/**
- * <p>The <code>Color</code> class provides methods for creating, converting and
- * manipulating colors.</p>
- *
- * <h3>Color int</h3>
- * <p>Color int is the most common representation.</p>
- *
- * <p>A color int always defines a color in the sRGB color space using 4 components
- * packed in a single 32 bit integer value:</p>
- *
- * <table summary="Color int definition">
- *     <tr>
- *         <th>Component</th><th>Name</th><th>Size</th><th>Range</th>
- *     </tr>
- *     <tr><td>A</td><td>Alpha</td><td>8 bits</td><td>\([0..255]\)</td></tr>
- *     <tr><td>R</td><td>Red</td><td>8 bits</td><td>\([0..255]\)</td></tr>
- *     <tr><td>G</td><td>Green</td><td>8 bits</td><td>\([0..255]\)</td></tr>
- *     <tr><td>B</td><td>Blue</td><td>8 bits</td><td>\([0..255]\)</td></tr>
- * </table>
- *
- * <p>The components in this table are listed in encoding order (see below),
- * which is why color ints are called ARGB colors.</p>
- *
- * <h4>Usage in code</h4>
- * <p>To avoid confusing color ints with arbitrary integer values, it is a
- * good practice to annotate them with the <code>@ColorInt</code> annotation.</p>
- *
- * <h4>Encoding</h4>
- * <p>The four components of a color int are encoded in the following way:</p>
- * <pre class="prettyprint">
- * int color = (A &amp; 0xff) &lt;&lt; 24 | (R &amp; 0xff) &lt;&lt; 16 | (G &amp; 0xff) &lt;&lt; 8 | (B &amp; 0xff);
- * </pre>
- *
- * <p>Because of this encoding, color ints can easily be described as an integer
- * constant in source. For instance, opaque blue is <code>0xff0000ff</code>
- * and yellow is <code>0xffffff00</code>.</p>
- *
- * <p>To easily encode color ints, it is recommended to use the static methods
- * {@link #argb(int, int, int, int)} and {@link #rgb(int, int, int)}. The second
- * method omits the alpha component and assumes the color is opaque (alpha is 255).
- * As a convenience this class also offers methods to encode color ints from components
- * defined in the \([0..1]\) range: {@link #argb(float, float, float, float)} and
- * {@link #rgb(float, float, float)}.</p>
- *
- * <h4>Decoding</h4>
- * <p>The four ARGB components can be individually extracted from a color int
- * using the following expressions:</p>
- * <pre class="prettyprint">
- * int A = (color >> 24) &amp; 0xff; // or color >>> 24
- * int R = (color >> 16) &amp; 0xff;
- * int G = (color >>  8) &amp; 0xff;
- * int B = (color      ) &amp; 0xff;
- * </pre>
- *
- * <p>This class offers convenience methods to easily extract these components:</p>
- * <ul>
- *     <li>{@link #alpha(int)} to extract the alpha component</li>
- *     <li>{@link #red(int)} to extract the red component</li>
- *     <li>{@link #green(int)} to extract the green component</li>
- *     <li>{@link #blue(int)} to extract the blue component</li>
- * </ul>
- *
- * <h3>Color4f</h3>
- * <p>Color4f is a representation of RGBA color values in the sRGB color space,
- * holding four floating-point components, to store colors with more precision than color
- * ints. Color components are always in a known order. RGB components may be premultiplied
- * by alpha or not, but public API always uses un-premultiplied colors.</p>
- *
- * <h3>Alpha and transparency</h3>
- * <p>The alpha component of a color defines the level of transparency of a
- * color. When the alpha component is 0, the color is completely transparent.
- * When the alpha is component is 1 (in the \([0..1]\) range) or 255 (in the
- * \([0..255]\) range), the color is completely opaque.</p>
- *
- * <p>The color representations described above do not use pre-multiplied
- * color components (a pre-multiplied color component is a color component
- * that has been multiplied by the value of the alpha component).
- * For instance, the color int representation of opaque red is
- * <code>0xffff0000</code>. For semi-transparent (50%) red, the
- * representation becomes <code>0x80ff0000</code>. The equivalent color
- * instance representations would be <code>(1.0, 0.0, 0.0, 1.0)</code>
- * and <code>(1.0, 0.0, 0.0, 0.5)</code>.</p>
- */
-@SuppressWarnings("unused")
 public final class Color {
 
     /**
@@ -329,290 +244,7 @@ public final class Color {
             COLOR_CHANNEL_FLAGS_RGB = COLOR_CHANNEL_FLAGS_RG | COLOR_CHANNEL_FLAG_BLUE,
             COLOR_CHANNEL_FLAGS_RGBA = COLOR_CHANNEL_FLAGS_RGB | COLOR_CHANNEL_FLAG_ALPHA;
 
-    @ApiStatus.Internal
-    public float
-            mR,
-            mG,
-            mB,
-            mA;
-
-    /**
-     * Creates a new transparent <code>Color</code> instance in the sRGB color space.
-     */
-    public Color() {
-    }
-
-    /**
-     * Creates a new <code>Color</code> instance from an ARGB color int.
-     * The resulting color is in the sRGB color space.
-     *
-     * @param color the ARGB color int to create a <code>Color</code> from
-     */
-    public Color(@ColorInt int color) {
-        mR = ((color >> 16) & 0xff) / 255.0f;
-        mG = ((color >> 8) & 0xff) / 255.0f;
-        mB = (color & 0xff) / 255.0f;
-        mA = (color >>> 24) / 255.0f;
-    }
-
-    /**
-     * Creates a new <code>Color</code> instance in the sRGB color space.
-     *
-     * @param r the value of the red channel, must be in [0..1] range
-     * @param g the value of the green channel, must be in [0..1] range
-     * @param b the value of the blue channel, must be in [0..1] range
-     * @param a the value of the alpha channel, must be in [0..1] range
-     */
-    public Color(float r, float g, float b, float a) {
-        mR = r;
-        mG = g;
-        mB = b;
-        mA = a;
-    }
-
-    /**
-     * Creates a new <code>Color</code> instance from an existing color instance.
-     *
-     * @param color an existing color instance to create a new color from
-     */
-    public Color(Color color) {
-        mR = color.mR;
-        mG = color.mG;
-        mB = color.mB;
-        mA = color.mA;
-    }
-
-    /**
-     * Set this color values from an ARGB color int in the sRGB color space.
-     *
-     * @param color the ARGB color int to set this from
-     */
-    public void set(@ColorInt int color) {
-        mR = ((color >> 16) & 0xff) / 255.0f;
-        mG = ((color >> 8) & 0xff) / 255.0f;
-        mB = (color & 0xff) / 255.0f;
-        mA = (color >>> 24) / 255.0f;
-    }
-
-    /**
-     * Set this color values in the sRGB color space.
-     *
-     * @param r the value of the red channel, must be in [0..1] range
-     * @param g the value of the green channel, must be in [0..1] range
-     * @param b the value of the blue channel, must be in [0..1] range
-     * @param a the value of the alpha channel, must be in [0..1] range
-     */
-    public void set(float r, float g, float b, float a) {
-        mR = r;
-        mG = g;
-        mB = b;
-        mA = a;
-    }
-
-    /**
-     * Set this color values from an existing color instance.
-     *
-     * @param color an existing color instance
-     */
-    public void set(Color color) {
-        mR = color.mR;
-        mG = color.mG;
-        mB = color.mB;
-        mA = color.mA;
-    }
-
-    /**
-     * Converts this color to an ARGB color int. A color int is always in
-     * the sRGB color space. This implies a color space conversion is applied if needed.
-     *
-     * @return an ARGB color in the sRGB color space
-     */
-    @ColorInt
-    public int toArgb() {
-        return ((int) (mA * 255.0f + 0.5f) << 24) |
-                ((int) (mR * 255.0f + 0.5f) << 16) |
-                ((int) (mG * 255.0f + 0.5f) << 8) |
-                (int) (mB * 255.0f + 0.5f);
-    }
-
-    /**
-     * Returns the value of the red component in the range \([0..1]\).
-     *
-     * @see #alpha()
-     * @see #green()
-     * @see #blue()
-     */
-    public float red() {
-        return mR;
-    }
-
-    /**
-     * Returns the value of the green component in the range \([0..1]\).
-     *
-     * @see #alpha()
-     * @see #red()
-     * @see #blue()
-     */
-    public float green() {
-        return mG;
-    }
-
-    /**
-     * Returns the value of the blue component in the range \([0..1]\).
-     *
-     * @see #alpha()
-     * @see #red()
-     * @see #green()
-     */
-    public float blue() {
-        return mB;
-    }
-
-    /**
-     * Returns the value of the alpha component in the range \([0..1]\).
-     *
-     * @see #red()
-     * @see #green()
-     * @see #blue()
-     */
-    public float alpha() {
-        return mA;
-    }
-
-    /**
-     * Sets the value of the red component in the range \([0..1]\).
-     *
-     * @see #alpha(float)
-     * @see #green(float)
-     * @see #blue(float)
-     */
-    public void red(float red) {
-        mR = red;
-    }
-
-    /**
-     * Sets the value of the green component in the range \([0..1]\).
-     *
-     * @see #alpha(float)
-     * @see #red(float)
-     * @see #blue(float)
-     */
-    public void green(float green) {
-        mG = green;
-    }
-
-    /**
-     * Sets the value of the blue component in the range \([0..1]\).
-     *
-     * @see #alpha(float)
-     * @see #red(float)
-     * @see #green(float)
-     */
-    public void blue(float blue) {
-        mB = blue;
-    }
-
-    /**
-     * Returns the value of the alpha component in the range \([0..1]\).
-     *
-     * @see #red(float)
-     * @see #green(float)
-     * @see #blue(float)
-     */
-    public void alpha(float alpha) {
-        mA = alpha;
-    }
-
-    /**
-     * Returns true if the color is an opaque color (i.e. alpha() == 1.0f).
-     *
-     * @return true if the color is opaque
-     */
-    public boolean isOpaque() {
-        return mA == 1.0f;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Color color = (Color) o;
-        return Float.floatToIntBits(color.mR) == Float.floatToIntBits(mR) &&
-                Float.floatToIntBits(color.mG) == Float.floatToIntBits(mG) &&
-                Float.floatToIntBits(color.mB) == Float.floatToIntBits(mB) &&
-                Float.floatToIntBits(color.mA) == Float.floatToIntBits(mA);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Float.floatToIntBits(mR);
-        result = 31 * result + Float.floatToIntBits(mG);
-        result = 31 * result + Float.floatToIntBits(mB);
-        result = 31 * result + Float.floatToIntBits(mA);
-        return result;
-    }
-
-    /**
-     * <p>Returns a string representation of the object. This method returns
-     * a string equal to the value of:</p>
-     *
-     * <pre class="prettyprint">
-     * "Color(" + r + ", " + g + ", " + b + ", " + a + ')'
-     * </pre>
-     *
-     * <p>For instance, the string representation of opaque black in the sRGB
-     * color space is equal to the following value:</p>
-     *
-     * <pre>
-     * Color(0.0, 0.0, 0.0, 1.0)
-     * </pre>
-     *
-     * @return A non-null string representation of the object
-     */
-    @NonNull
-    @Override
-    public String toString() {
-        return "Color(" + mR +
-                ", " + mG +
-                ", " + mB +
-                ", " + mA +
-                ')';
-    }
-
-    /**
-     * </p>Parse the color string, and return the corresponding color-int.
-     * If the string cannot be parsed, throws an IllegalArgumentException
-     * exception. Supported formats are:</p>
-     *
-     * <ul>
-     *   <li><code>#RRGGBB</code></li>
-     *   <li><code>#AARRGGBB</code></li>
-     *   <li><code>0xRRGGBB</code></li>
-     *   <li><code>0xAARRGGBB</code></li>
-     * </ul>
-     */
-    @ColorInt
-    public static int parseColor(@NonNull String s) {
-        if (s.charAt(0) == '#') {
-            int color = Integer.parseUnsignedInt(s.substring(1), 16);
-            if (s.length() == 7) {
-                // Set the alpha value
-                color |= 0xFF000000;
-            } else if (s.length() != 9) {
-                throw new IllegalArgumentException("Unknown color: " + s);
-            }
-            return color;
-        } else if (s.startsWith("0x")) { // do not support upper case
-            int color = Integer.parseUnsignedInt(s.substring(2), 16);
-            if (s.length() == 8) {
-                // Set the alpha value
-                color |= 0xFF000000;
-            } else if (s.length() != 10) {
-                throw new IllegalArgumentException("Unknown color: " + s);
-            }
-            return color;
-        }
-        throw new IllegalArgumentException("Unknown color prefix: " + s);
+    private Color() {
     }
 
     /**
@@ -683,8 +315,8 @@ public final class Color {
      * @return RGB equivalent to HSV, without alpha
      */
     public static int HSVToColor(float h, float s, float v) {
-        s = MathUtil.clamp(s, 0.0f, 1.0f);
-        v = MathUtil.clamp(v, 0.0f, 1.0f);
+        s = MathUtil.pin(s, 0.0f, 1.0f);
+        v = MathUtil.pin(v, 0.0f, 1.0f);
 
         if (s <= 1.0f / 1024.0f) {
             int i = (int) (v * 255.0f + 0.5f);
@@ -749,7 +381,7 @@ public final class Color {
      * @param hsv three element array which holds the input HSV components
      * @return RGB equivalent to HSV, without alpha
      */
-    public static int HSVToColor(float[] hsv) {
+    public static int HSVToColor(float @NonNull[] hsv) {
         return HSVToColor(hsv[0], hsv[1], hsv[2]);
     }
 
@@ -785,7 +417,7 @@ public final class Color {
      *
      * @param col the color components
      */
-    public static void GammaToLinear(float[] col) {
+    public static void GammaToLinear(float @NonNull[] col) {
         col[0] = GammaToLinear(col[0]);
         col[1] = GammaToLinear(col[1]);
         col[2] = GammaToLinear(col[2]);
@@ -797,7 +429,7 @@ public final class Color {
      *
      * @param col the color components
      */
-    public static void LinearToGamma(float[] col) {
+    public static void LinearToGamma(float @NonNull[] col) {
         col[0] = LinearToGamma(col[0]);
         col[1] = LinearToGamma(col[1]);
         col[2] = LinearToGamma(col[2]);
