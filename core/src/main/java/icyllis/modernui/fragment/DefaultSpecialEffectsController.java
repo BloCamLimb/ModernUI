@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2019 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.fragment;
@@ -21,8 +38,13 @@ package icyllis.modernui.fragment;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
+import icyllis.modernui.animation.AnimatorSet;
+import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.PropertyValuesHolder;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.CancellationSignal;
 import icyllis.modernui.fragment.SpecialEffectsController.Operation.State;
 import icyllis.modernui.graphics.Rect;
@@ -36,8 +58,6 @@ import icyllis.modernui.view.ViewGroup;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -51,12 +71,12 @@ import static icyllis.modernui.ModernUI.LOGGER;
  */
 class DefaultSpecialEffectsController extends SpecialEffectsController {
 
-    DefaultSpecialEffectsController(@Nonnull ViewGroup container) {
+    DefaultSpecialEffectsController(@NonNull ViewGroup container) {
         super(container);
     }
 
     @Override
-    void executeOperations(@Nonnull List<Operation> operations, boolean isPop) {
+    void executeOperations(@NonNull List<Operation> operations, boolean isPop) {
         // Shared element transitions are done between the first fragment leaving and
         // the last fragment coming in. Finding these operations is the first priority
         Operation firstOut = null;
@@ -131,9 +151,9 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
         }
     }
 
-    private void startAnimations(@Nonnull List<AnimationInfo> animationInfos,
-                                 @Nonnull List<Operation> awaitingContainerChanges,
-                                 @Nonnull Object2BooleanMap<Operation> startedTransitions) {
+    private void startAnimations(@NonNull List<AnimationInfo> animationInfos,
+                                 @NonNull List<Operation> awaitingContainerChanges,
+                                 @NonNull Object2BooleanMap<Operation> startedTransitions) {
         final ViewGroup container = getContainer();
 
         for (final AnimationInfo animationInfo : animationInfos) {
@@ -173,7 +193,7 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
             container.startViewTransition(viewToAnimate);
             animator.addListener(new AnimatorListener() {
                 @Override
-                public void onAnimationEnd(@Nonnull Animator anim) {
+                public void onAnimationEnd(@NonNull Animator anim) {
                     container.endViewTransition(viewToAnimate);
                     if (isHideOperation) {
                         // Specifically for hide operations with Animator, we can't
@@ -205,9 +225,9 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
         }
     }
 
-    @Nonnull
+    @NonNull
     private Object2BooleanMap<Operation> startTransitions(
-            @Nonnull List<TransitionInfo> transitionInfos, @Nonnull List<Operation> awaitingContainerChanges,
+            @NonNull List<TransitionInfo> transitionInfos, @NonNull List<Operation> awaitingContainerChanges,
             final boolean isPop, @Nullable final Operation firstOut, @Nullable final Operation lastIn) {
         final Object2BooleanMap<Operation> startedTransitions = new Object2BooleanOpenHashMap<>();
         // First verify that we can run all transitions together
@@ -624,8 +644,8 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
      * @param sharedElementViews The map of shared element transitions that should be filtered.
      * @param transitionNames    The set of transition names to be retained.
      */
-    void retainMatchingViews(@Nonnull ArrayMap<String, View> sharedElementViews,
-                             @Nonnull Collection<String> transitionNames) {
+    void retainMatchingViews(@NonNull ArrayMap<String, View> sharedElementViews,
+                             @NonNull Collection<String> transitionNames) {
         sharedElementViews.entrySet().removeIf(entry -> !transitionNames.contains(entry.getValue().getTransitionName()));
     }
 
@@ -637,7 +657,7 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
      *                           {@link ViewGroup#isTransitionGroup()} true.
      * @param view               The base of the view hierarchy to look in.
      */
-    void captureTransitioningViews(@Nonnull ArrayList<View> transitioningViews, View view) {
+    void captureTransitioningViews(@NonNull ArrayList<View> transitioningViews, View view) {
         if (view instanceof ViewGroup viewGroup) {
             if (viewGroup.isTransitionGroup()) {
                 if (!transitioningViews.contains(view)) {
@@ -663,7 +683,7 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
      * Finds all views that have transition names in the hierarchy under the given view and
      * stores them in {@code namedViews} map with the name as the key.
      */
-    void findNamedViews(@Nonnull Map<String, View> namedViews, @Nonnull View view) {
+    void findNamedViews(@NonNull Map<String, View> namedViews, @NonNull View view) {
         String transitionName = view.getTransitionName();
         if (transitionName != null) {
             namedViews.put(transitionName, view);
@@ -679,29 +699,29 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
         }
     }
 
-    static void applyContainerChanges(@Nonnull Operation operation) {
+    static void applyContainerChanges(@NonNull Operation operation) {
         View view = operation.getFragment().mView;
         operation.getFinalState().applyState(view);
     }
 
     private static class SpecialEffectsInfo {
 
-        @Nonnull
+        @NonNull
         private final Operation mOperation;
-        @Nonnull
+        @NonNull
         private final CancellationSignal mSignal;
 
-        SpecialEffectsInfo(@Nonnull Operation operation, @Nonnull CancellationSignal signal) {
+        SpecialEffectsInfo(@NonNull Operation operation, @NonNull CancellationSignal signal) {
             mOperation = operation;
             mSignal = signal;
         }
 
-        @Nonnull
+        @NonNull
         Operation getOperation() {
             return mOperation;
         }
 
-        @Nonnull
+        @NonNull
         CancellationSignal getSignal() {
             return mSignal;
         }
@@ -730,16 +750,62 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
                 fragment_fade_exit;
 
         static {
-            fragment_open_enter = ObjectAnimator.ofFloat(null, View.ALPHA, 0, 1);
-            fragment_open_enter.setInterpolator(TimeInterpolator.DECELERATE_CUBIC);
-            fragment_open_enter.setDuration(300);
+            TimeInterpolator alpha_interpolator = t -> t < 0.5f ? 0 : 0.5f + 0.5f * t;
+            {
+                var alpha = ObjectAnimator.ofFloat(null, View.ALPHA, 0, 1);
+                alpha.setInterpolator(alpha_interpolator);
+                alpha.setDuration(100);
+                var scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 0.85f, 1.0f);
+                var scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.85f, 1.0f);
+                var scale = ObjectAnimator.ofPropertyValuesHolder(null, scaleX, scaleY);
+                scale.setInterpolator(MotionEasingUtils.MOTION_EASING_EMPHASIZED);
+                scale.setDuration(300);
+                var anim = new AnimatorSet();
+                anim.playTogether(alpha, scale);
+                fragment_open_enter = anim;
+            }
 
-            fragment_open_exit = ObjectAnimator.ofFloat(null, View.ALPHA, 1, 0);
-            fragment_open_exit.setInterpolator(TimeInterpolator.DECELERATE_CUBIC);
-            fragment_open_exit.setDuration(300);
+            {
+                var alpha = ObjectAnimator.ofFloat(null, View.ALPHA, 1, 0);
+                alpha.setInterpolator(alpha_interpolator);
+                alpha.setDuration(100);
+                var scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, 1.15f);
+                var scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, 1.15f);
+                var scale = ObjectAnimator.ofPropertyValuesHolder(null, scaleX, scaleY);
+                scale.setInterpolator(MotionEasingUtils.MOTION_EASING_EMPHASIZED);
+                scale.setDuration(300);
+                var anim = new AnimatorSet();
+                anim.playTogether(alpha, scale);
+                fragment_open_exit = anim;
+            }
 
-            fragment_close_enter = fragment_open_enter;
-            fragment_close_exit = fragment_open_exit;
+            {
+                var alpha = ObjectAnimator.ofFloat(null, View.ALPHA, 0, 1);
+                alpha.setInterpolator(alpha_interpolator);
+                alpha.setDuration(100);
+                var scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.1f, 1.0f);
+                var scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.1f, 1.0f);
+                var scale = ObjectAnimator.ofPropertyValuesHolder(null, scaleX, scaleY);
+                scale.setInterpolator(MotionEasingUtils.MOTION_EASING_EMPHASIZED);
+                scale.setDuration(300);
+                var anim = new AnimatorSet();
+                anim.playTogether(alpha, scale);
+                fragment_close_enter = anim;
+            }
+
+            {
+                var alpha = ObjectAnimator.ofFloat(null, View.ALPHA, 1, 0);
+                alpha.setInterpolator(alpha_interpolator);
+                alpha.setDuration(100);
+                var scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, 0.9f);
+                var scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, 0.9f);
+                var scale = ObjectAnimator.ofPropertyValuesHolder(null, scaleX, scaleY);
+                scale.setInterpolator(MotionEasingUtils.MOTION_EASING_EMPHASIZED);
+                scale.setDuration(300);
+                var anim = new AnimatorSet();
+                anim.playTogether(alpha, scale);
+                fragment_close_exit = anim;
+            }
 
             fragment_fade_enter = ObjectAnimator.ofFloat(null, View.ALPHA, 0, 1);
             fragment_fade_enter.setInterpolator(TimeInterpolator.DECELERATE_CUBIC);
@@ -755,7 +821,7 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
         @Nullable
         private Animator mAnimator;
 
-        AnimationInfo(@Nonnull Operation operation, @Nonnull CancellationSignal signal,
+        AnimationInfo(@NonNull Operation operation, @NonNull CancellationSignal signal,
                       boolean isPop) {
             super(operation, signal);
             mIsPop = isPop;
@@ -773,7 +839,7 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
         }
 
         @Nullable
-        private static Animator loadAnimator(@Nonnull Fragment fragment, boolean enter, boolean isPop) {
+        private static Animator loadAnimator(@NonNull Fragment fragment, boolean enter, boolean isPop) {
             int transit = fragment.getNextTransition();
             int nextAnim = getNextAnim(fragment, enter, isPop);
             // Clear the Fragment animations
@@ -806,16 +872,8 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
                     case FragmentTransaction.TRANSIT_FRAGMENT_FADE:
                         return enter ? fragment_fade_enter.clone() : fragment_fade_exit.clone();
                     case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN:
-                        /*animAttr = enter
-                                ? toActivityTransitResId(context, android.R.attr.activityOpenEnterAnimation)
-                                : toActivityTransitResId(context, android.R.attr.activityOpenExitAnimation);*/
                         break;
                     case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE:
-                        /*animAttr = enter
-                                ? toActivityTransitResId(context,
-                                android.R.attr.activityCloseEnterAnimation)
-                                : toActivityTransitResId(context,
-                                android.R.attr.activityCloseExitAnimation);*/
                         break;
                 }
             }
@@ -848,8 +906,8 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
         @Nullable
         private final Transition mSharedElementTransition;
 
-        TransitionInfo(@Nonnull Operation operation,
-                       @Nonnull CancellationSignal signal, boolean isPop,
+        TransitionInfo(@NonNull Operation operation,
+                       @NonNull CancellationSignal signal, boolean isPop,
                        boolean providesSharedElementTransition) {
             super(operation, signal);
             if (operation.getFinalState() == Operation.State.VISIBLE) {
