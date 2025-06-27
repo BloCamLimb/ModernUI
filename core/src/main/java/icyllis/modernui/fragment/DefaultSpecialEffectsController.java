@@ -48,6 +48,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.CancellationSignal;
 import icyllis.modernui.fragment.SpecialEffectsController.Operation.State;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.transition.TransitionManager;
 import icyllis.modernui.transition.TransitionSet;
@@ -841,9 +842,9 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
         @Nullable
         private static Animator loadAnimator(@NonNull Fragment fragment, boolean enter, boolean isPop) {
             int transit = fragment.getNextTransition();
-            int nextAnim = getNextAnim(fragment, enter, isPop);
+            var nextAnim = getNextAnim(fragment, enter, isPop);
             // Clear the Fragment animations
-            fragment.setAnimations(0, 0, 0, 0);
+            fragment.setAnimations(null, null, null, null);
             // We do not need to keep up with the removing Fragment after we get its next animation.
             // If transactions do not allow reordering, this will always be true and the visible
             // removing fragment will be cleared. If reordering is allowed, this will only be true
@@ -858,12 +859,12 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
                 return null;
             }
 
-            Animator animator = fragment.onCreateAnimator(transit, enter, nextAnim);
+            Animator animator = fragment.onCreateAnimator(transit, enter, isPop, nextAnim);
             if (animator != null) {
                 return animator;
             }
 
-            if (nextAnim == 0 && transit != 0) {
+            if (nextAnim == null && transit != 0) {
                 switch (transit) {
                     case FragmentTransaction.TRANSIT_FRAGMENT_OPEN:
                         return enter ? fragment_open_enter.clone() : fragment_open_exit.clone();
@@ -878,10 +879,13 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
                 }
             }
 
+            //TODO load nextAnim
+
             return null;
         }
 
-        private static int getNextAnim(Fragment fragment, boolean enter, boolean isPop) {
+        @Nullable
+        private static ResourceId getNextAnim(Fragment fragment, boolean enter, boolean isPop) {
             if (isPop) {
                 if (enter) {
                     return fragment.getPopEnterAnim();

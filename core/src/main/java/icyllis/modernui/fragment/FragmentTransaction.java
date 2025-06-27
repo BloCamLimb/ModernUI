@@ -38,9 +38,11 @@ package icyllis.modernui.fragment;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.lifecycle.Lifecycle;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.intellij.lang.annotations.MagicConstant;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -68,10 +70,10 @@ public abstract class FragmentTransaction {
         int mCmd;
         Fragment mFragment;
         boolean mFromExpandedOp;
-        int mEnterAnim;
-        int mExitAnim;
-        int mPopEnterAnim;
-        int mPopExitAnim;
+        ResourceId mEnterAnim;
+        ResourceId mExitAnim;
+        ResourceId mPopEnterAnim;
+        ResourceId mPopExitAnim;
         Lifecycle.State mOldMaxState;
         Lifecycle.State mCurrentMaxState;
 
@@ -118,10 +120,10 @@ public abstract class FragmentTransaction {
     private final FragmentFactory mFragmentFactory;
 
     ArrayList<Op> mOps = new ArrayList<>();
-    int mEnterAnim;
-    int mExitAnim;
-    int mPopEnterAnim;
-    int mPopExitAnim;
+    ResourceId mEnterAnim;
+    ResourceId mExitAnim;
+    ResourceId mPopEnterAnim;
+    ResourceId mPopExitAnim;
     int mTransition;
     boolean mAddToBackStack;
     boolean mAllowAddToBackStack = true;
@@ -547,8 +549,8 @@ public abstract class FragmentTransaction {
      *              view of the fragment being removed or detached.
      */
     @NonNull
-    public FragmentTransaction setCustomAnimations(int enter, int exit) {
-        return setCustomAnimations(enter, exit, 0, 0);
+    public FragmentTransaction setCustomAnimations(@Nullable ResourceId enter, @Nullable ResourceId exit) {
+        return setCustomAnimations(enter, exit, null, null);
     }
 
     /**
@@ -582,7 +584,8 @@ public abstract class FragmentTransaction {
      *                 {@link FragmentManager#popBackStack()} or similar methods.
      */
     @NonNull
-    public FragmentTransaction setCustomAnimations(int enter, int exit, int popEnter, int popExit) {
+    public FragmentTransaction setCustomAnimations(@Nullable ResourceId enter, @Nullable ResourceId exit,
+                                                   @Nullable ResourceId popEnter, @Nullable ResourceId popExit) {
         mEnterAnim = enter;
         mExitAnim = exit;
         mPopEnterAnim = popEnter;
@@ -599,8 +602,8 @@ public abstract class FragmentTransaction {
      *                      appearing Fragment.
      * @param name          The transitionName for a View in an appearing Fragment to match to the shared
      *                      element.
-     * @see Fragment#setSharedElementReturnTransition(Object)
-     * @see Fragment#setSharedElementEnterTransition(Object)
+     * @see Fragment#setSharedElementReturnTransition(icyllis.modernui.transition.Transition)
+     * @see Fragment#setSharedElementEnterTransition(icyllis.modernui.transition.Transition)
      */
     @NonNull
     public FragmentTransaction addSharedElement(@NonNull View sharedElement, @NonNull String name) {
@@ -631,7 +634,8 @@ public abstract class FragmentTransaction {
      * {@link #TRANSIT_FRAGMENT_CLOSE}, or {@link #TRANSIT_FRAGMENT_FADE}.
      */
     @NonNull
-    public FragmentTransaction setTransition(int transition) {
+    public FragmentTransaction setTransition(@MagicConstant(intValues = {TRANSIT_NONE, TRANSIT_FRAGMENT_OPEN,
+            TRANSIT_FRAGMENT_CLOSE, TRANSIT_FRAGMENT_FADE}) int transition) {
         mTransition = transition;
         return this;
     }

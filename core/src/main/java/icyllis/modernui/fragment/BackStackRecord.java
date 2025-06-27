@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2020-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,17 +14,34 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2018 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.LogWriter;
 import icyllis.modernui.lifecycle.Lifecycle;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 import org.apache.logging.log4j.Level;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
@@ -42,12 +59,12 @@ final class BackStackRecord extends FragmentTransaction implements
     int mIndex = -1;
     boolean mBeingSaved = false;
 
-    BackStackRecord(@Nonnull FragmentManager manager) {
+    BackStackRecord(@NonNull FragmentManager manager) {
         super(manager.getFragmentFactory());
         mManager = manager;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(128);
@@ -83,19 +100,19 @@ final class BackStackRecord extends FragmentTransaction implements
                 writer.print("mTransition=#");
                 writer.print(Integer.toHexString(mTransition));
             }
-            if (mEnterAnim != 0 || mExitAnim != 0) {
+            if (mEnterAnim != null || mExitAnim != null) {
                 writer.print(prefix);
                 writer.print("mEnterAnim=#");
-                writer.print(Integer.toHexString(mEnterAnim));
+                writer.print((mEnterAnim));
                 writer.print(" mExitAnim=#");
-                writer.println(Integer.toHexString(mExitAnim));
+                writer.println((mExitAnim));
             }
-            if (mPopEnterAnim != 0 || mPopExitAnim != 0) {
+            if (mPopEnterAnim != null || mPopExitAnim != null) {
                 writer.print(prefix);
                 writer.print("mPopEnterAnim=#");
-                writer.print(Integer.toHexString(mPopEnterAnim));
+                writer.print((mPopEnterAnim));
                 writer.print(" mPopExitAnim=#");
-                writer.println(Integer.toHexString(mPopExitAnim));
+                writer.println((mPopExitAnim));
             }
         }
 
@@ -127,19 +144,19 @@ final class BackStackRecord extends FragmentTransaction implements
                 writer.print(" ");
                 writer.println(op.mFragment);
                 if (full) {
-                    if (op.mEnterAnim != 0 || op.mExitAnim != 0) {
+                    if (op.mEnterAnim != null || op.mExitAnim != null) {
                         writer.print(prefix);
                         writer.print("enterAnim=#");
-                        writer.print(Integer.toHexString(op.mEnterAnim));
+                        writer.print((op.mEnterAnim));
                         writer.print(" exitAnim=#");
-                        writer.println(Integer.toHexString(op.mExitAnim));
+                        writer.println((op.mExitAnim));
                     }
-                    if (op.mPopEnterAnim != 0 || op.mPopExitAnim != 0) {
+                    if (op.mPopEnterAnim != null || op.mPopExitAnim != null) {
                         writer.print(prefix);
                         writer.print("popEnterAnim=#");
-                        writer.print(Integer.toHexString(op.mPopEnterAnim));
+                        writer.print((op.mPopEnterAnim));
                         writer.print(" popExitAnim=#");
-                        writer.println(Integer.toHexString(op.mPopExitAnim));
+                        writer.println((op.mPopExitAnim));
                     }
                 }
             }
@@ -158,14 +175,14 @@ final class BackStackRecord extends FragmentTransaction implements
     }
 
     @Override
-    void doAddOp(int containerViewId, @Nonnull Fragment fragment, @Nullable String tag, int cmd) {
+    void doAddOp(int containerViewId, @NonNull Fragment fragment, @Nullable String tag, int cmd) {
         super.doAddOp(containerViewId, fragment, tag, cmd);
         fragment.mFragmentManager = mManager;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public FragmentTransaction remove(@Nonnull Fragment fragment) {
+    public FragmentTransaction remove(@NonNull Fragment fragment) {
         if (fragment.mFragmentManager != null && fragment.mFragmentManager != mManager) {
             throw new IllegalStateException("Cannot remove Fragment attached to "
                     + "a different FragmentManager. Fragment " + fragment + " is already"
@@ -174,9 +191,9 @@ final class BackStackRecord extends FragmentTransaction implements
         return super.remove(fragment);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public FragmentTransaction hide(@Nonnull Fragment fragment) {
+    public FragmentTransaction hide(@NonNull Fragment fragment) {
         if (fragment.mFragmentManager != null && fragment.mFragmentManager != mManager) {
             throw new IllegalStateException("Cannot hide Fragment attached to "
                     + "a different FragmentManager. Fragment " + fragment + " is already"
@@ -185,9 +202,9 @@ final class BackStackRecord extends FragmentTransaction implements
         return super.hide(fragment);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public FragmentTransaction show(@Nonnull Fragment fragment) {
+    public FragmentTransaction show(@NonNull Fragment fragment) {
         if (fragment.mFragmentManager != null && fragment.mFragmentManager != mManager) {
             throw new IllegalStateException("Cannot show Fragment attached to "
                     + "a different FragmentManager. Fragment " + fragment + " is already"
@@ -196,9 +213,9 @@ final class BackStackRecord extends FragmentTransaction implements
         return super.show(fragment);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public FragmentTransaction detach(@Nonnull Fragment fragment) {
+    public FragmentTransaction detach(@NonNull Fragment fragment) {
         if (fragment.mFragmentManager != null && fragment.mFragmentManager != mManager) {
             throw new IllegalStateException("Cannot detach Fragment attached to "
                     + "a different FragmentManager. Fragment " + fragment + " is already"
@@ -207,7 +224,7 @@ final class BackStackRecord extends FragmentTransaction implements
         return super.detach(fragment);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public FragmentTransaction setPrimaryNavigationFragment(@Nullable Fragment fragment) {
         if (fragment != null
@@ -219,10 +236,10 @@ final class BackStackRecord extends FragmentTransaction implements
         return super.setPrimaryNavigationFragment(fragment);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public FragmentTransaction setMaxLifecycle(@Nonnull Fragment fragment,
-                                               @Nonnull Lifecycle.State state) {
+    public FragmentTransaction setMaxLifecycle(@NonNull Fragment fragment,
+                                               @NonNull Lifecycle.State state) {
         if (fragment.mFragmentManager != mManager) {
             throw new IllegalArgumentException("Cannot setMaxLifecycle for Fragment not attached to"
                     + " FragmentManager " + mManager);
@@ -319,8 +336,8 @@ final class BackStackRecord extends FragmentTransaction implements
      * @return true always because the records and isRecordPop will always be changed
      */
     @Override
-    public boolean generateOps(@Nonnull ArrayList<BackStackRecord> records,
-                               @Nonnull BooleanArrayList isRecordPop) {
+    public boolean generateOps(@NonNull ArrayList<BackStackRecord> records,
+                               @NonNull BooleanArrayList isRecordPop) {
         if (FragmentManager.TRACE) {
             LOGGER.info(FragmentManager.MARKER, "Run: " + this);
         }
