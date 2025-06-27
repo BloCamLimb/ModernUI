@@ -267,8 +267,12 @@ public class Paint {
     static final int MIPMAP_MODE_SHIFT = 6;
     static final int MIPMAP_MODE_MASK = 0xC0;
 
-    static final int DEFAULT_FLAGS = (ImageShader.FILTER_MODE_LINEAR << FILTER_MODE_SHIFT) |
-            TEXT_ANTI_ALIAS_DEFAULT | LINEAR_TEXT_FLAG; // TODO make linear text configurable
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static int sDefaultFlags = (ImageShader.FILTER_MODE_LINEAR << FILTER_MODE_SHIFT) |
+            TEXT_ANTI_ALIAS_DEFAULT | LINEAR_TEXT_FLAG;
 
     // the recycle bin, see obtain()
     private static final Paint[] sPool = new Paint[8];
@@ -392,7 +396,7 @@ public class Paint {
 
     private void internalReset() {
         mColorFilter = null;
-        mFlags = DEFAULT_FLAGS;
+        mFlags = sDefaultFlags;
         mTextSize = 16;
     }
 
