@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2020-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,20 +14,47 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2018 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.fragment;
 
 import icyllis.modernui.animation.Animator;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.CallSuper;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.lifecycle.*;
-import icyllis.modernui.transition.*;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.transition.AutoTransition;
+import icyllis.modernui.transition.Transition;
+import icyllis.modernui.transition.Visibility;
 import icyllis.modernui.util.DataSet;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import icyllis.modernui.view.LayoutInflater;
+import icyllis.modernui.view.MenuItem;
+import icyllis.modernui.view.View;
 import icyllis.modernui.view.View.OnCreateContextMenuListener;
+import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.AdapterView;
 
 import java.io.FileDescriptor;
@@ -714,15 +741,33 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      *                 set.
      * @param enter    {@code true} when the fragment is added/attached/shown or {@code false} when
      *                 the fragment is removed/detached/hidden.
-     * @param nextAnim The resource set in
-     *                 {@link FragmentTransaction#setCustomAnimations(int, int)},
-     *                 {@link FragmentTransaction#setCustomAnimations(int, int, int, int)}, or
-     *                 0 if neither was called. The value will depend on the current operation.
+     * @param nextAnim Always 0.
+     * @deprecated override {@link #onCreateAnimator(int, boolean, boolean, ResourceId)} instead
      */
+    @Deprecated
     @UiThread
     @Nullable
     public Animator onCreateAnimator(int transit, boolean enter, int nextAnim) {
         return null;
+    }
+
+    /**
+     * Called when a fragment loads an animator.
+     *
+     * @param transit  The value set in {@link FragmentTransaction#setTransition(int)} or
+     *                 {@link FragmentTransaction#TRANSIT_NONE} if not set.
+     * @param enter    {@code true} when the fragment is added/attached/shown or {@code false} when
+     *                 the fragment is removed/detached/hidden.
+     * @param isPop    {@code true} when the fragment is popped from the back stack
+     * @param nextAnim The resource ID set in
+     *                 {@link FragmentTransaction#setCustomAnimations(ResourceId, ResourceId)},
+     *                 {@link FragmentTransaction#setCustomAnimations(ResourceId, ResourceId, ResourceId, ResourceId)},
+     *                 or null if neither was called. The value will depend on the current operation.
+     */
+    @UiThread
+    @Nullable
+    public Animator onCreateAnimator(int transit, boolean enter, boolean isPop, @Nullable ResourceId nextAnim) {
+        return onCreateAnimator(transit, enter, 0);
     }
 
     /**
@@ -1509,22 +1554,22 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
         writer.print(prefix);
         writer.print("mPopDirection=");
         writer.println(getPopDirection());
-        if (getEnterAnim() != 0) {
+        if (getEnterAnim() != null) {
             writer.print(prefix);
             writer.print("getEnterAnim=");
             writer.println(getEnterAnim());
         }
-        if (getExitAnim() != 0) {
+        if (getExitAnim() != null) {
             writer.print(prefix);
             writer.print("getExitAnim=");
             writer.println(getExitAnim());
         }
-        if (getPopEnterAnim() != 0) {
+        if (getPopEnterAnim() != null) {
             writer.print(prefix);
             writer.print("getPopEnterAnim=");
             writer.println(getPopEnterAnim());
         }
-        if (getPopExitAnim() != 0) {
+        if (getPopExitAnim() != null) {
             writer.print(prefix);
             writer.print("getPopExitAnim=");
             writer.println(getPopExitAnim());
@@ -1791,8 +1836,9 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
         return mAnimationInfo;
     }
 
-    void setAnimations(int enter, int exit, int popEnter, int popExit) {
-        if (mAnimationInfo == null && enter == 0 && exit == 0 && popEnter == 0 && popExit == 0) {
+    void setAnimations(@Nullable ResourceId enter, @Nullable ResourceId exit,
+                       @Nullable ResourceId popEnter, @Nullable ResourceId popExit) {
+        if (mAnimationInfo == null && enter == null && exit == null && popEnter == null && popExit == null) {
             return; // no change!
         }
         ensureAnimationInfo().mEnterAnim = enter;
@@ -1801,30 +1847,34 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
         ensureAnimationInfo().mPopExitAnim = popExit;
     }
 
-    int getEnterAnim() {
+    @Nullable
+    ResourceId getEnterAnim() {
         if (mAnimationInfo == null) {
-            return 0;
+            return null;
         }
         return mAnimationInfo.mEnterAnim;
     }
 
-    int getExitAnim() {
+    @Nullable
+    ResourceId getExitAnim() {
         if (mAnimationInfo == null) {
-            return 0;
+            return null;
         }
         return mAnimationInfo.mExitAnim;
     }
 
-    int getPopEnterAnim() {
+    @Nullable
+    ResourceId getPopEnterAnim() {
         if (mAnimationInfo == null) {
-            return 0;
+            return null;
         }
         return mAnimationInfo.mPopEnterAnim;
     }
 
-    int getPopExitAnim() {
+    @Nullable
+    ResourceId getPopExitAnim() {
         if (mAnimationInfo == null) {
-            return 0;
+            return null;
         }
         return mAnimationInfo.mPopExitAnim;
     }
@@ -1948,10 +1998,10 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
         boolean mIsPop;
 
         // All possible animations
-        int mEnterAnim;
-        int mExitAnim;
-        int mPopEnterAnim;
-        int mPopExitAnim;
+        ResourceId mEnterAnim;
+        ResourceId mExitAnim;
+        ResourceId mPopEnterAnim;
+        ResourceId mPopExitAnim;
 
         // If app has requested a specific transition, this is the one to use.
         int mNextTransition;
