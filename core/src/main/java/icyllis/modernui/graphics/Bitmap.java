@@ -1832,7 +1832,9 @@ public final class Bitmap implements AutoCloseable {
          * </pre>
          * On little-endian machine, this is the same as {@link #BGRA_8888}.
          * On big-endian machine, this is the same as {@link #ARGB_8888}.
-         * This is actually used for int values that marked as {@link ColorInt}.
+         * This is actually used for int values that marked as {@link ColorInt}, which
+         * is known as ARGB 32-bit colors. But unless you only use Bitmap on the CPU side,
+         * use {@link #RGBA_8888} instead for better CPU<->GPU transfer performance.
          */
         BGRA_8888_PACK32(4, ColorInfo.CT_BGRA_8888_NATIVE);
         //@formatter:on
