@@ -164,7 +164,6 @@ public class Image implements AutoCloseable {
      *
      * @return image info
      */
-    @ApiStatus.Experimental
     @NonNull
     public ImageInfo getInfo() {
         return mImage.getInfo();

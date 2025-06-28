@@ -29,6 +29,9 @@ import java.lang.annotation.*;
  * <pre>{@code
  *  public abstract void setTextColor(@ColorInt int color);
  * }</pre>
+ * <p>
+ * Note: this packing format is exactly mapped to
+ * {@link icyllis.modernui.graphics.Bitmap.Format#BGRA_8888_PACK32}.
  */
 @Documented
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.FIELD})
