@@ -331,6 +331,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         // in the Theme, so we can call the single-parameter constructor of View.
         super(context);
         mMovement = getDefaultMovementMethod();
+        mTextPaint.density = context.getResources().getDisplayMetrics().density;
         setTextSize(16);
 
         final Resources.Theme theme = context.getTheme();
@@ -364,6 +365,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         super(context, attrs, defStyleAttr, defStyleRes);
 
         mMovement = getDefaultMovementMethod();
+        mTextPaint.density = context.getResources().getDisplayMetrics().density;
 
         final TextAppearance appearance;
 

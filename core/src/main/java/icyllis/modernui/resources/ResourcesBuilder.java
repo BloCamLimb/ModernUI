@@ -167,7 +167,8 @@ public class ResourcesBuilder {
         resources.mData = data;
         mKeyStringTable = null;
 
-        Object2IntMap.Entry<String>[] entries = mStyleToOffset.object2IntEntrySet().toArray(new Object2IntMap.Entry[0]);
+        @SuppressWarnings("unchecked") Object2IntMap.Entry<String>[] entries =
+                mStyleToOffset.object2IntEntrySet().toArray(new Object2IntMap.Entry[0]);
         Arrays.sort(entries, Map.Entry.comparingByKey());
         String[] styleKeys = new String[entries.length];
         int[] styleOffsets = new int[entries.length];

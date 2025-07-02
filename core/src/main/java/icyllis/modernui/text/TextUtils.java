@@ -404,13 +404,7 @@ public final class TextUtils {
 
             final List<Object> os = sp.getSpans(0, cs.length(), Object.class);
             for (final Object o : os) {
-                Object target = o;
-
-                if (target instanceof CharacterStyle) {
-                    target = ((CharacterStyle) target).getUnderlying();
-                }
-
-                if (target instanceof ParcelableSpan span) {
+                if (o instanceof ParcelableSpan span) {
                     final int id = span.getSpanTypeId();
                     if (id < FIRST_SPAN || id > LAST_SPAN) {
                         throw new AssertionError(id);
