@@ -169,7 +169,7 @@ public class ScrollView extends FrameLayout {
 
     public ScrollView(Context context) {
         super(context);
-        mScroller = new OverScroller();
+        mScroller = new OverScroller(context);
         mEdgeGlowTop = new EdgeEffect(context);
         mEdgeGlowBottom = new EdgeEffect(context);
         setFocusable(true);
@@ -217,7 +217,7 @@ public class ScrollView extends FrameLayout {
                                 @Nullable @AttrRes ResourceId defStyleAttr,
                                 @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        mScroller = new OverScroller();
+        mScroller = new OverScroller(context);
         mEdgeGlowTop = new EdgeEffect(context);
         mEdgeGlowBottom = new EdgeEffect(context);
         setFocusable(true);

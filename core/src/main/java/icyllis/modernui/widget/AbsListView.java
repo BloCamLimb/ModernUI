@@ -3332,7 +3332,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         private static final int FLYWHEEL_TIMEOUT = 40; // milliseconds
 
         FlingRunnable() {
-            mScroller = new OverScroller();
+            mScroller = new OverScroller(getContext());
         }
 
         float getSplineFlingDistance(int velocity) {

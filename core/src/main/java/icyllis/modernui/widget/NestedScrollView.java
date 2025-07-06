@@ -140,7 +140,7 @@ public class NestedScrollView extends FrameLayout {
         mEdgeGlowTop = new EdgeEffect(context);
         mEdgeGlowBottom = new EdgeEffect(context);
 
-        mScroller = new OverScroller();
+        mScroller = new OverScroller(context);
         setFocusable(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);

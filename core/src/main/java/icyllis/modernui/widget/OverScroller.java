@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,12 +14,31 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2010 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.core.Context;
+import icyllis.modernui.util.DisplayMetrics;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
@@ -31,10 +50,10 @@ import java.util.Objects;
  */
 public class OverScroller {
 
-    private static final int DEFAULT_DURATION = 200;
+    private static final int DEFAULT_DURATION = 250;
 
-    private final SplineScroller mScrollerX = new SplineScroller();
-    private final SplineScroller mScrollerY = new SplineScroller();
+    private final SplineScroller mScrollerX;
+    private final SplineScroller mScrollerY;
 
     private TimeInterpolator mInterpolator;
 
@@ -45,18 +64,54 @@ public class OverScroller {
 
     /**
      * Creates a Scroller with flywheel.
+     *
+     * @deprecated use {@link #OverScroller(Context)}
      */
+    @Deprecated
     public OverScroller() {
-        this(null);
+        this(null, null);
     }
 
+    @Deprecated
     public OverScroller(@Nullable TimeInterpolator interpolator) {
-        this(interpolator, true);
+        this(null, interpolator, true);
     }
 
-    public OverScroller(@Nullable TimeInterpolator interpolator, boolean flywheel) {
-        mInterpolator = Objects.requireNonNullElse(interpolator, TimeInterpolator.DECELERATE);
+    /**
+     * Creates an OverScroller with a viscous fluid scroll interpolator and flywheel.
+     *
+     * @param context The context for display metrics.
+     */
+    public OverScroller(Context context) {
+        this(context, null);
+    }
+
+    /**
+     * Creates an OverScroller with flywheel enabled.
+     *
+     * @param context      The context for display metrics.
+     * @param interpolator The scroll interpolator. If null, a default (viscous) interpolator will
+     *                     be used.
+     */
+    public OverScroller(Context context, @Nullable TimeInterpolator interpolator) {
+        this(context, interpolator, true);
+    }
+
+    /**
+     * Creates an OverScroller.
+     *
+     * @param context      The context for display metrics.
+     * @param interpolator The scroll interpolator. If null, a default (viscous) interpolator will
+     *                     be used.
+     * @param flywheel     If true, successive fling motions will keep on increasing scroll speed.
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public OverScroller(Context context, @Nullable TimeInterpolator interpolator, boolean flywheel) {
+        mInterpolator = Objects.requireNonNullElse(interpolator, TimeInterpolator.VISCOUS_FLUID);
         mFlywheel = flywheel;
+        mScrollerX = new SplineScroller(context);
+        mScrollerY = new SplineScroller(context);
     }
 
     void setInterpolator(@Nullable TimeInterpolator interpolator) {
@@ -101,13 +156,29 @@ public class OverScroller {
      * @return The duration of the scroll in milliseconds.
      */
     public final int getDuration() {
-        return mScrollerX.mDuration;
+        return Math.max(mScrollerX.mDuration, mScrollerY.mDuration);
+    }
+
+    /**
+     * Extend the scroll animation. This allows a running animation to scroll
+     * further and longer, when used with {@link #setFinalX(int)} or {@link #setFinalY(int)}.
+     *
+     * @param extend Additional time to scroll in milliseconds.
+     * @hidden
+     * @see #setFinalX(int)
+     * @see #setFinalY(int)
+     */
+    @ApiStatus.Internal
+    public void extendDuration(int extend) {
+        mScrollerX.extendDuration(extend);
+        mScrollerY.extendDuration(extend);
     }
 
     /**
      * Sets the final position (X) for this scroller.
      *
      * @param newX The new X offset as an absolute distance from the origin.
+     * @hidden
      * @see #extendDuration(int)
      * @see #setFinalY(int)
      */
@@ -120,6 +191,7 @@ public class OverScroller {
      * Sets the final position (Y) for this scroller.
      *
      * @param newY The new Y offset as an absolute distance from the origin.
+     * @hidden
      * @see #extendDuration(int)
      * @see #setFinalX(int)
      */
@@ -225,8 +297,10 @@ public class OverScroller {
             final int duration = mScrollerX.mDuration;
             if (elapsedTime < duration) {
                 final float q = mInterpolator.getInterpolation(elapsedTime / (float) duration);
-                mScrollerX.updateScroll(q);
-                mScrollerY.updateScroll(q);
+                final float q2 =
+                        mInterpolator.getInterpolation((elapsedTime - 1) / (float) duration);
+                mScrollerX.updateScroll(q, q2);
+                mScrollerY.updateScroll(q, q2);
             } else {
                 abortAnimation();
             }
@@ -248,18 +322,7 @@ public class OverScroller {
      *               content up.
      */
     public void startScroll(int startX, int startY, int dx, int dy) {
-        int duration;
-        int dis = Math.max(Math.abs(dy), Math.abs(dx));
-        if (dis > 160.0) {
-            duration = (int) (Math.sqrt(dis / 160.0) * DEFAULT_DURATION);
-        } else {
-            duration = DEFAULT_DURATION;
-        }
-        double d = AnimationUtils.currentAnimationTimeMillis() - mScrollerX.mStartTime;
-        if (d < DEFAULT_DURATION * 0.6) {
-            duration *= (0.2 * d / (DEFAULT_DURATION * 0.6)) + 0.8;
-        }
-        startScroll(startX, startY, dx, dy, duration);
+        startScroll(startX, startY, dx, dy, DEFAULT_DURATION);
     }
 
     /**
@@ -428,6 +491,10 @@ public class OverScroller {
         return (int) (time - startTime);
     }
 
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
     public boolean isScrollingInDirection(float xvel, float yvel) {
         final int dx = mScrollerX.mFinal - mScrollerX.mStart;
         final int dy = mScrollerY.mFinal - mScrollerY.mStart;
@@ -442,7 +509,6 @@ public class OverScroller {
     private static class SplineScroller {
 
         private static final float SCROLL_FRICTION = 0.015f;
-        private static final float PHYSICAL_COEFF = 51890.202f;
 
         private static final float GRAVITY = 2000.0f;
 
@@ -540,11 +606,27 @@ public class OverScroller {
         // Current state of the animation.
         private int mState = SPLINE;
 
-        private SplineScroller() {
+        // A context-specific coefficient adjusted to physical values.
+        private final float mPhysicalCoeff;
+
+        SplineScroller(Context context) {
+            final float ppi;
+            if (context != null) {
+                ppi = context.getResources().getDisplayMetrics().density * DisplayMetrics.DENSITY_DEFAULT;
+            } else {
+                ppi = DisplayMetrics.DENSITY_DEFAULT;
+            }
+            mPhysicalCoeff = 9.80665f // g (m/s^2)
+                    * 39.37f // inch/meter
+                    * ppi
+                    * 0.84f; // look and feel tuning
         }
 
-        void updateScroll(float q) {
-            mCurrentPosition = mStart + Math.round(q * (mFinal - mStart));
+        void updateScroll(float q, float q2) {
+            int distance = mFinal - mStart;
+            mCurrentPosition = mStart + Math.round(q * distance);
+            // q2 is 1ms before q1
+            mCurrVelocity = 1000f * (q - q2) * distance;
         }
 
         void setFriction(float friction) {
@@ -593,6 +675,13 @@ public class OverScroller {
         void setFinalPosition(int position) {
             mFinal = position;
             mSplineDistance = mFinal - mStart;
+            mFinished = false;
+        }
+
+        void extendDuration(int extend) {
+            final long time = AnimationUtils.currentAnimationTimeMillis();
+            final int elapsedTime = (int) (time - mStartTime);
+            mDuration = mSplineDuration = elapsedTime + extend;
             mFinished = false;
         }
 
@@ -665,13 +754,13 @@ public class OverScroller {
         }
 
         private double getSplineDeceleration(int velocity) {
-            return Math.log(INFLEXION * Math.abs(velocity) / (mFlingFriction * PHYSICAL_COEFF));
+            return Math.log(INFLEXION * Math.abs(velocity) / (mFlingFriction * mPhysicalCoeff));
         }
 
         private double getSplineFlingDistance(int velocity) {
             final double l = getSplineDeceleration(velocity);
             final double decelMinusOne = DECELERATION_RATE - 1.0;
-            return mFlingFriction * PHYSICAL_COEFF * Math.exp(DECELERATION_RATE / decelMinusOne * l);
+            return mFlingFriction * mPhysicalCoeff * Math.exp(DECELERATION_RATE / decelMinusOne * l);
         }
 
         /* Returns the duration, expressed in milliseconds */
