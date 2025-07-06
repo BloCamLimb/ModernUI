@@ -341,7 +341,7 @@ public class ViewPager extends ViewGroup {
         setWillNotDraw(false);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setFocusable(true);
-        mScroller = new OverScroller(TimeInterpolator.DECELERATE_QUINTIC);
+        mScroller = new OverScroller(context, TimeInterpolator.DECELERATE_QUINTIC);
         final ViewConfiguration configuration = ViewConfiguration.get(context);
         final float density = context.getResources().getDisplayMetrics().density;
 

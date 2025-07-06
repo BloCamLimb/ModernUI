@@ -168,7 +168,7 @@ public class HorizontalScrollView extends FrameLayout {
 
     public HorizontalScrollView(Context context) {
         super(context);
-        mScroller = new OverScroller();
+        mScroller = new OverScroller(context);
         mEdgeGlowLeft = new EdgeEffect(context);
         mEdgeGlowRight = new EdgeEffect(context);
         setFocusable(true);
@@ -216,7 +216,7 @@ public class HorizontalScrollView extends FrameLayout {
                                 @Nullable @AttrRes ResourceId defStyleAttr,
                                 @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        mScroller = new OverScroller();
+        mScroller = new OverScroller(context);
         mEdgeGlowLeft = new EdgeEffect(context);
         mEdgeGlowRight = new EdgeEffect(context);
         setFocusable(true);
