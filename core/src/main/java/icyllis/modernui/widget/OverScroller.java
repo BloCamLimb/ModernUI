@@ -39,6 +39,7 @@ import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.view.ViewConfiguration;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
@@ -508,8 +509,6 @@ public class OverScroller {
 
     private static class SplineScroller {
 
-        private static final float SCROLL_FRICTION = 0.015f;
-
         private static final float GRAVITY = 2000.0f;
 
         private static float getDeceleration(int velocity) {
@@ -601,7 +600,7 @@ public class OverScroller {
         private int mOver;
 
         // Fling friction
-        private float mFlingFriction = SCROLL_FRICTION;
+        private float mFlingFriction = ViewConfiguration.getScrollFriction();
 
         // Current state of the animation.
         private int mState = SPLINE;

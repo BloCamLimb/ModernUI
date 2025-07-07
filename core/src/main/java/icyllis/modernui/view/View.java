@@ -6068,10 +6068,10 @@ public class View implements Drawable.Callback {
             // Invalidate to show the scrollbars
             postInvalidateOnAnimation();
 
-            if (scrollCache.mState == ScrollCache.OFF) {
+            /*if (scrollCache.mState == ScrollCache.OFF) {
                 // first takes longer
                 startDelay = Math.max(1500, startDelay);
-            } else {
+            } else*/ {
                 startDelay = Math.max(0, startDelay);
             }
 
