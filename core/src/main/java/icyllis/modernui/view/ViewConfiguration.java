@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,10 +31,15 @@ import org.jetbrains.annotations.ApiStatus;
 public class ViewConfiguration {
 
     /**
-     * Defines the width of the horizontal scrollbar and the height of the vertical scrollbar in
+     * Defines the height of the horizontal scrollbar and the width of the vertical scrollbar in
      * dips
+     * @hidden
      */
-    public static final int SCROLL_BAR_SIZE = 8;
+    @ApiStatus.Internal
+    public static final int SCROLL_BAR_SIZE = 4;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sScrollBarSize = SCROLL_BAR_SIZE;
 
     /**
      * Defines the length of the fading edges in dips
@@ -77,64 +82,129 @@ public class ViewConfiguration {
 
     /**
      * Distance a touch can wander before we think the user is scrolling in dips.
-     * Note that this value defined here is only used as a fallback by legacy/misbehaving
-     * applications that do not provide a Context for determining density/configuration-dependent
-     * values.
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final int TOUCH_SLOP = 4;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sTouchSlop = TOUCH_SLOP;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sHoverSlop = TOUCH_SLOP;
 
     /**
      * Defines the minimum size of the touch target for a scrollbar in dips
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final int MIN_SCROLLBAR_TOUCH_TARGET = 16;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sMinScrollbarTouchTarget = MIN_SCROLLBAR_TOUCH_TARGET;
 
     /**
      * Minimum velocity to initiate a fling, as measured in dips per second
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final int MINIMUM_FLING_VELOCITY = 50;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
 
     /**
      * Maximum velocity to initiate a fling, as measured in dips per second
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final int MAXIMUM_FLING_VELOCITY = 8000;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sMaximumFlingVelocity = MAXIMUM_FLING_VELOCITY;
+
+    /**
+     * The coefficient of friction applied to flings/scrolls.
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final float SCROLL_FRICTION = 0.015f;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static float sScrollFriction = SCROLL_FRICTION;
 
     /**
      * Max distance in dips to overscroll for edge effects
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final int OVERSCROLL_DISTANCE = 0;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sOverscrollDistance = OVERSCROLL_DISTANCE;
 
     /**
      * Max distance in dips to overfling for edge effects
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final int OVERFLING_DISTANCE = 12;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sOverflingDistance = OVERFLING_DISTANCE;
 
     /**
      * Amount to scroll in response to a horizontal {@link MotionEvent#ACTION_SCROLL} event,
      * in dips per axis value.
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final float HORIZONTAL_SCROLL_FACTOR = 64;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static float sHorizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR;
 
     /**
      * Amount to scroll in response to a vertical {@link MotionEvent#ACTION_SCROLL} event,
      * in dips per axis value.
+     * @hidden
      */
+    @ApiStatus.Internal
     public static final float VERTICAL_SCROLL_FACTOR = 64;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static float sVerticalScrollFactor = VERTICAL_SCROLL_FACTOR;
 
     /**
      * Defines the duration in milliseconds before an end of a long press causes a tooltip to be
      * hidden.
+     * @hidden
      */
-    private static final int LONG_PRESS_TOOLTIP_HIDE_TIMEOUT = 1500;
+    @ApiStatus.Internal
+    public static final int LONG_PRESS_TOOLTIP_HIDE_TIMEOUT = 1500;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sLongPressTooltipHideTimeout = LONG_PRESS_TOOLTIP_HIDE_TIMEOUT;
 
     /**
      * Defines the duration in milliseconds before a hover event causes a tooltip to be shown.
+     * @hidden
      */
-    private static final int HOVER_TOOLTIP_SHOW_TIMEOUT = 500;
+    @ApiStatus.Internal
+    public static final int HOVER_TOOLTIP_SHOW_TIMEOUT = 500;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sHoverTooltipShowTimeout = HOVER_TOOLTIP_SHOW_TIMEOUT;
 
     /**
      * Defines the duration in milliseconds before mouse inactivity causes a tooltip to be hidden.
+     * @hidden
      */
-    private static final int HOVER_TOOLTIP_HIDE_TIMEOUT = 30000;
+    @ApiStatus.Internal
+    public static final int HOVER_TOOLTIP_HIDE_TIMEOUT = 30000;
+    /** @hidden */
+    @ApiStatus.Internal
+    public static int sHoverTooltipHideTimeout = HOVER_TOOLTIP_HIDE_TIMEOUT;
 
     private final int mEdgeSlop;
     private final int mFadingEdgeLength;
@@ -165,21 +235,21 @@ public class ViewConfiguration {
 
         mEdgeSlop = (int) (density * EDGE_SLOP + 0.5f);
         mFadingEdgeLength = (int) (density * FADING_EDGE_LENGTH + 0.5f);
-        mScrollbarSize = (int) (density * SCROLL_BAR_SIZE + 0.5f);
+        mScrollbarSize = (int) (density * sScrollBarSize + 0.5f);
 
-        mTouchSlop = (int) (density * TOUCH_SLOP + 0.5f);
-        mHoverSlop = mTouchSlop;
-        mMinScrollbarTouchTarget = (int) (density * MIN_SCROLLBAR_TOUCH_TARGET + 0.5f);
+        mTouchSlop = (int) (density * sTouchSlop + 0.5f);
+        mHoverSlop = (int) (density * sHoverSlop + 0.5f);
+        mMinScrollbarTouchTarget = (int) (density * sMinScrollbarTouchTarget + 0.5f);
         mPagingTouchSlop = mTouchSlop * 2;
 
-        mMinimumFlingVelocity = (int) (density * MINIMUM_FLING_VELOCITY + 0.5f);
-        mMaximumFlingVelocity = (int) (density * MAXIMUM_FLING_VELOCITY + 0.5f);
+        mMinimumFlingVelocity = (int) (density * sMinimumFlingVelocity + 0.5f);
+        mMaximumFlingVelocity = (int) (density * sMaximumFlingVelocity + 0.5f);
 
-        mVerticalScrollFactor = (int) (density * VERTICAL_SCROLL_FACTOR + 0.5f);
-        mHorizontalScrollFactor = (int) (density * HORIZONTAL_SCROLL_FACTOR + 0.5f);
+        mVerticalScrollFactor = (int) (density * sVerticalScrollFactor + 0.5f);
+        mHorizontalScrollFactor = (int) (density * sHorizontalScrollFactor + 0.5f);
 
-        mOverscrollDistance = (int) (density * OVERSCROLL_DISTANCE + 0.5f);
-        mOverflingDistance = (int) (density * OVERFLING_DISTANCE + 0.5f);
+        mOverscrollDistance = (int) (density * sOverscrollDistance + 0.5f);
+        mOverflingDistance = (int) (density * sOverflingDistance + 0.5f);
     }
 
     /**
@@ -192,7 +262,7 @@ public class ViewConfiguration {
     @NonNull
     public static ViewConfiguration get(@NonNull Context context) {
         final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-        final int density = metrics.densityDpi;
+        final int density = (int) (metrics.density * DisplayMetrics.DENSITY_DEFAULT);
 
         ViewConfiguration configuration = sConfigurations.get(density);
         if (configuration == null) {
@@ -201,6 +271,29 @@ public class ViewConfiguration {
         }
 
         return configuration;
+    }
+
+    /**
+     * Removes cached ViewConfiguration instances, so that we can ensure `get` constructs a new
+     * ViewConfiguration instance.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static void resetCache() {
+        sConfigurations.clear();
+    }
+
+    /**
+     * Sets the ViewConfiguration cached instance for a given Context.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static void setInstance(@NonNull Context context, ViewConfiguration instance) {
+        final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        final int density = (int) (metrics.density * DisplayMetrics.DENSITY_DEFAULT);
+        sConfigurations.put(density, instance);
     }
 
     /**
@@ -243,7 +336,7 @@ public class ViewConfiguration {
     }
 
     /**
-     * @return The width of the horizontal scrollbar and the height of the vertical
+     * @return The height of the horizontal scrollbar and the width of the vertical
      * scrollbar in pixels
      */
     public int getScaledScrollbarSize() {
@@ -341,12 +434,22 @@ public class ViewConfiguration {
     }
 
     /**
+     * The amount of friction applied to scrolls and flings.
+     *
+     * @return A scalar dimensionless value representing the coefficient of
+     *         friction.
+     */
+    public static float getScrollFriction() {
+        return sScrollFriction;
+    }
+
+    /**
      * @return the duration in milliseconds before an end of a long press causes a tooltip to be
      * hidden
      */
     @ApiStatus.Internal
     public static int getLongPressTooltipHideTimeout() {
-        return LONG_PRESS_TOOLTIP_HIDE_TIMEOUT;
+        return sLongPressTooltipHideTimeout;
     }
 
     /**
@@ -354,7 +457,7 @@ public class ViewConfiguration {
      */
     @ApiStatus.Internal
     public static int getHoverTooltipShowTimeout() {
-        return HOVER_TOOLTIP_SHOW_TIMEOUT;
+        return sHoverTooltipShowTimeout;
     }
 
     /**
@@ -362,6 +465,6 @@ public class ViewConfiguration {
      */
     @ApiStatus.Internal
     public static int getHoverTooltipHideTimeout() {
-        return HOVER_TOOLTIP_HIDE_TIMEOUT;
+        return sHoverTooltipHideTimeout;
     }
 }
