@@ -759,21 +759,13 @@ public class ListPopupWindow implements ShowableListMenu {
             mDropDownList.setOnItemClickListener(mItemClickListener);
             mDropDownList.setFocusable(true);
             mDropDownList.setFocusableInTouchMode(true);
-            mDropDownList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view,
-                                           int position, long id) {
-                    if (position != -1) {
-                        DropDownListView dropDownList = mDropDownList;
+            mDropDownList.setOnItemSelectedListener((parent, view, position, id) -> {
+                if (position != -1) {
+                    DropDownListView dropDownList = mDropDownList;
 
-                        if (dropDownList != null) {
-                            dropDownList.setListSelectionHidden(false);
-                        }
+                    if (dropDownList != null) {
+                        dropDownList.setListSelectionHidden(false);
                     }
-                }
-
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {
                 }
             });
 

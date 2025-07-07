@@ -346,7 +346,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
          * @param id       The row id of the item that was clicked
          * @return true if the callback consumed the long click, false otherwise
          */
-        boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id);
+        boolean onItemLongClick(@NonNull AdapterView<?> parent, View view, int position, long id);
     }
 
     /**
@@ -374,6 +374,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * Interface definition for a callback to be invoked when
      * an item in this view has been selected.
      */
+    @FunctionalInterface
     public interface OnItemSelectedListener {
 
         /**
@@ -390,7 +391,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
          * @param position The position of the view in the adapter
          * @param id       The row id of the item that is selected
          */
-        void onItemSelected(AdapterView<?> parent, View view, int position, long id);
+        void onItemSelected(@NonNull AdapterView<?> parent, View view, int position, long id);
 
         /**
          * Callback method to be invoked when the selection disappears from this
@@ -399,7 +400,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
          *
          * @param parent The AdapterView that now contains no selected item.
          */
-        void onNothingSelected(AdapterView<?> parent);
+        default void onNothingSelected(@NonNull AdapterView<?> parent) {}
     }
 
     /**
