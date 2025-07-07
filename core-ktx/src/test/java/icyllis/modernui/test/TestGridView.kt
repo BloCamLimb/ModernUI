@@ -26,8 +26,6 @@ import icyllis.modernui.util.Log
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup
-import icyllis.modernui.widget.AdapterView
-import icyllis.modernui.widget.AdapterView.OnItemSelectedListener
 import icyllis.modernui.widget.ArrayAdapter
 import icyllis.modernui.widget.GridView
 
@@ -53,13 +51,8 @@ class TestGridView : Fragment() {
             val gv = parent as GridView
             Log.info(null, "Item clicked {}, is checked {}", position, gv.isItemChecked(position))
         }
-        gridView.onItemSelectedListener = object : OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
-                Log.info(null , "Item selected {}", position)
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-            }
+        gridView.setOnItemSelectedListener { parent, view, position, id ->
+            Log.info(null, "Item selected {}", position)
         }
 
         return gridView
