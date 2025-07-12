@@ -40,7 +40,7 @@ fun main() {
     System.setProperty("java.awt.headless", "true")
     Log.setLevel(Log.DEBUG)
     ModernUI().use { app ->
-        app.theme.applyStyle(R.style.Theme_Material3_Light, true)
+        app.setTheme(R.style.Theme_Material3_Light)
         app.run(TestTabLayout())
     }
 }

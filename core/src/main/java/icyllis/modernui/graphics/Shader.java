@@ -31,6 +31,9 @@ import java.lang.ref.Cleaner;
  * once (e.g. image tiling or gradient) and then change its transparency
  * w/o having to modify the original shader... only the paint's alpha needs
  * to be modified.
+ * <p>
+ * All subclasses are required to be reentrant-safe : it must be legal to share
+ * the same instance between several threads.
  *
  * @since 3.11
  */
