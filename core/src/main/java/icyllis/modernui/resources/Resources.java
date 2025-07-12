@@ -39,13 +39,13 @@ import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
+import javax.annotation.concurrent.ThreadSafe;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static icyllis.modernui.resources.AssetManager.kMaxIterations;
 
 @ApiStatus.Experimental
-@SuppressWarnings("SuspiciousMethodCalls")
 public class Resources {
 
     public static final Marker MARKER = MarkerManager.getMarker("Resources");
@@ -89,6 +89,21 @@ public class Resources {
     int[] mData;
 
     Object2ObjectOpenHashMap<String, ResolvedBag> mCachedBags = new Object2ObjectOpenHashMap<>();
+
+    /**
+     * Returns a default theme for the framework.
+     *
+     * @hidden
+     * @param curTheme The current theme, or null if not specified.
+     * @return A theme resource identifier
+     */
+    @ApiStatus.Internal
+    public static ResourceId selectDefaultTheme(ResourceId curTheme) {
+        if (curTheme != null) {
+            return curTheme;
+        }
+        return R.style.Theme_Material3_Dark;
+    }
 
     /**
      * This exception is thrown by the resource APIs when a requested resource
@@ -409,6 +424,7 @@ public class Resources {
         return newBag;
     }
 
+    @ThreadSafe
     public final class Theme {
 
         private final Object mLock = new Object();
@@ -696,7 +712,7 @@ public class Resources {
             }
         }
 
-        static class Entry {
+        static class Entry implements Cloneable {
             int type;
             int data;
             int cookie;
@@ -708,6 +724,15 @@ public class Resources {
                 data = bag.values[offset + ResolvedBag.COLUMN_DATA];
                 cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
                 typeSpecFlags = bag.typeSpecFlags;
+            }
+
+            @Override
+            public Entry clone() {
+                try {
+                    return (Entry) super.clone();
+                } catch (CloneNotSupportedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 
@@ -826,6 +851,47 @@ public class Resources {
          */
         public Resources getResources() {
             return Resources.this;
+        }
+
+        public void setTo(@NonNull Theme other) {
+            if (this == other) {
+                return;
+            }
+            synchronized (mLock) {
+                synchronized (other.mLock) {
+                    //TODO we also need to lock underlying Resources & AssetManager
+                    // and retrieve attribute values if they are different.
+                    // atm we just do deep copy.
+                    if (other.mEntries == null) {
+                        mEntries = null;
+                    } else {
+                        if (mEntries == null) {
+                            mEntries = new Object2ObjectOpenHashMap<>();
+                        }
+                        for (var oit = other.mEntries.object2ObjectEntrySet().fastIterator(); oit.hasNext(); ) {
+                            var oe = oit.next();
+                            Object2ObjectOpenHashMap<String, Entry> inner =
+                                    new Object2ObjectOpenHashMap<>(oe.getValue().size());
+                            for (var iit = oe.getValue().object2ObjectEntrySet().fastIterator(); iit.hasNext(); ) {
+                                var ie = iit.next();
+                                inner.put(ie.getKey(), ie.getValue().clone());
+                            }
+                            mEntries.put(oe.getKey(), inner);
+                        }
+                    }
+
+                    mKey.setTo(other.getKey());
+                    mKeyCopy = mKey.clone();
+                }
+            }
+        }
+
+        public void clear() {
+            synchronized (mLock) {
+                mEntries = null;
+                mKey.clear();
+                mKeyCopy = mKey.clone();
+            }
         }
 
         /**
@@ -955,6 +1021,12 @@ public class Resources {
             mResId = other.mResId;
             mForce = other.mForce;
             mHashCode = other.mHashCode;
+        }
+
+        public void clear() {
+            mResId = null;
+            mForce = null;
+            mHashCode = 0;
         }
 
         @Override

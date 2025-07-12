@@ -61,6 +61,7 @@ import icyllis.modernui.lifecycle.LifecycleOwner;
 import icyllis.modernui.lifecycle.LifecycleRegistry;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.ResourcesBuilder;
 import icyllis.modernui.resources.SystemTheme;
@@ -154,8 +155,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
     private final Object mThemeLock = new Object();
 
-    private Resources mResources;
+    private final Resources mResources;
     private Resources.Theme mTheme;
+    private ResourceId mThemeResource;
 
     private Image mBackgroundImage;
 
@@ -515,6 +517,21 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     }
 
     @Override
+    public void setTheme(@Nullable ResourceId resId) {
+        synchronized (mThemeLock) {
+            mThemeResource = resId;
+
+            if (mTheme == null) {
+                return;
+            }
+
+            mTheme.clear();
+            mThemeResource = Resources.selectDefaultTheme(mThemeResource);
+            mTheme.applyStyle(mThemeResource, true);
+        }
+    }
+
+    @Override
     public Resources.Theme getTheme() {
         synchronized (mThemeLock) {
             if (mTheme != null) {
@@ -522,7 +539,8 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             }
 
             mTheme = mResources.newTheme();
-            mTheme.applyStyle(R.style.Theme_Material3_Dark, true);
+            mThemeResource = Resources.selectDefaultTheme(mThemeResource);
+            mTheme.applyStyle(mThemeResource, true);
 
             return mTheme;
         }
