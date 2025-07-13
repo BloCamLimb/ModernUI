@@ -35,6 +35,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
@@ -88,7 +89,7 @@ public class PopupMenu {
      *        anchor.
      */
     public PopupMenu(Context context, View anchor, int gravity) {
-        this(context, anchor, gravity, MenuPopupHelper.DEF_STYLE_ATTR, null);
+        this(context, anchor, gravity, R.attr.popupMenuStyle, null);
     }
 
     /**

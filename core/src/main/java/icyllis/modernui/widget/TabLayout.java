@@ -386,10 +386,6 @@ public class TabLayout extends HorizontalScrollView {
     // Pool we use as a simple RecyclerBin
     private final Pools.Pool<TabView> tabViewPool = new Pools.SimplePool<>(12);
 
-    @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.tabStyle);
-
     private static final String[] STYLEABLE = {
             /* 0*/R.ns, R.attr.tabContentStart,
             /* 1*/R.ns, R.attr.tabGravity,
@@ -420,7 +416,7 @@ public class TabLayout extends HorizontalScrollView {
     }
 
     public TabLayout(@NonNull Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.tabStyle);
     }
 
     public TabLayout(@NonNull Context context, @Nullable AttributeSet attrs,

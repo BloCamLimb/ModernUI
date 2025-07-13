@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
@@ -49,7 +50,7 @@ public class ToggleButton extends CompoundButton {
     }
 
     public ToggleButton(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, Button.DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.buttonStyle);
     }
 
     public ToggleButton(Context context, @Nullable AttributeSet attrs,

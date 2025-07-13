@@ -39,7 +39,6 @@ fun main() {
     System.setProperty("java.awt.headless", "true")
     Log.setLevel(Log.DEBUG)
     ModernUI().use { app ->
-        app.setTheme(R.style.Theme_Material3_Light)
         app.run(TestViewPager())
     }
 }
@@ -91,7 +90,7 @@ class TestViewPager : Fragment() {
                 tabMode = TabLayout.MODE_AUTO
                 layoutParams = LinearLayout.LayoutParams(dp(960F), WRAP_CONTENT)
             }, 0)
-            addView(Button(context, null, null, R.style.Widget_Material3_Button_OutlinedButton).apply {
+            addView(Button(context, null, R.attr.buttonOutlinedStyle).apply {
                 text = "Increment count"
                 setOnClickListener {
                     (pager.adapter as MyAdapter).apply {
@@ -109,7 +108,7 @@ class TestViewPager : Fragment() {
                 gravity = Gravity.CENTER
                 setMargins(0, dp(4F), 0, dp(4F))
             })
-            addView(Button(context, null, null, R.style.Widget_Material3_Button_OutlinedButton).apply {
+            addView(Button(context, null, R.attr.buttonOutlinedStyle).apply {
                 text = "Decrement count"
                 setOnClickListener {
                     (pager.adapter as MyAdapter).apply {
@@ -121,7 +120,7 @@ class TestViewPager : Fragment() {
                 gravity = Gravity.CENTER
                 setMargins(0, dp(4F), 0, dp(4F))
             })
-            addView(ToggleButton(context, null, null, R.style.Widget_Material3_Button_OutlinedButton).apply {
+            addView(ToggleButton(context, null, R.attr.buttonOutlinedStyle).apply {
                 text = "Toggle LTR/RTL"
                 setOnCheckedChangeListener { _, checked ->
                     (pager.parent as? View)?.apply {

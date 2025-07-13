@@ -58,8 +58,7 @@ public class TooltipPopup {
         mTextView = new TextView(context);
         final Resources.Theme theme = context.getTheme();
         final TypedValue value = new TypedValue();
-        if (theme.resolveAttribute(R.ns, R.attr.textAppearanceBodySmall, value, true))
-            mTextView.setTextAppearance(value.getResourceId());
+        mTextView.setTextAppearance(R.attr.textAppearanceBodySmall);
         if (theme.resolveAttribute(R.ns, R.attr.colorOnSurfaceInverse, value, true))
             mTextView.setTextColor(value.data);
         mTextView.setGravity(Gravity.CENTER_VERTICAL);

@@ -65,10 +65,6 @@ import icyllis.modernui.view.Gravity;
  */
 public class EditText extends TextView {
 
-    @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.editTextStyle);
-
     public EditText(Context context) {
         super(context);
         setFocusable(true);
@@ -79,7 +75,7 @@ public class EditText extends TextView {
     }
 
     public EditText(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.editTextStyle);
     }
 
     public EditText(Context context, @Nullable AttributeSet attrs,

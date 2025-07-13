@@ -102,7 +102,7 @@ public class Resources {
         if (curTheme != null) {
             return curTheme;
         }
-        return R.style.Theme_Material3_Dark;
+        return R.style.Theme_Material3_Light;
     }
 
     /**

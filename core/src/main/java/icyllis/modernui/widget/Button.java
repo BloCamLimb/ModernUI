@@ -60,10 +60,6 @@ import icyllis.modernui.view.LayoutInflater;
  */
 public class Button extends TextView {
 
-    @AttrRes
-    static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.buttonStyle);
-
     /**
      * Simple constructor to use when creating a button from code.
      * <p>
@@ -98,7 +94,7 @@ public class Button extends TextView {
      * @see icyllis.modernui.view.View#View(Context, AttributeSet)
      */
     public Button(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.buttonStyle);
     }
 
     public Button(Context context, @Nullable AttributeSet attrs,

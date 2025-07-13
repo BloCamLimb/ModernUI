@@ -23,7 +23,6 @@ import icyllis.modernui.R
 import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.drawable.BuiltinIconDrawable
 import icyllis.modernui.graphics.drawable.ShapeDrawable
-import icyllis.modernui.resources.ResourceId
 import icyllis.modernui.resources.TypedValue
 import icyllis.modernui.util.DataSet
 import icyllis.modernui.util.Log
@@ -40,7 +39,6 @@ fun main() {
     System.setProperty("java.awt.headless", "true")
     Log.setLevel(Log.DEBUG)
     ModernUI().use { app ->
-        app.setTheme(R.style.Theme_Material3_Light)
         app.run(TestTabLayout())
     }
 }
@@ -85,7 +83,7 @@ class TestTabLayout : Fragment() {
                     Gravity.CENTER
                 }
             })
-            addView(TabLayout(requireContext(), null, ResourceId.attr(R.ns, R.attr.tabSecondaryStyle)).apply {
+            addView(TabLayout(requireContext(), null, R.attr.tabSecondaryStyle).apply {
                 addTab(newTab().apply {
                     text = "Overview"
                 })

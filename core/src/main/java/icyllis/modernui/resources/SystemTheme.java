@@ -1119,6 +1119,15 @@ public class SystemTheme {
             style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
             style.addReference(R.attr.tabStyle, R.style.Widget_Material3_TabLayout);
             style.addReference(R.attr.tabSecondaryStyle, R.style.Widget_Material3_TabLayout_Secondary);
+            style.addReference(R.attr.borderlessButtonStyle, R.style.Widget_Material3_Button_TextButton);
+            style.addReference(R.attr.buttonTonalStyle, R.style.Widget_Material3_Button_TonalButton);
+            style.addReference(R.attr.buttonOutlinedStyle, R.style.Widget_Material3_Button_OutlinedButton);
+            style.addReference(R.attr.buttonElevatedStyle, R.style.Widget_Material3_Button_ElevatedButton);
+            style.addReference(R.attr.iconButtonStyle, R.style.Widget_Material3_Button_IconButton_Standard);
+            style.addReference(R.attr.iconButtonFilledStyle, R.style.Widget_Material3_Button_IconButton);
+            style.addReference(R.attr.iconButtonTonalStyle, R.style.Widget_Material3_Button_IconButton_Tonal);
+            style.addReference(R.attr.iconButtonOutlinedStyle, R.style.Widget_Material3_Button_IconButton_Outlined);
+            style.addReference(R.attr.editTextOutlinedStyle, R.style.Widget_Material3_EditText_OutlinedBox);
         }
         {
             SystemTheme t = createMaterial(false);
@@ -1166,6 +1175,15 @@ public class SystemTheme {
             style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
             style.addReference(R.attr.tabStyle, R.style.Widget_Material3_TabLayout);
             style.addReference(R.attr.tabSecondaryStyle, R.style.Widget_Material3_TabLayout_Secondary);
+            style.addReference(R.attr.borderlessButtonStyle, R.style.Widget_Material3_Button_TextButton);
+            style.addReference(R.attr.buttonTonalStyle, R.style.Widget_Material3_Button_TonalButton);
+            style.addReference(R.attr.buttonOutlinedStyle, R.style.Widget_Material3_Button_OutlinedButton);
+            style.addReference(R.attr.buttonElevatedStyle, R.style.Widget_Material3_Button_ElevatedButton);
+            style.addReference(R.attr.iconButtonStyle, R.style.Widget_Material3_Button_IconButton_Standard);
+            style.addReference(R.attr.iconButtonFilledStyle, R.style.Widget_Material3_Button_IconButton);
+            style.addReference(R.attr.iconButtonTonalStyle, R.style.Widget_Material3_Button_IconButton_Tonal);
+            style.addReference(R.attr.iconButtonOutlinedStyle, R.style.Widget_Material3_Button_IconButton_Outlined);
+            style.addReference(R.attr.editTextOutlinedStyle, R.style.Widget_Material3_EditText_OutlinedBox);
         }
         {
             SystemTheme t = createDefault(true, 2);

@@ -135,16 +135,12 @@ public class ListPopupWindow implements ShowableListMenu {
 
     PopupWindow mPopup;
 
-    @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.listPopupWindowStyle);
-
     public ListPopupWindow(@NonNull Context context) {
         this(context, null);
     }
 
     public ListPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.listPopupWindowStyle);
     }
 
     public ListPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs,

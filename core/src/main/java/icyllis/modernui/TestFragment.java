@@ -43,7 +43,6 @@ import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.ShapedText;
-import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.SpannableString;
@@ -100,7 +99,6 @@ public class TestFragment extends Fragment {
         Configurator.setRootLevel(Level.DEBUG);
 
         try (ModernUI app = new ModernUI()) {
-            app.setTheme(R.style.Theme_Material3_Light);
             //app.getTheme().applyStyle(R.style.ThemeOverlay_Material3_Dark_Rust, true);
             app.run(new TestFragment());
         }
@@ -493,8 +491,7 @@ public class TestFragment extends Fragment {
                 View v;
                 LayoutParams p;
                 if (i == 1) {
-                    Button button = new Button(getContext(), null, null,
-                            R.style.Widget_Material3_Button_OutlinedButton);
+                    Button button = new Button(getContext(), null, R.attr.buttonOutlinedStyle);
                     button.setText("Play A Music!");
                     button.setOnClickListener(__ -> {
                         if (mGoodAnim != null) {
@@ -569,9 +566,8 @@ public class TestFragment extends Fragment {
                 } else if (i == 2) {
                     continue;
                 } else if (i == 3) {
-                    EditText textField = new EditText(getContext(), null, null,
-                            R.style.Widget_Material3_EditText_OutlinedBox);
-                    textField.setTextAppearance(R.style.TextAppearance_Material3_LabelLarge);
+                    EditText textField = new EditText(getContext(), null, R.attr.editTextOutlinedStyle);
+                    textField.setTextAppearance(R.attr.textAppearanceLabelLarge);
                     v = textField;
                     p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -669,9 +665,7 @@ public class TestFragment extends Fragment {
                     v = seekbar;
                     p = new LayoutParams(dp(236), WRAP_CONTENT);
                 } else if (i == 12) {
-                    ProgressBar progressBar = new ProgressBar(context, null, ResourceId.attr(
-                            R.ns, R.attr.progressBarStyleHorizontal
-                    ));
+                    ProgressBar progressBar = new ProgressBar(context, null, R.attr.progressBarStyleHorizontal);
                     progressBar.setIndeterminate(true);
                     v = progressBar;
                     p = new LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
@@ -684,7 +678,7 @@ public class TestFragment extends Fragment {
                     mProgressBar2 = progressBar;
                 } else if (i == 14) {
                     CheckableImageButton button = new CheckableImageButton(getContext(),
-                            null, null, R.style.Widget_Material3_Button_IconButton);
+                            null, R.attr.iconButtonFilledStyle);
                     var icon = new StateListDrawable();
                     icon.addState(new int[]{R.attr.state_checked}, new BuiltinIconDrawable(getContext().getResources(),
                             BuiltinIconDrawable.KEYBOARD_ARROW_UP));
@@ -698,7 +692,7 @@ public class TestFragment extends Fragment {
                 } else {
                     Button button;
                     if (i < 6) {
-                        button = new ToggleButton(getContext(), null, null, R.style.Widget_Material3_Button_ElevatedButton);
+                        button = new ToggleButton(getContext(), null, R.attr.buttonElevatedStyle);
                         var icon = new BuiltinIconDrawable(getContext().getResources(),
                                 BuiltinIconDrawable.CHECK, 18);
                         icon.setTintList(button.getTextColors());

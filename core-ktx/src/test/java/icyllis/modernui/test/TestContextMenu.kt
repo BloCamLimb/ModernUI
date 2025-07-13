@@ -19,21 +19,22 @@
 package icyllis.modernui.test
 
 import icyllis.modernui.ModernUI
-import icyllis.modernui.R
 import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.Color
 import icyllis.modernui.graphics.drawable.GradientDrawable
 import icyllis.modernui.util.DataSet
 import icyllis.modernui.util.Log
 import icyllis.modernui.view.LayoutInflater
+import icyllis.modernui.view.Menu
+import icyllis.modernui.view.MenuItem
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup
+import icyllis.modernui.widget.Toast
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
     Log.setLevel(Log.DEBUG)
     ModernUI().use { app ->
-        app.setTheme(R.style.Theme_Material3_Light)
         app.run(TestContextMenu())
     }
 }
@@ -59,13 +60,19 @@ class TestContextMenu : Fragment() {
         }
         view.layoutParams =
             ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        val menuItemClickListener = MenuItem.OnMenuItemClickListener {
+            // your logic here
+            Toast.makeText(view.context, "Clicked item ${it.itemId}", Toast.LENGTH_SHORT)
+                .show()
+            true
+        }
         view.setOnCreateContextMenuListener { menu, _, _ ->
-            menu.add("1")
-            menu.add("2")
-            menu.add("3")
-            menu.add("4")
-            menu.add("5")
-            menu.add("6")
+            menu.add(Menu.NONE, 1, Menu.NONE, "Item 1").setOnMenuItemClickListener(menuItemClickListener)
+            menu.add(Menu.NONE, 2, Menu.NONE, "Item 2").setOnMenuItemClickListener(menuItemClickListener)
+            menu.add(Menu.NONE, 3, Menu.NONE, "Item 3").setOnMenuItemClickListener(menuItemClickListener)
+            menu.add(Menu.NONE, 4, Menu.NONE, "Item 4").setOnMenuItemClickListener(menuItemClickListener)
+            menu.add(Menu.NONE, 5, Menu.NONE, "Item 5").setOnMenuItemClickListener(menuItemClickListener)
+            menu.add(Menu.NONE, 6, Menu.NONE, "Item 6").setOnMenuItemClickListener(menuItemClickListener)
         }
         return view
     }

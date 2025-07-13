@@ -28,6 +28,7 @@ public final class R {
     public static final String ns = ModernUI.ID;
 
     public static final class attr {
+        private static final String type = "attr";
 
         /**
          * State identifier indicating that the object is currently checked.
@@ -232,36 +233,40 @@ public final class R {
         public static final String colorErrorContainer = "colorErrorContainer";
         public static final String colorOnErrorContainer = "colorOnErrorContainer";
 
-        public static final String absListViewStyle = "absListViewStyle";
-        public static final String autoCompleteTextViewStyle = "autoCompleteTextViewStyle";
-        public static final String buttonStyle = "buttonStyle";
-        public static final String checkboxStyle = "checkboxStyle";
-        public static final String checkboxStyleMenuItem = "checkboxStyleMenuItem";
-        public static final String dropDownListViewStyle = "dropDownListViewStyle";
-        public static final String editTextStyle = "editTextStyle";
-        public static final String expandableListViewStyle = "expandableListViewStyle";
-        public static final String gridViewStyle = "gridViewStyle";
-        public static final String imageButtonStyle = "imageButtonStyle";
-        public static final String listViewStyle = "listViewStyle";
-        public static final String progressBarStyle = "progressBarStyle";
-        public static final String progressBarStyleSmall = "progressBarStyleSmall";
-        public static final String progressBarStyleHorizontal = "progressBarStyleHorizontal";
-        public static final String progressBarStyleVertical = "progressBarStyleVertical";
-        public static final String seekBarStyle = "seekBarStyle";
-        public static final String radioButtonStyle = "radioButtonStyle";
-        public static final String radioButtonStyleMenuItem = "radioButtonStyleMenuItem";
-        public static final String scrollbarStyle = "scrollbarStyle";
-        public static final String scrollViewStyle = "scrollViewStyle";
-        public static final String spinnerStyle = "spinnerStyle";
-        public static final String switchStyle = "switchStyle";
-        public static final String textViewStyle = "textViewStyle";
-        public static final String dropDownItemStyle = "dropDownItemStyle";
-        public static final String spinnerDropDownItemStyle = "spinnerDropDownItemStyle";
-        public static final String dropDownHintAppearance = "dropDownHintAppearance";
-        public static final String spinnerItemStyle = "spinnerItemStyle";
-        public static final String popupMenuStyle = "popupMenuStyle";
-        public static final String contextPopupMenuStyle = "contextPopupMenuStyle";
-        public static final String listPopupWindowStyle = "listPopupWindowStyle";
+        public static final ResourceId absListViewStyle = new ResourceId(ns, type, "absListViewStyle");
+        public static final ResourceId autoCompleteTextViewStyle = new ResourceId(ns, type, "autoCompleteTextViewStyle");
+        public static final ResourceId buttonStyle = new ResourceId(ns, type, "buttonStyle");
+        public static final ResourceId checkboxStyle = new ResourceId(ns, type, "checkboxStyle");
+        public static final ResourceId checkboxStyleMenuItem = new ResourceId(ns, type, "checkboxStyleMenuItem");
+        public static final ResourceId dropDownListViewStyle = new ResourceId(ns, type, "dropDownListViewStyle");
+        public static final ResourceId editTextStyle = new ResourceId(ns, type, "editTextStyle");
+        public static final ResourceId expandableListViewStyle = new ResourceId(ns, type, "expandableListViewStyle");
+        public static final ResourceId gridViewStyle = new ResourceId(ns, type, "gridViewStyle");
+        public static final ResourceId imageButtonStyle = new ResourceId(ns, type, "imageButtonStyle");
+        public static final ResourceId listViewStyle = new ResourceId(ns, type, "listViewStyle");
+        public static final ResourceId progressBarStyle = new ResourceId(ns, type, "progressBarStyle");
+        public static final ResourceId progressBarStyleSmall = new ResourceId(ns, type, "progressBarStyleSmall");
+        public static final ResourceId progressBarStyleHorizontal = new ResourceId(ns, type, "progressBarStyleHorizontal");
+        public static final ResourceId progressBarStyleVertical = new ResourceId(ns, type, "progressBarStyleVertical");
+        public static final ResourceId seekBarStyle = new ResourceId(ns, type, "seekBarStyle");
+        public static final ResourceId radioButtonStyle = new ResourceId(ns, type, "radioButtonStyle");
+        public static final ResourceId radioButtonStyleMenuItem = new ResourceId(ns, type, "radioButtonStyleMenuItem");
+        public static final ResourceId scrollbarStyle = new ResourceId(ns, type, "scrollbarStyle");
+        public static final ResourceId scrollViewStyle = new ResourceId(ns, type, "scrollViewStyle");
+        public static final ResourceId spinnerStyle = new ResourceId(ns, type, "spinnerStyle");
+        public static final ResourceId switchStyle = new ResourceId(ns, type, "switchStyle");
+        public static final ResourceId textViewStyle = new ResourceId(ns, type, "textViewStyle");
+        public static final ResourceId dropDownItemStyle = new ResourceId(ns, type, "dropDownItemStyle");
+        public static final ResourceId spinnerDropDownItemStyle = new ResourceId(ns, type, "spinnerDropDownItemStyle");
+        public static final ResourceId spinnerItemStyle = new ResourceId(ns, type, "spinnerItemStyle");
+        public static final ResourceId popupMenuStyle = new ResourceId(ns, type, "popupMenuStyle");
+        public static final ResourceId contextPopupMenuStyle = new ResourceId(ns, type, "contextPopupMenuStyle");
+        public static final ResourceId listPopupWindowStyle = new ResourceId(ns, type, "listPopupWindowStyle");
+
+        /**
+         * Style for buttons without an explicit border (text buttons), often used in groups.
+         */
+        public static final ResourceId borderlessButtonStyle = new ResourceId(ns, type, "borderlessButtonStyle");
 
         public static final String textSize = "textSize";
         public static final String textStyle = "textStyle";
@@ -273,24 +278,24 @@ public final class R {
 
         public static final String textFontWeight = "textFontWeight";
 
-        public static final String textAppearanceDisplayLarge = "textAppearanceDisplayLarge";
-        public static final String textAppearanceDisplayMedium = "textAppearanceDisplayMedium";
-        public static final String textAppearanceDisplaySmall = "textAppearanceDisplaySmall";
-        public static final String textAppearanceHeadlineLarge = "textAppearanceHeadlineLarge";
-        public static final String textAppearanceHeadlineMedium = "textAppearanceHeadlineMedium";
-        public static final String textAppearanceHeadlineSmall = "textAppearanceHeadlineSmall";
-        public static final String textAppearanceTitleLarge = "textAppearanceTitleLarge";
-        public static final String textAppearanceTitleMedium = "textAppearanceTitleMedium";
-        public static final String textAppearanceTitleSmall = "textAppearanceTitleSmall";
-        public static final String textAppearanceBodyLarge = "textAppearanceBodyLarge";
-        public static final String textAppearanceBodyMedium = "textAppearanceBodyMedium";
-        public static final String textAppearanceBodySmall = "textAppearanceBodySmall";
-        public static final String textAppearanceLabelLarge = "textAppearanceLabelLarge";
-        public static final String textAppearanceLabelMedium = "textAppearanceLabelMedium";
-        public static final String textAppearanceLabelSmall = "textAppearanceLabelSmall";
+        public static final ResourceId textAppearanceDisplayLarge = new ResourceId(ns, type, "textAppearanceDisplayLarge");
+        public static final ResourceId textAppearanceDisplayMedium = new ResourceId(ns, type, "textAppearanceDisplayMedium");
+        public static final ResourceId textAppearanceDisplaySmall = new ResourceId(ns, type, "textAppearanceDisplaySmall");
+        public static final ResourceId textAppearanceHeadlineLarge = new ResourceId(ns, type, "textAppearanceHeadlineLarge");
+        public static final ResourceId textAppearanceHeadlineMedium = new ResourceId(ns, type, "textAppearanceHeadlineMedium");
+        public static final ResourceId textAppearanceHeadlineSmall = new ResourceId(ns, type, "textAppearanceHeadlineSmall");
+        public static final ResourceId textAppearanceTitleLarge = new ResourceId(ns, type, "textAppearanceTitleLarge");
+        public static final ResourceId textAppearanceTitleMedium = new ResourceId(ns, type, "textAppearanceTitleMedium");
+        public static final ResourceId textAppearanceTitleSmall = new ResourceId(ns, type, "textAppearanceTitleSmall");
+        public static final ResourceId textAppearanceBodyLarge = new ResourceId(ns, type, "textAppearanceBodyLarge");
+        public static final ResourceId textAppearanceBodyMedium = new ResourceId(ns, type, "textAppearanceBodyMedium");
+        public static final ResourceId textAppearanceBodySmall = new ResourceId(ns, type, "textAppearanceBodySmall");
+        public static final ResourceId textAppearanceLabelLarge = new ResourceId(ns, type, "textAppearanceLabelLarge");
+        public static final ResourceId textAppearanceLabelMedium = new ResourceId(ns, type, "textAppearanceLabelMedium");
+        public static final ResourceId textAppearanceLabelSmall = new ResourceId(ns, type, "textAppearanceLabelSmall");
 
-        public static final String tabStyle = "tabStyle";
-        public static final String tabSecondaryStyle = "tabSecondaryStyle";
+        public static final ResourceId tabStyle = new ResourceId(ns, type, "tabStyle");
+        public static final ResourceId tabSecondaryStyle = new ResourceId(ns, type, "tabSecondaryStyle");
         public static final String tabIndicator = "tabIndicator";
         public static final String tabIndicatorColor = "tabIndicatorColor";
         public static final String tabIndicatorGravity = "tabIndicatorGravity";
@@ -314,16 +319,38 @@ public final class R {
         public static final String tabInlineLabel = "tabInlineLabel";
         public static final String tabUnboundedRipple = "tabUnboundedRipple";
 
+        /**
+         * Style to use for Material Tonal Buttons in theme.
+         */
+        public static final ResourceId buttonTonalStyle = new ResourceId(ns, type, "buttonTonalStyle");
+        /**
+         * Style to use for Material Outlined Buttons in theme.
+         */
+        public static final ResourceId buttonOutlinedStyle = new ResourceId(ns, type, "buttonOutlinedStyle");
+        /**
+         * Style to use for Material Elevated Buttons in theme.
+         */
+        public static final ResourceId buttonElevatedStyle = new ResourceId(ns, type, "buttonElevatedStyle");
+
+        /**
+         * Style to use for Material Icon Only Buttons in theme, applied to ImageButton.
+         */
+        public static final ResourceId iconButtonStyle = new ResourceId(ns, type, "iconButtonStyle");
+        public static final ResourceId iconButtonFilledStyle = new ResourceId(ns, type, "iconButtonFilledStyle");
+        public static final ResourceId iconButtonTonalStyle = new ResourceId(ns, type, "iconButtonTonalStyle");
+        public static final ResourceId iconButtonOutlinedStyle = new ResourceId(ns, type, "iconButtonOutlinedStyle");
+
+        /**
+         * Style to use for Outlined EditText in theme.
+         */
+        public static final ResourceId editTextOutlinedStyle = new ResourceId(ns, type, "editTextOutlinedStyle");
+
         /// INTERNAL BELOW \\\
 
         // Constant IDs for Material package.
         public static final int state_error = 0x05010001;
         public static final int state_indeterminate = 0x05010002;
         public static final int state_with_icon = 0x05010003;
-
-        static {
-            __();
-        }
     }
 
     public static final class id {
