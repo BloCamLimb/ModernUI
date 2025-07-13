@@ -49,16 +49,12 @@ import icyllis.modernui.util.AttributeSet;
  */
 public class RadioButton extends CompoundButton {
 
-    @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.radioButtonStyle);
-
     public RadioButton(Context context) {
         this(context, null);
     }
 
     public RadioButton(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.radioButtonStyle);
     }
 
     public RadioButton(Context context, @Nullable AttributeSet attrs,

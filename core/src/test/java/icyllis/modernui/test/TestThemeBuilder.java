@@ -50,7 +50,7 @@ public class TestThemeBuilder {
         ModernUI.LOGGER.info(a.getDimensionPixelSize(2, -1));
 
         TypedValue value = new TypedValue();
-        boolean result = theme.resolveAttribute(R.ns, R.attr.textAppearanceDisplayMedium,
+        boolean result = theme.resolveAttribute(R.attr.textAppearanceDisplayMedium,
                 value, true);
         ModernUI.LOGGER.info(result);
         ModernUI.LOGGER.info(value);

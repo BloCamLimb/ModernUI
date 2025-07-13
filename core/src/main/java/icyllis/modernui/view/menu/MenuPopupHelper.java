@@ -75,16 +75,12 @@ public class MenuPopupHelper implements MenuHelper {
      */
     private final PopupWindow.OnDismissListener mInternalOnDismissListener = this::onDismiss;
 
-    @AttrRes
-    public static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.popupMenuStyle);
-
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu) {
-        this(context, menu, null, false, DEF_STYLE_ATTR, null);
+        this(context, menu, null, false, R.attr.popupMenuStyle, null);
     }
 
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu, View anchorView) {
-        this(context, menu, anchorView, false, DEF_STYLE_ATTR, null);
+        this(context, menu, anchorView, false, R.attr.popupMenuStyle, null);
     }
 
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu,

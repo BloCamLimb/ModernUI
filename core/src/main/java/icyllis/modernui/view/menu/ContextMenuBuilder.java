@@ -39,7 +39,6 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.View;
 
@@ -101,7 +100,7 @@ public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
                     this,
                     originalView,
                     false,
-                    ResourceId.attr(R.ns, R.attr.contextPopupMenuStyle));
+                    R.attr.contextPopupMenuStyle);
             helper.show(Math.round(x), Math.round(y));
             return helper;
         }

@@ -292,10 +292,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             /*11*/R.ns, R.attr.textStyle,
     };
 
-    @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.textViewStyle);
-
     // Maps styleable attributes that exist both in TextView style and TextAppearance.
     private static final Int2IntOpenHashMap sAppearanceValues;
     private static void mapAttribute(@NonNull Int2IntOpenHashMap values,
@@ -351,7 +347,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     public TextView(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.textViewStyle);
     }
 
     public TextView(Context context, @Nullable AttributeSet attrs,

@@ -192,10 +192,6 @@ public class ProgressBar extends View {
             /*9*/R.ns, R.attr.secondaryProgress,
     };
 
-    @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.progressBarStyle);
-
     /**
      * Create a new progress bar with range 0...10000 and initial progress of 0.
      *
@@ -206,7 +202,7 @@ public class ProgressBar extends View {
     }
 
     public ProgressBar(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.progressBarStyle);
     }
 
     public ProgressBar(Context context, @Nullable AttributeSet attrs,

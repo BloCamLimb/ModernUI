@@ -43,7 +43,6 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
-import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.Gravity;
@@ -110,7 +109,7 @@ public class ListMenuItemView extends LinearLayout
             {
                 mTitleView = new TextView(getContext());
                 mTitleView.setId(R.id.title);
-                mTitleView.setTextAppearance(ResourceId.attr(R.ns, R.attr.textAppearanceBodyMedium));
+                mTitleView.setTextAppearance(R.attr.textAppearanceBodyMedium);
                 mTitleView.setSingleLine();
                 mTitleView.setDuplicateParentStateEnabled(true);
                 mTitleView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
@@ -123,7 +122,7 @@ public class ListMenuItemView extends LinearLayout
 
             {
                 mShortcutView = new TextView(getContext());
-                mShortcutView.setTextAppearance(ResourceId.attr(R.ns, R.attr.textAppearanceBodySmall));
+                mShortcutView.setTextAppearance(R.attr.textAppearanceBodySmall);
                 mShortcutView.setSingleLine();
                 mShortcutView.setDuplicateParentStateEnabled(true);
                 mShortcutView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
@@ -345,7 +344,7 @@ public class ListMenuItemView extends LinearLayout
     }
 
     private void insertRadioButton() {
-        mRadioButton = new RadioButton(getContext(), null, ResourceId.attr(R.ns, R.attr.radioButtonStyleMenuItem));
+        mRadioButton = new RadioButton(getContext(), null, R.attr.radioButtonStyleMenuItem);
         mRadioButton.setFocusable(false);
         mRadioButton.setClickable(false);
         mRadioButton.setDuplicateParentStateEnabled(true);
@@ -356,7 +355,7 @@ public class ListMenuItemView extends LinearLayout
     }
 
     private void insertCheckBox() {
-        mCheckBox = new CheckBox(getContext(), null, ResourceId.attr(R.ns, R.attr.checkboxStyleMenuItem));
+        mCheckBox = new CheckBox(getContext(), null, R.attr.checkboxStyleMenuItem);
         mCheckBox.setFocusable(false);
         mCheckBox.setClickable(false);
         mCheckBox.setDuplicateParentStateEnabled(true);

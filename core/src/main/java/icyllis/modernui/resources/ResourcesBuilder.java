@@ -256,6 +256,16 @@ public class ResourcesBuilder {
                     storeKeyString(target)));
         }
 
+        public void addAttribute(@AttrRes String attr, @NonNull @AttrRes ResourceId target) {
+            assert target.type().equals("attr") && target.namespace().equals(Resources.DEFAULT_NAMESPACE);
+            addAttribute(attr, target.entry());
+        }
+
+        public void addReference(@AttrRes ResourceId attr, @Nullable @AnyRes ResourceId target) {
+            assert attr.type().equals("attr") && attr.namespace().equals(Resources.DEFAULT_NAMESPACE);
+            addReference(attr.entry(), target);
+        }
+
         public void addReference(@AttrRes String attr, @Nullable @AnyRes ResourceId target) {
             assert target == null || target.namespace().equals(Resources.DEFAULT_NAMESPACE);
             attr = dedupKeyString(attr);

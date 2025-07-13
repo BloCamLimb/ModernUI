@@ -155,10 +155,6 @@ public class Switch extends Button implements Checkable2 {
             R.ns, R.attr.track,
     };
 
-    @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.switchStyle);
-
     /**
      * Construct a new Switch with default styling.
      *
@@ -176,7 +172,7 @@ public class Switch extends Button implements Checkable2 {
      * @param attrs   Specification of attributes that should deviate from default styling.
      */
     public Switch(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.switchStyle);
     }
 
     /**

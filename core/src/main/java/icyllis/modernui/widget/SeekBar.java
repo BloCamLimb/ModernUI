@@ -79,16 +79,12 @@ public class SeekBar extends AbsSeekBar {
 
     private OnSeekBarChangeListener mOnSeekBarChangeListener;
 
-    @AttrRes
-    private static final ResourceId DEF_STYLE_ATTR =
-            ResourceId.attr(R.ns, R.attr.seekBarStyle);
-
     public SeekBar(Context context) {
         this(context, null);
     }
 
     public SeekBar(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, DEF_STYLE_ATTR);
+        this(context, attrs, R.attr.seekBarStyle);
     }
 
     public SeekBar(Context context, @Nullable AttributeSet attrs,
