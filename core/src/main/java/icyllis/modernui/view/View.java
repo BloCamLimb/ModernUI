@@ -64,6 +64,7 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.util.LayoutDirection;
+import icyllis.modernui.util.LongSparseLongArray;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
@@ -209,6 +210,18 @@ public class View implements Drawable.Callback {
      */
     public static final int NO_ID = -1;
 
+    /**
+     * When true makes it possible to use onMeasure caches also when the force layout flag is
+     * enabled. This helps avoiding multiple measures in the same frame with the same dimensions.
+     * <p>
+     * Enables using the measure cache during a view force layout from the second
+     * onMeasure call onwards during the same traversal.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean sUseMeasureCacheDuringForceLayout = false;
+
     @MagicConstant(intValues = {NOT_FOCUSABLE, FOCUSABLE, FOCUSABLE_AUTO})
     @Retention(RetentionPolicy.SOURCE)
     public @interface Focusable {
@@ -265,6 +278,7 @@ public class View implements Drawable.Callback {
 
     /**
      * Mask for use with setFlags indicating bits used for visibility.
+     *
      * @hidden
      */
     static final int VISIBILITY_MASK = 0x0000000C;
@@ -272,6 +286,7 @@ public class View implements Drawable.Callback {
     /**
      * This view is enabled. Interpretation varies by subclass.
      * Use with ENABLED_MASK when calling setFlags.
+     *
      * @hidden
      */
     static final int ENABLED = 0x00000000;
@@ -279,6 +294,7 @@ public class View implements Drawable.Callback {
     /**
      * This view is disabled. Interpretation varies by subclass.
      * Use with ENABLED_MASK when calling setFlags.
+     *
      * @hidden
      */
     static final int DISABLED = 0x00000020;
@@ -286,6 +302,7 @@ public class View implements Drawable.Callback {
     /**
      * Mask for use with setFlags indicating bits used for indicating whether
      * this view is enabled
+     *
      * @hidden
      */
     static final int ENABLED_MASK = 0x00000020;
@@ -294,6 +311,7 @@ public class View implements Drawable.Callback {
      * This view won't draw. {@link #onDraw(Canvas)} won't be
      * called and further optimizations will be performed. It is okay to have
      * this flag set and a background. Use with DRAW_MASK when calling setFlags.
+     *
      * @hidden
      */
     static final int WILL_NOT_DRAW = 0x00000080;
@@ -301,24 +319,28 @@ public class View implements Drawable.Callback {
     /**
      * Mask for use with setFlags indicating bits used for indicating whether
      * this view is will draw
+     *
      * @hidden
      */
     static final int DRAW_MASK = 0x00000080;
 
     /**
      * <p>This view doesn't show scrollbars.</p>
+     *
      * @hidden
      */
     static final int SCROLLBARS_NONE = 0x00000000;
 
     /**
      * <p>This view shows horizontal scrollbars.</p>
+     *
      * @hidden
      */
     static final int SCROLLBARS_HORIZONTAL = 0x00000100;
 
     /**
      * <p>This view shows vertical scrollbars.</p>
+     *
      * @hidden
      */
     static final int SCROLLBARS_VERTICAL = 0x00000200;
@@ -326,24 +348,28 @@ public class View implements Drawable.Callback {
     /**
      * <p>Mask for use with setFlags indicating bits used for indicating which
      * scrollbars are enabled.</p>
+     *
      * @hidden
      */
     static final int SCROLLBARS_MASK = 0x00000300;
 
     /**
      * <p>This view doesn't show fading edges.</p>
+     *
      * @hidden
      */
     static final int FADING_EDGE_NONE = 0x00000000;
 
     /**
      * <p>This view shows horizontal fading edges.</p>
+     *
      * @hidden
      */
     static final int FADING_EDGE_HORIZONTAL = 0x00001000;
 
     /**
      * <p>This view shows vertical fading edges.</p>
+     *
      * @hidden
      */
     static final int FADING_EDGE_VERTICAL = 0x00002000;
@@ -351,6 +377,7 @@ public class View implements Drawable.Callback {
     /**
      * <p>Mask for use with setFlags indicating bits used for indicating which
      * fading edges are enabled.</p>
+     *
      * @hidden
      */
     static final int FADING_EDGE_MASK = 0x00003000;
@@ -358,12 +385,14 @@ public class View implements Drawable.Callback {
     /**
      * <p>Indicates this view can be clicked. When clickable, a View reacts
      * to clicks by notifying the OnClickListener.<p>
+     *
      * @hidden
      */
     static final int CLICKABLE = 0x00004000;
 
     /**
      * <p>Indicates this view can take / keep focus when int touch mode.</p>
+     *
      * @hidden
      */
     static final int FOCUSABLE_IN_TOUCH_MODE = 0x00040000;
@@ -374,6 +403,7 @@ public class View implements Drawable.Callback {
      * reacts to long clicks by notifying the OnLongClickListener or showing a
      * context menu.
      * </p>
+     *
      * @hidden
      */
     static final int LONG_CLICKABLE = 0x00200000;
@@ -392,6 +422,7 @@ public class View implements Drawable.Callback {
      * context click (e.g. a primary stylus button press or right mouse click) by notifying the
      * OnContextClickListener.
      * </p>
+     *
      * @hidden
      */
     static final int CONTEXT_CLICKABLE = 0x00800000;
@@ -436,18 +467,21 @@ public class View implements Drawable.Callback {
 
     /**
      * Mask to check if the scrollbar style is overlay or inset.
+     *
      * @hidden
      */
     static final int SCROLLBARS_INSET_MASK = 0x01000000;
 
     /**
      * Mask to check if the scrollbar style is inside or outside.
+     *
      * @hidden
      */
     static final int SCROLLBARS_OUTSIDE_MASK = 0x02000000;
 
     /**
      * Mask for scrollbar style.
+     *
      * @hidden
      */
     static final int SCROLLBARS_STYLE_MASK = 0x03000000;
@@ -466,6 +500,7 @@ public class View implements Drawable.Callback {
 
     /**
      * <p>Indicates this view can display a tooltip on hover or long press.</p>
+     *
      * @hidden
      */
     static final int TOOLTIP = 0x40000000;
@@ -995,6 +1030,7 @@ public class View implements Drawable.Callback {
      * children and should therefore not cancel invalidate requests, even if they
      * lie outside of this view's bounds.
      * <p>
+     *
      * @hidden
      */
     static final int PFLAG_DRAW_ANIMATION = 0x00000040;
@@ -1032,6 +1068,7 @@ public class View implements Drawable.Callback {
     /**
      * Flag used to indicate that this view should be drawn once more (and only once
      * more) after its animation has completed.
+     *
      * @hidden
      */
     static final int PFLAG_ANIMATION_STARTED = 0x00010000;
@@ -1041,6 +1078,7 @@ public class View implements Drawable.Callback {
     /**
      * Indicates that the View returned true when onSetAlpha() was called and that
      * the alpha must be restored.
+     *
      * @hidden
      */
     static final int PFLAG_ALPHA_SET = 0x00040000;
@@ -1993,18 +2031,16 @@ public class View implements Drawable.Callback {
 
     /**
      * The parent this view is attached to.
-     * @hidden
      *
+     * @hidden
      * @see #getParent()
      */
     ViewParent mParent;
 
     /**
-     * @hidden
-     * <p>
+     * @hidden <p>
      * Not available for general use. If you need help, hang up and then dial one of the following
      * public APIs:
-     *
      * @see #isAttachedToWindow() for current attach state
      * @see #onAttachedToWindow() for subclasses performing work when becoming attached
      * @see #onDetachedFromWindow() for subclasses performing work when becoming detached
@@ -2037,6 +2073,7 @@ public class View implements Drawable.Callback {
      * The field should not be used directly. Instead {@link #getLayoutParams()} and {@link
      * #setLayoutParams(ViewGroup.LayoutParams)} should be used. The setter guarantees internal
      * state correctness of the class.
+     *
      * @hidden
      */
     ViewGroup.LayoutParams mLayoutParams;
@@ -2046,6 +2083,7 @@ public class View implements Drawable.Callback {
      * <p>
      * Use {@link #setTransitionVisibility(int)} to change the visibility of this view without
      * triggering updates.
+     *
      * @hidden
      */
     int mViewFlags;
@@ -2057,8 +2095,8 @@ public class View implements Drawable.Callback {
 
     /**
      * The view's identifier.
-     * @hidden
      *
+     * @hidden
      * @see #setId(int)
      * @see #getId()
      */
@@ -2066,8 +2104,8 @@ public class View implements Drawable.Callback {
 
     /**
      * The view's tag.
-     * @hidden
      *
+     * @hidden
      * @see #setTag(Object)
      * @see #getTag()
      */
@@ -2098,24 +2136,28 @@ public class View implements Drawable.Callback {
     /**
      * The distance in pixels from the left edge of this view's parent
      * to the left edge of this view.
+     *
      * @hidden
      */
     int mLeft;
     /**
      * The distance in pixels from the left edge of this view's parent
      * to the right edge of this view.
+     *
      * @hidden
      */
     int mRight;
     /**
      * The distance in pixels from the top edge of this view's parent
      * to the top edge of this view.
+     *
      * @hidden
      */
     int mTop;
     /**
      * The distance in pixels from the top edge of this view's parent
      * to the bottom edge of this view.
+     *
      * @hidden
      */
     int mBottom;
@@ -2125,6 +2167,7 @@ public class View implements Drawable.Callback {
      * horizontally.
      * Please use {@link View#getScrollX()} and {@link View#setScrollX(int)} instead of
      * accessing these directly.
+     *
      * @hidden
      */
     protected int mScrollX;
@@ -2133,6 +2176,7 @@ public class View implements Drawable.Callback {
      * vertically.
      * Please use {@link View#getScrollY()} and {@link View#setScrollY(int)} instead of
      * accessing these directly.
+     *
      * @hidden
      */
     protected int mScrollY;
@@ -2140,6 +2184,7 @@ public class View implements Drawable.Callback {
     /**
      * The final computed left padding in pixels that is used for drawing. This is the distance in
      * pixels between the left edge of this view and the left edge of its content.
+     *
      * @hidden
      */
     @ApiStatus.Internal
@@ -2147,6 +2192,7 @@ public class View implements Drawable.Callback {
     /**
      * The final computed right padding in pixels that is used for drawing. This is the distance in
      * pixels between the right edge of this view and the right edge of its content.
+     *
      * @hidden
      */
     @ApiStatus.Internal
@@ -2154,6 +2200,7 @@ public class View implements Drawable.Callback {
     /**
      * The final computed top padding in pixels that is used for drawing. This is the distance in
      * pixels between the top edge of this view and the top edge of its content.
+     *
      * @hidden
      */
     @ApiStatus.Internal
@@ -2161,6 +2208,7 @@ public class View implements Drawable.Callback {
     /**
      * The final computed bottom padding in pixels that is used for drawing. This is the distance in
      * pixels between the bottom edge of this view and the bottom edge of its content.
+     *
      * @hidden
      */
     @ApiStatus.Internal
@@ -2247,12 +2295,14 @@ public class View implements Drawable.Callback {
 
     /**
      * Width as measured during measure pass.
+     *
      * @hidden
      */
     int mMeasuredWidth;
 
     /**
      * Height as measured during measure pass.
+     *
      * @hidden
      */
     int mMeasuredHeight;
@@ -2265,6 +2315,8 @@ public class View implements Drawable.Callback {
      * @hidden
      */
     int mOldHeightMeasureSpec = Integer.MIN_VALUE;
+
+    private LongSparseLongArray mMeasureCache;
 
     private Drawable mBackground;
     private boolean mBackgroundSizeChanged;
@@ -3169,6 +3221,11 @@ public class View implements Drawable.Callback {
      */
     @SuppressWarnings("unchecked")
     public void layout(int l, int t, int r, int b) {
+        if ((mPrivateFlags3 & PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT) != 0) {
+            onMeasure(mOldWidthMeasureSpec, mOldHeightMeasureSpec);
+            mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
+        }
+
         int oldL = mLeft;
         int oldT = mTop;
         int oldB = mBottom;
@@ -3336,7 +3393,12 @@ public class View implements Drawable.Callback {
      * @see #onMeasure(int, int)
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
-        boolean needsLayout = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT;
+        // Suppress sign extension for the low bytes
+        long key = (long) widthMeasureSpec << 32 | (long) heightMeasureSpec & 0xffffffffL;
+        if (mMeasureCache == null) mMeasureCache = new LongSparseLongArray(2);
+
+        final boolean forceLayout = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT;
+        boolean needsLayout = forceLayout;
 
         if (!needsLayout) {
             // Optimize layout by avoiding an extra EXACTLY pass when the view is
@@ -3357,8 +3419,18 @@ public class View implements Drawable.Callback {
 
             resolveRtlPropertiesIfNeeded();
 
-            // measure ourselves, this should set the measured dimension flag back
-            onMeasure(widthMeasureSpec, heightMeasureSpec);
+            int cacheIndex = forceLayout && !sUseMeasureCacheDuringForceLayout ? -1 : mMeasureCache.indexOfKey(key);
+
+            if (cacheIndex < 0) {
+                // measure ourselves, this should set the measured dimension flag back
+                onMeasure(widthMeasureSpec, heightMeasureSpec);
+                mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
+            } else {
+                long value = mMeasureCache.valueAt(cacheIndex);
+                // Casting a long to int drops the high 32 bits, no mask needed
+                setMeasuredDimension((int) (value >> 32), (int) value);
+                mPrivateFlags3 |= PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
+            }
 
             // the flag should be added in onMeasure() by calling setMeasuredDimension()
             if ((mPrivateFlags & PFLAG_MEASURED_DIMENSION_SET) == 0) {
@@ -3372,6 +3444,9 @@ public class View implements Drawable.Callback {
 
         mOldWidthMeasureSpec = widthMeasureSpec;
         mOldHeightMeasureSpec = heightMeasureSpec;
+
+        mMeasureCache.put(key, ((long) mMeasuredWidth) << 32 |
+                (long) mMeasuredHeight & 0xffffffffL); // suppress sign extension
     }
 
     /**
@@ -9375,6 +9450,8 @@ public class View implements Drawable.Callback {
      */
     @CallSuper
     public void requestLayout() {
+        if (mMeasureCache != null) mMeasureCache.clear();
+
         if (mAttachInfo != null && mAttachInfo.mViewRequestingLayout == null) {
             // Only trigger request-during-layout logic if this is the view requesting it,
             // not the views in its parent hierarchy
@@ -9414,6 +9491,8 @@ public class View implements Drawable.Callback {
      * on the parent.
      */
     public void forceLayout() {
+        if (mMeasureCache != null) mMeasureCache.clear();
+
         mPrivateFlags |= PFLAG_FORCE_LAYOUT;
         mPrivateFlags |= PFLAG_INVALIDATED;
     }
