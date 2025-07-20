@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,35 +16,23 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test;
+package icyllis.modernui.test.jmh;
 
-import icyllis.modernui.core.Message;
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-@Fork(2)
-@Threads(16)
-@Warmup(iterations = 2, time = 1)
-@Measurement(iterations = 5, time = 1)
-@State(Scope.Thread)
-public class TestMessagePool {
+public class Bench {
 
     public static void main(String[] args) throws RunnerException {
+        if (args.length == 0) {
+            throw new IllegalArgumentException("Specify the benchmark include regex");
+        }
         new Runner(new OptionsBuilder()
-                .include(TestMessagePool.class.getSimpleName())
-                .jvmArgs("-XX:+UseZGC", "-XX:+ZGenerational")
-                .shouldFailOnError(true).shouldDoGC(true)
+                .include(args[0])
+                .shouldFailOnError(true)
+                .shouldDoGC(true)
                 .build())
                 .run();
-    }
-
-    @Benchmark
-    public void single(Blackhole blackhole) {
-        Message m = Message.obtain();
-        blackhole.consume(m);
-        m.recycle();
     }
 }
