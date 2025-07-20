@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,33 +16,27 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test;
+package icyllis.modernui.test.jmh;
 
 import icyllis.modernui.graphics.Bitmap;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.Random;
 
-@Fork(2)
+@Fork(value = 2, jvmArgsAppend = {"-Xmx128m", "-Dorg.lwjgl.system.allocator=system"})
 @Threads(16)
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 5, time = 1)
 @State(Scope.Thread)
 public class TestHighConcurrencyBitmap {
-
-    public static void main(String[] args) throws RunnerException {
-        // you will get seg fault if there is no reachabilityFence() in the Bitmap class
-        new Runner(new OptionsBuilder()
-                .include(TestHighConcurrencyBitmap.class.getSimpleName())
-                .shouldFailOnError(true).shouldDoGC(true)
-                .jvmArgs("-Xmx128m", "-Dorg.lwjgl.system.allocator=system")
-                .build())
-                .run();
-    }
+    // you will get seg fault if there is no reachabilityFence() in the Bitmap class
 
     private static final Bitmap SRC;
 

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,14 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test;
+package icyllis.modernui.test.jmh;
 
 import icyllis.modernui.util.MpmcArrayQueue;
 import icyllis.modernui.util.Pools;
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -51,14 +52,6 @@ public class TestRingBuffer {
         Runnable callback;
         Holder next;
         int flags;
-    }
-
-    public static void main(String[] args) throws RunnerException {
-        new Runner(new OptionsBuilder()
-                .include(TestRingBuffer.class.getSimpleName())
-                .shouldFailOnError(true).shouldDoGC(true)
-                .build())
-                .run();
     }
 
     @Benchmark
