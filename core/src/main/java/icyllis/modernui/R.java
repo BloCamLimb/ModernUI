@@ -344,6 +344,7 @@ public final class R {
          * Style to use for Outlined EditText in theme.
          */
         public static final ResourceId editTextOutlinedStyle = new ResourceId(ns, type, "editTextOutlinedStyle");
+        public static final ResourceId editTextFilledStyle = new ResourceId(ns, type, "editTextFilledStyle");
 
         /// INTERNAL BELOW \\\
 
@@ -516,6 +517,8 @@ public final class R {
         public static final ResourceId Widget_Material3_EditText = new ResourceId(ns, type, "Widget.Material3.EditText");
         // unofficial
         public static final ResourceId Widget_Material3_EditText_OutlinedBox = new ResourceId(ns, type, "Widget.Material3.EditText.OutlinedBox");
+        // unofficial
+        public static final ResourceId Widget_Material3_EditText_FilledBox = new ResourceId(ns, type, "Widget.Material3.EditText.FilledBox");
 
         public static final ResourceId Widget_Material3_TabLayout = new ResourceId(ns, type, "Widget.Material3.TabLayout");
         /**
