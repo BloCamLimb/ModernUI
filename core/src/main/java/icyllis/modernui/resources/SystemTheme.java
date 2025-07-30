@@ -19,6 +19,7 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.R;
+import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
@@ -936,6 +937,50 @@ public class SystemTheme {
             return textfield_indicator_text_color;
         }
 
+        private ColorStateList textfield_filled_background_color;
+        private ColorStateList textfield_filled_background_color() {
+            if (textfield_filled_background_color != null) {
+                return textfield_filled_background_color;
+            }
+            textfield_filled_background_color = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.get(StateSet.VIEW_STATE_HOVERED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnSurfaceInverse, material_emphasis_disabled),
+                            Color.blend(BlendMode.SRC_OVER,
+                                    (colorOnSurface & 0xFFFFFF) | (int) (0.08f * 255 + 0.5f) << 24,
+                                    colorSurfaceContainerHighest),
+                            colorSurfaceContainerHighest
+                    }
+            );
+            return textfield_filled_background_color;
+        }
+
+        private ColorStateList textfield_filled_indicator_color;
+        private ColorStateList textfield_filled_indicator_color() {
+            if (textfield_filled_indicator_color != null) {
+                return textfield_filled_indicator_color;
+            }
+            textfield_filled_indicator_color = new ColorStateList(
+                    new int[][]{
+                            new int[]{-R.attr.state_enabled},
+                            StateSet.get(StateSet.VIEW_STATE_FOCUSED),
+                            StateSet.get(StateSet.VIEW_STATE_HOVERED),
+                            StateSet.WILD_CARD
+                    },
+                    new int[]{
+                            modulateColor(colorOnSurface, material_emphasis_disabled),
+                            colorPrimary,
+                            colorOnSurface,
+                            colorOnSurfaceVariant
+                    }
+            );
+            return textfield_filled_indicator_color;
+        }
+
         private ColorStateList slider_halo_color;
         private ColorStateList slider_halo_color() {
             if (slider_halo_color != null) {
@@ -1128,6 +1173,7 @@ public class SystemTheme {
             style.addReference(R.attr.iconButtonTonalStyle, R.style.Widget_Material3_Button_IconButton_Tonal);
             style.addReference(R.attr.iconButtonOutlinedStyle, R.style.Widget_Material3_Button_IconButton_Outlined);
             style.addReference(R.attr.editTextOutlinedStyle, R.style.Widget_Material3_EditText_OutlinedBox);
+            style.addReference(R.attr.editTextFilledStyle, R.style.Widget_Material3_EditText_FilledBox);
         }
         {
             SystemTheme t = createMaterial(false);
@@ -1184,6 +1230,7 @@ public class SystemTheme {
             style.addReference(R.attr.iconButtonTonalStyle, R.style.Widget_Material3_Button_IconButton_Tonal);
             style.addReference(R.attr.iconButtonOutlinedStyle, R.style.Widget_Material3_Button_IconButton_Outlined);
             style.addReference(R.attr.editTextOutlinedStyle, R.style.Widget_Material3_EditText_OutlinedBox);
+            style.addReference(R.attr.editTextFilledStyle, R.style.Widget_Material3_EditText_FilledBox);
         }
         {
             SystemTheme t = createDefault(true, 2);
@@ -1869,6 +1916,11 @@ public class SystemTheme {
             style.addReference(R.attr.textAppearance, R.style.TextAppearance_Material3_BodyMedium);
         }
         {
+            var style = b.newStyle(R.style.Widget_Material3_EditText_FilledBox, R.style.Widget_Material3_EditText);
+            style.addDrawable(R.attr.background, SystemTheme::filled_box);
+            style.addReference(R.attr.textAppearance, R.style.TextAppearance_Material3_BodyMedium);
+        }
+        {
             var style = b.newStyle(R.style.Widget_Material3_TabLayout, null);
             BiFunction<Resources, Resources.Theme, ColorStateList> tint = (resources, theme) ->
                     fromCache(theme, ThemedCache::tabs_text_color);
@@ -1928,6 +1980,32 @@ public class SystemTheme {
         selector.addState(StateSet.get(StateSet.VIEW_STATE_FOCUSED), focusedBackground);
         selector.addState(StateSet.WILD_CARD, background);
         return selector;
+    }
+
+    private static Drawable filled_box(Resources resources, Resources.Theme theme) {
+        var boxBackgroundColor = fromCache(theme, ThemedCache::textfield_filled_background_color);
+        var boxIndicatorColor = fromCache(theme, ThemedCache::textfield_filled_indicator_color);
+        var layer = new LayerDrawable();
+        var background = new ShapeDrawable();
+        background.setShape(ShapeDrawable.RECTANGLE);
+        var cornerSizeExtraSmall = dp(4, resources);
+        background.setCornerRadii(cornerSizeExtraSmall, cornerSizeExtraSmall, 0, 0);
+        background.setColor(boxBackgroundColor);
+        background.setSize(-1, dp(36, resources));
+        var boxUnderline = new StateListDrawable();
+        var boxUnderlineDefault = new ShapeDrawable();
+        boxUnderlineDefault.setShape(ShapeDrawable.RECTANGLE);
+        boxUnderlineDefault.setColor(boxIndicatorColor);
+        boxUnderlineDefault.setSize(-1, dp(1, resources));
+        var boxUnderlineFocused = (ShapeDrawable) boxUnderlineDefault.getConstantState().newDrawable(resources);
+        boxUnderlineFocused.mutate();
+        boxUnderlineFocused.setSize(-1, dp(2, resources));
+        boxUnderline.addState(StateSet.get(StateSet.VIEW_STATE_FOCUSED), boxUnderlineFocused);
+        boxUnderline.addState(StateSet.WILD_CARD, boxUnderlineDefault);
+        layer.addLayer(background);
+        layer.addLayer(boxUnderline);
+        layer.setLayerGravity(1, Gravity.BOTTOM);
+        return layer;
     }
 
     private static Drawable circular_progress_drawable(Resources resources, Resources.Theme theme,

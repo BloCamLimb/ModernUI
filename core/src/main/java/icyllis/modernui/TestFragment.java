@@ -566,7 +566,7 @@ public class TestFragment extends Fragment {
                 } else if (i == 2) {
                     continue;
                 } else if (i == 3) {
-                    EditText textField = new EditText(getContext(), null, R.attr.editTextOutlinedStyle);
+                    EditText textField = new EditText(getContext(), null, R.attr.editTextFilledStyle);
                     textField.setTextAppearance(R.attr.textAppearanceLabelLarge);
                     v = textField;
                     p = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
