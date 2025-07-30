@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,6 @@ import icyllis.modernui.graphics.BitmapFactory
 import icyllis.modernui.util.Log
 import java.io.IOException
 import java.nio.file.Path
-import java.util.*
 
 fun main() {
     Log.setLevel(Log.DEBUG)
@@ -31,7 +30,7 @@ fun main() {
     if (gets != null) {
         val opts = BitmapFactory.Options()
         opts.inDecodeMimeType = true
-        Arrays.stream(gets).map { s: String -> Path.of(s) }.forEach { p: Path ->
+        gets.asSequence().map { s: String -> Path.of(s) }.forEach { p: Path ->
             try {
                 BitmapFactory.decodePathInfo(p, opts)
                 Log.info(
