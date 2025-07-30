@@ -19,8 +19,8 @@
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.annotation.UiThread;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * ViewModel is a class that is responsible for preparing and managing the data for
@@ -87,7 +87,7 @@ import org.apache.logging.log4j.MarkerManager;
 public abstract class ViewModel {
 
     // this abstract class is preserved for future internal changes
-    static final Marker MARKER = MarkerManager.getMarker("ViewModel");
+    static final Marker MARKER = MarkerFactory.getMarker("ViewModel");
 
     /**
      * This method will be called when this ViewModel is no longer used and will be destroyed.

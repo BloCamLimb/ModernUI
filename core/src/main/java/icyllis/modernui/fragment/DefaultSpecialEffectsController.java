@@ -64,7 +64,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * A SpecialEffectsController that hooks into the existing Fragment APIs to run

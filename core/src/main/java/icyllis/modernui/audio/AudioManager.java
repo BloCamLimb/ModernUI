@@ -18,11 +18,11 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.MainThread;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import icyllis.modernui.util.Log;
 import org.lwjgl.openal.*;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,7 +36,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 //TODO WIP
 public class AudioManager implements AutoCloseable {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Audio");
+    public static final Marker MARKER = MarkerFactory.getMarker("Audio");
 
     // 1, 2, 4, 5, 8, 10, 20, 25, 40, 50, 100, 125, 200, 250 milliseconds
     public static final int TICK_PERIOD = 20;
@@ -110,7 +110,7 @@ public class AudioManager implements AutoCloseable {
                     ALCCapabilities alcCapabilities = ALC.createCapabilities(device);
                     ALCapabilities alCapabilities = AL.createCapabilities(alcCapabilities);
                     if (!alcCapabilities.OpenALC11 || !alCapabilities.OpenAL11) {
-                        ModernUI.LOGGER.fatal(MARKER, "OpenAL 1.1 is not supported");
+                        Log.wtf(MARKER, "OpenAL 1.1 is not supported", null);
                     }
                     /*if (alCapabilities.AL_EXT_source_distance_model) {
                         alEnable(EXTSourceDistanceModel.AL_SOURCE_DISTANCE_MODEL);
@@ -125,12 +125,12 @@ public class AudioManager implements AutoCloseable {
                         }
                     }*/
                     String devName = alcGetString(device, ALC_DEVICE_SPECIFIER);
-                    ModernUI.LOGGER.info(MARKER, "Open audio device {}", devName);
+                    Log.LOGGER.info(MARKER, "Open audio device {}", devName);
                 } else {
-                    ModernUI.LOGGER.error(MARKER, "Failed to create audio context");
+                    Log.LOGGER.error(MARKER, "Failed to create audio context");
                 }
             } else {
-                ModernUI.LOGGER.info(MARKER, "No suitable audio device was found");
+                Log.LOGGER.info(MARKER, "No suitable audio device was found");
             }
         }
     }
@@ -148,14 +148,14 @@ public class AudioManager implements AutoCloseable {
                     }
                     destroy();
                     setDevice(null);
-                    ModernUI.LOGGER.info(MARKER, "Device list changed");
+                    Log.LOGGER.info(MARKER, "Device list changed");
                 }
             }
             for (Track track : mTracks) {
                 track.tick();
             }
         } catch (Throwable t) {
-            ModernUI.LOGGER.error(MARKER, "Caught an exception on audio thread", t);
+            Log.LOGGER.error(MARKER, "Caught an exception on audio thread", t);
         }
         mTimer = timer;
     }

@@ -21,7 +21,6 @@ package icyllis.modernui.test
 import icyllis.arc3d.core.Rect2i
 import icyllis.arc3d.core.RectanglePacker
 import icyllis.modernui.graphics.MathUtil
-import icyllis.modernui.util.Log
 import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
@@ -34,7 +33,6 @@ const val HEIGHT = 1024
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
-    Log.setLevel(Log.INFO)
 
     val packer1 = TestRectanglePacker(RectanglePacker.ALGORITHM_SKYLINE)
     val packer2 = TestRectanglePacker(RectanglePacker.ALGORITHM_HORIZON)

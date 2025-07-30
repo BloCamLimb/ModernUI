@@ -22,7 +22,6 @@ import icyllis.modernui.ModernUI
 import icyllis.modernui.TestFragment.TestLinearLayout
 import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.util.DataSet
-import icyllis.modernui.util.Log
 import icyllis.modernui.view.Gravity
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
@@ -32,7 +31,8 @@ import icyllis.modernui.widget.HorizontalScrollView
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
-    Log.setLevel(Log.DEBUG)
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug")
+    System.setProperty("org.slf4j.simpleLogger.logFile", "System.out")
     ModernUI().use { app -> app.run(TestHorizontalScrollView()) }
 }
 

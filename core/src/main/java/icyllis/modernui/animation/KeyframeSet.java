@@ -18,10 +18,10 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Keyframe.FloatKeyframe;
 import icyllis.modernui.animation.Keyframe.IntKeyframe;
 import icyllis.modernui.animation.Keyframe.ObjectKeyframe;
+import icyllis.modernui.util.Log;
 
 import javax.annotation.Nonnull;
 
@@ -84,7 +84,7 @@ public class KeyframeSet implements Keyframes {
             }
         }
         if (badValue) {
-            ModernUI.LOGGER.warn(Animator.MARKER, "Bad value (NaN) in float animator");
+            Log.LOGGER.warn(Animator.MARKER, "Bad value (NaN) in float animator");
         }
         return new FloatKeyframeSet(keyframes);
     }

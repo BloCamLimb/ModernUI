@@ -18,16 +18,16 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.util.GrowingArrayUtils;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.widget.TextView;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.*;
 
@@ -40,7 +40,7 @@ import java.util.*;
  */
 public class StaticLayout extends Layout {
 
-    public static final Marker MARKER = MarkerManager.getMarker("StaticLayout");
+    public static final Marker MARKER = MarkerFactory.getMarker("StaticLayout");
 
     private static final Pools.Pool<Builder> sPool = Pools.newSynchronizedPool(2);
 
@@ -928,7 +928,7 @@ public class StaticLayout extends Layout {
                 ellipsisStart = 0;
                 ellipsisCount = i;
             } else {
-                ModernUI.LOGGER.warn(MARKER, "Start Ellipsis only supported with one line");
+                Log.LOGGER.warn(MARKER, "Start Ellipsis only supported with one line");
             }
         } else if (where == TextUtils.TruncateAt.END || where == TextUtils.TruncateAt.MARQUEE) {
             float sum = 0;
@@ -985,7 +985,7 @@ public class StaticLayout extends Layout {
                 ellipsisStart = left;
                 ellipsisCount = right - left;
             } else {
-                ModernUI.LOGGER.warn(MARKER, "Middle Ellipsis only supported with one line");
+                Log.LOGGER.warn(MARKER, "Middle Ellipsis only supported with one line");
             }
         }
         mEllipsized = true;
@@ -1138,7 +1138,7 @@ public class StaticLayout extends Layout {
     @Override
     public int getHeight(boolean cap) {
         if (cap && mLineCount > mMaximumVisibleLineCount && mMaxLineHeight == -1) {
-            ModernUI.LOGGER.warn(MARKER, "maxLineHeight should not be -1. "
+            Log.LOGGER.warn(MARKER, "maxLineHeight should not be -1. "
                     + " maxLines: {} lineCount: {}", mMaximumVisibleLineCount, mLineCount);
         }
 

@@ -27,10 +27,10 @@ import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.graphics.text.OutlineFont;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.view.Gravity;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -88,7 +88,7 @@ import java.nio.ShortBuffer;
  */
 public abstract class Canvas {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Canvas");
+    public static final Marker MARKER = MarkerFactory.getMarker("Canvas");
 
     protected Canvas() {
     }

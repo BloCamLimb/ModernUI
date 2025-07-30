@@ -18,13 +18,13 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +39,7 @@ import java.util.function.Function;
 @ApiStatus.Internal
 public final class FontFamily {
 
-    static final Marker MARKER = MarkerManager.getMarker("Font");
+    static final Marker MARKER = MarkerFactory.getMarker("Font");
 
     public static final FontFamily SANS_SERIF;
     public static final FontFamily SERIF;
@@ -224,7 +224,7 @@ public final class FontFamily {
             if (!font.getFamily().equals(original.getFamily())) {
                 font = original;
                 // this may be due to a change in the default locale
-                ModernUI.LOGGER.warn(MARKER, "Failed to lookup in registered fonts, original font: {}, full name: {}",
+                Log.LOGGER.warn(MARKER, "Failed to lookup in registered fonts, original font: {}, full name: {}",
                         original, original.getFontName());
                 // in this case, we cannot use native bold/italic fonts
             }

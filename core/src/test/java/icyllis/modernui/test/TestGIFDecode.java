@@ -19,10 +19,8 @@
 package icyllis.modernui.test;
 
 import icyllis.arc3d.core.image.GIFDecoder;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Bitmap;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
+import icyllis.modernui.util.Log;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
@@ -34,7 +32,7 @@ import java.nio.file.StandardOpenOption;
 public class TestGIFDecode {
 
     public static void main(String[] args) {
-        Configurator.setRootLevel(Level.INFO);
+        System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         String get = Bitmap.openDialogGet(null, null, null);
         if (get != null) {
             Path p = Path.of(get);
@@ -46,7 +44,7 @@ public class TestGIFDecode {
                 fc.read(buf);
                 buf.flip();
                 GIFDecoder dec = new GIFDecoder(buf);
-                ModernUI.LOGGER.info("FileSize {}, ScreenDim {}x{}", buf.limit(), dec.getScreenWidth(),
+                Log.LOGGER.info("FileSize {}, ScreenDim {}x{}", buf.limit(), dec.getScreenWidth(),
                         dec.getScreenHeight());
                 pixels = MemoryUtil.memAlloc(dec.getScreenWidth() * dec.getScreenHeight() * 4);
                 for (int i = 0; i < 500; i++) {

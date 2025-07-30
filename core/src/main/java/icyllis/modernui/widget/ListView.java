@@ -24,15 +24,15 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.*;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * <p>Displays a vertically-scrollable collection of views, where each view is positioned
@@ -91,7 +91,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
  */
 public class ListView extends AbsListView {
 
-    static final Marker MARKER = MarkerManager.getMarker("ListView");
+    static final Marker MARKER = MarkerFactory.getMarker("ListView");
 
     /**
      * Used to indicate a no preference for a position type.

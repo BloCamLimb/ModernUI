@@ -20,9 +20,9 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public abstract class Animator implements Cloneable {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Animator");
+    public static final Marker MARKER = MarkerFactory.getMarker("Animator");
 
     /**
      * The value used to indicate infinite duration (e.g. when Animators repeat infinitely).

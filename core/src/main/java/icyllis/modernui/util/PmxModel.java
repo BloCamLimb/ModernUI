@@ -18,8 +18,6 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.ModernUI;
-
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -91,8 +89,8 @@ public class PmxModel {
     }
 
     public void debug() {
-        ModernUI.LOGGER.info(mModelName);
-        ModernUI.LOGGER.info(mModelComment);
+        Log.LOGGER.info(mModelName);
+        Log.LOGGER.info(mModelComment);
     }
 
     public static class Vertex {

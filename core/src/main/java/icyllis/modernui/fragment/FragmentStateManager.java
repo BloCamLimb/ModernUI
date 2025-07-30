@@ -21,11 +21,11 @@ package icyllis.modernui.fragment;
 import icyllis.modernui.R;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.view.*;
-import org.apache.logging.log4j.Marker;
+import org.slf4j.Marker;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * Modified from Android Open Source Project.

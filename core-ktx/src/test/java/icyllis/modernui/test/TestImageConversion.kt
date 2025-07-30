@@ -26,7 +26,8 @@ import java.nio.file.Path
 
 // convert to PNG
 fun main() {
-    Log.setLevel(Log.DEBUG)
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug")
+    System.setProperty("org.slf4j.simpleLogger.logFile", "System.out")
     println(Runtime.version())
     val get = Bitmap.openDialogGet(null, null, null)
     if (get != null) {
@@ -35,8 +36,7 @@ fun main() {
         opts.inDecodeMimeType = true
         try {
             BitmapFactory.decodePath(p, opts).use { bm ->
-                Log.info(
-                    null,
+                Log.LOGGER.info(
                     "dimensions: {}x{}, format: {}, mimeType: {}",
                     opts.outWidth, opts.outHeight, opts.outFormat, opts.outMimeType
                 )

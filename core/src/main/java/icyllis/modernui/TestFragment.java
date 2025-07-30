@@ -36,8 +36,6 @@ import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
-import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
@@ -60,6 +58,7 @@ import icyllis.modernui.text.style.URLSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.KeyEvent;
@@ -71,20 +70,13 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Iterator;
 import java.util.List;
 
-import static icyllis.modernui.ModernUI.*;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 /**
@@ -96,7 +88,6 @@ public class TestFragment extends Fragment {
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
-        Configurator.setRootLevel(Level.DEBUG);
 
         try (ModernUI app = new ModernUI()) {
             //app.getTheme().applyStyle(R.style.ThemeOverlay_Material3_Dark_Rust, true);
@@ -206,7 +197,7 @@ public class TestFragment extends Fragment {
                 return false;
             });
 
-            LOGGER.info("{} onCreateView(), id={}", getClass().getSimpleName(), getId());
+            Log.LOGGER.info("{} onCreateView(), id={}", getClass().getSimpleName(), getId());
 
             return content;
         }
@@ -214,7 +205,7 @@ public class TestFragment extends Fragment {
         @Override
         public void onDestroy() {
             super.onDestroy();
-            LOGGER.info("{} onDestroy()", getClass().getSimpleName());
+            Log.LOGGER.info("{} onDestroy()", getClass().getSimpleName());
         }
     }
 
@@ -231,7 +222,7 @@ public class TestFragment extends Fragment {
         @Override
         public void onDestroy() {
             super.onDestroy();
-            LOGGER.info("FragmentB onDestroy()");
+            Log.LOGGER.info("FragmentB onDestroy()");
         }
     }
 
@@ -764,7 +755,7 @@ public class TestFragment extends Fragment {
                 p.gravity = Gravity.CENTER;
                 addView(v, p);
             }
-            LOGGER.info((System.nanoTime() - start) / 1000000D);
+            Log.LOGGER.info(String.valueOf((System.nanoTime() - start) / 1000000D));
             addView(new DView(getContext()), new LayoutParams(dp(120),
                     dp(120)));
             setClipToPadding(false);

@@ -24,7 +24,6 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.markdown.Markdown;
 import icyllis.modernui.util.DataSet;
-import icyllis.modernui.util.Log;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.TextView;
@@ -33,7 +32,8 @@ public class TestMarkdown extends Fragment {
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
-        Log.setLevel(Log.DEBUG);
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+        System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         try (ModernUI app = new ModernUI()) {
             app.run(new TestMarkdown());
         }

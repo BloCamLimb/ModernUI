@@ -19,7 +19,7 @@
 package icyllis.modernui.fragment;
 
 import icyllis.modernui.view.ViewGroup;
-import org.apache.logging.log4j.Marker;
+import org.slf4j.Marker;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,7 +27,7 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.*;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 final class FragmentStore {
 

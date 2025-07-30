@@ -37,7 +37,8 @@ import icyllis.modernui.widget.*
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
-    Log.setLevel(Log.DEBUG)
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug")
+    System.setProperty("org.slf4j.simpleLogger.logFile", "System.out")
     ModernUI().use { app ->
         app.run(TestViewPager())
     }
@@ -71,7 +72,7 @@ class TestViewPager : Fragment() {
                 isKeyboardNavigationCluster = true
                 // press 'tab' key to take focus, and use arrow keys
                 onFocusChangeListener = OnFocusChangeListener { v, hasFocus ->
-                    Log.info(null, "{} focus change: {}", v, hasFocus)
+                    Log.i(null, "$v focus change: $hasFocus")
                 }
                 /*addView(TabLayout(context).apply {
                     tabMode = TabLayout.MODE_AUTO
@@ -99,7 +100,7 @@ class TestViewPager : Fragment() {
                         notifyDataSetChanged()
                         val nextItem = curItem + 1
                         if (nextItem < count) {
-                            Log.info(null, "Set item to {}", nextItem)
+                            Log.i(null, "Set item to $nextItem")
                             pager.currentItem = nextItem
                         }
                     }
@@ -144,7 +145,7 @@ class TestViewPager : Fragment() {
         }
 
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
-            Log.info(null, "Instantiate item {}", position)
+            Log.i(null, "Instantiate item $position")
             return TextView(container.context).apply {
                 text = "This is page $position"
                 tag = position
@@ -158,7 +159,7 @@ class TestViewPager : Fragment() {
         }
 
         override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {
-            Log.info(null, "Destroy item {}", position)
+            Log.i(null, "Destroy item $position")
             container.removeView(`object` as View)
         }
 

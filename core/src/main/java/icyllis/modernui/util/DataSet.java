@@ -18,12 +18,11 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -48,7 +47,7 @@ import java.util.function.Consumer;
 @SuppressWarnings({"unchecked", "unused"})
 public final class DataSet implements Map<String, Object>, Parcelable {
 
-    private static final Marker MARKER = MarkerManager.getMarker("DataSet");
+    private static final Marker MARKER = MarkerFactory.getMarker("DataSet");
 
     @NonNull
     public static final Parcelable.ClassLoaderCreator<DataSet> CREATOR
@@ -1935,9 +1934,9 @@ public final class DataSet implements Map<String, Object>, Parcelable {
     // Log a message if the value was non-null but not of the expected type
     static void typeWarning(int key, Object value, String className,
                             Object defaultValue, ClassCastException e) {
-        ModernUI.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
+        Log.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
                 key, className, value.getClass().getName(), defaultValue);
-        ModernUI.LOGGER.warn(MARKER, "Attempt to cast generated internal exception", e);
+        Log.LOGGER.warn(MARKER, "Attempt to cast generated internal exception", e);
     }
 
     static void typeWarning(String key, Object value, String className,
@@ -1948,8 +1947,8 @@ public final class DataSet implements Map<String, Object>, Parcelable {
     // Log a message if the value was non-null but not of the expected type
     static void typeWarning(String key, Object value, String className,
                             Object defaultValue, ClassCastException e) {
-        ModernUI.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
+        Log.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
                 key, className, value.getClass().getName(), defaultValue);
-        ModernUI.LOGGER.warn(MARKER, "Attempt to cast generated internal exception", e);
+        Log.LOGGER.warn(MARKER, "Attempt to cast generated internal exception", e);
     }
 }

@@ -21,7 +21,7 @@ package icyllis.modernui.fragment;
 import icyllis.modernui.lifecycle.ViewModel;
 import icyllis.modernui.lifecycle.ViewModelProvider;
 import icyllis.modernui.lifecycle.ViewModelStore;
-import org.apache.logging.log4j.Marker;
+import org.slf4j.Marker;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * FragmentManagerViewModel is the always up-to-date view of the Fragment's

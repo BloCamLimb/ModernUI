@@ -18,33 +18,50 @@
 
 package icyllis.modernui.core;
 
-import icyllis.arc3d.engine.*;
+import icyllis.arc3d.engine.ContextOptions;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.opengl.GLUtil;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.annotation.UiThread;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11C;
+import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.opengl.GLDebugMessageAMDCallback;
+import org.lwjgl.opengl.GLDebugMessageARBCallback;
+import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import org.slf4j.helpers.NOPLogger;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.ref.Cleaner;
 import java.net.URI;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 
 import static icyllis.arc3d.opengl.GLUtil.*;
-import static icyllis.modernui.ModernUI.*;
+import static icyllis.modernui.util.Log.LOGGER;
 import static org.lwjgl.opengl.AMDDebugOutput.glDebugMessageCallbackAMD;
 import static org.lwjgl.opengl.ARBDebugOutput.glDebugMessageCallbackARB;
 import static org.lwjgl.opengl.GL11C.*;
@@ -56,6 +73,8 @@ import static org.lwjgl.system.MemoryUtil.*;
  * memory operations and thread scheduling.
  */
 public final class Core {
+
+    public static final Marker MARKER = MarkerFactory.getMarker("Core");
 
     private static final Cleaner sCleaner = Cleaner.create();
 

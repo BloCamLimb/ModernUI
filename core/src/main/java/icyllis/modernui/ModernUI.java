@@ -78,10 +78,6 @@ import icyllis.modernui.view.WindowManager;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
 import icyllis.modernui.view.menu.MenuHelper;
 import icyllis.modernui.widget.TextView;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.TestOnly;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -108,6 +104,9 @@ import java.util.function.LongConsumer;
 
 import static org.lwjgl.glfw.GLFW.*;
 
+import static icyllis.modernui.core.Core.MARKER;
+import static icyllis.modernui.util.Log.LOGGER;
+
 /**
  * The core class of Modern UI.
  */
@@ -115,9 +114,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
     public static final String ID = "modernui"; // as well as the namespace
     public static final String NAME_CPT = "ModernUI";
-
-    public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
-    public static final Marker MARKER = MarkerManager.getMarker("Core");
 
     @SuppressWarnings("unused")
     public static final Properties props = new Properties();
@@ -253,7 +249,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         String name = Configuration.OPENGL_LIBRARY_NAME.get();
         if (name != null) {
             // non-system library should load before window creation
-            LOGGER.debug(ModernUI.MARKER, "OpenGL library: {}", name);
+            LOGGER.debug(MARKER, "OpenGL library: {}", name);
             Objects.requireNonNull(GL.getFunctionProvider(), "Implicit OpenGL loading is required");
         }
 

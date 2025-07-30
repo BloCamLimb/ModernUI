@@ -20,12 +20,14 @@ package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import org.apache.logging.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.Marker;
+import org.slf4j.event.Level;
 
 import java.io.Writer;
 
 /**
- * Buffered writer to log4j logger, auto flush on newline.
+ * Buffered writer to logger, auto flush on newline.
  */
 public class LogWriter extends Writer {
 
@@ -83,11 +85,11 @@ public class LogWriter extends Writer {
     private void flushBuilder() {
         if (mBuilder.length() != 0) {
             var msg = mBuilder.toString();
+            var e = mLogger.atLevel(mLevel);
             if (mMarker != null) {
-                mLogger.log(mLevel, mMarker, msg);
-            } else {
-                mLogger.log(mLevel, msg);
+                e = e.addMarker(mMarker);
             }
+            e.setMessage(msg).log();
             mBuilder.setLength(0);
         }
     }

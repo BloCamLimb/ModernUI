@@ -18,12 +18,12 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import icyllis.modernui.util.Log;
 import org.lwjgl.glfw.GLFW;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ import java.util.concurrent.locks.LockSupport;
  */
 public final class MessageQueue {
 
-    private static final Marker MARKER = MarkerManager.getMarker("MessageQueue");
+    private static final Marker MARKER = MarkerFactory.getMarker("MessageQueue");
     private static final boolean DEBUG = false;
 
     // Null means the main thread, otherwise the looper thread
@@ -200,7 +200,7 @@ public final class MessageQueue {
                             mMessages = msg.next;
                         }
                         msg.next = null;
-                        if (DEBUG) ModernUI.LOGGER.info(MARKER, "Returning message: " + msg);
+                        if (DEBUG) Log.LOGGER.trace(MARKER, "Returning message: {}", msg);
                         msg.markInUse();
                         return msg;
                     }
@@ -244,7 +244,7 @@ public final class MessageQueue {
                 try {
                     keep = idler.queueIdle();
                 } catch (Throwable t) {
-                    ModernUI.LOGGER.fatal(MARKER, "IdleHandler threw exception", t);
+                    Log.wtf(MARKER, "IdleHandler threw exception", t);
                 }
 
                 if (!keep) {
@@ -390,7 +390,7 @@ public final class MessageQueue {
             if (mQuitting) {
                 IllegalStateException e = new IllegalStateException(
                         msg.target + " sending message to a Handler on a dead thread");
-                ModernUI.LOGGER.warn(MARKER, e.getMessage(), e);
+                Log.LOGGER.warn(MARKER, e.getMessage(), e);
                 msg.recycle();
                 return false;
             }

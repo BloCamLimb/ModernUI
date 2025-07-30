@@ -18,7 +18,7 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.modernui.ModernUI;
+import icyllis.modernui.util.Log;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
@@ -56,9 +56,9 @@ public class WaveDecoder {
             throw new IllegalArgumentException("Not PCM format");
         }
         short channels = buffer.getShort();
-        ModernUI.LOGGER.info("Channels: {}", channels);
+        Log.LOGGER.info("Channels: {}", channels);
         int sampleRate = buffer.getInt();
-        ModernUI.LOGGER.info("Sample Rate: {}", sampleRate);
+        Log.LOGGER.info("Sample Rate: {}", sampleRate);
         if (buffer.getInt() != sampleRate * channels << 1 ||
                 buffer.getShort() != channels << 1 ||
                 buffer.getShort() != 16) {

@@ -22,13 +22,13 @@ import icyllis.modernui.core.Handler;
 import icyllis.modernui.core.HandlerThread;
 import icyllis.modernui.core.Looper;
 import icyllis.modernui.core.Message;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * <p>A filter constrains data with a filtering pattern.</p>
@@ -45,7 +45,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
  */
 public abstract class Filter {
 
-    private static final Marker MARKER = MarkerManager.getMarker("Filter");
+    private static final Marker MARKER = MarkerFactory.getMarker("Filter");
 
     private static final String THREAD_NAME = "Filter";
     private static final int FILTER_TOKEN = 0xD0D0F00D;

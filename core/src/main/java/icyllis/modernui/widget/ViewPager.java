@@ -35,7 +35,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.CallSuper;
@@ -54,9 +53,9 @@ import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -67,7 +66,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * Layout manager that allows the user to flip left and right
@@ -81,7 +80,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
 @SuppressWarnings("ForLoopReplaceableByForEach")
 public class ViewPager extends ViewGroup {
 
-    private static final Marker MARKER = MarkerManager.getMarker("ViewPager");
+    private static final Marker MARKER = MarkerFactory.getMarker("ViewPager");
 
     private static final int DEFAULT_OFFSCREEN_PAGES = 1;
     private static final int MAX_SETTLE_DURATION = 600; // ms
@@ -685,7 +684,7 @@ public class ViewPager extends ViewGroup {
      */
     public void setOffscreenPageLimit(int limit) {
         if (limit < DEFAULT_OFFSCREEN_PAGES) {
-            ModernUI.LOGGER.warn(MARKER, "Requested offscreen page limit {} too small; defaulting to {}",
+            LOGGER.warn(MARKER, "Requested offscreen page limit {} too small; defaulting to {}",
                     limit, DEFAULT_OFFSCREEN_PAGES);
             limit = DEFAULT_OFFSCREEN_PAGES;
         }

@@ -69,11 +69,11 @@ import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 import icyllis.modernui.view.menu.MenuBuilder;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -85,7 +85,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * <p>
@@ -201,9 +201,9 @@ import static icyllis.modernui.ModernUI.LOGGER;
 public class View implements Drawable.Callback {
 
     /**
-     * The logging marker used by this class with {@link org.apache.logging.log4j.Logger}.
+     * The logging marker used by this class with {@link org.slf4j.Logger}.
      */
-    protected static final Marker VIEW_MARKER = MarkerManager.getMarker("View");
+    protected static final Marker VIEW_MARKER = MarkerFactory.getMarker("View");
 
     /**
      * Used to mark a View that has no ID.

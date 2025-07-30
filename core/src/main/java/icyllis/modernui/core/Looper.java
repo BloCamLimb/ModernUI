@@ -34,11 +34,11 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.*;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * Class used to run a message loop for a thread.  Threads by default do
@@ -53,7 +53,7 @@ import org.jetbrains.annotations.ApiStatus;
  */
 public final class Looper {
 
-    private static final Marker MARKER = MarkerManager.getMarker("Looper");
+    private static final Marker MARKER = MarkerFactory.getMarker("Looper");
 
     // sThreadLocal.get() will return null unless you've called prepare().
     static final ThreadLocal<Looper> sThreadLocal = new ThreadLocal<>();
@@ -165,7 +165,7 @@ public final class Looper {
         if (logSlowDelivery) {
             if (me.mSlowDeliveryDetected) {
                 if (dispatchStart - msg.when <= 10) {
-                    ModernUI.LOGGER.warn(MARKER, "Drained");
+                    Log.LOGGER.warn(MARKER, "Drained");
                     me.mSlowDeliveryDetected = false;
                 }
             } else {
@@ -193,7 +193,7 @@ public final class Looper {
             throw new RuntimeException("No Looper; Looper.prepare() wasn't called on this thread.");
         }
         if (me.mInLoop) {
-            ModernUI.LOGGER.warn(MARKER, "Loop again would have the queued messages be executed"
+            Log.LOGGER.warn(MARKER, "Loop again would have the queued messages be executed"
                     + " before this one completed.");
         }
         me.mInLoop = true;
@@ -210,7 +210,7 @@ public final class Looper {
             return false;
         }
         // For slow delivery, the current message isn't really important, but log it anyway.
-        ModernUI.LOGGER.warn(MARKER, "Slow {} took {}ms {} h={} c={} m={}",
+        Log.LOGGER.warn(MARKER, "Slow {} took {}ms {} h={} c={} m={}",
                 what, actualTime, Thread.currentThread().getName(),
                 msg.target.getClass().getName(), msg.callback, msg.what);
         return true;

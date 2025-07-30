@@ -31,7 +31,8 @@ import icyllis.modernui.widget.GridView
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
-    Log.setLevel(Log.DEBUG)
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug")
+    System.setProperty("org.slf4j.simpleLogger.logFile", "System.out")
     ModernUI().use { app -> app.run(TestGridView()) }
 }
 
@@ -49,10 +50,10 @@ class TestGridView : Fragment() {
         gridView.adapter = ArrayAdapter(context, list)
         gridView.setOnItemClickListener { parent, view, position, id ->
             val gv = parent as GridView
-            Log.info(null, "Item clicked {}, is checked {}", position, gv.isItemChecked(position))
+            Log.LOGGER.info("Item clicked {}, is checked {}", position, gv.isItemChecked(position))
         }
         gridView.setOnItemSelectedListener { parent, view, position, id ->
-            Log.info(null, "Item selected {}", position)
+            Log.LOGGER.info("Item selected {}", position)
         }
 
         return gridView
