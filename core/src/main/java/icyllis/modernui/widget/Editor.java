@@ -25,8 +25,8 @@ import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.text.method.WordIterator;
 import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.*;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.Nonnull;
 
@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
  */
 public class Editor {
 
-    private static final Marker MARKER = MarkerManager.getMarker("Editor");
+    private static final Marker MARKER = MarkerFactory.getMarker("Editor");
 
     static final int BLINK = 500;
     // Tag used when the Editor maintains its own separate UndoManager.

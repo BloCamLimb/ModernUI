@@ -18,13 +18,12 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.util.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,7 +34,7 @@ import java.util.*;
  */
 public class SpannableStringBuilder implements Editable, Spannable, GetChars, Appendable {
 
-    public static final Marker MARKER = MarkerManager.getMarker("SpannableStringBuilder");
+    public static final Marker MARKER = MarkerFactory.getMarker("SpannableStringBuilder");
 
     private static final Pools.Pool<IntArrayList> sIntBufferPool = Pools.newSynchronizedPool(2);
 
@@ -824,7 +823,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         // 0-length Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         if (flagsStart == POINT && flagsEnd == MARK && start == end) {
             if (send) {
-                ModernUI.LOGGER.error(MARKER, "SPAN_EXCLUSIVE_EXCLUSIVE spans cannot have a zero length");
+                Log.LOGGER.error(MARKER, "SPAN_EXCLUSIVE_EXCLUSIVE spans cannot have a zero length");
             }
             // Silently ignore invalid spans when they are created from this class.
             // This avoids the duplication of the above test code before all the

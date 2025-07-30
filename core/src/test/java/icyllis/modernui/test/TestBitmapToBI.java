@@ -18,11 +18,9 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.BitmapFactory;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
+import icyllis.modernui.util.Log;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -38,7 +36,7 @@ public class TestBitmapToBI {
     // Decode an image using ModernUI Bitmap API
     // Copy a subset to BufferedImage and convert to INT_ARGB format
     public static void main(String[] args) {
-        Configurator.setRootLevel(Level.INFO);
+        System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         String get = Bitmap.openDialogGet(null, null, null);
         if (get == null) {
             return;
@@ -47,10 +45,10 @@ public class TestBitmapToBI {
         try (var fc = FileChannel.open(Path.of(get), StandardOpenOption.READ)) {
             bitmap = BitmapFactory.decodeChannel(fc);
         } catch (IOException e) {
-            ModernUI.LOGGER.error(e);
+            Log.LOGGER.error("", e);
             return;
         }
-        ModernUI.LOGGER.info(bitmap);
+        Log.LOGGER.info(bitmap.toString());
         int w = bitmap.getWidth(), h = bitmap.getHeight();
         int subW = w / 2, subH = h / 2;
         if (subW < 2 || subH < 2) {
@@ -65,7 +63,7 @@ public class TestBitmapToBI {
         try {
             ImageIO.write(bi, "png", new File("bitmap_to_argb_to_imageio.png"));
         } catch (IOException e) {
-            ModernUI.LOGGER.error(e);
+            Log.LOGGER.error("", e);
         }
     }
 }

@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * Controller for all "special effects" (such as Animator, Transition) that can be applied to

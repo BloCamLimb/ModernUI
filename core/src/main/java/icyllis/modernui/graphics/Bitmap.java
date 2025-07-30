@@ -25,13 +25,13 @@ import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Core;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.*;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 import sun.misc.Unsafe;
 
 import java.io.*;
@@ -46,7 +46,7 @@ import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -88,7 +88,7 @@ import static org.lwjgl.system.MemoryUtil.*;
 @SuppressWarnings("unused")
 public final class Bitmap implements AutoCloseable {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Bitmap");
+    public static final Marker MARKER = MarkerFactory.getMarker("Bitmap");
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 
     @NonNull

@@ -19,12 +19,10 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.CompactDecimalFormat;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.AlgorithmUtils;
 import icyllis.modernui.resources.TypedValue;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
+import icyllis.modernui.util.Log;
 import org.lwjgl.system.MemoryUtil;
 
 import java.math.BigDecimal;
@@ -35,9 +33,9 @@ import java.util.Locale;
 public class TestMisc {
 
     public static void main(String[] args) {
-        Configurator.setRootLevel(Level.ALL);
+        System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         var complex = TypedValue.floatToComplex(-3.6f);
-        ModernUI.LOGGER.info(
+        Log.LOGGER.info(
                 "Complex to Float: {} -> {}",
                 Integer.toHexString(complex),
                 TypedValue.complexToFloat(complex)
@@ -46,12 +44,12 @@ public class TestMisc {
                 new Locale("zh"), CompactDecimalFormat.CompactStyle.SHORT
         );
         format.setMaximumFractionDigits(2);
-        ModernUI.LOGGER.info(format.format(new BigDecimal("2136541565.615")));
-        ModernUI.LOGGER.info("Levenshtein distance: {}", TextUtils.distance("sunday", "saturday"));
+        Log.LOGGER.info(format.format(new BigDecimal("2136541565.615")));
+        Log.LOGGER.info("Levenshtein distance: {}", TextUtils.distance("sunday", "saturday"));
 
         var doubles = new double[]{1.0, 160.0, 3.0};
-        Arrays.stream(doubles).average().ifPresent(ModernUI.LOGGER::info);
-        ModernUI.LOGGER.info(AlgorithmUtils.averageStable(doubles));
+        Arrays.stream(doubles).average().ifPresent(d -> Log.LOGGER.info(Double.toString(d)));
+        Log.LOGGER.info(Double.toString(AlgorithmUtils.averageStable(doubles)));
 
         var ptr = MemoryUtil.nmemAlloc(4);
         MemoryUtil.memPutByte(ptr + 0, (byte) 0x11);
@@ -59,7 +57,7 @@ public class TestMisc {
         MemoryUtil.memPutByte(ptr + 2, (byte) 0x33);
         MemoryUtil.memPutByte(ptr + 3, (byte) 0x44);
 
-        ModernUI.LOGGER.info(
+        Log.LOGGER.info(
                 "{} {}",
                 ByteOrder.nativeOrder(),
                 Integer.toHexString(MemoryUtil.memGetInt(ptr))

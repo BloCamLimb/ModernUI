@@ -18,7 +18,6 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.SystemTheme;
@@ -30,7 +29,8 @@ import icyllis.modernui.util.Log;
 public class TestThemeBuilder {
 
     public static void main(String[] args) {
-        Log.setLevel(Log.DEBUG);
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+        System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         ResourcesBuilder builder = new ResourcesBuilder();
 
         SystemTheme.addToResources(builder);
@@ -47,14 +47,14 @@ public class TestThemeBuilder {
                 R.style.TextAppearance_Material3_DisplayMedium,
                 styleable);
 
-        ModernUI.LOGGER.info(a.getDimensionPixelSize(2, -1));
+        Log.i(null, a.getDimensionPixelSize(2, -1));
 
         TypedValue value = new TypedValue();
         boolean result = theme.resolveAttribute(R.attr.textAppearanceDisplayMedium,
                 value, true);
-        ModernUI.LOGGER.info(result);
-        ModernUI.LOGGER.info(value);
-        ModernUI.LOGGER.info(value.getResourceId());
-        ModernUI.LOGGER.info(R.style.TextAppearance_Material3_DisplayMedium.equals(value.getResourceId()));
+        Log.i(null, result);
+        Log.i(null, value);
+        Log.i(null, value.getResourceId());
+        Log.i(null, R.style.TextAppearance_Material3_DisplayMedium.equals(value.getResourceId()));
     }
 }

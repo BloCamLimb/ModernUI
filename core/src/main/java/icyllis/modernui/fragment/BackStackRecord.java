@@ -40,12 +40,12 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.LogWriter;
 import icyllis.modernui.lifecycle.Lifecycle;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
-import org.apache.logging.log4j.Level;
+import org.slf4j.event.Level;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * Entry of an operation on the fragment back stack.

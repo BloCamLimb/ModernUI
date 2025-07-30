@@ -19,11 +19,11 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.fragment.Fragment;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * An ActionProvider defines rich menu interaction in a single component.
@@ -50,7 +50,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
  */
 public abstract class ActionProvider {
 
-    private static final Marker MARKER = MarkerManager.getMarker("ActionProvider");
+    private static final Marker MARKER = MarkerFactory.getMarker("ActionProvider");
 
     private SubUiVisibilityListener mSubUiVisibilityListener;
     private VisibilityListener mVisibilityListener;

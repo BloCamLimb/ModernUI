@@ -19,11 +19,11 @@
 package icyllis.modernui.test
 
 import icyllis.modernui.util.DataSet
-import icyllis.modernui.util.Log
 import icyllis.modernui.util.Parcel
 
 fun main() {
-    Log.setLevel(Log.DEBUG)
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug")
+    System.setProperty("org.slf4j.simpleLogger.logFile", "System.out")
     val parcel = Parcel()
     write(parcel)
     val pos = parcel.position()

@@ -35,7 +35,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
@@ -43,8 +42,8 @@ import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.Objects;
 
@@ -54,7 +53,7 @@ import java.util.Objects;
  */
 public class LayerDrawable extends Drawable implements Drawable.Callback {
 
-    public static final Marker MARKER = MarkerManager.getMarker("LayerDrawable");
+    public static final Marker MARKER = MarkerFactory.getMarker("LayerDrawable");
 
     /**
      * Padding mode used to nest each layer inside the padding of the previous
@@ -1498,7 +1497,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
                     clone = dr;
                     if (dr.getCallback() != null) {
                         // This drawable already has an owner.
-                        ModernUI.LOGGER.warn(MARKER, "Invalid drawable added to LayerDrawable! Drawable already "
+                        Log.LOGGER.warn(MARKER, "Invalid drawable added to LayerDrawable! Drawable already "
                                         + "belongs to another owner but does not expose a constant state.",
                                 new RuntimeException());
                     }

@@ -18,12 +18,11 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -60,7 +59,7 @@ import java.util.function.BiConsumer;
 @SuppressWarnings("unchecked")
 public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
-    private static final Marker MARKER = MarkerManager.getMarker("ArrayMap");
+    private static final Marker MARKER = MarkerFactory.getMarker("ArrayMap");
 
     /**
      * The minimum amount by which the capacity of a ArrayMap will increase.
@@ -410,7 +409,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             throw new IllegalStateException("Array is full");
         }
         if (index > 0 && mHashes[index - 1] > hash) {
-            ModernUI.LOGGER.warn(MARKER, "New hash " + hash
+            Log.LOGGER.warn(MARKER, "New hash " + hash
                             + " is before end of array hash " + mHashes[index - 1]
                             + " at index " + index + " key " + key,
                     new RuntimeException("here").fillInStackTrace());
@@ -1395,7 +1394,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                     }
                     // Whoops!  Someone trampled the array (probably due to not protecting
                     // their access with a lock).  Our cache is corrupt; report and give up.
-                    ModernUI.LOGGER.fatal(MARKER, "Found corrupt ArrayMap cache: [0]=" + array[0]
+                    Log.LOGGER.error(MARKER, "Found corrupt ArrayMap cache: [0]=" + array[0]
                             + " [1]=" + array[1]);
                     mTwiceBaseCache = null;
                     mTwiceBaseCacheSize = 0;
@@ -1418,7 +1417,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                     }
                     // Whoops!  Someone trampled the array (probably due to not protecting
                     // their access with a lock).  Our cache is corrupt; report and give up.
-                    ModernUI.LOGGER.fatal(MARKER, "Found corrupt ArrayMap cache: [0]=" + array[0]
+                    Log.LOGGER.error(MARKER, "Found corrupt ArrayMap cache: [0]=" + array[0]
                             + " [1]=" + array[1]);
                     mBaseCache = null;
                     mBaseCacheSize = 0;

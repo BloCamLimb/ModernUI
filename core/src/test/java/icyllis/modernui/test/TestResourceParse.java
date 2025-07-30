@@ -20,8 +20,8 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.resources.ResourceParser;
 import icyllis.modernui.resources.ResourceUtils;
-import org.apache.logging.log4j.*;
-import org.apache.logging.log4j.core.config.Configurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.*;
 import javax.xml.stream.events.StartElement;
@@ -29,10 +29,9 @@ import java.io.StringReader;
 
 public class TestResourceParse {
 
-    public static final Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LoggerFactory.getLogger(TestResourceParse.class);
 
     public static void main(String[] args) {
-        Configurator.setRootLevel(Level.INFO);
 
         try {
             var reader = XMLInputFactory.newFactory().createXMLStreamReader(new StringReader("""

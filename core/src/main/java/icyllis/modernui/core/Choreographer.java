@@ -24,13 +24,13 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.View;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.Objects;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * Coordinates the timing of animations, input and drawing.
@@ -76,7 +76,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
 //TODO not stable, consider swap-chain? when to schedule?
 public final class Choreographer {
 
-    private static final Marker MARKER = MarkerManager.getMarker("Choreographer");
+    private static final Marker MARKER = MarkerFactory.getMarker("Choreographer");
 
     // Prints debug messages about every frame and callback registered (high volume).
     private static final boolean DEBUG_FRAMES = false;

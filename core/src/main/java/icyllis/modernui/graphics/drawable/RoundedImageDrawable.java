@@ -18,16 +18,16 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.view.Gravity;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.MarkerFactory;
 
 import java.io.InputStream;
 
@@ -84,7 +84,7 @@ public class RoundedImageDrawable extends Drawable {
         try (var bitmap = BitmapFactory.decodeStream(stream)) {
             image = Image.createTextureFromBitmap(bitmap);
         } catch (Exception e) {
-            ModernUI.LOGGER.warn(MarkerManager.getMarker("RoundedImageDrawable"),
+            Log.LOGGER.warn(MarkerFactory.getMarker("RoundedImageDrawable"),
                     "Cannot create RoundedImageDrawable from {}", stream, e);
         } finally {
             mImage = image;

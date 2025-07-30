@@ -25,7 +25,8 @@ import java.io.IOException
 import java.nio.file.Path
 
 fun main() {
-    Log.setLevel(Log.DEBUG)
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug")
+    System.setProperty("org.slf4j.simpleLogger.logFile", "System.out")
     val gets = Bitmap.openDialogGets(null, null, null)
     if (gets != null) {
         val opts = BitmapFactory.Options()
@@ -33,8 +34,7 @@ fun main() {
         gets.asSequence().map { s: String -> Path.of(s) }.forEach { p: Path ->
             try {
                 BitmapFactory.decodePathInfo(p, opts)
-                Log.info(
-                    null,
+                Log.LOGGER.info(
                     "file: {}\ndimensions: {}x{}, format: {}, mimeType: {}",
                     p, opts.outWidth, opts.outHeight, opts.outFormat, opts.outMimeType
                 )

@@ -28,10 +28,11 @@ import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.view.*;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayDeque;
@@ -39,7 +40,7 @@ import java.util.ArrayDeque;
 @ApiStatus.Internal
 public final class ToastManager {
 
-    static final Marker MARKER = MarkerManager.getMarker("Toast");
+    static final Marker MARKER = MarkerFactory.getMarker("Toast");
 
     private static final int MAX_TOASTS = 5;
 
@@ -140,7 +141,7 @@ public final class ToastManager {
                 record.update(duration);
             } else {
                 if (mToastQueue.size() >= MAX_TOASTS) {
-                    ModernUI.LOGGER.error(MARKER, "System has already queued {} toasts. Not showing more.",
+                    Log.LOGGER.error(MARKER, "System has already queued {} toasts. Not showing more.",
                             mToastQueue.size());
                     return;
                 }
@@ -159,7 +160,7 @@ public final class ToastManager {
             if (r != null) {
                 cancelToastLocked(r);
             } else {
-                ModernUI.LOGGER.warn(MARKER, "Toast already cancelled. token={}", token);
+                Log.LOGGER.warn(MARKER, "Toast already cancelled. token={}", token);
             }
         }
     }

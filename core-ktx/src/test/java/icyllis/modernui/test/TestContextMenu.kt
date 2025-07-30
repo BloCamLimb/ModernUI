@@ -23,7 +23,6 @@ import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.Color
 import icyllis.modernui.graphics.drawable.GradientDrawable
 import icyllis.modernui.util.DataSet
-import icyllis.modernui.util.Log
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.Menu
 import icyllis.modernui.view.MenuItem
@@ -33,7 +32,8 @@ import icyllis.modernui.widget.Toast
 
 fun main() {
     System.setProperty("java.awt.headless", "true")
-    Log.setLevel(Log.DEBUG)
+    System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug")
+    System.setProperty("org.slf4j.simpleLogger.logFile", "System.out")
     ModernUI().use { app ->
         app.run(TestContextMenu())
     }

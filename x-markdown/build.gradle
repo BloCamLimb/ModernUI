@@ -5,6 +5,7 @@ repositories {
 dependencies {
     api project(':ModernUI-Core')
     api "com.vladsch.flexmark:flexmark:${flexmark_version}"
+    testImplementation "org.slf4j:slf4j-simple:${slf4j_version}"
 }
 
 jar {

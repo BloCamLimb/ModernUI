@@ -35,14 +35,14 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
  * <p>This class is used to create a multiple-exclusion scope for a set of radio
@@ -78,7 +78,7 @@ import org.apache.logging.log4j.MarkerManager;
 // Based on Android and optimized & improved by Modern UI
 public class RadioGroup extends LinearLayout {
 
-    private static final Marker MARKER = MarkerManager.getMarker("RadioGroup");
+    private static final Marker MARKER = MarkerFactory.getMarker("RadioGroup");
 
     // holds the checked id; the selection is empty by default
     private int mCheckedId = NO_ID;
@@ -93,7 +93,7 @@ public class RadioGroup extends LinearLayout {
         if (!mProtectFromCheckedChange) {
             int buttonId = buttonView.getId();
             if (buttonId == NO_ID) {
-                ModernUI.LOGGER.error(MARKER, "Button ID is not valid: {}", buttonView);
+                Log.LOGGER.error(MARKER, "Button ID is not valid: {}", buttonView);
                 return;
             }
             if (isChecked && buttonId != mCheckedId) {

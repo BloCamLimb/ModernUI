@@ -18,14 +18,16 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.view.*;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -214,6 +216,8 @@ public class GridLayout extends ViewGroup {
     public static final int ALIGN_MARGINS = 1;
 
     // Misc constants
+
+    static final Marker MARKER = MarkerFactory.getMarker("GridLayout");
 
     static final int MAX_SIZE = 100000;
     static final int DEFAULT_CONTAINER_MARGIN = 0;
@@ -798,7 +802,7 @@ public class GridLayout extends ViewGroup {
             validateLayoutParams();
             mLastLayoutParamsHashCode = computeLayoutParamsHashCode();
         } else if (mLastLayoutParamsHashCode != computeLayoutParamsHashCode()) {
-            ModernUI.LOGGER.warn("The fields of some layout parameters were modified in between "
+            Log.LOGGER.warn(MARKER, "The fields of some layout parameters were modified in between "
                     + "layout operations. Check the javadoc for GridLayout.LayoutParams#rowSpec.");
             invalidateStructure();
             consistencyCheck();
@@ -1383,8 +1387,8 @@ public class GridLayout extends ViewGroup {
                     removed.add(arc);
                 }
             }
-            ModernUI.LOGGER.warn(axisName + " constraints: " + arcsToString(culprits) +
-                    " are inconsistent; permanently removing: " + arcsToString(removed) + ". ");
+            Log.LOGGER.warn(MARKER, "{} constraints: {} are inconsistent; permanently removing: {}. ",
+                    axisName, arcsToString(culprits), arcsToString(removed));
         }
 
         /*

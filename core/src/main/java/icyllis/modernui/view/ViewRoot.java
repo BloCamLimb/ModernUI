@@ -23,9 +23,9 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.view.View.FocusDirection;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -37,7 +37,7 @@ import java.util.function.BooleanSupplier;
 @ApiStatus.Internal
 public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
-    protected static final Marker MARKER = MarkerManager.getMarker("ViewRoot");
+    protected static final Marker MARKER = MarkerFactory.getMarker("ViewRoot");
 
     private final AttachInfo mAttachInfo;
 

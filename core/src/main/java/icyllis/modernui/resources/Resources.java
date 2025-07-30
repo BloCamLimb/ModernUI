@@ -18,7 +18,6 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
@@ -32,12 +31,13 @@ import icyllis.modernui.resources.ResourceTypes.Res_value;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Arrays;
@@ -48,7 +48,7 @@ import static icyllis.modernui.resources.AssetManager.kMaxIterations;
 @ApiStatus.Experimental
 public class Resources {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Resources");
+    public static final Marker MARKER = MarkerFactory.getMarker("Resources");
     public static final String DEFAULT_NAMESPACE = R.ns;
 
     private final DisplayMetrics mMetrics = new DisplayMetrics();
@@ -329,7 +329,7 @@ public class Resources {
 
         var parentBag = getBag(mKeyStrings[parentId]);
         if (parentBag == null) {
-            ModernUI.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
+            Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
                     mKeyStrings[parentId], style);
             return null;
         }

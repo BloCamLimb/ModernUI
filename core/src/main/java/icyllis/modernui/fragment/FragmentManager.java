@@ -50,9 +50,9 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+import org.slf4j.event.Level;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -66,7 +66,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * Interface for interacting with {@link Fragment} objects inside a host.
@@ -83,7 +83,7 @@ public final class FragmentManager implements FragmentResultOwner {
     static final boolean DEBUG = false;
     static final boolean TRACE = false;
 
-    static final Marker MARKER = MarkerManager.getMarker("FragmentManager");
+    static final Marker MARKER = MarkerFactory.getMarker("FragmentManager");
 
     /**
      * Flag for {@link #popBackStack(String, int)}

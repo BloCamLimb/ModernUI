@@ -35,7 +35,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.animation.MotionEasingUtils;
@@ -68,6 +67,7 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DataSetObserver;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
@@ -76,9 +76,9 @@ import icyllis.modernui.view.SoundEffectConstants;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.intellij.lang.annotations.MagicConstant;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -144,7 +144,7 @@ public class TabLayout extends HorizontalScrollView {
 
     private static final int ANIMATION_DURATION = 300;
 
-    private static final Marker MARKER = MarkerManager.getMarker("TabLayout");
+    private static final Marker MARKER = MarkerFactory.getMarker("TabLayout");
 
     /**
      * Scrollable tabs display a subset of tabs at any given moment, and can contain longer tab labels
@@ -1742,7 +1742,7 @@ public class TabLayout extends HorizontalScrollView {
             case MODE_AUTO:
             case MODE_FIXED:
                 if (tabGravity == GRAVITY_START) {
-                    ModernUI.LOGGER.warn(
+                    Log.LOGGER.warn(
                             MARKER,
                             "GRAVITY_START is not supported with the current tab mode, GRAVITY_CENTER will be"
                                     + " used instead");
@@ -1763,7 +1763,7 @@ public class TabLayout extends HorizontalScrollView {
                 slidingTabIndicator.setGravity(Gravity.CENTER_HORIZONTAL);
                 break;
             case GRAVITY_FILL:
-                ModernUI.LOGGER.warn(
+                Log.LOGGER.warn(
                         MARKER,
                         "MODE_SCROLLABLE + GRAVITY_FILL is not supported, GRAVITY_START will be used"
                                 + " instead");

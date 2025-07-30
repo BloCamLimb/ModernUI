@@ -18,8 +18,8 @@
 
 package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.util.Log;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.InvocationTargetException;
@@ -179,7 +179,7 @@ public class ViewModelProvider {
             return (T) viewModel;
         } else {
             if (viewModel != null) {
-                ModernUI.LOGGER.warn(ViewModel.MARKER, "Mismatched model class {} with an existing instance {}",
+                Log.LOGGER.warn(ViewModel.MARKER, "Mismatched model class {} with an existing instance {}",
                         modelClass, viewModel);
             }
         }

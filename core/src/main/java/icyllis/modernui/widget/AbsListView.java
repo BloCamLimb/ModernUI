@@ -35,7 +35,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -45,6 +44,7 @@ import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.util.LongSparseArray;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.SparseBooleanArray;
@@ -55,9 +55,9 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMaps;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,7 +69,7 @@ import java.util.List;
  */
 public abstract class AbsListView extends AdapterView<ListAdapter> implements Filter.FilterListener {
 
-    private static final Marker MARKER = MarkerManager.getMarker("AbsListView");
+    private static final Marker MARKER = MarkerFactory.getMarker("AbsListView");
 
     /**
      * Disables the transcript mode.
@@ -5476,7 +5476,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             final int paddedBottom = getHeight() - mListPadding.bottom;
 
             if (targetPos < firstPos || targetPos > lastPos) {
-                ModernUI.LOGGER.warn(MARKER, "scrollToVisible called with targetPos " + targetPos +
+                Log.LOGGER.warn(MARKER, "scrollToVisible called with targetPos " + targetPos +
                         " not visible [" + firstPos + ", " + lastPos + "]");
             }
             if (boundPos < firstPos || boundPos > lastPos) {

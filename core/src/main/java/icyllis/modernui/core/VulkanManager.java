@@ -35,11 +35,12 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-import static org.lwjgl.vulkan.VK11.*;
 import static icyllis.arc3d.vulkan.VKUtil.*;
-import static icyllis.modernui.ModernUI.*;
+import static icyllis.modernui.core.Core.MARKER;
+import static icyllis.modernui.util.Log.LOGGER;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
+import static org.lwjgl.vulkan.VK11.*;
 
 /**
  * This class contains the shared global Vulkan objects, such as VkInstance, VkDevice and VkQueue,
@@ -121,7 +122,9 @@ public final class VulkanManager implements AutoCloseable {
         }
 
         LOGGER.info(MARKER, "Enumerated {} instance extensions", mInstanceExtensions.size());
-        LOGGER.debug(MARKER, mInstanceExtensions);
+        if (LOGGER.isDebugEnabled(MARKER)) {
+            LOGGER.debug(MARKER, mInstanceExtensions.toString());
+        }
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final ByteBuffer appName = stack.UTF8("Modern UI", true);
@@ -187,7 +190,9 @@ public final class VulkanManager implements AutoCloseable {
         }
 
         LOGGER.info(MARKER, "Enumerated {} device extensions", mDeviceExtensions.size());
-        LOGGER.debug(MARKER, mDeviceExtensions);
+        if (LOGGER.isDebugEnabled(MARKER)) {
+            LOGGER.debug(MARKER, mDeviceExtensions.toString());
+        }
 
         mPhysicalDeviceFeatures2 = VkPhysicalDeviceFeatures2
                 .calloc()
@@ -288,21 +293,14 @@ public final class VulkanManager implements AutoCloseable {
             int driverVersion = properties.driverVersion();
             mDriverVersion = driverVersion;
             LOGGER.info(MARKER, "Choose device ID {}, vendor ID: {}, driver version: {}",
-                    properties.deviceID(), switch (vendorID) {
-                        case 0x1002 -> "AMD";
-                        case 0x1010 -> "ImgTec";
-                        case 0x10DE -> "NVIDIA";
-                        case 0x13B5 -> "ARM";
-                        case 0x5143 -> "Qualcomm";
-                        case 0x8086 -> "INTEL";
-                        default -> "0x" + Integer.toHexString(vendorID);
-                    }, switch (vendorID) {
-                        case 0x10DE -> String.format("%d.%d.%d.%d", // NVIDIA
+                    properties.deviceID(), VKUtil.getVendorIDName(vendorID),
+                    switch (vendorID) {
+                        case VKUtil.kNVIDIA_VendorID -> String.format("%d.%d.%d.%d", // NVIDIA
                                 driverVersion >>> 22,
                                 (driverVersion >>> 14) & 0xFF,
                                 (driverVersion >> 6) & 0xFF,
                                 driverVersion & 0x3F);
-                        default -> "0x" + Integer.toHexString(vendorID);
+                        default -> "0x" + Integer.toHexString(driverVersion);
                     });
             return true;
         }

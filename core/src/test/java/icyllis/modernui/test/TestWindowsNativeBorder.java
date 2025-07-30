@@ -22,7 +22,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.TestFragment;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.core.windows.WindowsNativeWindowBorder;
-import icyllis.modernui.util.Log;
 import org.lwjgl.glfw.GLFWNativeWin32;
 import org.lwjgl.system.Platform;
 
@@ -32,7 +31,8 @@ public class TestWindowsNativeBorder {
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
-        Log.setLevel(Log.DEBUG);
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+        System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         try (ModernUI app = new ModernUI()) {
             if (Platform.get() == Platform.WINDOWS) {
                 app.run(new TestFragment(), win -> {

@@ -14,9 +14,10 @@ dependencies {
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
 
-    implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
+    api "org.slf4j:slf4j-api:${slf4j_version}"
+    /*implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
     implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
-    implementation "org.apache.logging.log4j:log4j-slf4j2-impl:${log4j_version}"
+    implementation "org.apache.logging.log4j:log4j-slf4j2-impl:${log4j_version}"*/
 
     /*api("icyllis.arc3d:Arc3D")
     shadow("icyllis.arc3d:Arc3D") {
@@ -69,6 +70,7 @@ dependencies {
         runtimeOnly "org.lwjgl:lwjgl-vulkan::$lwjglNatives"
     }
 
+    testImplementation "org.slf4j:slf4j-simple:${slf4j_version}"
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
 }
