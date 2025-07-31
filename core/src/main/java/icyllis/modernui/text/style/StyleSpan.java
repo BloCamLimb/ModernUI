@@ -79,8 +79,9 @@ public class StyleSpan extends MetricAffectingSpan implements ParcelableSpan {
         return mStyle;
     }
 
+    @SuppressWarnings("MagicConstant")
     @Override
     public void updateMeasureState(@NonNull TextPaint paint) {
-        paint.setTextStyle(mStyle);
+        paint.setTextStyle(paint.getTextStyle() | mStyle);
     }
 }
