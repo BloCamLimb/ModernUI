@@ -39,7 +39,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.LogWriter;
+import icyllis.modernui.util.LogWriter;
 import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.lifecycle.LifecycleObserver;
 import icyllis.modernui.lifecycle.LifecycleOwner;
@@ -52,7 +52,6 @@ import icyllis.modernui.view.ViewParent;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-import org.slf4j.event.Level;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -229,7 +228,7 @@ public final class FragmentManager implements FragmentResultOwner {
 
     private void throwException(@NonNull RuntimeException ex) {
         LOGGER.error(MARKER, "FragmentManager throws an exception", ex);
-        var w = new PrintWriter(new LogWriter(LOGGER, Level.DEBUG, MARKER), true);
+        var w = new PrintWriter(new LogWriter(MARKER), true);
         try (w) {
             if (mHost != null) {
                 try {
