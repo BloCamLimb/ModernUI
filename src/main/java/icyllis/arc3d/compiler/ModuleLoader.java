@@ -296,7 +296,7 @@ public class ModuleLoader {
     @NonNull
     public String loadModuleSource(String name) {
         final InputStream in = ModuleLoader.class
-                .getResourceAsStream("/assets/arc3d/shaders/" + name);
+                .getResourceAsStream("/icyllis/arc3d/shaders/" + name);
         if (in == null) {
             throw new RuntimeException("Failed to load module: " + name);
         }

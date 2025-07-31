@@ -19,7 +19,7 @@ dependencies {
 
     api 'org.jspecify:jspecify:1.0.0'
 
-    api "org.slf4j:slf4j-api:2.0.9"
+    api "org.slf4j:slf4j-api:${slf4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
 
     def lwjglNatives
@@ -63,17 +63,15 @@ dependencies {
     testImplementation "org.lwjgl:lwjgl-glfw"
     testImplementation "org.lwjgl:lwjgl-stb"
     testImplementation "org.lwjgl:lwjgl-shaderc"
-    testImplementation "org.lwjgl:lwjgl-ktx"
     testImplementation "org.lwjgl:lwjgl-tinyfd"
     testImplementation "org.lwjgl:lwjgl-spvc"
     testRuntimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-shaderc::$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-ktx::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-tinyfd::$lwjglNatives"
     testRuntimeOnly "org.lwjgl:lwjgl-spvc::$lwjglNatives"
 
-    testImplementation "org.slf4j:slf4j-simple:2.0.9"
+    testImplementation "org.slf4j:slf4j-simple:${slf4j_version}"
 
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
