@@ -339,7 +339,7 @@ public final class Log {
         event.setMessage(() -> String.valueOf(messageSupplier != null ? messageSupplier.get() : null)).log();
     }
 
-    private static org.slf4j.event.Level toLogLevel(int level) {
+    static org.slf4j.event.Level toLogLevel(int level) {
         return switch (level) {
             case VERBOSE -> org.slf4j.event.Level.TRACE;
             case DEBUG -> org.slf4j.event.Level.DEBUG;

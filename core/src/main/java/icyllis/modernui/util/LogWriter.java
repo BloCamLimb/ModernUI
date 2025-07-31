@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,39 +16,38 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.util;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import org.slf4j.Logger;
+import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
-import org.slf4j.event.Level;
 
 import java.io.Writer;
 
 /**
  * Buffered writer to logger, auto flush on newline.
+ *
+ * @hidden
  */
+@ApiStatus.Internal
 public class LogWriter extends Writer {
 
     private static final int FORCE_WRAP_LENGTH = 960;
 
-    private final Logger mLogger;
-    private final Level mLevel;
+    private final int mLevel;
     private final Marker mMarker;
     private final StringBuilder mBuilder = new StringBuilder(120);
 
-    public LogWriter(@NonNull Logger logger) {
-        this(logger, Level.DEBUG, null);
+    public LogWriter(@Nullable Marker marker) {
+        this(Log.DEBUG, marker);
     }
 
     /**
      * Create a new Writer that sends to the log with the given tag.
      */
-    public LogWriter(@NonNull Logger logger,
-                     @NonNull Level level,
+    public LogWriter(@Log.Level int level,
                      @Nullable Marker marker) {
-        mLogger = logger;
         mLevel = level;
         mMarker = marker;
     }
@@ -84,12 +83,7 @@ public class LogWriter extends Writer {
 
     private void flushBuilder() {
         if (mBuilder.length() != 0) {
-            var msg = mBuilder.toString();
-            var e = mLogger.atLevel(mLevel);
-            if (mMarker != null) {
-                e = e.addMarker(mMarker);
-            }
-            e.setMessage(msg).log();
+            Log.println(mLevel, mMarker, mBuilder.toString());
             mBuilder.setLength(0);
         }
     }
