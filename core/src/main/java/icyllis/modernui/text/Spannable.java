@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,12 +18,11 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.widget.TextView;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
 
 /**
  * This is the interface for text to which markup objects can be
@@ -36,7 +35,16 @@ public interface Spannable extends Spanned {
     /**
      * Standard factory.
      */
+    @NonNull
     Factory DEFAULT_FACTORY = SpannableString::new;
+
+    /**
+     * No copy factory. If the input is a Spannable, return it as is.
+     */
+    @NonNull
+    Factory NO_COPY_FACTORY = source -> source instanceof Spannable
+            ? (Spannable) source
+            : new SpannableString(source);
 
     /**
      * Attach the specified markup object to the range <code>start&hellip;end</code>
@@ -53,7 +61,7 @@ public interface Spannable extends Spanned {
      * @param end   the end char index of the span
      * @param flags the flags of the span
      */
-    void setSpan(@Nonnull Object span, int start, int end, int flags);
+    void setSpan(@NonNull Object span, int start, int end, int flags);
 
     /**
      * Remove the specified object from the range of text to which it
@@ -63,7 +71,7 @@ public interface Spannable extends Spanned {
      *
      * @param span markup object to remove
      */
-    void removeSpan(@Nonnull Object span);
+    void removeSpan(@NonNull Object span);
 
     /**
      * Remove the specified object from the range of text to which it
@@ -77,7 +85,7 @@ public interface Spannable extends Spanned {
      * @param flags flags
      */
     @ApiStatus.Internal
-    default void removeSpan(@Nonnull Object span, int flags) {
+    default void removeSpan(@NonNull Object span, int flags) {
         removeSpan(span);
     }
 
@@ -98,7 +106,7 @@ public interface Spannable extends Spanned {
          * @param source the source to be created from
          * @return a new {@link Spannable}
          */
-        @Nonnull
-        Spannable newSpannable(@Nonnull CharSequence source);
+        @NonNull
+        Spannable newSpannable(@NonNull CharSequence source);
     }
 }

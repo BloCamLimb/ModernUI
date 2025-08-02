@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
 
 /**
  * This is the interface for text whose content and markup can be changed (as opposed
@@ -30,7 +30,13 @@ public interface Editable extends Spannable, GetChars, Appendable {
     /**
      * The standard Editable Factory.
      */
+    @NonNull
     Factory DEFAULT_FACTORY = SpannableStringBuilder::new;
+
+    @NonNull
+    Factory NO_COPY_FACTORY = source -> source instanceof Editable
+            ? (Editable) source
+            : new SpannableStringBuilder(source);
 
     /**
      * Replaces the specified range (<code>st&hellip;en</code>) of text in this
@@ -56,28 +62,28 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * @return a reference to this object.
      * @see Spanned#SPAN_PARAGRAPH
      */
-    Editable replace(int st, int en, @Nonnull CharSequence source, int start, int end);
+    Editable replace(int st, int en, @NonNull CharSequence source, int start, int end);
 
     /**
      * Convenience for replace(st, en, text, 0, text.length())
      *
      * @see #replace(int, int, CharSequence, int, int)
      */
-    Editable replace(int st, int en, @Nonnull CharSequence text);
+    Editable replace(int st, int en, @NonNull CharSequence text);
 
     /**
      * Convenience for replace(where, where, text, start, end)
      *
      * @see #replace(int, int, CharSequence, int, int)
      */
-    Editable insert(int where, @Nonnull CharSequence text, int start, int end);
+    Editable insert(int where, @NonNull CharSequence text, int start, int end);
 
     /**
      * Convenience for replace(where, where, text, 0, text.length());
      *
      * @see #replace(int, int, CharSequence, int, int)
      */
-    Editable insert(int where, @Nonnull CharSequence text);
+    Editable insert(int where, @NonNull CharSequence text);
 
     /**
      * Convenience for replace(st, en, "", 0, 0)
@@ -92,7 +98,7 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    Editable append(@Nonnull CharSequence text);
+    Editable append(@NonNull CharSequence text);
 
     /**
      * Convenience for replace(length(), length(), text, start, end)
@@ -100,7 +106,7 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    Editable append(@Nonnull CharSequence text, int start, int end);
+    Editable append(@NonNull CharSequence text, int start, int end);
 
     /**
      * Convenience for append(String.valueOf(text)).
@@ -130,13 +136,13 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * whenever the text of this Editable is changed, each of which has
      * the opportunity to limit or transform the text that is being inserted.
      */
-    void setFilters(@Nonnull InputFilter[] filters);
+    void setFilters(@NonNull InputFilter[] filters);
 
     /**
      * Returns the array of input filters that are currently applied
      * to changes to this Editable.
      */
-    @Nonnull
+    @NonNull
     InputFilter[] getFilters();
 
     /**
@@ -153,7 +159,7 @@ public interface Editable extends Spannable, GetChars, Appendable {
          * CharSequence.  You can override this to provide
          * a different kind of Spanned.
          */
-        @Nonnull
-        Editable newEditable(@Nonnull CharSequence source);
+        @NonNull
+        Editable newEditable(@NonNull CharSequence source);
     }
 }
