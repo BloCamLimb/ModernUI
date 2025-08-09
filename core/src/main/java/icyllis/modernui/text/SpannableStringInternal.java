@@ -43,6 +43,7 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 // modified version of https://android.googlesource.com/
+@SuppressWarnings("ForLoopReplaceableByForEach")
 abstract class SpannableStringInternal implements Spanned, GetChars {
 
     private static final int START = 0;
@@ -85,7 +86,8 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
     private void copySpansFromSpanned(@NonNull Spanned src, int start, int end, boolean ignoreNoCopySpan) {
         List<Object> spans = src.getSpans(start, end, Object.class);
 
-        for (Object span : spans) {
+        for (int i = 0; i < spans.size(); i++) {
+            Object span = spans.get(i);
             if (ignoreNoCopySpan && span instanceof NoCopySpan) {
                 continue;
             }
@@ -378,11 +380,11 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
     }
 
     @SuppressWarnings("unchecked")
-    final <T> void getSpansSpanSet(int start, int end, Class<? extends T> type,
-                                   @NonNull SpanSet<T> dest) {
+    final <T> boolean getSpans(int start, int end, Class<? extends T> type,
+                               boolean ignoreEmptySpans, @NonNull SpanSet<T> dest) {
         dest.clear();
         if (mSpanCount == 0) {
-            return;
+            return false;
         }
 
         final int count = mSpanCount;
@@ -411,7 +413,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
                 continue;
             }
 
-            if (dest.mIgnoreEmptySpans && spanStart == spanEnd) {
+            if (ignoreEmptySpans && spanStart == spanEnd) {
                 continue;
             }
 
@@ -420,7 +422,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
             if (priority != 0) {
                 int j = 0;
                 for (; j < dest.size(); j++) {
-                    int p = dest.mSpanFlags[j] & Spanned.SPAN_PRIORITY;
+                    int p = dest.spanFlags[j] & Spanned.SPAN_PRIORITY;
                     if (priority > p) {
                         break;
                     }
@@ -430,6 +432,8 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
                 dest.add((T) spans[i], spanStart, spanEnd, flags);
             }
         }
+
+        return !dest.isEmpty();
     }
 
     @Override
@@ -487,23 +491,23 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
 
     private void sendSpanAdded(Object span, int start, int end) {
         final List<SpanWatcher> watchers = getSpans(start, end, SpanWatcher.class);
-        for (SpanWatcher watcher : watchers) {
-            watcher.onSpanAdded((Spannable) this, span, start, end);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).onSpanAdded((Spannable) this, span, start, end);
         }
     }
 
     private void sendSpanRemoved(Object span, int start, int end) {
         final List<SpanWatcher> watchers = getSpans(start, end, SpanWatcher.class);
-        for (SpanWatcher watcher : watchers) {
-            watcher.onSpanRemoved((Spannable) this, span, start, end);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).onSpanRemoved((Spannable) this, span, start, end);
         }
     }
 
     private void sendSpanChanged(Object span, int s, int e, int st, int en) {
         final List<SpanWatcher> watchers = getSpans(Math.min(s, st), Math.max(e, en),
                 SpanWatcher.class);
-        for (SpanWatcher watcher : watchers) {
-            watcher.onSpanChanged((Spannable) this, span, s, e, st, en);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).onSpanChanged((Spannable) this, span, s, e, st, en);
         }
     }
 

@@ -18,20 +18,27 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.util.*;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.util.GrowingArrayUtils;
+import icyllis.modernui.util.Log;
+import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
+import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
 
 /**
  * This is the class for text whose content and markup can both be changed.
  */
+@SuppressWarnings("ForLoopReplaceableByForEach")
 public class SpannableStringBuilder implements Editable, Spannable, GetChars, Appendable {
 
     public static final Marker MARKER = MarkerFactory.getMarker("SpannableStringBuilder");
@@ -57,7 +64,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
 
     private static final InputFilter[] NO_FILTERS = {};
 
-    @Nonnull
+    @NonNull
     private InputFilter[] mFilters = NO_FILTERS;
 
     private char[] mText;
@@ -92,7 +99,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * Create a new SpannableStringBuilder containing a copy of the
      * specified text, including its spans if any.
      */
-    public SpannableStringBuilder(@Nonnull CharSequence text) {
+    public SpannableStringBuilder(@NonNull CharSequence text) {
         this(text, 0, text.length());
     }
 
@@ -100,7 +107,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * Create a new SpannableStringBuilder containing a copy of the
      * specified slice of the specified text, including its spans if any.
      */
-    public SpannableStringBuilder(@Nonnull CharSequence text, int start, int end) {
+    public SpannableStringBuilder(@NonNull CharSequence text, int start, int end) {
         final int srcLen = end - start;
         if (srcLen < 0) {
             throw new StringIndexOutOfBoundsException();
@@ -122,9 +129,11 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         mSpanOrder = IntArrays.EMPTY_ARRAY;
 
         if (text instanceof Spanned sp) {
+            //TODO optimize if text is SpannableStringInternal
             List<?> spans = sp.getSpans(start, end, Object.class);
 
-            for (Object span : spans) {
+            for (int i = 0; i < spans.size(); i++) {
+                Object span = spans.get(i);
                 if (span instanceof NoCopySpan) {
                     continue;
                 }
@@ -149,8 +158,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         }
     }
 
-    @Nonnull
-    public static SpannableStringBuilder valueOf(@Nonnull CharSequence source) {
+    @NonNull
+    public static SpannableStringBuilder valueOf(@NonNull CharSequence source) {
         if (source instanceof SpannableStringBuilder) {
             return (SpannableStringBuilder) source;
         } else {
@@ -268,7 +277,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    public SpannableStringBuilder insert(int where, @Nonnull CharSequence tb, int start, int end) {
+    public SpannableStringBuilder insert(int where, @NonNull CharSequence tb, int start, int end) {
         return replace(where, where, tb, start, end);
     }
 
@@ -278,7 +287,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    public SpannableStringBuilder insert(int where, @Nonnull CharSequence tb) {
+    public SpannableStringBuilder insert(int where, @NonNull CharSequence tb) {
         return replace(where, where, tb, 0, tb.length());
     }
 
@@ -343,7 +352,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    public SpannableStringBuilder append(@Nonnull CharSequence text) {
+    public SpannableStringBuilder append(@NonNull CharSequence text) {
         int length = length();
         return replace(length, length, text, 0, text.length());
     }
@@ -357,7 +366,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param flags see {@link Spanned}.
      * @return this {@code SpannableStringBuilder}.
      */
-    public SpannableStringBuilder append(@Nonnull CharSequence text, @Nonnull Object what, int flags) {
+    public SpannableStringBuilder append(@NonNull CharSequence text, @NonNull Object what, int flags) {
         int start = length();
         append(text);
         setSpan(what, start, length(), flags);
@@ -370,7 +379,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    public SpannableStringBuilder append(@Nonnull CharSequence text, int start, int end) {
+    public SpannableStringBuilder append(@NonNull CharSequence text, int start, int end) {
         int length = length();
         return replace(length, length, text, start, end);
     }
@@ -412,7 +421,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         return false;
     }
 
-    private void change(int start, int end, @Nonnull CharSequence cs, int csStart, int csEnd) {
+    private void change(int start, int end, @NonNull CharSequence cs, int csStart, int csEnd) {
         // Can be negative
         final int replacedLength = end - start;
         final int replacementLength = csEnd - csStart;
@@ -507,9 +516,11 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         }
 
         if (cs instanceof Spanned sp) {
+            //TODO optimize if cs is SpannableStringInternal
             List<?> spans = sp.getSpans(csStart, csEnd, Object.class);
 
-            for (Object span : spans) {
+            for (int i = 0; i < spans.size(); i++) {
+                Object span = spans.get(i);
                 int st = sp.getSpanStart(span);
                 int en = sp.getSpanEnd(span);
 
@@ -598,7 +609,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    public SpannableStringBuilder replace(int start, int end, @Nonnull CharSequence tb) {
+    public SpannableStringBuilder replace(int start, int end, @NonNull CharSequence tb) {
         return replace(start, end, tb, 0, tb.length());
     }
 
@@ -628,7 +639,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      */
     @Override
     public SpannableStringBuilder replace(final int start, final int end,
-                                          @Nonnull CharSequence tb, int tbstart, int tbend) {
+                                          @NonNull CharSequence tb, int tbstart, int tbend) {
         checkRange("replace", start, end);
 
         for (InputFilter filter : mFilters) {
@@ -651,7 +662,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         }
 
         List<TextWatcher> textWatchers = getSpans(start, end, TextWatcher.class);
-        if (textWatchers != null) {
+        if (!textWatchers.isEmpty()) {
             sendBeforeTextChanged(textWatchers, start, origLen, newLen);
         }
 
@@ -690,7 +701,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
             change(start, end, tb, tbstart, tbend);
         }
 
-        if (textWatchers != null) {
+        if (!textWatchers.isEmpty()) {
             sendTextChanged(textWatchers, start, origLen, newLen);
             sendAfterTextChanged(textWatchers);
         }
@@ -704,10 +715,10 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     private static boolean hasNonExclusiveExclusiveSpanAt(CharSequence text, int offset) {
         if (text instanceof Spanned spanned) {
             List<?> spans = spanned.getSpans(offset, offset, Object.class);
-            for (Object span : spans) {
+            for (int i = 0; i < spans.size(); i++) {
+                Object span = spans.get(i);
                 int flags = spanned.getSpanFlags(span);
-                if (flags != Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    return true;
+                if (flags != Spanned.SPAN_EXCLUSIVE_EXCLUSIVE) return true;
             }
         }
         return false;
@@ -789,14 +800,14 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * inserted at the start or end of the span's range.
      */
     @Override
-    public void setSpan(@Nonnull Object what, int start, int end, int flags) {
+    public void setSpan(@NonNull Object what, int start, int end, int flags) {
         setSpan(true, what, start, end, flags, true/*enforceParagraph*/);
     }
 
     // Note: if send is false, then it is the caller's responsibility to restore
     // invariants. If send is false and the span already exists, then this method
     // will not change the index of any spans.
-    private void setSpan(boolean send, @Nonnull Object what, int start, int end, int flags,
+    private void setSpan(boolean send, @NonNull Object what, int start, int end, int flags,
                          boolean enforceParagraph) {
         checkRange("setSpan", start, end);
 
@@ -903,7 +914,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * Remove the specified markup object from the buffer.
      */
     @Override
-    public void removeSpan(@Nonnull Object what) {
+    public void removeSpan(@NonNull Object what) {
         removeSpan(what, 0 /* flags */);
     }
 
@@ -911,7 +922,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * Remove the specified markup object from the buffer.
      */
     @Override
-    public void removeSpan(@Nonnull Object what, int flags) {
+    public void removeSpan(@NonNull Object what, int flags) {
         if (mIndexOfSpan == null)
             return;
         Integer i = mIndexOfSpan.remove(what);
@@ -932,7 +943,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * markup object, or -1 if it is not attached to this buffer.
      */
     @Override
-    public int getSpanStart(@Nonnull Object what) {
+    public int getSpanStart(@NonNull Object what) {
         if (mIndexOfSpan == null)
             return -1;
         Integer i = mIndexOfSpan.get(what);
@@ -944,7 +955,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * markup object, or -1 if it is not attached to this buffer.
      */
     @Override
-    public int getSpanEnd(@Nonnull Object what) {
+    public int getSpanEnd(@NonNull Object what) {
         if (mIndexOfSpan == null)
             return -1;
         Integer i = mIndexOfSpan.get(what);
@@ -956,7 +967,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * markup object, or 0 if it is not attached to this buffer.
      */
     @Override
-    public int getSpanFlags(@Nonnull Object what) {
+    public int getSpanFlags(@NonNull Object what) {
         if (mIndexOfSpan == null)
             return 0;
         Integer i = mIndexOfSpan.get(what);
@@ -968,11 +979,11 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * the specified range of the buffer.  The kind may be Object.class to get
      * a list of all the spans regardless of type.
      */
-    @Nonnull
+    @NonNull
     @Override
     public <T> List<T> getSpans(int queryStart, int queryEnd, @Nullable Class<? extends T> kind,
-                                @Nullable List<T> out) {
-        return getSpans(queryStart, queryEnd, kind, true, out);
+                                @Nullable List<T> dest) {
+        return getSpans(queryStart, queryEnd, kind, true, dest);
     }
 
     /**
@@ -986,9 +997,11 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param sortByInsertionOrder If true the results are sorted by the insertion order.
      * @param <T>                  Markup type.
      * @return List of the spans.
+     * @hidden
      */
+    @ApiStatus.Internal
     @SuppressWarnings({"unchecked"})
-    @Nonnull
+    @NonNull
     public <T> List<T> getSpans(int queryStart, int queryEnd, @Nullable Class<? extends T> kind,
                                 boolean sortByInsertionOrder, @Nullable List<T> dest) {
         if (dest != null) {
@@ -1005,11 +1018,12 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         }
         final IntArrayList prioSortBuffer = sortByInsertionOrder ? obtain() : null;
         final IntArrayList orderSortBuffer = sortByInsertionOrder ? obtain() : null;
-        getSpansRec(queryStart, queryEnd, kind, treeRoot(), (List<Object>) dest, prioSortBuffer,
+        int count = getSpansRec(queryStart, queryEnd, kind, treeRoot(), (List<Object>) dest, prioSortBuffer,
                 orderSortBuffer, 0, sortByInsertionOrder);
+        assert count == dest.size();
         if (sortByInsertionOrder) {
-            if (!dest.isEmpty()) {
-                sort(dest, prioSortBuffer, orderSortBuffer);
+            if (count != 0) {
+                sort(dest, prioSortBuffer.elements(), orderSortBuffer.elements());
             }
             recycle(prioSortBuffer);
             recycle(orderSortBuffer);
@@ -1017,7 +1031,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         return dest;
     }
 
-    private int countSpans(int queryStart, int queryEnd, @Nonnull Class<?> kind, int i) {
+    private int countSpans(int queryStart, int queryEnd, @NonNull Class<?> kind, int i) {
         int count = 0;
         if ((i & 1) != 0) {
             // internal tree node
@@ -1069,8 +1083,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      *                       the spans with priority flag will be sorted in the result array.
      * @return The total number of spans found.
      */
-    private int getSpansRec(int queryStart, int queryEnd, @Nonnull Class<?> kind, int i,
-                            @Nonnull List<Object> ret, IntArrayList priority, IntArrayList insertionOrder,
+    private int getSpansRec(int queryStart, int queryEnd, @NonNull Class<?> kind, int i,
+                            @NonNull List<Object> ret, IntArrayList priority, IntArrayList insertionOrder,
                             int count, boolean sort) {
         if ((i & 1) != 0) {
             // internal tree node
@@ -1129,7 +1143,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      *
      * @return an int[] with elementCount length
      */
-    @Nonnull
+    @NonNull
     private static IntArrayList obtain() {
         IntArrayList result = sIntBufferPool.acquire();
         if (result == null) {
@@ -1143,7 +1157,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      *
      * @param buffer buffer to be recycled
      */
-    private static void recycle(@Nonnull IntArrayList buffer) {
+    private static void recycle(@NonNull IntArrayList buffer) {
         buffer.clear();
         sIntBufferPool.release(buffer);
     }
@@ -1159,24 +1173,22 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param insertionOrder Insertion orders of the spans
      * @param <T>            Span object type.
      */
-    private static <T> void sort(@Nonnull List<T> list, IntArrayList priority, IntArrayList insertionOrder) {
+    private static <T> void sort(@NonNull List<T> list, int[] priority, int[] insertionOrder) {
         int size = list.size();
         for (int i = size / 2 - 1; i >= 0; i--) {
             siftDown(i, list, size, priority, insertionOrder);
         }
 
         for (int i = size - 1; i > 0; i--) {
-            final T tmpSpan = list.get(0);
-            list.set(0, list.get(i));
-            list.set(i, tmpSpan);
+            list.set(i, list.set(0, list.get(i)));
 
-            final int tmpPriority = priority.getInt(0);
-            priority.set(0, priority.getInt(i));
-            priority.set(i, tmpPriority);
+            final int tmpPriority = priority[0];
+            priority[0] = priority[i];
+            priority[i] = tmpPriority;
 
-            final int tmpOrder = insertionOrder.getInt(0);
-            insertionOrder.set(0, insertionOrder.getInt(i));
-            insertionOrder.set(i, tmpOrder);
+            final int tmpOrder = insertionOrder[0];
+            insertionOrder[0] = insertionOrder[i];
+            insertionOrder[i] = tmpOrder;
 
             siftDown(0, list, i, priority, insertionOrder);
         }
@@ -1192,8 +1204,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param insertionOrder Insertion orders of the spans
      * @param <T>            Span object type.
      */
-    private static <T> void siftDown(int index, @Nonnull List<T> list, int size, IntArrayList priority,
-                                     IntArrayList insertionOrder) {
+    private static <T> void siftDown(int index, @NonNull List<T> list, int size, @NonNull int[] priority,
+                                     @NonNull int[] insertionOrder) {
         int left = 2 * index + 1;
         while (left < size) {
             if (left < size - 1 && compareSpans(left, left + 1, priority, insertionOrder) < 0) {
@@ -1203,17 +1215,15 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
                 break;
             }
 
-            final T tmpSpan = list.get(index);
-            list.set(index, list.get(left));
-            list.set(left, tmpSpan);
+            list.set(left, list.set(index, list.get(left)));
 
-            final int tmpPriority = priority.getInt(index);
-            priority.set(index, priority.getInt(left));
-            priority.set(left, tmpPriority);
+            final int tmpPriority = priority[index];
+            priority[index] = priority[left];
+            priority[left] = tmpPriority;
 
-            final int tmpOrder = insertionOrder.getInt(index);
-            insertionOrder.set(index, insertionOrder.getInt(left));
-            insertionOrder.set(left, tmpOrder);
+            final int tmpOrder = insertionOrder[index];
+            insertionOrder[index] = insertionOrder[left];
+            insertionOrder[left] = tmpOrder;
 
             index = left;
             left = 2 * index + 1;
@@ -1230,12 +1240,12 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param insertionOrder Insertion orders of the spans
      * @return comparing result
      */
-    private static int compareSpans(int left, int right, @Nonnull IntArrayList priority,
-                                    @Nonnull IntArrayList insertionOrder) {
-        int priority1 = priority.getInt(left);
-        int priority2 = priority.getInt(right);
+    private static int compareSpans(int left, int right, @NonNull int[] priority,
+                                    @NonNull int[] insertionOrder) {
+        int priority1 = priority[left];
+        int priority2 = priority[right];
         if (priority1 == priority2) {
-            return Integer.compare(insertionOrder.getInt(left), insertionOrder.getInt(right));
+            return Integer.compare(insertionOrder[left], insertionOrder[right]);
         }
         // since high priority has to be before a lower priority, the arguments to compare are
         // opposite of the insertion order check.
@@ -1256,7 +1266,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         return nextSpanTransitionRec(start, limit, kind, treeRoot());
     }
 
-    private int nextSpanTransitionRec(int start, int limit, @Nonnull Class<?> kind, int i) {
+    private int nextSpanTransitionRec(int start, int limit, @NonNull Class<?> kind, int i) {
         if ((i & 1) != 0) {
             // internal tree node
             int left = leftChild(i);
@@ -1339,41 +1349,41 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         return mTextWatcherDepth;
     }
 
-    private void sendBeforeTextChanged(@Nonnull List<TextWatcher> watchers, int start, int before, int after) {
+    private void sendBeforeTextChanged(@NonNull List<TextWatcher> watchers, int start, int before, int after) {
         mTextWatcherDepth++;
-        for (TextWatcher watcher : watchers) {
-            watcher.beforeTextChanged(this, start, before, after);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).beforeTextChanged(this, start, before, after);
         }
         mTextWatcherDepth--;
     }
 
-    private void sendTextChanged(@Nonnull List<TextWatcher> watchers, int start, int before, int after) {
+    private void sendTextChanged(@NonNull List<TextWatcher> watchers, int start, int before, int after) {
         mTextWatcherDepth++;
-        for (TextWatcher watcher : watchers) {
-            watcher.onTextChanged(this, start, before, after);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).onTextChanged(this, start, before, after);
         }
         mTextWatcherDepth--;
     }
 
-    private void sendAfterTextChanged(@Nonnull List<TextWatcher> watchers) {
+    private void sendAfterTextChanged(@NonNull List<TextWatcher> watchers) {
         mTextWatcherDepth++;
-        for (TextWatcher watcher : watchers) {
-            watcher.afterTextChanged(this);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).afterTextChanged(this);
         }
         mTextWatcherDepth--;
     }
 
     private void sendSpanAdded(Object what, int start, int end) {
         List<SpanWatcher> watchers = getSpans(start, end, SpanWatcher.class);
-        for (SpanWatcher watcher : watchers) {
-            watcher.onSpanAdded(this, what, start, end);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).onSpanAdded(this, what, start, end);
         }
     }
 
     private void sendSpanRemoved(Object what, int start, int end) {
         List<SpanWatcher> watchers = getSpans(start, end, SpanWatcher.class);
-        for (SpanWatcher watcher : watchers) {
-            watcher.onSpanRemoved(this, what, start, end);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).onSpanRemoved(this, what, start, end);
         }
     }
 
@@ -1382,12 +1392,12 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         // called, so that the order of the span does not affect this broadcast.
         List<SpanWatcher> watchers = getSpans(Math.min(oldStart, start),
                 Math.min(Math.max(oldEnd, end), length()), SpanWatcher.class);
-        for (SpanWatcher watcher : watchers) {
-            watcher.onSpanChanged(this, what, oldStart, oldEnd, start, end);
+        for (int i = 0; i < watchers.size(); i++) {
+            watchers.get(i).onSpanChanged(this, what, oldStart, oldEnd, start, end);
         }
     }
 
-    @Nonnull
+    @NonNull
     private static String region(int start, int end) {
         return "(" + start + " ... " + end + ")";
     }
@@ -1498,7 +1508,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * the opportunity to limit or transform the text that is being inserted.
      */
     @Override
-    public void setFilters(@Nonnull InputFilter[] filters) {
+    public void setFilters(@NonNull InputFilter[] filters) {
         mFilters = filters;
     }
 
@@ -1506,7 +1516,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * Returns the array of input filters that are currently applied
      * to changes to this Editable.
      */
-    @Nonnull
+    @NonNull
     @Override
     public InputFilter[] getFilters() {
         return mFilters;

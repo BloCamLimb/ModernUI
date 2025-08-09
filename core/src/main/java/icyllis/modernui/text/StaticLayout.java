@@ -38,6 +38,7 @@ import java.util.*;
  * to use this class directly unless you are implementing your own widget
  * or custom display object.
  */
+@SuppressWarnings("ForLoopReplaceableByForEach")
 public class StaticLayout extends Layout {
 
     public static final Marker MARKER = MarkerFactory.getMarker("StaticLayout");
@@ -550,7 +551,8 @@ public class StaticLayout extends Layout {
             if (spanned != null) {
                 List<LeadingMarginSpan> leadingMarginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
                         LeadingMarginSpan.class);
-                for (LeadingMarginSpan lms : leadingMarginSpans) {
+                for (int i = 0; i < leadingMarginSpans.size(); i++) {
+                    LeadingMarginSpan lms = leadingMarginSpans.get(i);
                     firstWidth -= lms.getLeadingMargin(true);
                     restWidth -= lms.getLeadingMargin(false);
 
@@ -564,7 +566,8 @@ public class StaticLayout extends Layout {
 
                 List<TrailingMarginSpan> trailingMarginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
                         TrailingMarginSpan.class);
-                for (TrailingMarginSpan tms : trailingMarginSpans) {
+                for (int i = 0; i < trailingMarginSpans.size(); i++) {
+                    TrailingMarginSpan tms = trailingMarginSpans.get(i);
                     int margin = tms.getTrailingMargin();
                     firstWidth -= margin;
                     restWidth -= margin;
@@ -898,7 +901,7 @@ public class StaticLayout extends Layout {
             return;
         }
 
-        //TODO use paint.measureText
+        // NB: ellipsis string is considered as Force LTR
         char[] ellipsisChars = TextUtils.getEllipsisChars(where);
         float ellipsisWidth = LayoutCache.getOrCreate(ellipsisChars, 0, ellipsisChars.length,
                 0, ellipsisChars.length, false, paint.getInternalPaint(), 0).getAdvance();

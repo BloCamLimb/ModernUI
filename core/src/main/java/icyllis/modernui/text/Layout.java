@@ -47,6 +47,7 @@ import java.util.List;
  * @see DynamicLayout
  * @since 3.0
  */
+@SuppressWarnings("ForLoopReplaceableByForEach")
 public abstract class Layout {
 
     public static final int DIR_LEFT_TO_RIGHT = 1;
@@ -225,8 +226,8 @@ public abstract class Layout {
                         for (int j = 0; j < mLineBackgroundSpans.size(); j++) {
                             // equal test is valid since both intervals are not empty by
                             // construction
-                            if (mLineBackgroundSpans.mSpanStarts[j] >= end ||
-                                    mLineBackgroundSpans.mSpanEnds[j] <= start) continue;
+                            if (mLineBackgroundSpans.spanStarts[j] >= end ||
+                                    mLineBackgroundSpans.spanEnds[j] <= start) continue;
                             spans = GrowingArrayUtils.append(
                                     spans, spansLength, mLineBackgroundSpans.get(j));
                             spansLength++;
@@ -324,7 +325,8 @@ public abstract class Layout {
                 // Draw all leading margin spans.  Adjust left or right according
                 // to the paragraph direction of the line.
                 boolean useFirstLineMargin = isFirstParaLine;
-                for (ParagraphStyle span : spans) {
+                for (int i = 0; i < spans.size(); i++) {
+                    ParagraphStyle span = spans.get(i);
                     if (span instanceof LeadingMarginSpan2 margin) {
                         int count = margin.getLeadingMarginLineCount();
                         int startLine = getLineForOffset(sp.getSpanStart(margin));
@@ -336,7 +338,8 @@ public abstract class Layout {
                         }
                     }
                 }
-                for (ParagraphStyle span : spans) {
+                for (int i = 0; i < spans.size(); i++) {
+                    ParagraphStyle span = spans.get(i);
                     // sometimes a span can implement both LMS and TMS
                     if (span instanceof LeadingMarginSpan lms) {
                         lms.drawMargin(canvas, paint, left, right, dir, ltop,
@@ -1448,7 +1451,8 @@ public abstract class Layout {
             List<ReplacementSpan> spans = ((Spanned) text).getSpans(offset, offset,
                     ReplacementSpan.class);
 
-            for (ReplacementSpan span : spans) {
+            for (int i = 0; i < spans.size(); i++) {
+                ReplacementSpan span = spans.get(i);
                 int start = ((Spanned) text).getSpanStart(span);
                 int end = ((Spanned) text).getSpanEnd(span);
 
@@ -1547,7 +1551,8 @@ public abstract class Layout {
         int margin = 0;
 
         boolean useFirstLineMargin = lineStart == 0 || spanned.charAt(lineStart - 1) == '\n';
-        for (LeadingMarginSpan span : spans) {
+        for (int i = 0; i < spans.size(); i++) {
+            LeadingMarginSpan span = spans.get(i);
             if (span instanceof LeadingMarginSpan2) {
                 int spStart = spanned.getSpanStart(span);
                 int spanLine = getLineForOffset(spStart);
@@ -1556,7 +1561,8 @@ public abstract class Layout {
                 useFirstLineMargin |= line < spanLine + count;
             }
         }
-        for (LeadingMarginSpan span : spans) {
+        for (int i = 0; i < spans.size(); i++) {
+            LeadingMarginSpan span = spans.get(i);
             margin += span.getLeadingMargin(useFirstLineMargin);
         }
 
@@ -1587,7 +1593,8 @@ public abstract class Layout {
 
         int margin = 0;
 
-        for (TrailingMarginSpan span : spans) {
+        for (int i = 0; i < spans.size(); i++) {
+            TrailingMarginSpan span = spans.get(i);
             margin += span.getTrailingMargin();
         }
 
@@ -1993,12 +2000,14 @@ public abstract class Layout {
             if (text instanceof Spanned spanned) {
                 List<LeadingMarginSpan> leadingMarginSpans = getParagraphSpans(spanned, start, end,
                         LeadingMarginSpan.class);
-                for (LeadingMarginSpan lms : leadingMarginSpans) {
+                for (int i = 0; i < leadingMarginSpans.size(); i++) {
+                    LeadingMarginSpan lms = leadingMarginSpans.get(i);
                     margin += lms.getLeadingMargin(true);
                 }
                 List<TrailingMarginSpan> trailingMarginSpans = getParagraphSpans(spanned, start, end,
                         TrailingMarginSpan.class);
-                for (TrailingMarginSpan tms : trailingMarginSpans) {
+                for (int i = 0; i < trailingMarginSpans.size(); i++) {
+                    TrailingMarginSpan tms = trailingMarginSpans.get(i);
                     margin += tms.getTrailingMargin();
                 }
             }
@@ -2074,17 +2083,16 @@ public abstract class Layout {
         final int ellipsisStart = getEllipsisStart(line);
         final int lineStart = getLineStart(line);
 
-        final String ellipsisString = TextUtils.getEllipsisString(method);
-        final int ellipsisStringLen = ellipsisString.length();
+        final char[] ellipsisChars = TextUtils.getEllipsisChars(method);
         // Use the ellipsis string only if there are that at least as many characters to replace.
-        final boolean useEllipsisString = ellipsisCount >= ellipsisStringLen;
+        final boolean useEllipsisString = ellipsisCount >= ellipsisChars.length;
         final int min = Math.max(0, start - ellipsisStart - lineStart);
         final int max = Math.min(ellipsisCount, end - ellipsisStart - lineStart);
 
         for (int i = min; i < max; i++) {
             final char c;
-            if (useEllipsisString && i < ellipsisStringLen) {
-                c = ellipsisString.charAt(i);
+            if (useEllipsisString && i < ellipsisChars.length) {
+                c = ellipsisChars[i];
             } else {
                 c = TextUtils.ELLIPSIS_FILLER;
             }
@@ -2117,12 +2125,9 @@ public abstract class Layout {
 
         @Override
         public char charAt(int off) {
-            char[] buf = TextUtils.obtain(1);
+            char[] buf = new char[1];
             getChars(off, off + 1, buf, 0);
-            char ret = buf[0];
-
-            TextUtils.recycle(buf);
-            return ret;
+            return buf[0];
         }
 
         @Override
@@ -2159,7 +2164,7 @@ public abstract class Layout {
 
     static class SpannedEllipsizer extends Ellipsizer implements Spanned {
 
-        private final Spanned mSpanned;
+        final Spanned mSpanned;
 
         public SpannedEllipsizer(CharSequence display) {
             super(display);
@@ -2168,8 +2173,9 @@ public abstract class Layout {
 
         @NonNull
         @Override
-        public <T> List<T> getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out) {
-            return mSpanned.getSpans(start, end, type, out);
+        public <T> List<T> getSpans(int start, int end, @Nullable Class<? extends T> type,
+                                    @Nullable List<T> dest) {
+            return mSpanned.getSpans(start, end, type, dest);
         }
 
         @Override

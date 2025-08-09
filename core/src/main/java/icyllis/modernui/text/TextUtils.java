@@ -24,6 +24,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.text.FontPaint;
+import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.LayoutPiece;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.text.style.*;
@@ -56,12 +57,9 @@ public final class TextUtils {
     private TextUtils() {
     }
 
-    @NonNull
-    public static String getEllipsisString(@NonNull TextUtils.TruncateAt method) {
-        return ELLIPSIS_NORMAL;
-    }
-
-    //TODO temp, remove in future
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     @NonNull
     public static char[] getEllipsisChars(@NonNull TextUtils.TruncateAt method) {
@@ -644,7 +642,7 @@ public final class TextUtils {
                                          float avail, @NonNull TruncateAt where,
                                          boolean preserveLength, @Nullable EllipsizeCallback callback) {
         return ellipsize(text, paint, avail, where, preserveLength, callback,
-                TextDirectionHeuristics.FIRSTSTRONG_LTR, getEllipsisString(where));
+                TextDirectionHeuristics.FIRSTSTRONG_LTR, getEllipsisChars(where));
     }
 
     /**
@@ -658,30 +656,17 @@ public final class TextUtils {
      * If <code>callback</code> is non-null, it will be called to
      * report the start and end of the ellipsized range.
      *
-     * @hide
+     * @hidden
      */
     @NonNull
     private static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint paint,
                                           float avail, @NonNull TruncateAt where, boolean preserveLength,
                                           @Nullable EllipsizeCallback callback,
-                                          @NonNull TextDirectionHeuristic textDir, @NonNull String ellipsis) {
+                                          @NonNull TextDirectionHeuristic textDir, @NonNull char[] ellipsis) {
 
         final int len = text.length();
 
-        final float ellipsisWidth;
-
         MeasuredParagraph mt = null;
-        try {
-            mt = MeasuredParagraph.buildForStaticLayout(paint, null, ellipsis, 0, ellipsis.length(), textDir, false,
-                    null);
-            ellipsisWidth = mt.getAdvance(0, ellipsis.length());
-        } finally {
-            if (mt != null) {
-                mt.recycle();
-                mt = null;
-            }
-        }
-
         try {
             mt = MeasuredParagraph.buildForStaticLayout(paint, null, text, 0, text.length(), textDir, false, null);
             float width = mt.getAdvance(0, text.length());
@@ -694,6 +679,9 @@ public final class TextUtils {
                 return text;
             }
 
+            // NB: ellipsis string is considered as Force LTR
+            float ellipsisWidth = LayoutCache.getOrCreate(ellipsis, 0, ellipsis.length,
+                    0, ellipsis.length, false, paint.getInternalPaint(), 0).getAdvance();
             avail -= ellipsisWidth;
 
             int left = 0;
@@ -720,9 +708,9 @@ public final class TextUtils {
             final int removed = right - left;
             final int remaining = len - removed;
             if (preserveLength) {
-                if (remaining > 0 && removed >= ellipsis.length()) {
-                    ellipsis.getChars(0, ellipsis.length(), buf, left);
-                    left += ellipsis.length();
+                if (remaining > 0 && removed >= ellipsis.length) {
+                    System.arraycopy(ellipsis, 0, buf, left, ellipsis.length);
+                    left += ellipsis.length;
                 } // else skip the ellipsis
                 for (int i = left; i < right; i++) {
                     buf[i] = ELLIPSIS_FILLER;
@@ -741,14 +729,16 @@ public final class TextUtils {
             }
 
             if (sp == null) {
-                return String.valueOf(buf, 0, left) +
-                        ellipsis +
-                        String.valueOf(buf, right, len - right);
+                StringBuilder sb = new StringBuilder(remaining + ellipsis.length);
+                sb.append(buf, 0, left);
+                sb.append(ellipsis);
+                sb.append(buf, right, len - right);
+                return sb.toString();
             }
 
             SpannableStringBuilder ssb = new SpannableStringBuilder();
             ssb.append(text, 0, left);
-            ssb.append(ellipsis);
+            ssb.append(CharBuffer.wrap(ellipsis));
             ssb.append(text, right, len);
             return ssb;
         } finally {
@@ -1097,6 +1087,11 @@ public final class TextUtils {
      * @since 3.7
      */
     public static int distance(@NonNull CharSequence a, @NonNull CharSequence b) {
+        return distance(a, b, null);
+    }
+
+    public static int distance(@NonNull CharSequence a, @NonNull CharSequence b,
+                               @Nullable int[] supp) {
         // fast path for reference equality
         if (a == b)
             return 0;
@@ -1105,15 +1100,15 @@ public final class TextUtils {
         if (m == 0 || n == 0)
             return m | n;
         return m < n
-                ? distance0(b, a, n, m)
-                : distance0(a, b, m, n);
+                ? distance0(b, a, n, m, supp)
+                : distance0(a, b, m, n, supp);
     }
 
     private static int distance0(@NonNull CharSequence a, @NonNull CharSequence b,
-                                 int m, int n) {
+                                 int m, int n, @Nullable int[] supp) {
         // assert m >= n;
         int i, j, w, c;
-        int[] d = new int[n + 1];
+        int[] d = supp != null && supp.length >= n + 1 ? supp : new int[n + 1];
         for (j = 1; j <= n; j++)
             d[j] = j;
         for (i = 1; i <= m; i++) {
