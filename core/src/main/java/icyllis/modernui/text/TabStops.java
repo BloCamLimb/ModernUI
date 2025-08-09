@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,10 +18,9 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.style.TabStopSpan;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,16 +36,18 @@ public class TabStops {
         mTabWidth = tabWidth;
     }
 
-    public TabStops(float tabWidth, @Nonnull List<?> spans) {
+    public TabStops(float tabWidth, @NonNull List<?> spans) {
         reset(tabWidth, spans);
     }
 
-    public void reset(float tabWidth, @Nonnull List<?> spans) {
+    public void reset(float tabWidth, @NonNull List<?> spans) {
         mTabWidth = tabWidth;
 
         int ns = 0;
         float[] stops = mStops;
-        for (Object o : spans) {
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < spans.size(); i++) {
+            Object o = spans.get(i);
             if (o instanceof TabStopSpan) {
                 if (stops == null) {
                     stops = new float[2];

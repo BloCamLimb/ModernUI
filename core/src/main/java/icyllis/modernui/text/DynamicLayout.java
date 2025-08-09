@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
+@SuppressWarnings("ForLoopReplaceableByForEach")
 public class DynamicLayout extends Layout {
 
     private static final Pools.Pool<Builder> sPool = Pools.newSynchronizedPool(2);
@@ -398,8 +399,8 @@ public class DynamicLayout extends Layout {
             // Strip out any watchers for other DynamicLayouts.
             final int baseLength = mBase.length();
             final List<ChangeWatcher> spans = sp.getSpans(0, baseLength, ChangeWatcher.class);
-            for (ChangeWatcher span : spans) {
-                sp.removeSpan(span);
+            for (int i = 0; i < spans.size(); i++) {
+                sp.removeSpan(spans.get(i));
             }
 
             sp.setSpan(mWatcher, 0, baseLength,
@@ -453,7 +454,8 @@ public class DynamicLayout extends Layout {
                 List<?> force = sp.getSpans(where, where + after,
                         WrapTogetherSpan.class);
 
-                for (Object span : force) {
+                for (int i = 0; i < force.size(); i++) {
+                    Object span = force.get(i);
                     int st = sp.getSpanStart(span);
                     int en = sp.getSpanEnd(span);
 

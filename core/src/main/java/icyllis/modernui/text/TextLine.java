@@ -654,8 +654,8 @@ public class TextLine {
                     mReplacementSpanSpanSet.init(mSpanned, offset, offset);
 
                     for (int i = 0; i < mReplacementSpanSpanSet.size(); i++) {
-                        int start = mReplacementSpanSpanSet.mSpanStarts[i];
-                        int end = mReplacementSpanSpanSet.mSpanEnds[i];
+                        int start = mReplacementSpanSpanSet.spanStarts[i];
+                        int end = mReplacementSpanSpanSet.spanEnds[i];
 
                         if (start < offset && end > offset)
                             offset = end;
@@ -683,8 +683,8 @@ public class TextLine {
                     mReplacementSpanSpanSet.init(mSpanned, offset, offset);
 
                     for (int i = 0; i < mReplacementSpanSpanSet.size(); i++) {
-                        int start = mReplacementSpanSpanSet.mSpanStarts[i];
-                        int end = mReplacementSpanSpanSet.mSpanEnds[i];
+                        int start = mReplacementSpanSpanSet.spanStarts[i];
+                        int end = mReplacementSpanSpanSet.spanEnds[i];
 
                         if (start < offset && end > offset)
                             offset = start;
@@ -717,8 +717,8 @@ public class TextLine {
                 for (int j = 0; j < mMetricAffectingSpanSpanSet.size(); j++) {
                     MetricAffectingSpan span = mMetricAffectingSpanSpanSet.get(j);
 
-                    if ((mMetricAffectingSpanSpanSet.mSpanStarts[j] >= mStart + spanLimit) ||
-                            (mMetricAffectingSpanSpanSet.mSpanEnds[j] <= mStart + spanStart)) continue;
+                    if ((mMetricAffectingSpanSpanSet.spanStarts[j] >= mStart + spanLimit) ||
+                            (mMetricAffectingSpanSpanSet.spanEnds[j] <= mStart + spanStart)) continue;
 
                     if (span instanceof ReplacementSpan) {
                         replacement = (ReplacementSpan) span;
@@ -900,14 +900,14 @@ public class TextLine {
             for (int j = 0; j < mMetricAffectingSpanSpanSet.size(); j++) {
                 // Both intervals [spanStarts..spanEnds] and [mStart + i..mStart + mlimit] are NOT
                 // empty by construction. This special case in getSpans() explains the >= & <= tests
-                if ((mMetricAffectingSpanSpanSet.mSpanStarts[j] >= mStart + mlimit)
-                        || (mMetricAffectingSpanSpanSet.mSpanEnds[j] <= mStart + i)) continue;
+                if ((mMetricAffectingSpanSpanSet.spanStarts[j] >= mStart + mlimit)
+                        || (mMetricAffectingSpanSpanSet.spanEnds[j] <= mStart + i)) continue;
 
                 final MetricAffectingSpan span = mMetricAffectingSpanSpanSet.get(j);
                 if (span instanceof ReplacementSpan) {
                     boolean insideEllipsis =
-                            mStart + mEllipsisStart <= mMetricAffectingSpanSpanSet.mSpanStarts[j]
-                                    && mMetricAffectingSpanSpanSet.mSpanEnds[j] <= mStart + mEllipsisEnd;
+                            mStart + mEllipsisStart <= mMetricAffectingSpanSpanSet.spanStarts[j]
+                                    && mMetricAffectingSpanSpanSet.spanEnds[j] <= mStart + mEllipsisEnd;
                     replacement = insideEllipsis ? null : (ReplacementSpan) span;
                 } else {
                     // We might have a replacement that uses the draw
@@ -936,8 +936,8 @@ public class TextLine {
                 activePaint.set(mPaint);
                 for (int k = 0; k < mCharacterStyleSpanSet.size(); k++) {
                     // Intentionally using >= and <= as explained above
-                    if ((mCharacterStyleSpanSet.mSpanStarts[k] >= mStart + offset) ||
-                            (mCharacterStyleSpanSet.mSpanEnds[k] <= mStart + j)) continue;
+                    if ((mCharacterStyleSpanSet.spanStarts[k] >= mStart + offset) ||
+                            (mCharacterStyleSpanSet.spanEnds[k] <= mStart + j)) continue;
 
                     final CharacterStyle span = mCharacterStyleSpanSet.get(k);
                     span.updateDrawState(activePaint);

@@ -128,8 +128,9 @@ public final class Selection {
     private static void removeMemory(Spannable text) {
         text.removeSpan(SELECTION_MEMORY);
         List<MemoryTextWatcher> watchers = text.getSpans(0, text.length(), MemoryTextWatcher.class);
-        for (MemoryTextWatcher watcher : watchers) {
-            text.removeSpan(watcher);
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < watchers.size(); i++) {
+            text.removeSpan(watchers.get(i));
         }
     }
 

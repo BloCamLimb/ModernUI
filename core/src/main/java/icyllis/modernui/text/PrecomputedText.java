@@ -70,6 +70,7 @@ import java.util.*;
  * Note that any {@link NoCopySpan} attached to the original text won't be passed to
  * PrecomputedText.
  */
+//TODO Not fully utilized
 public class PrecomputedText implements Spannable {
 
     /**
@@ -391,14 +392,16 @@ public class PrecomputedText implements Spannable {
 
     /**
      * Return the underlying text.
+     * @hidden
      */
     @ApiStatus.Internal
-    public @NonNull CharSequence getText() {
+    public @NonNull Spannable getText() {
         return mText;
     }
 
     /**
      * Returns the inclusive start offset of measured region.
+     * @hidden
      */
     @ApiStatus.Internal
     public @IntRange(from = 0) int getStart() {
@@ -407,6 +410,7 @@ public class PrecomputedText implements Spannable {
 
     /**
      * Returns the exclusive end offset of measured region.
+     * @hidden
      */
     @ApiStatus.Internal
     public @IntRange(from = 0) int getEnd() {
@@ -443,11 +447,17 @@ public class PrecomputedText implements Spannable {
         return mParagraphInfo[paraIndex].paragraphEnd;
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     public @NonNull MeasuredParagraph getMeasuredParagraph(@IntRange(from = 0) int paraIndex) {
         return mParagraphInfo[paraIndex].measured;
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     public @NonNull ParagraphInfo[] getParagraphInfo() {
         return mParagraphInfo;
@@ -455,6 +465,7 @@ public class PrecomputedText implements Spannable {
 
     /**
      * Returns value if the given TextPaint gives the same result of text layout for this text.
+     * @hidden
      */
     @ApiStatus.Internal
     public @Params.CheckResultUsableResult int checkResultUsable(
@@ -468,6 +479,9 @@ public class PrecomputedText implements Spannable {
         }
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     public int findParaIndex(@IntRange(from = 0) int pos) {
         // TODO: Maybe good to remove paragraph concept from PrecomputedText and add substring
@@ -544,6 +558,7 @@ public class PrecomputedText implements Spannable {
      * Returns the size of PrecomputedText memory usage.
      * <p>
      * Note that this is not guaranteed to be accurate. Must be used only for testing purposes.
+     * @hidden
      */
     @ApiStatus.Internal
     public int getMemoryUsage() {

@@ -112,7 +112,7 @@ import java.util.Objects;
  * <p>
  * Explore the methods in this class to find more usage
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "ForLoopReplaceableByForEach"})
 public class TextView extends View implements ViewTreeObserver.OnPreDrawListener {
 
     /**
@@ -2484,8 +2484,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (text instanceof Spannable sp) {
             // Remove any ChangeWatchers that might have come from other TextViews.
             final List<ChangeWatcher> watchers = sp.getSpans(0, sp.length(), ChangeWatcher.class);
-            for (ChangeWatcher watcher : watchers) {
-                sp.removeSpan(watcher);
+            for (int i = 0; i < watchers.size(); i++) {
+                sp.removeSpan(watchers.get(i));
             }
 
             if (mChangeWatcher == null) {
@@ -4503,9 +4503,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     private void sendBeforeTextChanged(CharSequence text, int start, int before, int after) {
-        if (mListeners != null && mListeners.size() > 0) {
-            for (TextWatcher textWatcher : mListeners) {
-                textWatcher.beforeTextChanged(text, start, before, after);
+        if (mListeners != null) {
+            for (int i = 0; i < mListeners.size(); i++) {
+                mListeners.get(i).beforeTextChanged(text, start, before, after);
             }
         }
     }
@@ -4515,9 +4515,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * through a thunk.
      */
     private void sendOnTextChanged(CharSequence text, int start, int before, int after) {
-        if (mListeners != null && mListeners.size() > 0) {
-            for (TextWatcher textWatcher : mListeners) {
-                textWatcher.onTextChanged(text, start, before, after);
+        if (mListeners != null) {
+            for (int i = 0; i < mListeners.size(); i++) {
+                mListeners.get(i).onTextChanged(text, start, before, after);
             }
         }
 
@@ -4531,9 +4531,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * through a thunk.
      */
     private void sendAfterTextChanged(Editable text) {
-        if (mListeners != null && mListeners.size() > 0) {
-            for (TextWatcher textWatcher : mListeners) {
-                textWatcher.afterTextChanged(text);
+        if (mListeners != null) {
+            for (int i = 0; i < mListeners.size(); i++) {
+                mListeners.get(i).afterTextChanged(text);
             }
         }
     }
