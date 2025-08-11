@@ -3,6 +3,9 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
 
 rootProject.name = 'ModernUI'
 
@@ -15,14 +18,11 @@ include 'core-ktx'
 project(':core-ktx').name = 'ModernUI-Core-KTX'
 
 // extensions
-//include 'x-viewpager'
-//project(':x-viewpager').name = "ModernUI-ViewPager"
-
 include 'x-awt'
 project(':x-awt').name = "ModernUI-AWT"
 
-include 'x-markdown'
-project(':x-markdown').name = "ModernUI-Markdown"
+include 'x-markflow'
+project(':x-markflow').name = "ModernUI-Markflow"
 
 // externals
 include 'external:Arc3D'
