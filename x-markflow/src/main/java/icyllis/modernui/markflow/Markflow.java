@@ -165,17 +165,9 @@ public final class Markflow {
      * {@link #setMarkdown(TextView, CharSequence)} or {@link #setRenderedMarkdown(TextView, Spanned)}
      * as these methods will additionally call specific {@link MarkflowPlugin} methods
      * to <em>prepare</em> proper display.
-     * <p>
-     * Note that for performance reasons, especially when the returned Spanned needs
-     * to be selected or edited, or contains a large number of spans, this method
-     * actually returns a {@link icyllis.modernui.text.SpannableStringBuilder}.
-     * On the one hand, it is both spannable and editable, allowing it to be used with
-     * NoCopyFactory to {@link #setRenderedMarkdown(TextView, Spanned)} without copying;
-     * on the other hand, it uses interval tree and hash table internally, making it
-     * much more efficient than SpannableString when processing long and complex text.
      *
      * @param document the root node
-     * @return the rendered Markdown, can be cast to {@link icyllis.modernui.text.SpannableStringBuilder}
+     * @return the rendered Markdown
      */
     @NonNull
     public Spanned render(@NonNull Node document) {
@@ -310,7 +302,14 @@ public final class Markflow {
 
         /**
          * Specify the buffer type when applying text to a TextView.
-         * The default is {@link TextView.BufferType#SPANNABLE}
+         * The default is {@link TextView.BufferType#SPANNABLE}.
+         * <p>
+         * Note that if you insist on {@link TextView.BufferType#SPANNABLE} and your rendered
+         * Markdown text contains too many spans, consider setting a factory that returns a
+         * {@link icyllis.modernui.text.SpannableStringBuilder} via the {@link TextView#setSpannableFactory}
+         * It uses interval tree and hash table internally, making it much more efficient than
+         * {@link icyllis.modernui.text.SpannableString} (default factory) when processing long and complex text.
+         * Although the text is editable, the TextView is not editable (bufferType is SPANNABLE).
          *
          * @return this
          */

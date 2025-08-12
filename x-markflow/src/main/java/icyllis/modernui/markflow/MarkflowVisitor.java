@@ -48,6 +48,7 @@ public final class MarkflowVisitor {
 
     @Nullable
     private final BlockHandler mBlockHandler;
+    private boolean mInBlockHandler = false;
 
     MarkflowVisitor(@NonNull MarkflowConfig config,
                     @NonNull Map<Class<? extends Node>, NodeVisitor<Node>> visitors,
@@ -131,19 +132,21 @@ public final class MarkflowVisitor {
     }
 
     public void beforeBlock(@NonNull Block block) {
-        if (mBlockHandler != null) {
+        if (mBlockHandler != null && !mInBlockHandler) {
+            mInBlockHandler = true;
             mBlockHandler.beforeBlock(this, block);
+            mInBlockHandler = false;
         } else {
-            // Keep sync with BlockHandler default impl
             ensureNewLine();
         }
     }
 
     public void afterBlock(@NonNull Block block) {
-        if (mBlockHandler != null) {
+        if (mBlockHandler != null && !mInBlockHandler) {
+            mInBlockHandler = true;
             mBlockHandler.afterBlock(this, block);
+            mInBlockHandler = false;
         } else {
-            // Keep sync with BlockHandler default impl
             if (hasNext(block)) {
                 ensureNewLine();
                 forceNewLine();
@@ -153,10 +156,10 @@ public final class MarkflowVisitor {
 
     @Nullable
     public <N extends Node> Object preSetSpans(@NonNull N node, int offset) {
-        SpanFactory<? super Node> factory = mConfig.getSpanFactory(node.getClass());
+        SpanFactory<Node> factory = mConfig.getSpanFactory(node.getClass());
         if (factory != null) {
             Object spans = factory.createSpans(mConfig, node, mArguments);
-            setSpans(spans, offset, offset, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+            setSpans(spans, offset, offset, Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
             return spans;
         }
         return null;
