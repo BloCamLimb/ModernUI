@@ -28,15 +28,10 @@ import org.commonmark.node.Block;
 public interface BlockHandler {
 
     default void beforeBlock(@NonNull MarkflowVisitor visitor, @NonNull Block block) {
-        // Keep sync with MarkflowVisitor default impl
-        visitor.ensureNewLine();
+        visitor.beforeBlock(block);
     }
 
     default void afterBlock(@NonNull MarkflowVisitor visitor, @NonNull Block block) {
-        // Keep sync with MarkflowVisitor default impl
-        if (visitor.hasNext(block)) {
-            visitor.ensureNewLine();
-            visitor.forceNewLine();
-        }
+        visitor.afterBlock(block);
     }
 }
