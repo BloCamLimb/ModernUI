@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.Layout;
@@ -43,8 +44,11 @@ public class QuoteSpan implements LeadingMarginSpan {
     }
 
     @Override
-    public void drawLeadingMargin(Canvas c, TextPaint p, int x, int dir, int top, int baseline, int bottom,
-                                  CharSequence text, int start, int end, boolean first, Layout layout) {
+    public void drawLeadingMargin(@NonNull Canvas c, @NonNull TextPaint p,
+                                  int x, int dir,
+                                  int top, int baseline, int bottom,
+                                  @NonNull CharSequence text, int start, int end,
+                                  boolean first, @NonNull Layout layout) {
         var style = p.getStyle();
         var color = p.getColor();
 

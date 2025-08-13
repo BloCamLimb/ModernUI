@@ -86,8 +86,11 @@ public class OrderedListItemSpan implements LeadingMarginSpan {
     }
 
     @Override
-    public void drawLeadingMargin(Canvas c, TextPaint p, int x, int dir, int top, int baseline, int bottom,
-                                  CharSequence text, int start, int end, boolean first, Layout layout) {
+    public void drawLeadingMargin(@NonNull Canvas c, @NonNull TextPaint p,
+                                  int x, int dir,
+                                  int top, int baseline, int bottom,
+                                  @NonNull CharSequence text, int start, int end,
+                                  boolean first, @NonNull Layout layout) {
         if (first && ((Spanned) text).getSpanStart(this) == start) {
             if (mShapedNumber == null) {
                 shapeText(TextDirectionHeuristics.FIRSTSTRONG_LTR, p);

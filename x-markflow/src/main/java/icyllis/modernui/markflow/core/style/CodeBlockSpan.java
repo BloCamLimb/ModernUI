@@ -22,11 +22,12 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.markflow.MarkflowTheme;
 import icyllis.modernui.text.Layout;
+import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.style.*;
 
 public class CodeBlockSpan extends MetricAffectingSpan
-        implements LeadingMarginSpan, TrailingMarginSpan {
+        implements LeadingMarginSpan {
 
     private final MarkflowTheme mTheme;
 
@@ -65,13 +66,11 @@ public class CodeBlockSpan extends MetricAffectingSpan
     }
 
     @Override
-    public void drawLeadingMargin(Canvas c, TextPaint p, int x, int dir, int top, int baseline, int bottom,
-                                  CharSequence text, int start, int end, boolean first, Layout layout) {
-    }
-
-    @Override
-    public void drawMargin(Canvas c, TextPaint p, int left, int right, int dir, int top, int baseline, int bottom,
-                           CharSequence text, int start, int end, boolean first, Layout layout) {
+    public void drawMargin(@NonNull Canvas c, @NonNull TextPaint p,
+                           int left, int right, int dir,
+                           int top, int baseline, int bottom,
+                           @NonNull Spanned text, int start, int end,
+                           boolean first, @NonNull Layout layout) {
         final int color = p.getColor();
         p.setColor(mTheme.getCodeBlockBackgroundColor());
         c.drawRect(left, top, right, bottom, p);

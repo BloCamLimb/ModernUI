@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.text.*;
 import icyllis.modernui.util.Parcel;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * A paragraph style affecting the leading margin. There can be multiple leading
@@ -31,8 +32,9 @@ import icyllis.modernui.util.Parcel;
  * <p>
  * LeadingMarginSpans should be attached from the first character to the last
  * character of a single paragraph.
- *
- * @see TrailingMarginSpan
+ * <p>
+ * Since 3.8, there's <code>TrailingMarginSpan</code> affecting the trailing margin.
+ * Since 3.12, the <code>TrailingMarginSpan</code> is merged into this interface.
  */
 public interface LeadingMarginSpan extends ParagraphStyle {
 
@@ -40,12 +42,31 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * Returns the amount by which to adjust the leading margin. Positive values
      * move away from the leading edge of the paragraph, negative values move
      * towards it.
+     * <p>
+     * The leading margin is on the left for lines in a left-to-right paragraph,
+     * and on the right for lines in a right-to-left paragraph.
      *
      * @param first true if the request is for the first line of a paragraph,
      *              false for subsequent lines
      * @return the offset for the margin.
      */
     int getLeadingMargin(boolean first);
+
+    /**
+     * Returns the amount by which to adjust the trailing margin. Positive values
+     * move away from the trailing edge of the paragraph, negative values move
+     * towards it.
+     * <p>
+     * The trailing margin is on the right for lines in a left-to-right paragraph,
+     * and on the left for lines in a right-to-left paragraph.
+     * <p>
+     * Added by Modern UI.
+     *
+     * @return the offset for the margin.
+     */
+    default int getTrailingMargin() {
+        return 0;
+    }
 
     /**
      * Renders the leading margin.  This is called before the margin has been
@@ -65,11 +86,13 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * @param first    true if this is the first line of its paragraph
      * @param layout   the layout containing this line
      */
-    void drawLeadingMargin(Canvas c, TextPaint p,
-                           int x, int dir,
-                           int top, int baseline, int bottom,
-                           CharSequence text, int start, int end,
-                           boolean first, Layout layout);
+    @ApiStatus.OverrideOnly
+    default void drawLeadingMargin(@NonNull Canvas c, @NonNull TextPaint p,
+                                   int x, int dir,
+                                   int top, int baseline, int bottom,
+                                   @NonNull CharSequence text, int start, int end,
+                                   boolean first, @NonNull Layout layout) {
+    }
 
     /**
      * Called when drawing the margin.
@@ -96,11 +119,11 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * @param first    true if this is the first line of its paragraph
      * @param layout   the layout containing this line
      */
-    default void drawMargin(Canvas c, TextPaint p,
+    default void drawMargin(@NonNull Canvas c, @NonNull TextPaint p,
                             int left, int right, int dir,
                             int top, int baseline, int bottom,
-                            CharSequence text, int start, int end,
-                            boolean first, Layout layout) {
+                            @NonNull Spanned text, int start, int end,
+                            boolean first, @NonNull Layout layout) {
         int x = dir == Layout.DIR_RIGHT_TO_LEFT ? right : left;
         drawLeadingMargin(c, p, x, dir,
                 top, baseline, bottom,
@@ -178,14 +201,6 @@ public interface LeadingMarginSpan extends ParagraphStyle {
         @Override
         public int getLeadingMargin(boolean first) {
             return first ? mFirst : mRest;
-        }
-
-        @Override
-        public void drawLeadingMargin(Canvas c, TextPaint p,
-                                      int x, int dir,
-                                      int top, int baseline, int bottom,
-                                      CharSequence text, int start, int end,
-                                      boolean first, Layout layout) {
         }
     }
 }
