@@ -28,10 +28,10 @@ import icyllis.modernui.widget.TextView;
 
 import java.util.List;
 
-public class OrderedListItemSpan implements LeadingMarginSpan {
+public class NumberSpan implements LeadingMarginSpan {
 
     /**
-     * Process supplied `text` argument and supply TextView paint to all OrderedListItemSpans
+     * Process supplied `text` argument and supply TextView paint to all NumberSpans
      * in order for them to measure number.
      * <p>
      * NB, this method must be called <em>before</em> setting text to a TextView (`TextView#setText`
@@ -41,10 +41,10 @@ public class OrderedListItemSpan implements LeadingMarginSpan {
      * @param markdown parsed markdown to process
      */
     public static void measure(@NonNull TextView textView, @NonNull Spanned markdown) {
-        final List<OrderedListItemSpan> spans = markdown.getSpans(
+        final List<NumberSpan> spans = markdown.getSpans(
                 0,
                 markdown.length(),
-                OrderedListItemSpan.class);
+                NumberSpan.class);
 
         final TextDirectionHeuristic dir = textView.getTextDirectionHeuristic();
         final TextPaint paint = textView.getPaint();
@@ -59,7 +59,7 @@ public class OrderedListItemSpan implements LeadingMarginSpan {
 
     private ShapedText mShapedNumber;
 
-    public OrderedListItemSpan(MarkflowTheme theme, String number) {
+    public NumberSpan(MarkflowTheme theme, String number) {
         mTheme = theme;
         mNumber = number;
     }

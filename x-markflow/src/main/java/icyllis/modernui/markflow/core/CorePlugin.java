@@ -26,7 +26,7 @@ import icyllis.modernui.markflow.MarkflowTheme;
 import icyllis.modernui.markflow.MarkflowVisitor;
 import icyllis.modernui.markflow.core.style.CodeBlockSpan;
 import icyllis.modernui.markflow.core.style.HeadingSpan;
-import icyllis.modernui.markflow.core.style.OrderedListItemSpan;
+import icyllis.modernui.markflow.core.style.NumberSpan;
 import icyllis.modernui.markflow.core.style.ThematicBreakSpan;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
@@ -117,7 +117,7 @@ public final class CorePlugin implements MarkflowPlugin {
 
     @Override
     public void beforeSetText(@NonNull TextView textView, @NonNull Spanned markdown) {
-        OrderedListItemSpan.measure(textView, markdown);
+        NumberSpan.measure(textView, markdown);
     }
 
     private void visitSimpleBlock(
@@ -242,8 +242,8 @@ public final class CorePlugin implements MarkflowPlugin {
             @NonNull ListItem listItem,
             @NonNull DataSet args) {
         if (args.getBoolean(CORE_ORDERED_LIST)) {
-            String number = args.getInt(CORE_ORDERED_LIST_ITEM_NUMBER) + ".\u00a0";
-            return new OrderedListItemSpan(config.getTheme(), number);
+            String number = args.getInt(CORE_ORDERED_LIST_ITEM_NUMBER, 1) + ".\u00a0";
+            return new NumberSpan(config.getTheme(), number);
         }
         int level = listLevel(listItem);
         return new BulletSpan(config.getTheme().getListItemMargin(),

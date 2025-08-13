@@ -58,7 +58,7 @@ public class HeadingSpan extends MetricAffectingSpan
                            int top, int baseline, int bottom,
                            @NonNull Spanned text, int start, int end,
                            boolean first, @NonNull Layout layout) {
-        if (mLevel == 1 || mLevel == 2) {
+        if ((mLevel == 1 || mLevel == 2) && text.getSpanEnd(this) == end) {
             var style = p.getStyle();
             int color = p.getColor();
 
