@@ -23,6 +23,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * A special kind of {@link Parcelable} for objects that will serve as text spans.
+ *
+ * @hidden
  */
 @ApiStatus.Internal
 public interface ParcelableSpan extends Parcelable {

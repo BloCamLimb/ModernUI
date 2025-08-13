@@ -327,35 +327,26 @@ public abstract class Layout {
                 boolean useFirstLineMargin = isFirstParaLine;
                 for (int i = 0; i < spans.size(); i++) {
                     ParagraphStyle span = spans.get(i);
-                    if (span instanceof LeadingMarginSpan2 margin) {
-                        int count = margin.getLeadingMarginLineCount();
-                        int startLine = getLineForOffset(sp.getSpanStart(margin));
-                        // if there is more than one LeadingMarginSpan2, use
-                        // the count that is greatest
-                        if (lineNum < startLine + count) {
-                            useFirstLineMargin = true;
-                            break;
-                        }
+                    if (span instanceof LeadingMarginSpan2) {
+                        int count = ((LeadingMarginSpan2) span).getLeadingMarginLineCount();
+                        int startLine = getLineForOffset(sp.getSpanStart(span));
+                        // Fixed by Modern UI:
+                        // if there is more than one LeadingMarginSpan2, use the count that is greatest
+                        useFirstLineMargin |= lineNum < startLine + count;
                     }
                 }
                 for (int i = 0; i < spans.size(); i++) {
                     ParagraphStyle span = spans.get(i);
-                    // sometimes a span can implement both LMS and TMS
-                    if (span instanceof LeadingMarginSpan lms) {
-                        lms.drawMargin(canvas, paint, left, right, dir, ltop,
-                                lbaseline, lbottom, buf,
+                    if (span instanceof LeadingMarginSpan margin) {
+                        margin.drawMargin(canvas, paint, left, right, dir, ltop,
+                                lbaseline, lbottom, sp,
                                 start, end, isFirstParaLine, this);
                         if (dir == DIR_RIGHT_TO_LEFT) {
-                            right -= lms.getLeadingMargin(useFirstLineMargin);
+                            left += margin.getTrailingMargin();
+                            right -= margin.getLeadingMargin(useFirstLineMargin);
                         } else {
-                            left += lms.getLeadingMargin(useFirstLineMargin);
-                        }
-                    }
-                    if (span instanceof TrailingMarginSpan tms) {
-                        if (dir == DIR_LEFT_TO_RIGHT) {
-                            right -= tms.getTrailingMargin();
-                        } else {
-                            left += tms.getTrailingMargin();
+                            left += margin.getLeadingMargin(useFirstLineMargin);
+                            right -= margin.getTrailingMargin();
                         }
                     }
                 }
@@ -877,6 +868,18 @@ public abstract class Layout {
      */
     public final Alignment getParagraphAlignment(int line) {
         Alignment align = mAlignment;
+
+        if (mSpannedText) {
+            Spanned sp = (Spanned) mText;
+            List<AlignmentSpan> spans = getParagraphSpans(sp, getLineStart(line),
+                    getLineEnd(line),
+                    AlignmentSpan.class);
+
+            int spanLength = spans.size();
+            if (spanLength > 0) {
+                align = spans.get(spanLength-1).getAlignment();
+            }
+        }
 
         return align;
     }
@@ -1554,11 +1557,10 @@ public abstract class Layout {
         for (int i = 0; i < spans.size(); i++) {
             LeadingMarginSpan span = spans.get(i);
             if (span instanceof LeadingMarginSpan2) {
-                int spStart = spanned.getSpanStart(span);
-                int spanLine = getLineForOffset(spStart);
                 int count = ((LeadingMarginSpan2) span).getLeadingMarginLineCount();
+                int startLine = getLineForOffset(spanned.getSpanStart(span));
                 // if there is more than one LeadingMarginSpan2, use the count that is greatest
-                useFirstLineMargin |= line < spanLine + count;
+                useFirstLineMargin |= line < startLine + count;
             }
         }
         for (int i = 0; i < spans.size(); i++) {
@@ -1584,9 +1586,9 @@ public abstract class Layout {
         int lineStart = getLineStart(line);
         int lineEnd = getLineEnd(line);
         int spanEnd = spanned.nextSpanTransition(lineStart, lineEnd,
-                TrailingMarginSpan.class);
-        List<TrailingMarginSpan> spans = getParagraphSpans(spanned, lineStart, spanEnd,
-                TrailingMarginSpan.class);
+                LeadingMarginSpan.class);
+        List<LeadingMarginSpan> spans = getParagraphSpans(spanned, lineStart, spanEnd,
+                LeadingMarginSpan.class);
         if (spans.isEmpty()) {
             return 0; // no trailing margin span;
         }
@@ -1594,7 +1596,7 @@ public abstract class Layout {
         int margin = 0;
 
         for (int i = 0; i < spans.size(); i++) {
-            TrailingMarginSpan span = spans.get(i);
+            LeadingMarginSpan span = spans.get(i);
             margin += span.getTrailingMargin();
         }
 
@@ -1998,17 +2000,12 @@ public abstract class Layout {
             // margins should be taken into account when measuring a paragraph
             int margin = 0;
             if (text instanceof Spanned spanned) {
-                List<LeadingMarginSpan> leadingMarginSpans = getParagraphSpans(spanned, start, end,
+                List<LeadingMarginSpan> marginSpans = getParagraphSpans(spanned, start, end,
                         LeadingMarginSpan.class);
-                for (int i = 0; i < leadingMarginSpans.size(); i++) {
-                    LeadingMarginSpan lms = leadingMarginSpans.get(i);
-                    margin += lms.getLeadingMargin(true);
-                }
-                List<TrailingMarginSpan> trailingMarginSpans = getParagraphSpans(spanned, start, end,
-                        TrailingMarginSpan.class);
-                for (int i = 0; i < trailingMarginSpans.size(); i++) {
-                    TrailingMarginSpan tms = trailingMarginSpans.get(i);
-                    margin += tms.getTrailingMargin();
+                for (int i = 0; i < marginSpans.size(); i++) {
+                    LeadingMarginSpan span = marginSpans.get(i);
+                    margin += span.getLeadingMargin(true);
+                    margin += span.getTrailingMargin();
                 }
             }
             for (char c : chars) {

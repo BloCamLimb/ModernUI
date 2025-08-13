@@ -53,13 +53,11 @@ public class HeadingSpan extends MetricAffectingSpan
     }
 
     @Override
-    public void drawLeadingMargin(Canvas c, TextPaint p, int x, int dir, int top, int baseline, int bottom,
-                                  CharSequence text, int start, int end, boolean first, Layout layout) {
-    }
-
-    @Override
-    public void drawMargin(Canvas c, TextPaint p, int left, int right, int dir, int top, int baseline, int bottom,
-                           CharSequence text, int start, int end, boolean first, Layout layout) {
+    public void drawMargin(@NonNull Canvas c, @NonNull TextPaint p,
+                           int left, int right, int dir,
+                           int top, int baseline, int bottom,
+                           @NonNull Spanned text, int start, int end,
+                           boolean first, @NonNull Layout layout) {
         if (mLevel == 1 || mLevel == 2) {
             var style = p.getStyle();
             int color = p.getColor();

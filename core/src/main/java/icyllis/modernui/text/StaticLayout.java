@@ -549,28 +549,23 @@ public class StaticLayout extends Layout {
 
             List<LineHeightSpan> chooseHt = Collections.emptyList();
             if (spanned != null) {
-                List<LeadingMarginSpan> leadingMarginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
+                List<LeadingMarginSpan> marginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
                         LeadingMarginSpan.class);
-                for (int i = 0; i < leadingMarginSpans.size(); i++) {
-                    LeadingMarginSpan lms = leadingMarginSpans.get(i);
-                    firstWidth -= lms.getLeadingMargin(true);
-                    restWidth -= lms.getLeadingMargin(false);
+                for (int i = 0; i < marginSpans.size(); i++) {
+                    LeadingMarginSpan span = marginSpans.get(i);
+                    firstWidth -= span.getLeadingMargin(true);
+                    restWidth -= span.getLeadingMargin(false);
+
+                    int trailingMargin = span.getTrailingMargin();
+                    firstWidth -= trailingMargin;
+                    restWidth -= trailingMargin;
 
                     // LeadingMarginSpan2 is odd.  The count affects all
                     // leading margin spans, not just this particular one
-                    if (lms instanceof LeadingMarginSpan2) {
+                    if (span instanceof LeadingMarginSpan2) {
                         firstWidthLineCount = Math.max(firstWidthLineCount,
-                                ((LeadingMarginSpan2) lms).getLeadingMarginLineCount());
+                                ((LeadingMarginSpan2) span).getLeadingMarginLineCount());
                     }
-                }
-
-                List<TrailingMarginSpan> trailingMarginSpans = getParagraphSpans(spanned, paraStart, paraEnd,
-                        TrailingMarginSpan.class);
-                for (int i = 0; i < trailingMarginSpans.size(); i++) {
-                    TrailingMarginSpan tms = trailingMarginSpans.get(i);
-                    int margin = tms.getTrailingMargin();
-                    firstWidth -= margin;
-                    restWidth -= margin;
                 }
 
                 chooseHt = getParagraphSpans(spanned, paraStart, paraEnd, LineHeightSpan.class);
