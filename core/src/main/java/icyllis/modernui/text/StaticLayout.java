@@ -553,10 +553,10 @@ public class StaticLayout extends Layout {
                         LeadingMarginSpan.class);
                 for (int i = 0; i < marginSpans.size(); i++) {
                     LeadingMarginSpan span = marginSpans.get(i);
-                    firstWidth -= span.getLeadingMargin(true);
-                    restWidth -= span.getLeadingMargin(false);
+                    firstWidth -= span.getLeadingMargin(paint, true);
+                    restWidth -= span.getLeadingMargin(paint, false);
 
-                    int trailingMargin = span.getTrailingMargin();
+                    int trailingMargin = span.getTrailingMargin(paint);
                     firstWidth -= trailingMargin;
                     restWidth -= trailingMargin;
 

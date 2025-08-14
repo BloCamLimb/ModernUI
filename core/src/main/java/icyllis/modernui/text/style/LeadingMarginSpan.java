@@ -43,14 +43,37 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * move away from the leading edge of the paragraph, negative values move
      * towards it.
      * <p>
-     * The leading margin is on the left for lines in a left-to-right paragraph,
-     * and on the right for lines in a right-to-left paragraph.
+     * This method is obsolete in favor of {@link #getLeadingMargin(TextPaint, boolean)}.
      *
      * @param first true if the request is for the first line of a paragraph,
      *              false for subsequent lines
      * @return the offset for the margin.
      */
-    int getLeadingMargin(boolean first);
+    @ApiStatus.Obsolete
+    @ApiStatus.OverrideOnly
+    default int getLeadingMargin(boolean first) {
+        return 0;
+    }
+
+    /**
+     * Returns the amount by which to adjust the leading margin. Positive values
+     * move away from the leading edge of the paragraph, negative values move
+     * towards it.
+     * <p>
+     * The leading margin is on the left for lines in a left-to-right paragraph,
+     * and on the right for lines in a right-to-left paragraph. The default
+     * implementation is to call {@link #getLeadingMargin(boolean)}.
+     * <p>
+     * Added by Modern UI.
+     *
+     * @param paint the base paint (read-only)
+     * @param first true if the request is for the first line of a paragraph,
+     *              false for subsequent lines
+     * @return the offset for the margin.
+     */
+    default int getLeadingMargin(@NonNull TextPaint paint, boolean first) {
+        return getLeadingMargin(first);
+    }
 
     /**
      * Returns the amount by which to adjust the trailing margin. Positive values
@@ -62,15 +85,16 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * <p>
      * Added by Modern UI.
      *
+     * @param paint the base paint (read-only)
      * @return the offset for the margin.
      */
-    default int getTrailingMargin() {
+    default int getTrailingMargin(@NonNull TextPaint paint) {
         return 0;
     }
 
     /**
      * Renders the leading margin.  This is called before the margin has been
-     * adjusted by the value returned by {@link #getLeadingMargin(boolean)}.
+     * adjusted by the value returned by {@link #getLeadingMargin(TextPaint, boolean)}.
      *
      * @param c        the canvas
      * @param p        the paint. This should be left unchanged on exit.

@@ -56,12 +56,12 @@ public class CodeBlockSpan extends MetricAffectingSpan
     }
 
     @Override
-    public int getLeadingMargin(boolean first) {
+    public int getLeadingMargin(@NonNull TextPaint paint, boolean first) {
         return mTheme.getCodeBlockMargin();
     }
 
     @Override
-    public int getTrailingMargin() {
+    public int getTrailingMargin(@NonNull TextPaint paint) {
         return mTheme.getCodeBlockMargin();
     }
 

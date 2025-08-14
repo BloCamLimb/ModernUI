@@ -193,9 +193,8 @@ public abstract class Layout {
         Spanned buffer = (Spanned) mText;
 
         int textLength = buffer.length();
-        mLineBackgroundSpans.init(buffer, 0, textLength);
 
-        if (!mLineBackgroundSpans.isEmpty()) {
+        if (mLineBackgroundSpans.init(buffer, 0, textLength)) {
             int previousLineBottom = getLineTop(firstLine);
             int previousLineEnd = getLineStart(firstLine);
             LineBackgroundSpan[] spans = EMPTY_BACKGROUND_SPANS;
@@ -342,11 +341,11 @@ public abstract class Layout {
                                 lbaseline, lbottom, sp,
                                 start, end, isFirstParaLine, this);
                         if (dir == DIR_RIGHT_TO_LEFT) {
-                            left += margin.getTrailingMargin();
-                            right -= margin.getLeadingMargin(useFirstLineMargin);
+                            left += margin.getTrailingMargin(paint);
+                            right -= margin.getLeadingMargin(paint, useFirstLineMargin);
                         } else {
-                            left += margin.getLeadingMargin(useFirstLineMargin);
-                            right -= margin.getTrailingMargin();
+                            left += margin.getLeadingMargin(paint, useFirstLineMargin);
+                            right -= margin.getTrailingMargin(paint);
                         }
                     }
                 }
@@ -939,7 +938,7 @@ public abstract class Layout {
      *
      * @return true if offset is at the BiDi level transition point and trailing BiDi level is
      * higher than previous BiDi level. See above for the detail.
-     * @hide
+     * @hidden
      */
     public boolean primaryIsTrailingPrevious(int offset) {
         int line = getLineForOffset(offset);
@@ -996,7 +995,7 @@ public abstract class Layout {
      *
      * @param line The line giving the offsets we compute the information for
      * @return The array of results, indexed from 0, where 0 corresponds to the line start offset
-     * @hide
+     * @hidden
      */
     public boolean[] primaryIsTrailingPreviousAllLineOffsets(int line) {
         int lineStart = getLineStart(line);
@@ -1043,7 +1042,7 @@ public abstract class Layout {
      * Get the primary horizontal position for the specified text offset, but
      * optionally clamp it so that it doesn't exceed the width of the layout.
      *
-     * @hide
+     * @hidden
      */
     public float getPrimaryHorizontal(int offset, boolean clamped) {
         boolean trailing = primaryIsTrailingPrevious(offset);
@@ -1063,7 +1062,7 @@ public abstract class Layout {
      * Get the secondary horizontal position for the specified text offset, but
      * optionally clamp it so that it doesn't exceed the width of the layout.
      *
-     * @hide
+     * @hidden
      */
     public float getSecondaryHorizontal(int offset, boolean clamped) {
         boolean trailing = primaryIsTrailingPrevious(offset);
@@ -1182,7 +1181,7 @@ public abstract class Layout {
      * @param line    the line used to find the closest offset
      * @param horiz   the horizontal position used to find the closest offset
      * @param primary whether to use the primary position or secondary position to find the offset
-     * @hide
+     * @hidden
      */
     public int getOffsetForHorizontal(int line, float horiz, boolean primary) {
         // TODO: use Paint.getOffsetForAdvance to avoid binary search
@@ -1378,7 +1377,7 @@ public abstract class Layout {
      *
      * @param offset the offset
      * @return true if at a level boundary
-     * @hide
+     * @hidden
      */
     public boolean isLevelBoundary(int offset) {
         int line = getLineForOffset(offset);
@@ -1565,7 +1564,7 @@ public abstract class Layout {
         }
         for (int i = 0; i < spans.size(); i++) {
             LeadingMarginSpan span = spans.get(i);
-            margin += span.getLeadingMargin(useFirstLineMargin);
+            margin += span.getLeadingMargin(mPaint, useFirstLineMargin);
         }
 
         return margin;
@@ -1597,7 +1596,7 @@ public abstract class Layout {
 
         for (int i = 0; i < spans.size(); i++) {
             LeadingMarginSpan span = spans.get(i);
-            margin += span.getTrailingMargin();
+            margin += span.getTrailingMargin(mPaint);
         }
 
         return margin;
@@ -1944,7 +1943,7 @@ public abstract class Layout {
      * Return how wide a layout must be in order to display the
      * specified text slice with one line per paragraph.
      *
-     * @hide
+     * @hidden
      */
     public static float getDesiredWidth(CharSequence source, int start, int end, TextPaint paint,
                                         TextDirectionHeuristic textDir) {
@@ -1957,7 +1956,7 @@ public abstract class Layout {
      * <p>
      * If the measured width exceeds given limit, returns limit value instead.
      *
-     * @hide
+     * @hidden
      */
     public static float getDesiredWidthWithLimit(CharSequence source, int start, int end,
                                                  TextPaint paint, TextDirectionHeuristic textDir, float upperLimit) {
@@ -2004,8 +2003,8 @@ public abstract class Layout {
                         LeadingMarginSpan.class);
                 for (int i = 0; i < marginSpans.size(); i++) {
                     LeadingMarginSpan span = marginSpans.get(i);
-                    margin += span.getLeadingMargin(true);
-                    margin += span.getTrailingMargin();
+                    margin += span.getLeadingMargin(paint, true);
+                    margin += span.getTrailingMargin(paint);
                 }
             }
             for (char c : chars) {
