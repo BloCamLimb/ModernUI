@@ -22,6 +22,7 @@ import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
 import icyllis.arc3d.sketch.TextBlob;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -100,12 +101,21 @@ public class ShapedText {
      * @return glyphs
      */
     @Unmodifiable
+    @ApiStatus.Experimental
     public int[] getGlyphs() {
         return mGlyphs;
     }
 
     /**
-     * Helper of {@link #getGlyphs()}.
+     * Copy an array of glyphs for the given range.
+     * The array is about all laid-out glyph codes for in order visually from left to right.
+     */
+    public void getGlyphs(int glyphIndex, int glyphCount, @NonNull int[] dstGlyphs, int dstOffset) {
+        System.arraycopy(mGlyphs, glyphIndex, dstGlyphs, dstOffset, glyphCount);
+    }
+
+    /**
+     * Helper of {@link #getGlyphs}.
      */
     public int getGlyph(int i) {
         return mGlyphs[i];
@@ -118,19 +128,28 @@ public class ShapedText {
      * @return glyph positions
      */
     @Unmodifiable
+    @ApiStatus.Experimental
     public float[] getPositions() {
         return mPositions;
     }
 
     /**
-     * Helper of {@link #getPositions()}.
+     * Copy an array of glyph positions for the given range.
+     * This array holds the repeat of x offset, y offset of glyph positions.
+     */
+    public void getPositions(int glyphIndex, int glyphCount, @NonNull float[] dstPositions, int dstOffset) {
+        System.arraycopy(mPositions, glyphIndex << 1, dstPositions, dstOffset, glyphCount << 1);
+    }
+
+    /**
+     * Helper of {@link #getPositions}.
      */
     public float getX(int i) {
         return mPositions[i << 1];
     }
 
     /**
-     * Helper of {@link #getPositions()}.
+     * Helper of {@link #getPositions}.
      */
     public float getY(int i) {
         return mPositions[i << 1 | 1];
@@ -151,6 +170,8 @@ public class ShapedText {
 
     /**
      * Returns the number of characters (i.e. constructor <code>limit - start</code> in code units).
+     *
+     * @hidden
      */
     @ApiStatus.Internal
     public int getCharCount() {
@@ -165,6 +186,7 @@ public class ShapedText {
      *
      * @return advances, or null
      * @see GraphemeBreak
+     * @hidden
      */
     @ApiStatus.Internal
     public float[] getAdvances() {
@@ -173,6 +195,8 @@ public class ShapedText {
 
     /**
      * Helper of {@link #getAdvances()}.
+     *
+     * @hidden
      */
     @ApiStatus.Internal
     public float getAdvance(int i) {
@@ -224,7 +248,17 @@ public class ShapedText {
      * @hidden
      */
     @ApiStatus.Experimental
+    @Nullable
     public TextBlob getTextBlob() {
+        if (mNativeFont != null) {
+            synchronized (this) {
+                if (mNativeFont != null) {
+                    var nativeFont = mNativeFont;
+                    mTextBlob = computeTextBlob(nativeFont);
+                    mNativeFont = null;
+                }
+            }
+        }
         return mTextBlob;
     }
 
@@ -254,6 +288,7 @@ public class ShapedText {
                 ", mAscent=" + mAscent +
                 ", mDescent=" + mDescent +
                 ", mAdvance=" + mAdvance +
+                ", mTextBlob=" + mTextBlob +
                 '}';
     }
 
@@ -275,7 +310,8 @@ public class ShapedText {
     // total advance
     private final float mAdvance;
 
-    private final TextBlob mTextBlob;
+    private volatile icyllis.arc3d.sketch.Font mNativeFont;
+    private TextBlob mTextBlob;
 
     /**
      * Generate the shaped text layout. The layout object will not be associated with the
@@ -421,25 +457,32 @@ public class ShapedText {
         int nGlyphs = mGlyphs.length;
         if (nGlyphs == 0) {
             mTextBlob = null;
-        } else if (mFontIndices == null) {
-            // optimize for single font
+            mNativeFont = null;
+        } else {
             var nativeFont = new icyllis.arc3d.sketch.Font();
             paint.getNativeFont(nativeFont);
+            mNativeFont = nativeFont;
+        }
+    }
+
+    @Nullable
+    private TextBlob computeTextBlob(@NonNull icyllis.arc3d.sketch.Font nativeFont) {
+        if (mFontIndices == null) {
+            // optimize for single font
             nativeFont.setTypeface(mFonts[0].getNativeTypeface());
             if (nativeFont.getTypeface() != null) {
-                mTextBlob = TextBlob.makeNoCopy(mGlyphs, mPositions,
+                return TextBlob.makeNoCopy(mGlyphs, mPositions,
                         nativeFont, null);
             } else {
-                mTextBlob = null;
+                return null;
             }
         } else {
             // theoretically, we don't need to copy the array in this case, but...
             final TextBlob.Builder builder = new TextBlob.Builder();
-            var nativeFont = new icyllis.arc3d.sketch.Font();
-            paint.getNativeFont(nativeFont);
             var lastFont = getFont(0);
             int lastPos = 0;
             int currPos = 1;
+            int nGlyphs = mGlyphs.length;
             for (; currPos <= nGlyphs; currPos++) {
                 var currFont = currPos == nGlyphs ? null : getFont(currPos);
                 if (lastFont != currFont) {
@@ -456,15 +499,22 @@ public class ShapedText {
                     lastPos = currPos;
                 }
             }
-            mTextBlob = builder.build();
+            return builder.build();
         }
     }
 
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
     @FunctionalInterface
     public interface RunConsumer {
         void accept(LayoutPiece piece, float offsetX, FontPaint paint);
     }
 
+    /**
+     * @hidden
+     */
     // BiDi run, visual order, append layout pieces
     @ApiStatus.Internal
     public static float doLayoutRun(char[] text, int contextStart, int contextLimit,
@@ -476,6 +526,9 @@ public class ShapedText {
                 consumer);
     }
 
+    /**
+     * @hidden
+     */
     // BiDi run, visual order
     @ApiStatus.Internal
     public static float doLayoutRun(char[] text, int contextStart, int contextLimit,
