@@ -72,15 +72,19 @@ public class NumberSpan implements LeadingMarginSpan {
         );
     }
 
+    //TODO when text rendering is optimized, we just TextPaint to measure & draw (no cache),
+    // making this span not dynamic; move to core framework; also add letter & roman support
+
     @Override
-    public int getLeadingMargin(boolean first) {
+    public int getLeadingMargin(@NonNull TextPaint paint, boolean first) {
         int margin = mTheme.getListItemMargin();
-        if (mShapedNumber != null) {
-            int adv = Math.round(mShapedNumber.getAdvance());
-            if (adv > margin) {
-                int mid = (margin + 1) / 2;
-                return (int) Math.ceil((float) adv / mid) * mid;
-            }
+        if (mShapedNumber == null) {
+            shapeText(TextDirectionHeuristics.FIRSTSTRONG_LTR, paint);
+        }
+        int adv = Math.round(mShapedNumber.getAdvance());
+        if (adv > margin) {
+            int mid = (margin + 1) / 2;
+            return (int) Math.ceil((float) adv / mid) * mid;
         }
         return margin;
     }
@@ -92,10 +96,7 @@ public class NumberSpan implements LeadingMarginSpan {
                                   @NonNull CharSequence text, int start, int end,
                                   boolean first, @NonNull Layout layout) {
         if (first && ((Spanned) text).getSpanStart(this) == start) {
-            if (mShapedNumber == null) {
-                shapeText(TextDirectionHeuristics.FIRSTSTRONG_LTR, p);
-            }
-            int width = getLeadingMargin(false);
+            int width = getLeadingMargin(p, false);
             if (dir > 0) {
                 x += width - mShapedNumber.getAdvance();
             } else {

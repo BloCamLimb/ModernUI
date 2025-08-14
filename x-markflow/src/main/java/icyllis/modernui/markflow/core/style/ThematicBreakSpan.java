@@ -36,11 +36,6 @@ public class ThematicBreakSpan implements LeadingMarginSpan {
     }
 
     @Override
-    public int getLeadingMargin(boolean first) {
-        return 0;
-    }
-
-    @Override
     public void drawMargin(@NonNull Canvas c, @NonNull TextPaint p,
                            int left, int right, int dir,
                            int top, int baseline, int bottom,

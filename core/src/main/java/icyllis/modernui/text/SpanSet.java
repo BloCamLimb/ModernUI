@@ -19,19 +19,22 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.ApiStatus;
+
+import java.util.ArrayList;
 
 /**
  * A cached set of spans. Caches the result of {@link Spanned#getSpans(int, int, Class, java.util.List)} and then
  * provides faster access to {@link Spanned#nextSpanTransition(int, int, Class)}. Also retrieves
  * spanStart, spanEnd, spanFlags simultaneously with constant complexity.
- * <p>
- * Fields are public for a convenient direct access (read only). Empty spans are ignored by default.
+ * <ul>
+ * <li>Fields are public for a convenient direct access (read only).</li>
+ * <li>Empty spans are ignored by default.</li>
+ * <li>Cannot be used as normal ArrayList (you can only consume this object after init).</li>
+ * </ul>
  */
-// this class should not extend ObjectArrayList, internal use only
 @ApiStatus.Experimental
-public class SpanSet<E> extends ObjectArrayList<E> {
+public class SpanSet<E> extends ArrayList<E> {
 
     private final Class<? extends E> mType;
     private final boolean mIgnoreEmptySpans;
@@ -74,7 +77,7 @@ public class SpanSet<E> extends ObjectArrayList<E> {
 
     private void grow(int length) {
         if (spanStarts == null) {
-            length = Math.max(length, DEFAULT_INITIAL_CAPACITY);
+            length = Math.max(length, 10);
         } else if (spanStarts.length < length) {
             length = Math.max(length, spanStarts.length + (spanStarts.length >> 1));
         } else {
