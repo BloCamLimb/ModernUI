@@ -41,11 +41,10 @@ import java.util.Locale;
  * For the base class {@link FontPaint}, changing any attributes will require a
  * reflow and re-layout, not just re-drawing.
  */
-@SuppressWarnings("MagicConstant")
 public class TextPaint extends Paint {
 
     @ApiStatus.Internal
-    @MagicConstant(intValues = {
+    @MagicConstant(flags = {
             NORMAL,
             BOLD,
             ITALIC,

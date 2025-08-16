@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,65 +19,39 @@
 package icyllis.modernui.markflow.core.style;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.markflow.MarkflowTheme;
-import icyllis.modernui.text.Layout;
-import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.text.style.LeadingMarginSpan;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 
-public class CodeBlockSpan extends MetricAffectingSpan
-        implements LeadingMarginSpan {
+public class CodeSpan extends MetricAffectingSpan {
 
     private final MarkflowTheme mTheme;
 
-    public CodeBlockSpan(@NonNull MarkflowTheme theme) {
+    public CodeSpan(@NonNull MarkflowTheme theme) {
         mTheme = theme;
     }
 
     @Override
     public void updateDrawState(@NonNull TextPaint paint) {
         super.updateDrawState(paint);
-        int color = mTheme.getCodeBlockTextColor();
+        int color = mTheme.getCodeTextColor();
         if (color != 0) {
             paint.setColor(color);
         }
+        paint.bgColor = mTheme.getCodeBackgroundColor();
     }
 
     @Override
     public void updateMeasureState(@NonNull TextPaint paint) {
-        paint.setTypeface(mTheme.getCodeBlockTypeface());
-        int textSize = mTheme.getCodeBlockTextSize();
+        paint.setTypeface(mTheme.getCodeTypeface());
+        int textSize = mTheme.getCodeTextSize();
         if (textSize > 0) {
             paint.setTextSize(textSize);
         } else {
-            float textSizeMultiplier = mTheme.getCodeBlockTextSizeMultiplier();
+            float textSizeMultiplier = mTheme.getCodeTextSizeMultiplier();
             if (textSizeMultiplier > 0) {
                 paint.setTextSize(paint.getTextSize() * textSizeMultiplier);
             }
         }
-    }
-
-    @Override
-    public int getLeadingMargin(@NonNull TextPaint paint, boolean first) {
-        return mTheme.getCodeBlockMargin();
-    }
-
-    @Override
-    public int getTrailingMargin(@NonNull TextPaint paint) {
-        return mTheme.getCodeBlockMargin();
-    }
-
-    @Override
-    public void drawMargin(@NonNull Canvas c, @NonNull TextPaint p,
-                           int left, int right, int dir,
-                           int top, int baseline, int bottom,
-                           @NonNull Spanned text, int start, int end,
-                           boolean first, @NonNull Layout layout) {
-        final int oldColor = p.getColor();
-        p.setColor(mTheme.getCodeBlockBackgroundColor());
-        c.drawRect(left, top, right, bottom, p);
-        p.setColor(oldColor);
     }
 }

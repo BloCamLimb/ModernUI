@@ -31,7 +31,7 @@ public class ThematicBreakSpan implements LeadingMarginSpan {
 
     private final MarkflowTheme mTheme;
 
-    public ThematicBreakSpan(MarkflowTheme theme) {
+    public ThematicBreakSpan(@NonNull MarkflowTheme theme) {
         mTheme = theme;
     }
 
@@ -41,16 +41,25 @@ public class ThematicBreakSpan implements LeadingMarginSpan {
                            int top, int baseline, int bottom,
                            @NonNull Spanned text, int start, int end,
                            boolean first, @NonNull Layout layout) {
-        var style = p.getStyle();
-        int color = p.getColor();
+        int color = mTheme.getThematicBreakColor();
+        if (color != 0) {
+            var oldStyle = p.getStyle();
+            int oldColor = p.getColor();
 
-        p.setStyle(Paint.FILL);
-        p.setColor(mTheme.getThematicBreakColor());
-        float cy = (top + bottom) / 2f;
-        float mid = p.getTextSize() / 6f;
-        c.drawRect(left, cy - mid, right, cy + mid, p);
+            p.setStyle(Paint.FILL);
+            p.setColor(color);
+            float cy = (top + bottom) / 2f;
+            int height = mTheme.getThematicBreakHeight();
+            float mid;
+            if (height > 0) {
+                mid = height * 0.5f;
+            } else {
+                mid = p.getTextSize() / 8f;
+            }
+            c.drawRect(left, cy - mid, right, cy + mid, p);
 
-        p.setStyle(style);
-        p.setColor(color);
+            p.setStyle(oldStyle);
+            p.setColor(oldColor);
+        }
     }
 }
