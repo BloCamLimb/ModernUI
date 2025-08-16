@@ -364,7 +364,7 @@ public final class Markflow {
                     .process();
 
             var parserBuilder = Parser.builder();
-            var themeBuilder = MarkflowTheme.builderWithDefaults(mContext);
+            var themeBuilder = MarkflowTheme.builder(mContext);
             var configBuilder = MarkflowConfig.builder();
             var visitorBuilder = MarkflowVisitor.builder();
 

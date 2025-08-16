@@ -21,8 +21,12 @@ package icyllis.modernui.markflow.core.style;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.text.ShapedText;
-import icyllis.modernui.markflow.MarkflowTheme;
-import icyllis.modernui.text.*;
+import icyllis.modernui.text.Layout;
+import icyllis.modernui.text.Spanned;
+import icyllis.modernui.text.TextDirectionHeuristic;
+import icyllis.modernui.text.TextDirectionHeuristics;
+import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.TextShaper;
 import icyllis.modernui.text.style.LeadingMarginSpan;
 import icyllis.modernui.widget.TextView;
 
@@ -54,13 +58,15 @@ public class NumberSpan implements LeadingMarginSpan {
         }
     }
 
-    private final MarkflowTheme mTheme;
+    private final int mBlockMargin;
+    private final int mColor;
     private final String mNumber;
 
     private ShapedText mShapedNumber;
 
-    public NumberSpan(MarkflowTheme theme, String number) {
-        mTheme = theme;
+    public NumberSpan(int blockMargin, int color, String number) {
+        mBlockMargin = blockMargin;
+        mColor = color;
         mNumber = number;
     }
 
@@ -77,7 +83,7 @@ public class NumberSpan implements LeadingMarginSpan {
 
     @Override
     public int getLeadingMargin(@NonNull TextPaint paint, boolean first) {
-        int margin = mTheme.getListItemMargin();
+        int margin = mBlockMargin;
         if (mShapedNumber == null) {
             shapeText(TextDirectionHeuristics.FIRSTSTRONG_LTR, paint);
         }
@@ -98,12 +104,12 @@ public class NumberSpan implements LeadingMarginSpan {
         if (first && ((Spanned) text).getSpanStart(this) == start) {
             int width = getLeadingMargin(p, false);
             if (dir > 0) {
-                x += width - mShapedNumber.getAdvance();
+                x += width - (int) mShapedNumber.getAdvance();
             } else {
                 x -= width;
             }
             int oldColor = 0;
-            int newColor = mTheme.getListItemColor();
+            int newColor = mColor;
             if (newColor != 0) {
                 oldColor = p.getColor();
                 p.setColor(newColor);

@@ -23,8 +23,13 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.markflow.MarkflowTheme;
-import icyllis.modernui.text.*;
-import icyllis.modernui.text.style.*;
+import icyllis.modernui.text.Layout;
+import icyllis.modernui.text.Spanned;
+import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.Typeface;
+import icyllis.modernui.text.style.LeadingMarginSpan;
+import icyllis.modernui.text.style.LineHeightSpan;
+import icyllis.modernui.text.style.MetricAffectingSpan;
 
 public class HeadingSpan extends MetricAffectingSpan
         implements LeadingMarginSpan, LineHeightSpan {
@@ -32,7 +37,7 @@ public class HeadingSpan extends MetricAffectingSpan
     private final MarkflowTheme mTheme;
     private final int mLevel;
 
-    public HeadingSpan(MarkflowTheme theme, int level) {
+    public HeadingSpan(@NonNull MarkflowTheme theme, int level) {
         mTheme = theme;
         mLevel = level;
     }
@@ -43,8 +48,14 @@ public class HeadingSpan extends MetricAffectingSpan
         if (typeface != null) {
             paint.setTypeface(typeface);
         }
-        float multiplier = mTheme.getHeadingTextSizeMultiplier(mLevel);
-        paint.setTextSize(paint.getTextSize() * multiplier);
+        int size = mTheme.getHeadingTextSize(mLevel);
+        if (size > 0) {
+            paint.setTextSize(size);
+        } else {
+            float multiplier = mTheme.getHeadingTextSizeMultiplier(mLevel);
+            paint.setTextSize(paint.getTextSize() * multiplier);
+        }
+        paint.setTextStyle(paint.getTextStyle() | mTheme.getHeadingTextStyle());
     }
 
     @Override
@@ -53,18 +64,25 @@ public class HeadingSpan extends MetricAffectingSpan
                            int top, int baseline, int bottom,
                            @NonNull Spanned text, int start, int end,
                            boolean first, @NonNull Layout layout) {
-        if ((mLevel == 1 || mLevel == 2) && text.getSpanEnd(this) == end) {
-            var style = p.getStyle();
-            int color = p.getColor();
+        int color = mTheme.getHeadingBreakColor();
+        if (color != 0 && (mLevel == 1 || mLevel == 2) && text.getSpanEnd(this) == end) {
+            var oldStyle = p.getStyle();
+            int oldColor = p.getColor();
 
             p.setStyle(Paint.FILL);
-            p.setColor(mTheme.getHeadingBreakColor());
-            float mid = p.getTextSize() / 24f;
-            float cy = bottom - mid * 3f;
+            p.setColor(color);
+            int height = mTheme.getHeadingBreakHeight();
+            float mid;
+            if (height > 0) {
+                mid = height * 0.5f;
+            } else {
+                mid = p.getTextSize() / 32f;
+            }
+            float cy = bottom - mid;
             c.drawRect(left, cy - mid, right, cy + mid, p);
 
-            p.setStyle(style);
-            p.setColor(color);
+            p.setStyle(oldStyle);
+            p.setColor(oldColor);
         }
     }
 
@@ -72,6 +90,6 @@ public class HeadingSpan extends MetricAffectingSpan
     public void chooseHeight(CharSequence text, int start, int end,
                              int spanstartv, int lineHeight,
                              FontMetricsInt fm, TextPaint paint) {
-        fm.descent += fm.descent * 0.5f;
+        fm.descent += (int) (fm.descent * 0.5f);
     }
 }

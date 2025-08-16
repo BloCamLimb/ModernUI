@@ -22,22 +22,18 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.markflow.MarkflowConfig;
 import icyllis.modernui.markflow.MarkflowPlugin;
-import icyllis.modernui.markflow.MarkflowTheme;
 import icyllis.modernui.markflow.MarkflowVisitor;
 import icyllis.modernui.markflow.core.style.CodeBlockSpan;
+import icyllis.modernui.markflow.core.style.CodeSpan;
 import icyllis.modernui.markflow.core.style.HeadingSpan;
 import icyllis.modernui.markflow.core.style.NumberSpan;
 import icyllis.modernui.markflow.core.style.ThematicBreakSpan;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.text.style.AbsoluteSizeSpan;
-import icyllis.modernui.text.style.BackgroundColorSpan;
 import icyllis.modernui.text.style.BulletSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.QuoteSpan;
-import icyllis.modernui.text.style.RelativeSizeSpan;
 import icyllis.modernui.text.style.StyleSpan;
-import icyllis.modernui.text.style.TypefaceSpan;
 import icyllis.modernui.text.style.URLSpan;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.widget.TextView;
@@ -68,13 +64,10 @@ public final class CorePlugin implements MarkflowPlugin {
 
                 .appendSpanFactory(ListItem.class, this::createListItemSpans)
 
-                .appendSpanFactory(BlockQuote.class,
-                        (config, node, props) -> new QuoteSpan(
-                                config.getTheme().getBlockQuoteMargin(),
-                                config.getTheme().getBlockQuoteWidth(),
-                                config.getTheme().getBlockQuoteColor()))
+                .appendSpanFactory(BlockQuote.class, this::createBlockQuoteSpans)
 
-                .appendSpanFactory(Code.class, this::createCodeSpans)
+                .appendSpanFactory(Code.class,
+                        (config, node, args) -> new CodeSpan(config.getTheme()))
                 .appendSpanFactory(FencedCodeBlock.class,
                         (config, node, args) -> new CodeBlockSpan(config.getTheme()))
                 .appendSpanFactory(IndentedCodeBlock.class,
@@ -206,48 +199,20 @@ public final class CorePlugin implements MarkflowPlugin {
     }
 
     @NonNull
-    private Object createCodeSpans(
-            @NonNull MarkflowConfig config,
-            @NonNull Code code,
-            @NonNull DataSet args) {
-        MarkflowTheme theme = config.getTheme();
-        boolean applyTextColor = theme.getCodeTextColor() != 0;
-        boolean applyBackgroundColor = theme.getCodeBackgroundColor() != 0;
-        boolean applyTextSize = theme.getCodeTextSize() != 0;
-        int extra = 0;
-        if (applyTextColor) ++extra;
-        if (applyBackgroundColor) ++extra;
-        Object[] spans = new Object[extra + 2];
-        spans[0] = new TypefaceSpan(theme.getCodeTypeface());
-        if (applyTextSize) {
-            spans[1] = new AbsoluteSizeSpan(theme.getCodeTextSize());
-        } else {
-            spans[1] = new RelativeSizeSpan(0.875F);
-        }
-        if (extra > 0) {
-            extra = 2;
-            if (applyTextColor) {
-                spans[extra++] = new ForegroundColorSpan(theme.getCodeTextColor());
-            }
-            if (applyBackgroundColor) {
-                spans[extra++] = new BackgroundColorSpan(theme.getCodeBackgroundColor());
-            }
-        }
-        return spans;
-    }
-
-    @NonNull
     private Object createListItemSpans(
             @NonNull MarkflowConfig config,
             @NonNull ListItem listItem,
             @NonNull DataSet args) {
+        var theme = config.getTheme();
+        int level = listLevel(listItem);
         if (args.getBoolean(CORE_ORDERED_LIST)) {
             String number = args.getInt(CORE_ORDERED_LIST_ITEM_NUMBER, 1) + ".\u00a0";
-            return new NumberSpan(config.getTheme(), number);
+            return new NumberSpan(theme.getListItemMargin(),
+                    theme.getListItemColor(), number);
+        } else {
+            return new BulletSpan(theme.getListItemMargin(),
+                    theme.getBulletWidth(), theme.getListItemColor(), level);
         }
-        int level = listLevel(listItem);
-        return new BulletSpan(config.getTheme().getListItemMargin(),
-                0, config.getTheme().getListItemColor(), level);
     }
 
     private static int listLevel(@NonNull Node node) {
@@ -260,6 +225,25 @@ public final class CorePlugin implements MarkflowPlugin {
             parent = parent.getParent();
         }
         return level;
+    }
+
+    @NonNull
+    private Object createBlockQuoteSpans(
+            @NonNull MarkflowConfig config,
+            @NonNull BlockQuote blockQuote,
+            @NonNull DataSet args) {
+        var theme = config.getTheme();
+        var quoteSpan = new QuoteSpan(
+                theme.getBlockQuoteMargin(),
+                theme.getBlockQuoteWidth(),
+                theme.getBlockQuoteColor());
+        if (theme.getBlockQuoteTextColor() != 0) {
+            return new Object[]{
+                    quoteSpan,
+                    new ForegroundColorSpan(theme.getBlockQuoteTextColor())
+            };
+        }
+        return quoteSpan;
     }
 
     private void visitText(@NonNull MarkflowVisitor visitor, @NonNull Text text) {
