@@ -1639,8 +1639,8 @@ public class ScrollView extends FrameLayout {
         final int oldScrollY = mScrollY;
         scrollBy(0, dyUnconsumed);
         final int myConsumed = mScrollY - oldScrollY;
-        final int myUnconsumed = dyUnconsumed - myConsumed;
         consumed[1] += myConsumed;
+        final int myUnconsumed = dyUnconsumed - myConsumed;
         dispatchNestedScroll(0, myConsumed, 0, myUnconsumed, null, type, consumed);
     }
 
