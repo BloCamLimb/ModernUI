@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,29 +14,56 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2015 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.animation.AnimationUtils;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.FocusFinder;
+import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.VelocityTracker;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewConfiguration;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewParent;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
- * NestedScrollView is just like {@link ScrollView}, but it supports acting
- * as both a nested scrolling parent and child on both new and old versions of Android.
+ * NestedScrollView is just like {@link ScrollView}, but it supports nested
+ * fling and nested scrolling by mouse wheel & touchpad (normal {@link ScrollView}
+ * and {@link ListView} only supports nested scrolling by dragging).
  * Nested scrolling is enabled by default.
  */
-//FIXME buggy
 public class NestedScrollView extends FrameLayout {
 
     static final int ANIMATED_SCROLL_GAP = 250;
@@ -65,7 +92,7 @@ public class NestedScrollView extends FrameLayout {
          * @param oldScrollX Previous horizontal scroll origin.
          * @param oldScrollY Previous vertical scroll origin.
          */
-        void onScrollChange(NestedScrollView v, int scrollX, int scrollY,
+        void onScrollChange(@NonNull NestedScrollView v, int scrollX, int scrollY,
                             int oldScrollX, int oldScrollY);
     }
 
@@ -124,6 +151,8 @@ public class NestedScrollView extends FrameLayout {
     private final int mMinimumVelocity;
     private final int mMaximumVelocity;
 
+    private final float mVerticalScrollFactor;
+
     /**
      * Used during scrolling to retrieve the new offset within the window.
      */
@@ -148,6 +177,7 @@ public class NestedScrollView extends FrameLayout {
         mTouchSlop = configuration.getScaledTouchSlop();
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
+        mVerticalScrollFactor = configuration.getScaledVerticalScrollFactor();
 
         // ...because why else would you be using this widget?
         setNestedScrollingEnabled(true);
@@ -173,62 +203,36 @@ public class NestedScrollView extends FrameLayout {
         setVerticalScrollbarTrackDrawable(track);
     }
 
-    // NestedScrollingParent3
-
     @Override
-    public void onNestedScroll(@Nonnull View target, int dxConsumed, int dyConsumed,
-                               int dxUnconsumed, int dyUnconsumed, int type, @Nonnull int[] consumed) {
-        final int oldScrollY = getScrollY();
-        scrollBy(0, dyUnconsumed);
-        final int myConsumed = getScrollY() - oldScrollY;
-
-        if (consumed != null) {
-            consumed[1] += myConsumed;
-        }
-        final int myUnconsumed = dyUnconsumed - myConsumed;
-
-        dispatchNestedScroll(0, myConsumed, 0, myUnconsumed, null, type, consumed);
-    }
-
-    @Override
-    public boolean onStartNestedScroll(@Nonnull View child, @Nonnull View target, int axes,
-                                       int type) {
+    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes, int type) {
         return (axes & SCROLL_AXIS_VERTICAL) != 0;
     }
 
     @Override
-    public void onNestedScrollAccepted(@Nonnull View child, @Nonnull View target, int axes,
-                                       int type) {
+    public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes, int type) {
         super.onNestedScrollAccepted(child, target, axes, type);
         startNestedScroll(SCROLL_AXIS_VERTICAL, type);
     }
 
     @Override
-    public void onStopNestedScroll(@Nonnull View target, int type) {
-        super.onStopNestedScroll(target, type);
-        stopNestedScroll(type);
+    public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
+                               int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
+        final int oldScrollY = getScrollY();
+        scrollBy(0, dyUnconsumed);
+        final int myConsumed = getScrollY() - oldScrollY;
+        consumed[1] += myConsumed;
+        final int myUnconsumed = dyUnconsumed - myConsumed;
+        dispatchNestedScroll(0, myConsumed, 0, myUnconsumed, null, type, consumed);
     }
 
     @Override
-    public void onNestedPreScroll(@Nonnull View target, int dx, int dy, @Nonnull int[] consumed,
-                                  int type) {
-        dispatchNestedPreScroll(dx, dy, consumed, null, type);
-    }
-
-    @Override
-    public boolean onNestedFling(
-            @Nonnull View target, float velocityX, float velocityY, boolean consumed) {
+    public boolean onNestedFling(@NonNull View target, float velocityX, float velocityY, boolean consumed) {
         if (!consumed) {
             dispatchNestedFling(0, velocityY, true);
             fling((int) velocityY);
             return true;
         }
         return false;
-    }
-
-    @Override
-    public boolean onNestedPreFling(@Nonnull View target, float velocityX, float velocityY) {
-        return dispatchNestedPreFling(velocityX, velocityY);
     }
 
     // ScrollView import
@@ -247,7 +251,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public void addView(@Nonnull View child) {
+    public void addView(@NonNull View child) {
         if (getChildCount() > 0) {
             throw new IllegalStateException("ScrollView can host only one direct child");
         }
@@ -255,7 +259,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public void addView(@Nonnull View child, int index) {
+    public void addView(@NonNull View child, int index) {
         if (getChildCount() > 0) {
             throw new IllegalStateException("ScrollView can host only one direct child");
         }
@@ -263,7 +267,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public void addView(@Nonnull View child, @Nonnull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, @NonNull ViewGroup.LayoutParams params) {
         if (getChildCount() > 0) {
             throw new IllegalStateException("ScrollView can host only one direct child");
         }
@@ -271,7 +275,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public void addView(@Nonnull View child, int index, @Nonnull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, int index, @NonNull ViewGroup.LayoutParams params) {
         if (getChildCount() > 0) {
             throw new IllegalStateException("ScrollView can host only one direct child");
         }
@@ -386,7 +390,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public boolean dispatchKeyEvent(@Nonnull KeyEvent event) {
+    public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
         // Let the focused view and/or our descendants get the key first
         return super.dispatchKeyEvent(event) || executeKeyEvent(event);
     }
@@ -399,7 +403,7 @@ public class NestedScrollView extends FrameLayout {
      * @param event The key event to execute.
      * @return Return true if the event was handled, else false.
      */
-    public boolean executeKeyEvent(@Nonnull KeyEvent event) {
+    public boolean executeKeyEvent(@NonNull KeyEvent event) {
         mTempRect.setEmpty();
 
         if (!canScroll()) {
@@ -483,7 +487,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public boolean onInterceptTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean onInterceptTouchEvent(@NonNull MotionEvent ev) {
         /*
          * This method JUST determines whether we want to intercept the motion.
          * If we return true, onMotionEvent will be called and we do the actual
@@ -568,7 +572,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public boolean onTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean onTouchEvent(@NonNull MotionEvent ev) {
         initVelocityTrackerIfNotExists();
 
         final int action = ev.getAction();
@@ -725,7 +729,8 @@ public class NestedScrollView extends FrameLayout {
         } else {
             consumed = false;
         }
-        return consumed;
+        // Modern UI changed:
+        return consumed && false;
     }
 
     /**
@@ -755,11 +760,10 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
+    public boolean onGenericMotionEvent(@NonNull MotionEvent event) {
         if (event.getAction() == MotionEvent.ACTION_SCROLL && !mIsBeingDragged) {
             final float axisValue = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
-            final int delta =
-                    Math.round(axisValue * ViewConfiguration.get(getContext()).getScaledVerticalScrollFactor());
+            final int delta = Math.round(axisValue * mVerticalScrollFactor);
             if (Math.abs(axisValue) > 0.9 && Math.abs(delta) * 6 > mMinimumVelocity) {
                 int deltaY = MathUtil.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
                 if (!edgeEffectFling(deltaY)
@@ -1282,7 +1286,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    protected void measureChild(@Nonnull View child, int parentWidthMeasureSpec,
+    protected void measureChild(@NonNull View child, int parentWidthMeasureSpec,
                                 int parentHeightMeasureSpec) {
         ViewGroup.LayoutParams lp = child.getLayoutParams();
 
@@ -1298,7 +1302,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    protected void measureChildWithMargins(@Nonnull View child, int parentWidthMeasureSpec, int widthUsed,
+    protected void measureChildWithMargins(@NonNull View child, int parentWidthMeasureSpec, int widthUsed,
                                            int parentHeightMeasureSpec, int heightUsed) {
         final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
 
@@ -1423,7 +1427,7 @@ public class NestedScrollView extends FrameLayout {
      *
      * @param child the View to scroll to
      */
-    private void scrollToChild(@Nonnull View child) {
+    private void scrollToChild(@NonNull View child) {
         child.getDrawingRect(mTempRect);
 
         /* Offset from child's local coordinates to ScrollView coordinates */
@@ -1716,7 +1720,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public void onDrawForeground(@Nonnull Canvas canvas) {
+    public void onDrawForeground(@NonNull Canvas canvas) {
         super.onDrawForeground(canvas);
         final int scrollY = getScrollY();
         if (!mEdgeGlowTop.isFinished()) {

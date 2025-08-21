@@ -7012,10 +7012,13 @@ public class View implements Drawable.Callback {
             View child = this;
             while (p != null) {
                 if (p.onStartNestedScroll(child, this, axes, type)) {
-                    if (type == TYPE_NON_TOUCH) {
-                        mNestedScrollingParentNonTouch = p;
-                    } else {
-                        mNestedScrollingParentTouch = p;
+                    switch (type) {
+                        case TYPE_TOUCH:
+                            mNestedScrollingParentTouch = p;
+                            break;
+                        case TYPE_NON_TOUCH:
+                            mNestedScrollingParentNonTouch = p;
+                            break;
                     }
                     p.onNestedScrollAccepted(child, this, axes, type);
                     return true;
@@ -7038,15 +7041,18 @@ public class View implements Drawable.Callback {
      * @see #startNestedScroll(int, int)
      */
     public void stopNestedScroll(@NestedScrollType int type) {
-        if (type == TYPE_NON_TOUCH) {
-            if (mNestedScrollingParentNonTouch != null) {
-                mNestedScrollingParentNonTouch.onStopNestedScroll(this, type);
-                mNestedScrollingParentNonTouch = null;
+        switch (type) {
+            case TYPE_TOUCH -> {
+                if (mNestedScrollingParentTouch != null) {
+                    mNestedScrollingParentTouch.onStopNestedScroll(this, type);
+                    mNestedScrollingParentTouch = null;
+                }
             }
-        } else {
-            if (mNestedScrollingParentTouch != null) {
-                mNestedScrollingParentTouch.onStopNestedScroll(this, type);
-                mNestedScrollingParentTouch = null;
+            case TYPE_NON_TOUCH -> {
+                if (mNestedScrollingParentNonTouch != null) {
+                    mNestedScrollingParentNonTouch.onStopNestedScroll(this, type);
+                    mNestedScrollingParentNonTouch = null;
+                }
             }
         }
     }
@@ -7061,11 +7067,11 @@ public class View implements Drawable.Callback {
      * @return whether this view has a nested scrolling parent
      */
     public boolean hasNestedScrollingParent(@NestedScrollType int type) {
-        if (type == TYPE_NON_TOUCH) {
-            return mNestedScrollingParentNonTouch != null;
-        } else {
-            return mNestedScrollingParentTouch != null;
-        }
+        return switch (type) {
+            case TYPE_TOUCH -> mNestedScrollingParentTouch != null;
+            case TYPE_NON_TOUCH -> mNestedScrollingParentNonTouch != null;
+            default -> false;
+        };
     }
 
     /**
@@ -7103,8 +7109,11 @@ public class View implements Drawable.Callback {
                                         @Nullable int[] offsetInWindow, @NestedScrollType int type,
                                         @NonNull int[] consumed) {
         if (isNestedScrollingEnabled()) {
-            final ViewParent parent = type == TYPE_NON_TOUCH ? mNestedScrollingParentNonTouch :
-                    mNestedScrollingParentTouch;
+            final ViewParent parent = switch (type) {
+                case TYPE_TOUCH -> mNestedScrollingParentTouch;
+                case TYPE_NON_TOUCH -> mNestedScrollingParentNonTouch;
+                default -> null;
+            };
             if (parent == null) {
                 return false;
             }
@@ -7158,8 +7167,11 @@ public class View implements Drawable.Callback {
     public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
                                            @Nullable int[] offsetInWindow, @NestedScrollType int type) {
         if (isNestedScrollingEnabled()) {
-            final ViewParent parent = type == TYPE_NON_TOUCH ? mNestedScrollingParentNonTouch :
-                    mNestedScrollingParentTouch;
+            final ViewParent parent = switch (type) {
+                case TYPE_TOUCH -> mNestedScrollingParentTouch;
+                case TYPE_NON_TOUCH -> mNestedScrollingParentNonTouch;
+                default -> null;
+            };
             if (parent == null) {
                 return false;
             }
