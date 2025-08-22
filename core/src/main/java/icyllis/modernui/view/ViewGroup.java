@@ -533,8 +533,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
         canvas.concat(shadowMatrix);
 
-        canvas.translate(-child.mScrollX, -child.mScrollY);
-
         float zPlane0, zPlane1, zPlane2;
         if (shadowMatrix.hasPerspective()) {
             zPlane0 = shadowMatrix.m13;
