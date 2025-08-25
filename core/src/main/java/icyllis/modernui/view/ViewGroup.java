@@ -2240,12 +2240,18 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         if (end == childrenCount) {
             for (int i = start; i < end; i++) {
-                children[i].mParent = null;
+                // Fixed by Modern UI
+                if (!(mTransitioningViews != null && mTransitioningViews.contains(children[i]))) {
+                    children[i].mParent = null;
+                }
                 children[i] = null;
             }
         } else {
             for (int i = start; i < end; i++) {
-                children[i].mParent = null;
+                // Fixed by Modern UI
+                if (!(mTransitioningViews != null && mTransitioningViews.contains(children[i]))) {
+                    children[i].mParent = null;
+                }
             }
 
             // Since we're looping above, we might as well do the copy, but is arraycopy()
@@ -2589,7 +2595,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
             onViewRemoved(view);
 
-            view.mParent = null;
+            // Google bug, fixed by Modern UI
+            if (!(mTransitioningViews != null && mTransitioningViews.contains(view))) {
+                view.mParent = null;
+            }
             children[i] = null;
         }
 
