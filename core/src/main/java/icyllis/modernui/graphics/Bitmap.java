@@ -96,7 +96,7 @@ public final class Bitmap implements AutoCloseable {
     @NonNull
     private Pixmap mPixmap;
     // managed by cleaner
-    private volatile Pixels mPixels;
+    private volatile PixelRef mPixels;
     // this ensures unref being called when Bitmap become phantom-reachable
     // but never called to close
     private final Cleaner.Cleanable mCleanup;
@@ -120,12 +120,12 @@ public final class Bitmap implements AutoCloseable {
         mFormat = format;
         mPixmap = new Pixmap(info, null, addr, rowBytes);
         mRequestPremultiplied = info.alphaType() == ColorInfo.AT_PREMUL;
-        var pixels = new Pixels(info.width(), info.height(), null, addr, rowBytes, freeFn);
+        var pixels = new PixelRef(info.width(), info.height(), null, addr, rowBytes, freeFn);
         mCleanup = Core.registerNativeResource(this, pixels);
         mPixels = pixels;
     }
 
-    Bitmap(@NonNull Format format, @NonNull Pixmap pixmap, @NonNull Pixels pixels) {
+    Bitmap(@NonNull Format format, @NonNull Pixmap pixmap, @NonNull PixelRef pixels) {
         mFormat = format;
         mPixmap = pixmap;
         mRequestPremultiplied = pixmap.getInfo().alphaType() == ColorInfo.AT_PREMUL;
@@ -1267,10 +1267,11 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * The current pixel map, which is usually paired with {@link Pixels}.
+     * The current pixel map, which is usually paired with {@link PixelRef}.
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the current pixel map
+     * @hidden
      */
     @ApiStatus.Internal
     @NonNull
@@ -1281,17 +1282,33 @@ public final class Bitmap implements AutoCloseable {
     /**
      * The ref of current pixel data, which may be shared across instances.
      * Calling this method won't affect the ref cnt. Every bitmap object
-     * ref the {@link Pixels} on create, and unref on {@link #close()}.
+     * ref the {@link PixelRef} on create, and unref on {@link #close()}.
      * <p>
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the ref of pixel data, or null if released
+     * @hidden
      */
     @ApiStatus.Internal
     @RawPtr
     @Nullable
-    public Pixels getPixels() {
+    public PixelRef getPixels() {
         return mPixels;
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @SharedPtr
+    @Nullable
+    public PixelRef refPixels() {
+        try {
+            // this operation is not atomic
+            return RefCnt.create(mPixels);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -1509,17 +1526,11 @@ public final class Bitmap implements AutoCloseable {
     @SuppressWarnings("MethodDoesntCallSuperMethod")
     @NonNull
     public Bitmap clone() {
-        Pixels pixels;
-        try {
-            // this operation is not atomic
-            pixels = RefCnt.create(mPixels);
-        } finally {
-            Reference.reachabilityFence(this);
-        }
+        PixelRef pixels = refPixels();
         if (pixels == null) {
             throw new IllegalStateException("Cannot clone a recycled bitmap!");
         }
-        return new Bitmap(mFormat, mPixmap, pixels);
+        return new Bitmap(mFormat, mPixmap, pixels); // move
     }
 
     /**
