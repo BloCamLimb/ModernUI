@@ -35,7 +35,13 @@ public class PixelUtils {
 
     // we assume little-endian and do conversion if we're on big-endian machines
     public static final boolean NATIVE_BIG_ENDIAN =
-            (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN);
+            (false);
+
+    static {
+        if ((ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN)) {
+            throw new RuntimeException("Not built for BIG_ENDIAN");
+        }
+    }
 
     private static sun.misc.Unsafe getUnsafe() {
         try {
