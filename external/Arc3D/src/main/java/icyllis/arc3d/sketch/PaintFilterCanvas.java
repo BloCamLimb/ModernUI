@@ -209,7 +209,7 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
     protected void onDrawEdgeAAQuad(Rect2fc rect, float[] clip, int edgeFlags, Paint paint) {
         mFilterPaint.set(paint);
         if (onFilter(mFilterPaint)) {
-            super.onDrawEdgeAAQuad(rect, clip, edgeFlags, paint);
+            super.onDrawEdgeAAQuad(rect, clip, edgeFlags, mFilterPaint);
         }
         mFilterPaint.close();
     }
@@ -218,7 +218,7 @@ public abstract class PaintFilterCanvas extends NWayCanvas {
     protected void onDrawBlurredRRect(RRect rr, Paint paint, float blurRadius, float noiseAlpha) {
         mFilterPaint.set(paint);
         if (onFilter(mFilterPaint)) {
-            super.onDrawBlurredRRect(rr, paint, blurRadius, noiseAlpha);
+            super.onDrawBlurredRRect(rr, mFilterPaint, blurRadius, noiseAlpha);
         }
         mFilterPaint.close();
     }

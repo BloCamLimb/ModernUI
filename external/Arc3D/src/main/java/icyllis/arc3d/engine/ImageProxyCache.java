@@ -19,7 +19,7 @@
 
 package icyllis.arc3d.engine;
 
-import icyllis.arc3d.core.Pixels;
+import icyllis.arc3d.core.PixelRef;
 import icyllis.arc3d.core.Pixmap;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCnt;
@@ -143,7 +143,7 @@ public final class ImageProxyCache {
      * Creates a lazy {@link ImageViewProxy} for the pixel map.
      *
      * @param pixmap       pixel map
-     * @param pixels       raw ptr to pixel ref, must be immutable
+     * @param pixelRef       raw ptr to pixel ref, must be immutable
      * @param dstColorType a color type for surface usage, see {@link ImageDesc}
      * @param surfaceFlags flags described as follows
      * @see ISurface#FLAG_BUDGETED
@@ -154,7 +154,7 @@ public final class ImageProxyCache {
     @Nullable
     @SharedPtr
     public ImageViewProxy createTextureFromPixels(@NonNull Pixmap pixmap,
-                                                  @NonNull @RawPtr Pixels pixels,
+                                                  @NonNull @RawPtr PixelRef pixelRef,
                                                   int dstColorType,
                                                   int surfaceFlags) {
         mContext.checkOwnerThread();
@@ -166,7 +166,7 @@ public final class ImageProxyCache {
         if (!pixmap.getInfo().isValid()) {
             return null;
         }
-        if (!pixels.isImmutable()) {
+        if (!pixelRef.isImmutable()) {
             return null;
         }
         var format = mContext.getCaps()
@@ -179,7 +179,7 @@ public final class ImageProxyCache {
         var height = pixmap.getHeight();
         @SharedPtr
         var texture = createLazyTexture(format, width, height, surfaceFlags,
-                new PixelsCallback(pixels, srcColorType, dstColorType));
+                new PixelsCallback(pixelRef, srcColorType, dstColorType));
         if (texture == null) {
             return null;
         }
@@ -192,12 +192,12 @@ public final class ImageProxyCache {
     @Deprecated
     private static final class PixelsCallback implements SurfaceProxy.LazyInstantiateCallback {
 
-        private Pixels mPixels;
+        private PixelRef mPixelRef;
         private final int mSrcColorType;
         private final int mDstColorType;
 
-        public PixelsCallback(Pixels pixels, int srcColorType, int dstColorType) {
-            mPixels = RefCnt.create(pixels);
+        public PixelsCallback(PixelRef pixelRef, int srcColorType, int dstColorType) {
+            mPixelRef = RefCnt.create(pixelRef);
             mSrcColorType = srcColorType;
             mDstColorType = dstColorType;
         }
@@ -211,7 +211,7 @@ public final class ImageProxyCache {
                 int surfaceFlags,
                 String label) {
             //TODO implement fast pixel transfer from heap array
-            assert mPixels.getBase() == null;
+            assert mPixelRef.getBase() == null;
             /*@SharedPtr
             Image texture = provider.createTexture(
                     width, height,
@@ -230,7 +230,7 @@ public final class ImageProxyCache {
 
         @Override
         public void close() {
-            mPixels = RefCnt.move(mPixels);
+            mPixelRef = RefCnt.move(mPixelRef);
         }
     }
 

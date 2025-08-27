@@ -24,6 +24,7 @@ import icyllis.arc3d.sketch.PathConsumer;
 
 import javax.imageio.ImageIO;
 import java.awt.BasicStroke;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +65,16 @@ public class TestPathUtils {
     public static void writePath(Path src, boolean stroke, String outName) {
         var image = new BufferedImage(256, 256, BufferedImage.TYPE_BYTE_GRAY);
         var graphics = image.createGraphics();
-        //graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY);
+        graphics.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        graphics.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
+        graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_PURE);
         if (stroke) {
             graphics.setStroke(new BasicStroke(0));
             graphics.draw(src);

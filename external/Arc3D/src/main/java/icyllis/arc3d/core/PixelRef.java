@@ -28,7 +28,7 @@ import java.util.function.LongConsumer;
  * This class is the smart container for pixel memory.<br>
  * This class may be shared/accessed between multiple threads.
  */
-public class Pixels extends RefCnt {
+public class PixelRef extends RefCnt {
 
     protected final int mWidth;
     protected final int mHeight;
@@ -40,7 +40,7 @@ public class Pixels extends RefCnt {
     protected boolean mImmutable;
 
     /**
-     * Creates {@link Pixels} from width, height.
+     * Creates {@link PixelRef} from width, height.
      * <var>rowBytes</var> should be width times bpp, or larger.
      * <var>freeFn</var> is used to free the <var>address</var>.
      *
@@ -49,12 +49,12 @@ public class Pixels extends RefCnt {
      * @param rowBytes size of one row of buffer; width times bpp, or larger
      * @param freeFn   free function for native buffer; may be null
      */
-    public Pixels(int width,
-                  int height,
-                  @Nullable Object base,
-                  @NativeType("void *") long address,
-                  int rowBytes,
-                  @Nullable LongConsumer freeFn) {
+    public PixelRef(int width,
+                    int height,
+                    @Nullable Object base,
+                    @NativeType("void *") long address,
+                    int rowBytes,
+                    @Nullable LongConsumer freeFn) {
         mWidth = width;
         mHeight = height;
         mBase = base;
