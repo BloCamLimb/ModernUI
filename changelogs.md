@@ -1,5 +1,226 @@
 Changelogs
 ===
+### ModernUI 3.12.0 (2025-08-26)
+#### Core Framework
+* Fix disappearing transitions caused by removing views in batches cannot be seen
+* Tweak edge absorption in NestedScrollView
+* Delay TextBlob initialization of ShapedText until draw time
+* Add paint parameter for leading/trailing margins
+* Merge TrailingMarginSpan with LeadingMarginSpan, also fix a text layout bug
+* Optimize many text processing methods
+* Fix StyleSpan is not cumulative
+* Move LogWriter to internal
+* Migrate to SLF4J, remove Log4j dependency
+* Add filled text field style
+* Add measure cache
+* Add convenient methods for specifying styles
+* Add thread-safe methods to change themes in context
+* Change AdapterView.OnItemSelectedListener to functional interface
+* Fully configurable view configuration
+* Update scroller to calculate physical coefficients using ppi
+* Make CharacterStyle cloneable, also fix TextPaint.density
+* More methods in Color, and allow creating instances
+* Update default fragment SFX transitions
+* Allow shallow copy of Bitmap and Image as shared owners
+* Add TabLayout and styles
+* Improve widget scrolling mechanism
+* Add tag system to View
+* Add MotionEasingUtils for common bezier interpolators
+* Add RTL support and fix bugs for ViewPager
+* Improvements and fixes for ViewPager
+* Fix hotspot point not dispatched to children
+* Fix LinearLayout divider layout bug in RTL direction
+* Add option to enable SPIR-V in OpenGL backend, but disable by default
+  - NVIDIA driver will compile SPIR-V back to into GLSL in OpenGL, and
+    the disassembler takes up at least 40MB of additional RAM usage
+* Use rounding for font metrics
+  - Rounding seems to produce a more accurate layout, so the ceiling
+    is no longer used unless there are internal changes in the JDK
+* Fix view pager touch slop
+* Update color mappings for all buttons
+* Not showing long click tooltip when there's hover tooltip
+* Add icon button styles
+* Fix two bugs in font register
+  - Should lookup in FontManager to use native bold/italic fonts
+  - To ensure thread-safety, lock the whole register method (actually a JDK bug)
+* Improve tooltip show/hide logic when tooltip text is changed
+* Add shadow alpha configuration to ViewGroup
+* Add ComposeShader to composite two layers
+* Add copyWithLocalMatrix for gradient shaders
+* Use an accurate method to detect whether Bidi is needed
+  - Matching ShapedText and MeasuredText behavior.
+    This is 20% slower than the previous one, but is fast enough.
+* Optimize image shader constructor, add copyWithLocalMatrix
+* Add new slider styles and animation control
+* Expose clearFocusInternal method to internal code
+* Expose setOptionalIconsVisible method
+* Remove unnecessary ThreadLocal usage
+* Add View lighting and shadow casting system
+* Optimize line breaking performance
+* Add Drawable dirty bounds
+* Update dropdown style
+* Add menu item icon style and update menu item layout
+* Add new checkbox style
+* Add new text field and spinner styles
+* Add the drawable tint methods to TextView
+* Move TextStyle from Paint to TextPaint subclass
+* Add builtin icons and replace legacy code
+* Add new draw methods to Canvas API
+* Renew RippleDrawable with masks and animations
+* Add Outline class and compute Drawable outline
+* Disable edge AA for ImageDrawable by default
+* Change font_size_granularity to 0.25
+* Enable subpixel positioning for text rendering
+* Sync with latest Arc3D
+* Add indeterminate state to checkbox, a tri-state checkbox
+* Update subset logic for (Rounded)ImageDrawable and move subset to constant state
+* Change default reference density DPI to 96
+* Add on/off tooltip text for CheckableImageButton, and optimize
+* Add ArrayAdapter.getContext()
+* Allow nested radio groups to work, deprecate RelativeRadioGroup
+* Add on/off text to switch, and optimize
+* Add toggle button
+* Enhance RadioGroup, so that it can work on all checkable views
+* Add Checkable2 interface for checkable views with a callback
+* Make CompoundButton always have checkable state to sync with CheckableImageButton
+* Add checkable image button
+* Add elevated button style
+* Adjust default button size
+* Move modulateColor to ColorStateList as a public method
+* Adjust tooltip padding
+* Add InsetDrawable
+* Allow ShapeDrawable to draw rounded rectangles with per-corner radius
+* Add methods to draw rounded rectangles with different corner radii to Canvas
+* Temporarily disable popup anchor aligning to work around a bug
+* Add ClipDrawable
+* Add AnimationDrawable for frame-by-frame animations
+* Add themed resource cache
+* Add theme styles
+* Add dropdown styles
+* Add styles for popup menus
+* Add seek bar styles and other improvements
+* Add progress bar styles (determinate and indeterminate)
+* Full functionality and fixes for ProgressBar
+* Update text appearance of menu item
+* Add radio button and switch styles
+* Make EdgeEffect accept Context to retrieve theme color
+* Add TextAppearance class and methods to apply typography
+* Add many buttons styles
+* Add many system theme values, based on M3 Expressive
+* Add attributes/styleables for most UI components
+* Rework the TypedValue class
+* Add methods to retrieve attributes and styles in batch
+* Add base methods for retrieving attributes
+* Add ResourceId, StringView, ThemeKey
+* Introduce a new Resources and Theme system
+* Merge with ICU Bidi for MeasuredText
+* Add fast path for BoringLayout.drawText() for all alignments
+* Add toString() for animator classes
+* Remove assertions for kotlin compile tasks
+* Add RoundedImageDrawable (always keeping aspect ratio)
+* Remove Paint.getShader() and simplify ImageDrawable
+* Update scrollbar colors
+* Update toast and tooltip styles
+* Update popup menu styles
+* Add new slider style
+* No longer use pointing hand cursor for buttons (only for hyperlinks now)
+* Update SeekBar to respect thumbOffset and support split track
+* Add new drop-down style
+* Update drop-down transition animation
+* Change default layout for ArrayAdapter
+* Change default selector for ListView
+* Disable default transition for windows (rework needed)
+* Add text padding for Switch
+* Add custom clip bounds for View
+* Add new switch thumb drawable
+* Add Switch, deprecate SwitchButton
+* Add two cubic Bezier interpolator
+* Add button tint blend mode
+* Make ShapeDrawable always skip stroking when the color is transparent
+* Add new radio button drawable
+* Add SystemTheme
+* Make ValueAnimator work without values
+* Support line spacing addition/multiplier for text Layout
+* No longer using Caffeine for text layout caching, remove Caffeine dependency
+* Fix AnimationMatrix clear
+* Make View.getMatrix() return non-null
+* Add partial view invalidation, dirty region accumulation
+* Delete obsolete GLSL shaders
+* Add RippleDrawable (allowing analytic mask)
+* Add Bezier time interpolator
+* Add experimental support for Windows native window border (no title bar)
+#### Markflow Extension
+The old **Markdown** extension is completely deprecated and replaced by the new **Markflow**
+* Renew markdown theme & styling
+* Fix heading break style when wrapping
+* Update API notice for Markflow
+* Markflow initial version
+#### Arc3D Graphics Engine
+* Update benchmark, shader source, and dependency version
+* ContextOptions logger defaults to null
+* Remove instance usage of Color
+* Disable runtime constant BIG_ENDIAN since LWJGL does not support big endian machines
+* Rename Pixels to PixelRef
+* Rename Path.recycle() to Path.release()
+* Remove the old usage of UniqueID
+* Rework some classes
+* Optimize TaskList and more
+* Fully decouple core and sketch package
+* TextureQueryLod support should default to false
+* Remove helper methods for drawing round rects
+* Rework PathIterable and PathIterator, add Shape interface
+* Rename SharedResourceCache to GlobalResourceCache
+* Move 2D rendering API to sketch package
+* Optimize and fix text metrics computation
+* No longer make Blender and ColorFilter ref-counted
+* Many improvements on high-quality text rendering
+* Add Rect2f.makeInfiniteInverted() for branchless bounds union
+* Update load factor for multimap
+* Delete a lot of old code
+* Add drawEllipse to Canvas
+* Add AnalyticComplexBox geometry step, for complex AA rounded rectangles
+* Trying to use Contract on read-only parameters
+* Fix constant value retrieval for vector splats
+* Add isOpaque for more shaders
+* Merge Color4fShader with ColorShader
+* Allow creating GL programs without fragment shaders (for depth-only pass)
+* Add cover bounds step to handle non-AA fill and scissor fill
+* Simplify LinkedListMultimap and make it small-footprint
+* Add experimental drawEdgeAAQuad and drawBlurredRRect to Canvas
+* ResourceCache: move budgeted and shareable to resource creation
+* Strengthen FragmentStage initialization
+* Add analytic blurred box geometry step
+* Add modes for makeWithLocalMatrix, allow pre-concat, post-concat, replacement
+* Optimize Vertices color array memcopy, move the swizzling to GPU
+* Add RRectShader and implementation
+* More methods to the RRect class
+* Leak ref count of some wrapper-like effect objects to the underlying objects
+* Allow some Shader objects to be trivially ref-counted
+* Add option to enable SPIR-V in OpenGL backend
+* Enable SPIR-V in OpenGL backend
+* Fix vertex array setup prior to OpenGL 4.3
+* Add per-edge AA quad geometry step
+* Add option to use staging buffers in OpenGL, and default to false (previously is true)
+* Rewrite shaders from GLSL to AkSL (Arc3D shading language)
+* Fix sizeof(IndexType) calculation
+* Fix blend shaders bugs
+* Make StrikeDesc immutable by default
+* Full support for subpixel positioning fonts
+* Add methods to pack subpixel info into glyph ID
+* Migrate to jspecify
+#### Arc3D Shader Compiler
+* Rename some classes in compiler package
+* No longer use 'packed' as a variable name
+  - Prior to GLSL ES 3.00, 'packed' is a reserved keyword.
+    However, even if we use versions 3.00 and above, some drivers still consider it a keyword.
+* Add some intrinsics to SPIR-V codegen
+* Add TreeWriter to visit and modify the AST
+* Rework TreeVisitor and AST node accept
+* Use Context object everywhere instead of ShaderCompiler object
+* Now accept only String input, due to immutability and compressed strings
+* Remove short/half types in favor of min16int/min16float types
+* Full support for GLSL codegen in OpenGL/ES backend
+
 ### Modern UI 3.11.1 (2024-11-21)
 The changelog is simplified
 #### Core Framework
