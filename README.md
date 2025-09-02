@@ -2,12 +2,12 @@
 [![MavenCore](https://img.shields.io/badge/dynamic/xml?color=orange&label=Core%20Version&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Core%2Fmaven-metadata.xml)]()
 [![Discord](https://img.shields.io/discord/696234198767501363?color=green&label=Discord&style=flat)](https://discord.gg/kmyGKt2)
 ### Description
-Modern UI (by Icyllis Milica) is a desktop application framework designed for standalone 2D and 3D rendering software development.
+**Modern UI** (by Icyllis Milica), also known as **ModernUI**, is a desktop application framework designed for standalone 2D and 3D rendering software development.
 It makes use of modern 3D graphical APIs and technologies to provide high real-time rendering performance.
 This framework is similar to JavaFX or Android, with a complete set of event loops, rendering systems, and UI components,
 which are also suitable for game development.
 
-There is also an official version that extends to Minecraft and Forge, it combines Modern UI with Minecraft and
+There is also an official version that extends to Minecraft, it combines Modern UI with Minecraft and
 provides a number of additional features and modding APIs. See [ModernUI-MC](https://github.com/BloCamLimb/ModernUI-MC) repository.
 
 What are the advantages?  
@@ -15,30 +15,51 @@ Powerful UI functionality, good internationalization support, complete text layo
 This framework has a powerful graphics engine, which is good to OpenGL 3.3 and OpenGL 4.5 core profiles and
 is specifically optimized for desktop GPUs, some engine designs are better than Google Skia.
 
-This project is still at a *relatively* early stage.  
-Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui).  
+Modern UI is published on [IzzelAliz Repo](https://maven.izzel.io/).  
+Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.com/minecraft/mc-mods/modern-ui) and
+[Modrinth](https://modrinth.com/mod/modern-ui).  
 If you have any questions, feel free to join our [Discord](https://discord.gg/kmyGKt2) server.
 ### License
 * Modern UI
-  - Copyright (C) 2019-2024 BloCamLimb
-  - [![License](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
-  - Copyright (C) 2006 The Android Open Source Project
-  - [![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
-* Runtime Libraries (not part of the ModernUI project)
-  - [lwjgl](https://github.com/LWJGL/lwjgl3) licensed under BSD-3-Clause
-  - [fastutil](https://github.com/vigna/fastutil) by Vigna, licensed under Apache-2.0
-  - [log4j](https://github.com/apache/logging-log4j2) licensed under Apache-2.0
-  - [icu4j](https://github.com/unicode-org/icu) by Unicode, Inc. see [LICENSE](https://github.com/unicode-org/icu/blob/main/LICENSE)
+  - Copyright (C) 2019-2025 BloCamLimb and contributors
+  - [![License-LGPL--3.0--or--later](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
+
+All modules of the Modern UI project are licensed under GNU Lesser General Public License v3.0 or later (LGPL-3.0-or-later).  
+For the full license text, see [LICENSE](LICENSE). For additional license notices, see [NOTICE](NOTICE).
+### Dependencies
+Modern UI requires the following third-party libraries to compile and run:
+* LWJGL (https://github.com/LWJGL/lwjgl3)
+  - License: BSD-3-Clause (https://github.com/LWJGL/lwjgl3/blob/master/LICENSE.md)
+  - Modules: lwjgl-core, lwjgl-glfw, lwjgl-jemalloc lwjgl-openal lwjgl-opengl lwjgl-stb lwjgl-tinyfd lwjgl-vma lwjgl-vulkan
+* fastutil (https://github.com/vigna/fastutil)
+  - License: Apache-2.0 (https://github.com/vigna/fastutil/blob/master/LICENSE-2.0)
+* ICU4J (https://github.com/unicode-org/icu)
+  - License: Unicode-3.0 (https://github.com/unicode-org/icu/blob/main/LICENSE)
+* SLF4J (https://github.com/qos-ch/slf4j)
+  - License: MIT License (https://github.com/qos-ch/slf4j/blob/master/LICENSE.txt)
+* Arc3D (https://github.com/BloCamLimb/Arc3D)
+  - License: LGPL-3.0-or-later (https://github.com/BloCamLimb/Arc3D/blob/master/LICENSE)
+  - Note: Arc3D is part of Modern UI project, but its upstream is in an independent repository.
+    Currently the Modern UI Core jar contains all the Arc3D code, but in the future we will make
+    Arc3D a standalone release.
+
+The above dependencies are flat, with no nested dependencies.  
+There are also some annotation libraries that are used for compilation but not required for runtime, not listing here.
 ### Documentation
+Developer Guide (WIP)  
+Specification (WIP)  
 [JavaDoc](https://blocamlimb.github.io/ModernUI/javadoc/index.html)  
-Specification (WIP)
 
 #### Environment requirements
-- Windows 10 or above, Linux, macOS 10.10 or above
-- JDK 17.0.1 or above
-- OpenGL 3.3 or above (OpenGL 4.3 is recommended)
-- Vulkan 1.1 or above (WIP)
+Modern UI can run on any platform as long as it supports:
+- Java SE 17 or above
+- GLFW 3.4
+- One of 3D APIs:
+  * OpenGL 3.3 or above
+  * OpenGL ES 3.0 or above
+  * Vulkan 1.1 or above
 
+Note: LWJGL natives currently do not support big-endian CPUs, although Java and Modern UI support.
 #### Gradle configuration
 ```
 repositories {
