@@ -1,0 +1,37 @@
+Modern UI
+Copyright (C) 2019-2025 BloCamLimb and contributors
+Licensed under the GNU Lesser General Public License v3.0 or later (LGPL-3.0-or-later).
+A copy of the LGPL v3 license text is included as LICENSE in the project root.
+
+
+NOTE ON THIRD-PARTY DEPENDENCIES
+--------------------------------
+This project is built with Gradle/Maven and **does not include or distribute** third-party
+library binaries (JARs). Dependencies are resolved by Gradle/Maven at build/run time.
+
+
+APACHE-DERIVED SOURCE ATTRIBUTIONS
+----------------------------------
+This product includes software derived from the Android Open Source Project (AOSP).
+Relevant original source and attributions are from AOSP and are available at:
+  https://source.android.com/ and https://android.googlesource.com/
+
+The following attributions are included as required by the Apache License, Version 2.0:
+
+- Android Code - Copyright (C) 2006 The Android Open Source Project
+
+If you modified those upstream files, the original copyright/notice lines were retained in-source,
+and modifications are noted in each file's header.
+
+Reference: Apache License 2.0, section 4.d.
+
+
+HOW TO FIND FULL LICENSE TEXTS
+------------------------------
+For third-party dependencies, please see each module's README.md, which lists the dependencies
+and provides links to their license texts.
+The Apache License 2.0 and any NOTICE files for AOSP components are available in the upstream
+AOSP repositories linked above.
+The LGPL v3 text is provided as LICENSE in the project root.
+
+Contact: BloCamLimb <pocamelards@gmail.com>
