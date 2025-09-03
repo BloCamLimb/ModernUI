@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * This is the class for text whose content is immutable but to which
@@ -53,6 +54,25 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
         } else {
             return new SpannableString(source);
         }
+    }
+
+    @Override
+    public void setSpan(@NonNull Object span, int start, int end, int flags) {
+        super.setSpan(span, start, end, flags, true);
+    }
+
+    @Override
+    public void removeSpan(@NonNull Object span) {
+        super.removeSpan(span, 0);
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @Override
+    public void removeSpan(@NonNull Object span, int flags) {
+        super.removeSpan(span, flags);
     }
 
     @NonNull

@@ -178,15 +178,11 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         return false;
     }
 
-    public void setSpan(@NonNull Object span, int start, int end, int flags) {
-        setSpan(span, start, end, flags, true);
-    }
-
     private boolean isIndexFollowsNextLine(int index) {
         return index != 0 && index != length() && charAt(index - 1) != '\n';
     }
 
-    private void setSpan(@NonNull Object span, int start, int end, int flags, boolean enforceParagraph) {
+    final void setSpan(@NonNull Object span, int start, int end, int flags, boolean enforceParagraph) {
         Objects.requireNonNull(span, "span");
         if ((start | end - start | length() - end) < 0) {
             throw new IndexOutOfBoundsException(
@@ -267,11 +263,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         }
     }
 
-    public void removeSpan(@NonNull Object span) {
-        removeSpan(span, 0);
-    }
-
-    public void removeSpan(@NonNull Object span, int flags) {
+    void removeSpan(@NonNull Object span, int flags) {
         final int count = mSpanCount;
         final Object[] spans = mSpans;
         final int[] data = mSpanData;
