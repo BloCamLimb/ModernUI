@@ -24,5 +24,8 @@ package icyllis.modernui.text;
  */
 public interface GetChars extends CharSequence {
 
+    /**
+     * @throws IndexOutOfBoundsException if out of range
+     */
     void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin);
 }

@@ -383,7 +383,7 @@ public class PrecomputedText implements Spannable {
     private PrecomputedText(@NonNull CharSequence text, @IntRange(from = 0) int start,
                             @IntRange(from = 0) int end, @NonNull Params params,
                             @NonNull ParagraphInfo[] paraInfo) {
-        mText = new SpannableString(text, true /* ignoreNoCopySpan */);
+        mText = new SpannableString(text);
         mStart = start;
         mEnd = end;
         mParams = params;
@@ -395,7 +395,7 @@ public class PrecomputedText implements Spannable {
      * @hidden
      */
     @ApiStatus.Internal
-    public @NonNull Spannable getText() {
+    public @NonNull Spanned getText() {
         return mText;
     }
 

@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This is the class for text whose content and markup can both be changed.
@@ -809,6 +810,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     // will not change the index of any spans.
     private void setSpan(boolean send, @NonNull Object what, int start, int end, int flags,
                          boolean enforceParagraph) {
+        Objects.requireNonNull(what, "span");
         checkRange("setSpan", start, end);
 
         int flagsStart = (flags & START_MASK) >> START_SHIFT;
