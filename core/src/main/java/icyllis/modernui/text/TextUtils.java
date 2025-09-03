@@ -156,6 +156,8 @@ public final class TextUtils {
 
     /**
      * Copies a block of characters efficiently.
+     *
+     * @throws IndexOutOfBoundsException if out of range
      */
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
                                 @NonNull char[] dst, int dstBegin) {
@@ -170,6 +172,8 @@ public final class TextUtils {
         else if (s instanceof CharBuffer buf)
             buf.get(buf.position() + srcBegin, dst, dstBegin, srcEnd - srcBegin); // Java 13
         else {
+            if (srcBegin > srcEnd)
+                throw new IndexOutOfBoundsException("srcBegin " + srcBegin + ", srcEnd " + srcEnd);
             for (int i = srcBegin; i < srcEnd; i++)
                 dst[dstBegin++] = s.charAt(i);
         }
@@ -226,16 +230,21 @@ public final class TextUtils {
      * {@link CharSequence#subSequence(int, int) CharSequence.subSequence}
      * in that it does not preserve any style runs in the source sequence,
      * allowing a more efficient implementation.
+     *
+     * @throws IndexOutOfBoundsException if out of range
      */
-    public static String substring(CharSequence source, int start, int end) {
+    @NonNull
+    public static String substring(@NonNull CharSequence source, int start, int end) {
         if (source instanceof String)
             return ((String) source).substring(start, end);
         if (source instanceof StringBuilder)
             return ((StringBuilder) source).substring(start, end);
         if (source instanceof StringBuffer)
             return ((StringBuffer) source).substring(start, end);
-        if (source instanceof SpannableStringInternal)
+        if (source instanceof SpannableStringInternal || source instanceof PrecomputedText)
             return source.toString().substring(start, end);
+        if (source instanceof CharBuffer)
+            return ((CharBuffer) source).slice(start, end - start).toString(); // Java 13
 
         char[] temp = obtain(end - start);
         getChars(source, start, end, temp, 0);

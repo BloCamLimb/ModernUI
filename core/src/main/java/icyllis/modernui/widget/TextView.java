@@ -139,7 +139,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     static final int VERY_WIDE = 1024 * 1024; // XXX should be much larger
 
     private static final InputFilter[] NO_FILTERS = new InputFilter[0];
-    private static final Spanned EMPTY_SPANNED = new SpannedString("");
 
     private static final int CHANGE_WATCHER_PRIORITY = 100;
 
@@ -2420,7 +2419,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public void setText(@NonNull CharSequence text, @NonNull BufferType type) {
         for (InputFilter filter : mFilters) {
-            CharSequence out = filter.filter(text, 0, text.length(), EMPTY_SPANNED, 0, 0);
+            CharSequence out = filter.filter(text, 0, text.length(), SpannedString.EMPTY, 0, 0);
             if (out != null) {
                 text = out;
             }

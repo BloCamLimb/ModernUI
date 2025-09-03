@@ -44,7 +44,8 @@ import java.util.stream.IntStream;
 
 // modified version of https://android.googlesource.com/
 @SuppressWarnings("ForLoopReplaceableByForEach")
-abstract class SpannableStringInternal implements Spanned, GetChars {
+abstract sealed class SpannableStringInternal implements Spanned, GetChars
+        permits SpannableString, SpannedString {
 
     private static final int START = 0;
     private static final int END = 1;
@@ -56,11 +57,13 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
     private int[] mSpanData;
     private int mSpanCount;
 
-    SpannableStringInternal(CharSequence source, int start, int end, boolean ignoreNoCopySpan) {
+    // Modern UI changed: optimize substring, never copy NoCopySpan,
+    // never copy PARAGRAPH span if not at paragraph boundary
+    SpannableStringInternal(@NonNull CharSequence source, int start, int end) {
         if (start == 0 && end == source.length())
             mText = source.toString();
         else
-            mText = source.toString().substring(start, end);
+            mText = TextUtils.substring(source, start, end);
 
         mSpans = ObjectArrays.EMPTY_ARRAY;
         // Invariant: mSpanData.length = mSpans.length * COLUMNS
@@ -68,9 +71,9 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
 
         if (source instanceof Spanned) {
             if (source instanceof SpannableStringInternal) {
-                copySpansFromInternal((SpannableStringInternal) source, start, end, ignoreNoCopySpan);
+                copySpansFromInternal((SpannableStringInternal) source, start, end);
             } else {
-                copySpansFromSpanned((Spanned) source, start, end, ignoreNoCopySpan);
+                copySpansFromSpanned((Spanned) source, start, end);
             }
         }
     }
@@ -81,14 +84,13 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
      * @param src              Source object to copy from.
      * @param start            Start index in the source object.
      * @param end              End index in the source object.
-     * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
      */
-    private void copySpansFromSpanned(@NonNull Spanned src, int start, int end, boolean ignoreNoCopySpan) {
+    private void copySpansFromSpanned(@NonNull Spanned src, int start, int end) {
         List<Object> spans = src.getSpans(start, end, Object.class);
 
         for (int i = 0; i < spans.size(); i++) {
             Object span = spans.get(i);
-            if (ignoreNoCopySpan && span instanceof NoCopySpan) {
+            if (span instanceof NoCopySpan) {
                 continue;
             }
             int st = src.getSpanStart(span);
@@ -100,7 +102,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
             if (en > end)
                 en = end;
 
-            setSpan(span, st - start, en - start, fl, false/*enforceParagraph*/);
+            setSpan(false, span, st - start, en - start, fl, false/*enforceParagraph*/);
         }
     }
 
@@ -111,10 +113,8 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
      * @param src              Source object to copy from.
      * @param start            Start index in the source object.
      * @param end              End index in the source object.
-     * @param ignoreNoCopySpan copy NoCopySpan for backward compatible reasons.
      */
-    private void copySpansFromInternal(@NonNull SpannableStringInternal src, int start, int end,
-                                       boolean ignoreNoCopySpan) {
+    private void copySpansFromInternal(@NonNull SpannableStringInternal src, int start, int end) {
         int count = 0;
         final int[] srcData = src.mSpanData;
         final Object[] srcSpans = src.mSpans;
@@ -127,9 +127,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
             if (isOutOfCopyRange(start, end, spanStart, spanEnd)) continue;
             if (srcSpans[i] instanceof NoCopySpan) {
                 hasNoCopySpan = true;
-                if (ignoreNoCopySpan) {
-                    continue;
-                }
+                continue;
             }
             count++;
         }
@@ -137,31 +135,44 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         if (count == 0) return;
 
         if (!hasNoCopySpan && start == 0 && end == src.length()) {
-            mSpans = new Object[src.mSpans.length];
-            mSpanData = new int[src.mSpanData.length];
+            // Also trim the array to size
+            assert count == src.mSpanCount;
             mSpanCount = src.mSpanCount;
-            System.arraycopy(src.mSpans, 0, mSpans, 0, src.mSpans.length);
-            System.arraycopy(src.mSpanData, 0, mSpanData, 0, mSpanData.length);
-        } else {
-            mSpanCount = count;
             mSpans = new Object[mSpanCount];
             mSpanData = new int[mSpans.length * COLUMNS];
-            for (int i = 0, j = 0; i < limit; i++) {
+            System.arraycopy(src.mSpans, 0, mSpans, 0, mSpans.length);
+            System.arraycopy(src.mSpanData, 0, mSpanData, 0, mSpanData.length);
+        } else {
+            mSpans = new Object[count];
+            mSpanData = new int[mSpans.length * COLUMNS];
+            int j = 0;
+            for (int i = 0; i < limit; i++) {
                 int spanStart = srcData[i * COLUMNS + START];
                 int spanEnd = srcData[i * COLUMNS + END];
+                int spanFlags = srcData[i * COLUMNS + FLAGS];
                 if (isOutOfCopyRange(start, end, spanStart, spanEnd)
-                        || (ignoreNoCopySpan && srcSpans[i] instanceof NoCopySpan)) {
+                        || (srcSpans[i] instanceof NoCopySpan)) {
                     continue;
                 }
-                if (spanStart < start) spanStart = start;
-                if (spanEnd > end) spanEnd = end;
+                // Added paragraph boundary check
+                if ((spanFlags & Spannable.SPAN_PARAGRAPH) == Spannable.SPAN_PARAGRAPH) {
+                    if (isIndexFollowsNextLine(spanStart) || isIndexFollowsNextLine(spanEnd)) {
+                        continue;
+                    }
+                }
+                if (spanStart < start)
+                    spanStart = start;
+                if (spanEnd > end)
+                    spanEnd = end;
 
                 mSpans[j] = srcSpans[i];
                 mSpanData[j * COLUMNS + START] = spanStart - start;
                 mSpanData[j * COLUMNS + END] = spanEnd - start;
-                mSpanData[j * COLUMNS + FLAGS] = srcData[i * COLUMNS + FLAGS];
+                mSpanData[j * COLUMNS + FLAGS] = spanFlags;
                 j++;
             }
+            assert j <= count;
+            mSpanCount = j;
         }
     }
 
@@ -182,7 +193,8 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         return index != 0 && index != length() && charAt(index - 1) != '\n';
     }
 
-    final void setSpan(@NonNull Object span, int start, int end, int flags, boolean enforceParagraph) {
+    final void setSpan(boolean send, @NonNull Object span, int start, int end, int flags,
+                       boolean enforceParagraph) {
         Objects.requireNonNull(span, "span");
         if ((start | end - start | length() - end) < 0) {
             throw new IndexOutOfBoundsException(
@@ -215,18 +227,21 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         Object[] spans = mSpans;
         int[] data = mSpanData;
 
-        for (int i = 0; i < count; i++) {
-            if (spans[i] == span) {
-                int ic = i * COLUMNS;
-                int ost = data[ic + START];
-                int oen = data[ic + END];
+        // send is false only in constructor, so the whole block can be skipped
+        if (send) {
+            for (int i = 0; i < count; i++) {
+                if (spans[i] == span) {
+                    int ic = i * COLUMNS;
+                    int ost = data[ic + START];
+                    int oen = data[ic + END];
 
-                data[ic + START] = start;
-                data[ic + END] = end;
-                data[ic + FLAGS] = flags;
+                    data[ic + START] = start;
+                    data[ic + END] = end;
+                    data[ic + FLAGS] = flags;
 
-                sendSpanChanged(span, ost, oen, start, end);
-                return;
+                    sendSpanChanged(span, ost, oen, start, end);
+                    return;
+                }
             }
         }
 
@@ -258,7 +273,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         mSpanData[ic + FLAGS] = flags;
         mSpanCount++;
 
-        if (this instanceof Spannable) {
+        if (send) {
             sendSpanAdded(span, start, end);
         }
     }
