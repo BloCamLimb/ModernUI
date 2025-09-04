@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,16 +14,38 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.text.method;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.text.*;
+import icyllis.modernui.text.Editable;
+import icyllis.modernui.text.GetChars;
+import icyllis.modernui.text.Spannable;
+import icyllis.modernui.text.Spanned;
+import icyllis.modernui.text.SpannedString;
+import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.view.View;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -38,14 +60,16 @@ public abstract class ReplacementTransformationMethod implements TransformationM
 
     /**
      * Returns the list of characters that are to be replaced by other
-     * characters when displayed.
+     * characters when displayed. The subclass must NOT modify the returned array.
      */
+    @NonNull
     protected abstract char[] getOriginal();
 
     /**
      * Returns a parallel array of replacement characters for the ones
-     * that are to be replaced.
+     * that are to be replaced. The subclass must NOT modify the returned array.
      */
+    @NonNull
     protected abstract char[] getReplacement();
 
     /**
@@ -53,8 +77,8 @@ public abstract class ReplacementTransformationMethod implements TransformationM
      * source CharSequence but with the characters in {@link #getOriginal}
      * replaced by ones from {@link #getReplacement}.
      */
-    @Nonnull
-    public CharSequence getTransformation(@Nonnull CharSequence source, @Nonnull View v) {
+    @NonNull
+    public CharSequence getTransformation(@NonNull CharSequence source, @NonNull View v) {
         char[] original = getOriginal();
         char[] replacement = getReplacement();
 
@@ -95,12 +119,13 @@ public abstract class ReplacementTransformationMethod implements TransformationM
             }
         }
 
+        // Spannable or Editable
         return new SpannedReplacementCharSequence((Spanned) source,
                 original, replacement);
     }
 
     @Override
-    public void onFocusChanged(@Nonnull View view, @Nonnull CharSequence sourceText,
+    public void onFocusChanged(@NonNull View view, @NonNull CharSequence sourceText,
                                boolean focused, int direction, @Nullable Rect previouslyFocusedRect) {
     }
 
@@ -136,20 +161,30 @@ public abstract class ReplacementTransformationMethod implements TransformationM
             return c;
         }
 
+        @NonNull
         @Override
         public CharSequence subSequence(int start, int end) {
-            char[] c = new char[end - start];
-
-            getChars(start, end, c, 0);
-            return new String(c);
+            int len = end - start;
+            char[] s = TextUtils.obtain(len);
+            try {
+                getChars(start, end, s, 0);
+                return new String(s, 0, len);
+            } finally {
+                TextUtils.recycle(s);
+            }
         }
 
+        @NonNull
         @Override
         public String toString() {
-            char[] c = new char[length()];
-
-            getChars(0, length(), c, 0);
-            return new String(c);
+            int len = length();
+            char[] s = TextUtils.obtain(len);
+            try {
+                getChars(0, len, s, 0);
+                return new String(s, 0, len);
+            } finally {
+                TextUtils.recycle(s);
+            }
         }
 
         @Override
@@ -180,30 +215,30 @@ public abstract class ReplacementTransformationMethod implements TransformationM
             mSpanned = source;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public CharSequence subSequence(int start, int end) {
-            return new SpannedString(this).subSequence(start, end);
+            return new SpannedString(this, start, end);
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public <T> List<T> getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out) {
             return mSpanned.getSpans(start, end, type, out);
         }
 
         @Override
-        public int getSpanStart(@Nonnull Object tag) {
+        public int getSpanStart(@NonNull Object tag) {
             return mSpanned.getSpanStart(tag);
         }
 
         @Override
-        public int getSpanEnd(@Nonnull Object tag) {
+        public int getSpanEnd(@NonNull Object tag) {
             return mSpanned.getSpanEnd(tag);
         }
 
         @Override
-        public int getSpanFlags(@Nonnull Object tag) {
+        public int getSpanFlags(@NonNull Object tag) {
             return mSpanned.getSpanFlags(tag);
         }
 
