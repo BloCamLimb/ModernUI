@@ -22,11 +22,11 @@ import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import com.ibm.icu.lang.UProperty;
 import com.ibm.icu.text.BreakIterator;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.text.CharacterIterator;
-import java.text.StringCharacterIterator;
 import java.util.Locale;
 
 import static com.ibm.icu.lang.UCharacter.GraphemeClusterBreak;
@@ -35,7 +35,7 @@ import static com.ibm.icu.lang.UCharacter.GraphemeClusterBreak;
  * This class handles grapheme cluster break.
  * <p>
  * It is important to recognize that what the user thinks of as a
- * &quot;character&quot;-a basic unit of a writing system for a language-
+ * &quot;character&quot; (a basic unit of a writing system for a language)
  * may not be just a single Unicode code point. Instead, that basic
  * unit may be made up of multiple Unicode code points. To avoid
  * ambiguity with the computer use of the term character, this is
@@ -45,7 +45,7 @@ import static com.ibm.icu.lang.UCharacter.GraphemeClusterBreak;
  * These user-perceived characters are approximated by what is called
  * a grapheme cluster, which can be determined programmatically.
  * <p>
- * Note: this class is not completed, use ICU instead.
+ * This class provides a tailored version of extended grapheme clusters.
  */
 public final class GraphemeBreak {
 
@@ -75,58 +75,19 @@ public final class GraphemeBreak {
     public static final int AT = 4;
 
     /**
-     * Config value, true to use ICU GCB, otherwise this
+     * Config value, true to use ICU4J for testing, false to use this tailored version.
+     *
+     * @hidden
      */
+    @ApiStatus.Internal
     public static boolean sUseICU = false;
 
     private GraphemeBreak() {
     }
 
-    public static int getTextRunCursor(@Nonnull String text, @Nonnull Locale locale, int contextStart, int contextEnd,
-                                       int offset, int op) {
-        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
-                | (offset - contextStart) | (contextEnd - offset)
-                | (text.length() - contextEnd) | op) < 0)
-                || op > AT) {
-            throw new IndexOutOfBoundsException();
-        }
-        return sUseICU ? getTextRunCursorICU(new StringCharacterIterator(text, contextStart, contextEnd, contextStart),
-                locale, offset, op) :
-                getTextRunCursorImpl(null, text.toCharArray(), contextStart, contextEnd - contextStart,
-                        offset, op);
-    }
-
-    public static void forTextRun(@Nonnull char[] text, @Nonnull Locale locale, int contextStart, int contextEnd,
-                                  @Nonnull ClusterConsumer consumer) {
-        if (sUseICU) {
-            final BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
-            breaker.setText(new CharArrayIterator(text, contextStart, contextEnd));
-            int prevOffset = contextStart;
-            int offset;
-            while ((offset = breaker.following(prevOffset)) != BreakIterator.DONE) {
-                consumer.accept(prevOffset, offset);
-                prevOffset = offset;
-            }
-        } else {
-            final int count = contextEnd - contextStart;
-            int prevOffset = contextStart;
-            int offset;
-            while ((offset = getTextRunCursorImpl(null, text, contextStart, count, prevOffset, AFTER))
-                    != prevOffset) {
-                consumer.accept(prevOffset, offset);
-                prevOffset = offset;
-            }
-        }
-    }
-
-    @FunctionalInterface
-    public interface ClusterConsumer {
-
-        void accept(int clusterStart, int clusterEnd);
-    }
-
-    public static int getTextRunCursorICU(CharacterIterator text, Locale locale, int offset, int op) {
-        final int oof = offset;
+    public static int getTextRunCursorICU(@Nonnull CharacterIterator text, @Nonnull Locale locale,
+                                          int offset, int op) {
+        final int original = offset;
         BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
         breaker.setText(text);
         switch (op) {
@@ -149,10 +110,10 @@ public final class GraphemeBreak {
                     return -1;
                 break;
         }
-        return offset == BreakIterator.DONE ? oof : offset;
+        return offset == BreakIterator.DONE ? original : offset;
     }
 
-    public static int getTextRunCursorImpl(@Nullable float[] advances, @Nonnull char[] buf, int start, int count,
+    public static int getTextRunCursorImpl(@Nullable float[] advances, @Nonnull CharSequence buf, int start, int count,
                                            int offset, int op) {
         switch (op) {
             case AFTER:
@@ -185,7 +146,7 @@ public final class GraphemeBreak {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean isGraphemeBreak(@Nullable float[] advances, @Nonnull char[] buf, int start, int count,
+    public static boolean isGraphemeBreak(@Nullable float[] advances, @Nonnull CharSequence buf, int start, int count,
                                           final int offset) {
         // This implementation closely follows Unicode Standard Annex #29 on
         // Unicode Text Segmentation (http://www.unicode.org/reports/tr29/),
@@ -196,36 +157,39 @@ public final class GraphemeBreak {
         if (offset <= start || offset >= start + count) {
             return true;
         }
-        if (Character.isLowSurrogate(buf[offset])) {
+        if (Character.isLowSurrogate(buf.charAt(offset))) {
             // Don't break a surrogate pair, but a lonely trailing surrogate pair is a break
-            return !Character.isHighSurrogate(buf[offset - 1]);
+            return !Character.isHighSurrogate(buf.charAt(offset - 1));
         }
         int c1;
         int c2;
-        int offsetBack = offset;
+        int offset_back = offset;
+        // Forward once, and back
 
         char _c1;
         char _c2;
-        // NEXT ONCE
 
-        c2 = _c1 = buf[offsetBack++];
-        if (Character.isHighSurrogate(_c1))
-            if (offsetBack != start + count &&
-                    Character.isLowSurrogate(_c2 = buf[offsetBack])) {
-                ++offsetBack;
+        // NEXT
+        c2 = _c1 = buf.charAt(offset_back++);
+        if (Character.isHighSurrogate(_c1)) {
+            if (offset_back != start + count &&
+                    Character.isLowSurrogate(_c2 = buf.charAt(offset_back))) {
+                ++offset_back;
                 c2 = Character.toCodePoint(_c1, _c2);
             }
+        }
 
-        offsetBack = offset;
+        offset_back = offset;
 
         // PREV
-        c1 = _c1 = buf[--offsetBack];
-        if (Character.isLowSurrogate(_c1))
-            if (offsetBack > start &&
-                    Character.isHighSurrogate(_c2 = buf[offsetBack - 1])) {
-                --offsetBack;
+        c1 = _c1 = buf.charAt(--offset_back);
+        if (Character.isLowSurrogate(_c1)) {
+            if (offset_back > start &&
+                    Character.isHighSurrogate(_c2 = buf.charAt(offset_back - 1))) {
+                --offset_back;
                 c1 = Character.toCodePoint(_c2, _c1);
             }
+        }
 
         int p1 = tailoredGraphemeClusterBreak(c1);
         int p2 = tailoredGraphemeClusterBreak(c2);
@@ -257,7 +221,7 @@ public final class GraphemeBreak {
 
         // This is used to decide font-dependent grapheme clusters. If we don't have the advance
         // information, we become conservative in grapheme breaking and assume that it has no advance.
-        boolean c2_has_advance = (advances != null && advances[offset - start] != 0.0);
+        boolean c2_has_advance = (advances != null && advances[offset - start] != 0.0F);
 
         // All the following rules are font-dependent, in the way that if we know c2 has an advance,
         // we definitely know that it cannot form a grapheme with the character(s) before it. So we
@@ -273,28 +237,30 @@ public final class GraphemeBreak {
 
         // Tailored version of Rule GB11
         // \p{Extended_Pictographic} Extend* ZWJ x \p{Extended_Pictographic}
-        if (offsetBack > start && p1 == GraphemeClusterBreak.ZWJ &&
+        if (offset_back > start && p1 == GraphemeClusterBreak.ZWJ &&
                 UCharacter.hasBinaryProperty(c2, UProperty.EXTENDED_PICTOGRAPHIC)) {
-            int offsetBack1 = offsetBack;
+            int offset_backback = offset_back;
             int p0;
 
-            int c0 = _c1 = buf[--offsetBack1];
-            if (Character.isLowSurrogate(_c1))
-                if (offsetBack1 > start &&
-                        Character.isHighSurrogate(_c2 = buf[offsetBack1 - 1])) {
-                    --offsetBack1;
+            int c0 = _c1 = buf.charAt(--offset_backback);
+            if (Character.isLowSurrogate(_c1)) {
+                if (offset_backback > start &&
+                        Character.isHighSurrogate(_c2 = buf.charAt(offset_backback - 1))) {
+                    --offset_backback;
                     c0 = Character.toCodePoint(_c2, _c1);
                 }
+            }
 
             p0 = tailoredGraphemeClusterBreak(c0);
-            while (p0 == GraphemeClusterBreak.EXTEND && offsetBack1 > start) {
-                c0 = _c1 = buf[--offsetBack1];
-                if (Character.isLowSurrogate(_c1))
-                    if (offsetBack1 > start &&
-                            Character.isHighSurrogate(_c2 = buf[offsetBack1 - 1])) {
-                        --offsetBack1;
+            while (p0 == GraphemeClusterBreak.EXTEND && offset_backback > start) {
+                c0 = _c1 = buf.charAt(--offset_backback);
+                if (Character.isLowSurrogate(_c1)) {
+                    if (offset_backback > start &&
+                            Character.isHighSurrogate(_c2 = buf.charAt(offset_backback - 1))) {
+                        --offset_backback;
                         c0 = Character.toCodePoint(_c2, _c1);
                     }
+                }
                 p0 = tailoredGraphemeClusterBreak(c0);
             }
             if (UCharacter.hasBinaryProperty(c0, UProperty.EXTENDED_PICTOGRAPHIC)) {
@@ -316,32 +282,37 @@ public final class GraphemeBreak {
                 return false;
             } else {
                 // Look at up to 1000 code units.
-                final int backBarrier = Math.max(start, offsetBack - 1000);
-                int offsetBack1 = offsetBack;
-                while (offsetBack1 > backBarrier) {
-                    int c0 = _c1 = buf[--offsetBack1];
-                    if (Character.isLowSurrogate(_c1))
-                        if (offsetBack1 > backBarrier &&
-                                Character.isHighSurrogate(_c2 = buf[offsetBack1 - 1])) {
-                            --offsetBack1;
+                final int lookback_barrier = Math.max(start, offset_back - 1000);
+                int offset_backback = offset_back;
+                while (offset_backback > lookback_barrier) {
+                    int c0 = _c1 = buf.charAt(--offset_backback);
+                    if (Character.isLowSurrogate(_c1)) {
+                        if (offset_backback > lookback_barrier &&
+                                Character.isHighSurrogate(_c2 = buf.charAt(offset_backback - 1))) {
+                            --offset_backback;
                             c0 = Character.toCodePoint(_c2, _c1);
                         }
+                    }
                     if (tailoredGraphemeClusterBreak(c0) != GraphemeClusterBreak.REGIONAL_INDICATOR) {
-                        offsetBack1 += Character.charCount(c0);
+                        offset_backback += Character.charCount(c0);
                         break;
                     }
                 }
                 // The number 4 comes from the number of code units in a whole flag.
-                return (offset - offsetBack1) % 4 == 0;
+                return (offset - offset_backback) % 4 == 0;
             }
         }
         // Cluster Indic syllables together (tailoring of UAX #29).
         // Immediately after each virama (that is not just a pure killer) followed by a letter, we
         // disallow grapheme breaks (if we are here, we don't know about advances, or we already know
-        // that c2 has no advance). Or Rule GB999, Any ÷ Any
-        return UCharacter.getIntPropertyValue(c1, UProperty.CANONICAL_COMBINING_CLASS) != 9  // virama
-                || isPureKiller(c1) ||
-                UCharacter.getIntPropertyValue(c2, UProperty.GENERAL_CATEGORY) != UCharacterCategory.OTHER_LETTER;
+        // that c2 has no advance).
+        if (UCharacter.getIntPropertyValue(c1, UProperty.CANONICAL_COMBINING_CLASS) == 9  // virama
+                && !isPureKiller(c1) &&
+                UCharacter.getIntPropertyValue(c2, UProperty.GENERAL_CATEGORY) != UCharacterCategory.OTHER_LETTER) {
+            return false;
+        }
+        // Rule GB999, Any ÷ Any
+        return true;
     }
 
     // Returns true for all characters whose IndicSyllabicCategory is Pure_Killer.
@@ -353,26 +324,28 @@ public final class GraphemeBreak {
                 c == 0x1172B);
     }
 
+    // @formatter:off
     public static int tailoredGraphemeClusterBreak(int c) {
         // Characters defined as Control that we want to treat them as Extend.
         // These are curated manually.
         if (c == 0x00AD                      // SHY
-                || c == 0x061C                   // ALM
-                || c == 0x180E                   // MONGOLIAN VOWEL SEPARATOR
-                || c == 0x200B                   // ZWSP
-                || c == 0x200E                   // LRM
-                || c == 0x200F                   // RLM
-                || (0x202A <= c && c <= 0x202E)  // LRE, RLE, PDF, LRO, RLO
-                || ((c | 0xF) == 0x206F)         // WJ, invisible math operators, LRI, RLI, FSI, PDI,
-                // and the deprecated invisible format controls
-                || c == 0xFEFF                   // BOM
-                || ((c | 0x7F) == 0xE007F))      // recently undeprecated tag characters in Plane 14
+            || c == 0x061C                   // ALM
+            || c == 0x180E                   // MONGOLIAN VOWEL SEPARATOR
+            || c == 0x200B                   // ZWSP
+            || c == 0x200E                   // LRM
+            || c == 0x200F                   // RLM
+            || (0x202A <= c && c <= 0x202E)  // LRE, RLE, PDF, LRO, RLO
+            || ((c | 0xF) == 0x206F)         // WJ, invisible math operators, LRI, RLI, FSI, PDI,
+                                             // and the deprecated invisible format controls
+            || c == 0xFEFF                   // BOM
+            || ((c | 0x7F) == 0xE007F))      // recently undeprecated tag characters in Plane 14
             return GraphemeClusterBreak.EXTEND;
-            // THAI CHARACTER SARA AM is treated as a normal letter by most other implementations: they
-            // allow a grapheme break before it.
+        // THAI CHARACTER SARA AM is treated as a normal letter by most other implementations: they
+        // allow a grapheme break before it.
         else if (c == 0x0E33)
             return GraphemeClusterBreak.OTHER;
         else
             return UCharacter.getIntPropertyValue(c, UProperty.GRAPHEME_CLUSTER_BREAK);
     }
+    // @formatter:on
 }

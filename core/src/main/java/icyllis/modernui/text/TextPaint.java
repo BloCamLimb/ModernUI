@@ -24,6 +24,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.CharArrayIterator;
+import icyllis.modernui.graphics.text.CharSequenceIterator;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.GraphemeBreak;
@@ -34,6 +35,7 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.nio.CharBuffer;
 import java.util.Locale;
 
 /**
@@ -352,9 +354,9 @@ public class TextPaint extends Paint {
                 || op > GraphemeBreak.AT) {
             throw new IndexOutOfBoundsException();
         }
-        return GraphemeBreak.sUseICU ? GraphemeBreak.getTextRunCursorICU(new CharArrayIterator(text, contextStart,
-                contextEnd), mLocale, offset, op)
-                : GraphemeBreak.getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
+        return GraphemeBreak.sUseICU
+                ? GraphemeBreak.getTextRunCursorICU(new CharArrayIterator(text, contextStart, contextEnd), mLocale, offset, op)
+                : GraphemeBreak.getTextRunCursorImpl(null, CharBuffer.wrap(text), contextStart, contextLength, offset, op);
     }
 
     /**
@@ -383,16 +385,15 @@ public class TextPaint extends Paint {
      */
     public int getTextRunCursor(@NonNull CharSequence text, int contextStart,
                                 int contextEnd, int offset, int op) {
-        if (text instanceof String || text instanceof SpannedString ||
-                text instanceof SpannableString) {
-            return GraphemeBreak.getTextRunCursor(text.toString(), mLocale, contextStart, contextEnd,
-                    offset, op);
+        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
+                | (offset - contextStart) | (contextEnd - offset)
+                | (text.length() - contextEnd) | op) < 0)
+                || op > GraphemeBreak.AT) {
+            throw new IndexOutOfBoundsException();
         }
-        final int contextLen = contextEnd - contextStart;
-        final char[] buf = new char[contextLen];
-        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
-        offset = getTextRunCursor(buf, 0, contextLen, offset - contextStart, op);
-        return offset == -1 ? -1 : offset + contextStart;
+        return GraphemeBreak.sUseICU
+                ? GraphemeBreak.getTextRunCursorICU(new CharSequenceIterator(text, contextStart, contextEnd), mLocale, offset, op)
+                : GraphemeBreak.getTextRunCursorImpl(null, text, contextStart, contextEnd - contextStart, offset, op);
     }
 
     int checkTextDecorations() {

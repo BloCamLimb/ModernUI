@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,75 +16,82 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text;
+package icyllis.modernui.graphics.text;
+
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.text.CharacterIterator;
 import java.util.Objects;
 
 /**
- * An implementation of {@link java.text.CharacterIterator} that iterates over a given CharSequence.
+ * An implementation of {@link CharacterIterator} that iterates over a given CharSequence.
+ *
+ * @hidden
  */
+@ApiStatus.Internal
 public class CharSequenceIterator implements CharacterIterator {
 
-    private final int mBeginIndex, mEndIndex;
-    private int mIndex;
-    private final CharSequence mCharSeq;
+    private final CharSequence text;
+    private final int start;
+    private final int end;
+    // invariant: start <= pos <= end
+    private int pos;
+
+    public CharSequenceIterator(@Nonnull CharSequence text) {
+        this(text, 0, text.length());
+    }
 
     public CharSequenceIterator(@Nonnull CharSequence text, int start, int end) {
-        mIndex = Objects.checkFromToIndex(start, end, text.length());
-        mCharSeq = text;
-        mBeginIndex = start;
-        mEndIndex = end;
+        pos = Objects.checkFromToIndex(start, end, text.length());
+        this.text = text;
+        this.start = start;
+        this.end = end;
     }
 
     @Override
     public char first() {
-        mIndex = mBeginIndex;
+        pos = start;
         return current();
     }
 
     @Override
     public char last() {
-        if (mBeginIndex == mEndIndex) {
-            mIndex = mEndIndex;
-            return DONE;
-        } else {
-            mIndex = mEndIndex - 1;
-            return mCharSeq.charAt(mIndex);
-        }
+        pos = end != start ? end - 1 : end;
+        return current();
     }
 
     @Override
     public char current() {
-        return (mIndex == mEndIndex) ? DONE : mCharSeq.charAt(mIndex);
+        assert start <= pos && pos <= end;
+        return pos < end ? text.charAt(pos) : DONE;
     }
 
     @Override
     public char next() {
-        mIndex++;
-        if (mIndex >= mEndIndex) {
-            mIndex = mEndIndex;
+        if (pos + 1 >= end) {
+            pos = end;
             return DONE;
         } else {
-            return mCharSeq.charAt(mIndex);
+            pos++;
+            return text.charAt(pos);
         }
     }
 
     @Override
     public char previous() {
-        if (mIndex <= mBeginIndex) {
+        if (pos <= start) {
             return DONE;
         } else {
-            mIndex--;
-            return mCharSeq.charAt(mIndex);
+            pos--;
+            return text.charAt(pos);
         }
     }
 
     @Override
     public char setIndex(int position) {
-        if (mBeginIndex <= position && position <= mEndIndex) {
-            mIndex = position;
+        if (start <= position && position <= end) {
+            pos = position;
             return current();
         } else {
             throw new IllegalArgumentException("invalid position");
@@ -93,17 +100,17 @@ public class CharSequenceIterator implements CharacterIterator {
 
     @Override
     public int getBeginIndex() {
-        return mBeginIndex;
+        return start;
     }
 
     @Override
     public int getEndIndex() {
-        return mEndIndex;
+        return end;
     }
 
     @Override
     public int getIndex() {
-        return mIndex;
+        return pos;
     }
 
     @Override

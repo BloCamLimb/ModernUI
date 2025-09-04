@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,27 +18,29 @@
 
 package icyllis.modernui.graphics.text;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
+import org.jetbrains.annotations.ApiStatus;
+
 import java.text.CharacterIterator;
 import java.util.Objects;
 
+/**
+ * @hidden
+ */
+@ApiStatus.Internal
 public class CharArrayIterator implements CharacterIterator {
 
     private final char[] text;
     private final int start;
     private final int end;
-
+    // invariant: start <= pos <= end
     private int pos;
 
-    public CharArrayIterator(char[] text) {
+    public CharArrayIterator(@NonNull char[] text) {
         this(text, 0, text.length);
     }
 
-    public CharArrayIterator(char[] text, int start) {
-        this(text, start, text.length);
-    }
-
-    public CharArrayIterator(@Nonnull char[] text, int start, int end) {
+    public CharArrayIterator(@NonNull char[] text, int start, int end) {
         pos = Objects.checkFromToIndex(start, end, text.length);
         this.text = text;
         this.start = start;
@@ -59,34 +61,39 @@ public class CharArrayIterator implements CharacterIterator {
 
     @Override
     public char current() {
-        return pos >= start && pos < end ? text[pos] : DONE;
+        assert start <= pos && pos <= end;
+        return pos < end ? text[pos] : DONE;
     }
 
     @Override
     public char next() {
-        pos += 1;
-        if (pos >= end) {
+        if (pos + 1 >= end) {
             pos = end;
             return DONE;
+        } else {
+            pos++;
+            return text[pos];
         }
-        return current();
     }
 
     @Override
     public char previous() {
-        if (pos == start) {
+        if (pos <= start) {
             return DONE;
+        } else {
+            pos--;
+            return text[pos];
         }
-        pos -= 1;
-        return current();
     }
 
     @Override
     public char setIndex(int position) {
-        if (position < start || position > end)
-            throw new IllegalArgumentException();
-        pos = position;
-        return current();
+        if (start <= position && position <= end) {
+            pos = position;
+            return current();
+        } else {
+            throw new IllegalArgumentException("invalid position");
+        }
     }
 
     @Override
@@ -109,7 +116,7 @@ public class CharArrayIterator implements CharacterIterator {
         try {
             return super.clone();
         } catch (CloneNotSupportedException e) {
-            return null;
+            throw new InternalError();
         }
     }
 }
