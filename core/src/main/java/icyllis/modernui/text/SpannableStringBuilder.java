@@ -1323,23 +1323,38 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     /**
      * Return a String containing a copy of the chars in this buffer.
      */
+    @NonNull
     @Override
     public String toString() {
         int len = length();
-        char[] buf = new char[len];
-
-        getChars(0, len, buf, 0);
-        return new String(buf);
+        if (len <= mGapStart) {
+            return new String(mText, 0, len);
+        } else if (0 >= mGapStart) {
+            return new String(mText, mGapLength, len);
+        } else {
+            // StringConcatFactory is fastest
+            return new String(mText, 0, mGapStart) +
+                    new String(mText, mGapStart + mGapLength, len - mGapStart);
+        }
     }
 
     /**
      * Return a String containing a copy of the chars in this buffer, limited to the
      * [start, end) range.
      */
+    @NonNull
     public String substring(int start, int end) {
-        char[] buf = new char[end - start];
-        getChars(start, end, buf, 0);
-        return new String(buf);
+        checkRange("substring", start, end);
+
+        if (end <= mGapStart) {
+            return new String(mText, start, end - start);
+        } else if (start >= mGapStart) {
+            return new String(mText, start + mGapLength, end - start);
+        } else {
+            // StringConcatFactory is fastest
+            return new String(mText, start, mGapStart - start) +
+                    new String(mText, mGapStart + mGapLength, end - mGapStart);
+        }
     }
 
     /**

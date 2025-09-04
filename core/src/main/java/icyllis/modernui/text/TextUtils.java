@@ -33,6 +33,7 @@ import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Formatter;
@@ -40,6 +41,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+@SuppressWarnings("ForLoopReplaceableByForEach")
 public final class TextUtils {
 
     private static final char[][] sTemp = new char[4][];
@@ -141,10 +143,10 @@ public final class TextUtils {
     public static boolean contentEquals(@Nullable CharSequence a, @Nullable CharSequence b) {
         if (a == b) return true;
         int length;
-        if (a != null && b != null && (length = a.length()) == b.length()) {
-            if (a instanceof String && b instanceof String) {
-                return a.equals(b);
-            } else {
+        if (a != null && b != null) {
+            if (a instanceof String) {
+                return ((String) a).contentEquals(b);
+            } else if ((length = a.length()) == b.length()) {
                 for (int i = 0; i < length; i++) {
                     if (a.charAt(i) != b.charAt(i)) return false;
                 }
@@ -195,6 +197,8 @@ public final class TextUtils {
      * @return A subset of spans where empty spans ({@link Spanned#getSpanStart(Object)}  ==
      * {@link Spanned#getSpanEnd(Object)} have been removed. The initial order is preserved
      */
+    //TODO Consider removing this inefficient method and using SpanSet instead.
+    @ApiStatus.Internal
     @NonNull
     public static <T> List<T> removeEmptySpans(@NonNull List<T> spans, @NonNull Spanned spanned) {
         List<T> copy = null;
@@ -237,12 +241,14 @@ public final class TextUtils {
     public static String substring(@NonNull CharSequence source, int start, int end) {
         if (source instanceof String)
             return ((String) source).substring(start, end);
+        if (source instanceof SpannableStringInternal || source instanceof PrecomputedText)
+            return source.toString().substring(start, end);
+        if (source instanceof SpannableStringBuilder)
+            return ((SpannableStringBuilder) source).substring(start, end);
         if (source instanceof StringBuilder)
             return ((StringBuilder) source).substring(start, end);
         if (source instanceof StringBuffer)
             return ((StringBuffer) source).substring(start, end);
-        if (source instanceof SpannableStringInternal || source instanceof PrecomputedText)
-            return source.toString().substring(start, end);
         if (source instanceof CharBuffer)
             return ((CharBuffer) source).slice(start, end - start).toString(); // Java 13
 
@@ -254,18 +260,23 @@ public final class TextUtils {
         return ret;
     }
 
-    public static int indexOf(CharSequence s, char ch) {
+    public static int indexOf(@NonNull CharSequence s, char ch) {
         return indexOf(s, ch, 0);
     }
 
-    public static int indexOf(CharSequence s, char ch, int start) {
-        if (s instanceof String) {
-            return ((String) s).indexOf(ch, start);
-        }
+    public static int indexOf(@NonNull CharSequence s, char ch, int start) {
         return indexOf(s, ch, start, s.length());
     }
 
     public static int indexOf(@NonNull CharSequence s, char ch, int start, int end) {
+        int len = s.length();
+        if (end == len && (s instanceof String || s instanceof SpannableStringInternal)) {
+            return s.toString().indexOf(ch, start);
+        }
+        if (start >= len)
+            return -1;
+        if (start < 0)
+            start = 0;
         final Class<? extends CharSequence> c = s.getClass();
 
         if (s instanceof GetChars || c == StringBuffer.class ||
@@ -302,27 +313,25 @@ public final class TextUtils {
         return -1;
     }
 
-    public static int lastIndexOf(CharSequence s, char ch) {
+    public static int lastIndexOf(@NonNull CharSequence s, char ch) {
         return lastIndexOf(s, ch, s.length() - 1);
     }
 
-    public static int lastIndexOf(CharSequence s, char ch, int last) {
-        Class<? extends CharSequence> c = s.getClass();
-
-        if (c == String.class)
-            return ((String) s).lastIndexOf(ch, last);
-
+    public static int lastIndexOf(@NonNull CharSequence s, char ch, int last) {
         return lastIndexOf(s, ch, 0, last);
     }
 
-    public static int lastIndexOf(CharSequence s, char ch,
+    public static int lastIndexOf(@NonNull CharSequence s, char ch,
                                   int start, int last) {
+        if (start == 0 && (s instanceof String || s instanceof SpannableStringInternal)) {
+            return s.toString().lastIndexOf(ch, last);
+        }
         if (last < 0)
             return -1;
-        if (last >= s.length())
-            last = s.length() - 1;
-
+        int len = s.length();
         int end = last + 1;
+        if (end > len)
+            end = len;
 
         Class<? extends CharSequence> c = s.getClass();
 
@@ -409,7 +418,8 @@ public final class TextUtils {
             dest.writeString(cs.toString());
 
             final List<Object> os = sp.getSpans(0, cs.length(), Object.class);
-            for (final Object o : os) {
+            for (int i = 0; i < os.size(); i++) {
+                final Object o = os.get(i);
                 if (o instanceof ParcelableSpan span) {
                     final int id = span.getSpanTypeId();
                     if (id < FIRST_SPAN || id > LAST_SPAN) {
@@ -464,6 +474,30 @@ public final class TextUtils {
 
     private static void readSpan(Parcel p, Spannable sp, Object o) {
         sp.setSpan(o, p.readInt(), p.readInt(), p.readInt());
+    }
+
+    /**
+     * Debugging tool to print the spans in a CharSequence.  The output will
+     * be printed one span per line.  If the CharSequence is not a Spanned,
+     * then the entire string will be printed on a single line.
+     */
+    public static void dumpSpans(CharSequence cs, PrintWriter printer, String prefix) {
+        if (cs instanceof Spanned sp) {
+            List<?> os = sp.getSpans(0, cs.length(), Object.class);
+
+            for (int i = 0; i < os.size(); i++) {
+                Object o = os.get(i);
+                int st = sp.getSpanStart(o);
+                int en = sp.getSpanEnd(o);
+                int fl = sp.getSpanFlags(o);
+                printer.println(prefix + substring(cs, st, en) + ": "
+                        + Integer.toHexString(System.identityHashCode(o))
+                        + " " + o.getClass().getCanonicalName()
+                        + " (" + st + "-" + en + ") fl=#" + Integer.toHexString(fl));
+            }
+        } else {
+            printer.println(prefix + cs + ": (no spans)");
+        }
     }
 
     /**
@@ -1012,7 +1046,8 @@ public final class TextUtils {
 
         List<?> spans = source.getSpans(start, end, type);
 
-        for (Object span : spans) {
+        for (int i = 0; i < spans.size(); i++) {
+            Object span = spans.get(i);
             int st = source.getSpanStart(span);
             int en = source.getSpanEnd(span);
             int fl = source.getSpanFlags(span);
