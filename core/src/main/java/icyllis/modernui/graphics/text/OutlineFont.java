@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.util.SparseArray;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -237,13 +238,21 @@ public final class OutlineFont implements Font {
         );
         int nGlyphs = vector.getNumGlyphs();
 
-        if (advances != null) {
+        if (advances != null && nGlyphs > 0) {
             final int baseFlags = isRtl
                     ? java.awt.Font.LAYOUT_RIGHT_TO_LEFT
                     : java.awt.Font.LAYOUT_LEFT_TO_RIGHT;
             // this is a bit slow
-            GraphemeBreak.forTextRun(buf, paint.mLocale, layoutStart, layoutLimit,
+            int[] clusters = vector.getGlyphCharIndices(0, nGlyphs, null);
+            forClusterRange(clusters, layoutStart, layoutLimit,
                     (clusterStart, clusterLimit) -> {
+                        if (clusterStart < layoutStart || clusterStart >= clusterLimit
+                                || clusterLimit > layoutLimit) {
+                            Log.LOGGER.error(FontFamily.MARKER,
+                                    "cluster range ({}, {}) out of layout bounds ({}, {})",
+                                    clusterStart, clusterLimit, layoutStart, layoutLimit);
+                            return;
+                        }
                         int flags = baseFlags;
                         if (clusterStart == contextStart) {
                             flags |= java.awt.Font.LAYOUT_NO_START_CONTEXT;
@@ -282,6 +291,26 @@ public final class OutlineFont implements Font {
         }
 
         return (float) vector.getGlyphPosition(nGlyphs).getX();
+    }
+
+    private static void forClusterRange(@NonNull int[] clusters, int layoutStart, int layoutLimit,
+                                        @NonNull ClusterConsumer consumer) {
+        assert clusters.length > 0;
+        Arrays.sort(clusters);
+        int prev = clusters[0];
+        for (int i = 1; i < clusters.length; i++) {
+            int v = clusters[i];
+            if (v == prev) continue;
+            consumer.accept(layoutStart + prev, layoutStart + v);
+            prev = v;
+        }
+        consumer.accept(layoutStart + prev, layoutLimit);
+    }
+
+    @FunctionalInterface
+    private interface ClusterConsumer {
+
+        void accept(int clusterStart, int clusterEnd);
     }
 
     @Override
