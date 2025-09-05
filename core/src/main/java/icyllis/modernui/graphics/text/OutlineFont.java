@@ -243,31 +243,46 @@ public final class OutlineFont implements Font {
                     ? java.awt.Font.LAYOUT_RIGHT_TO_LEFT
                     : java.awt.Font.LAYOUT_LEFT_TO_RIGHT;
             // this is a bit slow
-            int[] clusters = vector.getGlyphCharIndices(0, nGlyphs, null);
-            forClusterRange(clusters, layoutStart, layoutLimit,
-                    (clusterStart, clusterLimit) -> {
-                        if (clusterStart < layoutStart || clusterStart >= clusterLimit
-                                || clusterLimit > layoutLimit) {
-                            Log.LOGGER.error(FontFamily.MARKER,
-                                    "cluster range ({}, {}) out of layout bounds ({}, {})",
-                                    clusterStart, clusterLimit, layoutStart, layoutLimit);
-                            return;
-                        }
-                        int flags = baseFlags;
-                        if (clusterStart == contextStart) {
-                            flags |= java.awt.Font.LAYOUT_NO_START_CONTEXT;
-                        }
-                        if (clusterLimit == contextLimit) {
-                            flags |= java.awt.Font.LAYOUT_NO_LIMIT_CONTEXT;
-                        }
-                        var vec = face.layoutGlyphVector(
-                                frc, buf,
-                                clusterStart, clusterLimit,
-                                flags
-                        );
-                        advances[clusterStart - advanceOffset] =
-                                (float) vec.getGlyphPosition(vec.getNumGlyphs()).getX();
-                    });
+            // JDK 11+ uses HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, so clusters are monotonic.
+            // We remove duplicate cluster values and find the range for each cluster, and measure.
+            int i = isRtl ? nGlyphs - 1 : 0;
+            int dir = isRtl ? -1 : 1;
+            while (0 <= i && i < nGlyphs) {
+                int cv = vector.getGlyphCharIndex(i);
+                int j = i + dir;
+                while (0 <= j && j < nGlyphs && vector.getGlyphCharIndex(j) == cv) {
+                    j += dir;
+                }
+
+                int clusterStart = layoutStart + cv;
+                int clusterLimit = (0 <= j && j < nGlyphs)
+                        ? layoutStart + vector.getGlyphCharIndex(j)
+                        : layoutLimit;
+
+                if (clusterStart < layoutStart || clusterStart >= clusterLimit
+                        || clusterLimit > layoutLimit) {
+                    Log.LOGGER.error(FontFamily.MARKER,
+                            "cluster range ({}, {}) out of layout bounds ({}, {})",
+                            clusterStart, clusterLimit, layoutStart, layoutLimit);
+                } else {
+                    int flags = baseFlags;
+                    if (clusterStart == contextStart) {
+                        flags |= java.awt.Font.LAYOUT_NO_START_CONTEXT;
+                    }
+                    if (clusterLimit == contextLimit) {
+                        flags |= java.awt.Font.LAYOUT_NO_LIMIT_CONTEXT;
+                    }
+                    var vec = face.layoutGlyphVector(
+                            frc, buf,
+                            clusterStart, clusterLimit,
+                            flags
+                    );
+                    advances[clusterStart - advanceOffset] =
+                            (float) vec.getGlyphPosition(vec.getNumGlyphs()).getX();
+                }
+
+                i = j;
+            }
         }
 
         if (glyphs != null || positions != null) {
@@ -291,26 +306,6 @@ public final class OutlineFont implements Font {
         }
 
         return (float) vector.getGlyphPosition(nGlyphs).getX();
-    }
-
-    private static void forClusterRange(@NonNull int[] clusters, int layoutStart, int layoutLimit,
-                                        @NonNull ClusterConsumer consumer) {
-        assert clusters.length > 0;
-        Arrays.sort(clusters);
-        int prev = clusters[0];
-        for (int i = 1; i < clusters.length; i++) {
-            int v = clusters[i];
-            if (v == prev) continue;
-            consumer.accept(layoutStart + prev, layoutStart + v);
-            prev = v;
-        }
-        consumer.accept(layoutStart + prev, layoutLimit);
-    }
-
-    @FunctionalInterface
-    private interface ClusterConsumer {
-
-        void accept(int clusterStart, int clusterEnd);
     }
 
     @Override
