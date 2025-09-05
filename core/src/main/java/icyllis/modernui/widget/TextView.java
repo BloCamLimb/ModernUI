@@ -3467,6 +3467,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     .setLineSpacing(mSpacingAdd, mSpacingMult)
                     .setIncludePad(mIncludePad)
                     .setFallbackLineSpacing(mUseFallbackLineSpacing)
+                    .setLineBreakConfig(LineBreakConfig.getLineBreakConfig(
+                            mLineBreakStyle, mLineBreakWordStyle))
                     .setEllipsize(mBufferType != BufferType.EDITABLE ? effectiveEllipsize : null)
                     .setEllipsizedWidth(ellipsisWidth);
             result = builder.build();
