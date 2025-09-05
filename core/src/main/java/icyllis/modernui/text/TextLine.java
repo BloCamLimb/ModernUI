@@ -79,10 +79,8 @@ public class TextLine {
     private final TextBlob.Builder mTextBlobBuilder = new TextBlob.Builder();
     private final FontMetricsInt mCachedFontExtent = new FontMetricsInt();
 
-    private final ShapedText.RunConsumer mBuildTextBlob = (piece, offsetX, paint) ->
+    private final ShapedText.RunConsumer mBuildTextBlob = (piece, start, end, isRtl, paint, offsetX) ->
             TextUtils.buildTextBlob(mTextBlobBuilder, piece, offsetX, paint);
-    private final ShapedText.RunConsumer mPassthrough = (piece, offsetX, paint) -> {
-    };
 
     private TextLine() {
     }
@@ -998,7 +996,7 @@ public class TextLine {
                         mChars, contextStart, contextEnd, start, offset,
                         runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
-                        c != null ? mBuildTextBlob : mPassthrough
+                        c != null ? mBuildTextBlob : null
                 );
             } else {
                 final int delta = mStart;
@@ -1009,7 +1007,7 @@ public class TextLine {
                         buf, 0, len, start - contextStart, offset - contextStart,
                         runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
-                        c != null ? mBuildTextBlob : mPassthrough
+                        c != null ? mBuildTextBlob : null
                 );
                 TextUtils.recycle(buf);
             }

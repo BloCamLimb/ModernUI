@@ -386,17 +386,30 @@ public class ShapedText {
             fontVec.add(font);
             return (byte) fontMap.size();
         };
-        Function<Font, Byte> idGet = font ->
-                fontMap.computeIfAbsent(font, nextID);
 
         float advance = 0;
+
+        RunConsumer builder = (src, __, ___, ____, _____, offsetX) -> {
+            for (int i = 0; i < src.getGlyphCount(); i++) {
+                byte id = fontMap.computeIfAbsent(src.getFont(i), nextID);
+                fontIndices.add(id);
+            }
+            glyphs.addElements(glyphs.size(), src.getGlyphs());
+            int posIndex = positions.size();
+            positions.addElements(posIndex, src.getPositions());
+            for (int posEnd = positions.size();
+                 posIndex < posEnd;
+                 posIndex += 2) {
+                positions.elements()[posIndex] += offsetX;
+            }
+        };
 
         if (isOverride) {
             final boolean isRtl = (bidiFlags & 0b001) != 0;
             advance += doLayoutRun(text, contextStart, contextLimit,
                     start, limit, isRtl, paint, start,
-                    mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
-                    null);
+                    mAdvances, advance, extent,
+                    builder);
         } else {
             // here, text array is the entire context
             final byte paraLevel = switch (bidiFlags) {
@@ -413,15 +426,15 @@ public class ShapedText {
             if (bidi.isRightToLeft()) {
                 advance += doLayoutRun(text, 0, length,
                         start, limit, true, paint, start,
-                        mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
-                        null);
+                        mAdvances, advance, extent,
+                        builder);
             }
             // entirely left-to-right
             else if (bidi.isLeftToRight()) {
                 advance += doLayoutRun(text, 0, length,
                         start, limit, false, paint, start,
-                        mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
-                        null);
+                        mAdvances, advance, extent,
+                        builder);
             }
             // full bidirectional analysis
             else {
@@ -432,8 +445,8 @@ public class ShapedText {
                     int runEnd = Math.min(run.getLimit(), limit);
                     advance += doLayoutRun(text, 0, length,
                             runStart, runEnd, run.isOddRun(), paint, start,
-                            mAdvances, advance, glyphs, positions, fontIndices, idGet, extent,
-                            null);
+                            mAdvances, advance, extent,
+                            builder);
                 }
             }
         }
@@ -509,7 +522,8 @@ public class ShapedText {
     @ApiStatus.Internal
     @FunctionalInterface
     public interface RunConsumer {
-        void accept(LayoutPiece piece, float offsetX, FontPaint paint);
+        // piece layout start, piece layout end
+        void accept(LayoutPiece piece, int start, int end, boolean isRtl, FontPaint paint, float offsetX);
     }
 
     /**
@@ -522,7 +536,7 @@ public class ShapedText {
                                     FontMetricsInt extent, RunConsumer consumer) {
         return doLayoutRun(text, contextStart, contextLimit,
                 start, limit, isRtl, paint, start,
-                null, 0, null, null, null, null, extent,
+                null, 0.0F, extent,
                 consumer);
     }
 
@@ -533,10 +547,7 @@ public class ShapedText {
     @ApiStatus.Internal
     public static float doLayoutRun(char[] text, int contextStart, int contextLimit,
                                     int start, int limit, boolean isRtl, FontPaint paint,
-                                    int layoutStart, float[] advances, float curAdvance,
-                                    IntArrayList glyphs, FloatArrayList positions,
-                                    ByteArrayList fontIndices,
-                                    Function<Font, Byte> idGet,
+                                    int layoutStart, float[] advances, float startX,
                                     FontMetricsInt extent,
                                     RunConsumer consumer) {
         float advance = 0;
@@ -563,11 +574,7 @@ public class ShapedText {
                         paint,
                         itPieceStart - layoutStart,
                         advances,
-                        curAdvance + advance,
-                        glyphs,
-                        positions,
-                        fontIndices,
-                        idGet,
+                        startX + advance,
                         extent,
                         consumer);
                 pos = itPieceStart;
@@ -593,11 +600,7 @@ public class ShapedText {
                         paint,
                         itPieceStart - layoutStart,
                         advances,
-                        curAdvance + advance,
-                        glyphs,
-                        positions,
-                        fontIndices,
-                        idGet,
+                        startX + advance,
                         extent,
                         consumer);
                 pos = itPieceEnd;
@@ -610,37 +613,18 @@ public class ShapedText {
     // visual order
     private static float doLayoutWord(char[] buf, int contextStart, int contextEnd,
                                       int start, int end, boolean isRtl, FontPaint paint,
-                                      int advanceOffset, float[] advances, float curAdvance,
-                                      IntArrayList glyphs, FloatArrayList positions,
-                                      ByteArrayList fontIndices,
-                                      Function<Font, Byte> idGet,
-                                      FontMetricsInt extent,
-                                      RunConsumer consumer) {
+                                      int advanceOffset, float[] advances, float offsetX,
+                                      FontMetricsInt extent, RunConsumer consumer) {
         LayoutPiece src = LayoutCache.getOrCreate(
                 buf, contextStart, contextEnd, start, end, isRtl, paint,
                 advances != null ? LayoutCache.COMPUTE_CLUSTER_ADVANCES : 0);
 
-        if (consumer == null) {
-            for (int i = 0; i < src.getGlyphCount(); i++) {
-                fontIndices.add((byte) idGet.apply(src.getFont(i)));
-            }
-            glyphs.addElements(glyphs.size(), src.getGlyphs());
-            int posStart = positions.size();
-            positions.addElements(posStart, src.getPositions());
-            for (int posIndex = posStart,
-                 posEnd = positions.size();
-                 posIndex < posEnd;
-                 posIndex += 2) {
-                positions.elements()[posIndex] += curAdvance;
-            }
-
-            if (advances != null) {
-                float[] srcAdvances = src.getAdvances();
-                System.arraycopy(srcAdvances, 0,
-                        advances, advanceOffset, srcAdvances.length);
-            }
-        } else {
-            consumer.accept(src, curAdvance, paint);
+        if (consumer != null) {
+            consumer.accept(src, start, end, isRtl, paint, offsetX);
+        }
+        if (advances != null) {
+            System.arraycopy(src.getAdvances(), 0,
+                    advances, advanceOffset, src.getCharCount());
         }
         if (extent != null) {
             extent.extendBy(src.getAscent(), src.getDescent());
