@@ -535,7 +535,7 @@ public final class TextUtils {
         ShapedText.doLayoutRun(
                 text, contextStart, contextEnd,
                 start, end, isRtl, paint.getInternalPaint(), null,
-                (piece, offsetX, fontPaint) -> buildTextBlob(builder, piece, offsetX, fontPaint)
+                (piece, __, ___, ____, fontPaint, offsetX) -> buildTextBlob(builder, piece, offsetX, fontPaint)
         );
         canvas.drawTextBlob(builder.build(), x, y, paint);
     }
@@ -589,7 +589,7 @@ public final class TextUtils {
         ShapedText.doLayoutRun(
                 buf, 0, len,
                 start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
-                (piece, offsetX, fontPaint) -> buildTextBlob(builder, piece, offsetX, fontPaint)
+                (piece, __, ___, ____, fontPaint, offsetX) -> buildTextBlob(builder, piece, offsetX, fontPaint)
         );
         recycle(buf);
         canvas.drawTextBlob(builder.build(), x, y, paint);

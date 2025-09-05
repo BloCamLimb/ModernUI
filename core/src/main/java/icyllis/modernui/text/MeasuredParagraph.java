@@ -270,14 +270,10 @@ public class MeasuredParagraph {
 
     /**
      * Returns the advance of the char at the given index of the text buffer.
+     * This is per-cluster advance and font-dependent.
      * <p>
-     * This follows grapheme cluster break. For example: there are 6 chars (uint_16),
-     * the first two are the first grapheme, the last four are the second one.
-     * Then mAdvances[0] is for the first grapheme, mAdvances[2] for the second one,
-     * other elements are zero. It's in the same order of {@link #getChars()}
-     * <p>
-     * This is available only if the MeasuredParagraph is computed with buildForMeasurement.
-     * Returns empty array in other cases.
+     * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
+     * Returns 0 in other cases.
      *
      * @param offset the char index with start offset
      * @return advance
@@ -292,6 +288,7 @@ public class MeasuredParagraph {
 
     /**
      * Returns the advance of the given range.
+     * This is per-cluster advance and font-dependent.
      * <p>
      * This is not available if the MeasuredParagraph is computed with buildForBidi.
      * Returns 0 if the MeasuredParagraph is computed with buildForBidi.
