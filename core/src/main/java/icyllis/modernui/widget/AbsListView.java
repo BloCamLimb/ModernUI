@@ -35,6 +35,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -44,6 +45,9 @@ import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.util.LongSparseArray;
 import icyllis.modernui.util.SparseArray;
@@ -661,18 +665,25 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         mOverscrollDistance = configuration.getScaledOverscrollDistance();
         mOverflingDistance = configuration.getScaledOverflingDistance();
 
-        /*setVerticalScrollBarEnabled(true);
+        ColorStateList tint = null;
+        final TypedValue value = new TypedValue();
+        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorControlNormal, value, true)) {
+            tint = context.getResources().loadColorStateList(value, context.getTheme());
+        }
+        setVerticalScrollBarEnabled(true);
         ShapeDrawable thumb = new ShapeDrawable();
         thumb.setShape(ShapeDrawable.VLINE);
-        thumb.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.currentTheme().colorOnSurfaceVariant, 0.25f));
+        thumb.setStroke(dp(4), 0x84ffffff);
         thumb.setCornerRadius(1);
+        thumb.setTintList(tint);
         setVerticalScrollbarThumbDrawable(thumb);
         ShapeDrawable track = new ShapeDrawable();
         track.setShape(ShapeDrawable.VLINE);
-        track.setStroke(dp(4), SystemTheme.modulateColor(SystemTheme.currentTheme().colorOnSurfaceVariant, 0.25f));
+        track.setStroke(dp(4), 0x39ffffff);
         track.setSize(dp(4), -1);
         track.setCornerRadius(1);
-        setVerticalScrollbarTrackDrawable(track);*/
+        track.setTintList(tint);
+        setVerticalScrollbarTrackDrawable(track);
     }
 
     /**
@@ -5095,9 +5106,12 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             final ArrayList<View>[] scrapViews = mScrapViews;
             for (int i = 0; i < viewTypeCount; ++i) {
                 final ArrayList<View> scrapPile = scrapViews[i];
-                int size = scrapPile.size();
-                while (size > maxViews) {
-                    scrapPile.remove(--size);
+                // Fixed by Modern UI
+                for (int j = scrapPile.size() - 1; j >= maxViews; j--) {
+                    View v = scrapPile.remove(j);
+                    if (v.isTemporarilyDetached()) {
+                        removeDetachedView(v);
+                    }
                 }
             }
 
@@ -5173,9 +5187,12 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
 
         private void clearScrap(@NonNull final ArrayList<View> scrap) {
-            final int scrapCount = scrap.size();
-            for (int j = 0; j < scrapCount; j++) {
-                removeDetachedView(scrap.remove(scrapCount - 1 - j));
+            // Fixed by Modern UI
+            for (int j = scrap.size() - 1; j >= 0; j--) {
+                View v = scrap.remove(j);
+                if (v.isTemporarilyDetached()) {
+                    removeDetachedView(v);
+                }
             }
         }
 
