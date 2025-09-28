@@ -1352,6 +1352,8 @@ public class GridView extends AbsListView {
         } else {
             p.forceAdd = false;
             addViewInLayout(child, where, p, true);
+            // add view in layout will reset the RTL properties. We have to re-resolve them
+            child.resolveRtlPropertiesIfNeeded();
         }
 
         if (needToMeasure) {
