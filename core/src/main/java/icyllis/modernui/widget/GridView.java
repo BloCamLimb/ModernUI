@@ -33,6 +33,7 @@ public class GridView extends AbsListView {
 
     /**
      * Disables stretching.
+     * GridView will use the specified column width and horizontal spacing.
      *
      * @see #setStretchMode(int)
      */
@@ -49,12 +50,13 @@ public class GridView extends AbsListView {
      * @see #setStretchMode(int)
      */
     public static final int STRETCH_COLUMN_WIDTH = 2;
-    /**
+    // Modern UI changed: this is removed due to several bugs
+    /*
      * Stretches the spacing between columns. The spacing is uniform.
      *
      * @see #setStretchMode(int)
      */
-    public static final int STRETCH_SPACING_UNIFORM = 3;
+    //public static final int STRETCH_SPACING_UNIFORM = 3;
 
     /**
      * Creates as many columns as can fit on screen.
@@ -65,7 +67,7 @@ public class GridView extends AbsListView {
 
     static final int DEFAULT_COLUMNS = 2;
 
-    private int mNumColumns = AUTO_FIT;
+    private int mNumColumns;
 
     private int mHorizontalSpacing = 0;
     private int mRequestedHorizontalSpacing;
@@ -73,7 +75,7 @@ public class GridView extends AbsListView {
     private int mStretchMode = STRETCH_COLUMN_WIDTH;
     private int mColumnWidth;
     private int mRequestedColumnWidth;
-    private int mRequestedNumColumns;
+    private int mRequestedNumColumns = AUTO_FIT;
 
     private View mReferenceView = null;
     private View mReferenceViewInSelectedRow = null;
@@ -238,11 +240,9 @@ public class GridView extends AbsListView {
         int nextLeft;
 
         if (isLayoutRtl) {
-            nextLeft = getWidth() - mListPadding.right - columnWidth -
-                    ((mStretchMode == STRETCH_SPACING_UNIFORM) ? horizontalSpacing : 0);
+            nextLeft = getWidth() - mListPadding.right - columnWidth;
         } else {
-            nextLeft = mListPadding.left +
-                    ((mStretchMode == STRETCH_SPACING_UNIFORM) ? horizontalSpacing : 0);
+            nextLeft = mListPadding.left;
         }
 
         if (!mStackFromBottom) {
@@ -868,7 +868,6 @@ public class GridView extends AbsListView {
 
     private boolean determineColumns(int availableSpace) {
         final int requestedHorizontalSpacing = mRequestedHorizontalSpacing;
-        final int stretchMode = mStretchMode;
         final int requestedColumnWidth = mRequestedColumnWidth;
         boolean didNotInitiallyFit = false;
 
@@ -890,55 +889,42 @@ public class GridView extends AbsListView {
             mNumColumns = 1;
         }
 
-        if (stretchMode == NO_STRETCH) {
-            // Nobody stretches
-            mColumnWidth = requestedColumnWidth;
-            mHorizontalSpacing = requestedHorizontalSpacing;
-        } else if (stretchMode == STRETCH_SPACING_UNIFORM) {
-            // Modern UI fixed: edge case
-            // use (mNumColumns + 1) instead of (mNumColumns - 1)
-            int spaceLeftOver = availableSpace - (mNumColumns * requestedColumnWidth)
-                    - ((mNumColumns + 1) * requestedHorizontalSpacing);
+        int spaceLeftOver = availableSpace - (mNumColumns * requestedColumnWidth)
+                - ((mNumColumns - 1) * requestedHorizontalSpacing);
 
-            if (spaceLeftOver < 0) {
-                didNotInitiallyFit = true;
-            }
-
-            // Stretch the spacing between columns
-            mColumnWidth = requestedColumnWidth;
-            if (mNumColumns > 1) {
-                mHorizontalSpacing = requestedHorizontalSpacing
-                        + spaceLeftOver / (mNumColumns + 1);
-            } else {
-                mHorizontalSpacing = requestedHorizontalSpacing + spaceLeftOver;
-            }
-        } else {
-            int spaceLeftOver = availableSpace - (mNumColumns * requestedColumnWidth)
-                    - ((mNumColumns - 1) * requestedHorizontalSpacing);
-
-            if (spaceLeftOver < 0) {
-                didNotInitiallyFit = true;
-            }
-
-            switch (stretchMode) {
-                case STRETCH_COLUMN_WIDTH:
-                    // Stretch the columns
-                    mColumnWidth = requestedColumnWidth + spaceLeftOver / mNumColumns;
-                    mHorizontalSpacing = requestedHorizontalSpacing;
-                    break;
-
-                case STRETCH_SPACING:
-                    // Stretch the spacing between columns
-                    mColumnWidth = requestedColumnWidth;
-                    if (mNumColumns > 1) {
-                        mHorizontalSpacing = requestedHorizontalSpacing
-                                + spaceLeftOver / (mNumColumns - 1);
-                    } else {
-                        mHorizontalSpacing = requestedHorizontalSpacing + spaceLeftOver;
-                    }
-                    break;
-            }
+        if (spaceLeftOver < 0) {
+            didNotInitiallyFit = true;
         }
+
+        switch (mStretchMode) {
+            case NO_STRETCH:
+                // Nobody stretches
+                mColumnWidth = requestedColumnWidth;
+                mHorizontalSpacing = requestedHorizontalSpacing;
+                break;
+
+            case STRETCH_COLUMN_WIDTH:
+                // Stretch the columns
+                mColumnWidth = requestedColumnWidth + spaceLeftOver / mNumColumns;
+                if (mNumColumns > 1) {
+                    mHorizontalSpacing = requestedHorizontalSpacing;
+                } else {
+                    mHorizontalSpacing = 0;
+                }
+                break;
+
+            case STRETCH_SPACING:
+                // Stretch the spacing between columns
+                mColumnWidth = requestedColumnWidth;
+                if (mNumColumns > 1) {
+                    mHorizontalSpacing = requestedHorizontalSpacing
+                            + spaceLeftOver / (mNumColumns - 1);
+                } else {
+                    mHorizontalSpacing = spaceLeftOver;
+                }
+                break;
+        }
+
         return didNotInitiallyFit;
     }
 
@@ -1008,12 +994,9 @@ public class GridView extends AbsListView {
             heightSize = ourSize;
         }
 
-        if (widthMode == MeasureSpec.AT_MOST && mRequestedNumColumns != AUTO_FIT) {
-            // Modern UI fixed: use mNumColumns to avoid (requested == 0) case
-            int ourSize = (mNumColumns * mColumnWidth)
-                    + ((mNumColumns - 1) * mHorizontalSpacing)
-                    + mListPadding.left + mListPadding.right;
-            if (ourSize > widthSize || didNotInitiallyFit) {
+        if (widthMode == MeasureSpec.AT_MOST) {
+            // Modern UI fixed:
+            if (didNotInitiallyFit) {
                 widthSize |= MEASURED_STATE_TOO_SMALL;
             }
         }
@@ -1939,13 +1922,12 @@ public class GridView extends AbsListView {
      * Control how items are stretched to fill their space.
      *
      * @param stretchMode Either {@link #NO_STRETCH},
-     *                    {@link #STRETCH_SPACING}, {@link #STRETCH_SPACING_UNIFORM}, or {@link #STRETCH_COLUMN_WIDTH}.
+     *                    {@link #STRETCH_SPACING}, or {@link #STRETCH_COLUMN_WIDTH}.
      */
     public void setStretchMode(@MagicConstant(intValues = {
             NO_STRETCH,
             STRETCH_SPACING,
-            STRETCH_COLUMN_WIDTH,
-            STRETCH_SPACING_UNIFORM
+            STRETCH_COLUMN_WIDTH
     }) int stretchMode) {
         if (stretchMode != mStretchMode) {
             mStretchMode = stretchMode;
@@ -1956,8 +1938,7 @@ public class GridView extends AbsListView {
     @MagicConstant(intValues = {
             NO_STRETCH,
             STRETCH_SPACING,
-            STRETCH_COLUMN_WIDTH,
-            STRETCH_SPACING_UNIFORM
+            STRETCH_COLUMN_WIDTH
     })
     public int getStretchMode() {
         return mStretchMode;
