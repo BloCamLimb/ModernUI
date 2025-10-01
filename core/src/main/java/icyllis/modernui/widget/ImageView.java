@@ -57,6 +57,7 @@ public class ImageView extends View {
 
     private final Matrix mMatrix = new Matrix();
     private ScaleType mScaleType = ScaleType.FIT_CENTER;
+    private boolean mHaveFrame = false;
     private boolean mAdjustViewBounds = false;
     private int mMaxWidth = Integer.MAX_VALUE;
     private int mMaxHeight = Integer.MAX_VALUE;
@@ -761,11 +762,12 @@ public class ImageView extends View {
     @Override
     protected void onSizeChanged(int width, int height, int prevWidth, int prevHeight) {
         super.onSizeChanged(width, height, prevWidth, prevHeight);
+        mHaveFrame = true;
         configureBounds();
     }
 
     private void configureBounds() {
-        if (mDrawable == null || !isAttachedToWindow()) {
+        if (mDrawable == null || !mHaveFrame) {
             return;
         }
 
