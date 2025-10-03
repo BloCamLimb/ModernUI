@@ -1826,7 +1826,7 @@ public class GridView extends AbsListView {
 
     /**
      * Set the gravity for this grid. Gravity describes how the child views
-     * are horizontally aligned. Defaults to Gravity.LEFT
+     * are horizontally aligned. Defaults to {@link Gravity#START}.
      *
      * @param gravity the gravity to apply to this grid's children
      */

@@ -72,6 +72,7 @@ dependencies {
 
     testImplementation "org.slf4j:slf4j-simple:${slf4j_version}"
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
+    testImplementation 'com.google.code.gson:gson:2.11.0'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
 }
 

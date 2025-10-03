@@ -69,7 +69,11 @@ import java.util.List;
 /**
  * Base class that can be used to implement virtualized lists of items. A list does
  * not have a spatial definition here. For instance, subclasses of this class can
- * display the content of the list in a grid, in a carousel, as stack, etc.
+ * display the content of the list in a grid, in a carousel (see ViewPager), etc.
+ *
+ * @see ListView
+ * @see GridView
+ * @see StaggeredGridView
  */
 public abstract class AbsListView extends AdapterView<ListAdapter> implements Filter.FilterListener {
 
@@ -1016,8 +1020,8 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         if (childCount == 0) return true;
         if (childCount != mItemCount) return false;
 
-        return getChildAt(0).getTop() >= mListPadding.top &&
-                getChildAt(childCount - 1).getBottom() <= getHeight() - mListPadding.bottom;
+        return getHighestChildTop() >= mListPadding.top &&
+                getLowestChildBottom() <= getHeight() - mListPadding.bottom;
     }
 
     /**
@@ -1306,8 +1310,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         // ... Or top of 0th element is not visible
         if (!canScrollUp) {
             if (getChildCount() > 0) {
-                View child = getChildAt(0);
-                canScrollUp = child.getTop() < mListPadding.top;
+                canScrollUp = getHighestChildTop() < mListPadding.top;
             }
         }
 
@@ -1323,8 +1326,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
 
         // ... Or bottom of the last element is not visible
         if (!canScrollDown && count > 0) {
-            View child = getChildAt(count - 1);
-            canScrollDown = child.getBottom() > getBottom() - mListPadding.bottom;
+            canScrollDown = getLowestChildBottom() > getBottom() - mListPadding.bottom;
         }
 
         return canScrollDown;
@@ -2591,7 +2593,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      */
     @Override
     protected boolean handleScrollBarDragging(MotionEvent event) {
-        // Doesn't support normal scroll bar dragging. Use FastScroller.
+        //TODO when superclass use scrollBy to scroll, we can remove this restriction
         return false;
     }
 
@@ -2837,8 +2839,8 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             case TOUCH_MODE_SCROLL -> {
                 final int childCount = getChildCount();
                 if (childCount > 0) {
-                    final int firstChildTop = getChildAt(0).getTop();
-                    final int lastChildBottom = getChildAt(childCount - 1).getBottom();
+                    final int firstChildTop = getHighestChildTop();
+                    final int lastChildBottom = getLowestChildBottom();
                     final int contentTop = mListPadding.top;
                     final int contentBottom = getHeight() - mListPadding.bottom;
                     if (mFirstPosition == 0 && firstChildTop >= contentTop
@@ -3673,9 +3675,9 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         final int bottomLimit = getHeight() - getPaddingBottom();
 
         if (distance == 0 || mItemCount == 0 || childCount == 0 ||
-                (firstPos == 0 && getChildAt(0).getTop() == topLimit && distance < 0) ||
+                (firstPos == 0 && getHighestChildTop() == topLimit && distance < 0) ||
                 (lastPos == mItemCount &&
-                        getChildAt(childCount - 1).getBottom() == bottomLimit && distance > 0)) {
+                        getLowestChildBottom() == bottomLimit && distance > 0)) {
             mFlingRunnable.endFling();
             if (mPositionScroller != null) {
                 mPositionScroller.stop();
@@ -3722,6 +3724,12 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
     }
 
+    @Override
+    public void scrollTo(int x, int y) {
+        Log.LOGGER.warn(MARKER, "AbsListView does not support scrolling to an absolute position. "
+                + "Use scrollToPosition instead");
+    }
+
     /**
      * Scrolls the list items within the view by a specified number of pixels.
      *
@@ -3753,11 +3761,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         final int firstPosition = mFirstPosition;
         final Rect listPadding = mListPadding;
         if (direction > 0) {
-            final int lastBottom = getChildAt(childCount - 1).getBottom();
+            final int lastBottom = getLowestChildBottom();
             final int lastPosition = firstPosition + childCount;
             return lastPosition < mItemCount || lastBottom > getHeight() - listPadding.bottom;
         } else {
-            final int firstTop = getChildAt(0).getTop();
+            final int firstTop = getHighestChildTop();
             return firstPosition > 0 || firstTop < listPadding.top;
         }
     }
@@ -3776,8 +3784,8 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             return true;
         }
 
-        final int firstTop = getChildAt(0).getTop();
-        final int lastBottom = getChildAt(childCount - 1).getBottom();
+        final int firstTop = getHighestChildTop();
+        final int lastBottom = getLowestChildBottom();
 
         final Rect listPadding = mListPadding;
 
@@ -3792,9 +3800,9 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
 
         // FIXME account for grid vertical spacing too?
-        final int spaceAbove = effectivePaddingTop - firstTop;
+        final int spaceAbove = effectivePaddingTop - getFirstChildTop();
         final int end = getHeight() - effectivePaddingBottom;
-        final int spaceBelow = lastBottom - end;
+        final int spaceBelow = getLastChildBottom() - end;
 
         final int height = getHeight() - mPaddingBottom - mPaddingTop;
         if (deltaY < 0) {
@@ -4019,6 +4027,22 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
 
         final int motionRow = findMotionRow(y);
         return motionRow != INVALID_POSITION ? motionRow : mFirstPosition + childCount - 1;
+    }
+
+    int getFirstChildTop() {
+        return getChildCount() > 0 ? getChildAt(0).getTop() : 0;
+    }
+
+    int getHighestChildTop() {
+        return getChildCount() > 0 ? getChildAt(0).getTop() : 0;
+    }
+
+    int getLastChildBottom() {
+        return getChildCount() > 0 ? getChildAt(getChildCount() - 1).getBottom() : 0;
+    }
+
+    int getLowestChildBottom() {
+        return getChildCount() > 0 ? getChildAt(getChildCount() - 1).getBottom() : 0;
     }
 
     /**

@@ -19,6 +19,8 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.CompactDecimalFormat;
+import com.ibm.icu.text.RuleBasedNumberFormat;
+import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.AlgorithmUtils;
 import icyllis.modernui.resources.TypedValue;
@@ -28,6 +30,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.math.BigDecimal;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Locale;
 
 public class TestMisc {
@@ -62,5 +65,18 @@ public class TestMisc {
                 ByteOrder.nativeOrder(),
                 Integer.toHexString(MemoryUtil.memGetInt(ptr))
         );
+
+        {
+            var rbnf = new RuleBasedNumberFormat(Locale.ROOT, RuleBasedNumberFormat.NUMBERING_SYSTEM);
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 10; i++) {
+                for (int j = 0; j < 10; j++) {
+                    sb.append(rbnf.format(i*10+j+1, "%roman-upper"));
+                    sb.append(' ');
+                }
+                Log.LOGGER.info(sb.toString());
+                sb.setLength(0);
+            }
+        }
     }
 }

@@ -22,6 +22,8 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.TestFragment;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.core.windows.WindowsNativeWindowBorder;
+import icyllis.modernui.fragment.Fragment;
+import icyllis.modernui.util.Log;
 import org.lwjgl.glfw.GLFWNativeWin32;
 import org.lwjgl.system.Platform;
 
@@ -34,18 +36,30 @@ public class TestWindowsNativeBorder {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
         System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         try (ModernUI app = new ModernUI()) {
+            Fragment fragment = null;
+            if (args.length > 0) {
+                try {
+                    fragment = (Fragment) Class.forName(args[0]).getConstructor()
+                            .newInstance();
+                } catch (Exception e) {
+                    Log.LOGGER.warn("Cannot instantiate main fragment", e);
+                }
+            }
+            if (fragment == null) {
+                fragment = new TestFragment();
+            }
             if (Platform.get() == Platform.WINDOWS) {
-                app.run(new TestFragment(), win -> {
+                app.run(fragment, win -> {
                     long hwnd = GLFWNativeWin32.glfwGetWin32Window(win);
                     @SuppressWarnings("resource") var newProc = new WindowsNativeWindowBorder.WndProc(hwnd);
                     cleanup = newProc::destroy;
                 });
-                cleanup.run();
+                //cleanup.run();
             } else {
-                app.run(new TestFragment());
+                app.run(fragment);
             }
         }
-        AudioManager.getInstance().close();
+        //AudioManager.getInstance().close();
         System.gc();
     }
 }
