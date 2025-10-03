@@ -24,6 +24,7 @@ import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.drawable.toDrawable
 import icyllis.modernui.util.DataSet
 import icyllis.modernui.util.Log
+import icyllis.modernui.view.Gravity
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup
@@ -35,6 +36,7 @@ import icyllis.modernui.widget.Button
 import icyllis.modernui.widget.GridView
 import icyllis.modernui.widget.LinearLayout
 import icyllis.modernui.widget.ListView
+import icyllis.modernui.widget.StaggeredGridView
 import icyllis.modernui.widget.TextView
 import java.lang.ref.Cleaner
 import java.lang.ref.Reference
@@ -73,8 +75,12 @@ class TestListViewDetach : Fragment() {
                         Log.LOGGER.info("List resized")
                         it.postDelayed({ Runtime.getRuntime().gc() }, 1000L)
                     }
-                },
-                MATCH_PARENT, WRAP_CONTENT
+                    layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
+                        topMargin = dp(4F)
+                        bottomMargin = topMargin
+                        gravity = Gravity.CENTER
+                    }
+                }
             )
 
             addView(
@@ -87,8 +93,12 @@ class TestListViewDetach : Fragment() {
                             this@TestListViewDetach.layout.addView(list)
                         }
                     }
-                },
-                MATCH_PARENT, WRAP_CONTENT
+                    layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
+                        topMargin = dp(4F)
+                        bottomMargin = topMargin
+                        gravity = Gravity.CENTER
+                    }
+                }
             )
 
             addView(
@@ -97,7 +107,7 @@ class TestListViewDetach : Fragment() {
             )
 
             addView(
-                object : GridView(context) {
+                object : StaggeredGridView(context) {
                     val added = HashSet<View>()
                     override fun onViewAdded(child: View) {
                         super.onViewAdded(child)
@@ -115,23 +125,28 @@ class TestListViewDetach : Fragment() {
                         }
                     }
                 }.apply {
-                    val items = (1..400).map { it.toString() }
-                    adapter = CustomAdapter(items)
+                    adapter = CustomAdapter()
                     numColumns = 6
+                    horizontalSpacing = dp(8F)
+                    verticalSpacing = dp(8F)
                 }.also { list = it },
                 MATCH_PARENT, MATCH_PARENT
             )
 
             layout = this
         }
+        layout.layoutDirection = View.LAYOUT_DIRECTION_RTL
         return layout
     }
 
-    class CustomAdapter(
-        private val items: List<String>,
-    ) : BaseAdapter() {
+    class CustomAdapter : BaseAdapter() {
 
         private var viewCreationId = 0
+        private val items: List<ItemInfo> = (1..400).map {
+            ItemInfo(it.toString(), (Math.random() * 50).toInt() + 50)
+        }
+
+        data class ItemInfo(val text: String, val textSize: Int)
 
         override fun getView(
             position: Int,
@@ -185,14 +200,17 @@ class TestListViewDetach : Fragment() {
                         }
                     }
                 }
+                newView.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                    Log.i(null, "View $viewId laid out RTL ${v.isLayoutRtl}")
+                }
                 newView.tag = viewId
-                newView.textSize = ((Math.random() * 50).toInt() + 50).toFloat()
                 newView.background = Color.argb(128, 20, (Math.random() * 100).toInt() + 100, (Math.random() * 150).toInt() + 100).toDrawable()
-                newView.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, newView.dp(if (position % 12 < 6) 240F else 128F))
+                newView.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT/*newView.dp(if (position % 12 < 6) 240F else 128F)*/)
                 Log.i(null, "View $viewId created")
                 newView
             }
-            textView.text = items[position]
+            textView.text = items[position].text
+            textView.textSize = items[position].textSize.toFloat()
             return textView
         }
 
