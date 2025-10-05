@@ -77,6 +77,21 @@ public class TestStaggeredGridView extends Fragment {
     static final DateFormat DATE_FORMAT = SimpleDateFormat.getDateTimeInstance(
             SimpleDateFormat.LONG, SimpleDateFormat.LONG);
 
+    static final int NUMBER_TO_REQUEST = 200;
+
+    static class ReturnData {
+
+        int count;
+        int distinctInitiatorCount;
+        ArrayList<ItemInfo> infos;
+
+        ReturnData(int count, int distinctInitiatorCount, ArrayList<ItemInfo> infos) {
+            this.count = count;
+            this.distinctInitiatorCount = distinctInitiatorCount;
+            this.infos = infos;
+        }
+    }
+
     static class ItemInfo {
 
         String timestamp;
@@ -136,7 +151,9 @@ public class TestStaggeredGridView extends Fragment {
             }
             if (imageThumbImageReq != null) {
                 try (Bitmap bm = imageThumbImageReq.join()) {
-                    imageThumbImage = Image.createTextureFromBitmap(bm);
+                    if (bm.getWidth() * bm.getHeight() <= 250000) {
+                        imageThumbImage = Image.createTextureFromBitmap(bm);
+                    }
                 } catch (Exception e) {
                     Log.LOGGER.info("Failed to create texture", e);
                 }
@@ -175,6 +192,9 @@ public class TestStaggeredGridView extends Fragment {
                             } finally {
                                 MemoryUtil.memFree(p);
                             }
+                        }).exceptionally(throwable -> {
+                            Log.LOGGER.info("Failed to request image data {}", url, throwable);
+                            return null;
                         });
             } catch (Exception e) {
                 Log.LOGGER.info("Failed to request image {}", url);
@@ -183,6 +203,7 @@ public class TestStaggeredGridView extends Fragment {
         }
     }
 
+    TextView mTopInfo;
     AbsListView mGridView;
     MyAdapter mAdapter;
 
@@ -191,55 +212,98 @@ public class TestStaggeredGridView extends Fragment {
         super.onCreate(savedInstanceState);
 
         CompletableFuture.supplyAsync(() -> {
+            var infos = new ArrayList<ItemInfo>();
+            ReturnData data = null;
             HttpURLConnection connection = null;
             try {
-                URL url = new URL("https://mc.zbx1425.cn/teacon-jiachen/subnoteica_data.php");
-                connection = (HttpURLConnection) url.openConnection();
-                connection.setConnectTimeout(60_000); // 1min
-                connection.setReadTimeout(180_000); // 3min
-                connection.connect();
-                JsonObject res;
-                try (var br = new BufferedReader(new InputStreamReader(
-                        connection.getInputStream(), StandardCharsets.UTF_8))) {
-                    res = new Gson().fromJson(br, JsonObject.class);
-                }
-                var value = res.get("value").getAsJsonArray();
-                int limit = Math.min(value.size(), 200);
-                var infos = new ArrayList<ItemInfo>();
-                for (int i = 0; i < limit; i++) {
-                    infos.add(new ItemInfo(value.get(i).getAsJsonObject()));
-                }
-                List<CompletableFuture<?>> futures = new ArrayList<>();
+                String link = "https://mc.zbx1425.cn/teacon-jiachen/subnoteica_data.php";
                 ImageLoader loader = new ImageLoader();
-                for (var info : infos) {
-                    info.requestImages(loader, futures);
+                for (int i = 0; i < 10; i++) {
+                    Log.LOGGER.info("Start requesting {}", link);
+                    URL url = new URL(link);
+                    connection = (HttpURLConnection) url.openConnection();
+                    connection.setConnectTimeout(60_000); // 1min
+                    connection.setReadTimeout(180_000); // 3min
+                    connection.connect();
+                    Log.LOGGER.info("Connected to {}", link);
+                    JsonObject res;
+                    try (var br = new BufferedReader(new InputStreamReader(
+                            connection.getInputStream(), StandardCharsets.UTF_8))) {
+                        res = new Gson().fromJson(br, JsonObject.class);
+                    }
+                    Log.LOGGER.info("Got data from {}", link);
+                    if (data == null) {
+                        data = new ReturnData(
+                                res.get("@odata.count").getAsInt(),
+                                res.get("@odata.distinctInitiatorCount").getAsInt(),
+                                infos
+                        );
+                        Log.LOGGER.info("Create result");
+                    }
+                    var value = res.get("value").getAsJsonArray();
+                    int start = infos.size();
+                    int limit = Math.min(value.size(), NUMBER_TO_REQUEST - start);
+                    for (int j = 0; j < limit; j++) {
+                        infos.add(new ItemInfo(value.get(j).getAsJsonObject()));
+                    }
+                    while (start < infos.size()) {
+                        List<CompletableFuture<?>> futures = new ArrayList<>();
+                        for (int j = 0; j < 50; j++) {
+                            if (start < infos.size()) {
+                                infos.get(start).requestImages(loader, futures);
+                                start++;
+                            } else {
+                                break;
+                            }
+                        }
+                        try {
+                            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                                    .join();
+                        } catch (Exception e) {
+                            Log.LOGGER.info("Failed to request some image data", e);
+                        }
+                        Log.LOGGER.info("Got {} images", futures.size());
+                    }
+                    if (infos.size() >= NUMBER_TO_REQUEST) {
+                        Log.LOGGER.info("Not request more data");
+                        break;
+                    }
+                    link = res.get("@odata.nextLink").getAsString();
                 }
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                        .join();
-                return infos;
             } catch (IOException e) {
-                throw new CompletionException(e);
+                if (data == null) {
+                    throw new CompletionException(e);
+                } else {
+                    Log.LOGGER.info("Not request more data", e);
+                }
             } finally {
                 if (connection != null) {
                     connection.disconnect();
                 }
             }
+            return data;
         }).whenCompleteAsync((res, ex) -> {
             if (ex != null) {
                 Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
                 Log.LOGGER.warn("Failed to request data", cause);
             } else {
-                for (var info : res) {
+                for (var info : res.infos) {
                     info.uploadToTexture();
                 }
-                mAdapter = new MyAdapter(res);
+                mAdapter = new MyAdapter(res.infos);
                 mGridView.setAdapter(mAdapter);
+                mTopInfo.setText(String.format("Total messages: %d, total unique visitors: %d",
+                        res.count, res.distinctInitiatorCount));
             }
         }, Core.getUiThreadExecutor());
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, DataSet savedInstanceState) {
+
+        mTopInfo = new TextView(requireContext());
+        mTopInfo.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, mTopInfo.dp(48)));
+        mTopInfo.setGravity(Gravity.CENTER);
 
         var gridView = new StaggeredGridView(requireContext());
         gridView.setColumnWidth(gridView.dp(360));
@@ -250,6 +314,7 @@ public class TestStaggeredGridView extends Fragment {
         gridView.setPadding(dp16, dp16, dp16, dp16);
         gridView.setClipToPadding(false);
         gridView.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
+        gridView.addHeaderView(mTopInfo, null, false);
 
         return mGridView = gridView;
     }

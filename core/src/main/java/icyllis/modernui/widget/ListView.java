@@ -111,28 +111,6 @@ public class ListView extends AbsListView {
      */
     private static final int MIN_SCROLL_PREVIEW_PIXELS = 2;
 
-    /**
-     * A class that represents a fixed view in a list, for example a header at the top
-     * or a footer at the bottom.
-     */
-    public static class FixedViewInfo {
-        /**
-         * The view to add to the list
-         */
-        public View view;
-        /**
-         * The data backing the view. This is returned from {@link ListAdapter#getItem(int)}.
-         */
-        public Object data;
-        /**
-         * <code>true</code> if the fixed view should be selectable in the list
-         */
-        public boolean isSelectable;
-    }
-
-    ArrayList<FixedViewInfo> mHeaderViewInfos = new ArrayList<>();
-    ArrayList<FixedViewInfo> mFooterViewInfos = new ArrayList<>();
-
     Drawable mDivider;
     int mDividerHeight;
 
@@ -141,8 +119,6 @@ public class ListView extends AbsListView {
 
     private boolean mHeaderDividersEnabled;
     private boolean mFooterDividersEnabled;
-
-    private boolean mAreAllItemsSelectable = true;
 
     private boolean mItemsCanFocus = false;
 
@@ -215,180 +191,6 @@ public class ListView extends AbsListView {
                 offsetChildrenTopAndBottom(-delta);
             }
         }
-    }
-
-    /**
-     * Add a fixed view to appear at the top of the list. If this method is
-     * called more than once, the views will appear in the order they were
-     * added. Views added using this call can take focus if they want.
-     * <p>
-     * If the ListView's adapter does not extend
-     * {@link HeaderViewListAdapter}, it will be wrapped with a supporting
-     * instance of {@link WrapperListAdapter}.
-     *
-     * @param v            The view to add.
-     * @param data         Data to associate with this view
-     * @param isSelectable whether the item is selectable
-     */
-    public void addHeaderView(@NonNull View v, Object data, boolean isSelectable) {
-        if (v.getParent() != null && v.getParent() != this) {
-            LOGGER.warn(MARKER, "The specified child already has a parent. "
-                    + "You must call removeView() on the child's parent first.");
-        }
-
-        final FixedViewInfo info = new FixedViewInfo();
-        info.view = v;
-        info.data = data;
-        info.isSelectable = isSelectable;
-        mHeaderViewInfos.add(info);
-        mAreAllItemsSelectable &= isSelectable;
-
-        // Wrap the adapter if it wasn't already wrapped.
-        if (mAdapter != null) {
-            if (!(mAdapter instanceof HeaderViewListAdapter)) {
-                wrapHeaderListAdapterInternal();
-            }
-
-            // In the case of re-adding a header view, or adding one later on,
-            // we need to notify the observer.
-            if (mDataSetObserver != null) {
-                mDataSetObserver.onChanged();
-            }
-        }
-    }
-
-    /**
-     * Add a fixed view to appear at the top of the list. If this method is
-     * called more than once, the views will appear in the order they were
-     * added. Views added using this call can take focus if they want.
-     * <p>
-     * If the ListView's adapter does not extend
-     * {@link HeaderViewListAdapter}, it will be wrapped with a supporting
-     * instance of {@link WrapperListAdapter}.
-     *
-     * @param v The view to add.
-     */
-    public void addHeaderView(@NonNull View v) {
-        addHeaderView(v, null, true);
-    }
-
-    @Override
-    public int getHeaderViewsCount() {
-        return mHeaderViewInfos.size();
-    }
-
-    /**
-     * Removes a previously-added header view.
-     *
-     * @param v The view to remove
-     * @return true if the view was removed, false if the view was not a header
-     * view
-     */
-    public boolean removeHeaderView(@NonNull View v) {
-        if (mHeaderViewInfos.size() > 0) {
-            boolean result = false;
-            if (mAdapter != null && ((HeaderViewListAdapter) mAdapter).removeHeader(v)) {
-                if (mDataSetObserver != null) {
-                    mDataSetObserver.onChanged();
-                }
-                result = true;
-            }
-            removeFixedViewInfo(v, mHeaderViewInfos);
-            return result;
-        }
-        return false;
-    }
-
-    private void removeFixedViewInfo(@NonNull View v, @NonNull ArrayList<FixedViewInfo> where) {
-        int len = where.size();
-        for (int i = 0; i < len; ++i) {
-            FixedViewInfo info = where.get(i);
-            if (info.view == v) {
-                where.remove(i);
-                break;
-            }
-        }
-    }
-
-    /**
-     * Add a fixed view to appear at the bottom of the list. If this method is
-     * called more than once, the views will appear in the order they were
-     * added. Views added using this call can take focus if they want.
-     * <p>
-     * If the ListView's adapter does not extend
-     * {@link HeaderViewListAdapter}, it will be wrapped with a supporting
-     * instance of {@link WrapperListAdapter}.
-     *
-     * @param v            The view to add.
-     * @param data         Data to associate with this view
-     * @param isSelectable true if the footer view can be selected
-     */
-    public void addFooterView(@NonNull View v, Object data, boolean isSelectable) {
-        if (v.getParent() != null && v.getParent() != this) {
-            LOGGER.warn(MARKER, "The specified child already has a parent. "
-                    + "You must call removeView() on the child's parent first.");
-        }
-
-        final FixedViewInfo info = new FixedViewInfo();
-        info.view = v;
-        info.data = data;
-        info.isSelectable = isSelectable;
-        mFooterViewInfos.add(info);
-        mAreAllItemsSelectable &= isSelectable;
-
-        // Wrap the adapter if it wasn't already wrapped.
-        if (mAdapter != null) {
-            if (!(mAdapter instanceof HeaderViewListAdapter)) {
-                wrapHeaderListAdapterInternal();
-            }
-
-            // In the case of re-adding a footer view, or adding one later on,
-            // we need to notify the observer.
-            if (mDataSetObserver != null) {
-                mDataSetObserver.onChanged();
-            }
-        }
-    }
-
-    /**
-     * Add a fixed view to appear at the bottom of the list. If this method is
-     * called more than once, the views will appear in the order they were
-     * added. Views added using this call can take focus if they want.
-     * <p>
-     * If the ListView's adapter does not extend
-     * {@link HeaderViewListAdapter}, it will be wrapped with a supporting
-     * instance of {@link WrapperListAdapter}.
-     *
-     * @param v The view to add.
-     */
-    public void addFooterView(@NonNull View v) {
-        addFooterView(v, null, true);
-    }
-
-    @Override
-    public int getFooterViewsCount() {
-        return mFooterViewInfos.size();
-    }
-
-    /**
-     * Removes a previously-added footer view.
-     *
-     * @param v The view to remove
-     * @return true if the view was removed, false if the view was not a footer view
-     */
-    public boolean removeFooterView(@NonNull View v) {
-        if (mFooterViewInfos.size() > 0) {
-            boolean result = false;
-            if (mAdapter != null && ((HeaderViewListAdapter) mAdapter).removeFooter(v)) {
-                if (mDataSetObserver != null) {
-                    mDataSetObserver.onChanged();
-                }
-                result = true;
-            }
-            removeFixedViewInfo(v, mFooterViewInfos);
-            return result;
-        }
-        return false;
     }
 
     /**
@@ -484,16 +286,6 @@ public class ListView extends AbsListView {
         super.resetList();
 
         mLayoutMode = LAYOUT_NORMAL;
-    }
-
-    private void clearRecycledState(@NonNull ArrayList<FixedViewInfo> infos) {
-        for (FixedViewInfo info : infos) {
-            final View child = info.view;
-            final ViewGroup.LayoutParams params = child.getLayoutParams();
-            if (checkLayoutParams(params)) {
-                ((LayoutParams) params).recycledHeaderFooter = false;
-            }
-        }
     }
 
     /**
@@ -1769,52 +1561,6 @@ public class ListView extends AbsListView {
         removeUnusedFixedViews(mHeaderViewInfos);
         removeUnusedFixedViews(mFooterViewInfos);
         return result;
-    }
-
-    /**
-     * Header and Footer views are not scrapped / recycled like other views but they are still
-     * detached from the ViewGroup. After a layout operation, call this method to remove such views.
-     *
-     * @param infoList The info list to be traversed
-     */
-    private void removeUnusedFixedViews(@Nullable List<FixedViewInfo> infoList) {
-        if (infoList == null) {
-            return;
-        }
-        for (int i = infoList.size() - 1; i >= 0; i--) {
-            final FixedViewInfo fixedViewInfo = infoList.get(i);
-            final View view = fixedViewInfo.view;
-            final LayoutParams lp = (LayoutParams) view.getLayoutParams();
-            if (view.getParent() == null && lp != null && lp.recycledHeaderFooter) {
-                removeDetachedView(view, false);
-                lp.recycledHeaderFooter = false;
-            }
-
-        }
-    }
-
-    /**
-     * @param child a direct child of this list.
-     * @return Whether child is a header or footer view.
-     */
-    private boolean isDirectChildHeaderOrFooter(View child) {
-        final ArrayList<FixedViewInfo> headers = mHeaderViewInfos;
-        final int numHeaders = headers.size();
-        for (int i = 0; i < numHeaders; i++) {
-            if (child == headers.get(i).view) {
-                return true;
-            }
-        }
-
-        final ArrayList<FixedViewInfo> footers = mFooterViewInfos;
-        final int numFooters = footers.size();
-        for (int i = 0; i < numFooters; i++) {
-            if (child == footers.get(i).view) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -3504,147 +3250,6 @@ public class ListView extends AbsListView {
         }
     }
 
-    /**
-     * @see View#findViewById(int)
-     */
-    @Nullable
-    @Override
-    @SuppressWarnings("unchecked")
-    protected <T extends View> T findViewTraversal(int id) {
-        // First look in our children, then in any header and footer views that
-        // may be scrolled off.
-        View v = super.findViewTraversal(id);
-        if (v == null) {
-            v = findViewInHeadersOrFooters(mHeaderViewInfos, id);
-            if (v != null) {
-                return (T) v;
-            }
-            v = findViewInHeadersOrFooters(mFooterViewInfos, id);
-            if (v != null) {
-                return (T) v;
-            }
-        }
-        return (T) v;
-    }
-
-    View findViewInHeadersOrFooters(ArrayList<FixedViewInfo> where, int id) {
-        // Look in the passed in list of headers or footers for the view.
-        if (where != null) {
-            int len = where.size();
-            View v;
-
-            for (int i = 0; i < len; i++) {
-                v = where.get(i).view;
-
-                if (!v.isRootNamespace()) {
-                    v = v.findViewById(id);
-
-                    if (v != null) {
-                        return v;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @see View#findViewWithTag(Object)
-     */
-    @Nullable
-    @Override
-    @SuppressWarnings("unchecked")
-    protected <T extends View> T findViewWithTagTraversal(Object tag) {
-        // First look in our children, then in any header and footer views that
-        // may be scrolled off.
-        View v = super.findViewWithTagTraversal(tag);
-        if (v == null) {
-            v = findViewWithTagInHeadersOrFooters(mHeaderViewInfos, tag);
-            if (v != null) {
-                return (T) v;
-            }
-
-            v = findViewWithTagInHeadersOrFooters(mFooterViewInfos, tag);
-            if (v != null) {
-                return (T) v;
-            }
-        }
-        return (T) v;
-    }
-
-    View findViewWithTagInHeadersOrFooters(ArrayList<FixedViewInfo> where, Object tag) {
-        // Look in the passed in list of headers or footers for the view with
-        // the tag.
-        if (where != null) {
-            int len = where.size();
-            View v;
-
-            for (int i = 0; i < len; i++) {
-                v = where.get(i).view;
-
-                if (!v.isRootNamespace()) {
-                    v = v.findViewWithTag(tag);
-
-                    if (v != null) {
-                        return v;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * First look in our children, then in any header and footer views that may
-     * be scrolled off.
-     *
-     * @see View#findViewByPredicate(Predicate)
-     */
-    @Nullable
-    @Override
-    @SuppressWarnings("unchecked")
-    protected <T extends View> T findViewByPredicateTraversal(
-            @NonNull Predicate<View> predicate, @Nullable View childToSkip) {
-        View v = super.findViewByPredicateTraversal(predicate, childToSkip);
-        if (v == null) {
-            v = findViewByPredicateInHeadersOrFooters(mHeaderViewInfos, predicate, childToSkip);
-            if (v != null) {
-                return (T) v;
-            }
-
-            v = findViewByPredicateInHeadersOrFooters(mFooterViewInfos, predicate, childToSkip);
-            if (v != null) {
-                return (T) v;
-            }
-        }
-        return (T) v;
-    }
-
-    /**
-     * Look in the passed in list of headers or footers for the first view that
-     * matches the predicate.
-     */
-    View findViewByPredicateInHeadersOrFooters(ArrayList<FixedViewInfo> where,
-                                               Predicate<View> predicate, View childToSkip) {
-        if (where != null) {
-            int len = where.size();
-            View v;
-
-            for (int i = 0; i < len; i++) {
-                v = where.get(i).view;
-
-                if (v != childToSkip && !v.isRootNamespace()) {
-                    v = v.findViewByPredicate(predicate);
-
-                    if (v != null) {
-                        return v;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     int getHeightForPosition(int position) {
         final int height = super.getHeightForPosition(position);
@@ -3702,26 +3307,5 @@ public class ListView extends AbsListView {
         }
 
         return false;
-    }
-
-    @ApiStatus.Internal
-    @NonNull
-    protected HeaderViewListAdapter wrapHeaderListAdapterInternal(
-            ArrayList<ListView.FixedViewInfo> headerViewInfos,
-            ArrayList<ListView.FixedViewInfo> footerViewInfos,
-            ListAdapter adapter) {
-        return new HeaderViewListAdapter(headerViewInfos, footerViewInfos, adapter);
-    }
-
-    @ApiStatus.Internal
-    protected void wrapHeaderListAdapterInternal() {
-        mAdapter = wrapHeaderListAdapterInternal(mHeaderViewInfos, mFooterViewInfos, mAdapter);
-    }
-
-    @ApiStatus.Internal
-    protected void dispatchDataSetObserverOnChangedInternal() {
-        if (mDataSetObserver != null) {
-            mDataSetObserver.onChanged();
-        }
     }
 }

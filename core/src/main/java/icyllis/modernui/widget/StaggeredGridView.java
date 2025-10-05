@@ -140,7 +140,12 @@ public class StaggeredGridView extends AbsListView {
 
         resetList();
         mRecycler.clear();
-        mAdapter = adapter;
+
+        if (mHeaderViewInfos.size() > 0 || mFooterViewInfos.size() > 0) {
+            mAdapter = wrapHeaderListAdapterInternal(mHeaderViewInfos, mFooterViewInfos, adapter);
+        } else {
+            mAdapter = adapter;
+        }
 
         mOldSelectedPosition = INVALID_POSITION;
         mOldSelectedRowId = INVALID_ROW_ID;
@@ -183,9 +188,8 @@ public class StaggeredGridView extends AbsListView {
     void resetList() {
         // The parent's resetList() will remove all views from the layout so we need to
         // cleanup the state of our footers and headers
-        //TODO
-        //clearRecycledState(mHeaderViewInfos);
-        //clearRecycledState(mFooterViewInfos);
+        clearRecycledState(mHeaderViewInfos);
+        clearRecycledState(mFooterViewInfos);
 
         super.resetList();
 
@@ -834,6 +838,10 @@ public class StaggeredGridView extends AbsListView {
             // Flush any cached views that did not get reused above
             recycleBin.scrapActiveViews();
 
+            // remove any header/footer that has been temp detached and not re-attached
+            removeUnusedFixedViews(mHeaderViewInfos);
+            removeUnusedFixedViews(mFooterViewInfos);
+
             if (sel != null) {
                 positionSelector(INVALID_POSITION, sel);
                 mSelectedTop = sel.getTop();
@@ -880,6 +888,14 @@ public class StaggeredGridView extends AbsListView {
         } finally {
             mBlockLayoutRequests = false;
         }
+    }
+
+    @Override
+    boolean trackMotionScroll(int deltaY, int incrementalDeltaY) {
+        final boolean result = super.trackMotionScroll(deltaY, incrementalDeltaY);
+        removeUnusedFixedViews(mHeaderViewInfos);
+        removeUnusedFixedViews(mFooterViewInfos);
+        return result;
     }
 
     /**
@@ -1561,6 +1577,9 @@ public class StaggeredGridView extends AbsListView {
         return getLowestPositionedBottom();
     }
 
+    /**
+     * Not supported yet, do not use.
+     */
     @Override
     public void setStackFromBottom(boolean stackFromBottom) {
         if (stackFromBottom) {

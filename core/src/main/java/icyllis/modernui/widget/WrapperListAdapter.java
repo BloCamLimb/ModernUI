@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,12 +22,13 @@ package icyllis.modernui.widget;
  * List adapter that wraps another list adapter. The wrapped adapter can be retrieved
  * by calling {@link #getWrappedAdapter()}.
  *
- * @see ListView
+ * @see AbsListView
  */
 public interface WrapperListAdapter extends ListAdapter {
 
     /**
      * Returns the adapter wrapped by this list adapter.
+     * May be null if this wraps nothing occasionally.
      *
      * @return The {@link ListAdapter} wrapped by this adapter.
      */
