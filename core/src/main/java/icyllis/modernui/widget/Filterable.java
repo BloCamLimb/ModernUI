@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,8 @@
  */
 
 package icyllis.modernui.widget;
+
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * <p>Defines a filterable behavior. A filterable class can have its data
@@ -35,5 +37,6 @@ public interface Filterable {
      *
      * @return a filter used to constrain data
      */
+    @Nullable
     Filter getFilter();
 }

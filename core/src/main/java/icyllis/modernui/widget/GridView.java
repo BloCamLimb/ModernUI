@@ -30,6 +30,7 @@ import org.intellij.lang.annotations.MagicConstant;
  */
 // Modified from Android
 public class GridView extends AbsListView {
+    //TODO add header footer support
 
     /**
      * Disables stretching.

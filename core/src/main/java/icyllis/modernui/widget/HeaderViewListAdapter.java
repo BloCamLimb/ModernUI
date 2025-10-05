@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,15 +18,15 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.widget.ListView.FixedViewInfo;
+import icyllis.modernui.widget.AbsListView.FixedViewInfo;
+import org.jetbrains.annotations.VisibleForTesting;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Objects;
 
 /**
  * ListAdapter used when a ListView has header views. This ListAdapter
@@ -37,6 +37,7 @@ import java.util.Objects;
  */
 public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
 
+    @Nullable
     private final ListAdapter mAdapter;
 
     // These two ArrayList are assumed to NOT be null.
@@ -44,24 +45,17 @@ public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
     ArrayList<FixedViewInfo> mHeaderViewInfos;
     ArrayList<FixedViewInfo> mFooterViewInfos;
 
-    // Used as a placeholder in case the provided info views are indeed null.
-    // Currently, only used by some CTS tests, which may be removed.
-    static final ArrayList<FixedViewInfo> EMPTY_INFO_LIST =
-            new ArrayList<>();
-
     boolean mAreAllFixedViewsSelectable;
 
-    private final boolean mIsFilterable;
-
-    public HeaderViewListAdapter(@Nullable ArrayList<FixedViewInfo> headerViewInfos,
-                                 @Nullable ArrayList<FixedViewInfo> footerViewInfos,
-                                 @Nonnull ListAdapter adapter) {
+    @VisibleForTesting
+    public HeaderViewListAdapter(@NonNull ArrayList<FixedViewInfo> headerViewInfos,
+                                 @NonNull ArrayList<FixedViewInfo> footerViewInfos,
+                                 @Nullable ListAdapter adapter) {
         mAdapter = adapter;
-        mIsFilterable = adapter instanceof Filterable;
 
-        mHeaderViewInfos = Objects.requireNonNullElse(headerViewInfos, EMPTY_INFO_LIST);
+        mHeaderViewInfos = headerViewInfos;
 
-        mFooterViewInfos = Objects.requireNonNullElse(footerViewInfos, EMPTY_INFO_LIST);
+        mFooterViewInfos = footerViewInfos;
 
         mAreAllFixedViewsSelectable =
                 areAllListInfosSelectable(mHeaderViewInfos)
@@ -81,7 +75,7 @@ public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
         return mAdapter == null || mAdapter.isEmpty();
     }
 
-    private boolean areAllListInfosSelectable(ArrayList<FixedViewInfo> infos) {
+    private static boolean areAllListInfosSelectable(ArrayList<FixedViewInfo> infos) {
         if (infos != null) {
             for (FixedViewInfo info : infos) {
                 if (!info.isSelectable) {
@@ -92,7 +86,7 @@ public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
         return true;
     }
 
-    public boolean removeHeader(@Nonnull View v) {
+    public boolean removeHeader(@NonNull View v) {
         for (int i = 0; i < mHeaderViewInfos.size(); i++) {
             FixedViewInfo info = mHeaderViewInfos.get(i);
             if (info.view == v) {
@@ -109,7 +103,7 @@ public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
         return false;
     }
 
-    public boolean removeFooter(@Nonnull View v) {
+    public boolean removeFooter(@NonNull View v) {
         for (int i = 0; i < mFooterViewInfos.size(); i++) {
             FixedViewInfo info = mFooterViewInfos.get(i);
             if (info.view == v) {
@@ -209,9 +203,9 @@ public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
         return false;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
+    public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         // Header (negative positions will throw an IndexOutOfBoundsException)
         int numHeaders = getHeadersCount();
         if (position < numHeaders) {
@@ -255,14 +249,14 @@ public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
     }
 
     @Override
-    public void registerDataSetObserver(@Nonnull DataSetObserver observer) {
+    public void registerDataSetObserver(@NonNull DataSetObserver observer) {
         if (mAdapter != null) {
             mAdapter.registerDataSetObserver(observer);
         }
     }
 
     @Override
-    public void unregisterDataSetObserver(@Nonnull DataSetObserver observer) {
+    public void unregisterDataSetObserver(@NonNull DataSetObserver observer) {
         if (mAdapter != null) {
             mAdapter.unregisterDataSetObserver(observer);
         }
@@ -270,7 +264,7 @@ public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
 
     @Override
     public Filter getFilter() {
-        if (mIsFilterable) {
+        if (mAdapter instanceof Filterable) {
             return ((Filterable) mAdapter).getFilter();
         }
         return null;
