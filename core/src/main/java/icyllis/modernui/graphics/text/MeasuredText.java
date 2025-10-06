@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,13 +18,19 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.IntRange;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.AlgorithmUtils;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -232,10 +238,10 @@ public class MeasuredText {
          * @param isRtl  true if the text is in RTL context, otherwise false.
          */
         @NonNull
-        public Builder appendStyleRun(@NonNull TextPaint paint,
+        public Builder appendStyleRun(@NonNull FontPaint paint,
                                       @IntRange(from = 0) int length,
                                       boolean isRtl) {
-            addStyleRun(paint.createInternalPaint(), null, length, isRtl);
+            addStyleRun(new FontPaint(paint), null, length, isRtl);
             return this;
         }
 
@@ -253,14 +259,19 @@ public class MeasuredText {
          * @param isRtl           true if the text is in RTL context, otherwise false.
          */
         @NonNull
-        public Builder appendStyleRun(@NonNull TextPaint paint,
+        public Builder appendStyleRun(@NonNull FontPaint paint,
                                       @Nullable LineBreakConfig lineBreakConfig,
                                       @IntRange(from = 0) int length,
                                       boolean isRtl) {
-            addStyleRun(paint.createInternalPaint(), lineBreakConfig, length, isRtl);
+            addStyleRun(new FontPaint(paint), lineBreakConfig, length, isRtl);
             return this;
         }
 
+        /**
+         * Internal method that does not copy the paint. Caller must ensure that it is immutable.
+         *
+         * @hidden
+         */
         @ApiStatus.Internal
         public void addStyleRun(@NonNull FontPaint paint,
                                 @Nullable LineBreakConfig lineBreakConfig,
@@ -299,10 +310,10 @@ public class MeasuredText {
          * @param width  a replacement width of the range in pixels
          */
         @NonNull
-        public Builder appendReplacementRun(@NonNull TextPaint paint,
+        public Builder appendReplacementRun(@NonNull FontPaint paint,
                                             @IntRange(from = 0) int length,
                                             @FloatRange(from = 0) float width) {
-            addReplacementRun(paint.getTextLocale(), length, width);
+            addReplacementRun(paint.getLocale(), length, width);
             return this;
         }
 
@@ -411,8 +422,8 @@ public class MeasuredText {
         private float mAdvance;
 
         private StyleRun(int start, int end, FontPaint paint,
-                 int lineBreakStyle, int lineBreakWordStyle,
-                 boolean isRtl) {
+                         int lineBreakStyle, int lineBreakWordStyle,
+                         boolean isRtl) {
             super(start, end);
             mPaint = paint;
             mLineBreakStyle = lineBreakStyle;
