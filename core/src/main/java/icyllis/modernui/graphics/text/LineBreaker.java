@@ -21,7 +21,6 @@ package icyllis.modernui.graphics.text;
 import com.ibm.icu.text.BreakIterator;
 import com.ibm.icu.util.ULocale;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.text.TabStops;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 
 import javax.annotation.Nonnull;

@@ -437,12 +437,16 @@ public class TextPaint extends Paint {
     }
 
     /**
-     * Populates layout attributes to a temporary internal paint and returns.
-     * See {@link #createInternalPaint()} to create a new paint.
+     * Populates attributes that affect text layout to a temporary internal paint and returns.
+     * The returned object is used by the internal text layout engine, and can be
+     * passed to {@link icyllis.modernui.graphics.text.ShapedText},
+     * {@link icyllis.modernui.graphics.text.TextRunShaper},
+     * {@link icyllis.modernui.graphics.text.MeasuredText.Builder}, {@link icyllis.modernui.graphics.Canvas}.
+     * <p>
+     * See {@link #createInternalPaint()} to create a new paint as a copy.
      *
      * @return a shared internal paint
      */
-    @ApiStatus.Internal
     @NonNull
     public final FontPaint getInternalPaint() {
         FontPaint p = mInternalPaint;
@@ -461,7 +465,6 @@ public class TextPaint extends Paint {
      *
      * @return an internal paint
      */
-    @ApiStatus.Internal
     @NonNull
     public final FontPaint createInternalPaint() {
         return new FontPaint(getInternalPaint());

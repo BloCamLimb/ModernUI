@@ -313,6 +313,10 @@ public class ShapedText {
     private volatile icyllis.arc3d.sketch.Font mNativeFont;
     private TextBlob mTextBlob;
 
+    //TODO currently we don't compute/store per-cluster advances
+    // because they are not needed for rendering, just needed for line breaking...
+    private static final boolean COMPUTE_ADVANCES = false;
+
     /**
      * Generate the shaped text layout. The layout object will not be associated with the
      * text array and the paint after construction.
@@ -369,10 +373,11 @@ public class ShapedText {
             mTextBlob = null;
             return;
         }
-        //TODO currently we don't compute/store per-cluster advances
-        // because they are not needed for rendering, just needed for line breaking...
-        //mAdvances = new float[count];
-        mAdvances = null;
+        if (COMPUTE_ADVANCES) {
+            mAdvances = new float[count];
+        } else {
+            mAdvances = null;
+        }
         final FontMetricsInt extent = new FontMetricsInt();
 
         // reserve memory, glyph count is <= char count
