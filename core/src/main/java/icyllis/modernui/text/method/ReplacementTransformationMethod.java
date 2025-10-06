@@ -38,8 +38,9 @@ package icyllis.modernui.text.method;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.text.Editable;
-import icyllis.modernui.text.GetChars;
+import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.SpannedString;
@@ -165,12 +166,12 @@ public abstract class ReplacementTransformationMethod implements TransformationM
         @Override
         public CharSequence subSequence(int start, int end) {
             int len = end - start;
-            char[] s = TextUtils.obtain(len);
+            char[] s = CharUtils.obtain(len);
             try {
                 getChars(start, end, s, 0);
                 return new String(s, 0, len);
             } finally {
-                TextUtils.recycle(s);
+                CharUtils.recycle(s);
             }
         }
 
@@ -178,18 +179,18 @@ public abstract class ReplacementTransformationMethod implements TransformationM
         @Override
         public String toString() {
             int len = length();
-            char[] s = TextUtils.obtain(len);
+            char[] s = CharUtils.obtain(len);
             try {
                 getChars(0, len, s, 0);
                 return new String(s, 0, len);
             } finally {
-                TextUtils.recycle(s);
+                CharUtils.recycle(s);
             }
         }
 
         @Override
         public void getChars(int start, int end, char[] dest, int off) {
-            TextUtils.getChars(mSource, start, end, dest, off);
+            CharUtils.getChars(mSource, start, end, dest, off);
             int offend = end - start + off;
             int n = mOriginal.length;
 

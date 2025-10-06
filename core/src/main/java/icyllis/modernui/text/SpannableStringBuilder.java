@@ -20,6 +20,8 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.text.CharUtils;
+import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
@@ -118,7 +120,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         mGapStart = srcLen;
         mGapLength = mText.length - srcLen;
 
-        TextUtils.getChars(text, start, end, mText, 0);
+        CharUtils.getChars(text, start, end, mText, 0);
 
         mSpanCount = 0;
         mSpanInsertCount = 0;
@@ -495,9 +497,9 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         mGapLength -= nbNewChars;
 
         if (mGapLength < 1)
-            new Exception("mGapLength < 1").printStackTrace();
+            Log.LOGGER.warn(MARKER, "mGapLength < 1", new Exception());
 
-        TextUtils.getChars(cs, csStart, csEnd, mText, start);
+        CharUtils.getChars(cs, csStart, csEnd, mText, start);
 
         if (replacedLength > 0) { // no need for span fixup on pure insertion
             // TODO potential optimization: only update bounds on intersecting spans

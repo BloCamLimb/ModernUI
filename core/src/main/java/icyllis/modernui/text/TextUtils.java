@@ -23,7 +23,9 @@ import icyllis.arc3d.sketch.TextBlob;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontPaint;
+import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.LayoutPiece;
 import icyllis.modernui.graphics.text.ShapedText;
@@ -43,8 +45,6 @@ import java.util.Locale;
 
 @SuppressWarnings("ForLoopReplaceableByForEach")
 public final class TextUtils {
-
-    private static final char[][] sTemp = new char[4][];
 
     // Zero-width character used to fill ellipsized strings when codepoint length must be preserved.
     static final char ELLIPSIS_FILLER = '\uFEFF'; // ZERO WIDTH NO-BREAK SPACE
@@ -66,57 +66,6 @@ public final class TextUtils {
     @NonNull
     public static char[] getEllipsisChars(@NonNull TextUtils.TruncateAt method) {
         return ELLIPSIS_NORMAL_ARRAY;
-    }
-
-    /**
-     * Returns a temporary char buffer.
-     *
-     * @param len the length of the buffer
-     * @return a char buffer
-     * @hidden
-     * @see #recycle(char[]) recycle the buffer
-     */
-    @ApiStatus.Internal
-    @NonNull
-    public static char[] obtain(int len) {
-        if (len > 2000)
-            return new char[len];
-
-        char[] buf = null;
-
-        synchronized (sTemp) {
-            final char[][] pool = sTemp;
-            for (int i = pool.length - 1; i >= 0; --i) {
-                if ((buf = pool[i]) != null && buf.length >= len) {
-                    pool[i] = null;
-                    break;
-                }
-            }
-        }
-
-        if (buf == null || buf.length < len)
-            buf = new char[len];
-
-        return buf;
-    }
-
-    /**
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public static void recycle(@NonNull char[] temp) {
-        if (temp.length > 2000)
-            return;
-
-        synchronized (sTemp) {
-            final char[][] pool = sTemp;
-            for (int i = 0; i < pool.length; ++i) {
-                if (pool[i] == null) {
-                    pool[i] = temp;
-                    break;
-                }
-            }
-        }
     }
 
     public static CharSequence stringOrSpannedString(CharSequence source) {
@@ -163,22 +112,7 @@ public final class TextUtils {
      */
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
                                 @NonNull char[] dst, int dstBegin) {
-        if (s instanceof String)
-            ((String) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof GetChars)
-            ((GetChars) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof StringBuffer)
-            ((StringBuffer) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof StringBuilder)
-            ((StringBuilder) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof CharBuffer buf)
-            buf.get(buf.position() + srcBegin, dst, dstBegin, srcEnd - srcBegin); // Java 13
-        else {
-            if (srcBegin > srcEnd)
-                throw new IndexOutOfBoundsException("srcBegin " + srcBegin + ", srcEnd " + srcEnd);
-            for (int i = srcBegin; i < srcEnd; i++)
-                dst[dstBegin++] = s.charAt(i);
-        }
+        CharUtils.getChars(s, srcBegin, srcEnd, dst, dstBegin);
     }
 
     /**
@@ -252,10 +186,10 @@ public final class TextUtils {
         if (source instanceof CharBuffer)
             return ((CharBuffer) source).slice(start, end - start).toString(); // Java 13
 
-        char[] temp = obtain(end - start);
-        getChars(source, start, end, temp, 0);
+        char[] temp = CharUtils.obtain(end - start);
+        CharUtils.getChars(source, start, end, temp, 0);
         String ret = new String(temp, 0, end - start);
-        recycle(temp);
+        CharUtils.recycle(temp);
 
         return ret;
     }
@@ -282,19 +216,19 @@ public final class TextUtils {
         if (s instanceof GetChars || c == StringBuffer.class ||
                 c == StringBuilder.class || c == String.class ||
                 s instanceof CharBuffer) {
-            char[] temp = obtain(500);
+            char[] temp = CharUtils.obtain(500);
 
             while (start < end) {
                 int segend = start + 500;
                 if (segend > end)
                     segend = end;
 
-                getChars(s, start, segend, temp, 0);
+                CharUtils.getChars(s, start, segend, temp, 0);
 
                 int count = segend - start;
                 for (int i = 0; i < count; i++) {
                     if (temp[i] == ch) {
-                        recycle(temp);
+                        CharUtils.recycle(temp);
                         return i + start;
                     }
                 }
@@ -302,7 +236,7 @@ public final class TextUtils {
                 start = segend;
             }
 
-            recycle(temp);
+            CharUtils.recycle(temp);
             return -1;
         }
 
@@ -338,19 +272,19 @@ public final class TextUtils {
         if (s instanceof GetChars || c == StringBuffer.class ||
                 c == StringBuilder.class || c == String.class ||
                 s instanceof CharBuffer) {
-            char[] temp = obtain(500);
+            char[] temp = CharUtils.obtain(500);
 
             while (start < end) {
                 int segstart = end - 500;
                 if (segstart < start)
                     segstart = start;
 
-                getChars(s, segstart, end, temp, 0);
+                CharUtils.getChars(s, segstart, end, temp, 0);
 
                 int count = end - segstart;
                 for (int i = count - 1; i >= 0; i--) {
                     if (temp[i] == ch) {
-                        recycle(temp);
+                        CharUtils.recycle(temp);
                         return i + segstart;
                     }
                 }
@@ -358,7 +292,7 @@ public final class TextUtils {
                 end = segstart;
             }
 
-            recycle(temp);
+            CharUtils.recycle(temp);
             return -1;
         }
 
@@ -584,14 +518,14 @@ public final class TextUtils {
         }
         final TextBlob.Builder builder = new TextBlob.Builder();
         final int len = contextEnd - contextStart;
-        final char[] buf = obtain(len);
-        getChars(text, contextStart, contextEnd, buf, 0);
+        final char[] buf = CharUtils.obtain(len);
+        CharUtils.getChars(text, contextStart, contextEnd, buf, 0);
         ShapedText.doLayoutRun(
                 buf, 0, len,
                 start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
                 (piece, __, ___, ____, fontPaint, offsetX) -> buildTextBlob(builder, piece, offsetX, fontPaint)
         );
-        recycle(buf);
+        CharUtils.recycle(buf);
         canvas.drawTextBlob(builder.build(), x, y, paint);
     }
 

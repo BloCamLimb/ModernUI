@@ -23,9 +23,11 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.GraphemeBreak;
 import icyllis.modernui.graphics.text.ShapedText;
+import icyllis.modernui.graphics.text.TextRunShaper;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
@@ -165,7 +167,7 @@ public class TextLine {
             if (mChars == null || mChars.length < mLen) {
                 mChars = new char[mLen];
             }
-            TextUtils.getChars(text, start, limit, mChars, 0);
+            CharUtils.getChars(text, start, limit, mChars, 0);
             // Handle these all at once so we don't have to do it as we go.
             // Replace the first character of each replacement run with the
             // object-replacement character and the remainder with zero width
@@ -991,6 +993,8 @@ public class TextLine {
 
         if (c != null || needWidth) {
             mCachedFontExtent.reset();
+            //TODO the complexity of building text blob should be handled by Canvas
+            // once TextDisplayList is deployed
             if (mCharsValid) {
                 totalWidth = ShapedText.doLayoutRun(
                         mChars, contextStart, contextEnd, start, offset,
@@ -1001,15 +1005,15 @@ public class TextLine {
             } else {
                 final int delta = mStart;
                 final int len = contextEnd - contextStart;
-                final char[] buf = TextUtils.obtain(len);
-                TextUtils.getChars(mText, contextStart + delta, contextEnd + delta, buf, 0);
+                final char[] buf = CharUtils.obtain(len);
+                CharUtils.getChars(mText, contextStart + delta, contextEnd + delta, buf, 0);
                 totalWidth = ShapedText.doLayoutRun(
                         buf, 0, len, start - contextStart, offset - contextStart,
                         runIsRtl, wp.getInternalPaint(),
                         mCachedFontExtent,
                         c != null ? mBuildTextBlob : null
                 );
-                TextUtils.recycle(buf);
+                CharUtils.recycle(buf);
             }
             //TODO take use of PrecomputedText
         }
@@ -1084,20 +1088,20 @@ public class TextLine {
         int contextCount = contextEnd - contextStart;
         ShapedText glyphs;
         if (mCharsValid) {
-            glyphs = TextShaper.shapeTextRun(
+            glyphs = TextRunShaper.shapeTextRun(
                     mChars,
                     start, count,
                     contextStart, contextCount,
                     runIsRtl,
-                    paint
+                    paint.getInternalPaint()
             );
         } else {
-            glyphs = TextShaper.shapeTextRun(
+            glyphs = TextRunShaper.shapeTextRun(
                     mText,
                     mStart + start, count,
                     mStart + contextStart, contextCount,
                     runIsRtl,
-                    paint
+                    paint.getInternalPaint()
             );
         }
         float totalWidth = glyphs.getAdvance();

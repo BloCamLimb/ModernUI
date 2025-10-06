@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.text.GetChars;
 
 /**
  * This is the interface for text whose content and markup can be changed (as opposed

@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.LineBreakConfig;
@@ -417,7 +418,7 @@ public class MeasuredParagraph {
         if (mCopiedBuffer == null || mCopiedBuffer.length != length) {
             mCopiedBuffer = new char[length];
         }
-        TextUtils.getChars(text, start, end, mCopiedBuffer, 0);
+        CharUtils.getChars(text, start, end, mCopiedBuffer, 0);
 
         // Replace characters associated with ReplacementSpan to U+FFFC.
         if (mSpanned != null) {
