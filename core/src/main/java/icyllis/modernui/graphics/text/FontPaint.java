@@ -19,11 +19,10 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Locale;
 
 /**
@@ -75,7 +74,7 @@ public class FontPaint {
     }
 
     @ApiStatus.Internal
-    public FontPaint(@Nonnull FontPaint paint) {
+    public FontPaint(@NonNull FontPaint paint) {
         mFont = paint.mFont;
         mLocale = paint.mLocale;
         mFlags = paint.mFlags;
@@ -85,14 +84,14 @@ public class FontPaint {
     /**
      * Copy the data from paint into this TextPaint
      */
-    public void set(@Nonnull FontPaint paint) {
+    public void set(@NonNull FontPaint paint) {
         mFont = paint.mFont;
         mLocale = paint.mLocale;
         mFlags = paint.mFlags;
         mSize = paint.mSize;
     }
 
-    public void setFont(@Nonnull FontCollection font) {
+    public void setFont(FontCollection font) {
         mFont = font;
     }
 
@@ -100,7 +99,7 @@ public class FontPaint {
         return mFont;
     }
 
-    public void setLocale(@Nonnull Locale locale) {
+    public void setLocale(Locale locale) {
         mLocale = locale;
     }
 
@@ -182,7 +181,7 @@ public class FontPaint {
      * @param paint the paint to compare with
      * @return true if given {@link FontPaint} has the different effect on text measurement.
      */
-    public boolean isMetricAffecting(@Nonnull FontPaint paint) {
+    public boolean isMetricAffecting(@NonNull FontPaint paint) {
         if (mSize != paint.mSize)
             return true;
         if (mFlags != paint.mFlags)

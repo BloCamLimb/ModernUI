@@ -24,6 +24,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.graphics.text.Font;
+import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.OutlineFont;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.view.Gravity;
@@ -1293,10 +1294,11 @@ public abstract class Canvas {
      *                       {@code positionOffset + 1}, then the second glyph X position must be
      *                       stored at {@code positionOffset + 2}.
      * @param glyphCount     Number of glyphs to be drawn.
-     * @param font           FontFace used for drawing.
+     * @param font           FontFace used for rasterization.
      * @param x              Additional amount of x offset of the glyph X positions.
      * @param y              Additional amount of y offset of the glyph Y positions.
      * @param paint          Paint used for drawing.
+     * @param fontPaint      Paint used for font rasterization.
      * @see icyllis.modernui.text.TextShaper
      * @see #drawShapedText
      */
@@ -1307,7 +1309,8 @@ public abstract class Canvas {
                                     int glyphCount,
                                     @NonNull Font font,
                                     float x, float y,
-                                    @NonNull Paint paint);
+                                    @NonNull Paint paint,
+                                    FontPaint fontPaint);
 
     /**
      * @hidden
@@ -1333,13 +1336,15 @@ public abstract class Canvas {
     }
 
     public void drawSimpleText(@NonNull char[] text, @NonNull Font font,
-                               float x, float y, @NonNull Paint paint) {
+                               float x, float y, @NonNull Paint paint,
+                               @NonNull FontPaint fontPaint) {
         if (text.length == 0) {
             return;
         }
         if (font instanceof OutlineFont outlineFont) {
-            var face = outlineFont.chooseFont(paint);
-            var frc = OutlineFont.getFontRenderContext(paint);
+            // inline version of OutlineFont.doSimpleLayout
+            var face = outlineFont.chooseFont(fontPaint);
+            var frc = OutlineFont.getFontRenderContext(fontPaint);
             var gv = face.createGlyphVector(frc, text);
             int nGlyphs = gv.getNumGlyphs();
             drawGlyphs(gv.getGlyphCodes(0, nGlyphs, null),
@@ -1348,14 +1353,15 @@ public abstract class Canvas {
                     0,
                     nGlyphs,
                     font,
-                    x, y, paint);
+                    x, y, paint, fontPaint);
         }
     }
 
     public void drawSimpleText(@NonNull String text, @NonNull Font font,
-                               float x, float y, @NonNull Paint paint) {
-        if (!text.isBlank()) {
-            drawSimpleText(text.toCharArray(), font, x, y, paint);
+                               float x, float y, @NonNull Paint paint,
+                               @NonNull FontPaint fontPaint) {
+        if (!text.isEmpty()) {
+            drawSimpleText(text.toCharArray(), font, x, y, paint, fontPaint);
         }
     }
 

@@ -97,11 +97,13 @@ public class ShapedText {
     /**
      * The array is about all laid-out glyph codes for in order visually from left to right.
      * The length is {@link #getGlyphCount()}.
+     * <p>
+     * This is the underlying array that may be shared across threads,
+     * it must NOT be modified.
      *
      * @return glyphs
      */
     @Unmodifiable
-    @ApiStatus.Experimental
     public int[] getGlyphs() {
         return mGlyphs;
     }
@@ -124,11 +126,13 @@ public class ShapedText {
     /**
      * This array holds the repeat of x offset, y offset of glyph positions.
      * The length is twice as long as the glyph array.
+     * <p>
+     * This is the underlying array that may be shared across threads,
+     * it must NOT be modified.
      *
      * @return glyph positions
      */
     @Unmodifiable
-    @ApiStatus.Experimental
     public float[] getPositions() {
         return mPositions;
     }
@@ -157,6 +161,8 @@ public class ShapedText {
 
     /**
      * Returns which font should be used for the i-th glyph.
+     * <p>
+     * A layout can contain multiple font runs.
      *
      * @param i the index
      * @return the font
@@ -180,9 +186,6 @@ public class ShapedText {
 
     /**
      * The array of all chars advance, the length and order are relative to the text buffer.
-     * Only grapheme cluster bounds have advances, others are zeros. For example:
-     * [13.0, 0, 14.0, 0, 0] meaning c[0] and c[1] become a cluster; c[2], c[3] and c[4]
-     * become a cluster. The length is constructor <code>limit - start</code> in code units.
      *
      * @return advances, or null
      * @see GraphemeBreak
@@ -245,17 +248,43 @@ public class ShapedText {
     }
 
     /**
+     * Returns the base paragraph direction (1 if left-to-right, -1 if right-to-left).
+     * <p>
+     * A layout may contain only one BiDi run, or multiple BiDi runs.
+     *
+     * @return base dir, positive if LTR, negative if RTL
+     */
+    public int getParaDir() {
+        return mParaDir;
+    }
+
+    /**
+     * Returns the FontPaint that used to create this layout,
+     * or null of this layout contains no glyphs (i.e. getGlyphCount() == 0).
+     * <p>
+     * This is an immutable copy of the constructor argument, it must
+     * NOT be modified.
+     *
+     * @return the creating layout params
+     */
+    @Unmodifiable
+    public FontPaint getPaint() {
+        return mPaint;
+    }
+
+    /**
      * @hidden
      */
-    @ApiStatus.Experimental
+    @ApiStatus.Internal
     @Nullable
     public TextBlob getTextBlob() {
-        if (mNativeFont != null) {
+        if (!mTextBlobValid) {
             synchronized (this) {
-                if (mNativeFont != null) {
-                    var nativeFont = mNativeFont;
+                if (!mTextBlobValid) {
+                    var nativeFont = new icyllis.arc3d.sketch.Font();
+                    mPaint.getNativeFont(nativeFont);
                     mTextBlob = computeTextBlob(nativeFont);
-                    mNativeFont = null;
+                    mTextBlobValid = true; // order is important
                 }
             }
         }
@@ -309,8 +338,11 @@ public class ShapedText {
 
     // total advance
     private final float mAdvance;
+    // base paragraph direction
+    private final int mParaDir;
 
-    private volatile icyllis.arc3d.sketch.Font mNativeFont;
+    private final FontPaint mPaint;
+    private volatile boolean mTextBlobValid;
     private TextBlob mTextBlob;
 
     //TODO currently we don't compute/store per-cluster advances
@@ -370,7 +402,10 @@ public class ShapedText {
             mAscent = 0;
             mDescent = 0;
             mAdvance = 0;
+            mParaDir = 1;
+            mPaint = null;
             mTextBlob = null;
+            mTextBlobValid = true;
             return;
         }
         if (COMPUTE_ADVANCES) {
@@ -415,6 +450,7 @@ public class ShapedText {
                     start, limit, isRtl, paint, start,
                     mAdvances, advance, extent,
                     builder);
+            mParaDir = isRtl ? -1 : 1;
         } else {
             // here, text array is the entire context
             final byte paraLevel = switch (bidiFlags) {
@@ -454,6 +490,7 @@ public class ShapedText {
                             builder);
                 }
             }
+            mParaDir = (bidi.getParaLevel() & 1) == 0 ? 1 : -1;
         }
         mAdvance = advance;
 
@@ -474,12 +511,15 @@ public class ShapedText {
 
         int nGlyphs = mGlyphs.length;
         if (nGlyphs == 0) {
+            mPaint = null;
             mTextBlob = null;
-            mNativeFont = null;
+            mTextBlobValid = true;
         } else {
-            var nativeFont = new icyllis.arc3d.sketch.Font();
-            paint.getNativeFont(nativeFont);
-            mNativeFont = nativeFont;
+            // save a paint for computeTextBlob()
+            var copiedPaint = new FontPaint(paint);
+            copiedPaint.mFont = null;
+            mPaint = copiedPaint;
+            mTextBlobValid = false;
         }
     }
 
