@@ -81,9 +81,8 @@ public final class OutlineFont implements Font {
         return sGraphics[(paint.isAntiAlias() ? 1 : 0) | (paint.isLinearMetrics() ? 2 : 0)];
     }
 
-    public static FontRenderContext getFontRenderContext(@NonNull Paint paint) {
-        return sGraphics[(paint.isTextAntiAlias() ? 1 : 0) | (paint.isLinearText() ? 2 : 0)]
-                .getFontRenderContext();
+    public static FontRenderContext getFontRenderContext(@NonNull FontPaint paint) {
+        return getGraphics(paint).getFontRenderContext();
     }
 
     @Override
@@ -125,8 +124,8 @@ public final class OutlineFont implements Font {
     }
 
     @NonNull
-    public java.awt.Font chooseFont(@NonNull Paint paint) {
-        return chooseFont(FontPaint.getCanonicalFontSize(paint.getTextSize()));
+    public java.awt.Font chooseFont(@NonNull FontPaint paint) {
+        return chooseFont(paint.getFontSize());
     }
 
     @Override

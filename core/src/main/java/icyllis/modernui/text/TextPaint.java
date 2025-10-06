@@ -32,7 +32,6 @@ import icyllis.modernui.util.Pools;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.CharBuffer;
@@ -91,7 +90,7 @@ public class TextPaint extends Paint {
 
     private Typeface mTypeface;
     private Locale mLocale;
-    private int mFlags;
+    private float mTextSize;
 
     // Special value 0 means no background paint
     @ColorInt
@@ -111,14 +110,11 @@ public class TextPaint extends Paint {
      */
     public TextPaint() {
         super();
-        mTypeface = ModernUI.getSelectedTypeface();
-        mLocale = ModernUI.getSelectedLocale();
-        mFlags = NORMAL;
     }
 
     @ApiStatus.Internal
     public TextPaint(@NonNull TextPaint paint) {
-        set(paint);
+        super(paint);
     }
 
     /**
@@ -144,19 +140,34 @@ public class TextPaint extends Paint {
         sPool.release(this);
     }
 
+    @Override
+    protected void internalReset() {
+        super.internalReset();
+        mTypeface = ModernUI.getSelectedTypeface();
+        mLocale = ModernUI.getSelectedLocale();
+        mTextSize = 16;
+    }
+
+    @Override
+    protected void internalSetFrom(@NonNull Paint paint) {
+        super.internalSetFrom(paint);
+        if (paint instanceof TextPaint tp) {
+            mTypeface = tp.mTypeface;
+            mLocale = tp.mLocale;
+            mTextSize = tp.mTextSize;
+            bgColor = tp.bgColor;
+            baselineShift = tp.baselineShift;
+            linkColor = tp.linkColor;
+            density = tp.density;
+            underlineColor = tp.underlineColor;
+        }
+    }
+
     /**
      * Copy the data from paint into this TextPaint
      */
     public void set(@NonNull TextPaint paint) {
         super.set(paint);
-        mTypeface = paint.mTypeface;
-        mLocale = paint.mLocale;
-        mFlags = paint.mFlags;
-        bgColor = paint.bgColor;
-        baselineShift = paint.baselineShift;
-        linkColor = paint.linkColor;
-        density = paint.density;
-        underlineColor = paint.underlineColor;
     }
 
     /**
@@ -218,6 +229,78 @@ public class TextPaint extends Paint {
     @NonNull
     public Locale getTextLocale() {
         return mLocale;
+    }
+
+    /**
+     * Return the paint's text size in pixel units.
+     * <p>
+     * The default value is 16.
+     *
+     * @return the paint's text size in pixel units.
+     * @see #setTextSize(float)
+     */
+    public float getTextSize() {
+        return mTextSize;
+    }
+
+    /**
+     * Set the paint's text size in pixel units. For example, a text size
+     * of 16 (1em) means the letter 'M' is 16 pixels high in device space.
+     * Very large or small sizes will impact rendering performance, and the
+     * rendering system might not render text at these sizes. For now, text
+     * sizes will clamp to 1 and 2184. You can have even larger glyphs through
+     * matrix transformation, and our engine will attempt to use SDF text rendering.
+     * This method has no effect if size is not greater than or equal to zero.
+     * <p>
+     * The default value is 16.
+     *
+     * @param textSize set the paint's text size in pixel units.
+     */
+    public void setTextSize(float textSize) {
+        if (textSize >= 0) {
+            mTextSize = textSize;
+        }
+    }
+
+    public boolean isTextAntiAlias() {
+        return switch (mFlags & TEXT_ANTI_ALIAS_MASK) {
+            case TEXT_ANTI_ALIAS_ON -> true;
+            case TEXT_ANTI_ALIAS_OFF -> false;
+            default -> isAntiAlias();
+        };
+    }
+
+    public void setTextAntiAlias(boolean textAA) {
+        mFlags = (mFlags & ~TEXT_ANTI_ALIAS_MASK) |
+                (textAA ? TEXT_ANTI_ALIAS_ON : TEXT_ANTI_ALIAS_OFF);
+    }
+
+    /**
+     * @return whether to enable linear text
+     */
+    public boolean isLinearText() {
+        return (mFlags & LINEAR_TEXT_FLAG) != 0;
+    }
+
+    /**
+     * Paint flag that enables smooth linear scaling of text.
+     *
+     * <p>Enabling this flag does not actually scale text, but rather adjusts
+     * text draw operations to deal gracefully with smooth adjustment of scale.
+     * When this flag is enabled, font hinting is disabled to prevent shape
+     * deformation between scale factors, and glyph caching is disabled due to
+     * the large number of glyph images that will be generated.</p>
+     *
+     * <p>Since 3.12, enabling linear text also enables subpixel positioning.</p>
+     *
+     * @param linearText whether to enable linear text
+     */
+    public void setLinearText(boolean linearText) {
+        if (linearText) {
+            mFlags |= LINEAR_TEXT_FLAG;
+        } else {
+            mFlags &= ~LINEAR_TEXT_FLAG;
+        }
     }
 
     /**
@@ -408,7 +491,7 @@ public class TextPaint extends Paint {
      * @param paint the paint to compare with
      * @return true if given {@link TextPaint} has the different effect on text measurement.
      */
-    public boolean equalsForTextMeasurement(@Nonnull TextPaint paint) {
+    public boolean equalsForTextMeasurement(@NonNull TextPaint paint) {
         return !getInternalPaint().isMetricAffecting(paint.getInternalPaint());
     }
 

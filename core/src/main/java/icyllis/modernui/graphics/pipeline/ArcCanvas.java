@@ -37,6 +37,7 @@ import icyllis.modernui.graphics.Matrix;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.RectF;
 import icyllis.modernui.graphics.text.Font;
+import icyllis.modernui.graphics.text.FontPaint;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.nio.FloatBuffer;
@@ -327,13 +328,17 @@ public class ArcCanvas extends Canvas {
     public void drawGlyphs(@NonNull int[] glyphs, int glyphOffset,
                            @NonNull float[] positions, int positionOffset,
                            int glyphCount, @NonNull Font font,
-                           float x, float y, @NonNull Paint paint) {
+                           float x, float y, @NonNull Paint paint,
+                           FontPaint fontPaint) {
+        if (glyphCount <= 0) {
+            return;
+        }
         var nativeFont = new icyllis.arc3d.sketch.Font();
         nativeFont.setTypeface(font.getNativeTypeface());
         if (nativeFont.getTypeface() == null) {
             return;
         }
-        paint.getNativeFont(nativeFont);
+        fontPaint.getNativeFont(nativeFont);
         mCanvas.drawGlyphs(glyphs, glyphOffset,
                 positions, positionOffset,
                 glyphCount, x, y, nativeFont, paint.getNativePaint());
