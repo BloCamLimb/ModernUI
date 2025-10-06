@@ -40,6 +40,8 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.text.CharUtils;
+import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LineBreaker;
 import icyllis.modernui.text.method.TextKeyListener;
 import icyllis.modernui.text.style.*;
@@ -2148,7 +2150,7 @@ public abstract class Layout {
             int line1 = mLayout.getLineForOffset(start);
             int line2 = mLayout.getLineForOffset(end);
 
-            TextUtils.getChars(mText, start, end, dest, destoff);
+            CharUtils.getChars(mText, start, end, dest, destoff);
 
             for (int i = line1; i <= line2; i++) {
                 mLayout.ellipsize(start, end, i, dest, destoff, mMethod);
@@ -2164,12 +2166,12 @@ public abstract class Layout {
         @Override
         public CharSequence subSequence(int start, int end) {
             int len = end - start;
-            char[] s = TextUtils.obtain(len);
+            char[] s = CharUtils.obtain(len);
             try {
                 getChars(start, end, s, 0);
                 return new String(s, 0, len);
             } finally {
-                TextUtils.recycle(s);
+                CharUtils.recycle(s);
             }
         }
 
@@ -2177,12 +2179,12 @@ public abstract class Layout {
         @Override
         public String toString() {
             int len = length();
-            char[] s = TextUtils.obtain(len);
+            char[] s = CharUtils.obtain(len);
             try {
                 getChars(0, len, s, 0);
                 return new String(s, 0, len);
             } finally {
-                TextUtils.recycle(s);
+                CharUtils.recycle(s);
             }
         }
     }

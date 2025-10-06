@@ -22,8 +22,10 @@ import com.ibm.icu.lang.UCharacter;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.ShapedText;
+import icyllis.modernui.graphics.text.TextRunShaper;
 import icyllis.modernui.text.style.ParagraphStyle;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -256,12 +258,12 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
         if (source instanceof String) {
             String direct = source.toString();
             int len = direct.length();
-            mDirect = TextShaper.shapeTextRun(
+            mDirect = TextRunShaper.shapeTextRun(
                     direct,
                     0, len,
                     0, len,
                     false,
-                    paint
+                    paint.getInternalPaint()
             );
         } else {
             mDirect = null;
@@ -341,14 +343,14 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
      */
     private static boolean hasAnyInterestingChars(CharSequence text, int textLength) {
         final int MAX_BUF_LEN = 500;
-        final char[] buffer = TextUtils.obtain(MAX_BUF_LEN);
+        final char[] buffer = CharUtils.obtain(MAX_BUF_LEN);
         try {
             for (int start = 0; start < textLength; start += MAX_BUF_LEN) {
                 final int end = Math.min(start + MAX_BUF_LEN, textLength);
 
                 // No need to worry about getting half codepoints, since we consider surrogate code
                 // units "interesting" as soon we see one.
-                TextUtils.getChars(text, start, end, buffer, 0);
+                CharUtils.getChars(text, start, end, buffer, 0);
 
                 final int len = end - start;
                 for (int i = 0; i < len; i++) {
@@ -361,7 +363,7 @@ public class BoringLayout extends Layout implements TextUtils.EllipsizeCallback 
             }
             return false;
         } finally {
-            TextUtils.recycle(buffer);
+            CharUtils.recycle(buffer);
         }
     }
 
