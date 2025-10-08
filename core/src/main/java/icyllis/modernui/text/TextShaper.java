@@ -18,7 +18,6 @@
 
 package icyllis.modernui.text;
 
-import com.ibm.icu.text.Bidi;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.text.CharUtils;
@@ -139,7 +138,7 @@ public class TextShaper {
         if ((dir == TextDirectionHeuristics.LTR
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
-                && !Bidi.requiresBidi(text, start, start + count)) {
+                && !TextUtils.requiresBidi(text, start, start + count)) {
             bidiFlags = ShapedText.BIDI_OVERRIDE_LTR;
         } else if (dir == TextDirectionHeuristics.LTR) {
             bidiFlags = ShapedText.BIDI_LTR;
