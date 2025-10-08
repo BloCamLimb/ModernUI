@@ -82,7 +82,7 @@ public class TextLine {
     private final FontMetricsInt mCachedFontExtent = new FontMetricsInt();
 
     private final ShapedText.RunConsumer mBuildTextBlob = (piece, start, end, isRtl, paint, offsetX) ->
-            TextUtils.buildTextBlob(mTextBlobBuilder, piece, offsetX, paint);
+            icyllis.modernui.graphics.pipeline.ArcCanvas.buildTextBlob(mTextBlobBuilder, piece, offsetX, paint);
 
     private TextLine() {
     }
