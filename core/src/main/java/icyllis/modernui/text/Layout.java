@@ -708,8 +708,7 @@ public abstract class Layout {
      * leading margin indent, but excluding trailing whitespace.
      */
     public float getLineMax(int line) {
-        float margin = getParagraphLeadingMargin(line) +
-                getParagraphTrailingMargin(line);
+        float margin = getParagraphMargin(line, LEADING_MARGIN + TRAILING_MARGIN);
         float signedExtent = getLineExtent(line, false);
         return margin + (signedExtent >= 0 ? signedExtent : -signedExtent);
     }
@@ -719,8 +718,7 @@ public abstract class Layout {
      * leading margin indent and trailing whitespace.
      */
     public float getLineWidth(int line) {
-        float margin = getParagraphLeadingMargin(line) +
-                getParagraphTrailingMargin(line);
+        float margin = getParagraphMargin(line, LEADING_MARGIN + TRAILING_MARGIN);
         float signedExtent = getLineExtent(line, true);
         return margin + (signedExtent >= 0 ? signedExtent : -signedExtent);
     }
@@ -912,9 +910,9 @@ public abstract class Layout {
         }
         int dir = getParagraphDirection(line);
         if (dir == DIR_RIGHT_TO_LEFT) {
-            return getParagraphTrailingMargin(line);
+            return getParagraphMargin(line, TRAILING_MARGIN);
         }
-        return getParagraphLeadingMargin(line);
+        return getParagraphMargin(line, LEADING_MARGIN);
     }
 
     /**
@@ -927,9 +925,9 @@ public abstract class Layout {
         }
         int dir = getParagraphDirection(line);
         if (dir == DIR_LEFT_TO_RIGHT) {
-            return right - getParagraphTrailingMargin(line);
+            return right - getParagraphMargin(line, TRAILING_MARGIN);
         }
-        return right - getParagraphLeadingMargin(line);
+        return right - getParagraphMargin(line, LEADING_MARGIN);
     }
 
     /**
@@ -1546,14 +1544,17 @@ public abstract class Layout {
         return caret;
     }
 
+    private static final int LEADING_MARGIN = 1;
+    private static final int TRAILING_MARGIN = 2;
+
     /**
-     * Returns the effective leading margin (unsigned) for this line,
-     * taking into account LeadingMarginSpan and LeadingMarginSpan2.
+     * Returns the effective leading margin (unsigned), plus/or trailing margin (unsigned)
+     * for this line, taking into account LeadingMarginSpan and LeadingMarginSpan2.
      *
      * @param line the line index
-     * @return the leading margin of this line
+     * @return the leading/trailing margin of this line
      */
-    private int getParagraphLeadingMargin(int line) {
+    private int getParagraphMargin(int line, int flags) {
         if (!mSpannedText) {
             return 0;
         }
@@ -1566,56 +1567,32 @@ public abstract class Layout {
         List<LeadingMarginSpan> spans = getParagraphSpans(spanned, lineStart, spanEnd,
                 LeadingMarginSpan.class);
         if (spans.isEmpty()) {
-            return 0; // no leading margin span;
+            return 0; // no leading/trailing margin span;
         }
 
         int margin = 0;
 
-        boolean useFirstLineMargin = lineStart == 0 || spanned.charAt(lineStart - 1) == '\n';
-        for (int i = 0; i < spans.size(); i++) {
-            LeadingMarginSpan span = spans.get(i);
-            if (span instanceof LeadingMarginSpan2) {
-                int count = ((LeadingMarginSpan2) span).getLeadingMarginLineCount();
-                int startLine = getLineForOffset(spanned.getSpanStart(span));
-                // if there is more than one LeadingMarginSpan2, use the count that is greatest
-                useFirstLineMargin |= line < startLine + count;
+        boolean useFirstLineMargin = false;
+        if ((flags & LEADING_MARGIN) != 0) {
+            useFirstLineMargin = lineStart == 0 || spanned.charAt(lineStart - 1) == '\n';
+            for (int i = 0; i < spans.size(); i++) {
+                LeadingMarginSpan span = spans.get(i);
+                if (span instanceof LeadingMarginSpan2) {
+                    int count = ((LeadingMarginSpan2) span).getLeadingMarginLineCount();
+                    int startLine = getLineForOffset(spanned.getSpanStart(span));
+                    // if there is more than one LeadingMarginSpan2, use the count that is greatest
+                    useFirstLineMargin |= line < startLine + count;
+                }
             }
         }
         for (int i = 0; i < spans.size(); i++) {
             LeadingMarginSpan span = spans.get(i);
-            margin += span.getLeadingMargin(mPaint, useFirstLineMargin);
-        }
-
-        return margin;
-    }
-
-    /**
-     * Returns the effective trailing margin (unsigned) for this line.
-     *
-     * @param line the line index
-     * @return the trailing margin of this line
-     */
-    private int getParagraphTrailingMargin(int line) {
-        if (!mSpannedText) {
-            return 0;
-        }
-        Spanned spanned = (Spanned) mText;
-
-        int lineStart = getLineStart(line);
-        int lineEnd = getLineEnd(line);
-        int spanEnd = spanned.nextSpanTransition(lineStart, lineEnd,
-                LeadingMarginSpan.class);
-        List<LeadingMarginSpan> spans = getParagraphSpans(spanned, lineStart, spanEnd,
-                LeadingMarginSpan.class);
-        if (spans.isEmpty()) {
-            return 0; // no trailing margin span;
-        }
-
-        int margin = 0;
-
-        for (int i = 0; i < spans.size(); i++) {
-            LeadingMarginSpan span = spans.get(i);
-            margin += span.getTrailingMargin(mPaint);
+            if ((flags & LEADING_MARGIN) != 0) {
+                margin += span.getLeadingMargin(mPaint, useFirstLineMargin);
+            }
+            if ((flags & TRAILING_MARGIN) != 0) {
+                margin += span.getTrailingMargin(mPaint);
+            }
         }
 
         return margin;
