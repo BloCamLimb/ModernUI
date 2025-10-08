@@ -439,7 +439,7 @@ public class MeasuredParagraph {
         if ((dir == TextDirectionHeuristics.LTR
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
-                && !Bidi.requiresBidi(mCopiedBuffer, 0, length)) {
+                && !TextUtils.requiresBidi(mCopiedBuffer, 0, length)) {
             mBidi = null;
         } else {
             final byte paraLevel;

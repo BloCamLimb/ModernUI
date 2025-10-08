@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text;
 
+import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.util.ULocale;
 import icyllis.arc3d.sketch.TextBlob;
 import icyllis.modernui.annotation.NonNull;
@@ -994,6 +995,67 @@ public final class TextUtils {
             dest.setSpan(span, st - start + destoff, en - start + destoff,
                     fl);
         }
+    }
+
+    /**
+     * Returns true if the character's presence could affect RTL layout
+     * (require BiDi analysis).
+     * <p>
+     * In order to be fast, the code is intentionally rough and quite conservative in its
+     * considering inclusion of any non-BMP or surrogate characters or anything in the bidi
+     * blocks or any bidi formatting characters with a potential to affect RTL layout.
+     * See {@link #requiresBidi(char[], int, int)} for stricter version.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean couldAffectRtl(char c) {
+        return (0x0590 <= c && c <= 0x08FF) ||  // RTL scripts
+                c == 0x200E ||  // Bidi format character
+                c == 0x200F ||  // Bidi format character
+                (0x202A <= c && c <= 0x202E) ||  // Bidi format characters
+                (0x2066 <= c && c <= 0x2069) ||  // Bidi format characters
+                (0xD800 <= c && c <= 0xDFFF) ||  // Surrogate pairs
+                (0xFB1D <= c && c <= 0xFDFF) ||  // Hebrew and Arabic presentation forms
+                (0xFE70 <= c && c <= 0xFEFE);  // Arabic presentation forms
+    }
+
+    // See ICU Bidi.requiresBidi()
+    // Added RIGHT_TO_LEFT_ISOLATE, but is ARABIC_NUMBER needed?
+    static final int RTL_MASK = 1 << UCharacter.RIGHT_TO_LEFT |
+            1 << UCharacter.RIGHT_TO_LEFT_ARABIC |
+            1 << UCharacter.RIGHT_TO_LEFT_EMBEDDING |
+            1 << UCharacter.RIGHT_TO_LEFT_OVERRIDE |
+            1 << UCharacter.RIGHT_TO_LEFT_ISOLATE |
+            1 << UCharacter.ARABIC_NUMBER;
+
+    /**
+     * Similar to {@link com.ibm.icu.text.Bidi#requiresBidi(char[], int, int)},
+     * but this fixes the issue where it did not consider SMP characters.
+     * <p>
+     * This method can carefully determine whether BiDi analysis
+     * is needed (i.e. containing multiple BiDi runs or only one RTL run),
+     * when LTR or DEFAULT_LTR algorithm is used.
+     */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public static boolean requiresBidi(char[] text,
+                                       int start,
+                                       int limit) {
+        for (int i = start, cp; i < limit; ) {
+            char c1;
+            cp = c1 = text[i++];
+            if (Character.isHighSurrogate(c1) && i < limit) {
+                char c2;
+                if (Character.isLowSurrogate(c2 = text[i])) {
+                    cp = Character.toCodePoint(c1, c2);
+                    i++;
+                }
+            }
+            if (((1 << UCharacter.getDirection(cp)) & RTL_MASK) != 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
