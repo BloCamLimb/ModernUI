@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrays;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -176,10 +177,7 @@ public class ShapedText {
 
     /**
      * Returns the number of characters (i.e. constructor <code>limit - start</code> in code units).
-     *
-     * @hidden
      */
-    @ApiStatus.Internal
     public int getCharCount() {
         return mAdvances.length;
     }
@@ -188,20 +186,15 @@ public class ShapedText {
      * The array of all chars advance, the length and order are relative to the text buffer.
      *
      * @return advances, or null
-     * @see GraphemeBreak
-     * @hidden
      */
-    @ApiStatus.Internal
+    @Unmodifiable
     public float[] getAdvances() {
         return mAdvances;
     }
 
     /**
      * Helper of {@link #getAdvances()}.
-     *
-     * @hidden
      */
-    @ApiStatus.Internal
     public float getAdvance(int i) {
         if (i == mAdvances.length) {
             return mAdvance;
@@ -345,8 +338,7 @@ public class ShapedText {
     private volatile boolean mTextBlobValid;
     private TextBlob mTextBlob;
 
-    //TODO currently we don't compute/store per-cluster advances
-    // because they are not needed for rendering, just needed for line breaking...
+    // we don't compute/store per-cluster advances for the first constructor
     private static final boolean COMPUTE_ADVANCES = false;
 
     /**
@@ -360,6 +352,9 @@ public class ShapedText {
      * <p>
      * The context range will affect BiDi analysis and shaping results, it can be slightly
      * larger than the layout range.
+     * <p>
+     * This method only computes positioned glyphs but does not compute per-cluster advances,
+     * use {@link #ShapedText(Bidi, int, int, FontPaint, int)} for fine control.
      *
      * @param text         text buffer, cannot be null
      * @param contextStart the context start index of text array
@@ -370,7 +365,12 @@ public class ShapedText {
      * @param paint        layout params
      */
     public ShapedText(@NonNull char[] text, int contextStart, int contextLimit,
-                      int start, int limit, int bidiFlags, @NonNull FontPaint paint) {
+                      int start, int limit,
+                      @MagicConstant(flags = {
+                              BIDI_LTR, BIDI_RTL, BIDI_DEFAULT_LTR, BIDI_DEFAULT_RTL,
+                              BIDI_OVERRIDE_LTR, BIDI_OVERRIDE_RTL
+                      }) int bidiFlags,
+                      @NonNull FontPaint paint) {
         int length = text.length;
         Objects.checkFromToIndex(contextStart, contextLimit, length);
         if (contextStart > start || contextLimit < limit) {
@@ -392,7 +392,7 @@ public class ShapedText {
         int count = limit - start;
         // we allow for an empty range
         if (count == 0) {
-            mAdvances = null;
+            mAdvances = COMPUTE_ADVANCES ? FloatArrays.EMPTY_ARRAY : null;
             // these two arrays are public so cannot be null
             mGlyphs = IntArrays.EMPTY_ARRAY;
             mPositions = FloatArrays.EMPTY_ARRAY;
@@ -415,34 +415,11 @@ public class ShapedText {
         }
         final FontMetricsInt extent = new FontMetricsInt();
 
-        // reserve memory, glyph count is <= char count
-        final var fontIndices = new ByteArrayList(count);
-        final var glyphs = new IntArrayList(count);
-        final var positions = new FloatArrayList(count * 2);
 
-        final ArrayList<Font> fontVec = new ArrayList<>();
-        final HashMap<Font, Byte> fontMap = new HashMap<>();
-        final Function<Font, Byte> nextID = font -> {
-            fontVec.add(font);
-            return (byte) fontMap.size();
-        };
 
         float advance = 0;
 
-        RunConsumer builder = (src, __, ___, ____, _____, offsetX) -> {
-            for (int i = 0; i < src.getGlyphCount(); i++) {
-                byte id = fontMap.computeIfAbsent(src.getFont(i), nextID);
-                fontIndices.add(id);
-            }
-            glyphs.addElements(glyphs.size(), src.getGlyphs());
-            int posIndex = positions.size();
-            positions.addElements(posIndex, src.getPositions());
-            for (int posEnd = positions.size();
-                 posIndex < posEnd;
-                 posIndex += 2) {
-                positions.elements()[posIndex] += offsetX;
-            }
-        };
+        GlyphsBuilder builder = new GlyphsBuilder(count);
 
         if (isOverride) {
             final boolean isRtl = (bidiFlags & 0b001) != 0;
@@ -494,14 +471,14 @@ public class ShapedText {
         }
         mAdvance = advance;
 
-        mGlyphs = glyphs.toIntArray();
-        mPositions = positions.toFloatArray();
-        if (fontVec.size() > 1) {
-            mFontIndices = fontIndices.toByteArray();
+        mGlyphs = builder.glyphs.toIntArray();
+        mPositions = builder.positions.toFloatArray();
+        if (builder.fontVec.size() > 1) {
+            mFontIndices = builder.fontIndices.toByteArray();
         } else {
             mFontIndices = null;
         }
-        mFonts = fontVec.toArray(new Font[0]);
+        mFonts = builder.fontVec.toArray(new Font[0]);
 
         mAscent = extent.ascent;
         mDescent = extent.descent;
@@ -516,9 +493,132 @@ public class ShapedText {
             mTextBlobValid = true;
         } else {
             // save a paint for computeTextBlob()
-            var copiedPaint = new FontPaint(paint);
-            copiedPaint.mFont = null;
-            mPaint = copiedPaint;
+            mPaint = new FontPaint(paint);
+            mTextBlobValid = false;
+        }
+    }
+
+    /**
+     * Request to create per-cluster advance information.
+     *
+     * @see LayoutCache#COMPUTE_CLUSTER_ADVANCES
+     */
+    public static final int CREATE_CLUSTER_ADVANCES = 0x01;
+    /**
+     * Request to create positioned glyph vector (for rendering).
+     */
+    public static final int CREATE_POSITIONED_GLYPHS = 0x02;
+
+    /**
+     * Generate the shaped text layout. The layout object will not be associated with the
+     * bidi object and the paint after construction.
+     * <p>
+     * The <var>bidi</var> text is the entire context, the caller can create text layout
+     * for a subrange.
+     *
+     * @param bidi        bidi text, cannot be null
+     * @param start       the start index of the layout
+     * @param limit       the end index of the layout
+     * @param paint       layout params
+     * @param createFlags one of create flags listed above
+     * @since 3.12.1
+     */
+    public ShapedText(@NonNull Bidi bidi, int start, int limit,
+                      @NonNull FontPaint paint,
+                      @MagicConstant(flags = {
+                              CREATE_CLUSTER_ADVANCES,
+                              CREATE_POSITIONED_GLYPHS
+                      }) int createFlags) {
+        char[] text = bidi.getText();
+        int length = bidi.getLength();
+        int count = limit - start;
+        // we allow for an empty range
+        if (count == 0) {
+            mAdvances = (createFlags & CREATE_CLUSTER_ADVANCES) != 0 ? FloatArrays.EMPTY_ARRAY : null;
+            mGlyphs = (createFlags & CREATE_POSITIONED_GLYPHS) != 0 ? IntArrays.EMPTY_ARRAY : null;
+            mPositions = (createFlags & CREATE_POSITIONED_GLYPHS) != 0 ? FloatArrays.EMPTY_ARRAY : null;
+            // these two arrays are internal so can be null
+            mFontIndices = null;
+            mFonts = null;
+            mAscent = 0;
+            mDescent = 0;
+            mAdvance = 0;
+            mParaDir = 1;
+            mPaint = null;
+            mTextBlob = null;
+            mTextBlobValid = true;
+            return;
+        }
+        if ((createFlags & CREATE_CLUSTER_ADVANCES) != 0) {
+            mAdvances = new float[count];
+        } else {
+            mAdvances = null;
+        }
+        final FontMetricsInt extent = new FontMetricsInt();
+
+        float advance = 0;
+
+        GlyphsBuilder builder = (createFlags & CREATE_POSITIONED_GLYPHS) != 0 ? new GlyphsBuilder(count) : null;
+
+        // entirely right-to-left
+        if (bidi.isRightToLeft()) {
+            advance += doLayoutRun(text, 0, length,
+                    start, limit, true, paint, start,
+                    mAdvances, advance, extent,
+                    builder);
+        }
+        // entirely left-to-right
+        else if (bidi.isLeftToRight()) {
+            advance += doLayoutRun(text, 0, length,
+                    start, limit, false, paint, start,
+                    mAdvances, advance, extent,
+                    builder);
+        }
+        // full bidirectional analysis
+        else {
+            int runCount = bidi.getRunCount();
+            for (int visualIndex = 0; visualIndex < runCount; visualIndex++) {
+                BidiRun run = bidi.getVisualRun(visualIndex);
+                int runStart = Math.max(run.getStart(), start);
+                int runEnd = Math.min(run.getLimit(), limit);
+                advance += doLayoutRun(text, 0, length,
+                        runStart, runEnd, run.isOddRun(), paint, start,
+                        mAdvances, advance, extent,
+                        builder);
+            }
+        }
+        mParaDir = (bidi.getParaLevel() & 1) == 0 ? 1 : -1;
+        mAdvance = advance;
+
+        if (builder != null) {
+            mGlyphs = builder.glyphs.toIntArray();
+            mPositions = builder.positions.toFloatArray();
+            if (builder.fontVec.size() > 1) {
+                mFontIndices = builder.fontIndices.toByteArray();
+            } else {
+                mFontIndices = null;
+            }
+            mFonts = builder.fontVec.toArray(new Font[0]);
+
+            assert mGlyphs.length * 2 == mPositions.length;
+            assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
+        } else {
+            mGlyphs = null;
+            mPositions = null;
+            mFontIndices = null;
+            mFonts = null;
+        }
+
+        mAscent = extent.ascent;
+        mDescent = extent.descent;
+
+        if (mGlyphs == null || mGlyphs.length == 0) {
+            mPaint = null;
+            mTextBlob = null;
+            mTextBlobValid = true;
+        } else {
+            // save a paint for computeTextBlob()
+            mPaint = new FontPaint(paint);
             mTextBlobValid = false;
         }
     }
@@ -558,6 +658,47 @@ public class ShapedText {
                 }
             }
             return builder.build();
+        }
+    }
+
+    // build positioned glyphs
+    private static class GlyphsBuilder implements RunConsumer {
+        final ByteArrayList fontIndices;
+        final IntArrayList glyphs;
+        final FloatArrayList positions;
+
+        final ArrayList<Font> fontVec;
+        final HashMap<Font, Byte> fontMap;
+        final Function<Font, Byte> nextID;
+
+        GlyphsBuilder(int count) {
+            // reserve memory, glyph count is <= char count
+            fontIndices = new ByteArrayList(count);
+            glyphs = new IntArrayList(count);
+            positions = new FloatArrayList(count * 2);
+
+            fontVec = new ArrayList<>();
+            fontMap = new HashMap<>();
+            nextID = font -> {
+                fontVec.add(font);
+                return (byte) fontMap.size();
+            };
+        }
+
+        @Override
+        public void accept(LayoutPiece src, int start, int end, boolean isRtl, FontPaint paint, float offsetX) {
+            for (int i = 0; i < src.getGlyphCount(); i++) {
+                byte id = fontMap.computeIfAbsent(src.getFont(i), nextID);
+                fontIndices.add(id);
+            }
+            glyphs.addElements(glyphs.size(), src.getGlyphs());
+            int posIndex = positions.size();
+            positions.addElements(posIndex, src.getPositions());
+            for (int posEnd = positions.size();
+                 posIndex < posEnd;
+                 posIndex += 2) {
+                positions.elements()[posIndex] += offsetX;
+            }
         }
     }
 
