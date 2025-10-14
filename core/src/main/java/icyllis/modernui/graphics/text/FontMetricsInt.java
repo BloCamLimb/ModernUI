@@ -85,10 +85,8 @@ public class FontMetricsInt {
 
     @Override
     public String toString() {
-        return "FontMetricsInt{" +
-                "ascent=" + ascent +
-                ", descent=" + descent +
-                ", leading=" + leading +
-                '}';
+        return "FontMetricsInt: ascent=" + ascent +
+                " descent=" + descent +
+                " leading=" + leading;
     }
 }
