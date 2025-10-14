@@ -20,11 +20,13 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.CharArrayIterator;
 import icyllis.modernui.graphics.text.CharSequenceIterator;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.GraphemeBreak;
@@ -36,6 +38,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.CharBuffer;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * This class holds data used during text measuring and drawing at higher levels.
@@ -479,6 +482,117 @@ public class TextPaint extends Paint {
                 : GraphemeBreak.getTextRunCursorImpl(null, text, contextStart, contextEnd - contextStart, offset, op);
     }
 
+    /**
+     * Return the logical width of the text.
+     *
+     * @param text  text to measure. Cannot be null.
+     * @param index the index of the first character to start measuring
+     * @param count the number of characters to measure, beginning with start
+     * @param isRtl whether the run is in RTL direction
+     * @param fmi   font metrics to receive the effective ascent/descent used in layout
+     * @return the total advance (logical width) in pixels
+     * @see #getTextRunAdvances(char[], int, int, int, int, boolean, float[], int, FontMetricsInt)
+     */
+    public float measureTextRun(@NonNull char[] text, int index, int count,
+                                boolean isRtl, @Nullable FontMetricsInt fmi) {
+        Objects.requireNonNull(text, "text cannot be null");
+        if ((index | count) < 0 || index + count > text.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        if (text.length == 0 || count == 0) {
+            return 0f;
+        }
+        // looks like the historical code uses ceiling
+        return (float) Math.ceil(getInternalPaint().measureTextRun(text, index, count, index, count,
+                isRtl, null, 0, fmi));
+    }
+
+    /**
+     * Return the logical width of the text.
+     *
+     * @param text  text to measure. Cannot be null.
+     * @param start the index (inclusive) of the first character to measure
+     * @param end   the index (exclusive) of the last character to measure
+     * @param isRtl whether the run is in RTL direction
+     * @param fmi   font metrics to receive the effective ascent/descent used in layout
+     * @return the total advance (logical width) in pixels
+     * @see #getTextRunAdvances(char[], int, int, int, int, boolean, float[], int, FontMetricsInt)
+     */
+    public float measureTextRun(@NonNull CharSequence text, int start, int end,
+                                boolean isRtl, @Nullable FontMetricsInt fmi) {
+        Objects.requireNonNull(text, "text cannot be null");
+        if ((start | end | (end - start) | (text.length() - end)) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (text.isEmpty() || start == end) {
+            return 0f;
+        }
+        char[] buf = CharUtils.obtain(end - start);
+        TextUtils.getChars(text, start, end, buf, 0);
+        float result = measureTextRun(buf, 0, end - start, isRtl, fmi);
+        CharUtils.recycle(buf);
+        return result;
+    }
+
+    /**
+     * Retrieve the character advances of the text.
+     * <p>
+     * Returns the total advance for the characters in the run from {@code index} for
+     * {@code count} of chars, and if {@code advances} is not null, the advance assigned to each of
+     * these font-dependent clusters (in UTF-16 chars).
+     * <p>
+     * In the case of conjuncts or combining marks, the total advance is assigned to the first
+     * logical character, and the following characters are assigned an advance of 0.
+     * <p>
+     * This generates the sum of the advances of glyphs for characters in a reordered cluster as the
+     * width of the first logical character in the cluster, and 0 for the widths of all other
+     * characters in the cluster.  In effect, such clusters are treated like conjuncts.
+     * <p>
+     * The shaping bounds limit the amount of context available outside start and end that can be
+     * used for shaping analysis.  These bounds typically reflect changes in bidi level or font
+     * metrics across which shaping does not occur.
+     * <p>
+     * If {@code fmi} is not null, the accumulated ascent/descent value actually used in layout
+     * will be returned. It can be smaller than standard metrics {@link #getFontMetricsInt} if
+     * only a subset of the {@link Typeface} is used. It can also be larger if any
+     * global fallback font is used. Note: you may need to reset first to receive the current value,
+     * otherwise it will accumulate on top of the existing value, see {@link FontMetricsInt#reset()}.
+     *
+     * @param text          the text to measure.
+     * @param index         the index of the first character to measure
+     * @param count         the number of characters to measure
+     * @param contextIndex  the index of the first character to use for shaping context.
+     *                      Context must cover the measuring target.
+     * @param contextCount  the number of character to use for shaping context.
+     *                      Context must cover the measuring target.
+     * @param isRtl         whether the run is in RTL direction
+     * @param advances      array to receive the advances, must have room for all advances.
+     *                      This can be null if only total advance is needed
+     * @param advancesIndex the position in advances at which to put the advance corresponding to
+     *                      the character at start
+     * @param fmi           font metrics to receive the effective ascent/descent used in layout
+     * @return the total advance (logical width) in pixels
+     */
+    public float getTextRunAdvances(@NonNull char[] text, @IntRange(from = 0) int index,
+                                    @IntRange(from = 0) int count, @IntRange(from = 0) int contextIndex,
+                                    @IntRange(from = 0) int contextCount, boolean isRtl, @Nullable float[] advances,
+                                    @IntRange(from = 0) int advancesIndex, @Nullable FontMetricsInt fmi) {
+        Objects.requireNonNull(text, "text cannot be null");
+        if ((index | count | contextIndex | contextCount | advancesIndex
+                | (index - contextIndex) | (contextCount - count)
+                | ((contextIndex + contextCount) - (index + count))
+                | (text.length - (contextIndex + contextCount))
+                | (advances == null ? 0 :
+                (advances.length - (advancesIndex + count)))) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (text.length == 0 || count == 0){
+            return 0f;
+        }
+        return getInternalPaint().measureTextRun(text, index, count, contextIndex, contextCount,
+                isRtl, advances, advancesIndex, fmi);
+    }
+
     int checkTextDecorations() {
         int flags = mFlags & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
         mFlags &= ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
@@ -515,8 +629,8 @@ public class TextPaint extends Paint {
      *
      * @return the font's interline spacing.
      */
-    public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
-        return getInternalPaint().getFontMetricsInt(fm);
+    public int getFontMetricsInt(@Nullable FontMetricsInt fmi) {
+        return getInternalPaint().getFontMetricsInt(fmi);
     }
 
     /**

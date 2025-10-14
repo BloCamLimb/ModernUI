@@ -204,13 +204,61 @@ public class FontPaint {
      *
      * @return the font's interline spacing.
      */
-    public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
+    public int getFontMetricsInt(@Nullable FontMetricsInt fmi) {
         int height = 0;
         for (FontFamily family : getFont().getFamilies()) {
             var font = family.getClosestMatch(getFontStyle());
-            height = Math.max(height, font.getMetrics(this, fm));
+            height = Math.max(height, font.getMetrics(this, fmi));
         }
         return height;
+    }
+
+    /**
+     * Retrieve the character advances of the text.
+     * <p>
+     * Returns the total advance for the characters in the run from {@code start} for
+     * {@code count} of chars, and if {@code advances} is not null, the advance assigned to each of
+     * these font-dependent clusters (in UTF-16 chars).
+     * <p>
+     * In the case of conjuncts or combining marks, the total advance is assigned to the first
+     * logical character, and the following characters are assigned an advance of 0.
+     * <p>
+     * This generates the sum of the advances of glyphs for characters in a reordered cluster as the
+     * width of the first logical character in the cluster, and 0 for the widths of all other
+     * characters in the cluster.  In effect, such clusters are treated like conjuncts.
+     * <p>
+     * The shaping bounds limit the amount of context available outside start and end that can be
+     * used for shaping analysis.  These bounds typically reflect changes in bidi level or font
+     * metrics across which shaping does not occur.
+     * <p>
+     * If {@code fmi} is not null, the accumulated ascent/descent value actually used in layout
+     * will be returned. It can be smaller than standard metrics {@link #getFontMetricsInt} if
+     * only a subset of the {@link FontCollection} is used. It can also be larger if any
+     * global fallback font is used. Note: you may need to reset first to receive the current value,
+     * otherwise it will accumulate on top of the existing value, see {@link FontMetricsInt#reset()}.
+     *
+     * @param text          the text to measure.
+     * @param start         the index of the first character to measure
+     * @param count         the number of characters to measure
+     * @param contextStart  the index of the first character to use for shaping context.
+     *                      Context must cover the measuring target.
+     * @param contextCount  the number of character to use for shaping context.
+     *                      Context must cover the measuring target.
+     * @param isRtl         whether the run is in RTL direction
+     * @param advances      array to receive the advances, must have room for all advances.
+     *                      This can be null if only total advance is needed
+     * @param advancesIndex the position in advances at which to put the advance corresponding to
+     *                      the character at start
+     * @param fmi           font metrics to receive the effective ascent/descent used in layout
+     * @return the total advance (logical width) in pixels
+     */
+    public float measureTextRun(@NonNull char[] text, int start, int count,
+                                int contextStart, int contextCount, boolean isRtl,
+                                @Nullable float[] advances, int advancesIndex,
+                                @Nullable FontMetricsInt fmi) {
+        return ShapedText.doLayoutRun(text, contextStart, contextStart + contextCount,
+                start, start + count, isRtl, this,
+                start - advancesIndex, advances, 0f, fmi, null);
     }
 
     /**
