@@ -89,7 +89,20 @@ public class ShapedText {
     public static final int BIDI_OVERRIDE_RTL = 0b101;
 
     /**
+     * Request to create per-cluster advance information.
+     *
+     * @see LayoutCache#COMPUTE_CLUSTER_ADVANCES
+     */
+    public static final int CREATE_CLUSTER_ADVANCES = 0x01;
+    /**
+     * Request to create positioned glyph vector (for rendering).
+     */
+    public static final int CREATE_POSITIONED_GLYPHS = 0x02;
+
+    /**
      * Returns the number of glyphs.
+     * <p>
+     * This is available when {@link #CREATE_POSITIONED_GLYPHS} is set.
      */
     public int getGlyphCount() {
         return mGlyphs.length;
@@ -101,6 +114,8 @@ public class ShapedText {
      * <p>
      * This is the underlying array that may be shared across threads,
      * it must NOT be modified.
+     * <p>
+     * This is available when {@link #CREATE_POSITIONED_GLYPHS} is set.
      *
      * @return glyphs
      */
@@ -130,6 +145,8 @@ public class ShapedText {
      * <p>
      * This is the underlying array that may be shared across threads,
      * it must NOT be modified.
+     * <p>
+     * This is available when {@link #CREATE_POSITIONED_GLYPHS} is set.
      *
      * @return glyph positions
      */
@@ -164,6 +181,9 @@ public class ShapedText {
      * Returns which font should be used for the i-th glyph.
      * <p>
      * A layout can contain multiple font runs.
+     * <p>
+     * This is available when {@link #CREATE_POSITIONED_GLYPHS} is set
+     * and glyph count is nonzero.
      *
      * @param i the index
      * @return the font
@@ -177,6 +197,7 @@ public class ShapedText {
 
     /**
      * Returns the number of characters (i.e. constructor <code>limit - start</code> in code units).
+     * This is available when {@link #CREATE_CLUSTER_ADVANCES} is set.
      */
     public int getCharCount() {
         return mAdvances.length;
@@ -184,6 +205,7 @@ public class ShapedText {
 
     /**
      * The array of all chars advance, the length and order are relative to the text buffer.
+     * This is available when {@link #CREATE_CLUSTER_ADVANCES} is set.
      *
      * @return advances, or null
      */
@@ -257,6 +279,9 @@ public class ShapedText {
      * <p>
      * This is an immutable copy of the constructor argument, it must
      * NOT be modified.
+     * <p>
+     * This is available when {@link #CREATE_POSITIONED_GLYPHS} is set
+     * and glyph count is nonzero.
      *
      * @return the creating layout params
      */
@@ -310,6 +335,7 @@ public class ShapedText {
                 ", mAscent=" + mAscent +
                 ", mDescent=" + mDescent +
                 ", mAdvance=" + mAdvance +
+                ", mParaDir" + mParaDir +
                 ", mTextBlob=" + mTextBlob +
                 '}';
     }
@@ -354,7 +380,8 @@ public class ShapedText {
      * larger than the layout range.
      * <p>
      * This method only computes positioned glyphs but does not compute per-cluster advances,
-     * use {@link #ShapedText(Bidi, int, int, FontPaint, int)} for fine control.
+     * use {@link #ShapedText(char[], int, int, int, int, int, FontPaint, int)} or
+     * {@link #ShapedText(Bidi, int, int, FontPaint, int)} for fine control.
      *
      * @param text         text buffer, cannot be null
      * @param contextStart the context start index of text array
@@ -371,6 +398,44 @@ public class ShapedText {
                               BIDI_OVERRIDE_LTR, BIDI_OVERRIDE_RTL
                       }) int bidiFlags,
                       @NonNull FontPaint paint) {
+        this(text, contextStart, contextLimit, start, limit, bidiFlags, paint,
+                CREATE_POSITIONED_GLYPHS | (COMPUTE_ADVANCES ? CREATE_CLUSTER_ADVANCES : 0));
+    }
+
+    /**
+     * Generate the shaped text layout. The layout object will not be associated with the
+     * text array and the paint after construction.
+     * <p>
+     * If <var>bidiFlags</var> are not OVERRIDE, the text array is the entire context, the
+     * caller is responsible for creating a copy of the context. Otherwise, the text array
+     * can be larger than context range, which is specified by <var>contextStart</var> and
+     * <var>contextLimit</var>.
+     * <p>
+     * The context range will affect BiDi analysis and shaping results, it can be slightly
+     * larger than the layout range.
+     * <p>
+     * If you have already got the Bidi object, use {@link #ShapedText(Bidi, int, int, FontPaint, int)}.
+     *
+     * @param text         text buffer, cannot be null
+     * @param contextStart the context start index of text array
+     * @param contextLimit the context end index of text array
+     * @param start        the start index of the layout
+     * @param limit        the end index of the layout
+     * @param bidiFlags    one of BiDi flags listed above
+     * @param paint        layout params
+     * @param createFlags  one of create flags listed above
+     */
+    public ShapedText(@NonNull char[] text, int contextStart, int contextLimit,
+                      int start, int limit,
+                      @MagicConstant(flags = {
+                              BIDI_LTR, BIDI_RTL, BIDI_DEFAULT_LTR, BIDI_DEFAULT_RTL,
+                              BIDI_OVERRIDE_LTR, BIDI_OVERRIDE_RTL
+                      }) int bidiFlags,
+                      @NonNull FontPaint paint,
+                      @MagicConstant(flags = {
+                              CREATE_CLUSTER_ADVANCES,
+                              CREATE_POSITIONED_GLYPHS
+                      }) int createFlags) {
         int length = text.length;
         Objects.checkFromToIndex(contextStart, contextLimit, length);
         if (contextStart > start || contextLimit < limit) {
@@ -392,10 +457,9 @@ public class ShapedText {
         int count = limit - start;
         // we allow for an empty range
         if (count == 0) {
-            mAdvances = COMPUTE_ADVANCES ? FloatArrays.EMPTY_ARRAY : null;
-            // these two arrays are public so cannot be null
-            mGlyphs = IntArrays.EMPTY_ARRAY;
-            mPositions = FloatArrays.EMPTY_ARRAY;
+            mAdvances = (createFlags & CREATE_CLUSTER_ADVANCES) != 0 ? FloatArrays.EMPTY_ARRAY : null;
+            mGlyphs = (createFlags & CREATE_POSITIONED_GLYPHS) != 0 ? IntArrays.EMPTY_ARRAY : null;
+            mPositions = (createFlags & CREATE_POSITIONED_GLYPHS) != 0 ? FloatArrays.EMPTY_ARRAY : null;
             // these two arrays are internal so can be null
             mFontIndices = null;
             mFonts = null;
@@ -408,18 +472,16 @@ public class ShapedText {
             mTextBlobValid = true;
             return;
         }
-        if (COMPUTE_ADVANCES) {
+        if ((createFlags & CREATE_CLUSTER_ADVANCES) != 0) {
             mAdvances = new float[count];
         } else {
             mAdvances = null;
         }
         final FontMetricsInt extent = new FontMetricsInt();
 
-
-
         float advance = 0;
 
-        GlyphsBuilder builder = new GlyphsBuilder(count);
+        GlyphsBuilder builder = (createFlags & CREATE_POSITIONED_GLYPHS) != 0 ? new GlyphsBuilder(count) : null;
 
         if (isOverride) {
             final boolean isRtl = (bidiFlags & 0b001) != 0;
@@ -471,23 +533,29 @@ public class ShapedText {
         }
         mAdvance = advance;
 
-        mGlyphs = builder.glyphs.toIntArray();
-        mPositions = builder.positions.toFloatArray();
-        if (builder.fontVec.size() > 1) {
-            mFontIndices = builder.fontIndices.toByteArray();
+        if (builder != null) {
+            mGlyphs = builder.glyphs.toIntArray();
+            mPositions = builder.positions.toFloatArray();
+            if (builder.fontVec.size() > 1) {
+                mFontIndices = builder.fontIndices.toByteArray();
+            } else {
+                mFontIndices = null;
+            }
+            mFonts = builder.fontVec.toArray(new Font[0]);
+
+            assert mGlyphs.length * 2 == mPositions.length;
+            assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
         } else {
+            mGlyphs = null;
+            mPositions = null;
             mFontIndices = null;
+            mFonts = null;
         }
-        mFonts = builder.fontVec.toArray(new Font[0]);
 
         mAscent = extent.ascent;
         mDescent = extent.descent;
 
-        assert mGlyphs.length * 2 == mPositions.length;
-        assert mFontIndices == null || mFontIndices.length == mGlyphs.length;
-
-        int nGlyphs = mGlyphs.length;
-        if (nGlyphs == 0) {
+        if (mGlyphs == null || mGlyphs.length == 0) {
             mPaint = null;
             mTextBlob = null;
             mTextBlobValid = true;
@@ -497,17 +565,6 @@ public class ShapedText {
             mTextBlobValid = false;
         }
     }
-
-    /**
-     * Request to create per-cluster advance information.
-     *
-     * @see LayoutCache#COMPUTE_CLUSTER_ADVANCES
-     */
-    public static final int CREATE_CLUSTER_ADVANCES = 0x01;
-    /**
-     * Request to create positioned glyph vector (for rendering).
-     */
-    public static final int CREATE_POSITIONED_GLYPHS = 0x02;
 
     /**
      * Generate the shaped text layout. The layout object will not be associated with the
