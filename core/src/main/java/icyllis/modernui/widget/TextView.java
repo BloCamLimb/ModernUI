@@ -249,7 +249,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     private boolean mSingleLine;
     private int mDesiredHeightAtMeasure = -1;
-    private boolean mIncludePad = true;
+    private boolean mIncludePad = false;
     private int mDeferScroll = -1;
 
     // tmp primitives, so we don't alloc them on each draw
@@ -3393,11 +3393,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                         && (!shouldEllipsize || hintBoring.width <= ellipsisWidth)) {
                     if (mSavedHintLayout != null) {
                         mHintLayout = mSavedHintLayout.replaceOrMake(mHint, mTextPaint,
-                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
+                                hintWidth, alignment, mTextDir,mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad);
                     } else {
                         mHintLayout = BoringLayout.make(mHint, mTextPaint,
-                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
+                                hintWidth, alignment, mTextDir,mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad);
                     }
 
@@ -3405,12 +3405,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 } else if (shouldEllipsize && hintBoring.width <= hintWidth) {
                     if (mSavedHintLayout != null) {
                         mHintLayout = mSavedHintLayout.replaceOrMake(mHint, mTextPaint,
-                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
+                                hintWidth, alignment, mTextDir,mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad, mEllipsize,
                                 ellipsisWidth);
                     } else {
                         mHintLayout = BoringLayout.make(mHint, mTextPaint,
-                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
+                                hintWidth, alignment, mTextDir,mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad, mEllipsize,
                                 ellipsisWidth);
                     }
@@ -3485,11 +3485,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                         && (effectiveEllipsize == null || boring.width <= ellipsisWidth)) {
                     if (useSaved && mSavedLayout != null) {
                         result = mSavedLayout.replaceOrMake(mTransformed, mTextPaint,
-                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
+                                wantWidth, alignment, mTextDir,mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad);
                     } else {
                         result = BoringLayout.make(mTransformed, mTextPaint,
-                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
+                                wantWidth, alignment, mTextDir,mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad);
                     }
 
@@ -3499,12 +3499,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 } else if (shouldEllipsize && boring.width <= wantWidth) {
                     if (useSaved && mSavedLayout != null) {
                         result = mSavedLayout.replaceOrMake(mTransformed, mTextPaint,
-                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
+                                wantWidth, alignment, mTextDir,mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad, effectiveEllipsize,
                                 ellipsisWidth);
                     } else {
                         result = BoringLayout.make(mTransformed, mTextPaint,
-                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
+                                wantWidth, alignment, mTextDir,mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad, effectiveEllipsize,
                                 ellipsisWidth);
                     }

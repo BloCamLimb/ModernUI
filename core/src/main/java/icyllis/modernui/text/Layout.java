@@ -83,7 +83,7 @@ public abstract class Layout {
     private float mSpacingMult;
     private float mSpacingAdd;
     private boolean mSpannedText;
-    private final TextDirectionHeuristic mTextDir;
+    private TextDirectionHeuristic mTextDir;
     private SpanSet<LineBackgroundSpan> mLineBackgroundSpans;
 
     private static final LineBackgroundSpan[] EMPTY_BACKGROUND_SPANS = {};
@@ -113,13 +113,16 @@ public abstract class Layout {
      * Subclasses of Layout use this constructor to set the display text,
      * width, and other standard properties.
      *
-     * @param text    the text to render
-     * @param paint   the default paint for the layout.  Styles can override
-     *                various attributes of the paint.
-     * @param width   the wrapping width for the text.
-     * @param align   whether to left, right, or center the text.  Styles can
-     *                override the alignment.
-     * @param textDir the text direction algorithm
+     * @param text        the text to render
+     * @param paint       the default paint for the layout.  Styles can override
+     *                    various attributes of the paint.
+     * @param width       the wrapping width for the text.
+     * @param align       whether to left, right, or center the text.  Styles can
+     *                    override the alignment.
+     * @param textDir     a text direction heuristic.
+     * @param spacingMult factor by which to scale the font size to get the
+     *                    default line spacing
+     * @param spacingAdd  amount to add to the default line spacing
      * @hidden
      */
     @ApiStatus.Internal
@@ -155,6 +158,7 @@ public abstract class Layout {
      */
     void replaceWith(CharSequence text, TextPaint paint,
                      int width, Alignment align,
+                     TextDirectionHeuristic textDir,
                      float spacingMult, float spacingAdd) {
         if (width < 0) {
             throw new IllegalArgumentException("Layout: " + width + " < 0");
@@ -167,6 +171,7 @@ public abstract class Layout {
         mSpacingMult = spacingMult;
         mSpacingAdd = spacingAdd;
         mSpannedText = text instanceof Spanned;
+        mTextDir = textDir;
     }
 
     /**
