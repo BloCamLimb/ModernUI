@@ -527,7 +527,7 @@ public final class TextUtils {
             if (avail >= 0) {
                 if (where == TruncateAt.START) {
                     right = len - mt.breakText(len, false, avail);
-                } else if (where == TruncateAt.END) {
+                } else if (where == TruncateAt.END || where == TruncateAt.MARQUEE) {
                     left = mt.breakText(len, true, avail);
                 } else { // MIDDLE
                     right = len - mt.breakText(len, false, avail / 2);
@@ -583,6 +583,29 @@ public final class TextUtils {
             if (mt != null) {
                 mt.recycle();
             }
+        }
+    }
+
+    static int breakText(float[] advances, int limit, boolean forwards, float width) {
+        if (forwards) {
+            int i = 0;
+            while (i < limit) {
+                width -= advances[i];
+                if (width < 0.0f) break;
+                i++;
+            }
+            return i;
+        } else {
+            int i = limit - 1;
+            while (i >= 0) {
+                width -= advances[i];
+                if (width < 0.0f) break;
+                i--;
+            }
+            while (i < limit - 1 && advances[i + 1] == 0.0f) {
+                i++;
+            }
+            return limit - i - 1;
         }
     }
 
@@ -880,6 +903,29 @@ public final class TextUtils {
                 (0xD800 <= c && c <= 0xDFFF) ||  // Surrogate pairs
                 (0xFB1D <= c && c <= 0xFDFF) ||  // Hebrew and Arabic presentation forms
                 (0xFE70 <= c && c <= 0xFEFE);  // Arabic presentation forms
+    }
+
+    /**
+     * Returns true if the character's presence could affect RTL layout
+     * (require BiDi analysis).
+     * <p>
+     * Since this calls couldAffectRtl() above, it's also quite conservative, in the way that
+     * it may return 'true' (needs bidi) although careful consideration may tell us it should
+     * return 'false' (does not need bidi).
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public static boolean couldAffectRtl(char[] text,
+                                         int start,
+                                         int limit) {
+        for (int i = start; i < limit; i++) {
+            if (couldAffectRtl(text[i])) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // See ICU Bidi.requiresBidi()
