@@ -89,6 +89,7 @@ import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -2488,7 +2489,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
 
             if (mChangeWatcher == null) {
-                mChangeWatcher = new ChangeWatcher();
+                mChangeWatcher = new ChangeWatcher(this);
             }
 
             sp.setSpan(mChangeWatcher, 0, textLength, Spanned.SPAN_INCLUSIVE_INCLUSIVE
@@ -5419,36 +5420,63 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
     }
 
-    private class ChangeWatcher implements TextWatcher, SpanWatcher {
+    private static class ChangeWatcher implements TextWatcher, SpanWatcher {
+        // Modern UI changed:
+        // Make this class a static nested class that holds a weak reference to the original TextView.
+        // Also, check the ownership of the text to avoid memory leaks and unexpected behaviors,
+        // similar to what DynamicLayout.ChangeWatcher does.
+        private final WeakReference<TextView> mTextView;
+
+        public ChangeWatcher(TextView textView) {
+            mTextView = new WeakReference<>(textView);
+        }
 
         @Override
         public void onSpanAdded(Spannable text, Object what, int start, int end) {
-            spanChange(text, what, -1, start, -1, end);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == text) {
+                textView.spanChange(text, what, -1, start, -1, end);
+            }
         }
 
         @Override
         public void onSpanRemoved(Spannable text, Object what, int start, int end) {
-            spanChange(text, what, start, -1, end, -1);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == text) {
+                textView.spanChange(text, what, start, -1, end, -1);
+            }
         }
 
         @Override
         public void onSpanChanged(Spannable text, Object what, int ost, int oen, int nst, int nen) {
-            spanChange(text, what, ost, nst, oen, nen);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == text) {
+                textView.spanChange(text, what, ost, nst, oen, nen);
+            }
         }
 
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            sendBeforeTextChanged(s, start, count, after);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == s) {
+                textView.sendBeforeTextChanged(s, start, count, after);
+            }
         }
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            handleTextChanged(s, start, before, count);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == s) {
+                textView.handleTextChanged(s, start, before, count);
+            }
         }
 
         @Override
         public void afterTextChanged(Editable s) {
-            sendAfterTextChanged(s);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == s) {
+                textView.sendAfterTextChanged(s);
+            }
         }
     }
 }
