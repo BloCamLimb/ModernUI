@@ -208,9 +208,8 @@ public class BoringLayout extends Layout {
             trust = true;
         } else {
             String replacement = ellipsize(source, paint, metrics, ellipsizedWidth, ellipsize);
-            if (replacement != null) {
-                replaceWith(replacement, paint, outerWidth, align, textDir, spacingMultiplier, spacingAmount);
-            }
+            replaceWith(replacement != null ? replacement : source,
+                    paint, outerWidth, align, textDir, spacingMultiplier, spacingAmount);
 
             mEllipsizedWidth = ellipsizedWidth;
             trust = replacement == null;
@@ -294,8 +293,8 @@ public class BoringLayout extends Layout {
 
     // Optimized version provided by Modern UI
     /* package */ String ellipsize(@NonNull CharSequence text, @NonNull TextPaint paint,
-                                 BoringLayout.Metrics metrics,
-                                 float avail, @NonNull TextUtils.TruncateAt where) {
+                                   @NonNull BoringLayout.Metrics metrics,
+                                   float avail, @NonNull TextUtils.TruncateAt where) {
         if (metrics.width <= avail) {
 
             mEllipsizedStart = 0;
