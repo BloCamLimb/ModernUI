@@ -42,6 +42,27 @@ import org.jetbrains.annotations.ApiStatus;
  * you are encouraged to use a Layout.</p>
  */
 public class BoringLayout extends Layout {
+    //TODO make use of PrecomputedText
+
+    /**
+     * Utility function to construct a BoringLayout instance.
+     *
+     * @param source     the text to render
+     * @param paint      the default paint for the layout
+     * @param outerWidth the wrapping width for the text
+     * @param align      whether to left, right, or center the text
+     * @param metrics    {@code #Metrics} instance that contains information about FontMetrics and
+     *                   line width
+     * @param includePad set whether to include extra space beyond font ascent and descent which is
+     *                   needed to avoid clipping in some scripts
+     */
+    @NonNull
+    public static BoringLayout make(@NonNull CharSequence source, @NonNull TextPaint paint, int outerWidth,
+                                    @NonNull Alignment align, float spacingMult, float spacingAdd,
+                                    @NonNull BoringLayout.Metrics metrics, boolean includePad) {
+        return make(source, paint, outerWidth, align, TextDirectionHeuristics.FIRSTSTRONG_LTR,
+                spacingMult, spacingAdd, metrics, includePad);
+    }
 
     /**
      * Utility function to construct a BoringLayout instance.
@@ -65,6 +86,15 @@ public class BoringLayout extends Layout {
                                     boolean includePad) {
         return new BoringLayout(source, paint, outerWidth, align, textDir, spacingMult, spacingAdd, metrics,
                 includePad);
+    }
+
+    @NonNull
+    public static BoringLayout make(@NonNull CharSequence source, @NonNull TextPaint paint, int outerWidth,
+                                    @NonNull Alignment align, float spacingMult, float spacingAdd,
+                                    @NonNull BoringLayout.Metrics metrics, boolean includePad,
+                                    @Nullable TextUtils.TruncateAt ellipsize, int ellipsizedWidth) {
+        return make(source, paint, outerWidth, align, TextDirectionHeuristics.FIRSTSTRONG_LTR,
+                spacingMult, spacingAdd, metrics, includePad, ellipsize, ellipsizedWidth);
     }
 
     /**
@@ -433,6 +463,22 @@ public class BoringLayout extends Layout {
             mTopPadding = metrics.top - metrics.ascent;
             mBottomPadding = metrics.bottom - metrics.descent;
         }*/
+    }
+
+    /**
+     * Determine and compute metrics if given text can be handled by BoringLayout.
+     *
+     * @param text    a text to be calculated text layout.
+     * @param paint   a paint object used for styling.
+     * @param metrics a metrics object to be recycled. If null is passed, this function create new
+     *                object.
+     * @return layout metric for the given text. If metrics is not null, this method fills values
+     * to given metrics object instead of allocating new metrics object. null if given text
+     * is unable to be handled by BoringLayout.
+     */
+    @Nullable
+    public static Metrics isBoring(@NonNull CharSequence text, @NonNull TextPaint paint, @Nullable Metrics metrics) {
+        return isBoring(text, paint, TextDirectionHeuristics.FIRSTSTRONG_LTR, metrics);
     }
 
     /**
