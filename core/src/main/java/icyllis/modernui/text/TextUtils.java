@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LayoutCache;
+import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
@@ -460,7 +461,16 @@ public final class TextUtils {
     @NonNull
     public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint p,
                                          float avail, @NonNull TruncateAt where) {
-        return ellipsize(text, p, avail, where, false, null);
+        return ellipsize(text, p, avail, where, false, null,
+                TextDirectionHeuristics.FIRSTSTRONG_LTR);
+    }
+
+    @NonNull
+    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint p,
+                                         float avail, @NonNull TruncateAt where,
+                                         @NonNull TextDirectionHeuristic textDir) {
+        return ellipsize(text, p, avail, where, false, null,
+                textDir);
     }
 
     /**
@@ -480,7 +490,7 @@ public final class TextUtils {
                                          float avail, @NonNull TruncateAt where,
                                          boolean preserveLength, @Nullable EllipsizeCallback callback) {
         return ellipsize(text, paint, avail, where, preserveLength, callback,
-                TextDirectionHeuristics.FIRSTSTRONG_LTR, getEllipsisChars(where));
+                TextDirectionHeuristics.FIRSTSTRONG_LTR);
     }
 
     @NonNull
@@ -535,13 +545,13 @@ public final class TextUtils {
             int right = len;
             if (avail >= 0) {
                 if (where == TruncateAt.START) {
-                    right = len - mt.breakText(len, false, avail);
+                    right = len - breakText(mt.getMeasuredText(), len, false, avail);
                 } else if (where == TruncateAt.END || where == TruncateAt.MARQUEE) {
-                    left = mt.breakText(len, true, avail);
+                    left = breakText(mt.getMeasuredText(), len, true, avail);
                 } else { // MIDDLE
-                    right = len - mt.breakText(len, false, avail / 2);
+                    right = len - breakText(mt.getMeasuredText(), len, false, avail / 2);
                     avail -= mt.getAdvance(right, len);
-                    left = mt.breakText(right, true, avail);
+                    left = breakText(mt.getMeasuredText(), right, true, avail);
                 }
             }
 
@@ -595,7 +605,37 @@ public final class TextUtils {
         }
     }
 
+    /**
+     * Returns the maximum index that the accumulated width not exceeds the width.
+     * <p>
+     * If forward=false is passed, returns the minimum index from the end instead.
+     */
+    static int breakText(MeasuredText mt, int limit, boolean forwards, float width) {
+        assert mt != null;
+        if (forwards) {
+            int i = 0;
+            while (i < limit) {
+                width -= mt.getAdvance(i);
+                if (width < 0.0f) break;
+                i++;
+            }
+            return i;
+        } else {
+            int i = limit - 1;
+            while (i >= 0) {
+                width -= mt.getAdvance(i);
+                if (width < 0.0f) break;
+                i--;
+            }
+            while (i < limit - 1 && mt.getAdvance(i + 1) == 0.0f) {
+                i++;
+            }
+            return limit - i - 1;
+        }
+    }
+
     static int breakText(float[] advances, int limit, boolean forwards, float width) {
+        assert advances != null;
         if (forwards) {
             int i = 0;
             while (i < limit) {
