@@ -3474,9 +3474,17 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             result = builder.build();
         } else {
             if (boring == UNKNOWN_BORING) {
-                boring = BoringLayout.isBoring(mTransformed, mTextPaint, mTextDir, mBoring);
-                if (boring != null) {
-                    mBoring = boring;
+                // Modern UI changed:
+                if (mTransformed.length() - 500 > wantWidth) {
+                    // When the width MeasureSpec of the TextView is EXACTLY and the number of
+                    // characters exceeds the pixel width, the layout is unlikely to be boring,
+                    // so avoid the check. With 500 as the threshold.
+                    boring = null;
+                } else {
+                    boring = BoringLayout.isBoring(mTransformed, mTextPaint, mTextDir, mBoring);
+                    if (boring != null) {
+                        mBoring = boring;
+                    }
                 }
             }
 
