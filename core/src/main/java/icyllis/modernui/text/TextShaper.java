@@ -138,7 +138,7 @@ public class TextShaper {
         if ((dir == TextDirectionHeuristics.LTR
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
-                && !TextUtils.requiresBidi(text, start, start + count)) {
+                && !TextUtils.couldAffectRtl(text, start, start + count)) {
             bidiFlags = ShapedText.BIDI_OVERRIDE_LTR;
         } else if (dir == TextDirectionHeuristics.LTR) {
             bidiFlags = ShapedText.BIDI_LTR;

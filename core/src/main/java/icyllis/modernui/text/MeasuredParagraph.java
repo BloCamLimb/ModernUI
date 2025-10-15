@@ -110,8 +110,12 @@ public class MeasuredParagraph {
      */
     public void release() {
         reset();
-        mSpanEndCache.trim();
-        mFontMetrics.trim();
+        if (mSpanEndCache.elements().length > 10000) {
+            mSpanEndCache.trim();
+        }
+        if (mFontMetrics.elements().length > 10000) {
+            mFontMetrics.trim();
+        }
     }
 
     /**
@@ -216,7 +220,7 @@ public class MeasuredParagraph {
         for (int i = 0; i < bidi.getRunCount(); ++i) {
             int vIndex;
             if ((mBidi.getBaseLevel() & 0x01) == 1) {
-                // For the historical reasons, if the base directionality is RTL, ModernUI
+                // For the historical reasons, if the base directionality is RTL, TextLine
                 // draws from the right, i.e. the visually reordered run needs to be reversed.
                 vIndex = visualOrders[bidi.getRunCount() - i - 1];
             } else {
@@ -439,7 +443,7 @@ public class MeasuredParagraph {
         if ((dir == TextDirectionHeuristics.LTR
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
-                && !TextUtils.requiresBidi(mCopiedBuffer, 0, length)) {
+                && !TextUtils.couldAffectRtl(mCopiedBuffer, 0, length)) {
             mBidi = null;
         } else {
             final byte paraLevel;
@@ -463,8 +467,8 @@ public class MeasuredParagraph {
                 // Historically, the MeasuredParagraph does not treat the CR letters as paragraph
                 // breaker but ICU BiDi treats it as paragraph breaker. In the MeasureParagraph,
                 // the given range always represents a single paragraph, so if the BiDi object has
-                // multiple paragraph, it should contains a CR letters in the text. Using CR is not
-                // common in ModernUI and also it should not penalize the easy case, e.g. all LTR,
+                // multiple paragraph, it should contain a CR letters in the text. Using CR is not
+                // common and also it should not penalize the easy case, e.g. all LTR,
                 // check the paragraph count here and replace the CR letters and re-calculate
                 // BiDi again.
                 for (int i = 0; i < length; ++i) {

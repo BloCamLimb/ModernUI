@@ -483,6 +483,15 @@ public final class TextUtils {
                 TextDirectionHeuristics.FIRSTSTRONG_LTR, getEllipsisChars(where));
     }
 
+    @NonNull
+    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint paint,
+                                         float avail, @NonNull TruncateAt where,
+                                         boolean preserveLength, @Nullable EllipsizeCallback callback,
+                                         @NonNull TextDirectionHeuristic textDir) {
+        return ellipsize(text, paint, avail, where, preserveLength, callback,
+                textDir, getEllipsisChars(where));
+    }
+
     /**
      * Returns the original text if it fits in the specified width
      * given the properties of the specified Paint,
