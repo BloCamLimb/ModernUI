@@ -1559,15 +1559,17 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     // Same as SpannableStringInternal
     @Override
     public boolean equals(Object o) {
-        if (o instanceof final Spanned other &&
-                toString().equals(o.toString())) {
+        if (o instanceof final Spanned other) {
+            int length = length();
+            if (length != other.length())
+                return false;
+            for (int i = 0; i < length; i++)
+                if (charAt(i) != other.charAt(i))
+                    return false;
             // Check span data
             final List<?> otherSpans = other.getSpans(0, other.length(), Object.class);
             final List<?> spans = getSpans(0, length(), Object.class);
-            if (otherSpans.isEmpty() && spans.isEmpty()) {
-                return true;
-            } else if (!otherSpans.isEmpty() && !spans.isEmpty() &&
-                    otherSpans.size() == spans.size()) {
+            if (otherSpans.size() == spans.size()) {
                 // Do not check mSpanCount anymore for safety
                 for (int i = 0; i < spans.size(); ++i) {
                     final Object span = spans.get(i);
