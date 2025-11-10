@@ -98,8 +98,6 @@ public class SpanSet<E> extends ArrayList<E> {
         // Proxy classes
         if (spanned instanceof Layout.SpannedEllipsizer)
             spanned = ((Layout.SpannedEllipsizer) spanned).mSpanned;
-        if (spanned instanceof PrecomputedText)
-            spanned = ((PrecomputedText) spanned).getText();
 
         if (spanned instanceof SpannableStringInternal) {
             return ((SpannableStringInternal) spanned).getSpans(start, limit,
