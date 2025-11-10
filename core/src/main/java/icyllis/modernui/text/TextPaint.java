@@ -20,10 +20,13 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.CharArrayIterator;
+import icyllis.modernui.graphics.text.CharSequenceIterator;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.GraphemeBreak;
@@ -31,10 +34,11 @@ import icyllis.modernui.util.Pools;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.nio.CharBuffer;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * This class holds data used during text measuring and drawing at higher levels.
@@ -89,7 +93,7 @@ public class TextPaint extends Paint {
 
     private Typeface mTypeface;
     private Locale mLocale;
-    private int mFlags;
+    private float mTextSize;
 
     // Special value 0 means no background paint
     @ColorInt
@@ -109,14 +113,11 @@ public class TextPaint extends Paint {
      */
     public TextPaint() {
         super();
-        mTypeface = ModernUI.getSelectedTypeface();
-        mLocale = ModernUI.getSelectedLocale();
-        mFlags = NORMAL;
     }
 
     @ApiStatus.Internal
     public TextPaint(@NonNull TextPaint paint) {
-        set(paint);
+        super(paint);
     }
 
     /**
@@ -142,19 +143,34 @@ public class TextPaint extends Paint {
         sPool.release(this);
     }
 
+    @Override
+    protected void internalReset() {
+        super.internalReset();
+        mTypeface = ModernUI.getSelectedTypeface();
+        mLocale = ModernUI.getSelectedLocale();
+        mTextSize = 16;
+    }
+
+    @Override
+    protected void internalSetFrom(@NonNull Paint paint) {
+        super.internalSetFrom(paint);
+        if (paint instanceof TextPaint tp) {
+            mTypeface = tp.mTypeface;
+            mLocale = tp.mLocale;
+            mTextSize = tp.mTextSize;
+            bgColor = tp.bgColor;
+            baselineShift = tp.baselineShift;
+            linkColor = tp.linkColor;
+            density = tp.density;
+            underlineColor = tp.underlineColor;
+        }
+    }
+
     /**
      * Copy the data from paint into this TextPaint
      */
     public void set(@NonNull TextPaint paint) {
         super.set(paint);
-        mTypeface = paint.mTypeface;
-        mLocale = paint.mLocale;
-        mFlags = paint.mFlags;
-        bgColor = paint.bgColor;
-        baselineShift = paint.baselineShift;
-        linkColor = paint.linkColor;
-        density = paint.density;
-        underlineColor = paint.underlineColor;
     }
 
     /**
@@ -216,6 +232,78 @@ public class TextPaint extends Paint {
     @NonNull
     public Locale getTextLocale() {
         return mLocale;
+    }
+
+    /**
+     * Return the paint's text size in pixel units.
+     * <p>
+     * The default value is 16.
+     *
+     * @return the paint's text size in pixel units.
+     * @see #setTextSize(float)
+     */
+    public float getTextSize() {
+        return mTextSize;
+    }
+
+    /**
+     * Set the paint's text size in pixel units. For example, a text size
+     * of 16 (1em) means the letter 'M' is 16 pixels high in device space.
+     * Very large or small sizes will impact rendering performance, and the
+     * rendering system might not render text at these sizes. For now, text
+     * sizes will clamp to 1 and 2184. You can have even larger glyphs through
+     * matrix transformation, and our engine will attempt to use SDF text rendering.
+     * This method has no effect if size is not greater than or equal to zero.
+     * <p>
+     * The default value is 16.
+     *
+     * @param textSize set the paint's text size in pixel units.
+     */
+    public void setTextSize(float textSize) {
+        if (textSize >= 0) {
+            mTextSize = textSize;
+        }
+    }
+
+    public boolean isTextAntiAlias() {
+        return switch (mFlags & TEXT_ANTI_ALIAS_MASK) {
+            case TEXT_ANTI_ALIAS_ON -> true;
+            case TEXT_ANTI_ALIAS_OFF -> false;
+            default -> isAntiAlias();
+        };
+    }
+
+    public void setTextAntiAlias(boolean textAA) {
+        mFlags = (mFlags & ~TEXT_ANTI_ALIAS_MASK) |
+                (textAA ? TEXT_ANTI_ALIAS_ON : TEXT_ANTI_ALIAS_OFF);
+    }
+
+    /**
+     * @return whether to enable linear text
+     */
+    public boolean isLinearText() {
+        return (mFlags & LINEAR_TEXT_FLAG) != 0;
+    }
+
+    /**
+     * Paint flag that enables smooth linear scaling of text.
+     *
+     * <p>Enabling this flag does not actually scale text, but rather adjusts
+     * text draw operations to deal gracefully with smooth adjustment of scale.
+     * When this flag is enabled, font hinting is disabled to prevent shape
+     * deformation between scale factors, and glyph caching is disabled due to
+     * the large number of glyph images that will be generated.</p>
+     *
+     * <p>Since 3.12, enabling linear text also enables subpixel positioning.</p>
+     *
+     * @param linearText whether to enable linear text
+     */
+    public void setLinearText(boolean linearText) {
+        if (linearText) {
+            mFlags |= LINEAR_TEXT_FLAG;
+        } else {
+            mFlags &= ~LINEAR_TEXT_FLAG;
+        }
     }
 
     /**
@@ -352,9 +440,9 @@ public class TextPaint extends Paint {
                 || op > GraphemeBreak.AT) {
             throw new IndexOutOfBoundsException();
         }
-        return GraphemeBreak.sUseICU ? GraphemeBreak.getTextRunCursorICU(new CharArrayIterator(text, contextStart,
-                contextEnd), mLocale, offset, op)
-                : GraphemeBreak.getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
+        return GraphemeBreak.sUseICU
+                ? GraphemeBreak.getTextRunCursorICU(new CharArrayIterator(text, contextStart, contextEnd), mLocale, offset, op)
+                : GraphemeBreak.getTextRunCursorImpl(null, CharBuffer.wrap(text), contextStart, contextLength, offset, op);
     }
 
     /**
@@ -383,16 +471,126 @@ public class TextPaint extends Paint {
      */
     public int getTextRunCursor(@NonNull CharSequence text, int contextStart,
                                 int contextEnd, int offset, int op) {
-        if (text instanceof String || text instanceof SpannedString ||
-                text instanceof SpannableString) {
-            return GraphemeBreak.getTextRunCursor(text.toString(), mLocale, contextStart, contextEnd,
-                    offset, op);
+        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
+                | (offset - contextStart) | (contextEnd - offset)
+                | (text.length() - contextEnd) | op) < 0)
+                || op > GraphemeBreak.AT) {
+            throw new IndexOutOfBoundsException();
         }
-        final int contextLen = contextEnd - contextStart;
-        final char[] buf = new char[contextLen];
-        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
-        offset = getTextRunCursor(buf, 0, contextLen, offset - contextStart, op);
-        return offset == -1 ? -1 : offset + contextStart;
+        return GraphemeBreak.sUseICU
+                ? GraphemeBreak.getTextRunCursorICU(new CharSequenceIterator(text, contextStart, contextEnd), mLocale, offset, op)
+                : GraphemeBreak.getTextRunCursorImpl(null, text, contextStart, contextEnd - contextStart, offset, op);
+    }
+
+    /**
+     * Return the logical width of the text.
+     *
+     * @param text  text to measure. Cannot be null.
+     * @param index the index of the first character to start measuring
+     * @param count the number of characters to measure, beginning with start
+     * @param isRtl whether the run is in RTL direction
+     * @param fmi   font metrics to receive the effective ascent/descent used in layout
+     * @return the total advance (logical width) in pixels
+     * @see #getTextRunAdvances(char[], int, int, int, int, boolean, float[], int, FontMetricsInt)
+     */
+    public float measureTextRun(@NonNull char[] text, int index, int count,
+                                boolean isRtl, @Nullable FontMetricsInt fmi) {
+        Objects.requireNonNull(text, "text cannot be null");
+        if ((index | count) < 0 || index + count > text.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        if (text.length == 0 || count == 0) {
+            return 0f;
+        }
+        // looks like the historical code uses ceiling
+        return (float) Math.ceil(getInternalPaint().measureTextRun(text, index, count, index, count,
+                isRtl, null, 0, fmi));
+    }
+
+    /**
+     * Return the logical width of the text.
+     *
+     * @param text  text to measure. Cannot be null.
+     * @param start the index (inclusive) of the first character to measure
+     * @param end   the index (exclusive) of the last character to measure
+     * @param isRtl whether the run is in RTL direction
+     * @param fmi   font metrics to receive the effective ascent/descent used in layout
+     * @return the total advance (logical width) in pixels
+     * @see #getTextRunAdvances(char[], int, int, int, int, boolean, float[], int, FontMetricsInt)
+     */
+    public float measureTextRun(@NonNull CharSequence text, int start, int end,
+                                boolean isRtl, @Nullable FontMetricsInt fmi) {
+        Objects.requireNonNull(text, "text cannot be null");
+        if ((start | end | (end - start) | (text.length() - end)) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (text.isEmpty() || start == end) {
+            return 0f;
+        }
+        char[] buf = CharUtils.obtain(end - start);
+        TextUtils.getChars(text, start, end, buf, 0);
+        float result = measureTextRun(buf, 0, end - start, isRtl, fmi);
+        CharUtils.recycle(buf);
+        return result;
+    }
+
+    /**
+     * Retrieve the character advances of the text.
+     * <p>
+     * Returns the total advance for the characters in the run from {@code index} for
+     * {@code count} of chars, and if {@code advances} is not null, the advance assigned to each of
+     * these font-dependent clusters (in UTF-16 chars).
+     * <p>
+     * In the case of conjuncts or combining marks, the total advance is assigned to the first
+     * logical character, and the following characters are assigned an advance of 0.
+     * <p>
+     * This generates the sum of the advances of glyphs for characters in a reordered cluster as the
+     * width of the first logical character in the cluster, and 0 for the widths of all other
+     * characters in the cluster.  In effect, such clusters are treated like conjuncts.
+     * <p>
+     * The shaping bounds limit the amount of context available outside start and end that can be
+     * used for shaping analysis.  These bounds typically reflect changes in bidi level or font
+     * metrics across which shaping does not occur.
+     * <p>
+     * If {@code fmi} is not null, the accumulated ascent/descent value actually used in layout
+     * will be returned. It can be smaller than standard metrics {@link #getFontMetricsInt} if
+     * only a subset of the {@link Typeface} is used. It can also be larger if any
+     * global fallback font is used. Note: you may need to reset first to receive the current value,
+     * otherwise it will accumulate on top of the existing value, see {@link FontMetricsInt#reset()}.
+     *
+     * @param text          the text to measure.
+     * @param index         the index of the first character to measure
+     * @param count         the number of characters to measure
+     * @param contextIndex  the index of the first character to use for shaping context.
+     *                      Context must cover the measuring target.
+     * @param contextCount  the number of character to use for shaping context.
+     *                      Context must cover the measuring target.
+     * @param isRtl         whether the run is in RTL direction
+     * @param advances      array to receive the advances, must have room for all advances.
+     *                      This can be null if only total advance is needed
+     * @param advancesIndex the position in advances at which to put the advance corresponding to
+     *                      the character at start
+     * @param fmi           font metrics to receive the effective ascent/descent used in layout
+     * @return the total advance (logical width) in pixels
+     */
+    public float getTextRunAdvances(@NonNull char[] text, @IntRange(from = 0) int index,
+                                    @IntRange(from = 0) int count, @IntRange(from = 0) int contextIndex,
+                                    @IntRange(from = 0) int contextCount, boolean isRtl, @Nullable float[] advances,
+                                    @IntRange(from = 0) int advancesIndex, @Nullable FontMetricsInt fmi) {
+        Objects.requireNonNull(text, "text cannot be null");
+        if ((index | count | contextIndex | contextCount | advancesIndex
+                | (index - contextIndex) | (contextCount - count)
+                | ((contextIndex + contextCount) - (index + count))
+                | (text.length - (contextIndex + contextCount))
+                | (advances == null ? 0 :
+                (advances.length - (advancesIndex + count)))) < 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (text.length == 0 || count == 0){
+            return 0f;
+        }
+        return getInternalPaint().measureTextRun(text, index, count, contextIndex, contextCount,
+                isRtl, advances, advancesIndex, fmi);
     }
 
     int checkTextDecorations() {
@@ -407,7 +605,7 @@ public class TextPaint extends Paint {
      * @param paint the paint to compare with
      * @return true if given {@link TextPaint} has the different effect on text measurement.
      */
-    public boolean equalsForTextMeasurement(@Nonnull TextPaint paint) {
+    public boolean equalsForTextMeasurement(@NonNull TextPaint paint) {
         return !getInternalPaint().isMetricAffecting(paint.getInternalPaint());
     }
 
@@ -431,17 +629,21 @@ public class TextPaint extends Paint {
      *
      * @return the font's interline spacing.
      */
-    public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
-        return getInternalPaint().getFontMetricsInt(fm);
+    public int getFontMetricsInt(@Nullable FontMetricsInt fmi) {
+        return getInternalPaint().getFontMetricsInt(fmi);
     }
 
     /**
-     * Populates layout attributes to a temporary internal paint and returns.
-     * See {@link #createInternalPaint()} to create a new paint.
+     * Populates attributes that affect text layout to a temporary internal paint and returns.
+     * The returned object is used by the internal text layout engine, and can be
+     * passed to {@link icyllis.modernui.graphics.text.ShapedText},
+     * {@link icyllis.modernui.graphics.text.TextRunShaper},
+     * {@link icyllis.modernui.graphics.text.MeasuredText.Builder}, {@link icyllis.modernui.graphics.Canvas}.
+     * <p>
+     * See {@link #createInternalPaint()} to create a new paint as a copy.
      *
      * @return a shared internal paint
      */
-    @ApiStatus.Internal
     @NonNull
     public final FontPaint getInternalPaint() {
         FontPaint p = mInternalPaint;
@@ -460,7 +662,6 @@ public class TextPaint extends Paint {
      *
      * @return an internal paint
      */
-    @ApiStatus.Internal
     @NonNull
     public final FontPaint createInternalPaint() {
         return new FontPaint(getInternalPaint());

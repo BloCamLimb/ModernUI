@@ -22,7 +22,7 @@ import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.*;
 import com.ibm.icu.text.BreakIterator;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.text.CharSequenceIterator;
+import icyllis.modernui.graphics.text.CharSequenceIterator;
 
 import javax.annotation.Nonnull;
 import java.util.Locale;

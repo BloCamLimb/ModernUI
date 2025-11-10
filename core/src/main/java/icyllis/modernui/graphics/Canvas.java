@@ -24,6 +24,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.graphics.text.Font;
+import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.OutlineFont;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.view.Gravity;
@@ -1293,10 +1294,11 @@ public abstract class Canvas {
      *                       {@code positionOffset + 1}, then the second glyph X position must be
      *                       stored at {@code positionOffset + 2}.
      * @param glyphCount     Number of glyphs to be drawn.
-     * @param font           FontFace used for drawing.
+     * @param font           FontFace used for rasterization.
      * @param x              Additional amount of x offset of the glyph X positions.
      * @param y              Additional amount of y offset of the glyph Y positions.
      * @param paint          Paint used for drawing.
+     * @param fontPaint      Paint used for font rasterization.
      * @see icyllis.modernui.text.TextShaper
      * @see #drawShapedText
      */
@@ -1307,11 +1309,13 @@ public abstract class Canvas {
                                     int glyphCount,
                                     @NonNull Font font,
                                     float x, float y,
-                                    @NonNull Paint paint);
+                                    @NonNull Paint paint,
+                                    FontPaint fontPaint);
 
     /**
      * @hidden
      */
+    //TODO remove this once we introduce TextDisplayList
     @ApiStatus.Experimental
     public abstract void drawTextBlob(icyllis.arc3d.sketch.TextBlob blob, float x, float y,
                                       @NonNull Paint paint);
@@ -1319,13 +1323,18 @@ public abstract class Canvas {
     /**
      * Draw a single style run of positioned glyphs in order <em>visually left-to-right</em>,
      * where a single style run may contain multiple BiDi runs and font runs.
-     * The Paint must be the same as the one passed to any of {@link icyllis.modernui.text.TextShaper} methods.
+     * <p>
+     * The Paint only affects the colors and stroking styles, it's independent to the one passed
+     * to any of {@link icyllis.modernui.text.TextShaper} methods.
+     * <p>
+     * Use {@link #drawGlyphs} if you only want to draw a range of the ShapedText.
      *
      * @param text  A sequence of positioned glyphs.
      * @param x     Additional amount of x offset of the glyph X positions, i.e. left position
      * @param y     Additional amount of y offset of the glyph Y positions, i.e. baseline position
      * @param paint Paint used for drawing.
      * @see icyllis.modernui.text.TextShaper
+     * @see icyllis.modernui.graphics.text.TextRunShaper
      */
     public void drawShapedText(@NonNull ShapedText text,
                                float x, float y, @NonNull Paint paint) {
@@ -1333,13 +1342,15 @@ public abstract class Canvas {
     }
 
     public void drawSimpleText(@NonNull char[] text, @NonNull Font font,
-                               float x, float y, @NonNull Paint paint) {
+                               float x, float y, @NonNull Paint paint,
+                               @NonNull FontPaint fontPaint) {
         if (text.length == 0) {
             return;
         }
         if (font instanceof OutlineFont outlineFont) {
-            var face = outlineFont.chooseFont(paint);
-            var frc = OutlineFont.getFontRenderContext(paint);
+            // inline version of OutlineFont.doSimpleLayout
+            var face = outlineFont.chooseFont(fontPaint);
+            var frc = OutlineFont.getFontRenderContext(fontPaint);
             var gv = face.createGlyphVector(frc, text);
             int nGlyphs = gv.getNumGlyphs();
             drawGlyphs(gv.getGlyphCodes(0, nGlyphs, null),
@@ -1348,16 +1359,78 @@ public abstract class Canvas {
                     0,
                     nGlyphs,
                     font,
-                    x, y, paint);
+                    x, y, paint, fontPaint);
         }
     }
 
     public void drawSimpleText(@NonNull String text, @NonNull Font font,
-                               float x, float y, @NonNull Paint paint) {
-        if (!text.isBlank()) {
-            drawSimpleText(text.toCharArray(), font, x, y, paint);
+                               float x, float y, @NonNull Paint paint,
+                               @NonNull FontPaint fontPaint) {
+        if (!text.isEmpty()) {
+            drawSimpleText(text.toCharArray(), font, x, y, paint, fontPaint);
         }
     }
+
+    /**
+     * Draw a run of text, all in a single direction, with optional context for complex text
+     * shaping.
+     * <p>
+     * See {@link #drawTextRun(CharSequence, int, int, int, int, float, float, boolean, Paint, FontPaint)} for
+     * more details. This method uses a character array rather than CharSequence to represent the
+     * string.
+     *
+     * @param text         the text to render
+     * @param start        the start of the text to render. Data before this position can be used for
+     *                     shaping context.
+     * @param end          the end of the text to render. Data at or after this position can be used for
+     *                     shaping context.
+     * @param contextStart the index of the start of the shaping context
+     * @param contextEnd   the index of the end of the shaping context
+     * @param x            the x position at which to draw the text
+     * @param y            the y position at which to draw the text
+     * @param isRtl        whether the run is in RTL direction
+     * @param paint        the paint
+     * @param fontPaint    the paint used for font rasterization
+     */
+    public abstract void drawTextRun(@NonNull char[] text, int start, int end,
+                                     int contextStart, int contextEnd, float x, float y, boolean isRtl,
+                                     @NonNull Paint paint, @NonNull FontPaint fontPaint);
+
+    /**
+     * Draw a run of text, all in a single direction, with optional context for complex text
+     * shaping.
+     * <p>
+     * The run of text includes the characters from {@code start} to {@code end} in the text. In
+     * addition, the range {@code contextStart} to {@code contextEnd} is used as context for the
+     * purpose of complex text shaping, such as Arabic text potentially shaped differently based on
+     * the text next to it.
+     * <p>
+     * All text outside the range {@code contextStart..contextEnd} is ignored. The text between
+     * {@code start} and {@code end} will be laid out and drawn. The context range is useful for
+     * contextual shaping, e.g. Kerning, Arabic contextual form.
+     * <p>
+     * The direction of the run is explicitly specified by {@code isRtl}. Thus, this method is
+     * suitable only for runs of a single direction. Alignment of the text is as determined by the
+     * Paint's TextAlign value. Further, {@code 0 <= contextStart <= start <= end <= contextEnd
+     * <= text.length} must hold on entry.
+     *
+     * @param text         the text to render
+     * @param start        the start of the text to render. Data before this position can be used for
+     *                     shaping context.
+     * @param end          the end of the text to render. Data at or after this position can be used for
+     *                     shaping context.
+     * @param contextStart the index of the start of the shaping context
+     * @param contextEnd   the index of the end of the shaping context
+     * @param x            the x position at which to draw the text
+     * @param y            the y position at which to draw the text
+     * @param isRtl        whether the run is in RTL direction
+     * @param paint        the paint used for shading
+     * @param fontPaint    the paint used for font rasterization
+     * @see #drawTextRun(char[], int, int, int, int, float, float, boolean, Paint, FontPaint)
+     */
+    public abstract void drawTextRun(@NonNull CharSequence text, int start, int end,
+                                     int contextStart, int contextEnd, float x, float y, boolean isRtl,
+                                     @NonNull Paint paint, @NonNull FontPaint fontPaint);
 
     /**
      * Supported primitive topologies, corresponding to OpenGL and Vulkan defined values.

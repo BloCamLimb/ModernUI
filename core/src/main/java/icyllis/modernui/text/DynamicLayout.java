@@ -226,6 +226,20 @@ public class DynamicLayout extends Layout {
         }
 
         /**
+         * Set the line break configuration. The line break will be passed to native used for
+         * calculating the text wrapping. The default value of the line break style is
+         * {@link LineBreakConfig#LINE_BREAK_STYLE_NONE}
+         *
+         * @param lineBreakConfig the line break configuration for text wrapping.
+         * @return this builder, useful for chaining.
+         */
+        @NonNull
+        public Builder setLineBreakConfig(@NonNull LineBreakConfig lineBreakConfig) {
+            mLineBreakConfig = lineBreakConfig;
+            return this;
+        }
+
+        /**
          * Build the {@link DynamicLayout} after options have been set.
          *
          * <p>Note: the builder object must not be reused in any way after calling this method.
@@ -279,6 +293,7 @@ public class DynamicLayout extends Layout {
     private boolean mEllipsize;
     private int mEllipsizedWidth;
     private TextUtils.TruncateAt mEllipsizeAt;
+    private LineBreakConfig mLineBreakConfig;
 
     private PackedIntVector mInts;
     private PackedObjectVector<Directions> mObjects;
@@ -309,6 +324,7 @@ public class DynamicLayout extends Layout {
 
         mDisplay = b.mDisplay;
         mIncludePad = b.mIncludePad;
+        mLineBreakConfig = b.mLineBreakConfig;
 
         generate(b);
     }
@@ -515,6 +531,7 @@ public class DynamicLayout extends Layout {
                 .setFallbackLineSpacing(mFallbackLineSpacing)
                 .setEllipsizedWidth(mEllipsizedWidth)
                 .setEllipsize(mEllipsizeAt)
+                .setLineBreakConfig(mLineBreakConfig)
                 .setAddLastLineLineSpacing(!islast)
                 .setIncludePad(false);
 

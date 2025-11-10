@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.util.SparseArray;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -80,9 +81,8 @@ public final class OutlineFont implements Font {
         return sGraphics[(paint.isAntiAlias() ? 1 : 0) | (paint.isLinearMetrics() ? 2 : 0)];
     }
 
-    public static FontRenderContext getFontRenderContext(@NonNull Paint paint) {
-        return sGraphics[(paint.isTextAntiAlias() ? 1 : 0) | (paint.isLinearText() ? 2 : 0)]
-                .getFontRenderContext();
+    public static FontRenderContext getFontRenderContext(@NonNull FontPaint paint) {
+        return getGraphics(paint).getFontRenderContext();
     }
 
     @Override
@@ -124,8 +124,8 @@ public final class OutlineFont implements Font {
     }
 
     @NonNull
-    public java.awt.Font chooseFont(@NonNull Paint paint) {
-        return chooseFont(FontPaint.getCanonicalFontSize(paint.getTextSize()));
+    public java.awt.Font chooseFont(@NonNull FontPaint paint) {
+        return chooseFont(paint.getFontSize());
     }
 
     @Override
@@ -237,28 +237,51 @@ public final class OutlineFont implements Font {
         );
         int nGlyphs = vector.getNumGlyphs();
 
-        if (advances != null) {
+        if (advances != null && nGlyphs > 0) {
             final int baseFlags = isRtl
                     ? java.awt.Font.LAYOUT_RIGHT_TO_LEFT
                     : java.awt.Font.LAYOUT_LEFT_TO_RIGHT;
             // this is a bit slow
-            GraphemeBreak.forTextRun(buf, paint.mLocale, layoutStart, layoutLimit,
-                    (clusterStart, clusterLimit) -> {
-                        int flags = baseFlags;
-                        if (clusterStart == contextStart) {
-                            flags |= java.awt.Font.LAYOUT_NO_START_CONTEXT;
-                        }
-                        if (clusterLimit == contextLimit) {
-                            flags |= java.awt.Font.LAYOUT_NO_LIMIT_CONTEXT;
-                        }
-                        var vec = face.layoutGlyphVector(
-                                frc, buf,
-                                clusterStart, clusterLimit,
-                                flags
-                        );
-                        advances[clusterStart - advanceOffset] =
-                                (float) vec.getGlyphPosition(vec.getNumGlyphs()).getX();
-                    });
+            // JDK 11+ uses HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS, so clusters are monotonic.
+            // We remove duplicate cluster values and find the range for each cluster, and measure.
+            int i = isRtl ? nGlyphs - 1 : 0;
+            int dir = isRtl ? -1 : 1;
+            while (0 <= i && i < nGlyphs) {
+                int cv = vector.getGlyphCharIndex(i);
+                int j = i + dir;
+                while (0 <= j && j < nGlyphs && vector.getGlyphCharIndex(j) == cv) {
+                    j += dir;
+                }
+
+                int clusterStart = layoutStart + cv;
+                int clusterLimit = (0 <= j && j < nGlyphs)
+                        ? layoutStart + vector.getGlyphCharIndex(j)
+                        : layoutLimit;
+
+                if (clusterStart < layoutStart || clusterStart >= clusterLimit
+                        || clusterLimit > layoutLimit) {
+                    Log.LOGGER.error(FontFamily.MARKER,
+                            "cluster range ({}, {}) out of layout bounds ({}, {})",
+                            clusterStart, clusterLimit, layoutStart, layoutLimit);
+                } else {
+                    int flags = baseFlags;
+                    if (clusterStart == contextStart) {
+                        flags |= java.awt.Font.LAYOUT_NO_START_CONTEXT;
+                    }
+                    if (clusterLimit == contextLimit) {
+                        flags |= java.awt.Font.LAYOUT_NO_LIMIT_CONTEXT;
+                    }
+                    var vec = face.layoutGlyphVector(
+                            frc, buf,
+                            clusterStart, clusterLimit,
+                            flags
+                    );
+                    advances[clusterStart - advanceOffset] =
+                            (float) vec.getGlyphPosition(vec.getNumGlyphs()).getX();
+                }
+
+                i = j;
+            }
         }
 
         if (glyphs != null || positions != null) {

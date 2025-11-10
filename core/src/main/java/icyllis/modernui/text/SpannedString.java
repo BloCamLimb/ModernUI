@@ -35,35 +35,38 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.text.GetChars;
 
 /**
  * This is the class for text whose content and markup are immutable.
  * For mutable markup, see {@link SpannableString}.
+ * <p>
+ * Although a SpannedString is immutable, it is thread-safe only if you safely
+ * publish it.
  */
 public final class SpannedString extends SpannableStringInternal implements Spanned, GetChars {
 
     /**
-     * @param source           source object to copy from
-     * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
+     * A static, final, empty SpannedString, no spans, thread-safe.
      */
-    public SpannedString(@NonNull CharSequence source, boolean ignoreNoCopySpan) {
-        super(source, 0, source.length(), ignoreNoCopySpan);
+    public static final SpannedString EMPTY = new SpannedString("");
+
+    /**
+     * Note: {@link NoCopySpan} will not be copied into this.
+     *
+     * @param source source object to copy from
+     */
+    public SpannedString(@NonNull CharSequence source) {
+        super(source, 0, source.length());
     }
 
     /**
-     * @param source           source object to copy from
-     * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
+     * Note: {@link NoCopySpan} will not be copied into this.
+     *
+     * @param source source object to copy from
      */
-    public SpannedString(@NonNull CharSequence source, int start, int end, boolean ignoreNoCopySpan) {
-        super(source, start, end, ignoreNoCopySpan);
-    }
-
-    public SpannedString(@NonNull CharSequence source) {
-        this(source, false);
-    }
-
     public SpannedString(@NonNull CharSequence source, int start, int end) {
-        super(source, start, end, false);
+        super(source, start, end);
     }
 
     @NonNull

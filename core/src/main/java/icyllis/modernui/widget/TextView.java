@@ -89,6 +89,7 @@ import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -139,7 +140,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     static final int VERY_WIDE = 1024 * 1024; // XXX should be much larger
 
     private static final InputFilter[] NO_FILTERS = new InputFilter[0];
-    private static final Spanned EMPTY_SPANNED = new SpannedString("");
 
     private static final int CHANGE_WATCHER_PRIORITY = 100;
 
@@ -2420,7 +2420,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public void setText(@NonNull CharSequence text, @NonNull BufferType type) {
         for (InputFilter filter : mFilters) {
-            CharSequence out = filter.filter(text, 0, text.length(), EMPTY_SPANNED, 0, 0);
+            CharSequence out = filter.filter(text, 0, text.length(), SpannedString.EMPTY, 0, 0);
             if (out != null) {
                 text = out;
             }
@@ -2489,7 +2489,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
 
             if (mChangeWatcher == null) {
-                mChangeWatcher = new ChangeWatcher();
+                mChangeWatcher = new ChangeWatcher(this);
             }
 
             sp.setSpan(mChangeWatcher, 0, textLength, Spanned.SPAN_INCLUSIVE_INCLUSIVE
@@ -3394,11 +3394,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                         && (!shouldEllipsize || hintBoring.width <= ellipsisWidth)) {
                     if (mSavedHintLayout != null) {
                         mHintLayout = mSavedHintLayout.replaceOrMake(mHint, mTextPaint,
-                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
+                                hintWidth, alignment, mTextDir, mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad);
                     } else {
                         mHintLayout = BoringLayout.make(mHint, mTextPaint,
-                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
+                                hintWidth, alignment, mTextDir, mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad);
                     }
 
@@ -3406,12 +3406,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 } else if (shouldEllipsize && hintBoring.width <= hintWidth) {
                     if (mSavedHintLayout != null) {
                         mHintLayout = mSavedHintLayout.replaceOrMake(mHint, mTextPaint,
-                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
+                                hintWidth, alignment, mTextDir, mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad, mEllipsize,
                                 ellipsisWidth);
                     } else {
                         mHintLayout = BoringLayout.make(mHint, mTextPaint,
-                                hintWidth, alignment, mSpacingMult, mSpacingAdd,
+                                hintWidth, alignment, mTextDir, mSpacingMult, mSpacingAdd,
                                 hintBoring, mIncludePad, mEllipsize,
                                 ellipsisWidth);
                     }
@@ -3468,14 +3468,24 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     .setLineSpacing(mSpacingAdd, mSpacingMult)
                     .setIncludePad(mIncludePad)
                     .setFallbackLineSpacing(mUseFallbackLineSpacing)
+                    .setLineBreakConfig(LineBreakConfig.getLineBreakConfig(
+                            mLineBreakStyle, mLineBreakWordStyle))
                     .setEllipsize(mBufferType != BufferType.EDITABLE ? effectiveEllipsize : null)
                     .setEllipsizedWidth(ellipsisWidth);
             result = builder.build();
         } else {
             if (boring == UNKNOWN_BORING) {
-                boring = BoringLayout.isBoring(mTransformed, mTextPaint, mTextDir, mBoring);
-                if (boring != null) {
-                    mBoring = boring;
+                // Modern UI changed:
+                if (mTransformed.length() - 500 > wantWidth) {
+                    // When the width MeasureSpec of the TextView is EXACTLY and the number of
+                    // characters exceeds the pixel width, the layout is unlikely to be boring,
+                    // so avoid the check. With 500 as the threshold.
+                    boring = null;
+                } else {
+                    boring = BoringLayout.isBoring(mTransformed, mTextPaint, mTextDir, mBoring);
+                    if (boring != null) {
+                        mBoring = boring;
+                    }
                 }
             }
 
@@ -3484,11 +3494,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                         && (effectiveEllipsize == null || boring.width <= ellipsisWidth)) {
                     if (useSaved && mSavedLayout != null) {
                         result = mSavedLayout.replaceOrMake(mTransformed, mTextPaint,
-                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
+                                wantWidth, alignment, mTextDir, mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad);
                     } else {
                         result = BoringLayout.make(mTransformed, mTextPaint,
-                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
+                                wantWidth, alignment, mTextDir, mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad);
                     }
 
@@ -3498,12 +3508,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 } else if (shouldEllipsize && boring.width <= wantWidth) {
                     if (useSaved && mSavedLayout != null) {
                         result = mSavedLayout.replaceOrMake(mTransformed, mTextPaint,
-                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
+                                wantWidth, alignment, mTextDir, mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad, effectiveEllipsize,
                                 ellipsisWidth);
                     } else {
                         result = BoringLayout.make(mTransformed, mTextPaint,
-                                wantWidth, alignment, mSpacingMult, mSpacingAdd,
+                                wantWidth, alignment, mTextDir, mSpacingMult, mSpacingAdd,
                                 boring, mIncludePad, effectiveEllipsize,
                                 ellipsisWidth);
                     }
@@ -5410,36 +5420,63 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
     }
 
-    private class ChangeWatcher implements TextWatcher, SpanWatcher {
+    private static class ChangeWatcher implements TextWatcher, SpanWatcher {
+        // Modern UI changed:
+        // Make this class a static nested class that holds a weak reference to the original TextView.
+        // Also, check the ownership of the text to avoid memory leaks and unexpected behaviors,
+        // similar to what DynamicLayout.ChangeWatcher does.
+        private final WeakReference<TextView> mTextView;
+
+        public ChangeWatcher(TextView textView) {
+            mTextView = new WeakReference<>(textView);
+        }
 
         @Override
         public void onSpanAdded(Spannable text, Object what, int start, int end) {
-            spanChange(text, what, -1, start, -1, end);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == text) {
+                textView.spanChange(text, what, -1, start, -1, end);
+            }
         }
 
         @Override
         public void onSpanRemoved(Spannable text, Object what, int start, int end) {
-            spanChange(text, what, start, -1, end, -1);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == text) {
+                textView.spanChange(text, what, start, -1, end, -1);
+            }
         }
 
         @Override
         public void onSpanChanged(Spannable text, Object what, int ost, int oen, int nst, int nen) {
-            spanChange(text, what, ost, nst, oen, nen);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == text) {
+                textView.spanChange(text, what, ost, nst, oen, nen);
+            }
         }
 
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            sendBeforeTextChanged(s, start, count, after);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == s) {
+                textView.sendBeforeTextChanged(s, start, count, after);
+            }
         }
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            handleTextChanged(s, start, before, count);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == s) {
+                textView.handleTextChanged(s, start, before, count);
+            }
         }
 
         @Override
         public void afterTextChanged(Editable s) {
-            sendAfterTextChanged(s);
+            TextView textView = mTextView.get();
+            if (textView != null && textView.mText == s) {
+                textView.sendAfterTextChanged(s);
+            }
         }
     }
 }

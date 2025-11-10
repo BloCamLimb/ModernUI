@@ -42,6 +42,7 @@ import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.text.PrecomputedText;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.SpannableString;
 import icyllis.modernui.text.Spanned;
@@ -76,6 +77,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
@@ -398,14 +400,14 @@ public class TestFragment extends Fragment {
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             spannable.setSpan(new StrikethroughSpan(), text.length() / 4 * 3, text.length(),
                     Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-            /*CompletableFuture.runAsync(() -> {
+            CompletableFuture.runAsync(() -> {
                 long startNanos = System.nanoTime();
                 var precomputed = PrecomputedText.create(spannable, tv.getTextMetricsParams());
                 long usedNanos = System.nanoTime() - startNanos;
-                LOGGER.info("Precomputed text in {} microseconds", usedNanos / 1000);
-                tv.post(() -> tv.setText(precomputed, TextView.BufferType.SPANNABLE));
-            });*/
-            tv.setText(spannable, TextView.BufferType.SPANNABLE);
+                Log.LOGGER.info("Precomputed text in {} microseconds", usedNanos / 1000);
+                post(() -> tv.setText(precomputed, TextView.BufferType.SPANNABLE));
+            });
+            //tv.setText(spannable, TextView.BufferType.SPANNABLE);
             /*try {
                 Image image = ImageStore.getInstance().create(
                         FileChannel.open(Path.of("F:/Photoshop/AppleEmoji/horse-face_1f434.png"),

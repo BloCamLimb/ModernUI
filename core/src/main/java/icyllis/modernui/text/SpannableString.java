@@ -19,31 +19,31 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.graphics.text.GetChars;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * This is the class for text whose content is immutable but to which
  * markup objects can be attached and detached.
  */
-public class SpannableString extends SpannableStringInternal implements Spannable, GetChars {
+public non-sealed class SpannableString extends SpannableStringInternal implements Spannable, GetChars {
 
     /**
-     * @param source           source object to copy from
-     * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
+     * Note: {@link NoCopySpan} will not be copied into this.
+     *
+     * @param source source object to copy from
      */
-    public SpannableString(@NonNull CharSequence source, boolean ignoreNoCopySpan) {
-        super(source, 0, source.length(), ignoreNoCopySpan);
-    }
-
-    public SpannableString(@NonNull CharSequence source, int start, int end, boolean ignoreNoCopySpan) {
-        super(source, start, end, ignoreNoCopySpan);
-    }
-
     public SpannableString(@NonNull CharSequence source) {
-        this(source, false);
+        super(source, 0, source.length());
     }
 
+    /**
+     * Note: {@link NoCopySpan} will not be copied into this.
+     *
+     * @param source source object to copy from
+     */
     public SpannableString(@NonNull CharSequence source, int start, int end) {
-        super(source, start, end, false);
+        super(source, start, end);
     }
 
     @NonNull
@@ -53,6 +53,25 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
         } else {
             return new SpannableString(source);
         }
+    }
+
+    @Override
+    public void setSpan(@NonNull Object span, int start, int end, int flags) {
+        super.setSpan(true, span, start, end, flags, true);
+    }
+
+    @Override
+    public void removeSpan(@NonNull Object span) {
+        super.removeSpan(span, 0);
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @Override
+    public void removeSpan(@NonNull Object span, int flags) {
+        super.removeSpan(span, flags);
     }
 
     @NonNull

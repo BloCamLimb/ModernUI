@@ -20,21 +20,13 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.style.TabStopSpan;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class TabStops {
-
-    private float[] mStops;
-    private int mNumStops;
-    private float mTabWidth;
-
-    public TabStops(float[] stops, float tabWidth) {
-        mStops = stops;
-        mNumStops = stops == null ? 0 : stops.length;
-        mTabWidth = tabWidth;
-    }
+@ApiStatus.Internal
+public class TabStops extends icyllis.modernui.graphics.text.TabStops {
 
     public TabStops(float tabWidth, @NonNull List<?> spans) {
         reset(tabWidth, spans);
@@ -66,26 +58,5 @@ public class TabStops {
             mStops = stops;
         }
         mNumStops = ns;
-    }
-
-    public float nextTab(float width) {
-        final int ns = mNumStops;
-        if (ns > 0) {
-            float[] stops = mStops;
-            for (int i = 0; i < ns; ++i) {
-                float stop = stops[i];
-                if (stop > width) {
-                    return stop;
-                }
-            }
-        }
-        return nextDefaultStop(width, mTabWidth);
-    }
-
-    /**
-     * Returns the position of next tab stop.
-     */
-    public static float nextDefaultStop(float width, float tabWidth) {
-        return (int) (width / tabWidth + 1) * tabWidth;
     }
 }

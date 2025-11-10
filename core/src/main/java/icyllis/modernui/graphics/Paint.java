@@ -23,7 +23,6 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.text.FontPaint;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -254,18 +253,34 @@ public class Paint {
     private static final int ALIGN_SHIFT = 6;
     private static final int ALIGN_MASK = 0xC0;
 
-    static final int TEXT_ANTI_ALIAS_DEFAULT = 0x0;
-    static final int TEXT_ANTI_ALIAS_OFF = 0x4;
-    static final int TEXT_ANTI_ALIAS_ON = 0x8;
-    static final int TEXT_ANTI_ALIAS_MASK = 0xC;
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final int TEXT_ANTI_ALIAS_DEFAULT = 0x0,
+            TEXT_ANTI_ALIAS_OFF = 0x4,
+            TEXT_ANTI_ALIAS_ON = 0xC,
+            TEXT_ANTI_ALIAS_MASK = 0xC;
 
-    static final int LINEAR_TEXT_FLAG = 0x10;
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final int LINEAR_TEXT_FLAG = 0x10;
 
-    static final int FILTER_MODE_SHIFT = 5;
-    static final int FILTER_MODE_MASK = 0x20;
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final int FILTER_MODE_SHIFT = 5,
+            FILTER_MODE_MASK = 0x20;
 
-    static final int MIPMAP_MODE_SHIFT = 6;
-    static final int MIPMAP_MODE_MASK = 0xC0;
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final int MIPMAP_MODE_SHIFT = 6,
+            MIPMAP_MODE_MASK = 0xC0;
 
     /**
      * @hidden
@@ -284,9 +299,28 @@ public class Paint {
 
     private ColorFilter mColorFilter;
 
-    // rendering hints
-    private int mFlags;
-    private float mTextSize;
+    /*
+     * Shared by Paint and TextPaint
+     * |-------|-------|-------|-------|
+     *                                00 NORMAL (default)
+     *                                01 BOLD
+     *                                10 ITALIC
+     *                                11 BOLD_ITALIC
+     *                                11 TEXT_STYLE_MASK
+     *                              00   TEXT_ANTI_ALIAS_DEFAULT (default)
+     *                              01   TEXT_ANTI_ALIAS_OFF
+     *                              11   TEXT_ANTI_ALIAS_ON
+     *                              11   TEXT_ANTI_ALIAS_MASK
+     *                             1     LINEAR_TEXT_FLAG
+     *                            1      FILTER_MODE_MASK
+     *                          11       MIPMAP_MODE_MASK
+     * |-------|-------|-------|-------|
+     */
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    protected int mFlags;
 
     /**
      * Creates a new Paint with defaults.
@@ -394,16 +428,22 @@ public class Paint {
         }
     }
 
-    private void internalReset() {
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    protected void internalReset() {
         mColorFilter = null;
         mFlags = sDefaultFlags;
-        mTextSize = 16;
     }
 
-    private void internalSetFrom(@NonNull Paint paint) {
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    protected void internalSetFrom(@NonNull Paint paint) {
         mColorFilter = paint.mColorFilter;
         mFlags = paint.mFlags;
-        mTextSize = paint.mTextSize;
     }
 
     ///// Solid Color
@@ -865,80 +905,6 @@ public class Paint {
         mPaint.setBlendMode(mode != null ? mode.getNativeBlendMode() : null);
     }
 
-    ///// Text Parameters
-
-    /**
-     * Return the paint's text size in pixel units.
-     * <p>
-     * The default value is 16.
-     *
-     * @return the paint's text size in pixel units.
-     * @see #setTextSize(float)
-     */
-    public float getTextSize() {
-        return mTextSize;
-    }
-
-    /**
-     * Set the paint's text size in pixel units. For example, a text size
-     * of 16 (1em) means the letter 'M' is 16 pixels high in device space.
-     * Very large or small sizes will impact rendering performance, and the
-     * rendering system might not render text at these sizes. For now, text
-     * sizes will clamp to 1 and 2184. You can have even larger glyphs through
-     * matrix transformation, and our engine will attempt to use SDF text rendering.
-     * This method has no effect if size is not greater than or equal to zero.
-     * <p>
-     * The default value is 16.
-     *
-     * @param textSize set the paint's text size in pixel units.
-     */
-    public void setTextSize(float textSize) {
-        if (textSize >= 0) {
-            mTextSize = textSize;
-        }
-    }
-
-    public boolean isTextAntiAlias() {
-        return switch (mFlags & TEXT_ANTI_ALIAS_MASK) {
-            case TEXT_ANTI_ALIAS_ON -> true;
-            case TEXT_ANTI_ALIAS_OFF -> false;
-            default -> isAntiAlias();
-        };
-    }
-
-    public void setTextAntiAlias(boolean textAA) {
-        mFlags = (mFlags & ~TEXT_ANTI_ALIAS_MASK) |
-                (textAA ? TEXT_ANTI_ALIAS_ON : TEXT_ANTI_ALIAS_OFF);
-    }
-
-    /**
-     * @return whether to enable linear text
-     */
-    public boolean isLinearText() {
-        return (mFlags & LINEAR_TEXT_FLAG) != 0;
-    }
-
-    /**
-     * Paint flag that enables smooth linear scaling of text.
-     *
-     * <p>Enabling this flag does not actually scale text, but rather adjusts
-     * text draw operations to deal gracefully with smooth adjustment of scale.
-     * When this flag is enabled, font hinting is disabled to prevent shape
-     * deformation between scale factors, and glyph caching is disabled due to
-     * the large number of glyph images that will be generated.</p>
-     *
-     * <p>Since 3.12, enabling linear text also enables subpixel positioning.</p>
-     *
-     * @param linearText whether to enable linear text
-     */
-    public void setLinearText(boolean linearText) {
-        if (linearText) {
-            mFlags |= LINEAR_TEXT_FLAG;
-        } else {
-            mFlags &= ~LINEAR_TEXT_FLAG;
-        }
-    }
-
     ///// Sampler Parameters
 
     /**
@@ -1020,26 +986,10 @@ public class Paint {
         return mPaint;
     }
 
-    /**
-     * Populates font attributes to native font object, excluding the typeface.
-     *
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public void getNativeFont(@NonNull icyllis.arc3d.sketch.Font nativeFont) {
-        nativeFont.setSize(FontPaint.getCanonicalFontSize(getTextSize()));
-        nativeFont.setEdging(isTextAntiAlias()
-                ? icyllis.arc3d.sketch.Font.kAntiAlias_Edging
-                : icyllis.arc3d.sketch.Font.kAlias_Edging);
-        nativeFont.setLinearMetrics(isLinearText());
-        nativeFont.setSubpixel(isLinearText());
-    }
-
     @Override
     public int hashCode() {
         int result = mPaint.hashCode();
         result = 31 * result + mFlags;
-        result = 31 * result + Float.floatToIntBits(mTextSize);
         return result;
     }
 
@@ -1048,7 +998,6 @@ public class Paint {
         if (this == o) return true;
         if (!(o instanceof Paint paint)) return false;
         return mPaint.equals(paint.mPaint) &&
-                mFlags == paint.mFlags &&
-                mTextSize == paint.mTextSize;
+                mFlags == paint.mFlags;
     }
 }

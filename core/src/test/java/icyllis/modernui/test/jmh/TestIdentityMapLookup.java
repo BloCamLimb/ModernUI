@@ -29,7 +29,9 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
+import java.nio.file.StandardOpenOption;
 import java.util.IdentityHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Fork(5)
 @Threads(2)
@@ -43,60 +45,80 @@ public class TestIdentityMapLookup {
     //TestIdentityMapLookup.openhash      thrpt   25  330088237.990 ± 14930444.763  ops/s
     //TestIdentityMapLookup.openhash2     thrpt   25  307558052.906 ± 19373608.936  ops/s
 
+    // HIGH CACHE MISS
+    //Benchmark                            Mode  Cnt          Score         Error  Units
+    //TestIdentityMapLookup.identityhash  thrpt   25   93191811.469 ± 5218619.263  ops/s
+    //TestIdentityMapLookup.openhash      thrpt   25   88379105.586 ± 2202491.721  ops/s
+    //TestIdentityMapLookup.openhash2     thrpt   25   86245441.732 ± 2724354.998  ops/s
+
+    // LOW CACHE MISS
+    //Benchmark                            Mode  Cnt          Score          Error  Units
+    //TestIdentityMapLookup.identityhash  thrpt   25  120794197.188 ±  6584672.540  ops/s
+    //TestIdentityMapLookup.openhash      thrpt   25  100437372.206 ±  3853525.948  ops/s
+    //TestIdentityMapLookup.openhash2     thrpt   25  123727982.981 ± 11160165.333  ops/s
+
     // memory usage: openhash < openhash2 < identityhash
 
-    private static final IdentityHashMap<String, Integer> identityhash = new IdentityHashMap<>();
-    private static final Reference2IntOpenHashMap<String> openhash = new Reference2IntOpenHashMap<>(16, 0.75f);
-    private static final Reference2IntOpenHashMap<String> openhash2 = new Reference2IntOpenHashMap<>(16, 2/3f);
+    private final IdentityHashMap<Object, Integer> identityhash = new IdentityHashMap<>();
+    private final Reference2IntOpenHashMap<Object> openhash = new Reference2IntOpenHashMap<>(16, 0.75f);
+    private final Reference2IntOpenHashMap<Object> openhash2 = new Reference2IntOpenHashMap<>(16, 2/3f);
 
-    static {
-        long val = 7;
-        for (int i = 0; i < 1500; i++) {
-            String key = Long.toString(val);
-            identityhash.put(key, i);
-            openhash.put(key, i);
-            openhash2.put(key, i);
-            val *= 13;
-        }
-        for (int i = 3500; i < 4500; i += 2) {
-            String key = Integer.toString(i).intern();
-            identityhash.put(key, i);
-            openhash.put(key, i);
-            openhash2.put(key, i);
-        }
-    }
+    Object[] inputs;
+    int index = 0;
 
-    @State(Scope.Thread)
-    public static class InputState {
-        String[] inputs;
-        int index = 0;
-
-        @Setup
-        public void setUp() {
-            inputs = new String[512];
-            for (int i = 0; i < 512; i++) {
-                inputs[i] = Integer.toString(i + 3200).intern();
+    @Setup
+    public void setup() {
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        Object[] all = new Object[10000];
+        Object[] enums = StandardOpenOption.values();
+        for (int i = 0; i < all.length; i++) {
+            switch (rnd.nextInt(3)) {
+                case 0 -> {
+                    all[i] = Integer.toString(i * 2 + 1).intern();
+                }
+                case 1 -> {
+                    all[i] = enums[rnd.nextInt(enums.length)];
+                }
+                default -> {
+                    all[i] = new Object();
+                }
             }
         }
 
-        public String get() {
-            return inputs[index++ & 511];
+        for (int i = 0; i < 2000; i++) {
+            Object key = all[i];
+            identityhash.put(key, i);
+            openhash.put(key, i);
+            openhash2.put(key, i);
+        }
+
+        inputs = new Object[100000];
+        for (int i = 0; i < inputs.length; i++) {
+            if (rnd.nextInt(8) == 0) {
+                inputs[i] = new Object();
+            } else {
+                inputs[i] = all[rnd.nextInt(2000)];
+            }
         }
     }
 
+    public Object get() {
+        return inputs[index++ % 100000];
+    }
+
     @Benchmark
-    public void identityhash(InputState input, Blackhole bh) {
-        Integer val = identityhash.get(input.get());
+    public void identityhash(Blackhole bh) {
+        Integer val = identityhash.get(get());
         bh.consume(val != null ? val : -1);
     }
 
     @Benchmark
-    public void openhash(InputState input, Blackhole bh) {
-        bh.consume(openhash.getInt(input.get()));
+    public void openhash(Blackhole bh) {
+        bh.consume(openhash.getInt(get()));
     }
 
     @Benchmark
-    public void openhash2(InputState input, Blackhole bh) {
-        bh.consume(openhash2.getInt(input.get()));
+    public void openhash2(Blackhole bh) {
+        bh.consume(openhash2.getInt(get()));
     }
 }

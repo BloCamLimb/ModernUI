@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,23 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.text;
@@ -23,6 +40,8 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.text.CharUtils;
+import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LineBreaker;
 import icyllis.modernui.text.method.TextKeyListener;
 import icyllis.modernui.text.style.*;
@@ -64,7 +83,7 @@ public abstract class Layout {
     private float mSpacingMult;
     private float mSpacingAdd;
     private boolean mSpannedText;
-    private final TextDirectionHeuristic mTextDir;
+    private TextDirectionHeuristic mTextDir;
     private SpanSet<LineBackgroundSpan> mLineBackgroundSpans;
 
     private static final LineBackgroundSpan[] EMPTY_BACKGROUND_SPANS = {};
@@ -94,13 +113,16 @@ public abstract class Layout {
      * Subclasses of Layout use this constructor to set the display text,
      * width, and other standard properties.
      *
-     * @param text    the text to render
-     * @param paint   the default paint for the layout.  Styles can override
-     *                various attributes of the paint.
-     * @param width   the wrapping width for the text.
-     * @param align   whether to left, right, or center the text.  Styles can
-     *                override the alignment.
-     * @param textDir the text direction algorithm
+     * @param text        the text to render
+     * @param paint       the default paint for the layout.  Styles can override
+     *                    various attributes of the paint.
+     * @param width       the wrapping width for the text.
+     * @param align       whether to left, right, or center the text.  Styles can
+     *                    override the alignment.
+     * @param textDir     a text direction heuristic.
+     * @param spacingMult factor by which to scale the font size to get the
+     *                    default line spacing
+     * @param spacingAdd  amount to add to the default line spacing
      * @hidden
      */
     @ApiStatus.Internal
@@ -136,6 +158,7 @@ public abstract class Layout {
      */
     void replaceWith(CharSequence text, TextPaint paint,
                      int width, Alignment align,
+                     TextDirectionHeuristic textDir,
                      float spacingMult, float spacingAdd) {
         if (width < 0) {
             throw new IllegalArgumentException("Layout: " + width + " < 0");
@@ -148,6 +171,7 @@ public abstract class Layout {
         mSpacingMult = spacingMult;
         mSpacingAdd = spacingAdd;
         mSpannedText = text instanceof Spanned;
+        mTextDir = textDir;
     }
 
     /**
@@ -406,7 +430,7 @@ public abstract class Layout {
 
             if (directions == Directions.ALL_LEFT_TO_RIGHT && !mSpannedText && !hasTab) {
                 // XXX: assumes there's nothing additional to be done
-                TextUtils.drawTextRun(canvas, buf, start, end, start, end, x, lbaseline, false, paint);
+                canvas.drawTextRun(buf, start, end, start, end, x, lbaseline, false, paint, paint.getInternalPaint());
             } else {
                 tl.draw(canvas, x, ltop, lbaseline, lbottom);
             }
@@ -689,8 +713,7 @@ public abstract class Layout {
      * leading margin indent, but excluding trailing whitespace.
      */
     public float getLineMax(int line) {
-        float margin = getParagraphLeadingMargin(line) +
-                getParagraphTrailingMargin(line);
+        float margin = getParagraphMargin(line, LEADING_MARGIN + TRAILING_MARGIN);
         float signedExtent = getLineExtent(line, false);
         return margin + (signedExtent >= 0 ? signedExtent : -signedExtent);
     }
@@ -700,8 +723,7 @@ public abstract class Layout {
      * leading margin indent and trailing whitespace.
      */
     public float getLineWidth(int line) {
-        float margin = getParagraphLeadingMargin(line) +
-                getParagraphTrailingMargin(line);
+        float margin = getParagraphMargin(line, LEADING_MARGIN + TRAILING_MARGIN);
         float signedExtent = getLineExtent(line, true);
         return margin + (signedExtent >= 0 ? signedExtent : -signedExtent);
     }
@@ -893,9 +915,9 @@ public abstract class Layout {
         }
         int dir = getParagraphDirection(line);
         if (dir == DIR_RIGHT_TO_LEFT) {
-            return getParagraphTrailingMargin(line);
+            return getParagraphMargin(line, TRAILING_MARGIN);
         }
-        return getParagraphLeadingMargin(line);
+        return getParagraphMargin(line, LEADING_MARGIN);
     }
 
     /**
@@ -908,9 +930,9 @@ public abstract class Layout {
         }
         int dir = getParagraphDirection(line);
         if (dir == DIR_LEFT_TO_RIGHT) {
-            return right - getParagraphTrailingMargin(line);
+            return right - getParagraphMargin(line, TRAILING_MARGIN);
         }
-        return right - getParagraphLeadingMargin(line);
+        return right - getParagraphMargin(line, LEADING_MARGIN);
     }
 
     /**
@@ -1527,14 +1549,17 @@ public abstract class Layout {
         return caret;
     }
 
+    private static final int LEADING_MARGIN = 1;
+    private static final int TRAILING_MARGIN = 2;
+
     /**
-     * Returns the effective leading margin (unsigned) for this line,
-     * taking into account LeadingMarginSpan and LeadingMarginSpan2.
+     * Returns the effective leading margin (unsigned), plus/or trailing margin (unsigned)
+     * for this line, taking into account LeadingMarginSpan and LeadingMarginSpan2.
      *
      * @param line the line index
-     * @return the leading margin of this line
+     * @return the leading/trailing margin of this line
      */
-    private int getParagraphLeadingMargin(int line) {
+    private int getParagraphMargin(int line, int flags) {
         if (!mSpannedText) {
             return 0;
         }
@@ -1547,56 +1572,32 @@ public abstract class Layout {
         List<LeadingMarginSpan> spans = getParagraphSpans(spanned, lineStart, spanEnd,
                 LeadingMarginSpan.class);
         if (spans.isEmpty()) {
-            return 0; // no leading margin span;
+            return 0; // no leading/trailing margin span;
         }
 
         int margin = 0;
 
-        boolean useFirstLineMargin = lineStart == 0 || spanned.charAt(lineStart - 1) == '\n';
-        for (int i = 0; i < spans.size(); i++) {
-            LeadingMarginSpan span = spans.get(i);
-            if (span instanceof LeadingMarginSpan2) {
-                int count = ((LeadingMarginSpan2) span).getLeadingMarginLineCount();
-                int startLine = getLineForOffset(spanned.getSpanStart(span));
-                // if there is more than one LeadingMarginSpan2, use the count that is greatest
-                useFirstLineMargin |= line < startLine + count;
+        boolean useFirstLineMargin = false;
+        if ((flags & LEADING_MARGIN) != 0) {
+            useFirstLineMargin = lineStart == 0 || spanned.charAt(lineStart - 1) == '\n';
+            for (int i = 0; i < spans.size(); i++) {
+                LeadingMarginSpan span = spans.get(i);
+                if (span instanceof LeadingMarginSpan2) {
+                    int count = ((LeadingMarginSpan2) span).getLeadingMarginLineCount();
+                    int startLine = getLineForOffset(spanned.getSpanStart(span));
+                    // if there is more than one LeadingMarginSpan2, use the count that is greatest
+                    useFirstLineMargin |= line < startLine + count;
+                }
             }
         }
         for (int i = 0; i < spans.size(); i++) {
             LeadingMarginSpan span = spans.get(i);
-            margin += span.getLeadingMargin(mPaint, useFirstLineMargin);
-        }
-
-        return margin;
-    }
-
-    /**
-     * Returns the effective trailing margin (unsigned) for this line.
-     *
-     * @param line the line index
-     * @return the trailing margin of this line
-     */
-    private int getParagraphTrailingMargin(int line) {
-        if (!mSpannedText) {
-            return 0;
-        }
-        Spanned spanned = (Spanned) mText;
-
-        int lineStart = getLineStart(line);
-        int lineEnd = getLineEnd(line);
-        int spanEnd = spanned.nextSpanTransition(lineStart, lineEnd,
-                LeadingMarginSpan.class);
-        List<LeadingMarginSpan> spans = getParagraphSpans(spanned, lineStart, spanEnd,
-                LeadingMarginSpan.class);
-        if (spans.isEmpty()) {
-            return 0; // no trailing margin span;
-        }
-
-        int margin = 0;
-
-        for (int i = 0; i < spans.size(); i++) {
-            LeadingMarginSpan span = spans.get(i);
-            margin += span.getTrailingMargin(mPaint);
+            if ((flags & LEADING_MARGIN) != 0) {
+                margin += span.getLeadingMargin(mPaint, useFirstLineMargin);
+            }
+            if ((flags & TRAILING_MARGIN) != 0) {
+                margin += span.getTrailingMargin(mPaint);
+            }
         }
 
         return margin;
@@ -2131,7 +2132,7 @@ public abstract class Layout {
             int line1 = mLayout.getLineForOffset(start);
             int line2 = mLayout.getLineForOffset(end);
 
-            TextUtils.getChars(mText, start, end, dest, destoff);
+            CharUtils.getChars(mText, start, end, dest, destoff);
 
             for (int i = line1; i <= line2; i++) {
                 mLayout.ellipsize(start, end, i, dest, destoff, mMethod);
@@ -2143,18 +2144,30 @@ public abstract class Layout {
             return mText.length();
         }
 
+        @NonNull
         @Override
         public CharSequence subSequence(int start, int end) {
-            char[] s = new char[end - start];
-            getChars(start, end, s, 0);
-            return new String(s);
+            int len = end - start;
+            char[] s = CharUtils.obtain(len);
+            try {
+                getChars(start, end, s, 0);
+                return new String(s, 0, len);
+            } finally {
+                CharUtils.recycle(s);
+            }
         }
 
+        @NonNull
         @Override
         public String toString() {
-            char[] s = new char[length()];
-            getChars(0, length(), s, 0);
-            return new String(s);
+            int len = length();
+            char[] s = CharUtils.obtain(len);
+            try {
+                getChars(0, len, s, 0);
+                return new String(s, 0, len);
+            } finally {
+                CharUtils.recycle(s);
+            }
         }
     }
 
@@ -2194,14 +2207,10 @@ public abstract class Layout {
             return mSpanned.nextSpanTransition(start, limit, type);
         }
 
+        @NonNull
         @Override
         public CharSequence subSequence(int start, int end) {
-            char[] s = new char[end - start];
-            getChars(start, end, s, 0);
-
-            SpannableString ss = new SpannableString(new String(s));
-            TextUtils.copySpansFrom(mSpanned, start, end, Object.class, ss, 0);
-            return ss;
+            return new SpannedString(this, start, end);
         }
     }
 }

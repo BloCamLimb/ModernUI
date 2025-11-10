@@ -18,21 +18,21 @@
 
 package icyllis.modernui.text;
 
+import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.util.ULocale;
-import icyllis.arc3d.sketch.TextBlob;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.text.FontPaint;
+import icyllis.modernui.graphics.text.CharUtils;
+import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LayoutCache;
-import icyllis.modernui.graphics.text.LayoutPiece;
-import icyllis.modernui.graphics.text.ShapedText;
+import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Formatter;
@@ -40,9 +40,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
+@SuppressWarnings("ForLoopReplaceableByForEach")
 public final class TextUtils {
-
-    private static final char[][] sTemp = new char[4][];
 
     // Zero-width character used to fill ellipsized strings when codepoint length must be preserved.
     static final char ELLIPSIS_FILLER = '\uFEFF'; // ZERO WIDTH NO-BREAK SPACE
@@ -64,57 +63,6 @@ public final class TextUtils {
     @NonNull
     public static char[] getEllipsisChars(@NonNull TextUtils.TruncateAt method) {
         return ELLIPSIS_NORMAL_ARRAY;
-    }
-
-    /**
-     * Returns a temporary char buffer.
-     *
-     * @param len the length of the buffer
-     * @return a char buffer
-     * @hidden
-     * @see #recycle(char[]) recycle the buffer
-     */
-    @ApiStatus.Internal
-    @NonNull
-    public static char[] obtain(int len) {
-        if (len > 2000)
-            return new char[len];
-
-        char[] buf = null;
-
-        synchronized (sTemp) {
-            final char[][] pool = sTemp;
-            for (int i = pool.length - 1; i >= 0; --i) {
-                if ((buf = pool[i]) != null && buf.length >= len) {
-                    pool[i] = null;
-                    break;
-                }
-            }
-        }
-
-        if (buf == null || buf.length < len)
-            buf = new char[len];
-
-        return buf;
-    }
-
-    /**
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public static void recycle(@NonNull char[] temp) {
-        if (temp.length > 2000)
-            return;
-
-        synchronized (sTemp) {
-            final char[][] pool = sTemp;
-            for (int i = 0; i < pool.length; ++i) {
-                if (pool[i] == null) {
-                    pool[i] = temp;
-                    break;
-                }
-            }
-        }
     }
 
     public static CharSequence stringOrSpannedString(CharSequence source) {
@@ -141,10 +89,10 @@ public final class TextUtils {
     public static boolean contentEquals(@Nullable CharSequence a, @Nullable CharSequence b) {
         if (a == b) return true;
         int length;
-        if (a != null && b != null && (length = a.length()) == b.length()) {
-            if (a instanceof String && b instanceof String) {
-                return a.equals(b);
-            } else {
+        if (a != null && b != null) {
+            if (a instanceof String) {
+                return ((String) a).contentEquals(b);
+            } else if ((length = a.length()) == b.length()) {
                 for (int i = 0; i < length; i++) {
                     if (a.charAt(i) != b.charAt(i)) return false;
                 }
@@ -156,23 +104,12 @@ public final class TextUtils {
 
     /**
      * Copies a block of characters efficiently.
+     *
+     * @throws IndexOutOfBoundsException if out of range
      */
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
                                 @NonNull char[] dst, int dstBegin) {
-        if (s instanceof String)
-            ((String) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof GetChars)
-            ((GetChars) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof StringBuffer)
-            ((StringBuffer) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof StringBuilder)
-            ((StringBuilder) s).getChars(srcBegin, srcEnd, dst, dstBegin);
-        else if (s instanceof CharBuffer buf)
-            buf.get(buf.position() + srcBegin, dst, dstBegin, srcEnd - srcBegin); // Java 13
-        else {
-            for (int i = srcBegin; i < srcEnd; i++)
-                dst[dstBegin++] = s.charAt(i);
-        }
+        CharUtils.getChars(s, srcBegin, srcEnd, dst, dstBegin);
     }
 
     /**
@@ -191,6 +128,8 @@ public final class TextUtils {
      * @return A subset of spans where empty spans ({@link Spanned#getSpanStart(Object)}  ==
      * {@link Spanned#getSpanEnd(Object)} have been removed. The initial order is preserved
      */
+    //TODO Consider removing this inefficient method and using SpanSet instead.
+    @ApiStatus.Internal
     @NonNull
     public static <T> List<T> removeEmptySpans(@NonNull List<T> spans, @NonNull Spanned spanned) {
         List<T> copy = null;
@@ -226,55 +165,67 @@ public final class TextUtils {
      * {@link CharSequence#subSequence(int, int) CharSequence.subSequence}
      * in that it does not preserve any style runs in the source sequence,
      * allowing a more efficient implementation.
+     *
+     * @throws IndexOutOfBoundsException if out of range
      */
-    public static String substring(CharSequence source, int start, int end) {
+    @NonNull
+    public static String substring(@NonNull CharSequence source, int start, int end) {
         if (source instanceof String)
             return ((String) source).substring(start, end);
+        if (source instanceof SpannableStringInternal || source instanceof PrecomputedText)
+            return source.toString().substring(start, end);
+        if (source instanceof SpannableStringBuilder)
+            return ((SpannableStringBuilder) source).substring(start, end);
         if (source instanceof StringBuilder)
             return ((StringBuilder) source).substring(start, end);
         if (source instanceof StringBuffer)
             return ((StringBuffer) source).substring(start, end);
-        if (source instanceof SpannableStringInternal)
-            return source.toString().substring(start, end);
+        if (source instanceof CharBuffer)
+            return ((CharBuffer) source).slice(start, end - start).toString(); // Java 13
 
-        char[] temp = obtain(end - start);
-        getChars(source, start, end, temp, 0);
+        char[] temp = CharUtils.obtain(end - start);
+        CharUtils.getChars(source, start, end, temp, 0);
         String ret = new String(temp, 0, end - start);
-        recycle(temp);
+        CharUtils.recycle(temp);
 
         return ret;
     }
 
-    public static int indexOf(CharSequence s, char ch) {
+    public static int indexOf(@NonNull CharSequence s, char ch) {
         return indexOf(s, ch, 0);
     }
 
-    public static int indexOf(CharSequence s, char ch, int start) {
-        if (s instanceof String) {
-            return ((String) s).indexOf(ch, start);
-        }
+    public static int indexOf(@NonNull CharSequence s, char ch, int start) {
         return indexOf(s, ch, start, s.length());
     }
 
     public static int indexOf(@NonNull CharSequence s, char ch, int start, int end) {
+        int len = s.length();
+        if (end == len && (s instanceof String || s instanceof SpannableStringInternal)) {
+            return s.toString().indexOf(ch, start);
+        }
+        if (start >= len)
+            return -1;
+        if (start < 0)
+            start = 0;
         final Class<? extends CharSequence> c = s.getClass();
 
         if (s instanceof GetChars || c == StringBuffer.class ||
                 c == StringBuilder.class || c == String.class ||
                 s instanceof CharBuffer) {
-            char[] temp = obtain(500);
+            char[] temp = CharUtils.obtain(500);
 
             while (start < end) {
                 int segend = start + 500;
                 if (segend > end)
                     segend = end;
 
-                getChars(s, start, segend, temp, 0);
+                CharUtils.getChars(s, start, segend, temp, 0);
 
                 int count = segend - start;
                 for (int i = 0; i < count; i++) {
                     if (temp[i] == ch) {
-                        recycle(temp);
+                        CharUtils.recycle(temp);
                         return i + start;
                     }
                 }
@@ -282,7 +233,7 @@ public final class TextUtils {
                 start = segend;
             }
 
-            recycle(temp);
+            CharUtils.recycle(temp);
             return -1;
         }
 
@@ -293,46 +244,44 @@ public final class TextUtils {
         return -1;
     }
 
-    public static int lastIndexOf(CharSequence s, char ch) {
+    public static int lastIndexOf(@NonNull CharSequence s, char ch) {
         return lastIndexOf(s, ch, s.length() - 1);
     }
 
-    public static int lastIndexOf(CharSequence s, char ch, int last) {
-        Class<? extends CharSequence> c = s.getClass();
-
-        if (c == String.class)
-            return ((String) s).lastIndexOf(ch, last);
-
+    public static int lastIndexOf(@NonNull CharSequence s, char ch, int last) {
         return lastIndexOf(s, ch, 0, last);
     }
 
-    public static int lastIndexOf(CharSequence s, char ch,
+    public static int lastIndexOf(@NonNull CharSequence s, char ch,
                                   int start, int last) {
+        if (start == 0 && (s instanceof String || s instanceof SpannableStringInternal)) {
+            return s.toString().lastIndexOf(ch, last);
+        }
         if (last < 0)
             return -1;
-        if (last >= s.length())
-            last = s.length() - 1;
-
+        int len = s.length();
         int end = last + 1;
+        if (end > len)
+            end = len;
 
         Class<? extends CharSequence> c = s.getClass();
 
         if (s instanceof GetChars || c == StringBuffer.class ||
                 c == StringBuilder.class || c == String.class ||
                 s instanceof CharBuffer) {
-            char[] temp = obtain(500);
+            char[] temp = CharUtils.obtain(500);
 
             while (start < end) {
                 int segstart = end - 500;
                 if (segstart < start)
                     segstart = start;
 
-                getChars(s, segstart, end, temp, 0);
+                CharUtils.getChars(s, segstart, end, temp, 0);
 
                 int count = end - segstart;
                 for (int i = count - 1; i >= 0; i--) {
                     if (temp[i] == ch) {
-                        recycle(temp);
+                        CharUtils.recycle(temp);
                         return i + segstart;
                     }
                 }
@@ -340,7 +289,7 @@ public final class TextUtils {
                 end = segstart;
             }
 
-            recycle(temp);
+            CharUtils.recycle(temp);
             return -1;
         }
 
@@ -400,7 +349,8 @@ public final class TextUtils {
             dest.writeString(cs.toString());
 
             final List<Object> os = sp.getSpans(0, cs.length(), Object.class);
-            for (final Object o : os) {
+            for (int i = 0; i < os.size(); i++) {
+                final Object o = os.get(i);
                 if (o instanceof ParcelableSpan span) {
                     final int id = span.getSpanTypeId();
                     if (id < FIRST_SPAN || id > LAST_SPAN) {
@@ -458,135 +408,26 @@ public final class TextUtils {
     }
 
     /**
-     * Draw a run of text, all in a single direction, with optional context for complex text
-     * shaping.
-     * <p>
-     * See {@link #drawTextRun(Canvas, CharSequence, int, int, int, int, float, float, boolean, TextPaint)} for
-     * more details. This method uses a character array rather than CharSequence to represent the
-     * string.
-     *
-     * @param canvas       the canvas
-     * @param text         the text to render
-     * @param start        the start of the text to render. Data before this position can be used for
-     *                     shaping context.
-     * @param end          the end of the text to render. Data at or after this position can be used for
-     *                     shaping context.
-     * @param contextStart the index of the start of the shaping context
-     * @param contextEnd   the index of the end of the shaping context
-     * @param x            the x position at which to draw the text
-     * @param y            the y position at which to draw the text
-     * @param isRtl        whether the run is in RTL direction
-     * @param paint        the paint
+     * Debugging tool to print the spans in a CharSequence.  The output will
+     * be printed one span per line.  If the CharSequence is not a Spanned,
+     * then the entire string will be printed on a single line.
      */
-    public static void drawTextRun(@NonNull Canvas canvas, @NonNull char[] text, int start, int end,
-                                   int contextStart, int contextEnd, float x, float y, boolean isRtl,
-                                   @NonNull TextPaint paint) {
-        if ((start | end | contextStart | contextEnd | start - contextStart | end - start
-                | contextEnd - end | text.length - contextEnd) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (start == end) {
-            return;
-        }
-        final TextBlob.Builder builder = new TextBlob.Builder();
-        ShapedText.doLayoutRun(
-                text, contextStart, contextEnd,
-                start, end, isRtl, paint.getInternalPaint(), null,
-                (piece, offsetX, fontPaint) -> buildTextBlob(builder, piece, offsetX, fontPaint)
-        );
-        canvas.drawTextBlob(builder.build(), x, y, paint);
-    }
+    public static void dumpSpans(CharSequence cs, PrintWriter printer, String prefix) {
+        if (cs instanceof Spanned sp) {
+            List<?> os = sp.getSpans(0, cs.length(), Object.class);
 
-    /**
-     * Draw a run of text, all in a single direction, with optional context for complex text
-     * shaping.
-     * <p>
-     * The run of text includes the characters from {@code start} to {@code end} in the text. In
-     * addition, the range {@code contextStart} to {@code contextEnd} is used as context for the
-     * purpose of complex text shaping, such as Arabic text potentially shaped differently based on
-     * the text next to it.
-     * <p>
-     * All text outside the range {@code contextStart..contextEnd} is ignored. The text between
-     * {@code start} and {@code end} will be laid out and drawn. The context range is useful for
-     * contextual shaping, e.g. Kerning, Arabic contextual form.
-     * <p>
-     * The direction of the run is explicitly specified by {@code isRtl}. Thus, this method is
-     * suitable only for runs of a single direction. Alignment of the text is as determined by the
-     * Paint's TextAlign value. Further, {@code 0 <= contextStart <= start <= end <= contextEnd
-     * <= text.length} must hold on entry.
-     *
-     * @param canvas       the canvas
-     * @param text         the text to render
-     * @param start        the start of the text to render. Data before this position can be used for
-     *                     shaping context.
-     * @param end          the end of the text to render. Data at or after this position can be used for
-     *                     shaping context.
-     * @param contextStart the index of the start of the shaping context
-     * @param contextEnd   the index of the end of the shaping context
-     * @param x            the x position at which to draw the text
-     * @param y            the y position at which to draw the text
-     * @param isRtl        whether the run is in RTL direction
-     * @param paint        the paint
-     * @see #drawTextRun(Canvas, char[], int, int, int, int, float, float, boolean, TextPaint)
-     */
-    public static void drawTextRun(@NonNull Canvas canvas, @NonNull CharSequence text, int start, int end,
-                                   int contextStart, int contextEnd, float x, float y, boolean isRtl,
-                                   @NonNull TextPaint paint) {
-        if ((start | end | contextStart | contextEnd | start - contextStart | end - start
-                | contextEnd - end | text.length() - contextEnd) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (start == end) {
-            return;
-        }
-        final TextBlob.Builder builder = new TextBlob.Builder();
-        final int len = contextEnd - contextStart;
-        final char[] buf = obtain(len);
-        getChars(text, contextStart, contextEnd, buf, 0);
-        ShapedText.doLayoutRun(
-                buf, 0, len,
-                start - contextStart, end - contextStart, isRtl, paint.getInternalPaint(), null,
-                (piece, offsetX, fontPaint) -> buildTextBlob(builder, piece, offsetX, fontPaint)
-        );
-        recycle(buf);
-        canvas.drawTextBlob(builder.build(), x, y, paint);
-    }
-
-    /**
-     * Add a layout piece to text blob builder, the base unit to draw a text.
-     *
-     * @param piece the layout piece to draw
-     * @see TextUtils#drawTextRun
-     */
-    static void buildTextBlob(@NonNull TextBlob.Builder builder, @NonNull LayoutPiece piece,
-                              float offsetX, @NonNull FontPaint paint) {
-        final int nGlyphs = piece.getGlyphCount();
-        if (nGlyphs == 0) {
-            return;
-        }
-        var nativeFont = new icyllis.arc3d.sketch.Font();
-        paint.getNativeFont(nativeFont);
-        var lastFont = piece.getFont(0);
-        int lastPos = 0;
-        int currPos = 1;
-        for (; currPos <= nGlyphs; currPos++) {
-            var currFont = currPos == nGlyphs ? null : piece.getFont(currPos);
-            if (lastFont != currFont) {
-                nativeFont.setTypeface(lastFont.getNativeTypeface());
-                if (nativeFont.getTypeface() != null) {
-                    int runCount = currPos - lastPos;
-                    var runBuffer = builder.allocRunPos(
-                            nativeFont, runCount, null
-                    );
-                    runBuffer.addGlyphs(piece.getGlyphs(), lastPos, runCount);
-                    var positions = piece.getPositions();
-                    for (int i = 0, j = lastPos << 1; i < runCount; i += 1, j += 2) {
-                        runBuffer.addPosition(positions[j] + offsetX, positions[j | 1]);
-                    }
-                }
-                lastFont = currFont;
-                lastPos = currPos;
+            for (int i = 0; i < os.size(); i++) {
+                Object o = os.get(i);
+                int st = sp.getSpanStart(o);
+                int en = sp.getSpanEnd(o);
+                int fl = sp.getSpanFlags(o);
+                printer.println(prefix + substring(cs, st, en) + ": "
+                        + Integer.toHexString(System.identityHashCode(o))
+                        + " " + o.getClass().getCanonicalName()
+                        + " (" + st + "-" + en + ") fl=#" + Integer.toHexString(fl));
             }
+        } else {
+            printer.println(prefix + cs + ": (no spans)");
         }
     }
 
@@ -620,7 +461,16 @@ public final class TextUtils {
     @NonNull
     public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint p,
                                          float avail, @NonNull TruncateAt where) {
-        return ellipsize(text, p, avail, where, false, null);
+        return ellipsize(text, p, avail, where, false, null,
+                TextDirectionHeuristics.FIRSTSTRONG_LTR);
+    }
+
+    @NonNull
+    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint p,
+                                         float avail, @NonNull TruncateAt where,
+                                         @NonNull TextDirectionHeuristic textDir) {
+        return ellipsize(text, p, avail, where, false, null,
+                textDir);
     }
 
     /**
@@ -640,7 +490,16 @@ public final class TextUtils {
                                          float avail, @NonNull TruncateAt where,
                                          boolean preserveLength, @Nullable EllipsizeCallback callback) {
         return ellipsize(text, paint, avail, where, preserveLength, callback,
-                TextDirectionHeuristics.FIRSTSTRONG_LTR, getEllipsisChars(where));
+                TextDirectionHeuristics.FIRSTSTRONG_LTR);
+    }
+
+    @NonNull
+    public static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint paint,
+                                         float avail, @NonNull TruncateAt where,
+                                         boolean preserveLength, @Nullable EllipsizeCallback callback,
+                                         @NonNull TextDirectionHeuristic textDir) {
+        return ellipsize(text, paint, avail, where, preserveLength, callback,
+                textDir, getEllipsisChars(where));
     }
 
     /**
@@ -686,13 +545,13 @@ public final class TextUtils {
             int right = len;
             if (avail >= 0) {
                 if (where == TruncateAt.START) {
-                    right = len - mt.breakText(len, false, avail);
-                } else if (where == TruncateAt.END) {
-                    left = mt.breakText(len, true, avail);
+                    right = len - breakText(mt.getMeasuredText(), len, false, avail);
+                } else if (where == TruncateAt.END || where == TruncateAt.MARQUEE) {
+                    left = breakText(mt.getMeasuredText(), len, true, avail);
                 } else { // MIDDLE
-                    right = len - mt.breakText(len, false, avail / 2);
+                    right = len - breakText(mt.getMeasuredText(), len, false, avail / 2);
                     avail -= mt.getAdvance(right, len);
-                    left = mt.breakText(right, true, avail);
+                    left = breakText(mt.getMeasuredText(), right, true, avail);
                 }
             }
 
@@ -743,6 +602,59 @@ public final class TextUtils {
             if (mt != null) {
                 mt.recycle();
             }
+        }
+    }
+
+    /**
+     * Returns the maximum index that the accumulated width not exceeds the width.
+     * <p>
+     * If forward=false is passed, returns the minimum index from the end instead.
+     */
+    static int breakText(MeasuredText mt, int limit, boolean forwards, float width) {
+        assert mt != null;
+        if (forwards) {
+            int i = 0;
+            while (i < limit) {
+                width -= mt.getAdvance(i);
+                if (width < 0.0f) break;
+                i++;
+            }
+            return i;
+        } else {
+            int i = limit - 1;
+            while (i >= 0) {
+                width -= mt.getAdvance(i);
+                if (width < 0.0f) break;
+                i--;
+            }
+            while (i < limit - 1 && mt.getAdvance(i + 1) == 0.0f) {
+                i++;
+            }
+            return limit - i - 1;
+        }
+    }
+
+    static int breakText(float[] advances, int limit, boolean forwards, float width) {
+        assert advances != null;
+        if (forwards) {
+            int i = 0;
+            while (i < limit) {
+                width -= advances[i];
+                if (width < 0.0f) break;
+                i++;
+            }
+            return i;
+        } else {
+            int i = limit - 1;
+            while (i >= 0) {
+                width -= advances[i];
+                if (width < 0.0f) break;
+                i--;
+            }
+            while (i < limit - 1 && advances[i + 1] == 0.0f) {
+                i++;
+            }
+            return limit - i - 1;
         }
     }
 
@@ -1003,7 +915,8 @@ public final class TextUtils {
 
         List<?> spans = source.getSpans(start, end, type);
 
-        for (Object span : spans) {
+        for (int i = 0; i < spans.size(); i++) {
+            Object span = spans.get(i);
             int st = source.getSpanStart(span);
             int en = source.getSpanEnd(span);
             int fl = source.getSpanFlags(span);
@@ -1016,6 +929,90 @@ public final class TextUtils {
             dest.setSpan(span, st - start + destoff, en - start + destoff,
                     fl);
         }
+    }
+
+    /**
+     * Returns true if the character's presence could affect RTL layout
+     * (require BiDi analysis).
+     * <p>
+     * In order to be fast, the code is intentionally rough and quite conservative in its
+     * considering inclusion of any non-BMP or surrogate characters or anything in the bidi
+     * blocks or any bidi formatting characters with a potential to affect RTL layout.
+     * See {@link #requiresBidi(char[], int, int)} for stricter version.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean couldAffectRtl(char c) {
+        return (0x0590 <= c && c <= 0x08FF) ||  // RTL scripts
+                c == 0x200E ||  // Bidi format character
+                c == 0x200F ||  // Bidi format character
+                (0x202A <= c && c <= 0x202E) ||  // Bidi format characters
+                (0x2066 <= c && c <= 0x2069) ||  // Bidi format characters
+                (0xD800 <= c && c <= 0xDFFF) ||  // Surrogate pairs
+                (0xFB1D <= c && c <= 0xFDFF) ||  // Hebrew and Arabic presentation forms
+                (0xFE70 <= c && c <= 0xFEFE);  // Arabic presentation forms
+    }
+
+    /**
+     * Returns true if the character's presence could affect RTL layout
+     * (require BiDi analysis).
+     * <p>
+     * Since this calls couldAffectRtl() above, it's also quite conservative, in the way that
+     * it may return 'true' (needs bidi) although careful consideration may tell us it should
+     * return 'false' (does not need bidi).
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public static boolean couldAffectRtl(char[] text,
+                                         int start,
+                                         int limit) {
+        for (int i = start; i < limit; i++) {
+            if (couldAffectRtl(text[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // See ICU Bidi.requiresBidi()
+    // Added RIGHT_TO_LEFT_ISOLATE, but is ARABIC_NUMBER needed?
+    static final int RTL_MASK = 1 << UCharacter.RIGHT_TO_LEFT |
+            1 << UCharacter.RIGHT_TO_LEFT_ARABIC |
+            1 << UCharacter.RIGHT_TO_LEFT_EMBEDDING |
+            1 << UCharacter.RIGHT_TO_LEFT_OVERRIDE |
+            1 << UCharacter.RIGHT_TO_LEFT_ISOLATE |
+            1 << UCharacter.ARABIC_NUMBER;
+
+    /**
+     * Similar to {@link com.ibm.icu.text.Bidi#requiresBidi(char[], int, int)},
+     * but this fixes the issue where it did not consider SMP characters.
+     * <p>
+     * This method can carefully determine whether BiDi analysis
+     * is needed (i.e. containing multiple BiDi runs or only one RTL run),
+     * when LTR or DEFAULT_LTR algorithm is used.
+     */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public static boolean requiresBidi(char[] text,
+                                       int start,
+                                       int limit) {
+        for (int i = start, cp; i < limit; ) {
+            char c1;
+            cp = c1 = text[i++];
+            if (Character.isHighSurrogate(c1) && i < limit) {
+                char c2;
+                if (Character.isLowSurrogate(c2 = text[i])) {
+                    cp = Character.toCodePoint(c1, c2);
+                    i++;
+                }
+            }
+            if (((1 << UCharacter.getDirection(cp)) & RTL_MASK) != 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -20,6 +20,8 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.text.CharUtils;
+import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * This is the class for text whose content and markup can both be changed.
@@ -117,7 +120,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         mGapStart = srcLen;
         mGapLength = mText.length - srcLen;
 
-        TextUtils.getChars(text, start, end, mText, 0);
+        CharUtils.getChars(text, start, end, mText, 0);
 
         mSpanCount = 0;
         mSpanInsertCount = 0;
@@ -494,9 +497,9 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         mGapLength -= nbNewChars;
 
         if (mGapLength < 1)
-            new Exception("mGapLength < 1").printStackTrace();
+            Log.LOGGER.warn(MARKER, "mGapLength < 1", new Exception());
 
-        TextUtils.getChars(cs, csStart, csEnd, mText, start);
+        CharUtils.getChars(cs, csStart, csEnd, mText, start);
 
         if (replacedLength > 0) { // no need for span fixup on pure insertion
             // TODO potential optimization: only update bounds on intersecting spans
@@ -809,6 +812,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     // will not change the index of any spans.
     private void setSpan(boolean send, @NonNull Object what, int start, int end, int flags,
                          boolean enforceParagraph) {
+        Objects.requireNonNull(what, "span");
         checkRange("setSpan", start, end);
 
         int flagsStart = (flags & START_MASK) >> START_SHIFT;
@@ -1321,23 +1325,38 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     /**
      * Return a String containing a copy of the chars in this buffer.
      */
+    @NonNull
     @Override
     public String toString() {
         int len = length();
-        char[] buf = new char[len];
-
-        getChars(0, len, buf, 0);
-        return new String(buf);
+        if (len <= mGapStart) {
+            return new String(mText, 0, len);
+        } else if (0 >= mGapStart) {
+            return new String(mText, mGapLength, len);
+        } else {
+            // StringConcatFactory is fastest
+            return new String(mText, 0, mGapStart) +
+                    new String(mText, mGapStart + mGapLength, len - mGapStart);
+        }
     }
 
     /**
      * Return a String containing a copy of the chars in this buffer, limited to the
      * [start, end) range.
      */
+    @NonNull
     public String substring(int start, int end) {
-        char[] buf = new char[end - start];
-        getChars(start, end, buf, 0);
-        return new String(buf);
+        checkRange("substring", start, end);
+
+        if (end <= mGapStart) {
+            return new String(mText, start, end - start);
+        } else if (start >= mGapStart) {
+            return new String(mText, start + mGapLength, end - start);
+        } else {
+            // StringConcatFactory is fastest
+            return new String(mText, start, mGapStart - start) +
+                    new String(mText, mGapStart + mGapLength, end - mGapStart);
+        }
     }
 
     /**

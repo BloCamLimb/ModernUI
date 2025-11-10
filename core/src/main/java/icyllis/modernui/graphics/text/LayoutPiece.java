@@ -276,7 +276,8 @@ public final class LayoutPiece {
 
     /**
      * The array of all chars advance, the length and order are relative to
-     * the text buffer, if computed. Only grapheme cluster bounds have advances,
+     * the text buffer, if computed. Advances are computed per font-dependent
+     * cluster (from HarfBuzz output). Only cluster bounds have advances,
      * others are zeros. For example: [13.57, 0, 14.26, 0, 0]. The length is
      * constructor <code>end - start</code>.
      *
