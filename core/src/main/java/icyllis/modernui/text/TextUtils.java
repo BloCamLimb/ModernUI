@@ -172,7 +172,7 @@ public final class TextUtils {
     public static String substring(@NonNull CharSequence source, int start, int end) {
         if (source instanceof String)
             return ((String) source).substring(start, end);
-        if (source instanceof SpannableStringInternal || source instanceof PrecomputedText)
+        if (source instanceof SpannableStringInternal)
             return source.toString().substring(start, end);
         if (source instanceof SpannableStringBuilder)
             return ((SpannableStringBuilder) source).substring(start, end);

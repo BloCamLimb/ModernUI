@@ -21,6 +21,7 @@ package icyllis.modernui.text;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
+import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
@@ -46,19 +47,15 @@ import java.util.*;
  * <pre>
  * An example usage is:
  * {@code
- *  static void asyncSetText(TextView textView, final String longString, Executor bgExecutor) {
+ *  static void asyncSetText(TextView textView, final CharSequence longString, Executor bgExecutor) {
  *      // construct precompute related parameters using the TextView that we will set the text on.
  *      final PrecomputedText.Params params = textView.getTextMetricsParams();
- *      final Reference textViewRef = new WeakReference<>(textView);
- *      bgExecutor.submit(() -> {
+ *      final WeakReference<TextView> textViewRef = new WeakReference<>(textView);
+ *      bgExecutor.execute(() -> {
+ *          final PrecomputedText precomputedText = PrecomputedText.create(longString, params);
  *          TextView textView = textViewRef.get();
  *          if (textView == null) return;
- *          final PrecomputedText precomputedText = PrecomputedText.create(longString, params);
- *          textView.post(() -> {
- *              TextView textView = textViewRef.get();
- *              if (textView == null) return;
- *              textView.setText(precomputedText);
- *          });
+ *          textView.post(() -> textView.setText(precomputedText));
  *      });
  *  }
  * }
@@ -69,9 +66,13 @@ import java.util.*;
  * <p>
  * Note that any {@link NoCopySpan} attached to the original text won't be passed to
  * PrecomputedText.
+ * <p>
+ * Note that the same {@link PrecomputedText} instance cannot be set to multiple TextViews
+ * at the same time. Use {@link #create(CharSequence, Params)} to copy the internal spans.
  */
 //TODO Not fully utilized
-public class PrecomputedText implements Spannable {
+public final class PrecomputedText extends SpannableString {
+    // AOSP's PrecomputedText is buggy everywhere, we fixed a lot
 
     /**
      * The information required for building {@link PrecomputedText}.
@@ -157,6 +158,11 @@ public class PrecomputedText implements Spannable {
             }
         }
 
+        /**
+         * Use {@link Builder} instead.
+         *
+         * @hidden
+         */
         @ApiStatus.Internal
         public Params(@NonNull TextPaint paint,
                       @NonNull LineBreakConfig lineBreakConfig,
@@ -221,6 +227,9 @@ public class PrecomputedText implements Spannable {
         @ApiStatus.Internal
         public static final int USABLE = 2;
 
+        /**
+         * @hidden
+         */
         @ApiStatus.Internal
         public @CheckResultUsableResult int checkResultUsable(
                 @NonNull TextPaint paint, @NonNull TextDirectionHeuristic textDir,
@@ -264,6 +273,9 @@ public class PrecomputedText implements Spannable {
         }
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
     public static class ParagraphInfo {
         public final @IntRange(from = 0) int paragraphEnd;
@@ -280,15 +292,6 @@ public class PrecomputedText implements Spannable {
     }
 
 
-    // The original text.
-    private final @NonNull SpannableString mText;
-
-    // The inclusive start offset of the measuring target.
-    private final @IntRange(from = 0) int mStart;
-
-    // The exclusive end offset of the measuring target.
-    private final @IntRange(from = 0) int mEnd;
-
     private final @NonNull Params mParams;
 
     // The list of measured paragraph info.
@@ -303,12 +306,19 @@ public class PrecomputedText implements Spannable {
      * </p>
      * <p>
      * Note that any {@link NoCopySpan} attached to the text won't be passed to the
-     * created PrecomputedText.
+     * created PrecomputedText. Additionally, if a {@link MetricAffectingSpan} implements
+     * {@link NoCopySpan}, it will not affect the measurement results.
+     * <p>
+     * Note that calling this method with a {@link PrecomputedText} and its originating
+     * {@link Params} still yields a new {@link PrecomputedText} object. But only its internal
+     * span data is cloned, allowing you to attach span watchers without affecting each other,
+     * and both the text (string) itself and measurement information will be reused.
      *
      * @param text   the text to be measured
      * @param params parameters that define how text will be precomputed
      * @return A {@link PrecomputedText}
      */
+    @NonNull
     public static PrecomputedText create(@NonNull CharSequence text, @NonNull Params params) {
         ParagraphInfo[] paraInfo = null;
         if (text instanceof final PrecomputedText hintPct) {
@@ -318,7 +328,10 @@ public class PrecomputedText implements Spannable {
                             params.mLineBreakConfig);
             switch (checkResult) {
                 case Params.USABLE:
-                    return hintPct;
+                    // Modern UI changed: we can't simply return hintPct, instead,
+                    // reuse measure results, but copy spans and remove no-copy spans
+                    paraInfo = hintPct.getParagraphInfo();
+                    break;
                 case Params.NEED_RECOMPUTE:
                     // To be able to use PrecomputedText for new params, at least break strategy and
                     // hyphenation frequency must be the same.
@@ -329,30 +342,31 @@ public class PrecomputedText implements Spannable {
                     // Unable to use anything in PrecomputedText. Create PrecomputedText as the
                     // normal text input.
             }
+        }
 
-        }
-        if (paraInfo == null) {
-            paraInfo = createMeasuredParagraphs(
-                    text, params, 0, text.length(), true /* computeLayout */);
-        }
-        return new PrecomputedText(text, 0, text.length(), params, paraInfo);
+        return new PrecomputedText(text, params, paraInfo);
     }
 
+    @NonNull
     private static ParagraphInfo[] createMeasuredParagraphsFromPrecomputedText(
             @NonNull PrecomputedText pct, @NonNull Params params, boolean computeLayout) {
-        ArrayList<ParagraphInfo> result = new ArrayList<>();
+        ParagraphInfo[] result = new ParagraphInfo[pct.getParagraphCount()];
         for (int i = 0; i < pct.getParagraphCount(); ++i) {
             final int paraStart = pct.getParagraphStart(i);
             final int paraEnd = pct.getParagraphEnd(i);
-            result.add(new ParagraphInfo(paraEnd, MeasuredParagraph.buildForStaticLayout(
+            result[i] = new ParagraphInfo(paraEnd, MeasuredParagraph.buildForStaticLayout(
                     params.getTextPaint(), params.getLineBreakConfig(), pct, paraStart, paraEnd,
                     params.getTextDirection(), computeLayout,
-                    null /* no recycle */)));
+                    null /* no recycle */));
         }
-        return result.toArray(new ParagraphInfo[0]);
+        return result;
     }
 
+    /**
+     * @hidden
+     */
     @ApiStatus.Internal
+    @NonNull
     public static ParagraphInfo[] createMeasuredParagraphs(
             @NonNull CharSequence text, @NonNull Params params,
             @IntRange(from = 0) int start, @IntRange(from = 0) int end, boolean computeLayout) {
@@ -380,41 +394,27 @@ public class PrecomputedText implements Spannable {
     }
 
     // Use PrecomputedText.create instead.
-    private PrecomputedText(@NonNull CharSequence text, @IntRange(from = 0) int start,
-                            @IntRange(from = 0) int end, @NonNull Params params,
-                            @NonNull ParagraphInfo[] paraInfo) {
-        mText = new SpannableString(text);
-        mStart = start;
-        mEnd = end;
+    private PrecomputedText(@NonNull CharSequence text, @NonNull Params params,
+                            @Nullable ParagraphInfo[] paraInfo) {
+        super(text);    // <- no-copy spans will be removed
+        if (paraInfo == null) {
+            // Modern UI fixed: google bug, if the source text has NoCopy-MetricAffectingSpan,
+            // then measure results from 'text' and 'this' are different.
+            // Therefore, we use 'this' to measure.
+            paraInfo = createMeasuredParagraphs(
+                    this, params, 0, length(), true /* computeLayout */);
+        }
         mParams = params;
         mParagraphInfo = paraInfo;
     }
 
-    /**
-     * Return the underlying text.
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public @NonNull Spanned getText() {
-        return mText;
-    }
-
-    /**
-     * Returns the inclusive start offset of measured region.
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public @IntRange(from = 0) int getStart() {
-        return mStart;
-    }
-
-    /**
-     * Returns the exclusive end offset of measured region.
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public @IntRange(from = 0) int getEnd() {
-        return mEnd;
+    private PrecomputedText(@NonNull CharSequence text, @IntRange(from = 0) int start,
+                            @IntRange(from = 0) int end, @NonNull Params params) {
+        super(text, start, end);    // <- no-copy spans will be removed
+        ParagraphInfo[] paraInfo = createMeasuredParagraphs(
+                this, params, 0, length(), true /* computeLayout */);
+        mParams = params;
+        mParagraphInfo = paraInfo;
     }
 
     /**
@@ -436,7 +436,7 @@ public class PrecomputedText implements Spannable {
      */
     public @IntRange(from = 0) int getParagraphStart(@IntRange(from = 0) int paraIndex) {
         Objects.checkIndex(paraIndex, getParagraphCount());
-        return paraIndex == 0 ? mStart : getParagraphEnd(paraIndex - 1);
+        return paraIndex == 0 ? 0 : getParagraphEnd(paraIndex - 1);
     }
 
     /**
@@ -445,6 +445,15 @@ public class PrecomputedText implements Spannable {
     public @IntRange(from = 0) int getParagraphEnd(@IntRange(from = 0) int paraIndex) {
         Objects.checkIndex(paraIndex, getParagraphCount());
         return mParagraphInfo[paraIndex].paragraphEnd;
+    }
+
+    /**
+     * Returns the measured text of the paragraph of the text.
+     */
+    public @NonNull MeasuredText getMeasuredText(@IntRange(from = 0) int paraIndex) {
+        MeasuredText mt = mParagraphInfo[paraIndex].measured.getMeasuredText();
+        assert mt != null;
+        return mt;
     }
 
     /**
@@ -472,7 +481,8 @@ public class PrecomputedText implements Spannable {
             @IntRange(from = 0) int start,
             @IntRange(from = 0) int end, @NonNull TextDirectionHeuristic textDir,
             @NonNull TextPaint paint, @NonNull LineBreakConfig lbConfig) {
-        if (mStart != start || mEnd != end) {
+        if (start != 0 || end != length()) {
+            // subrange is not reusable
             return Params.UNUSABLE;
         } else {
             return mParams.checkResultUsable(paint, textDir, lbConfig);
@@ -484,16 +494,37 @@ public class PrecomputedText implements Spannable {
      */
     @ApiStatus.Internal
     public int findParaIndex(@IntRange(from = 0) int pos) {
-        // TODO: Maybe good to remove paragraph concept from PrecomputedText and add substring
-        //       layout support to StaticLayout.
-        for (int i = 0; i < mParagraphInfo.length; ++i) {
-            if (pos < mParagraphInfo[i].paragraphEnd) {
-                return i;
+        int low = 0;
+        int high = mParagraphInfo.length - 1;
+        if (high < 8) {
+            // linear
+            for (; low <= high; ++low) {
+                if (mParagraphInfo[low].paragraphEnd > pos) break;
+            }
+        } else {
+            // upper_bound
+            while (low <= high) {
+                int mid = (low + high) >>> 1;
+                if (mParagraphInfo[mid].paragraphEnd > pos) high = mid - 1;
+                else low = mid + 1;
             }
         }
-        throw new IndexOutOfBoundsException(
-                "pos must be less than " + mParagraphInfo[mParagraphInfo.length - 1].paragraphEnd
-                        + ", gave " + pos);
+        return low;
+    }
+
+    /**
+     * Returns a width of a character at offset
+     *
+     * @param offset an offset of the text.
+     * @return a width of the character.
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public float getCharWidthAt(@IntRange(from = 0) int offset) {
+        Objects.checkIndex(offset, length());
+        final int paraIndex = findParaIndex(offset);
+        final int paraStart = getParagraphStart(paraIndex);
+        return getMeasuredText(paraIndex).getAdvance(offset - paraStart);
     }
 
     /**
@@ -508,7 +539,7 @@ public class PrecomputedText implements Spannable {
      */
     public @FloatRange(from = 0) float getWidth(@IntRange(from = 0) int start,
                                                 @IntRange(from = 0) int end) {
-        Objects.checkFromToIndex(start, end, mText.length());
+        Objects.checkFromToIndex(start, end, length());
 
         if (start == end) {
             return 0;
@@ -521,7 +552,7 @@ public class PrecomputedText implements Spannable {
                     + "para: (" + paraStart + ", " + paraEnd + "), "
                     + "request: (" + start + ", " + end + ")");
         }
-        return getMeasuredParagraph(paraIndex).getAdvance(start - paraStart, end - paraStart);
+        return getMeasuredText(paraIndex).getAdvance(start - paraStart, end - paraStart);
     }
 
     /**
@@ -536,7 +567,7 @@ public class PrecomputedText implements Spannable {
      */
     public void getFontMetricsInt(@IntRange(from = 0) int start, @IntRange(from = 0) int end,
                                   @NonNull FontMetricsInt outMetrics) {
-        Objects.checkFromToIndex(start, end, mText.length());
+        Objects.checkFromToIndex(start, end, length());
         Objects.requireNonNull(outMetrics);
         if (start == end) {
             mParams.getTextPaint().getFontMetricsInt(outMetrics);
@@ -550,7 +581,7 @@ public class PrecomputedText implements Spannable {
                     + "para: (" + paraStart + ", " + paraEnd + "), "
                     + "request: (" + start + ", " + end + ")");
         }
-        getMeasuredParagraph(paraIndex).getExtent(start - paraStart,
+        getMeasuredText(paraIndex).getExtent(start - paraStart,
                 end - paraStart, outMetrics);
     }
 
@@ -578,80 +609,47 @@ public class PrecomputedText implements Spannable {
      * @throws IllegalArgumentException if {@link MetricAffectingSpan} is specified.
      */
     @Override
-    public void setSpan(@NonNull Object what, int start, int end, int flags) {
-        if (what instanceof MetricAffectingSpan) {
+    public void setSpan(@NonNull Object span, int start, int end, int flags) {
+        if (span instanceof MetricAffectingSpan) {
             throw new IllegalArgumentException(
                     "MetricAffectingSpan can not be set to PrecomputedText.");
         }
-        mText.setSpan(what, start, end, flags);
+        super.setSpan(span, start, end, flags);
     }
 
     /**
      * @throws IllegalArgumentException if {@link MetricAffectingSpan} is specified.
      */
     @Override
-    public void removeSpan(@NonNull Object what) {
-        if (what instanceof MetricAffectingSpan) {
+    public void removeSpan(@NonNull Object span) {
+        if (span instanceof MetricAffectingSpan) {
             throw new IllegalArgumentException(
                     "MetricAffectingSpan can not be removed from PrecomputedText.");
         }
-        mText.removeSpan(what);
+        super.removeSpan(span);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // Spanned overrides
-    //
-    // Just proxy for underlying mText if appropriate.
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @Override
+    public void removeSpan(@NonNull Object span, int flags) {
+        if (span instanceof MetricAffectingSpan) {
+            throw new IllegalArgumentException(
+                    "MetricAffectingSpan can not be removed from PrecomputedText.");
+        }
+        super.removeSpan(span, flags);
+    }
 
     @NonNull
     @Override
-    public <T> List<T> getSpans(int start, int end, @Nullable Class<? extends T> type,
-                                @Nullable List<T> dest) {
-        return mText.getSpans(start, end, type, dest);
-    }
-
-    @Override
-    public int getSpanStart(@NonNull Object tag) {
-        return mText.getSpanStart(tag);
-    }
-
-    @Override
-    public int getSpanEnd(@NonNull Object tag) {
-        return mText.getSpanEnd(tag);
-    }
-
-    @Override
-    public int getSpanFlags(@NonNull Object tag) {
-        return mText.getSpanFlags(tag);
-    }
-
-    @Override
-    public int nextSpanTransition(int start, int limit, @Nullable Class<?> type) {
-        return mText.nextSpanTransition(start, limit, type);
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // CharSequence overrides.
-    //
-    // Just proxy for underlying mText.
-
-    @Override
-    public int length() {
-        return mText.length();
-    }
-
-    @Override
-    public char charAt(int index) {
-        return mText.charAt(index);
-    }
-
-    @Override
     public CharSequence subSequence(int start, int end) {
-        return PrecomputedText.create(mText.subSequence(start, end), mParams);
-    }
-
-    @Override
-    public String toString() {
-        return mText.toString();
+        if (start == 0 && end == length()) {
+            // reuse measure results, but copy spans and remove no-copy spans
+            return new PrecomputedText(this, mParams, mParagraphInfo);
+        }
+        // subrange is not reusable, re-measure
+        return new PrecomputedText(this, start, end, mParams);
     }
 }
