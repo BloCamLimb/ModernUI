@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*
+ * Copyright (C) 2010 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.NonNull;
@@ -28,13 +44,13 @@ import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
+import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -84,7 +100,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
 
     private int mSpanCount;
     @Nullable
-    private IdentityHashMap<Object, Integer> mIndexOfSpan;
+    private Reference2IntOpenHashMap<Object> mIndexOfSpan;
     private int mLowWaterMark;  // indices below this have not been touched
 
     // TextWatcher callbacks may trigger changes that trigger more callbacks. This keeps track of
@@ -414,7 +430,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
                     // The following condition indicates that the span would become empty
                     (textIsRemoved || mSpanStarts[i] > start || mSpanEnds[i] < mGapStart)) {
                 assert mIndexOfSpan != null;
-                mIndexOfSpan.remove(mSpans[i]);
+                mIndexOfSpan.removeInt(mSpans[i]);
                 removeSpan(i, 0 /* flags */);
                 return true;
             }
@@ -864,9 +880,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         }
 
         if (mIndexOfSpan != null) {
-            Integer index = mIndexOfSpan.get(what);
-            if (index != null) {
-                int i = index;
+            int i = mIndexOfSpan.getInt(what);
+            if (i != -1) {
                 int ostart = mSpanStarts[i];
                 int oend = mSpanEnds[i];
 
@@ -929,9 +944,9 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     public void removeSpan(@NonNull Object what, int flags) {
         if (mIndexOfSpan == null)
             return;
-        Integer i = mIndexOfSpan.remove(what);
-        if (i != null) {
-            removeSpan(i.intValue(), flags);
+        int i = mIndexOfSpan.removeInt(what);
+        if (i != -1) {
+            removeSpan(i, flags);
         }
     }
 
@@ -950,8 +965,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     public int getSpanStart(@NonNull Object what) {
         if (mIndexOfSpan == null)
             return -1;
-        Integer i = mIndexOfSpan.get(what);
-        return i == null ? -1 : resolveGap(mSpanStarts[i]);
+        int i = mIndexOfSpan.getInt(what);
+        return i == -1 ? -1 : resolveGap(mSpanStarts[i]);
     }
 
     /**
@@ -962,8 +977,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     public int getSpanEnd(@NonNull Object what) {
         if (mIndexOfSpan == null)
             return -1;
-        Integer i = mIndexOfSpan.get(what);
-        return i == null ? -1 : resolveGap(mSpanEnds[i]);
+        int i = mIndexOfSpan.getInt(what);
+        return i == -1 ? -1 : resolveGap(mSpanEnds[i]);
     }
 
     /**
@@ -974,8 +989,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     public int getSpanFlags(@NonNull Object what) {
         if (mIndexOfSpan == null)
             return 0;
-        Integer i = mIndexOfSpan.get(what);
-        return i == null ? 0 : mSpanFlags[i];
+        int i = mIndexOfSpan.getInt(what);
+        return i == -1 ? 0 : mSpanFlags[i];
     }
 
     /**
@@ -1693,13 +1708,11 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
 
         // invariant 3: mIndexOfSpan maps spans back to indices
         if (mIndexOfSpan == null) {
-            mIndexOfSpan = new IdentityHashMap<>();
+            mIndexOfSpan = new Reference2IntOpenHashMap<>(mSpanCount);
+            mIndexOfSpan.defaultReturnValue(-1);
         }
         for (int i = mLowWaterMark; i < mSpanCount; i++) {
-            Integer existing = mIndexOfSpan.get(mSpans[i]);
-            if (existing == null || existing != i) {
-                mIndexOfSpan.put(mSpans[i], i);
-            }
+            mIndexOfSpan.put(mSpans[i], i);
         }
         mLowWaterMark = Integer.MAX_VALUE;
     }
