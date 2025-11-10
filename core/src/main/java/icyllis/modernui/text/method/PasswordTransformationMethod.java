@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,36 +14,63 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.text.method;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.text.*;
+import icyllis.modernui.graphics.text.CharUtils;
+import icyllis.modernui.text.Editable;
+import icyllis.modernui.graphics.text.GetChars;
+import icyllis.modernui.text.NoCopySpan;
+import icyllis.modernui.text.Spannable;
+import icyllis.modernui.text.Spanned;
+import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.text.TextWatcher;
 import icyllis.modernui.text.style.UpdateLayout;
 import icyllis.modernui.view.View;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
+// Modified, with some optimizations
+@SuppressWarnings("ForLoopReplaceableByForEach")
 public class PasswordTransformationMethod implements TransformationMethod, TextWatcher {
 
     private static final PasswordTransformationMethod sInstance = new PasswordTransformationMethod();
 
     private static final char DOT = '\u2022';
 
-    private PasswordTransformationMethod() {
+    protected PasswordTransformationMethod() {
     }
 
+    @NonNull
     public static PasswordTransformationMethod getInstance() {
         return sInstance;
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public CharSequence getTransformation(@Nonnull CharSequence source, @Nonnull View view) {
+    public CharSequence getTransformation(@NonNull CharSequence source, @NonNull View view) {
         if (source instanceof Spannable sp) {
             /*
              * Remove any references to other views that may still be
@@ -53,8 +80,8 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
              */
             List<ViewReference> vr = sp.getSpans(0, sp.length(),
                     ViewReference.class);
-            for (ViewReference r : vr) {
-                sp.removeSpan(r);
+            for (int i = 0; i < vr.size(); i++) {
+                sp.removeSpan(vr.get(i));
             }
 
             removeVisibleSpans(sp);
@@ -67,7 +94,7 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
     }
 
     @Override
-    public void onFocusChanged(@Nonnull View view, @Nonnull CharSequence sourceText,
+    public void onFocusChanged(@NonNull View view, @NonNull CharSequence sourceText,
                                boolean focused, int direction, @Nullable Rect previouslyFocusedRect) {
         if (!focused) {
             if (sourceText instanceof Spannable) {
@@ -122,10 +149,10 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
     public void afterTextChanged(Editable s) {
     }
 
-    private static void removeVisibleSpans(@Nonnull Spannable sp) {
+    private static void removeVisibleSpans(@NonNull Spannable sp) {
         List<Visible> old = sp.getSpans(0, sp.length(), Visible.class);
-        for (Visible visible : old) {
-            sp.removeSpan(visible);
+        for (int i = 0; i < old.size(); i++) {
+            sp.removeSpan(old.get(i));
         }
     }
 
@@ -147,7 +174,8 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
             if (mSource instanceof Spanned sp) {
                 List<Visible> visible = sp.getSpans(0, sp.length(), Visible.class);
 
-                for (Visible value : visible) {
+                for (int j = 0; j < visible.size(); j++) {
+                    Visible value = visible.get(j);
                     if (sp.getSpanStart(value.mTransformer) >= 0) {
                         int st = sp.getSpanStart(value);
                         int en = sp.getSpanEnd(value);
@@ -162,25 +190,35 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
             return DOT;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public CharSequence subSequence(int start, int end) {
-            char[] buf = new char[end - start];
-            getChars(start, end, buf, 0);
-            return new String(buf);
+            int len = end - start;
+            char[] s = CharUtils.obtain(len);
+            try {
+                getChars(start, end, s, 0);
+                return new String(s, 0, len);
+            } finally {
+                CharUtils.recycle(s);
+            }
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public String toString() {
-            char[] buf = new char[mSource.length()];
-            getChars(0, mSource.length(), buf, 0);
-            return new String(buf);
+            int len = length();
+            char[] s = CharUtils.obtain(len);
+            try {
+                getChars(0, len, s, 0);
+                return new String(s, 0, len);
+            } finally {
+                CharUtils.recycle(s);
+            }
         }
 
         @Override
         public void getChars(int start, int end, char[] dest, int off) {
-            TextUtils.getChars(mSource, start, end, dest, off);
+            CharUtils.getChars(mSource, start, end, dest, off);
 
             int count = 0;
             int[] starts = null, ends = null;
@@ -193,9 +231,10 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
                 ends = new int[count];
 
                 for (int i = 0; i < count; i++) {
-                    if (sp.getSpanStart(visible.get(i).mTransformer) >= 0) {
-                        starts[i] = sp.getSpanStart(visible.get(i));
-                        ends[i] = sp.getSpanEnd(visible.get(i));
+                    Visible value = visible.get(i);
+                    if (sp.getSpanStart(value.mTransformer) >= 0) {
+                        starts[i] = sp.getSpanStart(value);
+                        ends[i] = sp.getSpanEnd(value);
                     }
                 }
             }

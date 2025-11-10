@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,9 +14,28 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *   Copyright (C) 2006 The Android Open Source Project
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
  */
 
 package icyllis.modernui.text.method;
+
+import icyllis.modernui.annotation.NonNull;
 
 /**
  * This transformation method causes any newline characters (\n) to be
@@ -25,12 +44,12 @@ package icyllis.modernui.text.method;
  */
 public class SingleLineTransformationMethod extends ReplacementTransformationMethod {
 
-    private static final SingleLineTransformationMethod sInstance = new SingleLineTransformationMethod();
-
     private static final char[] ORIGINAL = new char[]{'\n', '\r'};
     private static final char[] REPLACEMENT = new char[]{' ', '\uFEFF'};
 
-    private SingleLineTransformationMethod() {
+    private static final SingleLineTransformationMethod sInstance = new SingleLineTransformationMethod();
+
+    protected SingleLineTransformationMethod() {
     }
 
     public static SingleLineTransformationMethod getInstance() {
@@ -40,6 +59,7 @@ public class SingleLineTransformationMethod extends ReplacementTransformationMet
     /**
      * The characters to be replaced are \n and \r.
      */
+    @NonNull
     @Override
     protected char[] getOriginal() {
         return ORIGINAL;
@@ -49,6 +69,7 @@ public class SingleLineTransformationMethod extends ReplacementTransformationMet
      * The character \n is replaced with is space;
      * the character \r is replaced with is FEFF (zero width space).
      */
+    @NonNull
     @Override
     protected char[] getReplacement() {
         return REPLACEMENT;

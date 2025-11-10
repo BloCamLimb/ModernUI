@@ -416,7 +416,7 @@ public class StaticLayout extends Layout {
      * Used by DynamicLayout.
      */
     StaticLayout(@Nullable CharSequence text) {
-        super(text, null, 0, null, 1, 0);
+        super(text, null, 0, null, null, 1, 0);
 
         mColumns = COLUMNS_ELLIPSIZE;
         mLineDirections = new Directions[2];

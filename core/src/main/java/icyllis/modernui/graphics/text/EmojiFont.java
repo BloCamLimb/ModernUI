@@ -103,7 +103,7 @@ public final class EmojiFont implements Font {
 
     @Override
     public int calcGlyphScore(char[] buf, int start, int limit) {
-        final var breaker = sBreaker;
+        final var breaker = (BreakIterator) sBreaker.clone();
         final var iterator = new CharArrayIterator(buf, start, limit);
 
         breaker.setText(iterator);
@@ -159,7 +159,7 @@ public final class EmojiFont implements Font {
                                  float[] advances, int advanceOffset,
                                  Rect bounds, float x, float y) {
         // Measure grapheme cluster in visual order
-        final var breaker = sBreaker;
+        final var breaker = (BreakIterator) sBreaker.clone();
         // We simply ignore the context range
         final var iterator = new CharArrayIterator(buf, layoutStart, layoutLimit);
         breaker.setText(iterator);

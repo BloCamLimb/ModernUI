@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.LineBreakConfig;
@@ -109,8 +110,12 @@ public class MeasuredParagraph {
      */
     public void release() {
         reset();
-        mSpanEndCache.trim();
-        mFontMetrics.trim();
+        if (mSpanEndCache.elements().length > 10000) {
+            mSpanEndCache.trim();
+        }
+        if (mFontMetrics.elements().length > 10000) {
+            mFontMetrics.trim();
+        }
     }
 
     /**
@@ -215,7 +220,7 @@ public class MeasuredParagraph {
         for (int i = 0; i < bidi.getRunCount(); ++i) {
             int vIndex;
             if ((mBidi.getBaseLevel() & 0x01) == 1) {
-                // For the historical reasons, if the base directionality is RTL, ModernUI
+                // For the historical reasons, if the base directionality is RTL, TextLine
                 // draws from the right, i.e. the visually reordered run needs to be reversed.
                 vIndex = visualOrders[bidi.getRunCount() - i - 1];
             } else {
@@ -270,14 +275,10 @@ public class MeasuredParagraph {
 
     /**
      * Returns the advance of the char at the given index of the text buffer.
+     * This is per-cluster advance and font-dependent.
      * <p>
-     * This follows grapheme cluster break. For example: there are 6 chars (uint_16),
-     * the first two are the first grapheme, the last four are the second one.
-     * Then mAdvances[0] is for the first grapheme, mAdvances[2] for the second one,
-     * other elements are zero. It's in the same order of {@link #getChars()}
-     * <p>
-     * This is available only if the MeasuredParagraph is computed with buildForMeasurement.
-     * Returns empty array in other cases.
+     * This is available only if the MeasuredParagraph is computed with buildForStaticLayout.
+     * Returns 0 in other cases.
      *
      * @param offset the char index with start offset
      * @return advance
@@ -292,6 +293,7 @@ public class MeasuredParagraph {
 
     /**
      * Returns the advance of the given range.
+     * This is per-cluster advance and font-dependent.
      * <p>
      * This is not available if the MeasuredParagraph is computed with buildForBidi.
      * Returns 0 if the MeasuredParagraph is computed with buildForBidi.
@@ -420,7 +422,7 @@ public class MeasuredParagraph {
         if (mCopiedBuffer == null || mCopiedBuffer.length != length) {
             mCopiedBuffer = new char[length];
         }
-        TextUtils.getChars(text, start, end, mCopiedBuffer, 0);
+        CharUtils.getChars(text, start, end, mCopiedBuffer, 0);
 
         // Replace characters associated with ReplacementSpan to U+FFFC.
         if (mSpanned != null) {
@@ -441,7 +443,7 @@ public class MeasuredParagraph {
         if ((dir == TextDirectionHeuristics.LTR
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
-                && !Bidi.requiresBidi(mCopiedBuffer, 0, length)) {
+                && !TextUtils.couldAffectRtl(mCopiedBuffer, 0, length)) {
             mBidi = null;
         } else {
             final byte paraLevel;
@@ -465,8 +467,8 @@ public class MeasuredParagraph {
                 // Historically, the MeasuredParagraph does not treat the CR letters as paragraph
                 // breaker but ICU BiDi treats it as paragraph breaker. In the MeasureParagraph,
                 // the given range always represents a single paragraph, so if the BiDi object has
-                // multiple paragraph, it should contains a CR letters in the text. Using CR is not
-                // common in ModernUI and also it should not penalize the easy case, e.g. all LTR,
+                // multiple paragraph, it should contain a CR letters in the text. Using CR is not
+                // common and also it should not penalize the easy case, e.g. all LTR,
                 // check the paragraph count here and replace the CR letters and re-calculate
                 // BiDi again.
                 for (int i = 0; i < length; ++i) {
@@ -551,40 +553,6 @@ public class MeasuredParagraph {
                     level = mBidi.getLevelAt(levelEnd);
                 }
             }
-        }
-    }
-
-    /**
-     * Returns the maximum index that the accumulated width not exceeds the width.
-     * <p>
-     * If forward=false is passed, returns the minimum index from the end instead.
-     * <p>
-     * This only works if the MeasuredParagraph is computed with buildForMeasurement.
-     * Undefined behavior in other case.
-     */
-    int breakText(int limit, boolean forwards, float width) {
-        MeasuredText mt = mMeasuredText;
-        assert mt != null;
-        if (forwards) {
-            int i = 0;
-            while (i < limit) {
-                width -= mt.getAdvance(i);
-                if (width < 0.0f) break;
-                i++;
-            }
-            while (i > 0 && mCopiedBuffer[i - 1] == ' ') i--;
-            return i;
-        } else {
-            int i = limit - 1;
-            while (i >= 0) {
-                width -= mt.getAdvance(i);
-                if (width < 0.0f) break;
-                i--;
-            }
-            while (i < limit - 1 && (mCopiedBuffer[i + 1] == ' ' || mt.getAdvance(i + 1) == 0.0f)) {
-                i++;
-            }
-            return limit - i - 1;
         }
     }
 

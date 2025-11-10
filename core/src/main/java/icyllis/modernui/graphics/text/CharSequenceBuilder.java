@@ -19,7 +19,6 @@
 package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.text.GetChars;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import org.jetbrains.annotations.ApiStatus;
 

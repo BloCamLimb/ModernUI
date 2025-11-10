@@ -18,11 +18,11 @@
 
 package icyllis.modernui.text;
 
-import com.ibm.icu.text.Bidi;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.ShapedText;
+import icyllis.modernui.graphics.text.TextRunShaper;
 
 import java.util.Objects;
 
@@ -31,7 +31,8 @@ import java.util.Objects;
  * <p>
  * Text shaping is a preprocess for drawing text into canvas with glyphs. The glyph is a most
  * primitive unit of the text drawing, consist of glyph identifier in the font file and its position
- * and style. You can draw the shape result to Canvas by calling {@link Canvas#drawShapedText}.
+ * and style. You can draw the shape result to Canvas by calling
+ * {@link icyllis.modernui.graphics.Canvas#drawShapedText}.
  * <p>
  * For most of the use cases, {@link #shapeText} will provide text shaping
  * functionalities needed.
@@ -137,7 +138,7 @@ public class TextShaper {
         if ((dir == TextDirectionHeuristics.LTR
                 || dir == TextDirectionHeuristics.FIRSTSTRONG_LTR
                 || dir == TextDirectionHeuristics.ANYRTL_LTR)
-                && !Bidi.requiresBidi(text, start, start + count)) {
+                && !TextUtils.couldAffectRtl(text, start, start + count)) {
             bidiFlags = ShapedText.BIDI_OVERRIDE_LTR;
         } else if (dir == TextDirectionHeuristics.LTR) {
             bidiFlags = ShapedText.BIDI_LTR;
@@ -190,16 +191,16 @@ public class TextShaper {
                 || dir == TextDirectionHeuristics.ANYRTL_LTR);
         char[] buf;
         if (mayTemp) {
-            buf = TextUtils.obtain(count);
+            buf = CharUtils.obtain(count);
         } else {
             buf = new char[count];
         }
         try {
-            TextUtils.getChars(text, start, start + count, buf, 0);
+            CharUtils.getChars(text, start, start + count, buf, 0);
             return shapeText(buf, 0, count, dir, paint);
         } finally {
             if (mayTemp) {
-                TextUtils.recycle(buf);
+                CharUtils.recycle(buf);
             }
         }
     }
@@ -225,9 +226,8 @@ public class TextShaper {
             @NonNull char[] text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, int contextStart, int contextCount,
             boolean isRtl, @NonNull TextPaint paint) {
-        int bidiFlags = isRtl ? ShapedText.BIDI_OVERRIDE_RTL : ShapedText.BIDI_OVERRIDE_LTR;
-        return new ShapedText(text, contextStart, contextStart + contextCount,
-                start, start + count, bidiFlags, paint.getInternalPaint());
+        return TextRunShaper.shapeTextRun(text, start, count, contextStart, contextCount, isRtl,
+                paint.getInternalPaint());
     }
 
     /**
@@ -251,15 +251,8 @@ public class TextShaper {
             @NonNull CharSequence text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, int contextStart, int contextCount,
             boolean isRtl, @NonNull TextPaint paint) {
-        Objects.checkFromIndexSize(contextStart, contextCount, text.length());
-        char[] buf = TextUtils.obtain(contextCount);
-        try {
-            TextUtils.getChars(text, contextStart, contextStart + contextCount, buf, 0);
-            return shapeTextRun(buf, start - contextStart, count,
-                    0, contextCount, isRtl, paint);
-        } finally {
-            TextUtils.recycle(buf);
-        }
+        return TextRunShaper.shapeTextRun(text, start, count, contextStart, contextCount, isRtl,
+                paint.getInternalPaint());
     }
 
     private TextShaper() {

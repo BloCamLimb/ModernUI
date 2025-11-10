@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,12 +18,19 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.IntRange;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.AlgorithmUtils;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -37,26 +44,27 @@ public class MeasuredText {
 
     private final char[] mTextBuf;
     private final Run[] mRuns;
-
-    private Run mLastSeenRun;
-    private int mLastSeenRunIndex;
+    private final float[] mAdvances;
 
     private MeasuredText(@NonNull char[] textBuf,
                          @NonNull Run[] runs,
                          boolean computeLayout) {
         //assert (textBuf.length == 0) == (runs.length == 0);
-        mTextBuf = textBuf;
-        mRuns = runs;
+        final float[] advances;
 
         if (runs.length > 0) {
-            mLastSeenRun = runs[0];
-
+            advances = new float[textBuf.length];
             for (Run run : runs) {
-                run.measure(textBuf, computeLayout);
+                run.measure(textBuf, advances, computeLayout);
             }
         } else {
-            mLastSeenRunIndex = -1;
+            advances = null;
         }
+
+        mTextBuf = textBuf;
+        // put final fields here to safely publish measure results
+        mRuns = runs;
+        mAdvances = advances;
     }
 
     /**
@@ -64,7 +72,9 @@ public class MeasuredText {
      * keep it synchronized with MeasuredText.
      *
      * @return the backend buffer of the text
+     * @hidden
      */
+    @ApiStatus.Internal
     @NonNull
     public char[] getTextBuf() {
         return mTextBuf;
@@ -75,53 +85,23 @@ public class MeasuredText {
      * under optimization consideration.
      *
      * @return all text runs, may empty if text buf is empty
+     * @hidden
      */
+    @ApiStatus.Internal
     @NonNull
     public Run[] getRuns() {
         return mRuns;
     }
 
     /**
-     * Expands the font metrics with those of the chars in the given range of the text buffer.
-     *
-     * @param start  the start index
-     * @param end    the end index
-     * @param extent receives the metrics
-     */
-    public void getExtent(int start, int end, @NonNull FontMetricsInt extent) {
-        if (start >= end) {
-            return;
-        }
-        Run run = memoizedSearch(start);
-        int index = mLastSeenRunIndex;
-        for (;;) {
-            if (start < run.mEnd && end > run.mStart) {
-                run.getExtent(mTextBuf,
-                        Math.max(start, run.mStart),
-                        Math.min(end, run.mEnd),
-                        extent);
-            }
-            if (run.mEnd >= end) {
-                break;
-            }
-            run = mRuns[++index];
-        }
-    }
-
-    /**
      * Returns the advance of the char at the given index of the text buffer.
-     * <p>
-     * This follows grapheme cluster break. For example: there are 6 chars (uint_16),
-     * the first two are the first grapheme, the last four are the second one.
-     * Then mAdvances[0] is for the first grapheme, mAdvances[2] for the second one,
-     * other elements are zero. It's in the same order of {@link #getTextBuf()}
+     * This is per-cluster advance and font-dependent.
      *
      * @param pos the char index
      * @return advance
      */
     public float getAdvance(int pos) {
-        Run run = memoizedSearch(pos);
-        return run.getAdvance(mTextBuf, pos);
+        return mAdvances[pos];
     }
 
     /**
@@ -137,102 +117,64 @@ public class MeasuredText {
             return 0;
         }
         float advance = 0;
-        Run run = memoizedSearch(start);
-        int index = mLastSeenRunIndex;
+        for (int i = start; i < end; i++) {
+            advance += mAdvances[i];
+        }
+        return advance;
+    }
+
+    /**
+     * Expands the font metrics with those of the chars in the given range of the text buffer.
+     *
+     * @param start  the start index
+     * @param end    the end index
+     * @param extent receives the metrics
+     */
+    public void getExtent(int start, int end, @NonNull FontMetricsInt extent) {
+        if (start >= end) {
+            return;
+        }
+        int index = findRunIndex(start);
+        Run run = mRuns[index];
         for (;;) {
             if (start < run.mEnd && end > run.mStart) {
-                advance += run.getAdvance(mTextBuf,
+                run.getExtent(mTextBuf,
                         Math.max(start, run.mStart),
-                        Math.min(end, run.mEnd));
+                        Math.min(end, run.mEnd),
+                        extent);
             }
             if (run.mEnd >= end) {
-                return advance;
+                break;
             }
             run = mRuns[++index];
         }
     }
 
     /**
-     * Fast binary search with ranges.
+     * Find the run for the given char index.
      *
      * @param pos char index
      * @return the run
+     * @hidden
      */
-    @NonNull
-    private Run memoizedSearch(int pos) {
-        Run run = mLastSeenRun;
-        if (pos >= run.mStart && pos < run.mEnd) {
-            return run;
-        }
-        // Find adjacent ranges
-        int index = mLastSeenRunIndex;
-        Run[] runs = mRuns;
-        if (index < runs.length - 1) {
-            // next
-            run = runs[index + 1];
-            if (pos >= run.mStart && pos < run.mEnd) {
-                mLastSeenRun = run;
-                ++mLastSeenRunIndex;
-                return run;
-            }
-        }
-        if (index > 0) {
-            // prev
-            run = runs[index - 1];
-            if (pos >= run.mStart && pos < run.mEnd) {
-                mLastSeenRun = run;
-                --mLastSeenRunIndex;
-                return run;
-            }
-        }
-
-        // Find random ranges
-        int low = 0;
-        int high = runs.length - 1;
-
-        while (low <= high) {
-            int mid = (low + high) >>> 1;
-            run = runs[mid];
-
-            if (run.mEnd <= pos)
-                low = mid + 1;
-            else if (run.mStart > pos)
-                high = mid - 1;
-            else {
-                mLastSeenRun = run;
-                mLastSeenRunIndex = mid;
-                return run;
-            }
-        }
-        throw new IndexOutOfBoundsException(-(low + 1));
-    }
-
-    /**
-     * Binary search with ranges.
-     *
-     * @param pos char index
-     * @return the run
-     */
-    @Nullable
-    public Run searchRun(int pos) {
-        if (pos < 0 || pos >= mTextBuf.length) {
-            return null;
-        }
+    @ApiStatus.Internal
+    public int findRunIndex(int pos) {
         int low = 0;
         int high = mRuns.length - 1;
-
-        while (low <= high) {
-            int mid = (low + high) >>> 1;
-            Run run = mRuns[mid];
-
-            if (run.mEnd <= pos)
-                low = mid + 1;
-            else if (run.mStart > pos)
-                high = mid - 1;
-            else
-                return run;
+        if (high < 8) {
+            // linear
+            for (; low <= high; ++low) {
+                if (mRuns[low].mEnd > pos) break;
+            }
+        } else {
+            // upper_bound
+            while (low <= high) {
+                int mid = (low + high) >>> 1;
+                if (mRuns[mid].mEnd > pos) high = mid - 1;
+                else low = mid + 1;
+            }
         }
-        return null;
+        return low;
     }
 
     /**
@@ -241,9 +183,12 @@ public class MeasuredText {
      * @return memory usage in bytes
      */
     public int getMemoryUsage() {
-        int size = 12 + 8 + 8 + 16;
+        int size = 12 + 8 + 8 + 8 + 16;
         for (Run run : mRuns) {
             size += run.getMemoryUsage();
+        }
+        if (mAdvances != null) {
+            size += 16 + (mAdvances.length << 2);
         }
         return size;
     }
@@ -293,10 +238,10 @@ public class MeasuredText {
          * @param isRtl  true if the text is in RTL context, otherwise false.
          */
         @NonNull
-        public Builder appendStyleRun(@NonNull TextPaint paint,
+        public Builder appendStyleRun(@NonNull FontPaint paint,
                                       @IntRange(from = 0) int length,
                                       boolean isRtl) {
-            addStyleRun(paint.createInternalPaint(), null, length, isRtl);
+            addStyleRun(new FontPaint(paint), null, length, isRtl);
             return this;
         }
 
@@ -314,14 +259,20 @@ public class MeasuredText {
          * @param isRtl           true if the text is in RTL context, otherwise false.
          */
         @NonNull
-        public Builder appendStyleRun(@NonNull TextPaint paint,
+        public Builder appendStyleRun(@NonNull FontPaint paint,
                                       @Nullable LineBreakConfig lineBreakConfig,
                                       @IntRange(from = 0) int length,
                                       boolean isRtl) {
-            addStyleRun(paint.createInternalPaint(), lineBreakConfig, length, isRtl);
+            addStyleRun(new FontPaint(paint), lineBreakConfig, length, isRtl);
             return this;
         }
 
+        /**
+         * Internal method that does not copy the paint. Caller must ensure that it is immutable.
+         *
+         * @hidden
+         */
+        @ApiStatus.Internal
         public void addStyleRun(@NonNull FontPaint paint,
                                 @Nullable LineBreakConfig lineBreakConfig,
                                 @IntRange(from = 0) int length,
@@ -359,13 +310,14 @@ public class MeasuredText {
          * @param width  a replacement width of the range in pixels
          */
         @NonNull
-        public Builder appendReplacementRun(@NonNull TextPaint paint,
+        public Builder appendReplacementRun(@NonNull FontPaint paint,
                                             @IntRange(from = 0) int length,
                                             @FloatRange(from = 0) float width) {
-            addReplacementRun(paint.getTextLocale(), length, width);
+            addReplacementRun(paint.getLocale(), length, width);
             return this;
         }
 
+        @ApiStatus.Internal
         public void addReplacementRun(@NonNull Locale locale, @IntRange(from = 0) int length,
                                       @FloatRange(from = 0) float width) {
             if (length <= 0) {
@@ -381,9 +333,9 @@ public class MeasuredText {
 
         /**
          * By passing true to this method, the build method will compute all full layout
-         * information.
+         * information, which is for long-lived MeasuredText.
          *
-         * @param computeLayout true if you want to retrieve full layout info, e.g. glyphs bounds
+         * @param computeLayout true if you want to retrieve full layout info
          */
         @NonNull
         public Builder setComputeLayout(boolean computeLayout) {
@@ -413,7 +365,10 @@ public class MeasuredText {
 
     /**
      * A logical run, subrange of bidi run.
+     *
+     * @hidden
      */
+    @ApiStatus.Internal
     public static abstract class Run {
 
         // range in context
@@ -426,14 +381,10 @@ public class MeasuredText {
         }
 
         // Compute metrics
-        public abstract void measure(@NonNull char[] text, boolean computeLayout);
+        public abstract void measure(@NonNull char[] text, @NonNull float[] advances, boolean computeLayout);
 
         // Extend extent
         public abstract void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent);
-
-        public abstract float getAdvance(char[] text, int pos);
-
-        public abstract float getAdvance(char[] text, int start, int end);
 
         // Returns true if this run is RTL. Otherwise returns false.
         public abstract boolean isRtl();
@@ -452,7 +403,11 @@ public class MeasuredText {
         public abstract int getMemoryUsage();
     }
 
-    public static class StyleRun extends Run {
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final class StyleRun extends Run {
 
         // maybe a shared pointer, but its contents must be immutable (read only)
         private final FontPaint mPaint;
@@ -466,9 +421,9 @@ public class MeasuredText {
 
         private float mAdvance;
 
-        StyleRun(int start, int end, FontPaint paint,
-                 int lineBreakStyle, int lineBreakWordStyle,
-                 boolean isRtl) {
+        private StyleRun(int start, int end, FontPaint paint,
+                         int lineBreakStyle, int lineBreakWordStyle,
+                         boolean isRtl) {
             super(start, end);
             mPaint = paint;
             mLineBreakStyle = lineBreakStyle;
@@ -477,39 +432,61 @@ public class MeasuredText {
         }
 
         @Override
-        public void measure(@NonNull char[] text, boolean computeLayout) {
-            final ArrayList<LayoutPiece> pieces = new ArrayList<>();
-            final IntArrayList offsets = new IntArrayList();
-            final int[] offset = {mIsRtl ? mEnd : mStart};
-            // context range is the same as StyleRun's range
+        public void measure(@NonNull char[] text, @NonNull float[] advances,
+                            boolean computeLayout) {
+            ArrayList<LayoutPiece> pieces;
+            IntArrayList offsets;
+            ShapedText.RunConsumer builder;
+            if (computeLayout) {
+                pieces = new ArrayList<>();
+                offsets = new IntArrayList();
+                builder = (piece, start, end, isRtl, paint, offsetX) -> {
+                    pieces.add(piece);
+                    offsets.add(end);
+                };
+            } else {
+                pieces = null;
+                offsets = null;
+                builder = null;
+            }
+
             mAdvance = ShapedText.doLayoutRun(text,
                     mStart, mEnd,
                     mStart, mEnd,
                     mIsRtl, mPaint,
-                    null, (piece, __, paint) -> {
-                        pieces.add(piece);
-                        if (mIsRtl) {
-                            offsets.add(offset[0]);
-                            offset[0] -= piece.getCharCount();
-                        } else {
-                            offset[0] += piece.getCharCount();
-                            offsets.add(offset[0]);
-                        }
-                    });
-            assert offset[0] == (mIsRtl ? mStart : mEnd);
-            if (mIsRtl) {
-                Collections.reverse(pieces);
-            }
-            mPieces = pieces.toArray(new LayoutPiece[0]);
-            mOffsets = offsets.toIntArray();
-            if (mIsRtl) {
-                Arrays.sort(mOffsets);
+                    0,
+                    advances, 0.0F,
+                    null, builder);
+
+            // save full layout for fast lookup
+            if (computeLayout) {
+                if (mIsRtl) {
+                    // reverse
+                    mPieces = new LayoutPiece[pieces.size()];
+                    for (int i = 0; i < mPieces.length; i++) {
+                        mPieces[i] = pieces.get(mPieces.length - i - 1);
+                    }
+                    mOffsets = new int[offsets.size()];
+                    for (int i = 0; i < mOffsets.length; i++) {
+                        mOffsets[i] = offsets.getInt(mOffsets.length - i - 1);
+                    }
+                } else {
+                    mPieces = pieces.toArray(new LayoutPiece[0]);
+                    mOffsets = offsets.toIntArray();
+                }
             }
         }
 
         @Override
         public void getExtent(@NonNull char[] text, int start, int end,
                               @NonNull FontMetricsInt extent) {
+            if (mPieces == null) {
+                ShapedText.doLayoutRun(text, mStart, mEnd,
+                        start, end, mIsRtl,
+                        mPaint, 0, null, 0.0F,
+                        extent, null);
+                return;
+            }
             final int[] offsets = mOffsets;
             final LayoutPiece[] pieces = mPieces;
             int i;
@@ -552,95 +529,6 @@ public class MeasuredText {
         }
 
         @Override
-        public float getAdvance(char[] text, int pos) {
-            final int[] offsets = mOffsets;
-            final LayoutPiece[] pieces = mPieces;
-            int i;
-            // the word context range is the same as StyleRun's context range
-            int itContextStart;
-            int itContextEnd;
-            if (pos < offsets[0]) {
-                i = 0;
-                itContextStart = mStart;
-                itContextEnd = offsets[0];
-            } else {
-                i = AlgorithmUtils.higher(offsets, pos);
-                itContextStart = offsets[i - 1];
-                itContextEnd = i == offsets.length ? mEnd : offsets[i];
-            }
-            LayoutPiece piece = pieces[i];
-            if ((piece.getComputeFlags() & LayoutCache.COMPUTE_CLUSTER_ADVANCES) == 0) {
-                pieces[i] = piece = LayoutCache.getOrCreate(
-                        text,
-                        itContextStart,
-                        itContextEnd,
-                        itContextStart,
-                        itContextEnd,
-                        mIsRtl,
-                        mPaint,
-                        LayoutCache.COMPUTE_CLUSTER_ADVANCES
-                );
-            }
-
-            return piece.getAdvances()[pos - itContextStart];
-        }
-
-        @Override
-        public float getAdvance(char[] text, int start, int end) {
-            if (start == mStart && end == mEnd) {
-                return mAdvance;
-            }
-            final int[] offsets = mOffsets;
-            final LayoutPiece[] pieces = mPieces;
-            int i;
-            // the word context range is the same as StyleRun's context range
-            int itContextStart;
-            int itContextEnd;
-            if (start < offsets[0]) {
-                i = 0;
-                itContextStart = mStart;
-                itContextEnd = offsets[0];
-            } else {
-                i = AlgorithmUtils.higher(offsets, start);
-                itContextStart = offsets[i - 1];
-                itContextEnd = i == offsets.length ? mEnd : offsets[i];
-            }
-            float advance = 0;
-            for (;;) {
-                int itPieceStart = Math.max(itContextStart, start);
-                int itPieceEnd = Math.min(itContextEnd, end);
-                if (itPieceStart == itContextStart &&
-                        itPieceEnd == itContextEnd) {
-                    advance += pieces[i].getAdvance();
-                } else {
-                    LayoutPiece piece = pieces[i];
-                    if ((piece.getComputeFlags() & LayoutCache.COMPUTE_CLUSTER_ADVANCES) == 0) {
-                        pieces[i] = piece = LayoutCache.getOrCreate(
-                                text,
-                                itContextStart,
-                                itContextEnd,
-                                itContextStart,
-                                itContextEnd,
-                                mIsRtl,
-                                mPaint,
-                                LayoutCache.COMPUTE_CLUSTER_ADVANCES
-                        );
-                    }
-                    for (int j = itPieceStart;
-                         j < itPieceEnd;
-                         j++) {
-                        advance += piece.getAdvances()[j - itContextStart];
-                    }
-                }
-                if (itPieceEnd == end) {
-                    return advance;
-                }
-                itContextStart = itContextEnd;
-                itContextEnd = offsets[++i];
-            }
-        }
-
-        @Override
         public boolean isRtl() {
             return mIsRtl;
         }
@@ -670,11 +558,13 @@ public class MeasuredText {
         public int getMemoryUsage() {
             // 12 + 4 + 4 + (12 + 8 + 8 + 4 + 4) + 1 + 1 + 8
             // here assumes paint is partially shared (one third)
-            // don't worry layout piece is null, see MeasuredText constructor
-            int size = 40 + 16 + 16 + 8;
-            size += (mOffsets.length << 2);
-            for (var piece : mPieces) {
-                size += piece.getMemoryUsage();
+            int size = 40 + 8;
+            if (mPieces != null) {
+                size += 16 + 16;
+                size += (mOffsets.length << 2);
+                for (var piece : mPieces) {
+                    size += piece.getMemoryUsage();
+                }
             }
             return size;
         }
@@ -693,7 +583,11 @@ public class MeasuredText {
         }
     }
 
-    public static class ReplacementRun extends Run {
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final class ReplacementRun extends Run {
 
         private final float mWidth;
         private final Locale mLocale;
@@ -705,31 +599,14 @@ public class MeasuredText {
         }
 
         @Override
-        public void measure(@NonNull char[] text, boolean computeLayout) {
-            //TODO: Get the extents information from the caller.
+        public void measure(@NonNull char[] text, @NonNull float[] advances,
+                            boolean computeLayout) {
+            advances[mStart] = mWidth;
         }
 
         @Override
         public void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent) {
-
-        }
-
-        @Override
-        public float getAdvance(char[] text, int pos) {
-            assert pos >= mStart && pos < mEnd;
-            if (pos == mStart) {
-                return mWidth;
-            }
-            return 0;
-        }
-
-        @Override
-        public float getAdvance(char[] text, int start, int end) {
-            assert start >= mStart && end <= mEnd && start < end;
-            if (start == mStart) {
-                return mWidth;
-            }
-            return 0;
+            //TODO: Get the extents information from the caller.
         }
 
         @Override

@@ -19,7 +19,6 @@
 package icyllis.modernui.util;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.text.GetChars;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.Objects;
@@ -30,7 +29,7 @@ import java.util.Objects;
  */
 @ApiStatus.Experimental
 public record StringView(@NonNull String string, int offset, int length)
-        implements Comparable<CharSequence>, CharSequence, GetChars {
+        implements Comparable<CharSequence>, CharSequence {
 
     public StringView(@NonNull String string, int offset, int length) {
         this.offset = Objects.checkFromIndexSize(offset, length, string.length());
@@ -54,7 +53,6 @@ public record StringView(@NonNull String string, int offset, int length)
         return new StringView(string, offset + start, end - start);
     }
 
-    @Override
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         Objects.checkFromToIndex(srcBegin, srcEnd, length);
         string.getChars(offset + srcBegin, offset + srcEnd, dst, dstBegin);
