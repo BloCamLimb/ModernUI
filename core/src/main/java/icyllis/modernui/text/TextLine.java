@@ -704,6 +704,7 @@ public class TextLine {
         } else {
             int target = after ? offset + 1 : offset;
             int limit = mStart + runLimit;
+            // Modern UI changed: optimization
             if (mMetricAffectingSpanSpanSet.init(mSpanned, mStart + spanStart, limit)) {
                 while (true) {
                     spanLimit = mMetricAffectingSpanSpanSet.getNextTransition(mStart + spanStart, limit) - mStart;
