@@ -30,11 +30,11 @@ import java.util.ArrayList;
  * <ul>
  * <li>Fields are public for a convenient direct access (read only).</li>
  * <li>Empty spans are ignored by default.</li>
- * <li>Cannot be used as normal ArrayList (you can only consume this object after init).</li>
+ * <li>Should not be used as normal ArrayList (you can consume this object after init).</li>
  * </ul>
  */
 @ApiStatus.Experimental
-public class SpanSet<E> extends ArrayList<E> {
+public final class SpanSet<E> extends ArrayList<E> {
 
     private final Class<? extends E> mType;
     private final boolean mIgnoreEmptySpans;
@@ -154,7 +154,8 @@ public class SpanSet<E> extends ArrayList<E> {
      * @param end must be strictly greater than start
      */
     public boolean hasSpansIntersecting(int start, int end) {
-        for (int i = 0; i < size(); i++) {
+        int size = size();
+        for (int i = 0; i < size; i++) {
             // equal test is valid since both intervals are not empty by construction
             if (spanStarts[i] >= end || spanEnds[i] <= start) continue;
             return true;
@@ -166,7 +167,8 @@ public class SpanSet<E> extends ArrayList<E> {
      * Similar to {@link Spanned#nextSpanTransition(int, int, Class)}
      */
     public int getNextTransition(int start, int limit) {
-        for (int i = 0; i < size(); i++) {
+        int size = size();
+        for (int i = 0; i < size; i++) {
             final int spanStart = spanStarts[i];
             final int spanEnd = spanEnds[i];
             if (spanStart > start && spanStart < limit) limit = spanStart;

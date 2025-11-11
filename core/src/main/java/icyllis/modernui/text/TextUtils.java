@@ -34,7 +34,6 @@ import org.jetbrains.annotations.ApiStatus;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.CharBuffer;
-import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
@@ -110,53 +109,6 @@ public final class TextUtils {
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
                                 @NonNull char[] dst, int dstBegin) {
         CharUtils.getChars(s, srcBegin, srcEnd, dst, dstBegin);
-    }
-
-    /**
-     * Removes empty spans from the <code>spans</code> list.
-     * <p>
-     * When parsing a Spanned using {@link Spanned#nextSpanTransition(int, int, Class)}, empty spans
-     * will (correctly) create span transitions, and calling getSpans on a slice of text bounded by
-     * one of these transitions will (correctly) include the empty overlapping span.
-     * <p>
-     * However, these empty spans should not be taken into account when laying-out or rendering the
-     * string and this method provides a way to filter getSpans' results accordingly.
-     *
-     * @param spans   A list of spans retrieved using {@link Spanned#getSpans(int, int, Class)} from
-     *                the <code>spanned</code>
-     * @param spanned The Spanned from which spans were extracted
-     * @return A subset of spans where empty spans ({@link Spanned#getSpanStart(Object)}  ==
-     * {@link Spanned#getSpanEnd(Object)} have been removed. The initial order is preserved
-     */
-    //TODO Consider removing this inefficient method and using SpanSet instead.
-    @ApiStatus.Internal
-    @NonNull
-    public static <T> List<T> removeEmptySpans(@NonNull List<T> spans, @NonNull Spanned spanned) {
-        List<T> copy = null;
-
-        for (int i = 0; i < spans.size(); i++) {
-            final T span = spans.get(i);
-            final int start = spanned.getSpanStart(span);
-            final int end = spanned.getSpanEnd(span);
-
-            if (start == end) {
-                if (copy == null) {
-                    copy = new ArrayList<>(i);
-                    for (int j = 0; j < i; j++) {
-                        copy.add(spans.get(j));
-                    }
-                }
-            } else {
-                if (copy != null) {
-                    copy.add(span);
-                }
-            }
-        }
-
-        if (copy == null) {
-            return spans;
-        }
-        return copy;
     }
 
     /**
