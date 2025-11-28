@@ -105,7 +105,7 @@ public class LongSparseArray<E> implements Cloneable {
      * if no such mapping has been made.
      */
     public E get(long key, E valueIfKeyNotFound) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i < 0 || mValues[i] == DELETED) {
             return valueIfKeyNotFound;
@@ -118,7 +118,7 @@ public class LongSparseArray<E> implements Cloneable {
      * Removes the mapping from the specified key, if there was any.
      */
     public void delete(long key) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             if (mValues[i] != DELETED) {
@@ -132,7 +132,7 @@ public class LongSparseArray<E> implements Cloneable {
      * Removes the mapping from the specified key, if there was any, returning the old value.
      */
     public E remove(long key) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             if (mValues[i] != DELETED) {
@@ -284,7 +284,7 @@ public class LongSparseArray<E> implements Cloneable {
      */
     @Nullable
     public E put(long key, E value) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             E oldValue = (E) mValues[i];
@@ -303,7 +303,7 @@ public class LongSparseArray<E> implements Cloneable {
                 gc();
 
                 // Search again because indices may have changed.
-                i = ~Arrays.binarySearch(mKeys, 0, mSize, key);
+                i = ~ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
             }
 
             mKeys = GrowingArrayUtils.insert(mKeys, mSize, i, key);
@@ -435,7 +435,7 @@ public class LongSparseArray<E> implements Cloneable {
             gc();
         }
 
-        return Arrays.binarySearch(mKeys, 0, mSize, key);
+        return ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
     }
 
     /**

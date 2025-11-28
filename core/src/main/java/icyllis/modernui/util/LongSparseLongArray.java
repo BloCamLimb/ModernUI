@@ -118,7 +118,7 @@ public class LongSparseLongArray implements Cloneable {
      * if no such mapping has been made.
      */
     public long get(long key, long valueIfKeyNotFound) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i < 0) {
             return valueIfKeyNotFound;
@@ -131,7 +131,7 @@ public class LongSparseLongArray implements Cloneable {
      * Removes the mapping from the specified key, if there was any.
      */
     public void delete(long key) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             removeAt(i);
@@ -153,7 +153,7 @@ public class LongSparseLongArray implements Cloneable {
      * was one.
      */
     public void put(long key, long value) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             mValues[i] = value;
@@ -219,7 +219,7 @@ public class LongSparseLongArray implements Cloneable {
      * key is not mapped.
      */
     public int indexOfKey(long key) {
-        return Arrays.binarySearch(mKeys, 0, mSize, key);
+        return ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
     }
 
     /**
