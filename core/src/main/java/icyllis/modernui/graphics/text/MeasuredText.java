@@ -22,7 +22,7 @@ import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.util.AlgorithmUtils;
+import icyllis.modernui.util.ContainerHelpers;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -497,7 +497,7 @@ public class MeasuredText {
                 itContextStart = mStart;
                 itContextEnd = offsets[0];
             } else {
-                i = AlgorithmUtils.higher(offsets, start);
+                i = ContainerHelpers.higher(offsets, start);
                 itContextStart = offsets[i - 1];
                 itContextEnd = i == offsets.length ? mEnd : offsets[i];
             }

@@ -20,7 +20,6 @@ package icyllis.modernui.test;
 
 import com.ibm.icu.text.CompactDecimalFormat;
 import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.util.AlgorithmUtils;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.Log;
 import org.lwjgl.system.MemoryUtil;
@@ -47,9 +46,9 @@ public class TestMisc {
         Log.LOGGER.info(format.format(new BigDecimal("2136541565.615")));
         Log.LOGGER.info("Levenshtein distance: {}", TextUtils.distance("sunday", "saturday"));
 
-        var doubles = new double[]{1.0, 160.0, 3.0};
+        /*var doubles = new double[]{1.0, 160.0, 3.0};
         Arrays.stream(doubles).average().ifPresent(d -> Log.LOGGER.info(Double.toString(d)));
-        Log.LOGGER.info(Double.toString(AlgorithmUtils.averageStable(doubles)));
+        Log.LOGGER.info(Double.toString(AlgorithmUtils.averageStable(doubles)));*/
 
         var ptr = MemoryUtil.nmemAlloc(4);
         MemoryUtil.memPutByte(ptr + 0, (byte) 0x11);

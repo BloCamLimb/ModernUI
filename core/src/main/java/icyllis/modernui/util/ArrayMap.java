@@ -1300,7 +1300,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
         int index;
         try {
-            index = Arrays.binarySearch(mHashes, 0, N, hash);
+            index = ContainerHelpers.binarySearch(mHashes, 0, N, hash);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new ConcurrentModificationException();
         }
@@ -1343,7 +1343,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
         int index;
         try {
-            index = Arrays.binarySearch(mHashes, 0, N, 0);
+            index = ContainerHelpers.binarySearch(mHashes, 0, N, 0);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new ConcurrentModificationException();
         }
