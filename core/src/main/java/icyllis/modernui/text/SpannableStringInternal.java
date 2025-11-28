@@ -436,7 +436,7 @@ abstract sealed class SpannableStringInternal implements Spanned, GetChars
         } else {
             assert found == 1;
             assert first != null;
-            return List.of(first);
+            return Collections.singletonList(first);
         }
     }
 
