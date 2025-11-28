@@ -185,22 +185,25 @@ public interface Spanned extends CharSequence {
     int SPAN_PRIORITY = 0xFF << SPAN_PRIORITY_SHIFT;
 
     /**
-     * Query a set of the markup objects attached to the specified slice
+     * Query a list of the markup objects attached to the specified slice
      * of this {@link CharSequence} and whose type is the specified type
      * or a subclass of it.
      * <br>
      * Specify {@code null} or {@code Object.class} for the type if you
      * want all the objects regardless of type.
      * <p>
-     * If <code>dest</code> list is non-null, it will be filled with the
-     * method results and returned as-is. Otherwise, a new (and possibly-
+     * If <code>dest</code> list is non-null, it will be cleared, filled
+     * with the method results, and returned as-is. Otherwise, a new (and possibly-
      * unmodifiable) list will be created with method results and returned.
-     * The return list can be empty if there is no match.
+     * <p>
+     * The return list can be empty if there is no match.<br>
+     * The return list will be sorted by priority and insertion order.
      *
      * @param start start char index of the slice
      * @param end   end char index of the slice
      * @param type  markup class
      * @param dest  the list that receives method results
+     * @param <T>   markup type
      * @return the list of results
      */
     @NonNull
