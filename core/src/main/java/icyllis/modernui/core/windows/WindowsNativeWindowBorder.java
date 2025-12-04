@@ -34,14 +34,14 @@ public class WindowsNativeWindowBorder {
 
         public WndProc(long hwnd) {
             this.hwnd = hwnd;
-            prevWndProc = SetWindowLongPtr(hwnd, GWL_WNDPROC, address());
-            SetWindowPos(hwnd, hwnd, 0, 0, 0, 0,
+            prevWndProc = SetWindowLongPtr(null, hwnd, GWL_WNDPROC, address());
+            SetWindowPos(null, hwnd, hwnd, 0, 0, 0, 0,
                     SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
         }
 
         public void destroy() {
-            SetWindowLongPtr(hwnd, GWL_WNDPROC, prevWndProc);
-            SetWindowPos(hwnd, hwnd, 0, 0, 0, 0,
+            SetWindowLongPtr(null, hwnd, GWL_WNDPROC, prevWndProc);
+            SetWindowPos(null, hwnd, hwnd, 0, 0, 0, 0,
                     SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
             free();
         }

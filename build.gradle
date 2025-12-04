@@ -1,6 +1,7 @@
 plugins {
     id 'maven-publish'
     id "org.jetbrains.kotlin.jvm" version "1.9.22" apply false
+    id 'org.jetbrains.dokka' version '2.1.0' apply false
 }
 
 publishing {
@@ -16,9 +17,10 @@ publishing {
     }
 }
 
-allprojects {
+subprojects {
     apply plugin: 'java'
     apply plugin: 'java-library'
+    apply plugin: 'org.jetbrains.dokka'
 
     group = 'icyllis.modernui'
     version = "${modernui_version}" as String
@@ -32,9 +34,15 @@ allprojects {
 
     dependencies {
         compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-        compileOnly 'org.jetbrains:annotations:23.1.0'
+        compileOnly 'org.jetbrains:annotations:26.0.2'
+        compileOnly 'org.jspecify:jspecify:1.0.0'
         testCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-        testCompileOnly 'org.jetbrains:annotations:23.1.0'
+        testCompileOnly 'org.jetbrains:annotations:26.0.2'
+        testCompileOnly 'org.jspecify:jspecify:1.0.0'
+
+        implementation platform("org.lwjgl:lwjgl-bom:${lwjgl_version}")
+
+        dokkaPlugin 'org.jetbrains.dokka:android-documentation-plugin:2.1.0'
     }
 
     tasks.withType(JavaCompile).configureEach {

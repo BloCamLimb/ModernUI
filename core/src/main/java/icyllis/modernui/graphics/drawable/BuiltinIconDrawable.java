@@ -125,11 +125,11 @@ public class BuiltinIconDrawable extends Drawable {
         clip[2] = 320; clip[3] = -664;
         clip[4] = 376; clip[5] = -720;
         clip[6] = 616; clip[7] = -480;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
         // counter-clockwise
         clip[3] = -296;
         clip[5] = -240;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
     }
 
     void keyboard_arrow_left(@NonNull Canvas c, @NonNull Paint p) {
@@ -139,11 +139,11 @@ public class BuiltinIconDrawable extends Drawable {
         clip[2] = 560; clip[3] = -720;
         clip[4] = 616; clip[5] = -664;
         clip[6] = 432; clip[7] = -480;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
         // counter-clockwise
         clip[3] = -240;
         clip[5] = -296;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
     }
 
     void keyboard_arrow_down(@NonNull Canvas c, @NonNull Paint p) {
@@ -153,11 +153,11 @@ public class BuiltinIconDrawable extends Drawable {
         clip[2] = 240; clip[3] = -584;
         clip[4] = 296; clip[5] = -640;
         clip[6] = 480; clip[7] = -456;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
         // counter-clockwise
         clip[2] = 720;
         clip[4] = 664;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
     }
 
     void keyboard_arrow_up(@NonNull Canvas c, @NonNull Paint p) {
@@ -167,11 +167,11 @@ public class BuiltinIconDrawable extends Drawable {
         clip[2] = 296; clip[3] = -344;
         clip[4] = 240; clip[5] = -400;
         clip[6] = 480; clip[7] = -640;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
         // counter-clockwise
         clip[2] = 664;
         clip[4] = 720;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
     }
 
     void check(@NonNull Canvas c, @NonNull Paint p) {
@@ -181,11 +181,11 @@ public class BuiltinIconDrawable extends Drawable {
         clip[2] = 154; clip[3] = -468;
         clip[4] = 211; clip[5] = -525;
         clip[6] = 382; clip[7] = -354;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
         // counter-clockwise
         clip[2] = 806; clip[3] = -664;
         clip[4] = 749; clip[5] = -721;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
     }
 
     void check_small(@NonNull Canvas c, @NonNull Paint p) {
@@ -195,11 +195,11 @@ public class BuiltinIconDrawable extends Drawable {
         clip[2] = 240; clip[3] = -464;
         clip[4] = 296; clip[5] = -520;
         clip[6] = 400; clip[7] = -416;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
         // counter-clockwise
         clip[2] = 720; clip[3] = -624;
         clip[4] = 664; clip[5] = -680;
-        c.drawEdgeAAQuad(null, clip, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, p);
+        c.drawEdgeAAQuad(null, clip, 0, Canvas.EDGE_AA_FLAG_TOP|Canvas.EDGE_AA_FLAG_RIGHT|Canvas.EDGE_AA_FLAG_BOTTOM, p);
     }
 
     void check_indeterminate_small(@NonNull Canvas c, @NonNull Paint p) {

@@ -228,7 +228,7 @@ class RippleForeground extends RippleComponent {
                         maxRadius, maxRadius);
                 p.getNativePaint().setShader(
                         icyllis.arc3d.sketch.shaders.RRectShader.make(
-                                rr, maxRadius * RIPPLE_SMOOTHNESS, false, null
+                                rr, maxRadius * RIPPLE_SMOOTHNESS, false
                         )
                 );
             }

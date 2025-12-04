@@ -21,6 +21,7 @@ package icyllis.modernui.core;
 import icyllis.arc3d.engine.ContextOptions;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ImmediateContext;
+import icyllis.arc3d.granite.GraniteUtil;
 import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.opengl.GLUtil;
 import icyllis.modernui.annotation.MainThread;
@@ -256,6 +257,10 @@ public final class Core {
             if (dc == null) {
                 return false;
             }
+            if (!GraniteUtil.init(dc)) {
+                dc.unref();
+                return false;
+            }
             sImmediateContext = dc;
         }
         final String glVendor = GL11C.glGetString(GL11C.GL_VENDOR);
@@ -383,7 +388,10 @@ public final class Core {
             } else if (Thread.currentThread() != sRenderThread) {
                 throw new IllegalStateException();
             }
-            try {
+            if (true) {
+                return false;
+            }
+            /*try {
                 var vkManager = VulkanManager.getInstance();
                 vkManager.initialize();
                 initContextOptions(options);
@@ -394,7 +402,8 @@ public final class Core {
             } catch (Exception e) {
                 e.printStackTrace();
                 return false;
-            }
+            }*/
+
             sImmediateContext = dc;
         }
         return true;

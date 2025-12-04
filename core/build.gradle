@@ -4,8 +4,6 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
-archivesBaseName = 'ModernUI'
-
 configurations {
     shadow
 }
@@ -23,10 +21,17 @@ dependencies {
     shadow("icyllis.arc3d:Arc3D") {
         transitive = false
     }*/
-    api(project(':external:Arc3D'))
-    shadow(project(':external:Arc3D')) {
+    //api(project(':external:Arc3D'))
+    api "icyllis.arc3d:arc3d-core:${arc3d_version}"
+    api "icyllis.arc3d:arc3d-sketch:${arc3d_version}"
+    api "icyllis.arc3d:arc3d-compiler:${arc3d_version}"
+    api "icyllis.arc3d:arc3d-engine:${arc3d_version}"
+    api "icyllis.arc3d:arc3d-granite:${arc3d_version}"
+    //api("icyllis.arc3d:arc3d-vulkan")
+    api "icyllis.arc3d:arc3d-opengl:${arc3d_version}"
+    /*shadow(project(':external:Arc3D')) {
         transitive = false
-    }
+    }*/
 
     def lwjglNatives
     switch (OperatingSystem.current()) {
@@ -46,8 +51,6 @@ dependencies {
                     : "natives-linux"
             break
     }
-
-    implementation platform("org.lwjgl:lwjgl-bom:${lwjgl_version}")
 
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-glfw"
@@ -76,7 +79,7 @@ dependencies {
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
 }
 
-shadowJar {
+/*shadowJar {
     archiveClassifier.set("shadow")
     configurations = [project.configurations.shadow]
 }
@@ -86,7 +89,7 @@ tasks.register('shadowSourcesJar', Jar) {
     from sourceSets.main.allSource
     //from fileTree(new File(gradle.includedBuild("Arc3D").projectDir, "src/main/java"))
     from project(':external:Arc3D').sourcesJar.archiveFile.map { zipTree(it) }
-}
+}*/
 
 tasks.register('copyDependencies', Copy) {
     from configurations.runtimeClasspath
@@ -110,10 +113,10 @@ jar {
 publishing {
     publications {
         mavenCore(MavenPublication) {
-            artifact(shadowJar.archiveFile) {
+            artifact(jar.archiveFile) {
                 builtBy build
             }
-            artifact(shadowSourcesJar.archiveFile) {
+            artifact(sourcesJar.archiveFile) {
                 builtBy build
                 classifier 'sources'
             }

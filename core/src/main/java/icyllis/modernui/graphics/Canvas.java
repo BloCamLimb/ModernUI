@@ -1599,16 +1599,16 @@ public abstract class Canvas {
 
     @ApiStatus.Experimental
     public static final int
-            QUAD_AA_FLAG_LEFT = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_LEFT,
-            QUAD_AA_FLAG_TOP = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_TOP,
-            QUAD_AA_FLAG_RIGHT = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_RIGHT,
-            QUAD_AA_FLAG_BOTTOM = icyllis.arc3d.sketch.Canvas.QUAD_AA_FLAG_BOTTOM;
+            EDGE_AA_FLAG_LEFT = icyllis.arc3d.sketch.Canvas.EDGE_AA_FLAG_LEFT,
+            EDGE_AA_FLAG_TOP = icyllis.arc3d.sketch.Canvas.EDGE_AA_FLAG_TOP,
+            EDGE_AA_FLAG_RIGHT = icyllis.arc3d.sketch.Canvas.EDGE_AA_FLAG_RIGHT,
+            EDGE_AA_FLAG_BOTTOM = icyllis.arc3d.sketch.Canvas.EDGE_AA_FLAG_BOTTOM;
 
     // From Chromium project
     @ApiStatus.Experimental
-    public void drawEdgeAAQuad(@Nullable RectF rect, @Nullable @Size(8) float[] clip,
-                               @MagicConstant(flags = {QUAD_AA_FLAG_LEFT, QUAD_AA_FLAG_TOP, QUAD_AA_FLAG_RIGHT,
-                                       QUAD_AA_FLAG_BOTTOM}) int edgeFlags, @Nullable Paint paint) {
+    public void drawEdgeAAQuad(@Nullable RectF rect, @Nullable @Size(8) float[] clip, int clipOffset,
+                               @MagicConstant(flags = {EDGE_AA_FLAG_LEFT, EDGE_AA_FLAG_TOP, EDGE_AA_FLAG_RIGHT,
+                                       EDGE_AA_FLAG_BOTTOM}) int edgeFlags, @Nullable Paint paint) {
     }
 
     @Deprecated

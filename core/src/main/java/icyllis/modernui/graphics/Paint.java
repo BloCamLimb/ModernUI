@@ -456,7 +456,10 @@ public class Paint {
      * @return the paint's color (and alpha).
      */
     public int getColor() {
-        return mPaint.getColor();
+        return ((int) (mPaint.getAlpha() * 255.0f + 0.5f) << 24) |
+                ((int) (mPaint.getRed() * 255.0f + 0.5f) << 16) |
+                ((int) (mPaint.getGreen() * 255.0f + 0.5f) << 8) |
+                (int) (mPaint.getBlue() * 255.0f + 0.5f);
     }
 
     /**
@@ -480,7 +483,7 @@ public class Paint {
     @NonNull
     @Size(4)
     public float[] getColor4f() {
-        return new float[]{mPaint.r(), mPaint.g(), mPaint.b(), mPaint.a()};
+        return new float[]{mPaint.getRed(), mPaint.getGreen(), mPaint.getBlue(), mPaint.getAlpha()};
     }
 
     /**
@@ -520,7 +523,7 @@ public class Paint {
      * @return the alpha component of the paint's color.
      */
     public int getAlpha() {
-        return mPaint.getAlpha();
+        return (int) (mPaint.getAlpha() * 255.0f + 0.5f);
     }
 
     /**
@@ -530,7 +533,7 @@ public class Paint {
      * @param a the alpha component [0..255] of the paint's color
      */
     public void setAlpha(int a) {
-        mPaint.setAlpha(a);
+        mPaint.setAlpha(a * (1 / 255.0f));
     }
 
     /**
@@ -539,7 +542,7 @@ public class Paint {
      * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
     public float getAlphaF() {
-        return mPaint.getAlphaF();
+        return mPaint.getAlpha();
     }
 
     /**
@@ -551,7 +554,7 @@ public class Paint {
      * @param a the alpha component [0..1] of the paint's color
      */
     public void setAlphaF(float a) {
-        mPaint.setAlphaF(a);
+        mPaint.setAlpha(a);
     }
 
     /**
@@ -578,7 +581,10 @@ public class Paint {
      * @param a amount of alpha, from fully transparent (0) to fully opaque (255)
      */
     public void setRGBA(int r, int g, int b, int a) {
-        mPaint.setRGBA(r, g, b, a);
+        mPaint.setColor4f(r * (1 / 255.0f),
+                g * (1 / 255.0f),
+                b * (1 / 255.0f),
+                a * (1 / 255.0f));
     }
 
     /**
@@ -591,7 +597,10 @@ public class Paint {
      * @param b amount of blue, from no blue (0) to full blue (255)
      */
     public void setARGB(int a, int r, int g, int b) {
-        mPaint.setARGB(a, r, g, b);
+        mPaint.setColor4f(r * (1 / 255.0f),
+                g * (1 / 255.0f),
+                b * (1 / 255.0f),
+                a * (1 / 255.0f));
     }
 
     ///// Basic Flags

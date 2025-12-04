@@ -9,8 +9,6 @@ plugins {
 
 rootProject.name = 'ModernUI'
 
-//includeBuild '../Arc3D'
-
 include 'core'
 project(':core').name = 'ModernUI-Core'
 
@@ -23,6 +21,3 @@ project(':x-awt').name = "ModernUI-AWT"
 
 include 'x-markflow'
 project(':x-markflow').name = "ModernUI-Markflow"
-
-// externals
-include 'external:Arc3D'

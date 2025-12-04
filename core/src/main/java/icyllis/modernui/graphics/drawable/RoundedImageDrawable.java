@@ -354,7 +354,7 @@ public class RoundedImageDrawable extends Drawable {
                                 Shader.TileMode.CLAMP.nativeInt,
                                 paint.getFilterMode() != ImageShader.FILTER_MODE_NEAREST
                                         ? icyllis.arc3d.core.SamplingOptions.LINEAR
-                                        : icyllis.arc3d.core.SamplingOptions.POINT,
+                                        : icyllis.arc3d.core.SamplingOptions.NEAREST,
                                 updateShaderMatrix(image)
                         )
                 );
