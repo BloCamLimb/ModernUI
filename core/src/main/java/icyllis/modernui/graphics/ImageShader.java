@@ -79,9 +79,17 @@ public class ImageShader extends Shader {
 
     /**
      * Use nearest-neighbour sampling for minification, magnification; no mipmapping.
-     * Also known as point sampling.
+     * <p>
+     * This is a legacy name of {@link #FILTER_NEAREST}.
      */
-    public static final Object FILTER_POINT = SamplingOptions.POINT;
+    public static final Object FILTER_POINT = SamplingOptions.NEAREST;
+
+    /**
+     * Use nearest-neighbour sampling for minification, magnification; no mipmapping.
+     *
+     * @since 3.13
+     */
+    public static final Object FILTER_NEAREST = SamplingOptions.NEAREST;
 
     /**
      * Use linear interpolation for minification, magnification; no mipmapping.
@@ -158,7 +166,7 @@ public class ImageShader extends Shader {
     /**
      * Create a new shader for the given image.
      * <p>
-     * The filter must be one of constants in this class, which are {@link #FILTER_POINT},
+     * The filter must be one of constants in this class, which are {@link #FILTER_NEAREST},
      * {@link #FILTER_LINEAR}, {@link #FILTER_CUBIC_BSPLINE}, {@link #FILTER_MITCHELL},
      * {@link #FILTER_PHOTOSHOP_BICUBIC} and {@link #FILTER_CATMULLROM}.
      * <p>

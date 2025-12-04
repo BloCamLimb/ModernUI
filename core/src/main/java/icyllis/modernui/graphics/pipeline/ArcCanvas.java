@@ -23,7 +23,6 @@ import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.core.SamplingOptions;
-import icyllis.arc3d.sketch.ClipOp;
 import icyllis.arc3d.sketch.RRect;
 import icyllis.arc3d.sketch.TextBlob;
 import icyllis.arc3d.sketch.Vertices;
@@ -162,13 +161,13 @@ public class ArcCanvas extends Canvas {
 
     @Override
     public boolean clipRect(float left, float top, float right, float bottom) {
-        mCanvas.clipRect(left, top, right, bottom, ClipOp.CLIP_OP_INTERSECT);
+        mCanvas.clipRect(left, top, right, bottom, icyllis.arc3d.sketch.Canvas.CLIP_OP_INTERSECT, false);
         return !mCanvas.isClipEmpty();
     }
 
     @Override
     public boolean clipOutRect(float left, float top, float right, float bottom) {
-        mCanvas.clipRect(left, top, right, bottom, ClipOp.CLIP_OP_DIFFERENCE);
+        mCanvas.clipRect(left, top, right, bottom, icyllis.arc3d.sketch.Canvas.CLIP_OP_DIFFERENCE, false);
         return !mCanvas.isClipEmpty();
     }
 
@@ -306,7 +305,7 @@ public class ArcCanvas extends Canvas {
         }
         mCanvas.drawImage(image.getNativeImage(), left, top,
                 paint != null && paint.getFilterMode() == ImageShader.FILTER_MODE_NEAREST
-                        ? SamplingOptions.POINT
+                        ? SamplingOptions.NEAREST
                         : SamplingOptions.LINEAR,
                 paint != null ? paint.getNativePaint() : null);
     }
@@ -321,7 +320,7 @@ public class ArcCanvas extends Canvas {
                 new Rect2f(srcLeft, srcTop, srcRight, srcBottom),
                 new Rect2f(dstLeft, dstTop, dstRight, dstBottom),
                 paint != null && paint.getFilterMode() == ImageShader.FILTER_MODE_NEAREST
-                        ? SamplingOptions.POINT
+                        ? SamplingOptions.NEAREST
                         : SamplingOptions.LINEAR,
                 paint != null ? paint.getNativePaint() : null,
                 icyllis.arc3d.sketch.Canvas.SRC_RECT_CONSTRAINT_FAST);
@@ -449,11 +448,11 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawEdgeAAQuad(@Nullable RectF rect, @Nullable float[] clip, int edgeFlags,
+    public void drawEdgeAAQuad(@Nullable RectF rect, @Nullable float[] clip, int clipOffset, int edgeFlags,
                                @Nullable Paint paint) {
         mCanvas.drawEdgeAAQuad(
                 rect != null ? new Rect2f(rect.left, rect.top, rect.right, rect.bottom) : null,
-                clip, edgeFlags, paint != null ? paint.getNativePaint() : null
+                clip, clipOffset, edgeFlags, paint != null ? paint.getNativePaint() : null
         );
     }
 

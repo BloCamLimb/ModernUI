@@ -1589,32 +1589,38 @@ public final class Bitmap implements AutoCloseable {
          */
         RGBA_8888       (4, ColorInfo.CT_RGBA_8888      ),
         /**
-         * Unsupported, DO NOT USE.
+         * Grayscale, one channel, 16-bit unsigned per channel.
+         * Basic data type: short.
          * <pre>
          * 0       2  byte
          * | gray  |
          * </pre>
+         * Supported since 3.13.
          */
-        @ApiStatus.Internal
-        GRAY_16         (1, ColorInfo.CT_UNKNOWN        ),
+        GRAY_16         (1, ColorInfo.CT_GRAY_16        ),
         /**
-         * Unsupported, DO NOT USE.
+         * Grayscale, with alpha, two channels, 16-bit unsigned per channel.
+         * Basic data type: short.
          * <pre>
          * 0       2       4  byte
          * | gray  | alpha |
          * </pre>
+         * Supported since 3.13.
          */
-        @ApiStatus.Internal
-        GRAY_ALPHA_1616 (2, ColorInfo.CT_UNKNOWN        ),
+        GRAY_ALPHA_1616 (2, ColorInfo.CT_GRAY_ALPHA_1616),
         /**
-         * Unsupported, DO NOT USE.
+         * RGB, three channels, 16-bit unsigned per channel.
+         * Basic data type: short.
          * <pre>
          * 0       2       4       6  byte
          * |   r   |   g   |   b   |
          * </pre>
+         * Because the bpp of this format is not a power of 2,
+         * operations on this format will be slower.
+         * <p>
+         * Supported since 3.13.
          */
-        @ApiStatus.Internal
-        RGB_161616      (3, ColorInfo.CT_UNKNOWN        ),
+        RGB_161616      (3, ColorInfo.CT_RGB_161616     ),
         /**
          * RGB, with alpha, four channels, 16-bit unsigned per channel.
          * Basic data type: short.
@@ -1797,26 +1803,6 @@ public final class Bitmap implements AutoCloseable {
          */
         BGRA_8888       (4, ColorInfo.CT_BGRA_8888      ),
         /**
-         * RGB, with alpha, four channels, 8-bit unsigned per channel.
-         * Basic data type: byte.
-         * <pre>
-         * 0       1       2       3       4  byte
-         * |   a   |   b   |   g   |   r   |
-         * </pre>
-         */
-        @ApiStatus.Experimental
-        ABGR_8888       (4, ColorInfo.CT_ABGR_8888      ),
-        /**
-         * RGB, with alpha, four channels, 8-bit unsigned per channel.
-         * Basic data type: byte.
-         * <pre>
-         * 0       1       2       3       4  byte
-         * |   a   |   r   |   g   |   b   |
-         * </pre>
-         */
-        @ApiStatus.Experimental
-        ARGB_8888       (4, ColorInfo.CT_ARGB_8888      ),
-        /**
          * RGB, with alpha, packed four channels, 32-bit unsigned per pixel.
          * Basic data type: int.
          * <pre>
@@ -1827,9 +1813,7 @@ public final class Bitmap implements AutoCloseable {
          * int color = (R & 0xff) | (G & 0xff) << 8 | (B & 0xff) << 16 | (A & 0xff) << 24;
          * </pre>
          * On little-endian machine, this is the same as {@link #RGBA_8888}.
-         * On big-endian machine, this is the same as {@link #ABGR_8888}.
          */
-        @ApiStatus.Experimental
         RGBA_8888_PACK32(4, ColorInfo.CT_RGBA_8888_NATIVE),
         /**
          * RGB, with alpha, packed four channels, 32-bit unsigned per pixel.
@@ -1842,7 +1826,6 @@ public final class Bitmap implements AutoCloseable {
          * int color = (B & 0xff) | (G & 0xff) << 8 | (R & 0xff) << 16 | (A & 0xff) << 24;
          * </pre>
          * On little-endian machine, this is the same as {@link #BGRA_8888}.
-         * On big-endian machine, this is the same as {@link #ARGB_8888}.
          * This is actually used for int values that marked as {@link ColorInt}, which
          * is known as ARGB 32-bit colors. But unless you only use Bitmap on the CPU side,
          * use {@link #RGBA_8888} instead for better CPU<->GPU transfer performance.
@@ -1907,9 +1890,7 @@ public final class Bitmap implements AutoCloseable {
                      R_8,
                      RG_88,
                      RGBX_8888,
-                     BGRA_8888,
-                     ABGR_8888,
-                     ARGB_8888 -> true;
+                     BGRA_8888 -> true;
                 default -> false;
             };
         }

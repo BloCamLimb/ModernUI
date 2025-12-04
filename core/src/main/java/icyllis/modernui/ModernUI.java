@@ -693,7 +693,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                                     ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL,
                                     ColorSpace.get(ColorSpace.Named.SRGB)),
                             false,
-                            Engine.SurfaceOrigin.kLowerLeft,
+                            Engine.SurfaceOrigin.kUpperLeft,
                             null
                     ));
 
@@ -762,7 +762,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             recording.close();
             if (added) {
                 GL33C.glBindFramebuffer(GL33C.GL_DRAW_FRAMEBUFFER, 0);
-                GL33C.glBlitFramebuffer(0, 0, width, height,
+                GL33C.glBlitFramebuffer(0, height, width, 0,
                         0, 0, width, height, GL33C.GL_COLOR_BUFFER_BIT,
                         GL33C.GL_NEAREST);
                 context.submit();

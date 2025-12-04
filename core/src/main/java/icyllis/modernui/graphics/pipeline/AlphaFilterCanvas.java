@@ -39,7 +39,7 @@ public class AlphaFilterCanvas extends PaintFilterCanvas {
 
     @Override
     public boolean onFilter(Paint paint) {
-        paint.setAlphaF(paint.getAlphaF() * mAlphaMultiplier);
+        paint.setAlpha(paint.getAlpha() * mAlphaMultiplier);
         return true;
     }
 }

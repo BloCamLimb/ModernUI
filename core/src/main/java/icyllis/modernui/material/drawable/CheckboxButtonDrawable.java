@@ -99,8 +99,10 @@ public class CheckboxButtonDrawable extends MaterialDrawable {
         paint.setAlphaF(mAlpha * (1 / 255f) * paint.getAlphaF());
 
         if (mHoleRadius <= 0) {
-            canvas.drawEdgeAAQuad(null, mLeftQuad, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, paint);
-            canvas.drawEdgeAAQuad(null, mRightQuad, Canvas.QUAD_AA_FLAG_TOP|Canvas.QUAD_AA_FLAG_RIGHT|Canvas.QUAD_AA_FLAG_BOTTOM, paint);
+            canvas.drawEdgeAAQuad(null, mLeftQuad, 0,
+                    Canvas.EDGE_AA_FLAG_TOP | Canvas.EDGE_AA_FLAG_RIGHT | Canvas.EDGE_AA_FLAG_BOTTOM, paint);
+            canvas.drawEdgeAAQuad(null, mRightQuad, 0,
+                    Canvas.EDGE_AA_FLAG_TOP | Canvas.EDGE_AA_FLAG_RIGHT | Canvas.EDGE_AA_FLAG_BOTTOM, paint);
         }
 
         canvas.restore();

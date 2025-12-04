@@ -213,6 +213,8 @@ public class PathMeasure extends icyllis.arc3d.sketch.PathMeasure {
     public boolean getSegment(float startDistance, float endDistance,
                               @NonNull Path dst, boolean startWithMoveTo) {
         Objects.requireNonNull(dst);
-        return super.getSegment(startDistance, endDistance, dst, startWithMoveTo);
+        //TODO
+        //return super.getSegment(startDistance, endDistance, dst, startWithMoveTo);
+        return false;
     }
 }
