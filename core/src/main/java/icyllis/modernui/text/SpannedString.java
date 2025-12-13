@@ -81,6 +81,9 @@ public final class SpannedString extends SpannableStringInternal implements Span
     @NonNull
     @Override
     public CharSequence subSequence(int start, int end) {
+        if (start == 0 && end == length()) {
+            return this;
+        }
         return new SpannedString(this, start, end);
     }
 }

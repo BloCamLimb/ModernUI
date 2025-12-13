@@ -286,7 +286,7 @@ public class FontCollection {
         if (lastFamilies == null || lastFamilies.isEmpty()) {
             // No character needed any font support, so it doesn't really matter which font they end up
             // getting displayed in. We put the whole string in one run, using the first font.
-            result.add(new Run(List.of(mFamilies.get(0)), offset, limit));
+            result.add(new Run(Collections.singletonList(mFamilies.get(0)), offset, limit));
         }
         return result;
     }
@@ -374,7 +374,7 @@ public class FontCollection {
         if (families != null) {
             return families;
         }
-        return List.of(mFamilies.get(0));
+        return Collections.singletonList(mFamilies.get(0));
     }
 
     @Override
