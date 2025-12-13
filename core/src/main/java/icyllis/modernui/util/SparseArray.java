@@ -120,7 +120,7 @@ public class SparseArray<E> implements Cloneable {
      * if no such mapping has been made.
      */
     public E get(int key, E defaultValue) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i < 0 || mValues[i] == DELETED) {
             return defaultValue;
@@ -133,7 +133,7 @@ public class SparseArray<E> implements Cloneable {
      * Removes the mapping from the specified key, if there was any.
      */
     public void delete(int key) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             if (mValues[i] != DELETED) {
@@ -147,7 +147,7 @@ public class SparseArray<E> implements Cloneable {
      * Removes the mapping from the specified key, if there was any, returning the old value.
      */
     public E remove(int key) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             if (mValues[i] != DELETED) {
@@ -299,7 +299,7 @@ public class SparseArray<E> implements Cloneable {
      */
     @Nullable
     public E put(int key, E value) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             E oldValue = (E) mValues[i];
@@ -318,7 +318,7 @@ public class SparseArray<E> implements Cloneable {
                 gc();
 
                 // Search again because indices may have changed.
-                i = ~Arrays.binarySearch(mKeys, 0, mSize, key);
+                i = ~ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
             }
 
             mKeys = GrowingArrayUtils.insert(mKeys, mSize, i, key);
@@ -450,7 +450,7 @@ public class SparseArray<E> implements Cloneable {
             gc();
         }
 
-        return Arrays.binarySearch(mKeys, 0, mSize, key);
+        return ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
     }
 
     /**

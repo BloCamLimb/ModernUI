@@ -4686,7 +4686,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 // The LinkMovementMethod which should handle taps on links has not been installed
                 // on non-editable text that support text selection.
                 // We reproduce its behavior here to open links for these.
-                List<ClickableSpan> links = mSpannable.getSpans(getSelectionStart(), getSelectionEnd(),
+                //TODO can we add LinkArrowKeyMovementMethod? so we don't have to add logic here
+                float x = event.getX();
+                float y = event.getY();
+                int offset = getOffsetForPosition(x, y);
+
+                List<ClickableSpan> links = mSpannable.getSpans(offset, offset,
                         ClickableSpan.class);
 
                 if (!links.isEmpty()) {

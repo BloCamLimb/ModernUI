@@ -34,10 +34,10 @@ import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -50,7 +50,10 @@ import java.util.List;
  * a rich text under Unicode specification and internationalization standards.
  *
  * @see MeasuredText
+ * @hidden
  */
+@SuppressWarnings("ForLoopReplaceableByForEach")
+@ApiStatus.Internal
 @NotThreadSafe
 public class MeasuredParagraph {
 
@@ -387,21 +390,22 @@ public class MeasuredParagraph {
         if (end > start) {
             final MeasuredText.Builder builder = new MeasuredText.Builder(c.mCopiedBuffer)
                     .setComputeLayout(fullLayout);
+            // Modern UI changed: use SpanSet to get and remove empty spans for the subrange
+            // to avoid situations where the source text has too many paragraphs,
+            // but we only care about one paragraph at a time.
+            final SpanSet<MetricAffectingSpan> spans = new SpanSet<>(MetricAffectingSpan.class);
             if (c.mSpanned == null) {
                 // No style change by MetricsAffectingSpan. Just measure all text.
-                c.applyMetricsAffectingSpan(paint, lineBreakConfig, /*spans*/Collections.emptyList(), start, end,
+                c.applyMetricsAffectingSpan(paint, lineBreakConfig, spans, start, end,
                         builder);
                 c.mSpanEndCache.add(end);
             } else {
                 // There may be a MetricsAffectingSpan. Split into span transitions and apply
                 // styles.
+                spans.init(c.mSpanned, start, end);
                 int spanEnd;
                 for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
-                    spanEnd = c.mSpanned.nextSpanTransition(spanStart, end,
-                            MetricAffectingSpan.class);
-                    List<MetricAffectingSpan> spans = c.mSpanned.getSpans(spanStart, spanEnd,
-                            MetricAffectingSpan.class);
-                    spans = TextUtils.removeEmptySpans(spans, c.mSpanned);
+                    spanEnd = spans.getNextTransition(spanStart, end);
                     c.applyMetricsAffectingSpan(paint, lineBreakConfig, spans, spanStart, spanEnd,
                             builder);
                     c.mSpanEndCache.add(spanEnd);
@@ -489,7 +493,7 @@ public class MeasuredParagraph {
     private void applyMetricsAffectingSpan(
             @NonNull TextPaint paint,
             @Nullable LineBreakConfig lineBreakConfig,
-            @NonNull List<MetricAffectingSpan> spans,
+            @NonNull SpanSet<MetricAffectingSpan> spans,
             @IntRange(from = 0) int start,
             @IntRange(from = 0) int end,
             @NonNull MeasuredText.Builder builder) {
@@ -500,6 +504,9 @@ public class MeasuredParagraph {
 
         ReplacementSpan replacement = null;
         for (int i = 0, e = spans.size(); i < e; i++) {
+            // empty spans are already removed
+            if ((spans.spanStarts[i] >= end)
+                    || (spans.spanEnds[i] <= start)) continue;
             MetricAffectingSpan span = spans.get(i);
             if (span instanceof ReplacementSpan) {
                 // The last ReplacementSpan is effective for backward compatibility reasons.

@@ -92,7 +92,7 @@ public class SparseBooleanArray implements Cloneable {
      * if no such mapping has been made.
      */
     public boolean get(int key, boolean defaultValue) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i < 0) {
             return defaultValue;
@@ -105,7 +105,7 @@ public class SparseBooleanArray implements Cloneable {
      * Removes the mapping from the specified key, if there was any.
      */
     public void delete(int key) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             System.arraycopy(mKeys, i + 1, mKeys, i, mSize - (i + 1));
@@ -130,7 +130,7 @@ public class SparseBooleanArray implements Cloneable {
      * was one.
      */
     public void put(int key, boolean value) {
-        int i = Arrays.binarySearch(mKeys, 0, mSize, key);
+        int i = ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
 
         if (i >= 0) {
             mValues[i] = value;
@@ -201,7 +201,7 @@ public class SparseBooleanArray implements Cloneable {
      * key is not mapped.
      */
     public int indexOfKey(int key) {
-        return Arrays.binarySearch(mKeys, 0, mSize, key);
+        return ContainerHelpers.binarySearch(mKeys, 0, mSize, key);
     }
 
     /**

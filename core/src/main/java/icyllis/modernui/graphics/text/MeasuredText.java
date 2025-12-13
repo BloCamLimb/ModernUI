@@ -22,13 +22,12 @@ import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.util.AlgorithmUtils;
+import icyllis.modernui.util.ContainerHelpers;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -81,8 +80,7 @@ public class MeasuredText {
     }
 
     /**
-     * Returns runs of text. Successive style runs may remain the same font paint
-     * under optimization consideration.
+     * Returns runs of text.
      *
      * @return all text runs, may empty if text buf is empty
      * @hidden
@@ -151,10 +149,10 @@ public class MeasuredText {
     }
 
     /**
-     * Find the run for the given char index.
+     * Find the run index for the given char index.
      *
      * @param pos char index
-     * @return the run
+     * @return the run index
      * @hidden
      */
     @ApiStatus.Internal
@@ -205,7 +203,7 @@ public class MeasuredText {
      */
     public static class Builder {
 
-        private final List<Run> mRuns = new ArrayList<>();
+        private final ArrayList<Run> mRuns = new ArrayList<>();
 
         @NonNull
         private final char[] mText;
@@ -417,6 +415,7 @@ public class MeasuredText {
 
         // end (exclusive) offsets of each piece
         private int[] mOffsets;
+        @Nullable
         private LayoutPiece[] mPieces;
 
         private float mAdvance;
@@ -498,7 +497,7 @@ public class MeasuredText {
                 itContextStart = mStart;
                 itContextEnd = offsets[0];
             } else {
-                i = AlgorithmUtils.higher(offsets, start);
+                i = ContainerHelpers.higher(offsets, start);
                 itContextStart = offsets[i - 1];
                 itContextEnd = i == offsets.length ? mEnd : offsets[i];
             }

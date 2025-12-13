@@ -29,6 +29,8 @@ import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.ShapedText;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.util.Arrays;
+
 /**
  * A BoringLayout is a simple Layout implementation for text that
  * fits on a single line and is not {@link Spanned}.
@@ -524,14 +526,21 @@ public class BoringLayout extends Layout {
         }
         final int textLength = text.length();
 
-        // In many cases a complete buffer is needed, so create a new one of the exact length
-        final char[] buffer = new char[textLength];
+        // In many cases a complete buffer is needed, however, the initial buffer size
+        // won't be too large to help early returns.
+        char[] buffer = new char[Math.min(1000, textLength)];
         boolean needsBidi = textDir != TextDirectionHeuristics.LTR
                 && textDir != TextDirectionHeuristics.FIRSTSTRONG_LTR
                 && textDir != TextDirectionHeuristics.ANYRTL_LTR;
         for (int start = 0; start < textLength; ) {
-            // Increment 500 at most.
+            // Advance 500 at most.
             final int end = Math.min(start + 500, textLength);
+            if (buffer.length < end) {
+                // Double the buffer.
+                buffer = Arrays.copyOf(buffer, (int) Math.max((long) buffer.length << 1L, textLength));
+                // It was grown by 1000 at least, while we only advance by 500 each time.
+                assert buffer.length >= end;
+            }
 
             // No need to worry about getting half codepoints, since we consider surrogate code
             // units "interesting" as soon we see one.
@@ -550,6 +559,8 @@ public class BoringLayout extends Layout {
 
             start = end;
         }
+        // Finally we got an exactly-sized buffer for possible bidi analysis and/or shaping.
+        assert buffer.length == textLength;
 
         final Metrics fm = metrics != null ? metrics : new Metrics();
 
