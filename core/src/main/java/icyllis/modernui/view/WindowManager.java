@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -136,7 +137,7 @@ public interface WindowManager extends ViewManager {
          */
         public final void setSurfaceInsets(View view, boolean manual, boolean preservePrevious) {
             //TODO
-            final int surfaceInset = (int) Math.ceil(view.getZ() * 3);
+            final int surfaceInset = (int) Math.ceil(view.getZ() * DrawShadowUtils.kOutsetPerZ);
             if (surfaceInset == 0) {
                 // OK to have 0 (this is the case for non-freeform windows).
                 surfaceInsets.set(0, 0, 0, 0);

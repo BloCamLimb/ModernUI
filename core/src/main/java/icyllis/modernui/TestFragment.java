@@ -321,6 +321,7 @@ public class TestFragment extends Fragment {
         ImageShader mTestImageShader;
         LinearGradient mTestLinearGrad;
         AngularGradient mTestAngularGrad;
+        DView mDView;
 
         public TestLinearLayout(Context context) {
             super(context);
@@ -706,6 +707,7 @@ public class TestFragment extends Fragment {
                     } else {
                         button = new Button(getContext(), null);
                         button.setText("Filled button " + i);
+                        button.setOnClickListener(__ -> mDView.setElevation(30));
                     }
                     if ((i & 1) == 1) {
                         button.setEnabled(false);
@@ -758,7 +760,7 @@ public class TestFragment extends Fragment {
                 addView(v, p);
             }
             Log.LOGGER.info(String.valueOf((System.nanoTime() - start) / 1000000D));
-            addView(new DView(getContext()), new LayoutParams(dp(120),
+            addView(mDView = new DView(getContext()), new LayoutParams(dp(120),
                     dp(120)));
             setClipToPadding(false);
 

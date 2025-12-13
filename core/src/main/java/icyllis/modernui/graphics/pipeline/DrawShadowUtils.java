@@ -40,6 +40,9 @@ public class DrawShadowUtils {
     // We'll round up to 300 to keep it simple.
     public static final float kMaxAmbientRadius = 300*kAmbientHeightFactor*kAmbientGeomFactor;
 
+    //TODO This value is not ideal and can underestimate the dirty area
+    public static final float kOutsetPerZ = 3f;
+
     private static float divide_and_pin(float numer, float denom, float min, float max) {
         float result = MathUtil.pin(numer / denom, min, max);
         // ensure that pin handled non-finites correctly

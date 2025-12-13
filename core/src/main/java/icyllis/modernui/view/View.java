@@ -54,6 +54,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.pipeline.AlphaFilterCanvas;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
+import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
@@ -2897,6 +2898,8 @@ public class View implements Drawable.Callback {
         // to call invalidate() successfully when doing animations
         mPrivateFlags |= PFLAG_DRAWN;
 
+        mRenderNode.setClipToBounds(clip);
+
         if (clip && childHasIdentityMatrix &&
                 canvas.quickReject(mLeft, mTop, mRight, mBottom)) {
             // quick rejected
@@ -3330,7 +3333,8 @@ public class View implements Drawable.Callback {
             int newHeight = bottom - top;
             boolean sizeChanged = (newWidth != oldWidth) || (newHeight != oldHeight);
 
-            invalidate();
+            // Invalidate our old position
+            invalidate(sizeChanged);
 
             mLeft = left;
             mTop = top;
@@ -3351,7 +3355,10 @@ public class View implements Drawable.Callback {
                 // before this call to setFrame came in, thereby clearing
                 // the DRAWN bit.
                 mPrivateFlags |= PFLAG_DRAWN;
-                invalidate();
+                invalidate(sizeChanged);
+                // parent display list may need to be recreated based on a change in the bounds
+                // of any child
+                invalidateParentCaches();
             }
 
             // Reset drawn bit to original value (invalidate turns it off)
@@ -4483,16 +4490,36 @@ public class View implements Drawable.Callback {
      * {@link #postInvalidate()}.
      */
     public void invalidate() {
-        invalidateInternal(0, 0, mRight - mLeft, mBottom - mTop, true, true);
+        invalidate(true);
     }
 
-    public void invalidate(Rect dirty) {
+    /**
+     * @hidden
+     */
+    public void invalidate(boolean invalidateCache) {
+        float z = getZ();
+        if (z > 0 && !mRenderNode.getOutline().isEmpty()) {
+            //TODO not an ideal solution
+            int inset = (int) Math.ceil(z * DrawShadowUtils.kOutsetPerZ * 2); // double it
+            invalidateInternal(-inset, -inset, mRight - mLeft + inset, mBottom - mTop + inset, invalidateCache, true);
+        } else {
+            invalidateInternal(0, 0, mRight - mLeft, mBottom - mTop, invalidateCache, true);
+        }
+    }
+
+    /**
+     * @hidden
+     */
+    public void invalidate(@NonNull Rect dirty) {
         final int scrollX = mScrollX;
         final int scrollY = mScrollY;
         invalidateInternal(dirty.left - scrollX, dirty.top - scrollY,
                 dirty.right - scrollX, dirty.bottom - scrollY, true, false);
     }
 
+    /**
+     * @hidden
+     */
     public void invalidate(int l, int t, int r, int b) {
         final int scrollX = mScrollX;
         final int scrollY = mScrollY;
@@ -4531,6 +4558,25 @@ public class View implements Drawable.Callback {
                 damage.set(l, t, r, b);
                 p.invalidateChild(this, damage);
             }
+        }
+    }
+
+    void invalidateViewProperty(boolean invalidateParent, boolean forceRedraw) {
+        if (invalidateParent) {
+            invalidateParentCaches();
+        }
+        if (forceRedraw) {
+            mPrivateFlags |= PFLAG_DRAWN; // force another invalidation with the new transformation
+        }
+        invalidate(false);
+    }
+
+    /**
+     * @hidden
+     */
+    protected void invalidateParentCaches() {
+        if (mParent instanceof View) {
+            ((View) mParent).mPrivateFlags |= PFLAG_INVALIDATED;
         }
     }
 
@@ -6033,6 +6079,7 @@ public class View implements Drawable.Callback {
             int oldY = mScrollY;
             mScrollX = x;
             mScrollY = y;
+            invalidateParentCaches();
             onScrollChanged(mScrollX, mScrollY, oldX, oldY);
             if (!awakenScrollBars()) {
                 postInvalidateOnAnimation();
@@ -7599,6 +7646,29 @@ public class View implements Drawable.Callback {
         return matrix == null || matrix.isIdentity();
     }
 
+    private static void sanitizeFloatPropertyValue(float value, String propertyName) {
+        sanitizeFloatPropertyValue(value, propertyName, -Float.MAX_VALUE, Float.MAX_VALUE);
+    }
+
+    private static void sanitizeFloatPropertyValue(float value, String propertyName,
+                                                   float min, float max) {
+        if (value >= min && value <= max) return;
+
+        if (value < min) {
+            throw new IllegalArgumentException("Cannot set '" + propertyName + "' to "
+                    + value + ", the value must be >= " + min);
+        }
+
+        if (value > max) {
+            throw new IllegalArgumentException("Cannot set '" + propertyName + "' to "
+                    + value + ", the value must be <= " + max);
+        }
+
+        // NaN case
+        throw new IllegalArgumentException(
+                "Cannot set '" + propertyName + "' to " + value);
+    }
+
     /**
      * The visual x position of this view, in pixels. This is equivalent to the
      * {@link #setTranslationX(float) translationX} property plus the current
@@ -7678,9 +7748,11 @@ public class View implements Drawable.Callback {
      * Sets the base elevation of this view, in pixels.
      */
     public void setElevation(float elevation) {
-        if (mRenderNode.setElevation(elevation)) {
-            invalidate();
-            mPrivateFlags |= PFLAG_DRAWN;
+        if (elevation != getElevation()) {
+            sanitizeFloatPropertyValue(elevation, "elevation");
+            invalidateViewProperty(true, false);
+            mRenderNode.setElevation(elevation);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7704,8 +7776,10 @@ public class View implements Drawable.Callback {
      *                     in pixels.
      */
     public void setTranslationX(float translationX) {
-        if (mRenderNode.setTranslationX(translationX)) {
-            invalidate();
+        if (translationX != getTranslationX()) {
+            invalidateViewProperty(true, false);
+            mRenderNode.setTranslationX(translationX);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7730,8 +7804,10 @@ public class View implements Drawable.Callback {
      *                     in pixels.
      */
     public void setTranslationY(float translationY) {
-        if (mRenderNode.setTranslationY(translationY)) {
-            invalidate();
+        if (translationY != getTranslationY()) {
+            invalidateViewProperty(true, false);
+            mRenderNode.setTranslationY(translationY);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7748,8 +7824,11 @@ public class View implements Drawable.Callback {
      * Sets the depth location of this view relative to its {@link #getElevation() elevation}.
      */
     public void setTranslationZ(float translationZ) {
-        if (mRenderNode.setTranslationZ(translationZ)) {
-            invalidate();
+        if (translationZ != getTranslationZ()) {
+            sanitizeFloatPropertyValue(translationZ, "translationZ");
+            invalidateViewProperty(true, false);
+            mRenderNode.setTranslationZ(translationZ);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7777,8 +7856,11 @@ public class View implements Drawable.Callback {
      * @see #setRotationY(float)
      */
     public void setRotation(float rotation) {
-        if (mRenderNode.setRotationZ(rotation)) {
-            invalidate();
+        if (rotation != getRotation()) {
+            // Double-invalidation is necessary to capture view's old and new areas
+            invalidateViewProperty(true, false);
+            mRenderNode.setRotationZ(rotation);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7807,8 +7889,10 @@ public class View implements Drawable.Callback {
      * @see #setRotationX(float)
      */
     public void setRotationY(float rotationY) {
-        if (mRenderNode.setRotationY(rotationY)) {
-            invalidate();
+        if (rotationY != getRotationY()) {
+            invalidateViewProperty(true, false);
+            mRenderNode.setRotationY(rotationY);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7837,8 +7921,10 @@ public class View implements Drawable.Callback {
      * @see #setRotationY(float)
      */
     public void setRotationX(float rotationX) {
-        if (mRenderNode.setRotationX(rotationX)) {
-            invalidate();
+        if (rotationX != getRotationX()) {
+            invalidateViewProperty(true, false);
+            mRenderNode.setRotationX(rotationX);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7865,8 +7951,11 @@ public class View implements Drawable.Callback {
      * @see #getPivotY()
      */
     public void setScaleX(float scaleX) {
-        if (mRenderNode.setScaleX(scaleX)) {
-            invalidate();
+        if (scaleX != getScaleX()) {
+            sanitizeFloatPropertyValue(scaleX, "scaleX");
+            invalidateViewProperty(true, false);
+            mRenderNode.setScaleX(scaleX);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7893,8 +7982,11 @@ public class View implements Drawable.Callback {
      * @see #getPivotY()
      */
     public void setScaleY(float scaleY) {
-        if (mRenderNode.setScaleY(scaleY)) {
-            invalidate();
+        if (scaleY != getScaleY()) {
+            sanitizeFloatPropertyValue(scaleY, "scaleY");
+            invalidateViewProperty(true, false);
+            mRenderNode.setScaleY(scaleY);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7926,8 +8018,10 @@ public class View implements Drawable.Callback {
      * @see #getPivotY()
      */
     public void setPivotX(float pivotX) {
-        if (mRenderNode.setPivotX(pivotX)) {
-            invalidate();
+        if (!mRenderNode.isPivotExplicitlySet() || pivotX != getPivotX()) {
+            invalidateViewProperty(true, false);
+            mRenderNode.setPivotX(pivotX);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7958,8 +8052,10 @@ public class View implements Drawable.Callback {
      * @see #getPivotY()
      */
     public void setPivotY(float pivotY) {
-        if (mRenderNode.setPivotY(pivotY)) {
-            invalidate();
+        if (!mRenderNode.isPivotExplicitlySet() || pivotY != getPivotY()) {
+            invalidateViewProperty(true, false);
+            mRenderNode.setPivotY(pivotY);
+            invalidateViewProperty(false, true);
         }
     }
 
@@ -7981,7 +8077,7 @@ public class View implements Drawable.Callback {
      */
     public void resetPivot() {
         if (mRenderNode.resetPivot()) {
-            invalidate();
+            invalidateViewProperty(false, false);
         }
     }
 
@@ -8051,12 +8147,37 @@ public class View implements Drawable.Callback {
         return true;
     }
 
-    //TODO WIP
+    /**
+     * Invoked if there is a Transform that involves alpha. Subclass that can
+     * draw themselves with the specified alpha should return true, and then
+     * respect that alpha when their onDraw() is called. If this returns false
+     * then the view may be redirected to draw into an offscreen buffer to
+     * fulfill the request, which will look fine, but may be slower than if the
+     * subclass handles it internally. The default implementation returns false.
+     *
+     * @param alpha The alpha (0..1) to apply to the view's drawing
+     * @return true if the view can draw with the specified alpha.
+     */
+    @ApiStatus.Experimental
+    //TODO not supported everywhere
+    protected boolean onSetAlpha(float alpha) {
+        return false;
+    }
+
+    //TODO WIP handle overlapping correctly, by introducing dedicated compositing layer
     public void setAlpha(float alpha) {
         if (mAlpha != alpha) {
             mAlpha = alpha;
-            invalidate();
-            mRenderNode.setAlpha(mAlpha * mTransitionAlpha);
+            if (onSetAlpha(alpha)) {
+                mPrivateFlags |= PFLAG_ALPHA_SET;
+                // subclass is handling alpha - don't optimize rendering cache invalidation
+                invalidateParentCaches();
+                invalidate(true);
+            } else {
+                mPrivateFlags &= ~PFLAG_ALPHA_SET;
+                invalidateViewProperty(true, false);
+                mRenderNode.setAlpha(mAlpha * mTransitionAlpha);
+            }
         }
     }
 
@@ -8070,7 +8191,8 @@ public class View implements Drawable.Callback {
     public final void setTransitionAlpha(float alpha) {
         if (mTransitionAlpha != alpha) {
             mTransitionAlpha = alpha;
-            invalidate();
+            mPrivateFlags &= ~PFLAG_ALPHA_SET;
+            invalidateViewProperty(true, false);
             mRenderNode.setAlpha(mAlpha * mTransitionAlpha);
         }
     }
@@ -8097,6 +8219,8 @@ public class View implements Drawable.Callback {
      * @param matrix The matrix, null indicates that the matrix should be cleared.
      * @see #getAnimationMatrix()
      */
+    //TODO not well supported, such invalidation, damage accumulation...
+    @ApiStatus.Experimental
     public final void setAnimationMatrix(@Nullable Matrix matrix) {
         mRenderNode.setAnimationMatrix(matrix);
     }
@@ -8128,7 +8252,7 @@ public class View implements Drawable.Callback {
      */
     public void setClipBounds(@Nullable Rect clipBounds) {
         if (mRenderNode.setClipBounds(clipBounds)) {
-            invalidate();
+            invalidateViewProperty(false, false);
         }
     }
 
@@ -8239,7 +8363,7 @@ public class View implements Drawable.Callback {
     public void invalidateOutline() {
         rebuildOutline();
 
-        invalidate();
+        invalidateViewProperty(false, false);
     }
 
     /**
@@ -12695,10 +12819,36 @@ public class View implements Drawable.Callback {
      */
     public void offsetTopAndBottom(int offset) {
         if (offset != 0) {
+            final boolean matrixIsIdentity = hasIdentityMatrix();
+            if (matrixIsIdentity) {
+                final ViewParent p = mParent;
+                if (p != null && mAttachInfo != null) {
+                    final Rect r = mAttachInfo.mTmpInvalRect;
+                    int minTop;
+                    int maxBottom;
+                    int yLoc;
+                    if (offset < 0) {
+                        minTop = mTop + offset;
+                        maxBottom = mBottom;
+                        yLoc = offset;
+                    } else {
+                        minTop = mTop;
+                        maxBottom = mBottom + offset;
+                        yLoc = 0;
+                    }
+                    r.set(0, yLoc, mRight - mLeft, maxBottom - minTop);
+                    p.invalidateChild(this, r);
+                }
+            } else {
+                invalidateViewProperty(false, false);
+            }
+
             mTop += offset;
             mBottom += offset;
             mRenderNode.offsetTopAndBottom(offset);
-            invalidate();
+            if (!matrixIsIdentity) {
+                invalidateViewProperty(false, true);
+            }
         }
     }
 
@@ -12709,10 +12859,33 @@ public class View implements Drawable.Callback {
      */
     public void offsetLeftAndRight(int offset) {
         if (offset != 0) {
+            final boolean matrixIsIdentity = hasIdentityMatrix();
+            if (matrixIsIdentity) {
+                final ViewParent p = mParent;
+                if (p != null && mAttachInfo != null) {
+                    final Rect r = mAttachInfo.mTmpInvalRect;
+                    int minLeft;
+                    int maxRight;
+                    if (offset < 0) {
+                        minLeft = mLeft + offset;
+                        maxRight = mRight;
+                    } else {
+                        minLeft = mLeft;
+                        maxRight = mRight + offset;
+                    }
+                    r.set(0, 0, maxRight - minLeft, mBottom - mTop);
+                    p.invalidateChild(this, r);
+                }
+            } else {
+                invalidateViewProperty(false, false);
+            }
+
             mLeft += offset;
             mRight += offset;
             mRenderNode.offsetLeftAndRight(offset);
-            invalidate();
+            if (!matrixIsIdentity) {
+                invalidateViewProperty(false, true);
+            }
         }
     }
 
