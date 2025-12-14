@@ -707,7 +707,16 @@ public class TestFragment extends Fragment {
                     } else {
                         button = new Button(getContext(), null);
                         button.setText("Filled button " + i);
-                        button.setOnClickListener(__ -> mDView.setElevation(30));
+                        button.setOnClickListener(__ -> {
+                            if (mDView.getElevation() < 20) {
+                                mDView.setElevation(30);
+                                mDView.setOutlineAmbientShadowColor(0xFF66CCFF);
+                            } else {
+                                mDView.setElevation(10);
+                                mDView.setOutlineAmbientShadowColor(0xFF000000);
+                            }
+                            mDView.setOutlineSpotShadowColor(0xFF66CCFF);
+                        });
                     }
                     if ((i & 1) == 1) {
                         button.setEnabled(false);

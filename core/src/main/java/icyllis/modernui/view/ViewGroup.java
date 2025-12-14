@@ -544,8 +544,15 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             return;
         }
 
-        int ambientColor = (int) (mAmbientShadowAlpha * casterAlpha * 255) << 24;
-        int spotColor = (int) (mSpotShadowAlpha * casterAlpha * 255) << 24;
+        int ambientAlpha = (int) (mAmbientShadowAlpha * casterAlpha *
+                Color.alpha(casterProperties.getAmbientShadowColor()));
+        int spotAlpha = (int) (mSpotShadowAlpha * casterAlpha *
+                Color.alpha(casterProperties.getSpotShadowColor()));
+        if (ambientAlpha <= 0 && spotAlpha <= 0) {
+            return;
+        }
+        int ambientColor = (casterProperties.getAmbientShadowColor() & 0xFFFFFF) | (ambientAlpha << 24);
+        int spotColor = (casterProperties.getSpotShadowColor() & 0xFFFFFF) | (spotAlpha << 24);
 
         canvas.save();
         canvas.translate(child.mLeft, child.mTop);
@@ -2476,19 +2483,60 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param spotShadowAlpha    The alpha for the spot shadow.
      * @since 3.12
      */
-    @ApiStatus.Experimental
     public void setShadowAlpha(@FloatRange(from = 0.0f, to = 1.0f) float ambientShadowAlpha,
                                @FloatRange(from = 0.0f, to = 1.0f) float spotShadowAlpha) {
-        if (!(ambientShadowAlpha >= 0.0f && ambientShadowAlpha <= 1.0f)) {
-            throw new IllegalArgumentException("ambientShadowAlpha must be a valid alpha, "
-                    + ambientShadowAlpha + " is not in the range of 0.0f to 1.0f");
-        }
+        setAmbientShadowAlpha(ambientShadowAlpha);
+        setSpotShadowAlpha(spotShadowAlpha);
+    }
+
+    /**
+     * Configures the spot shadow alpha for children. This is the alpha used when the shadow
+     * has max alpha, and ramps down from the values provided to zero. The final color of the
+     * spot shadow also depends on the child's {@link View#getOutlineSpotShadowColor()}.
+     * <p>
+     * The initial values are provided by the current theme.
+     *
+     * @param spotShadowAlpha The alpha for the spot shadow.
+     * @since 3.13
+     */
+    public void setSpotShadowAlpha(@FloatRange(from = 0.0f, to = 1.0f) float spotShadowAlpha) {
         if (!(spotShadowAlpha >= 0.0f && spotShadowAlpha <= 1.0f)) {
             throw new IllegalArgumentException("spotShadowAlpha must be a valid alpha, "
                     + spotShadowAlpha + " is not in the range of 0.0f to 1.0f");
         }
-        mAmbientShadowAlpha = ambientShadowAlpha;
         mSpotShadowAlpha = spotShadowAlpha;
+    }
+
+    /**
+     * @return The shadow alpha set by {@link #setSpotShadowAlpha(float)}
+     */
+    public @FloatRange(from = 0.0f, to = 1.0f) float getSpotShadowAlpha() {
+        return mSpotShadowAlpha;
+    }
+
+    /**
+     * Configures the ambient shadow alpha for children. This is the alpha used when the shadow
+     * has max alpha, and ramps down from the values provided to zero. The final color of the
+     * ambient shadow also depends on the child's {@link View#getOutlineAmbientShadowColor()}.
+     * <p>
+     * The initial values are provided by the current theme.
+     *
+     * @param ambientShadowAlpha The alpha for the ambient shadow.
+     * @since 3.13
+     */
+    public void setAmbientShadowAlpha(@FloatRange(from = 0.0f, to = 1.0f) float ambientShadowAlpha) {
+        if (!(ambientShadowAlpha >= 0.0f && ambientShadowAlpha <= 1.0f)) {
+            throw new IllegalArgumentException("ambientShadowAlpha must be a valid alpha, "
+                    + ambientShadowAlpha + " is not in the range of 0.0f to 1.0f");
+        }
+        mAmbientShadowAlpha = ambientShadowAlpha;
+    }
+
+    /**
+     * @return The shadow alpha set by {@link #setAmbientShadowAlpha(float)}
+     */
+    public @FloatRange(from = 0.0f, to = 1.0f) float getAmbientShadowAlpha() {
+        return mAmbientShadowAlpha;
     }
 
     private void removeViewsInternal(int start, int count) {

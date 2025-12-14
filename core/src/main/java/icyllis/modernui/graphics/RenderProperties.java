@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.Matrix4;
+import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
@@ -70,6 +71,8 @@ public class RenderProperties {
     private boolean mMatrixOrPivotDirty = false;
     private float mCameraDistance = 1;
     private boolean mCameraDistanceExplicitlySet = false;
+    private int mSpotShadowColor = Color.BLACK;
+    private int mAmbientShadowColor = Color.BLACK;
 
     private final Outline mOutline = new Outline();
 
@@ -893,6 +896,30 @@ public class RenderProperties {
             return true;
         }
         return false;
+    }
+
+    public boolean setSpotShadowColor(@ColorInt int color) {
+        if (mSpotShadowColor != color) {
+            mSpotShadowColor = color;
+            return true;
+        }
+        return false;
+    }
+
+    public @ColorInt int getSpotShadowColor() {
+        return mSpotShadowColor;
+    }
+
+    public boolean setAmbientShadowColor(@ColorInt int color) {
+        if (mAmbientShadowColor != color) {
+            mAmbientShadowColor = color;
+            return true;
+        }
+        return false;
+    }
+
+    public @ColorInt int getAmbientShadowColor() {
+        return mAmbientShadowColor;
     }
 
     /**
