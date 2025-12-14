@@ -359,8 +359,10 @@ public class RoundedImageDrawable extends Drawable {
                         )
                 );
             }
+            float rad = Math.min(mCornerRadius,
+                    Math.min(mDstRect.width(), mDstRect.height()) * 0.5f);
             canvas.drawRoundRect(mDstRect.left, mDstRect.top, mDstRect.right, mDstRect.bottom,
-                    mCornerRadius, paint);
+                    rad, paint);
         }
 
         if (clearColorFilter) {
@@ -418,7 +420,9 @@ public class RoundedImageDrawable extends Drawable {
         if (updateDstRect()) {
             mDstRectDirty = true; // keep dirty to rebuild shader later
         }
-        outline.setRoundRect(mDstRect, getCornerRadius());
+        float rad = Math.min(mCornerRadius,
+                Math.min(mDstRect.width(), mDstRect.height()) * 0.5f);
+        outline.setRoundRect(mDstRect, rad);
         outline.setAlpha(getAlpha() / 255.0f);
     }
 
