@@ -41,6 +41,7 @@ import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.CallSuper;
+import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
@@ -8390,6 +8391,62 @@ public class View implements Drawable.Callback {
             mOutlineProvider.getOutline(this, outline);
             mRenderNode.setOutline(outline);
         }
+    }
+
+    /**
+     * Sets the color of the spot shadow that is drawn when the view has a positive Z or
+     * elevation value.
+     * <p>
+     * By default the shadow color is black. Generally, this color will be opaque so the intensity
+     * of the shadow is consistent between different views with different colors.
+     * <p>
+     * The opacity of the final spot shadow is a function of the shadow caster height, the
+     * alpha channel of the outlineSpotShadowColor (typically opaque), and the
+     * parent's {@link ViewGroup#getSpotShadowAlpha()}.
+     *
+     * @param color The color this View will cast for its elevation spot shadow.
+     * @since 3.13
+     */
+    public void setOutlineSpotShadowColor(@ColorInt int color) {
+        if (mRenderNode.setSpotShadowColor(color)) {
+            invalidateViewProperty(true, true);
+        }
+    }
+
+    /**
+     * @return The shadow color set by {@link #setOutlineSpotShadowColor(int)}, or black if nothing
+     * was set
+     */
+    public @ColorInt int getOutlineSpotShadowColor() {
+        return mRenderNode.getSpotShadowColor();
+    }
+
+    /**
+     * Sets the color of the ambient shadow that is drawn when the view has a positive Z or
+     * elevation value.
+     * <p>
+     * By default the shadow color is black. Generally, this color will be opaque so the intensity
+     * of the shadow is consistent between different views with different colors.
+     * <p>
+     * The opacity of the final ambient shadow is a function of the shadow caster height, the
+     * alpha channel of the outlineAmbientShadowColor (typically opaque), and the
+     * parent's {@link ViewGroup#getAmbientShadowAlpha()}.
+     *
+     * @param color The color this View will cast for its elevation shadow.
+     * @since 3.13
+     */
+    public void setOutlineAmbientShadowColor(@ColorInt int color) {
+        if (mRenderNode.setAmbientShadowColor(color)) {
+            invalidateViewProperty(true, true);
+        }
+    }
+
+    /**
+     * @return The shadow color set by {@link #setOutlineAmbientShadowColor(int)}, or black if
+     * nothing was set
+     */
+    public @ColorInt int getOutlineAmbientShadowColor() {
+        return mRenderNode.getAmbientShadowColor();
     }
 
     /**
