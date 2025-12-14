@@ -18,8 +18,10 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.Matrix4c;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * This class represents a 3x3 matrix and a 2D transformation, its components
@@ -63,6 +65,20 @@ public class Matrix extends icyllis.arc3d.sketch.Matrix {
                   float shearX, float scaleY, float persp1,
                   float transX, float transY, float persp2) {
         super(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
+    }
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    @ApiStatus.Experimental
+    public Matrix(@NonNull Matrix4c m) {
+        super(m);
     }
 
     /**

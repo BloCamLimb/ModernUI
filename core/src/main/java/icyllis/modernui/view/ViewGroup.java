@@ -511,8 +511,36 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             return;
         }
 
+        var outlineRect = outline.getBounds();
+        var outlineRadius = outline.getRadius();
+
         if ((casterProperties.getClippingFlags() & RenderProperties.CLIP_TO_CLIP_BOUNDS) != 0) {
-            // we don't know the shape of the outline after it is clipped by the clip bounds
+            // we don't know the shape of the outline after it is clipped by the clip bounds,
+            // but we try to use an approximate shape if possible.
+            var clipRect = casterProperties.getClipBounds();
+            if (outlineRadius > 0f) {
+                // we expect that clip rect is fully contained in the outline rect.
+                if (!outlineRect.contains(clipRect)) {
+                    return;
+                }
+                // this method is fast, but might produce a shape that significantly differs from the
+                // exact intersection under certain inputs. However, since our clip bounds is
+                // primarily used for reveal animations, that don't generally produce strange results.
+                int diff = (clipRect.left - outlineRect.left)
+                        + (clipRect.top - outlineRect.top)
+                        + (outlineRect.right - clipRect.right)
+                        + (outlineRect.bottom - clipRect.bottom);
+                outlineRect = clipRect;
+                outlineRadius = Math.max(0, outlineRadius - diff / 4f);
+            } else {
+                Rect intersection = new Rect(outlineRect);
+                if (!intersection.intersect(clipRect)) {
+                    return;
+                }
+                outlineRect = intersection;
+            }
+        }
+        if (outlineRect.isEmpty()) {
             return;
         }
 
@@ -545,7 +573,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
         DrawShadowUtils.drawShadow(
                 ((ArcCanvas) canvas).getCanvas(),
-                outline.getBounds(), outline.getRadius(),
+                outlineRect, outlineRadius,
                 zPlane0, zPlane1, zPlane2,
                 LightingInfo.getLightX(), LightingInfo.getLightY(), LightingInfo.getLightZ(),
                 LightingInfo.getLightRadius(), ambientColor, spotColor
