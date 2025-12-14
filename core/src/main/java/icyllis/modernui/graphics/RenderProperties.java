@@ -932,7 +932,7 @@ public class RenderProperties {
         if (mLeft != left) {
             mLeft = left;
             mWidth = mRight - left;
-            if (!mPivotExplicitlySet) {
+            if (!mPivotExplicitlySet || !mCameraDistanceExplicitlySet) {
                 mMatrixOrPivotDirty = true;
             }
             return true;
@@ -959,7 +959,7 @@ public class RenderProperties {
         if (mTop != top) {
             mTop = top;
             mHeight = mBottom - top;
-            if (!mPivotExplicitlySet) {
+            if (!mPivotExplicitlySet || !mCameraDistanceExplicitlySet) {
                 mMatrixOrPivotDirty = true;
             }
             return true;
@@ -986,7 +986,7 @@ public class RenderProperties {
         if (mRight != right) {
             mRight = right;
             mWidth = right - mLeft;
-            if (!mPivotExplicitlySet) {
+            if (!mPivotExplicitlySet || !mCameraDistanceExplicitlySet) {
                 mMatrixOrPivotDirty = true;
             }
             return true;
@@ -1013,7 +1013,7 @@ public class RenderProperties {
         if (mBottom != bottom) {
             mBottom = bottom;
             mHeight = bottom - mTop;
-            if (!mPivotExplicitlySet) {
+            if (!mPivotExplicitlySet || !mCameraDistanceExplicitlySet) {
                 mMatrixOrPivotDirty = true;
             }
             return true;
@@ -1047,7 +1047,7 @@ public class RenderProperties {
             mBottom = bottom;
             mWidth = right - left;
             mHeight = bottom - top;
-            if (!mPivotExplicitlySet) {
+            if (!mPivotExplicitlySet || !mCameraDistanceExplicitlySet) {
                 mMatrixOrPivotDirty = true;
             }
             return true;
