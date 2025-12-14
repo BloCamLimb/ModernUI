@@ -7834,6 +7834,80 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Gets the distance along the Z axis from the camera to this view.
+     *
+     * @see #setCameraDistance(float)
+     *
+     * @return The distance along the Z axis, in pixels
+     * @since 3.13
+     */
+    public float getCameraDistance() {
+        return mRenderNode.getCameraDistance();
+    }
+
+    /**
+     * <p>Sets the distance along the Z axis (orthogonal to the X/Y plane on which
+     * views are drawn) from the camera to this view. The camera's distance
+     * affects 3D transformations, for instance rotations around the X and Y
+     * axis. If the rotationX or rotationY properties are changed and this view is
+     * large (more than half the size of the screen), it is recommended to always
+     * use a camera distance that's greater than the height (X axis rotation) or
+     * the width (Y axis rotation) of this view.</p>
+     *
+     * <p>The distance of the camera from the view plane can have an affect on the
+     * perspective distortion of the view when it is rotated around the x or y axis.
+     * For example, a large distance will result in a large viewing angle, and there
+     * will not be much perspective distortion of the view as it rotates. A short
+     * distance may cause much more perspective distortion upon rotation, and can
+     * also result in some drawing artifacts if the rotated view ends up partially
+     * behind the camera (which is why the recommendation is to use a distance at
+     * least as far as the size of the view, if the view is to be rotated.)</p>
+     *
+     * <p>The distance is expressed in pixels. The default distance depends
+     * on the view's largest dimension. For instance, for a view with a size of
+     * 1920x1080 pixels, the default distance is 1920 pixels. This value varies with
+     * width/height, and once you call this method, the camera distance will be
+     * fixed at the value you specify, unless {@link #resetCameraDistance()} is called.</p>
+     *
+     * @param distance the distance in pixels, should be positive
+     *
+     * @see #setRotationX(float)
+     * @see #setRotationY(float)
+     * @since 3.13
+     */
+    public void setCameraDistance(float distance) {
+        invalidateViewProperty(true, false);
+        mRenderNode.setCameraDistance(Math.abs(distance));
+        invalidateViewProperty(false, true); // should invalidate again with forceRedraw...
+    }
+
+    /**
+     * Returns whether a camera distance has been set by a call to {@link #setCameraDistance(float)} or
+     * If no camera distance has been set then the distance will be the max(width,height) of the view.
+     *
+     * @return True if a camera distance has been set, false if the default distance is being used
+     * @since 3.13
+     */
+    public boolean isCameraDistanceSet() {
+        return mRenderNode.isCameraDistanceExplicitlySet();
+    }
+
+    /**
+     * Clears any camera distance previously set by a call to {@link #setCameraDistance(float)}.
+     * After calling this {@link #isCameraDistanceSet()} will be false and the camera
+     * distance used for rotation will return to default to the max(width,height) of the view.
+     *
+     * @since 3.13
+     */
+    public void resetCameraDistance() {
+        if (mRenderNode.isCameraDistanceExplicitlySet()) {
+            invalidateViewProperty(true, false);
+            mRenderNode.resetCameraDistance();
+            invalidateViewProperty(false, true);
+        }
+    }
+
+    /**
      * The degrees that the view is rotated around the pivot point.
      *
      * @return The degrees of rotation.
@@ -8077,8 +8151,10 @@ public class View implements Drawable.Callback {
      * and the pivot used for rotation will return to default of being centered on the view.
      */
     public void resetPivot() {
-        if (mRenderNode.resetPivot()) {
-            invalidateViewProperty(false, false);
+        if (mRenderNode.isPivotExplicitlySet()) {
+            invalidateViewProperty(true, false);
+            mRenderNode.resetPivot();
+            invalidateViewProperty(false, true); // should invalidate again with forceRedraw...
         }
     }
 
@@ -8249,7 +8325,7 @@ public class View implements Drawable.Callback {
      * and the view will draw normally, using its full bounds.
      *
      * @param clipBounds The rectangular area, in the local coordinates of
-     * this view, to which future drawing operations will be clipped.
+     *                   this view, to which future drawing operations will be clipped.
      */
     public void setClipBounds(@Nullable Rect clipBounds) {
         if (mRenderNode.setClipBounds(clipBounds)) {
@@ -8278,7 +8354,7 @@ public class View implements Drawable.Callback {
      *
      * @param outRect rectangle in which to place the clip bounds of the view
      * @return {@code true} if successful or {@code false} if the view's
-     *         clip bounds are {@code null}
+     * clip bounds are {@code null}
      */
     public boolean getClipBounds(@NonNull Rect outRect) {
         if ((mRenderNode.getClippingFlags() & RenderProperties.CLIP_TO_CLIP_BOUNDS) != 0) {
