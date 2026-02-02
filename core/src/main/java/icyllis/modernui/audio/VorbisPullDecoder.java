@@ -70,7 +70,7 @@ public class VorbisPullDecoder extends SoundSample {
 
     @Override
     public void close() {
-        MemoryUtil.memFree(mPayload);
+        MemoryUtil.memFree((Buffer) mPayload);
         mPayload = null;
         if (mHandle != NULL) {
             STBVorbis.stb_vorbis_close(mHandle);

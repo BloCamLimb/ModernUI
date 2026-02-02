@@ -22,6 +22,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.nio.Buffer;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
 import java.util.function.Consumer;
@@ -239,7 +240,7 @@ public class Track implements AutoCloseable {
     @Override
     public void close() {
         AudioManager.getInstance().removeTrack(this);
-        MemoryUtil.memFree(mClientBuffer);
+        MemoryUtil.memFree((Buffer) mClientBuffer);
         mClientBuffer = null;
         if (mBuffers != null) {
             alDeleteBuffers(mBuffers);

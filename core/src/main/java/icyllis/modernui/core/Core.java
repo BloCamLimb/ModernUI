@@ -709,7 +709,7 @@ public final class Core {
                 }
             }
         } catch (Throwable t) {
-            memFree(p);
+            memFree((Buffer) p);
             throw t;
         }
         return p;

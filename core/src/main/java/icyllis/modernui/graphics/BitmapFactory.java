@@ -31,6 +31,7 @@ import org.lwjgl.system.jni.JNINativeInterface;
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageInputStream;
 import java.io.*;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.file.Path;
@@ -339,7 +340,7 @@ public final class BitmapFactory {
                 p = Core.readIntoNativeBuffer(stream);
                 bm = decodeBuffer(p.rewind(), opts);
             } finally {
-                MemoryUtil.memFree(p);
+                MemoryUtil.memFree((Buffer) p);
             }
         }
         assert bm != null;
@@ -372,7 +373,7 @@ public final class BitmapFactory {
                 p = Core.readIntoNativeBuffer(stream);
                 decodeBufferInfo(p.rewind(), opts);
             } finally {
-                MemoryUtil.memFree(p);
+                MemoryUtil.memFree((Buffer) p);
             }
         }
     }
@@ -431,7 +432,7 @@ public final class BitmapFactory {
                 p = Core.readIntoNativeBuffer(channel);
                 bm = decodeBuffer(p.rewind(), opts);
             } finally {
-                MemoryUtil.memFree(p);
+                MemoryUtil.memFree((Buffer) p);
             }
         }
         assert bm != null;
@@ -463,7 +464,7 @@ public final class BitmapFactory {
                 p = Core.readIntoNativeBuffer(channel);
                 decodeBufferInfo(p.rewind(), opts);
             } finally {
-                MemoryUtil.memFree(p);
+                MemoryUtil.memFree((Buffer) p);
             }
         }
     }
@@ -520,7 +521,7 @@ public final class BitmapFactory {
                     .put(data, offset, length)
                     .rewind(), opts);
         } finally {
-            MemoryUtil.memFree(p);
+            MemoryUtil.memFree((Buffer) p);
         }
         return bm;
     }
