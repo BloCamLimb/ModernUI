@@ -131,7 +131,7 @@ public class VorbisPushDecoder extends SoundStream {
             // if need more data, increment the capacity or back to start
             ByteBuffer buffer = MemoryUtil.memAlloc(mBuffer.capacity() << (pos == 0 ? 1 : 0));
             buffer.put(mBuffer);
-            MemoryUtil.memFree(mBuffer);
+            MemoryUtil.memFree((Buffer) mBuffer);
             mBuffer = buffer.flip();
         }
     }
@@ -188,7 +188,7 @@ public class VorbisPushDecoder extends SoundStream {
             STBVorbis.stb_vorbis_close(mHandle);
             mHandle = NULL;
         }
-        MemoryUtil.memFree(mBuffer);
+        MemoryUtil.memFree((Buffer) mBuffer);
         mBuffer = null;
         mChannel.close();
     }
