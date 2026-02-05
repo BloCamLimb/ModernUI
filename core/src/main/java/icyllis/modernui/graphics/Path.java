@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.Rect2f;
 import icyllis.modernui.annotation.NonNull;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * The {@link Path} object contains mutable path elements.
@@ -37,6 +37,7 @@ import icyllis.modernui.annotation.NonNull;
  * outside the geometry. Path also describes the winding rule used to fill
  * overlapping contours.
  */
+@ApiStatus.Experimental
 public class Path extends icyllis.arc3d.sketch.Path {
 
     /**
@@ -150,8 +151,7 @@ public class Path extends icyllis.arc3d.sketch.Path {
 //    }
 
     public final void getBounds(@NonNull RectF out) {
-        var r = new Rect2f();
-        super.getBounds(r);
-        out.set(r.left(), r.top(), r.right(), r.bottom());
+        var data = getPathData();
+        out.set(data.getLeft(), data.getTop(), data.getRight(), data.getBottom());
     }
 }
