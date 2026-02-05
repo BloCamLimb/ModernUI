@@ -66,7 +66,7 @@ public class Paint {
          * is oriented counter-clockwise. This restriction does not apply to
          * either FILL or STROKE.
          */
-        FILL_AND_STROKE (icyllis.arc3d.sketch.Paint.FILL_AND_STROKE);
+        FILL_AND_STROKE (icyllis.arc3d.sketch.Paint.STROKE_AND_FILL);
 
         final int nativeInt;
 
@@ -452,9 +452,15 @@ public class Paint {
      * Return the paint's solid color in sRGB. Note that the color is a 32-bit value
      * containing alpha as well as r,g,b. This 32-bit value is not premultiplied,
      * meaning that its alpha can be any value, regardless of the values of r,g,b.
+     * <p>
+     * This method is obsolete and discouraged. Converting color to a
+     * packed 32-bit integer (8-bit per channel) leads to precision loss.
+     * Use this only if you specifically need to quantize color components for storage
+     * or legacy API compatibility. Otherwise, use {@link #getColor4f()}.
      *
      * @return the paint's color (and alpha).
      */
+    @ApiStatus.Obsolete
     public int getColor() {
         return ((int) (mPaint.getAlpha() * 255.0f + 0.5f) << 24) |
                 ((int) (mPaint.getRed() * 255.0f + 0.5f) << 16) |
@@ -466,6 +472,8 @@ public class Paint {
      * Set the paint's solid color in sRGB. Note that the color is a 32-bit value
      * containing alpha as well as r,g,b. This 32-bit value is not premultiplied,
      * meaning that its alpha can be any value, regardless of the values of r,g,b.
+     * <p>
+     * Use {@link #setColor4f} for full-precision floating-point access.
      *
      * @param color the new color (including alpha) to set in the paint.
      */
@@ -477,6 +485,8 @@ public class Paint {
      * Returns alpha and RGB used when stroking and filling. The color is four floating
      * point values, un-premultiplied. The color values are interpreted as being in
      * the sRGB color space.
+     * <p>
+     * Use {@link #getColor4f(float[])} to avoid creating a new array.
      *
      * @return a new float array that contains r,g,b,a values
      */
@@ -502,13 +512,60 @@ public class Paint {
     }
 
     /**
+     * Returns the raw value of the red component.
+     * It's in sRGB space and independent of alpha.
+     *
+     * @see #getAlphaF()
+     * @see #getRedF()
+     * @see #getGreenF()
+     * @return red value
+     * @since 3.13.0
+     */
+    public float getRedF() {
+        return mPaint.getRed();
+    }
+
+    /**
+     * Returns the raw value of the green component.
+     * It's in sRGB space and independent of alpha.
+     *
+     * @see #getAlphaF()
+     * @see #getRedF()
+     * @see #getBlueF()
+     * @return green value
+     * @since 3.13.0
+     */
+    public float getGreenF() {
+        return mPaint.getGreen();
+    }
+
+    /**
+     * Returns the raw value of the blue component.
+     * It's in sRGB space and independent of alpha.
+     *
+     * @see #getAlphaF()
+     * @see #getGreenF()
+     * @see #getBlueF()
+     * @return blue value
+     * @since 3.13.0
+     */
+    public float getBlueF() {
+        return mPaint.getBlue();
+    }
+
+    /**
      * Sets alpha and RGB used when stroking and filling. The color is four floating
      * point values, un-premultiplied. The color values are interpreted as being in
-     * the sRGB color space.
+     * the sRGB color space. The alpha value will be clamped to 0..1, NaN alpha will
+     * become 0.
+     * <p>
+     * Starting from 3.13.0, this method will no longer clamp R, G, B values to 0..1.
+     * The rendering pipeline still applies the gamut and transfer function to
+     * out of range values.
      *
-     * @param r the new red component (0..1) of the paint's color.
-     * @param g the new green component (0..1) of the paint's color.
-     * @param b the new blue component (0..1) of the paint's color.
+     * @param r the new red component of the paint's color.
+     * @param g the new green component of the paint's color.
+     * @param b the new blue component of the paint's color.
      * @param a the new alpha component (0..1) of the paint's color.
      */
     public void setColor4f(float r, float g, float b, float a) {
@@ -519,9 +576,15 @@ public class Paint {
      * Helper to getColor() that just returns the color's alpha value. This is
      * the same as calling getColor() >>> 24. It always returns a value between
      * 0 (completely transparent) and 255 (completely opaque).
+     * <p>
+     * This method is obsolete and discouraged.
+     * Converting alpha to an 8-bit integer leads to precision loss.
+     * Use this only if you specifically need to quantize alpha values for storage
+     * or legacy API compatibility. Otherwise, use {@link #getAlphaF()}.
      *
      * @return the alpha component of the paint's color.
      */
+    @ApiStatus.Obsolete
     public int getAlpha() {
         return (int) (mPaint.getAlpha() * 255.0f + 0.5f);
     }
@@ -529,6 +592,8 @@ public class Paint {
     /**
      * Helper to setColor(), that only assigns the color's alpha value,
      * leaving its r,g,b values unchanged.
+     * <p>
+     * Use {@link #setAlphaF(float)} for full-precision floating-point access.
      *
      * @param a the alpha component [0..255] of the paint's color
      */
@@ -539,6 +604,9 @@ public class Paint {
     /**
      * Retrieves alpha/opacity from the color used when stroking and filling.
      *
+     * @see #getRedF()
+     * @see #getGreenF()
+     * @see #getBlueF()
      * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
     public float getAlphaF() {
@@ -561,6 +629,9 @@ public class Paint {
      * Sets alpha and RGB used when stroking and filling. The color is four floating
      * point values, un-premultiplied. The color values are interpreted as being in
      * the sRGB color space.
+     * <p>
+     * This method clamps the R,G,B values to 0..1, use {@link #setColor4f}
+     * for unclamped floating-point access.
      *
      * @param r the new red component (0..1) of the paint's color.
      * @param g the new green component (0..1) of the paint's color.
@@ -568,7 +639,11 @@ public class Paint {
      * @param a the new alpha component (0..1) of the paint's color.
      */
     public final void setRGBA(float r, float g, float b, float a) {
-        setColor4f(r, g, b, a);
+        setColor4f(
+                MathUtil.pin(r, 0f, 1f),
+                MathUtil.pin(g, 0f, 1f),
+                MathUtil.pin(b, 0f, 1f),
+                a);
     }
 
     /**
@@ -581,10 +656,7 @@ public class Paint {
      * @param a amount of alpha, from fully transparent (0) to fully opaque (255)
      */
     public void setRGBA(int r, int g, int b, int a) {
-        mPaint.setColor4f(r * (1 / 255.0f),
-                g * (1 / 255.0f),
-                b * (1 / 255.0f),
-                a * (1 / 255.0f));
+        mPaint.setColor4(r, g, b, a);
     }
 
     /**
@@ -597,10 +669,7 @@ public class Paint {
      * @param b amount of blue, from no blue (0) to full blue (255)
      */
     public void setARGB(int a, int r, int g, int b) {
-        mPaint.setColor4f(r * (1 / 255.0f),
-                g * (1 / 255.0f),
-                b * (1 / 255.0f),
-                a * (1 / 255.0f));
+        mPaint.setColor4(r, g, b, a);
     }
 
     ///// Basic Flags
