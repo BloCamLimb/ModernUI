@@ -55,11 +55,6 @@ public class Resources {
 
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
 
-    String[] mNamespaces = {DEFAULT_NAMESPACE};
-    String[] mTypeStrings;
-    String[] mKeyStrings;
-    Object[] mGlobalObjects;
-
     String[] mStyleKeys;
     int[] mStyleOffsets;
 
@@ -89,6 +84,8 @@ public class Resources {
     int[] mData;
 
     Object2ObjectOpenHashMap<String, ResolvedBag> mCachedBags = new Object2ObjectOpenHashMap<>();
+
+    AssetManager mAssetManager = new AssetManager();
 
     /**
      * Returns a default theme for the framework.
@@ -141,6 +138,10 @@ public class Resources {
         return mMetrics;
     }
 
+    public void addSource(ResourcesProvider provider) {
+        mAssetManager.setPacks(new PackAssets[]{provider.mPackAssets}, true);
+    }
+
     public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue, boolean resolveRefs) {
         getValue(id.namespace(), id.type(), id.entry(), outValue, resolveRefs);
     }
@@ -152,52 +153,31 @@ public class Resources {
 
     @Nullable
     CharSequence getPooledStringForCookie(int cookie, int id) {
-        if (cookie == 0 && id >= 0 && id < mGlobalObjects.length) {
-            return (CharSequence) mGlobalObjects[id];
+        LoadedResources loadedResources = mAssetManager.getLoadedResources(cookie);
+        if (loadedResources == null) {
+            return null;
         }
-        return null;
-    }
-
-    @Nullable
-    String getNamespaceForCookie(int cookie, int id) {
-        if (cookie == 0 && id >= 0 && id < mNamespaces.length) {
-            return mNamespaces[id];
-        }
-        return null;
-    }
-
-    @Nullable
-    String getTypeStringForCookie(int cookie, int id) {
-        if (cookie == 0 && id >= 0 && id < mTypeStrings.length) {
-            return mTypeStrings[id];
-        }
-        return null;
-    }
-
-    @Nullable
-    String getKeyStringForCookie(int cookie, int id) {
-        if (cookie == 0 && id >= 0 && id < mKeyStrings.length) {
-            return mKeyStrings[id];
-        }
-        return null;
+        return loadedResources.getGlobalStringPool().getSequenceAt(id);
     }
 
     @Nullable
     ResourceId getReferenceIdForCookie(int cookie, int typeId, int data) {
         assert typeId > 0;
-        String namespace = getNamespaceForCookie(cookie, data >>> Res_value.NAMESPACE_INDEX_SHIFT);
-        String typeName = getTypeStringForCookie(cookie, typeId - 1);
-        String entryName = getKeyStringForCookie(cookie, data & Res_value.KEY_INDEX_MASK);
-        if (namespace != null && typeName != null && entryName != null) {
-            return new ResourceId(namespace, typeName, entryName);
+        LoadedResources loadedResources = mAssetManager.getLoadedResources(cookie);
+        if (loadedResources == null) {
+            return null;
         }
-        return null;
+        return loadedResources.lookupResourceId(null, data, typeId);
     }
 
     @Nullable
     ResourceId getAttributeIdForCookie(int cookie, int data) {
-        String namespace = getNamespaceForCookie(cookie, data >>> Res_value.NAMESPACE_INDEX_SHIFT);
-        String attribute = getKeyStringForCookie(cookie, data & Res_value.KEY_INDEX_MASK);
+        LoadedResources loadedResources = mAssetManager.getLoadedResources(cookie);
+        if (loadedResources == null) {
+            return null;
+        }
+        String namespace = loadedResources.lookupPackageName(data >>> Res_value.PACKAGE_ID_SHIFT);
+        String attribute = loadedResources.getKeyStringPool().getStringAt(data & Res_value.KEY_INDEX_MASK);
         if (namespace != null && attribute != null) {
             return ResourceId.attr(namespace, attribute);
         }
@@ -229,11 +209,14 @@ public class Resources {
         }
 
         if (value.type == TypedValue.TYPE_FACTORY) {
-            Object object = mGlobalObjects[value.data];
-            if (object instanceof BiFunction<?, ?, ?>) {
-                object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
-                if (object instanceof ColorStateList) {
-                    return (ColorStateList) object;
+            LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
+            if (loadedResources != null) {
+                Object object = loadedResources.lookupFactory(value.data);
+                if (object != null) {
+                    object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
+                    if (object instanceof ColorStateList) {
+                        return (ColorStateList) object;
+                    }
                 }
             }
             throw new NotFoundException("Resource is not a color: " + value);
@@ -250,14 +233,17 @@ public class Resources {
                           @Nullable Theme theme) {
         try {
             if (value.type == TypedValue.TYPE_FACTORY) {
-                Object object = mGlobalObjects[value.data];
-                if (object instanceof BiFunction<?, ?, ?>) {
-                    object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
-                    if (object == null) {
-                        return null;
-                    }
-                    if (object instanceof Drawable) {
-                        return (Drawable) object;
+                LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
+                if (loadedResources != null) {
+                    Object object = loadedResources.lookupFactory(value.data);
+                    if (object != null) {
+                        object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
+                        if (object == null) {
+                            return null;
+                        }
+                        if (object instanceof Drawable) {
+                            return (Drawable) object;
+                        }
                     }
                 }
                 throw new NotFoundException("Resource is not a drawable: " + value);
@@ -283,7 +269,7 @@ public class Resources {
         }
     }
 
-    ResolvedBag getBag(@NonNull ResourceId resId) {
+    /*ResolvedBag getBag(@NonNull ResourceId resId) {
         return getBag(resId.entry());
     }
 
@@ -422,7 +408,7 @@ public class Resources {
         }
         mCachedBags.put(style, newBag);
         return newBag;
-    }
+    }*/
 
     @ThreadSafe
     public final class Theme {
@@ -468,7 +454,7 @@ public class Resources {
         }
 
         private boolean applyStyleInternal(@NonNull ResourceId resId, boolean force) {
-            var bag = getBag(resId);
+            var bag = mAssetManager.getBag(resId);
             if (bag == null) {
                 return false;
             }
@@ -682,14 +668,14 @@ public class Resources {
                 }
 
                 // post-process
-                switch (outValue.type & Res_value.TYPE_MASK) {
+                switch (outValue.type & Res_value.DATA_TYPE_MASK) {
                     case TypedValue.TYPE_STRING -> {
                         if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
                             return false;
                         }
                     }
                     case TypedValue.TYPE_REFERENCE -> {
-                        int typeId = outValue.type >>> Res_value.TYPE_ID_SHIFT;
+                        int typeId = (outValue.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT;
                         if (typeId != 0) {
                             // erase higher 8 bits
                             outValue.type = TypedValue.TYPE_REFERENCE;
@@ -757,9 +743,15 @@ public class Resources {
                 }
                 typeSpecFlags |= e.typeSpecFlags;
                 if (e.type == Res_value.TYPE_ATTRIBUTE) {
-                    namespace = mNamespaces[e.data >>> Res_value.NAMESPACE_INDEX_SHIFT];
-                    attribute = mKeyStrings[e.data & Res_value.KEY_INDEX_MASK];
-                    continue;
+                    LoadedResources loadedResources = mAssetManager.getLoadedResources(e.cookie);
+                    if (loadedResources != null) {
+                        namespace = loadedResources.lookupPackageName(e.data >>> Res_value.PACKAGE_ID_SHIFT);
+                        attribute = loadedResources.getKeyStringPool().getStringAt(e.data & Res_value.KEY_INDEX_MASK);
+                        if (namespace != null && attribute != null) {
+                            continue;
+                        }
+                    }
+                    return false;
                 }
 
                 outValue.cookie = e.cookie;
@@ -777,9 +769,17 @@ public class Resources {
                 return true;
             }
 
+            LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
+            if (loadedResources == null) {
+                return false;
+            }
+            String namespace = loadedResources.lookupPackageName(value.data >>> Res_value.PACKAGE_ID_SHIFT);
+            String attribute = loadedResources.getKeyStringPool().getStringAt(value.data & Res_value.KEY_INDEX_MASK);
+            if (namespace == null || attribute == null) {
+                return false;
+            }
+
             int flags = value.flags;
-            String namespace = mNamespaces[value.data >>> Res_value.NAMESPACE_INDEX_SHIFT];
-            String attribute = mKeyStrings[value.data & Res_value.KEY_INDEX_MASK];
             if (!getAttribute(namespace, attribute, value)) {
                 return false;
             }
@@ -799,11 +799,18 @@ public class Resources {
             AssetManager.ResolvedBag defStyleBag = null;
             if (defStyleAttr != null) {
                 if (getAttribute(defStyleAttr.namespace(), defStyleAttr.entry(), value)) {
-                    defStyleBag = getBag(mKeyStrings[value.data]);
+                    LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
+                    if (loadedResources != null) {
+                        ResourceId styleId = loadedResources.lookupResourceId(null,
+                                value.data, (value.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT);
+                        if (styleId != null) {
+                            defStyleBag = mAssetManager.getBag(styleId);
+                        }
+                    }
                 }
             }
             if (defStyleBag == null && defStyleRes != null) {
-                defStyleBag = getBag(defStyleRes);
+                defStyleBag = mAssetManager.getBag(defStyleRes);
             }
             defStyleAttrFinder.reset(defStyleBag);
 

@@ -18,63 +18,93 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.resources.ResourceTypes.*;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.lwjgl.system.MemoryUtil;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.HashMap;
 import java.util.List;
 
 public class LoadedPackage {
 
     public static class TypeSpec {
-        public static class TypeEntry {
-            // Pointer to a ResTable_type struct.
-            public final long type;
-
-            // Type configurations are accessed frequently when setting up an AssetManager and querying
-            // resources. Access this cached configuration to minimize page faults.
-            public final ResTable_config config;
-
-            public TypeEntry(long type) {
-                this.config = new ResTable_config(ResTable_type.pConfig(type));
-                this.type = type;
-            }
-        }
 
         // Pointer to a ResTable_typeSpec struct.
-        public final long typeSpec;
+        public int typeSpec;
+
+        public byte id;
+        public short typeCount;
+        public int entryCount;
+        public int entriesStart;
+
+        // Map key string index into entry index
+        public Object2IntOpenHashMap<String> entryIndexTable;
+
+        public ByteBuffer flags;
 
         public final TypeEntry[] typeEntries;
 
         public TypeSpec(long typeSpec, List<TypeEntry> typeEntries) {
             this.typeEntries = typeEntries.toArray(new TypeEntry[0]);
-            this.typeSpec = typeSpec;
+        }
+
+        public int getEntryIndexByName(String entryName) {
+            return entryIndexTable.getInt(entryName);
+        }
+
+        public int getFlagsForEntryIndex(int entryIndex) {
+            if (entryIndex < 0 || entryIndex >= entryCount) {
+                return 0;
+            }
+            return flags.getInt(entryIndex);
         }
     }
 
-    public ResStringTable getTypeStringTable() {
-        return typeStringTable;
+    public static class TypeEntry {
+
+        // Pointer to a ResTable_type struct.
+        public int type;
+
+        public byte id;
+        public byte flags;
+        public int entryCount;
+        public int entriesStart;
+
+        // remaining data (without header) of the type chunk
+        public ByteBuffer data;
+
+        public TypeEntry() {
+        }
     }
 
-    public ResStringTable getKeyStringTable() {
-        return keyStringTable;
+    public String packageName;
+
+    public LoadedPackage(String packageName) {
+        this.packageName = packageName;
     }
 
-    public TypeSpec getTypeSpecByTypeIndex(int typeIndex) {
-        return typeSpecs.get(typeIndex + 1);
+    public String getPackageName() {
+        return packageName;
     }
 
-    ResStringTable typeStringTable;
-    ResStringTable keyStringTable;
+    public TypeSpec getTypeSpecByName(String typeName) {
+        return typeSpecs.get(typeName);
+    }
 
-    Int2ObjectOpenHashMap<TypeSpec> typeSpecs;
+    HashMap<String, TypeSpec> typeSpecs;
 
     // Returns byte offset to entriesStart, or ResTable_type.NO_ENTRY if not found.
-    public int getEntryOffset(long typeChunk, int entryIndex) {
-        int entryCount = ResTable_type.entryCount(typeChunk);
-        long offsets = typeChunk + ResTable_type.headerSize(typeChunk);
+    public int getEntryOffset(TypeEntry typeChunk, int entryIndex) {
+        int entryCount = typeChunk.entryCount;
 
-        if ((ResTable_type.flags(typeChunk) & ResTable_type.FLAG_SPARSE) != 0) {
+        if ((typeChunk.flags & (ResTable_type.FLAG_SPARSE | ResTable_type.FLAG_OFFSET16)) != 0) {
+            // not implemented yet
+            return ResTable_type.NO_ENTRY;
+        }
+
+        /*if ((ResTable_type.flags(typeChunk) & ResTable_type.FLAG_SPARSE) != 0) {
             // This is encoded as a sparse map, so perform a binary search.
             int low = 0, high = entryCount - 1;
             while (low <= high) {
@@ -94,23 +124,55 @@ public class LoadedPackage {
             }
 
             return ResTable_sparseTypeEntry.offset(entry);
-        }
+        }*/
 
         // This type is encoded as a dense array.
-        if (entryIndex >= entryCount) {
+        if (entryIndex < 0 || entryIndex >= entryCount) {
             return ResTable_type.NO_ENTRY;
         }
 
-        //TODO validation of unsafe op
-
-        return MemoryUtil.memGetInt(offsets + (long) entryIndex * 4);
+        return typeChunk.data.getInt(entryIndex * 4);
     }
 
-    // Returns pointer to ResTable_entry struct.
-    public long getEntryFromOffset(long typeChunk, int entryOffset) {
-        //TODO validation of unsafe op
-        entryOffset += ResTable_type.entriesStart(typeChunk);
-        long entry = typeChunk + entryOffset;
-        return entry;
+    // Returns memory view to ResTable_entry struct.
+    public ByteBuffer getEntryFromOffset(TypeEntry typeChunk, int entryOffset) {
+
+        if (!MathUtil.isAlign4(entryOffset)) {
+            return null;
+        }
+
+        entryOffset += typeChunk.entriesStart - ResTable_type.SIZEOF;
+        if (entryOffset < 0 || entryOffset > typeChunk.data.limit() - ResTable_entry.SIZEOF) {
+            return null;
+        }
+
+        int entrySize = typeChunk.data.getShort(entryOffset + ResTable_entry.size) & 0xFFFF;
+
+        if (entrySize < ResTable_entry.SIZEOF || entryOffset > typeChunk.data.limit() - entrySize) {
+            return null;
+        }
+
+        int entryFlags = typeChunk.data.getShort(entryOffset + ResTable_entry.flags) & 0xFFFF;
+        if ((entryFlags & ResTable_entry.FLAG_COMPLEX) == 0) {
+            return typeChunk.data.slice(entryOffset, entrySize)
+                    .order(ByteOrder.nativeOrder());
+        }
+
+        if (entrySize < ResTable_entry.SIZEOF_EXT) {
+            return null;
+        }
+
+        int mapEntryCount = typeChunk.data.getInt(entryOffset + ResTable_entry.count);
+        int mapEntriesStart = entryOffset + entrySize;
+        if (!MathUtil.isAlign4(mapEntriesStart)) {
+            return null;
+        }
+
+        if (mapEntryCount > (typeChunk.data.limit() - mapEntriesStart) / ResTable_map.SIZEOF) {
+            return null;
+        }
+
+        return typeChunk.data.slice(entryOffset, entrySize + mapEntryCount * ResTable_map.SIZEOF)
+                .order(ByteOrder.nativeOrder());
     }
 }

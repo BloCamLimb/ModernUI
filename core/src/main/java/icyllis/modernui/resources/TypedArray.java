@@ -608,9 +608,9 @@ public class TypedArray {
         index *= STYLE_NUM_ENTRIES;
         final int[] data = mData;
         final int type = data[index + STYLE_TYPE];
-        switch (type & ResourceTypes.Res_value.TYPE_MASK) {
+        switch (type & ResourceTypes.Res_value.DATA_TYPE_MASK) {
             case TypedValue.TYPE_REFERENCE -> {
-                int typeId = type >>> ResourceTypes.Res_value.TYPE_ID_SHIFT;
+                int typeId = type >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
                 if (typeId != 0) {
                     return mResources.getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
                 } else {
@@ -790,12 +790,12 @@ public class TypedArray {
         outValue.data = data[offset + STYLE_DATA];
         outValue.cookie = data[offset + STYLE_COOKIE];
         outValue.flags = data[offset + STYLE_FLAGS];
-        switch (type & ResourceTypes.Res_value.TYPE_MASK) {
+        switch (type & ResourceTypes.Res_value.DATA_TYPE_MASK) {
             case TypedValue.TYPE_STRING -> {
                 outValue.object = loadStringValueAt(offset);
             }
             case TypedValue.TYPE_REFERENCE -> {
-                int typeId = type >>> ResourceTypes.Res_value.TYPE_ID_SHIFT;
+                int typeId = type >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
                 if (typeId != 0) {
                     outValue.type = TypedValue.TYPE_REFERENCE;
                     outValue.object = mResources.getReferenceIdForCookie(outValue.cookie, typeId, outValue.data);

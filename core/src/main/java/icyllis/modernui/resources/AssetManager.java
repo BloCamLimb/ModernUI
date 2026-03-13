@@ -21,14 +21,27 @@ package icyllis.modernui.resources;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.ResourceTypes.*;
+import icyllis.modernui.util.Log;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
+/**
+ * @hide
+ * @hidden
+ */
 @ApiStatus.Internal
 public class AssetManager {
+
+    public static final Marker MARKER = MarkerFactory.getMarker("AssetManager");
 
     public static final int kInvalidCookie = -1;
     public static final int kMaxIterations = 20;
@@ -82,13 +95,15 @@ public class AssetManager {
         }
     }
 
+    private static final ResolvedBag SENTINEL_BAG = new ResolvedBag();
+
     public static class PackageGroup {
         // The following three arrays are parallel arrays
         public final ArrayList<LoadedPackage> packages = new ArrayList<>();
 
         // Array of maps from type index to prefiltered collection of configurations
         // that match the current AssetManager configuration
-        public final ArrayList<ArrayList<LoadedPackage.TypeSpec.TypeEntry>[]> filteredConfigs = new ArrayList<>();
+        public final ArrayList<ArrayList<LoadedPackage.TypeEntry>[]> filteredConfigs = new ArrayList<>();
 
         public final IntArrayList cookies = new IntArrayList();
     }
@@ -98,10 +113,10 @@ public class AssetManager {
         public int cookie;
         // The value of the resource table entry.
         // Pointer to a ResTable_entry struct.
-        public long entry;
+        public ByteBuffer entry;
         public int typeFlags;
 
-        public FindEntryResult(int cookie, long entry, int typeFlags) {
+        public FindEntryResult(int cookie, ByteBuffer entry, int typeFlags) {
             this.cookie = cookie;
             this.entry = entry;
             this.typeFlags = typeFlags;
@@ -112,6 +127,246 @@ public class AssetManager {
             entry = o.entry;
             typeFlags = o.typeFlags;
         }
+    }
+
+    public void setPacks(PackAssets[] packs, boolean invalidateCaches) {
+
+        packAssets = packs.clone();
+        packageGroups.clear();
+        for (int i = 0; i < packAssets.length; i++) {
+            var pack = packAssets[i];
+            int cookie = i;
+
+            var loadedRsc = pack.getLoadedResources();
+
+            for (var pkg : loadedRsc.getPackages()) {
+                var pkgGroup = packageGroups.computeIfAbsent(
+                        pkg.getPackageName(), __ -> new PackageGroup());
+
+                pkgGroup.packages.add(pkg);
+                pkgGroup.cookies.add(cookie);
+            }
+        }
+    }
+
+    @Nullable
+    public ResolvedBag getBag(@NonNull ResourceId resId) {
+        return getBag(resId, null);
+    }
+
+    @SuppressWarnings("PointlessArithmeticExpression")
+    @Nullable
+    final ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds) {
+        ResolvedBag cached = cachedBags.get(resId);
+        if (cached != SENTINEL_BAG) {
+            return cached;
+        }
+
+        FindEntryResult entry = findEntry(resId.namespace(), resId.type(), resId.entry());
+        int entryFlags = 0;
+        int entrySize = 0;
+
+        if (entry != null) {
+            entrySize = entry.entry.getShort(ResTable_entry.size) & 0xFFFF;
+            entryFlags = entry.entry.getShort(ResTable_entry.flags) & 0xFFFF;
+        }
+
+        ByteBuffer map = null;
+
+        if ((entryFlags & ResTable_entry.FLAG_COMPLEX) != 0) {
+            map = entry.entry;
+        }
+
+        if (map == null) {
+            if (childResIds != null && !childResIds.isEmpty()) {
+                // If the parent bag we are looking for does not exist or is not a bag, cache it.
+                // Because the resId is declared within the package at this point.
+                // Otherwise, the resId is likely random and not worth caching.
+                cachedBags.put(resId, null);
+            }
+            return null;
+        }
+
+        int parentId = map.getInt(ResTable_entry.parent);
+        int entryCount = map.getInt(ResTable_entry.count);
+        int cookie = entry.cookie;
+        LoadedResources resources = getLoadedResources(cookie);
+        if (resources == null) {
+            return null; // impossible
+        }
+
+        // Keep track of ids that have already been seen to prevent infinite loops caused by circular
+        // dependencies between bags.
+        if (childResIds == null) {
+            childResIds = new ArrayList<>();
+        }
+        childResIds.add(resId);
+
+        ResourceId parentResId = null;
+        if (parentId != -1) {
+            parentResId = resources.lookupResourceId(resId, parentId, 0);
+            if (parentResId == null) {
+                // parent id is malformed, no need to cache
+                return null;
+            }
+        }
+        if (parentResId == null || childResIds.contains(parentResId)) {
+            // There is no parent or a circular parental dependency exist, meaning there is nothing to
+            // inherit and we can do a simple copy of the entries in the map.
+            int offset = entrySize;
+
+            ResolvedBag bag = null;
+            fill_entries://ttt
+            if (entryCount > 0) {
+                // Note that keys are already sorted using ResourceId.comparePair()
+                String[] keys = new String[entryCount * 2];
+                int[] values = new int[entryCount * ResolvedBag.VALUE_COLUMNS];
+                for (int i = 0; i < entryCount; i++) {
+                    int mapName = map.getInt(offset + ResTable_map.name);
+                    String packageName = resources.lookupPackageName(mapName);
+                    String attrName = resources.getKeyStringPool().getStringAt(
+                            mapName & Res_value.KEY_INDEX_MASK);
+                    if (packageName == null || attrName == null) {
+                        // malformed, returns null bag
+                        Log.LOGGER.error(MARKER, "Failed to find map name 0x{} from bag '{}'",
+                                Integer.toHexString(mapName), resId);
+                        break fill_entries;
+                    }
+                    keys[i * 2 + 0] = packageName;
+                    keys[i * 2 + 1] = attrName;
+                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
+                            map.getShort(offset + ResTable_map.value + Res_value.type) & 0xFFFF;
+                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
+                            map.getInt(offset + ResTable_map.value + Res_value.data);
+                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_COOKIE] = cookie;
+                    offset += ResTable_map.SIZEOF;
+                }
+                bag = new ResolvedBag();
+                bag.keys = keys;
+                bag.values = values;
+                bag.typeSpecFlags = entry.typeFlags;
+            }
+            cachedBags.put(resId, bag);
+            return bag;
+        }
+
+        ResolvedBag parentBag = getBag(parentResId, childResIds);
+        if (parentBag == null) {
+            Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
+                    parentResId, resId);
+            cachedBags.put(resId, null);
+            return null;
+        }
+
+        ResolvedBag newBag = null;
+        int parentCount = parentBag.getEntryCount();
+        int maxCount = parentCount + entryCount;
+        fill_entries://ttt
+        if (maxCount > 0) {
+            // allocate max possible array
+            String[] newKeys = new String[maxCount * 2];
+            int[] newValues = new int[maxCount * ResolvedBag.VALUE_COLUMNS];
+            int newIndex = 0;
+            String[] parentKeys = parentBag.keys;
+            int[] parentValues = parentBag.values;
+            int childIndex = 0;
+            int childOffset = entrySize;
+            int parentIndex = 0;
+
+            // merge two sorted arrays (parent and child)
+
+            while (childIndex < entryCount && parentIndex < parentCount) {
+                int mapName = map.getInt(childOffset + ResTable_map.name);
+                String childPackageName = resources.lookupPackageName(mapName);
+                String attrName = resources.getKeyStringPool().getStringAt(
+                        mapName & Res_value.KEY_INDEX_MASK);
+                if (childPackageName == null || attrName == null) {
+                    // malformed, returns null bag
+                    Log.LOGGER.error(MARKER, "Failed to find map name 0x{} from bag '{}'",
+                            Integer.toHexString(mapName), resId);
+                    break fill_entries;
+                }
+                String childAttrName = attrName;
+                String parentPackageName = parentKeys[parentIndex * 2 + 0];
+                String parentAttrName = parentKeys[parentIndex * 2 + 1];
+
+                int keyCompare = ResourceId.comparePair(childPackageName, childAttrName,
+                        parentPackageName, parentAttrName);
+
+                if (keyCompare <= 0) {
+                    // Use the child key if it comes before the parent
+                    // or is equal to the parent (overrides).
+                    newKeys[newIndex * 2 + 0] = childPackageName;
+                    newKeys[newIndex * 2 + 1] = childAttrName;
+                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
+                            map.getShort(childOffset + ResTable_map.value + Res_value.type) & 0xFFFF;
+                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
+                            map.getInt(childOffset + ResTable_map.value + Res_value.data);
+                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_COOKIE] = cookie;
+                    childIndex++;
+                    childOffset += ResTable_map.SIZEOF;
+                } else {
+                    newKeys[newIndex * 2 + 0] = parentPackageName;
+                    newKeys[newIndex * 2 + 1] = parentAttrName;
+                    System.arraycopy(parentValues, parentIndex * ResolvedBag.VALUE_COLUMNS,
+                            newValues, newIndex * ResolvedBag.VALUE_COLUMNS, ResolvedBag.VALUE_COLUMNS);
+                }
+
+
+                if (keyCompare >= 0) {
+                    parentIndex++;
+                }
+                newIndex++;
+            }
+
+            while (childIndex < entryCount) {
+                int mapName = map.getInt(childOffset + ResTable_map.name);
+                String childPackageName = resources.lookupPackageName(mapName);
+                String attrName = resources.getKeyStringPool().getStringAt(
+                        mapName & Res_value.KEY_INDEX_MASK);
+                if (childPackageName == null || attrName == null) {
+                    // malformed, returns null bag
+                    Log.LOGGER.error(MARKER, "Failed to find map name 0x{} from bag '{}'",
+                            Integer.toHexString(mapName), resId);
+                    break fill_entries;
+                }
+                String childAttrName = attrName;
+                newKeys[newIndex * 2 + 0] = childPackageName;
+                newKeys[newIndex * 2 + 1] = childAttrName;
+                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
+                        map.getShort(childOffset + ResTable_map.value + Res_value.type) & 0xFFFF;
+                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
+                        map.getInt(childOffset + ResTable_map.value + Res_value.data);
+                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_COOKIE] = cookie;
+                childIndex++;
+                childOffset += ResTable_map.SIZEOF;
+                newIndex++;
+            }
+
+            if (parentIndex < parentCount) {
+                int numToCopy = parentCount - parentIndex;
+                System.arraycopy(parentValues, parentIndex * ResolvedBag.VALUE_COLUMNS,
+                        newValues, newIndex * ResolvedBag.VALUE_COLUMNS, numToCopy * ResolvedBag.VALUE_COLUMNS);
+                System.arraycopy(parentKeys, parentIndex * 2,
+                        newKeys, newIndex * 2, numToCopy * 2);
+                newIndex += numToCopy;
+            }
+
+            assert newIndex <= maxCount;
+            if (newIndex < maxCount) {
+                // trim to size
+                newKeys = Arrays.copyOf(newKeys, newIndex * 2);
+                newValues = Arrays.copyOf(newValues, newIndex * ResolvedBag.VALUE_COLUMNS);
+            }
+
+            newBag = new ResolvedBag();
+            newBag.keys = newKeys;
+            newBag.values = newValues;
+            // Combine flags from the parent and our own bag.
+            newBag.typeSpecFlags = entry.typeFlags | parentBag.typeSpecFlags;
+        }
+        cachedBags.put(resId, newBag);
+        return newBag;
     }
 
     @Nullable
@@ -135,28 +390,31 @@ public class AssetManager {
                                               @NonNull String typeString, @NonNull String entryString) {
         int bestCookie = kInvalidCookie;
         LoadedPackage bestPackage = null;
-        long bestType = 0;
+        LoadedPackage.TypeEntry bestType = null;
         int bestOffset = 0;
+        int typeFlags = 0;
 
         int packageCount = packageGroup.packages.size();
         for (int pi = 0; pi < packageCount; pi++) {
             LoadedPackage loadedPackage = packageGroup.packages.get(pi);
             int cookie = packageGroup.cookies.getInt(pi);
 
-            int typeIndex = loadedPackage.getTypeStringTable().indexOfString(typeString);
-            int entryIndex = loadedPackage.getKeyStringTable().indexOfString(entryString);
-
-            LoadedPackage.TypeSpec typeSpec = loadedPackage.getTypeSpecByTypeIndex(typeIndex);
+            LoadedPackage.TypeSpec typeSpec = loadedPackage.getTypeSpecByName(typeString);
             if (typeSpec == null) {
                 continue;
             }
 
+            int entryIndex = typeSpec.getEntryIndexByName(entryString);
+            if (entryIndex == -1) {
+                continue;
+            }
+            typeFlags |= typeSpec.getFlagsForEntryIndex(entryIndex);
+
             int typeEntryCount = typeSpec.typeEntries.length;
             for (int i = 0; i < typeEntryCount; i++) {
-                LoadedPackage.TypeSpec.TypeEntry typeEntry = typeSpec.typeEntries[i];
+                LoadedPackage.TypeEntry typeEntry = typeSpec.typeEntries[i];
 
-                long type = typeEntry.type;
-                int offset = loadedPackage.getEntryOffset(type, entryIndex);
+                int offset = loadedPackage.getEntryOffset(typeEntry, entryIndex);
 
                 if (offset == ResTable_type.NO_ENTRY) {
                     continue;
@@ -164,7 +422,7 @@ public class AssetManager {
 
                 bestCookie = cookie;
                 bestPackage = loadedPackage;
-                bestType = type;
+                bestType = typeEntry;
                 bestOffset = offset;
 
                 break;
@@ -175,15 +433,15 @@ public class AssetManager {
             return null;
         }
 
-        long bestEntry = bestPackage.getEntryFromOffset(bestType, bestOffset);
-        if (bestEntry == 0) {
+        ByteBuffer bestEntry = bestPackage.getEntryFromOffset(bestType, bestOffset);
+        if (bestEntry == null) {
             return null;
         }
 
         return new FindEntryResult(
                 bestCookie,
                 bestEntry,
-                0
+                typeFlags
         );
     }
 
@@ -194,6 +452,22 @@ public class AssetManager {
         return packAssets[cookie];
     }
 
+    public LoadedResources getLoadedResources(int cookie) {
+        PackAssets assets = getPackAssets(cookie);
+        if (assets == null) {
+            return null;
+        }
+        return assets.getLoadedResources();
+    }
+
     private PackAssets[] packAssets;
     private final HashMap<String, PackageGroup> packageGroups = new HashMap<>();
+
+    // Cached set of bags. We don't need the best lookup performance, use
+    // OpenHashMap instead of HashMap to save memory (this map can be big)
+    Object2ObjectOpenHashMap<ResourceId, ResolvedBag> cachedBags = new Object2ObjectOpenHashMap<>();
+
+    {
+        cachedBags.defaultReturnValue(SENTINEL_BAG);
+    }
 }

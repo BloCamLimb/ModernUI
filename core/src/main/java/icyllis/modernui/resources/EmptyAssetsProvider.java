@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,22 +18,23 @@
 
 package icyllis.modernui.resources;
 
-import org.jetbrains.annotations.ApiStatus;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
-/**
- * Represents a loaded asset pack.
- *
- * @hide
- * @hidden
- */
-@ApiStatus.Internal
-public class PackAssets {
+import java.io.InputStream;
+import java.nio.channels.ReadableByteChannel;
 
-    AssetsProvider mAssetsProvider;
+public class EmptyAssetsProvider implements AssetsProvider {
 
-    LoadedResources loadedResources;
+    @Nullable
+    @Override
+    public InputStream openStream(@NonNull String path) {
+        return null;
+    }
 
-    public LoadedResources getLoadedResources() {
-        return loadedResources;
+    @Nullable
+    @Override
+    public ReadableByteChannel openChannel(@NonNull String path) {
+        return null;
     }
 }

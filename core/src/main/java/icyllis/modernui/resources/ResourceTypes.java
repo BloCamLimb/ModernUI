@@ -20,10 +20,9 @@ package icyllis.modernui.resources;
 
 import org.jetbrains.annotations.ApiStatus;
 
-import static org.lwjgl.system.MemoryUtil.*;
-
 /**
  * This class defines some structs to interpret MRSC file.
+ * This is a modified version of ARSC file.
  */
 @ApiStatus.Internal
 public class ResourceTypes {
@@ -39,25 +38,18 @@ public class ResourceTypes {
 
         // Type identifier for this chunk.  The meaning of this value depends
         // on the containing chunk.
-        public static int type(long struct) {
-            return memGetShort(struct) & 0xffff;
-        }
-
+        public static final int type = 0;
         // Size of the chunk header (in bytes).  Adding this value to
         // the address of the chunk allows you to find its associated data
         // (if any).
-        public static int headerSize(long struct) {
-            return memGetShort(struct + 2) & 0xffff;
-        }
-
+        public static final int headerSize = 2;
         // Total size of this chunk (in bytes).  This is the chunkSize plus
         // the size of any data associated with the chunk.  Adding this value
         // to the chunk allows you to completely skip its contents (including
         // any child chunks).  If this value is the same as chunkSize, there is
         // no data associated with the chunk.
-        public static int size(long struct) {
-            return memGetInt(struct + 4);
-        }
+        public static final int size = 4;
+
     }
 
     public static class ResTable_config {
@@ -76,7 +68,7 @@ public class ResourceTypes {
         }
      */
 
-    /*
+    /**
      * Representation of a value in a resource, supplying type
      * information.
      */
@@ -146,74 +138,112 @@ public class ResourceTypes {
          * can be found in type string table indexed by {@link #cookie}.
          * (type_id - 1) == type index (in type string table).
          */
-        public static final int TYPE_MASK = 0xff;
-        public static final int TYPE_ID_SHIFT = 8;
+        public static final int DATA_TYPE_MASK = 0xff;
+        public static final int DATA_TYPE_ID_MASK = 0xff00;
+        public static final int DATA_TYPE_ID_SHIFT = 8;
 
         public static final int KEY_INDEX_MASK = 0xffffff;
-        public static final int NAMESPACE_INDEX_SHIFT = 24;
+        public static final int PACKAGE_ID_SHIFT = 24;
 
         public static final int DATA_NULL_UNDEFINED = 0;
         public static final int DATA_NULL_EMPTY = 1;
 
-        public static int type(long struct) {
-            return memGetShort(struct + 2) & 0xffff;
-        }
+        //// field offsets
 
-        public static int data(long struct) {
-            return memGetInt(struct + 4);
-        }
+        public static final int size = 0;
+        public static final int type = 2;
+        public static final int data = 4;
     }
 
-    public static class ResTable_type extends ResChunk_header {
+    public static class ResTable_typeSpec extends ResChunk_header {
+        public static final int SIZEOF = 1 + 1 + 2 + 4 + 4 + ResChunk_header.SIZEOF;
 
-        public static final int
-                NO_ENTRY = 0xFFFFFFFF;
+        /*
+            uint8_t id;
+            uint8_t res0;
+            uint16_t typeCount;
+            uint32_t entryCount;
+            uint32_t entriesStart;
+            // end of header
 
-        public static final int
-                FLAG_SPARSE = 0x01;
+            uint32_t keys[entryCount]; // key string index to entry index
+
+            uint32_t entries[entryCount]; // changing configurations
+         */
+
+        //// field offsets
 
         // The type identifier this chunk is holding.  Type IDs start
         // at 1 (corresponding to the value of the type bits in a
         // resource identifier).  0 is invalid.
-        public static int id(long struct) {
-            return memGetByte(struct) & 0xff;
-        }
+        public static final int id = 0;
+        public static final int res0 = 1;
+        // Estimated number of ResTable_type chunks
+        public static final int typeCount = 2;
+        // Total number of entries
+        public static final int entryCount = 4;
+        // Offset from header where entry configuration masks data starts
+        public static final int entriesStart = 8;
 
-        public static int flags(long struct) {
-            return memGetByte(struct + 1) & 0xff;
-        }
-
-        // Number of uint32_t entry indices that follow.
-        public static int entryCount(long struct) {
-            return memGetInt(struct + 4);
-        }
-
-        // Offset from header where ResTable_entry data starts.
-        public static int entriesStart(long struct) {
-            return memGetInt(struct + 8);
-        }
-
-        // Configuration this collection of entries is designed for. This must always be last.
-        public static long pConfig(long struct) {
-            return struct + 12;
-        }
     }
 
-    /*
-     * An entry in a ResTable_type with the flag `FLAG_SPARSE` set.
-     */
-    public static class ResTable_sparseTypeEntry {
-        public static final int SIZEOF = 4 + 4;
+    public static class ResTable_type extends ResChunk_header {
+        public static final int SIZEOF = 1 + 1 + 2 + 4 + 4 + ResChunk_header.SIZEOF;
 
-        // The index of the entry.
-        public static int index(long struct) {
-            return memGetInt(struct);
-        }
+        public static final int
+                NO_ENTRY = 0xFFFFFFFF;
 
-        // The offset from ResTable_type::entriesStart, in bytes.
-        public static int offset(long struct) {
-            return memGetInt(struct + 4);
-        }
+        /*
+            uint32_t offsets[entryCount]; // byte offset
+
+            uint16_t offsets[entryCount]; // offset in multiple of 4
+
+
+            if sparse, use binary search:
+
+            struct sparse {
+                uint16_t entryIndex;
+                uint16_t entryOffset;
+            } offsets[entryCount];
+
+            struct sparse {
+                uint32_t entryIndex;
+                uint32_t entryOffset;
+            } offsets[entryCount];
+         */
+        public static final int
+                FLAG_SPARSE = 0x01,
+                FLAG_OFFSET16 = 0x02;
+
+        /*
+            uint8_t id;
+            uint8_t flags;
+            uint16_t reserved;
+            uint32_t entryCount;
+            uint32_t entriesStart;
+            // end of header
+
+            struct offset_entry {
+                // depends on flags
+            } offsets[entryCount];
+
+            struct ResTable_entry {
+                // variable-length
+            } entries[entryCount];
+         */
+
+        //// field offsets
+
+        // The type identifier this chunk is holding.  Type IDs start
+        // at 1 (corresponding to the value of the type bits in a
+        // resource identifier).  0 is invalid.
+        public static final int id = 0;
+        public static final int flags = 1;
+        public static final int reserved = 2;
+        // Number of uint32_t entry indices that follow.
+        public static final int entryCount = 4;
+        // Offset from header where ResTable_entry data starts.
+        public static final int entriesStart = 8;
     }
 
     /*
@@ -226,57 +256,42 @@ public class ResourceTypes {
      */
     public static class ResTable_entry {
         public static final int SIZEOF = 2 + 2 + 4;
+        public static final int SIZEOF_EXT = 2 + 2 + 4 + 4;
 
         // If set, this is a complex entry, holding a set of name/value
         // mappings.  It is followed by an array of ResTable_map structures.
         public static final int FLAG_COMPLEX = 0x0001;
 
+        // if NOT FLAG_COMPLEX:
         /*
-            uint16_t size;  // Number of bytes in this structure.
+            uint16_t size;  // Number of bytes in this structure. SIZEOF = 8
+            uint16_t flags; // higher 8 bits encode dataType, lower 8 bits encode flags
+            uint32_t data;
+         */
+
+        // if FLAG_COMPLEX:
+        /*
+            uint16_t size;  // Number of bytes in this structure. SIZEOF_EXT = 12
             uint16_t flags;
-            uint32_t key;   // Reference into key string table
+            uint32_t parent;    // Resource id 0xppeeeeee of the parent mapping, or -1 if there is none.
+            uint32_t count;     // Number of name/value pairs that follow.
+            ResTable_map pairs[count];
          */
 
-        public static int size(long struct) {
-            return memGetShort(struct) & 0xffff;
-        }
+        //// field offsets
+        public static final int size = 0;
+        public static final int flags = 2;
+        public static final int data = 4;
 
-        public static int flags(long struct) {
-            return memGetShort(struct + 2) & 0xffff;
-        }
-
-        public static int key(long struct) {
-            return memGetInt(struct + 4);
-        }
-    }
-
-    /*
-     * Extended form of a ResTable_entry for map entries, defining a parent map
-     * resource from which to inherit values.
-     */
-    public static class ResTable_map_entry extends ResTable_entry {
-        public static final int SIZEOF = 4 + 4 + ResTable_entry.SIZEOF;
-
-        /*
-            ResTable_ref parent;    // Resource identifier of the parent mapping, or 0 if there is none.
-            uint32_t count;         // Number of name/value pairs that follow for FLAG_COMPLEX.
-         */
-
-        // ResTable_ref
-        public static int parent(long struct) {
-            return memGetInt(struct + 8);
-        }
-
-        public static int count(long struct) {
-            return memGetInt(struct + 12);
-        }
+        public static final int parent = 4;
+        public static final int count = 8;
     }
 
     public static class ResTable_map {
         public static final int SIZEOF = 4 + Res_value.SIZEOF;
 
         /*
-            ResTable_ref name;  // The resource identifier defining this mapping's name.
+            uint32_t name;      // The resource identifier defining this mapping's name.
             Res_value value;    // This mapping's value.
          */
 
@@ -320,14 +335,8 @@ public class ResourceTypes {
         // supplied as additional entries in the map.
         TYPE_FLAGS = 1 << 17;
 
-        // ResTable_ref
-        public static int name(long struct) {
-            return memGetInt(struct);
-        }
-
-        // Res_value*
-        public static long pValue(long struct) {
-            return struct + 4;
-        }
+        //// field offsets
+        public static final int name = 0;
+        public static final int value = 4;
     }
 }

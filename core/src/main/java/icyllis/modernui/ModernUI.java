@@ -64,6 +64,7 @@ import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.ResourcesBuilder;
+import icyllis.modernui.resources.ResourcesProvider;
 import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Typeface;
@@ -165,9 +166,12 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 throw new RuntimeException("Multiple instances");
             }
         }
-        ResourcesBuilder rb = new ResourcesBuilder();
+        ResourcesBuilder rb = new ResourcesBuilder(R.ns);
         SystemTheme.addToResources(rb);
-        mResources = rb.build();
+        ResourcesProvider resourcesProvider = rb.build();
+        Resources resources = new Resources();
+        resources.addSource(resourcesProvider);
+        mResources = resources;
     }
 
     /**

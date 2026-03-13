@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,5 +18,29 @@
 
 package icyllis.modernui.resources;
 
-public class LoadedAssets {
+import icyllis.modernui.util.SparseArray;
+
+public class ResStringPool {
+
+    private CharSequence[] mCache;
+    private SparseArray<CharSequence> mSparseCache;
+
+    public ResStringPool(CharSequence[] input) {
+        mCache = input;
+    }
+
+    public CharSequence getSequenceAt(int idx) {
+        if (idx < 0 || idx > mCache.length) {
+            return null;
+        }
+        return mCache[idx];
+    }
+
+    public String getStringAt(int idx) {
+        CharSequence csq = getSequenceAt(idx);
+        if (csq != null) {
+            return csq.toString();
+        }
+        return null;
+    }
 }
