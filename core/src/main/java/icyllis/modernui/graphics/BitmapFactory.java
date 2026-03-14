@@ -33,16 +33,12 @@ import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.jni.JNINativeInterface;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
@@ -142,6 +138,20 @@ public final class BitmapFactory {
          * If not known, or there is an error, it is undefined.
          * <p>
          * Set only when {@link #inDecodeMimeType} is true.
+         * <p>
+         * Supported MIME types include:
+         * <ul>
+         * <li>{@code "image/png"} - Portable Network Graphics</li>
+         * <li>{@code "image/bmp"} - Windows Bitmap</li>
+         * <li>{@code "image/gif"} - Graphics Interchange Format</li>
+         * <li>{@code "image/vnd.adobe.photoshop"} - Adobe Photoshop Document (PSD)</li>
+         * <li>{@code "image/x-pict"} - Apple Macintosh QuickDraw (PICT)</li>
+         * <li>{@code "image/jpeg"} - Joint Photographic Experts Group</li>
+         * <li>{@code "image/x-portable-graymap"} - Netpbm Grayscale (PGM)</li>
+         * <li>{@code "image/x-portable-pixmap"} - Netpbm Color (PPM)</li>
+         * <li>{@code "image/vnd.radiance"} - Radiance High Dynamic Range (HDR)</li>
+         * <li>{@code "image/x-tga"} - Truevision TGA (Targa)</li>
+         * </ul>
          */
         public String outMimeType;
 
@@ -208,14 +218,10 @@ public final class BitmapFactory {
     public static Bitmap decodeFile(@NonNull File file,
                                     @Nullable Options opts) throws IOException {
         validate(opts);
-        if (opts != null && opts.inDecodeMimeType) {
-            decodeMimeType(opts, file);
-        }
         final Bitmap bm;
         try (final var stream = new FileInputStream(file)) {
-            bm = decodeSeekableChannel(stream.getChannel(), opts, false);
+            bm = decodeChannel(stream.getChannel(), opts);
         }
-        assert bm != null;
         return bm;
     }
 
@@ -231,11 +237,8 @@ public final class BitmapFactory {
      */
     public static void decodeFileInfo(@NonNull File file,
                                       @NonNull Options opts) throws IOException {
-        if (opts.inDecodeMimeType) {
-            decodeMimeType(opts, file);
-        }
         try (final var stream = new FileInputStream(file)) {
-            decodeSeekableChannel(stream.getChannel(), opts, true);
+            decodeChannelInfo(stream.getChannel(), opts);
         }
     }
 
@@ -273,9 +276,6 @@ public final class BitmapFactory {
     public static Bitmap decodePath(@NonNull Path path,
                                     @Nullable Options opts) throws IOException {
         validate(opts);
-        if (opts != null && opts.inDecodeMimeType) {
-            decodeMimeType(opts, path.toFile());
-        }
         try {
             // If the path represents a file on the OS default file system, then this is faster
             File file = path.toFile();
@@ -301,9 +301,6 @@ public final class BitmapFactory {
      */
     public static void decodePathInfo(@NonNull Path path,
                                       @NonNull Options opts) throws IOException {
-        if (opts.inDecodeMimeType) {
-            decodeMimeType(opts, path.toFile());
-        }
         try {
             // If the path represents a file on the OS default file system, then this is faster
             File file = path.toFile();
@@ -359,14 +356,8 @@ public final class BitmapFactory {
         final Bitmap bm;
         if (stream.getClass() == FileInputStream.class) {
             FileChannel ch = ((FileInputStream) stream).getChannel();
-            if (opts != null && opts.inDecodeMimeType) {
-                long pos = ch.position();
-                decodeMimeType(opts, stream); // no need to close
-                ch.position(pos);
-            }
             bm = decodeSeekableChannel(ch, opts, false);
         } else {
-            //TODO decode mime type
             bm = decodeSeekableStream(stream, opts, false);
         }
         assert bm != null;
@@ -387,14 +378,8 @@ public final class BitmapFactory {
                                         @NonNull Options opts) throws IOException {
         if (stream.getClass() == FileInputStream.class) {
             FileChannel ch = ((FileInputStream) stream).getChannel();
-            if (opts.inDecodeMimeType) {
-                long pos = ch.position();
-                decodeMimeType(opts, stream); // no need to close
-                ch.position(pos);
-            }
             decodeSeekableChannel(ch, opts, true);
         } else {
-            //TODO decode mime type
             decodeSeekableStream(stream, opts, true);
         }
     }
@@ -441,11 +426,6 @@ public final class BitmapFactory {
         validate(opts);
         final Bitmap bm;
         if (channel instanceof SeekableByteChannel ch) {
-            if (opts != null && opts.inDecodeMimeType) {
-                long pos = ch.position();
-                decodeMimeType(opts, Channels.newInputStream(channel)); // no need to close
-                ch.position(pos);
-            }
             bm = decodeSeekableChannel(ch, opts, false);
         } else {
             ByteBuffer p = null;
@@ -473,11 +453,6 @@ public final class BitmapFactory {
     public static void decodeChannelInfo(@NonNull ReadableByteChannel channel,
                                          @NonNull Options opts) throws IOException {
         if (channel instanceof SeekableByteChannel ch) {
-            if (opts.inDecodeMimeType) {
-                long pos = ch.position();
-                decodeMimeType(opts, Channels.newInputStream(channel)); // no need to close
-                ch.position(pos);
-            }
             decodeSeekableChannel(ch, opts, true);
         } else {
             ByteBuffer p = null;
@@ -532,7 +507,7 @@ public final class BitmapFactory {
         }
         validate(opts);
         if (opts != null && opts.inDecodeMimeType) {
-            decodeMimeType(opts, new ByteArrayInputStream(data, offset, length));  // no need to close (nop)
+            decodeMimeType(opts, ByteBuffer.wrap(data, offset, length));
         }
         ByteBuffer p = null;
         final Bitmap bm;
@@ -554,10 +529,8 @@ public final class BitmapFactory {
         validate(opts);
         assert buffer.isDirect() && !buffer.isReadOnly();
         if (opts != null && opts.inDecodeMimeType) {
-            // scan header for setting MIME type, 96 bytes is enough
-            byte[] seek = new byte[Math.min(buffer.limit(), 96)];
-            buffer.get(0, seek, 0, seek.length);
-            decodeMimeType(opts, new ByteArrayInputStream(seek)); // no need to close (nop)
+            // scan header for setting MIME type
+            decodeMimeType(opts, buffer);
         }
         return decodeBuffer0(buffer, opts);
     }
@@ -569,10 +542,8 @@ public final class BitmapFactory {
         final long buf = memAddress(buffer);
         final int len = buffer.remaining();
         if (opts.inDecodeMimeType) {
-            // scan header for setting MIME type, 96 bytes is enough
-            byte[] seek = new byte[Math.min(len, 96)];
-            buffer.get(buffer.position(), seek, 0, seek.length);
-            decodeMimeType(opts, new ByteArrayInputStream(seek)); // no need to close (nop)
+            // scan header for setting MIME type
+            decodeMimeType(opts, buffer);
         }
         final boolean isU16, isHDR;
         isHDR = STBImage.nstbi_is_hdr_from_memory(buf, len) != 0;
@@ -665,17 +636,19 @@ public final class BitmapFactory {
                     }
                     // Otherwise read from stream
                     try {
-                        int n = ctx.stream.read(ctx.buffer, 0, Math.min(request,
-                                Math.min(ctx.buffer.length, SeekableContext.BUFFER_SIZE)));
+                        int n = ctx.stream.read(ctx.buffer, 0,
+                                Math.min(ctx.buffer.length, SeekableContext.BUFFER_SIZE));
                         if (n <= 0) {
                             ctx.eof = true;
                             break;
                         }
+                        request = Math.min(request, n);
                         JNINativeInterface.nGetByteArrayRegion(
-                                ctx.buffer, 0, n, data + read
+                                ctx.buffer, 0, request, data + read
                         );
-                        ctx.pos = ctx.end = n;
-                        read += n;
+                        ctx.pos = request;
+                        ctx.end = n;
+                        read += request;
                     } catch (IOException e) {
                         ctx.ioe = e;
                         ctx.eof = true;
@@ -763,17 +736,26 @@ public final class BitmapFactory {
                                                @Nullable Options opts, boolean info) throws IOException {
         byte[] buffer = opts != null && opts.inTempStorage != null
                 ? opts.inTempStorage : new byte[SeekableContext.BUFFER_SIZE];
+
+        int n = stream.readNBytes(buffer, 0, Math.min(buffer.length, 128));
+        if (n <= 0) {
+            throw new IOException("No bytes read, or buffer is too small");
+        }
+
+        if (opts != null && opts.inDecodeMimeType) {
+            decodeMimeType(opts, ByteBuffer.wrap(buffer, 0, n));
+        }
+
         var context = new SeekableContext(stream, buffer);
+        // rewind
+        context.pos = 0;
+        context.end = n;
 
         final boolean isU16, isHDR;
         if (!info && opts != null && opts.inPreferredFormat != null) {
             isU16 = opts.inPreferredFormat.isChannelU16();
             isHDR = opts.inPreferredFormat.isChannelHDR();
         } else {
-            int n = stream.readNBytes(buffer, 0, Math.min(buffer.length, 128));
-            if (n <= 0) {
-                throw new IOException("No bytes read, or buffer is too small");
-            }
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 ByteBuffer p = stack.malloc(n);
                 p.put(0, buffer, 0, n);
@@ -784,9 +766,6 @@ public final class BitmapFactory {
                     isU16 = STBImage.stbi_is_16_bit_from_memory(p);
                 }
             }
-            // rewind
-            context.pos = 0;
-            context.end = n;
         }
 
         var callbacks = get_io_callbacks();
@@ -806,6 +785,15 @@ public final class BitmapFactory {
     @Nullable
     private static Bitmap decodeSeekableChannel(@NonNull SeekableByteChannel channel,
                                                 @Nullable Options opts, boolean info) throws IOException {
+        if (opts != null && opts.inDecodeMimeType) {
+            long pos = channel.position();
+            ByteBuffer seek = ByteBuffer.allocate(128);
+            while (channel.read(seek) > 0)
+                ;
+            decodeMimeType(opts, seek.flip());
+            channel.position(pos);
+        }
+
         var callbacks = get_io_callbacks();
         var context = new SeekableContext(channel);
         var user = JNINativeInterface.NewGlobalRef(context);
@@ -955,150 +943,208 @@ public final class BitmapFactory {
         }
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
-    public static void decodeMimeType(@NonNull Options opts, @NonNull Object input) {
-        try (var stream = ImageIO.createImageInputStream(input)) {
-            if (stream != null) {
-                var readers = ImageIO.getImageReaders(stream);
-                if (readers.hasNext()) {
-                    String[] mimeTypes = readers.next().getOriginatingProvider().getMIMETypes();
-                    if (mimeTypes != null) {
-                        opts.outMimeType = mimeTypes[0];
-                        return;
-                    }
-                }
-                // the order is important
-                if (test(stream, BitmapFactory::filterPSD)) {
-                    opts.outMimeType = "image/vnd.adobe.photoshop";
-                } else if (test(stream, BitmapFactory::filterPIC)) {
-                    opts.outMimeType = "image/x-pict";
-                } else if (test(stream, BitmapFactory::filterPGM)) {
-                    opts.outMimeType = "image/x-portable-graymap";
-                } else if (test(stream, BitmapFactory::filterPPM)) {
-                    opts.outMimeType = "image/x-portable-pixmap";
-                } else if (test(stream, BitmapFactory::filterHDR)) {
-                    opts.outMimeType = "image/vnd.radiance";
-                } else if (test(stream, BitmapFactory::filterTGA)) {
-                    opts.outMimeType = "image/x-tga";
-                }
-            }
-        } catch (Exception ignored) {
+    public static void decodeMimeType(@NonNull Options opts, @NonNull ByteBuffer input) {
+        // the order is important
+        if (test(input, BitmapFactory::filterPNG)) {
+            opts.outMimeType = "image/png";
+        } else if (test(input, BitmapFactory::filterBMP)) {
+            opts.outMimeType = "image/bmp";
+        } else if (test(input, BitmapFactory::filterGIF)) {
+            opts.outMimeType = "image/gif";
+        } else if (test(input, BitmapFactory::filterPSD)) {
+            opts.outMimeType = "image/vnd.adobe.photoshop";
+        } else if (test(input, BitmapFactory::filterPIC)) {
+            opts.outMimeType = "image/x-pict";
+        } else if (test(input, BitmapFactory::filterJPEG)) {
+            opts.outMimeType = "image/jpeg";
+        } else if (test(input, BitmapFactory::filterPGM)) {
+            opts.outMimeType = "image/x-portable-graymap";
+        } else if (test(input, BitmapFactory::filterPPM)) {
+            opts.outMimeType = "image/x-portable-pixmap";
+        } else if (test(input, BitmapFactory::filterHDR)) {
+            opts.outMimeType = "image/vnd.radiance";
+        } else if (test(input, BitmapFactory::filterTGA)) {
+            opts.outMimeType = "image/x-tga";
+        } else {
+            // since 3.13.0, clear to null if unknown
+            opts.outMimeType = null;
         }
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
-    public static boolean test(@NonNull ImageInputStream stream,
-                               @NonNull Predicate<ImageInputStream> filter) {
+    public static boolean test(@NonNull ByteBuffer input,
+                               @NonNull Predicate<ByteBuffer> filter) {
         try {
-            stream.mark();
+            input.mark();
             try {
-                return filter.test(stream);
+                return filter.test(input);
             } finally {
-                stream.reset();
+                input.reset();
             }
         } catch (Exception e) {
             return false;
         }
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
-    public static boolean filterPSD(@NonNull ImageInputStream stream) {
-        try {
-            return stream.read() == '8' &&
-                    stream.read() == 'B' &&
-                    stream.read() == 'P' &&
-                    stream.read() == 'S';
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static boolean filterPNG(@NonNull ByteBuffer input) {
+        return input.get() == (byte) 137 &&
+                input.get() == (byte) 80 &&
+                input.get() == (byte) 78 &&
+                input.get() == (byte) 71 &&
+                input.get() == (byte) 13 &&
+                input.get() == (byte) 10 &&
+                input.get() == (byte) 26 &&
+                input.get() == (byte) 10;
     }
 
-    public static boolean filterPIC(@NonNull ImageInputStream stream) {
-        try {
-            if (stream.read() != 0x53 ||
-                    stream.read() != 0x80 ||
-                    stream.read() != 0xF6 ||
-                    stream.read() != 0x34)
-                return false;
-            stream.seek(stream.getStreamPosition() + 84);
-            return stream.read() == 'P' &&
-                    stream.read() == 'I' &&
-                    stream.read() == 'C' &&
-                    stream.read() == 'T';
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean filterBMP(@NonNull ByteBuffer input) {
+        return input.get() == (byte) 'B' &&
+                input.get() == (byte) 'M';
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
-    public static boolean filterPGM(@NonNull ImageInputStream stream) {
-        try {
-            return stream.read() == 'P' && stream.read() == '5';
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static boolean filterGIF(@NonNull ByteBuffer input) {
+        int b;
+        return input.get() == (byte) 'G' &&
+                input.get() == (byte) 'I' &&
+                input.get() == (byte) 'F' &&
+                input.get() == (byte) '8' &&
+                ((b = input.get()) == (byte) '7' || b == (byte) '9') &&
+                input.get() == (byte) 'a';
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
-    public static boolean filterPPM(@NonNull ImageInputStream stream) {
-        try {
-            return stream.read() == 'P' && stream.read() == '6';
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static boolean filterJPEG(@NonNull ByteBuffer input) {
+        return input.get() == (byte) 0xFF &&
+                input.get() == (byte) 0xD8;
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
-    public static boolean filterHDR(@NonNull ImageInputStream stream) {
-        try {
-            return stream.read() == '#' &&
-                    stream.read() == '?' &&
-                    stream.read() == 'R' &&
-                    stream.read() == 'A' &&
-                    stream.read() == 'D' &&
-                    stream.read() == 'I' &&
-                    stream.read() == 'A' &&
-                    stream.read() == 'N' &&
-                    stream.read() == 'C' &&
-                    stream.read() == 'E' &&
-                    stream.read() == '\n';
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static boolean filterPSD(@NonNull ByteBuffer input) {
+        return input.get() == (byte) '8' &&
+                input.get() == (byte) 'B' &&
+                input.get() == (byte) 'P' &&
+                input.get() == (byte) 'S';
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
-    public static boolean filterTGA(@NonNull ImageInputStream stream) {
+    public static boolean filterPIC(@NonNull ByteBuffer input) {
+        if (input.get() != (byte) 0x53 ||
+                input.get() != (byte) 0x80 ||
+                input.get() != (byte) 0xF6 ||
+                input.get() != (byte) 0x34)
+            return false;
+        input.position(input.position() + 84);
+        return input.get() == (byte) 'P' &&
+                input.get() == (byte) 'I' &&
+                input.get() == (byte) 'C' &&
+                input.get() == (byte) 'T';
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean filterPGM(@NonNull ByteBuffer input) {
+        return input.get() == (byte) 'P' && input.get() == (byte) '5';
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean filterPPM(@NonNull ByteBuffer input) {
+        return input.get() == (byte) 'P' && input.get() == (byte) '6';
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean filterHDR(@NonNull ByteBuffer input) {
+        return input.get() == (byte) '#' &&
+                input.get() == (byte) '?' &&
+                input.get() == (byte) 'R' &&
+                input.get() == (byte) 'A' &&
+                input.get() == (byte) 'D' &&
+                input.get() == (byte) 'I' &&
+                input.get() == (byte) 'A' &&
+                input.get() == (byte) 'N' &&
+                input.get() == (byte) 'C' &&
+                input.get() == (byte) 'E' &&
+                input.get() == (byte) '\n';
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean filterTGA(@NonNull ByteBuffer input) {
         // TGA has no magic number, it must be the last
-        try {
-            stream.read();
-            int color_map_type = stream.read();
-            if (color_map_type != 0 && color_map_type != 1)
+        input.get();
+        int color_map_type = input.get() & 0xff;
+        if (color_map_type != 0 && color_map_type != 1)
+            return false;
+        int data_type_code = input.get() & 0xff;
+        if (color_map_type == 1) {
+            // Uncompressed, color-mapped images.
+            // Run-Length Encoded color-mapped images.
+            if (data_type_code != 1 && data_type_code != 9)
                 return false;
-            int data_type_code = stream.read();
-            if (color_map_type == 1) {
-                // Uncompressed, color-mapped images.
-                // Run-Length Encoded color-mapped images.
-                if (data_type_code != 1 && data_type_code != 9)
-                    return false;
-                stream.readInt(); // color map range
-                int color_map_depth = stream.read();
-                if (color_map_depth != 16 && color_map_depth != 24 && color_map_depth != 32)
-                    return false;
-            } else {
-                if (data_type_code != 2 && data_type_code != 3 && data_type_code != 10 && data_type_code != 11)
-                    return false;
-                stream.readInt(); // color map range
-                stream.read(); // color map depth
-            }
-            stream.readInt(); // origin
-            stream.readInt(); // dimensions
-            int bits_per_pixel = stream.read();
-            if (color_map_type == 1 && bits_per_pixel != 8 && bits_per_pixel != 16)
+            input.getInt(); // color map range
+            int color_map_depth = input.get() & 0xff;
+            if (color_map_depth != 16 && color_map_depth != 24 && color_map_depth != 32)
                 return false;
-            return bits_per_pixel == 16 || bits_per_pixel == 24 || bits_per_pixel == 32;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } else {
+            if (data_type_code != 2 && data_type_code != 3 && data_type_code != 10 && data_type_code != 11)
+                return false;
+            input.getInt(); // color map range
+            input.get(); // color map depth
         }
+        input.getInt(); // origin
+        input.getInt(); // dimensions
+        int bits_per_pixel = input.get() & 0xff;
+        if (color_map_type == 1 && bits_per_pixel != 8 && bits_per_pixel != 16)
+            return false;
+        return bits_per_pixel == 16 || bits_per_pixel == 24 || bits_per_pixel == 32;
     }
 }

@@ -43,7 +43,10 @@ public class TestBitmapToBI {
         }
         Bitmap bitmap;
         try (var fc = FileChannel.open(Path.of(get), StandardOpenOption.READ)) {
-            bitmap = BitmapFactory.decodeChannel(fc);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inDecodeMimeType = true;
+            bitmap = BitmapFactory.decodeChannel(fc, options);
+            Log.LOGGER.info(options.outMimeType);
         } catch (IOException e) {
             Log.LOGGER.error("", e);
             return;
