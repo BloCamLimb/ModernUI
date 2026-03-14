@@ -42,11 +42,11 @@ public class TestBitmapToBI {
             return;
         }
         Bitmap bitmap;
-        try (var fc = FileChannel.open(Path.of(get), StandardOpenOption.READ)) {
+        try {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inDecodeMimeType = true;
-            bitmap = BitmapFactory.decodeChannel(fc, options);
-            Log.LOGGER.info(options.outMimeType);
+            bitmap = BitmapFactory.decodeFile(new File(get), options);
+            Log.LOGGER.info(options.toString());
         } catch (IOException e) {
             Log.LOGGER.error("", e);
             return;
