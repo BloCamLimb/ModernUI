@@ -77,7 +77,7 @@ public class TestStaggeredGridView extends Fragment {
     static final DateFormat DATE_FORMAT = SimpleDateFormat.getDateTimeInstance(
             SimpleDateFormat.LONG, SimpleDateFormat.LONG);
 
-    static final int NUMBER_TO_REQUEST = 200;
+    static final int NUMBER_TO_REQUEST = 50;
 
     static class ReturnData {
 
@@ -178,19 +178,13 @@ public class TestStaggeredGridView extends Fragment {
                         .build();
                 return httpClient.sendAsync(req, HttpResponse.BodyHandlers.ofInputStream())
                         .thenApply(res -> {
-                            ByteBuffer p = null;
                             try (var is = res.body()) {
-                                p = Core.readIntoNativeBuffer(is);
-                                p.flip();
-                                return BitmapFactory.decodeBuffer(p, null);
+                                return BitmapFactory.decodeStream(is, null);
                             } catch (IOException e) {
-                                Log.LOGGER.info("{}\nURI {}\nContent-Type {}\n{}", e.getMessage(),
+                                Log.LOGGER.info("{}\nURI {}\nContent-Type {}", e.getMessage(),
                                         res.request().uri(),
-                                        res.headers().firstValue("Content-Type").orElse(""),
-                                        MemoryUtil.memUTF8Safe(p));
+                                        res.headers().firstValue("Content-Type").orElse(""));
                                 return null;
-                            } finally {
-                                MemoryUtil.memFree(p);
                             }
                         }).exceptionally(throwable -> {
                             Log.LOGGER.info("Failed to request image data {}", url, throwable);

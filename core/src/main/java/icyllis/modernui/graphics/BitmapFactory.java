@@ -18,22 +18,35 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ImageInfo;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
-import org.lwjgl.stb.*;
+import org.lwjgl.stb.STBIEOFCallback;
+import org.lwjgl.stb.STBIIOCallbacks;
+import org.lwjgl.stb.STBIReadCallback;
+import org.lwjgl.stb.STBISkipCallback;
+import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.jni.JNINativeInterface;
 
 import javax.imageio.ImageIO;
 import javax.imageio.stream.ImageInputStream;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
@@ -107,6 +120,12 @@ public final class BitmapFactory {
          * {@link #outColorSpace}.</p>
          */
         public ColorSpace inPreferredColorSpace = null;
+
+        /**
+         * Temporary storage used for decoding from a stream.
+         * The minimum size is 128; 8192 is recommended.
+         */
+        public byte[] inTempStorage = null;
 
         /**
          * The width of the bitmap. If there is an error, it is undefined.
@@ -257,11 +276,16 @@ public final class BitmapFactory {
         if (opts != null && opts.inDecodeMimeType) {
             decodeMimeType(opts, path.toFile());
         }
-        final Bitmap bm;
-        try (final var channel = FileChannel.open(path, StandardOpenOption.READ)) {
-            bm = decodeSeekableChannel(channel, opts, false);
+        try {
+            // If the path represents a file on the OS default file system, then this is faster
+            File file = path.toFile();
+            return decodeFile(file, opts);
+        } catch (RuntimeException ignored) {
         }
-        assert bm != null;
+        final Bitmap bm;
+        try (final var stream = Files.newInputStream(path, StandardOpenOption.READ)) {
+            bm = decodeStream(stream, opts);
+        }
         return bm;
     }
 
@@ -280,15 +304,22 @@ public final class BitmapFactory {
         if (opts.inDecodeMimeType) {
             decodeMimeType(opts, path.toFile());
         }
-        try (final var channel = FileChannel.open(path, StandardOpenOption.READ)) {
-            decodeSeekableChannel(channel, opts, true);
+        try {
+            // If the path represents a file on the OS default file system, then this is faster
+            File file = path.toFile();
+            decodeFileInfo(file, opts);
+            return;
+        } catch (RuntimeException ignored) {
+        }
+        try (final var stream = Files.newInputStream(path, StandardOpenOption.READ)) {
+            decodeStreamInfo(stream, opts);
         }
     }
 
     /**
      * Decode an input stream into a bitmap.
      * <p>
-     * The stream's position will be at the end of the encoded data. This method
+     * The stream's position will be undefined after being called. This method
      * <em>does not</em> closed the given stream after read operation has completed.
      * <p>
      * If the stream cannot be decoded into a bitmap, the method throws {@link IOException}
@@ -306,7 +337,7 @@ public final class BitmapFactory {
     /**
      * Decode an input stream into a bitmap.
      * <p>
-     * The stream's position will be at the end of the encoded data. This method
+     * The stream's position will be undefined after being called. This method
      * <em>does not</em> closed the given stream after read operation has completed.
      * <p>
      * If the stream cannot be decoded into a bitmap, the method throws {@link IOException}
@@ -335,13 +366,8 @@ public final class BitmapFactory {
             }
             bm = decodeSeekableChannel(ch, opts, false);
         } else {
-            ByteBuffer p = null;
-            try {
-                p = Core.readIntoNativeBuffer(stream);
-                bm = decodeBuffer(p.rewind(), opts);
-            } finally {
-                MemoryUtil.memFree((Buffer) p);
-            }
+            //TODO decode mime type
+            bm = decodeSeekableStream(stream, opts, false);
         }
         assert bm != null;
         return bm;
@@ -368,13 +394,8 @@ public final class BitmapFactory {
             }
             decodeSeekableChannel(ch, opts, true);
         } else {
-            ByteBuffer p = null;
-            try {
-                p = Core.readIntoNativeBuffer(stream);
-                decodeBufferInfo(p.rewind(), opts);
-            } finally {
-                MemoryUtil.memFree((Buffer) p);
-            }
+            //TODO decode mime type
+            decodeSeekableStream(stream, opts, true);
         }
     }
 
@@ -432,7 +453,7 @@ public final class BitmapFactory {
                 p = Core.readIntoNativeBuffer(channel);
                 bm = decodeBuffer(p.rewind(), opts);
             } finally {
-                MemoryUtil.memFree((Buffer) p);
+                memFree((Buffer) p);
             }
         }
         assert bm != null;
@@ -464,7 +485,7 @@ public final class BitmapFactory {
                 p = Core.readIntoNativeBuffer(channel);
                 decodeBufferInfo(p.rewind(), opts);
             } finally {
-                MemoryUtil.memFree((Buffer) p);
+                memFree((Buffer) p);
             }
         }
     }
@@ -516,12 +537,12 @@ public final class BitmapFactory {
         ByteBuffer p = null;
         final Bitmap bm;
         try {
-            p = MemoryUtil.memAlloc(length);
+            p = memAlloc(length);
             bm = decodeBuffer0(p
                     .put(data, offset, length)
                     .rewind(), opts);
         } finally {
-            MemoryUtil.memFree((Buffer) p);
+            memFree((Buffer) p);
         }
         return bm;
     }
@@ -575,73 +596,211 @@ public final class BitmapFactory {
         return decode0(NULL, NULL, buf, len, opts, isU16, isHDR);
     }
 
-    static class SeekableContext {
+    static final class SeekableContext {
+        static final int BUFFER_SIZE = 8192; // jdk convention
+
         boolean eof = false;
         IOException ioe = null;
+
         final SeekableByteChannel channel;
+
+        final InputStream stream;
+        final byte[] buffer;
+        int pos, end;
 
         SeekableContext(SeekableByteChannel channel) {
             this.channel = channel;
+            stream = null;
+            buffer = null;
+        }
+
+        SeekableContext(InputStream stream, byte[] buffer) {
+            this.stream = stream;
+            this.buffer = buffer;
+            channel = null;
         }
     }
 
-    //TODO provide a method to free this, or just untrack?
+    static final class ReadCallback extends STBIReadCallback {
+        @Override
+        public int invoke(long user, long data, int size) {
+            SeekableContext ctx = memGlobalRefToObject(user);
+            if (ctx.eof) {
+                return 0;
+            }
+            int read = 0;
+            if (ctx.channel != null) {
+                // File channel can read directly into the native buffer without
+                // going through the heap buffer. If it's not a file channel, then
+                // this typically performs a copy from the heap to native.
+                // Additionally, we require the channel to be in blocking mode.
+                ByteBuffer dst = STBIReadCallback.getData(data, size);
+                while (dst.hasRemaining()) {
+                    try {
+                        int n = ctx.channel.read(dst);
+                        if (n <= 0) {
+                            ctx.eof = true;
+                            break;
+                        }
+                        read += n;
+                    } catch (IOException e) {
+                        ctx.ioe = e;
+                        ctx.eof = true;
+                        break;
+                    }
+                }
+            } else {
+                assert ctx.stream != null && ctx.buffer != null;
+                while (read < size) {
+                    int request = size - read;
+                    // If we have pushback buffer, consume it first
+                    if (ctx.pos < ctx.end) {
+                        request = Math.min(request, ctx.end - ctx.pos);
+                        JNINativeInterface.nGetByteArrayRegion(
+                                ctx.buffer, ctx.pos, request, data + read
+                        );
+                        ctx.pos += request;
+                        read += request;
+                        continue;
+                    }
+                    // Otherwise read from stream
+                    try {
+                        int n = ctx.stream.read(ctx.buffer, 0, Math.min(request,
+                                Math.min(ctx.buffer.length, SeekableContext.BUFFER_SIZE)));
+                        if (n <= 0) {
+                            ctx.eof = true;
+                            break;
+                        }
+                        JNINativeInterface.nGetByteArrayRegion(
+                                ctx.buffer, 0, n, data + read
+                        );
+                        ctx.pos = ctx.end = n;
+                        read += n;
+                    } catch (IOException e) {
+                        ctx.ioe = e;
+                        ctx.eof = true;
+                        break;
+                    }
+                }
+            }
+            return read;
+        }
+    }
+
+    // After reviewing the stb_image.h, I found that its skip function never
+    // takes a negative n, therefore, any InputStream can work with it.
+    static final class SkipCallback extends STBISkipCallback {
+        @Override
+        public void invoke(long user, int n) {
+            SeekableContext ctx = memGlobalRefToObject(user);
+            if (ctx.eof) {
+                return;
+            }
+            if (ctx.channel != null) {
+                try {
+                    ctx.channel.position(ctx.channel.position() + n);
+                } catch (IOException e) {
+                    ctx.ioe = e;
+                    ctx.eof = true;
+                }
+            } else {
+                assert ctx.stream != null && ctx.buffer != null;
+                if (n <= 0) {
+                    // n <= 0 should not happen, but we allow it in release build
+                    if (ctx.pos >= n) {
+                        ctx.pos -= n;
+                    } else {
+                        ctx.eof = true;
+                    }
+                    return;
+                }
+                if (ctx.pos < ctx.end) {
+                    int request = Math.min(n, ctx.end - ctx.pos);
+                    ctx.pos += request;
+                    n -= request;
+                }
+                if (n > 0) {
+                    ctx.pos = ctx.end = 0;
+                    try {
+                        ctx.stream.skipNBytes(n);
+                    } catch (IOException e) {
+                        ctx.ioe = e;
+                        ctx.eof = true;
+                    }
+                }
+            }
+        }
+    }
+
+    static final class EOFCallback extends STBIEOFCallback {
+        @Override
+        public int invoke(long user) {
+            SeekableContext ctx = memGlobalRefToObject(user);
+            return ctx.eof ? 1 : 0;
+        }
+    }
+
+    //TODO we should untrack this global memory to help with org.lwjgl.util.DebugAllocator=true
     private static volatile STBIIOCallbacks g_io_callbacks;
 
     private static long get_io_callbacks() {
         if (g_io_callbacks == null) {
             synchronized (BitmapFactory.class) {
                 if (g_io_callbacks == null) {
-                    final var readcb = new STBIReadCallback() {
-                        @Override
-                        public int invoke(long user, long data, int size) {
-                            SeekableContext ctx = memGlobalRefToObject(user);
-                            if (ctx.eof) {
-                                return 0;
-                            }
-                            int n;
-                            try {
-                                n = ctx.channel.read(STBIReadCallback.getData(data, size));
-                            } catch (IOException e) {
-                                ctx.ioe = e;
-                                ctx.eof = true;
-                                return 0;
-                            }
-                            if (n < 0) {
-                                ctx.eof = true;
-                                return 0;
-                            }
-                            return n;
-                        }
-                    };
-                    final var skipcb = new STBISkipCallback() {
-                        @Override
-                        public void invoke(long user, int n) {
-                            SeekableContext ctx = memGlobalRefToObject(user);
-                            if (ctx.eof) {
-                                return;
-                            }
-                            try {
-                                ctx.channel.position(ctx.channel.position() + n);
-                            } catch (IOException e) {
-                                ctx.ioe = e;
-                                ctx.eof = true;
-                            }
-                        }
-                    };
-                    final var eofcb = new STBIEOFCallback() {
-                        @Override
-                        public int invoke(long user) {
-                            SeekableContext ctx = memGlobalRefToObject(user);
-                            return ctx.eof ? 1 : 0;
-                        }
-                    };
+                    final var readcb = new ReadCallback();
+                    final var skipcb = new SkipCallback();
+                    final var eofcb = new EOFCallback();
                     g_io_callbacks = STBIIOCallbacks.malloc()
                             .set(readcb, skipcb, eofcb);
                 }
             }
         }
         return g_io_callbacks.address();
+    }
+
+    @Nullable
+    private static Bitmap decodeSeekableStream(@NonNull InputStream stream,
+                                               @Nullable Options opts, boolean info) throws IOException {
+        byte[] buffer = opts != null && opts.inTempStorage != null
+                ? opts.inTempStorage : new byte[SeekableContext.BUFFER_SIZE];
+        var context = new SeekableContext(stream, buffer);
+
+        final boolean isU16, isHDR;
+        if (!info && opts != null && opts.inPreferredFormat != null) {
+            isU16 = opts.inPreferredFormat.isChannelU16();
+            isHDR = opts.inPreferredFormat.isChannelHDR();
+        } else {
+            int n = stream.readNBytes(buffer, 0, Math.min(buffer.length, 128));
+            if (n <= 0) {
+                throw new IOException("No bytes read, or buffer is too small");
+            }
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                ByteBuffer p = stack.malloc(n);
+                p.put(0, buffer, 0, n);
+                isHDR = STBImage.stbi_is_hdr_from_memory(p);
+                if (isHDR) {
+                    isU16 = false;
+                } else {
+                    isU16 = STBImage.stbi_is_16_bit_from_memory(p);
+                }
+            }
+            // rewind
+            context.pos = 0;
+            context.end = n;
+        }
+
+        var callbacks = get_io_callbacks();
+        var user = JNINativeInterface.NewGlobalRef(context);
+        try {
+            if (info) {
+                assert opts != null;
+                decodeInfo0(callbacks, user, NULL, 0, opts, isU16, isHDR);
+                return null;
+            }
+            return decode0(callbacks, user, NULL, 0, opts, isU16, isHDR);
+        } finally {
+            JNINativeInterface.DeleteGlobalRef(user);
+        }
     }
 
     @Nullable
