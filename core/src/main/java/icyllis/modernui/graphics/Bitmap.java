@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,24 +20,44 @@ package icyllis.modernui.graphics;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.PixelRef;
+import icyllis.arc3d.core.Pixmap;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.WorkerThread;
 import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.stb.*;
-import org.lwjgl.system.*;
+import org.lwjgl.stb.STBIWriteCallback;
+import org.lwjgl.stb.STBIWriteCallbackI;
+import org.lwjgl.stb.STBImage;
+import org.lwjgl.stb.STBImageWrite;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.NativeType;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 import sun.misc.Unsafe;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
-import java.nio.channels.*;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
@@ -583,9 +603,9 @@ public final class Bitmap implements AutoCloseable {
      * The address of {@code void *pixels} in native.
      * The address is valid until bitmap closed.
      *
+     * @return the pointer of pixel data, or NULL if released
      * @hide
      * @hidden
-     * @return the pointer of pixel data, or NULL if released
      */
     @ApiStatus.Internal
     public long getAddress() {
@@ -1388,11 +1408,18 @@ public final class Bitmap implements AutoCloseable {
     public void saveToPath(@NonNull SaveFormat format, int quality,
                            @NonNull Path path) throws IOException {
         checkReleased();
-        try (final var channel = FileChannel.open(path,
+        try {
+            // If the path represents a file on the OS default file system, then this is faster
+            File file = path.toFile();
+            saveToFile(format, quality, file);
+            return;
+        } catch (RuntimeException ignored) {
+        }
+        try (final var stream = Files.newOutputStream(path,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING)) {
-            saveToChannel(format, quality, channel);
+            saveToStream(format, quality, stream);
         } catch (IOException e) {
             throw new IOException("Failed to save image to path \"" +
                     path.toAbsolutePath() + "\"", e);
