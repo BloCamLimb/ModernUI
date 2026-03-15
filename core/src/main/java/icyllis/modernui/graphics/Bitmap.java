@@ -347,6 +347,10 @@ public final class Bitmap implements AutoCloseable {
         }
     }*/
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
     @NonNull
     public ImageInfo getInfo() {
@@ -384,12 +388,20 @@ public final class Bitmap implements AutoCloseable {
         return (long) getRowBytes() * getHeight();
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
     @ColorInfo.ColorType
     public int getColorType() {
         return mPixmap.getColorType();
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
     @ApiStatus.Internal
     @ColorInfo.AlphaType
     public int getAlphaType() {
@@ -436,7 +448,7 @@ public final class Bitmap implements AutoCloseable {
         if (info.colorType() != newColorType) {
             var newAlphaType = ColorInfo.validateAlphaType(newColorType,
                     mRequestPremultiplied ? ColorInfo.AT_PREMUL : ColorInfo.AT_UNPREMUL);
-            var newInfo = new ImageInfo(
+            var newInfo = ImageInfo.make(
                     info.width(), info.height(),
                     newColorType, newAlphaType,
                     info.colorSpace()
@@ -571,6 +583,8 @@ public final class Bitmap implements AutoCloseable {
      * The address of {@code void *pixels} in native.
      * The address is valid until bitmap closed.
      *
+     * @hide
+     * @hidden
      * @return the pointer of pixel data, or NULL if released
      */
     @ApiStatus.Internal
@@ -829,11 +843,11 @@ public final class Bitmap implements AutoCloseable {
             }
         } else {
             try {
-                var dstInfo = new ImageInfo(width, height,
+                var dstInfo = ImageInfo.make(width, height,
                         ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
                         ColorSpace.get(ColorSpace.Named.SRGB));
                 var dstPixmap = new Pixmap(dstInfo, dst,
-                        Unsafe.ARRAY_INT_BASE_OFFSET + (long) offset << 2,
+                        Unsafe.ARRAY_INT_BASE_OFFSET + ((long) offset << 2),
                         stride << 2);
                 boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
                 assert res;
@@ -878,11 +892,11 @@ public final class Bitmap implements AutoCloseable {
         checkOutOfBounds(dstX, dstY, width, height, offset, stride, src.length);
         if (getColorType() != ColorInfo.CT_UNKNOWN) {
             try {
-                var srcInfo = new ImageInfo(width, height,
+                var srcInfo = ImageInfo.make(width, height,
                         ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
                         ColorSpace.get(ColorSpace.Named.SRGB));
                 var srcPixmap = new Pixmap(srcInfo, src,
-                        Unsafe.ARRAY_INT_BASE_OFFSET + (long) offset << 2,
+                        Unsafe.ARRAY_INT_BASE_OFFSET + ((long) offset << 2),
                         stride << 2);
                 boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
                 assert res;
@@ -935,11 +949,11 @@ public final class Bitmap implements AutoCloseable {
             }
         } else {
             try {
-                var dstInfo = new ImageInfo(width, height,
+                var dstInfo = ImageInfo.make(width, height,
                         ColorInfo.CT_RGBA_F32, getAlphaType(),
                         getColorSpace());
                 var dstPixmap = new Pixmap(dstInfo, dst,
-                        Unsafe.ARRAY_FLOAT_BASE_OFFSET + (long) offset << 4,
+                        Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) offset << 4),
                         stride << 4);
                 boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
                 assert res;
@@ -986,11 +1000,11 @@ public final class Bitmap implements AutoCloseable {
         checkOutOfBounds(dstX, dstY, width, height, offset, stride, src.length >> 2);
         if (getColorType() != ColorInfo.CT_UNKNOWN) {
             try {
-                var srcInfo = new ImageInfo(width, height,
+                var srcInfo = ImageInfo.make(width, height,
                         ColorInfo.CT_RGBA_F32, getAlphaType(),
                         getColorSpace());
                 var srcPixmap = new Pixmap(srcInfo, src,
-                        Unsafe.ARRAY_FLOAT_BASE_OFFSET + (long) offset << 4,
+                        Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) offset << 4),
                         stride << 4);
                 boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
                 assert res;
@@ -1271,6 +1285,7 @@ public final class Bitmap implements AutoCloseable {
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the current pixel map
+     * @hide
      * @hidden
      */
     @ApiStatus.Internal
@@ -1287,6 +1302,7 @@ public final class Bitmap implements AutoCloseable {
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the ref of pixel data, or null if released
+     * @hide
      * @hidden
      */
     @ApiStatus.Internal
@@ -1297,6 +1313,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
+     * @hide
      * @hidden
      */
     @ApiStatus.Internal
@@ -1856,13 +1873,19 @@ public final class Bitmap implements AutoCloseable {
          * RGB is special, it's 3 bytes per pixel in CPU memory, but
          * 4 bytes per pixel in GPU memory (implicitly).
          *
+         * @hide
+         * @hidden
          * @see #getBytesPerPixel()
          */
+        @ApiStatus.Internal
         @ColorInfo.ColorType
         public int getColorType() {
             return mColorType;
         }
 
+        /**
+         * Returns the number of bytes per pixel.
+         */
         public int getBytesPerPixel() {
             if (mColorType != ColorInfo.CT_UNKNOWN) {
                 return ColorInfo.bytesPerPixel(mColorType);
@@ -1929,6 +1952,7 @@ public final class Bitmap implements AutoCloseable {
         }
 
         /**
+         * @hide
          * @hidden
          */
         @ApiStatus.Internal
