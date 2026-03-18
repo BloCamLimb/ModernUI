@@ -20,16 +20,46 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import org.jetbrains.annotations.ApiStatus;
 
-public class EmptyAssetsProvider implements AssetsProvider {
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+/**
+ * An {@link AssetsProvider} that uses {@link ZipFile} to access entries within
+ * a zip archive. Zip entries can be STORED or DEFLATED, but certain assets that
+ * require seeking must be STORED.
+ *
+ * @hide
+ * @hidden
+ */
+@ApiStatus.Internal
+public class ZipAssetsProvider implements AssetsProvider {
+
+    private final ZipFile zipFile;
+
+    /**
+     * Will close the zip file when this provider is closed.
+     */
+    public ZipAssetsProvider(@NonNull ZipFile zipFile) {
+        this.zipFile = zipFile;
+    }
 
     @Nullable
     @Override
     public Asset getAsset(@NonNull String path) {
-        return null;
+        if (path.isEmpty()) {
+            return null;
+        }
+        ZipEntry zipEntry = zipFile.getEntry(path);
+        if (zipEntry == null || zipEntry.isDirectory()) {
+            return null;
+        }
+        return new ZipAsset(zipFile, zipEntry);
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
+        zipFile.close();
     }
 }

@@ -22,18 +22,28 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents a loaded asset pack.
+ * <p>
+ * API users should use {@link ResourcesProvider} instead.
  *
  * @hide
  * @hidden
  */
 @ApiStatus.Internal
-public class PackAssets {
+public final class PackAssets implements AutoCloseable {
 
-    AssetsProvider mAssetsProvider;
+    AssetsProvider assetsProvider;
 
     LoadedResources loadedResources;
 
     public LoadedResources getLoadedResources() {
         return loadedResources;
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (assetsProvider != null) {
+            assetsProvider.close();
+            assetsProvider = null;
+        }
     }
 }

@@ -21,6 +21,7 @@ package icyllis.modernui.resources;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.ReadableByteChannel;
@@ -36,12 +37,38 @@ import java.nio.channels.ReadableByteChannel;
  * <li>not use single dot (.) or dotdot (..) as a path segment</li>
  * <li>not contain consecutive slashes (//)</li>
  * </ul>
+ *
+ * @since 3.13
  */
-public interface AssetsProvider {
+public interface AssetsProvider extends AutoCloseable {
 
+    /**
+     * Try to locate an asset file, or null if not found.
+     */
     @Nullable
-    InputStream openStream(@NonNull String path) throws IOException;
+    Asset getAsset(@NonNull String path);
 
-    @Nullable
-    ReadableByteChannel openChannel(@NonNull String path) throws IOException;
+    /**
+     * @see Asset#openStream()
+     */
+    @NonNull
+    default InputStream openStream(@NonNull String path) throws IOException {
+        Asset asset = getAsset(path);
+        if (asset == null) {
+            throw new FileNotFoundException(path);
+        }
+        return asset.openStream();
+    }
+
+    /**
+     * @see Asset#openChannel()
+     */
+    @NonNull
+    default ReadableByteChannel openChannel(@NonNull String path) throws IOException {
+        Asset asset = getAsset(path);
+        if (asset == null) {
+            throw new FileNotFoundException(path);
+        }
+        return asset.openChannel();
+    }
 }
