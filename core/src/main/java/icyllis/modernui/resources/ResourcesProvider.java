@@ -18,10 +18,81 @@
 
 package icyllis.modernui.resources;
 
-public class ResourcesProvider {
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.core.Core;
+import org.jetbrains.annotations.ApiStatus;
 
-    PackAssets mPackAssets;
+import javax.annotation.concurrent.GuardedBy;
+import java.lang.ref.Cleaner;
 
-    ResourcesProvider() {
+public class ResourcesProvider implements AutoCloseable {
+
+    private final Object mLock = new Object();
+
+    @GuardedBy("mLock")
+    private boolean mOpen;
+
+    @GuardedBy("mLock")
+    private int mUsageCount;
+
+    private PackAssets mPackAssets;
+    private final Cleaner.Cleanable mCleanup;
+
+    ResourcesProvider(@NonNull PackAssets packAssets) {
+        mOpen = true;
+        mUsageCount = 0;
+        mPackAssets = packAssets;
+        mCleanup = Core.registerNativeResource(this, packAssets);
+    }
+
+    void incUsageCount() {
+        synchronized (mLock) {
+            if (!mOpen) {
+                throw new IllegalStateException("Operation failed: resources provider is closed");
+            }
+            mUsageCount++;
+        }
+    }
+
+    void decUsageCount() {
+        synchronized (mLock) {
+            mUsageCount--;
+        }
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public PackAssets getPackAssets() {
+        return mPackAssets;
+    }
+
+    /**
+     * Frees internal data structures.
+     * <p>
+     * Closed providers can no longer be added to {@link ResourcesLoader ResourcesLoader(s)}.
+     * This method can only be called when this provider is not being used by any ResourceLoader.
+     * <p>
+     * When this object becomes phantom-reachable, the system will automatically
+     * do this cleanup operation.
+     *
+     * @throws IllegalStateException if provider is currently used by a ResourcesLoader
+     */
+    @Override
+    public void close() {
+        synchronized (mLock) {
+            if (!mOpen) {
+                return;
+            }
+            if (mUsageCount != 0) {
+                throw new IllegalStateException("Failed to close provider used by " + mUsageCount
+                        + " ResourcesLoader instances");
+            }
+            mOpen = false;
+        }
+        mPackAssets = null;
+        mCleanup.clean();
     }
 }

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.ResourceTypes.*;
@@ -28,11 +29,13 @@ import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @hide
@@ -42,6 +45,38 @@ import java.util.List;
 public class AssetManager {
 
     public static final Marker MARKER = MarkerFactory.getMarker("AssetManager");
+
+    private static final Object sLock = new Object();
+
+    private static final PackAssets[] sEmptyPackAssets = {};
+
+    @GuardedBy("sLock")
+    private static AssetManager sSystem;
+
+    @GuardedBy("sLock")
+    private static PackAssets[] sSystemPackAssets;
+    @GuardedBy("sLock")
+    private static Set<PackAssets> sSystemPackAssetsSet;
+
+    @GuardedBy("sLock")
+    private static void createSystemAssets() {
+        if (sSystem != null) {
+            return;
+        }
+
+        try {
+            ResourcesBuilder resourcesBuilder = new ResourcesBuilder(R.ns);
+            SystemTheme.addToResources(resourcesBuilder);
+            PackAssets pack = resourcesBuilder.buildPack();
+
+            sSystemPackAssetsSet = Set.of(pack);
+            sSystemPackAssets = new PackAssets[]{pack};
+            sSystem = new AssetManager(true);
+            sSystem.setPackAssets(sEmptyPackAssets, false);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create system AssetManager", e);
+        }
+    }
 
     public static final int kInvalidCookie = -1;
     public static final int kMaxIterations = 20;
@@ -129,24 +164,77 @@ public class AssetManager {
         }
     }
 
-    public void setPacks(PackAssets[] packs, boolean invalidateCaches) {
+    @Deprecated
+    public AssetManager() {
+    }
 
-        packAssets = packs.clone();
+    private AssetManager(boolean sentinel) {
+
+    }
+
+    /**
+     * Return a global shared asset manager that provides access to only
+     * system assets (no application assets).
+     */
+    public static AssetManager getSystem() {
+        synchronized (sLock) {
+            createSystemAssets();
+            return sSystem;
+        }
+    }
+
+    public void setPackAssets(@NonNull PackAssets[] packs, boolean invalidateCaches) {
+        PackAssets[] newPacks = new PackAssets[sSystemPackAssets.length + packs.length];
+
+        System.arraycopy(sSystemPackAssets, 0, newPacks, 0, sSystemPackAssets.length);
+
+        int newLength = sSystemPackAssets.length;
+        for (PackAssets pack : packs) {
+            if (!sSystemPackAssetsSet.contains(pack)) {
+                newPacks[newLength++] = pack;
+            }
+        }
+
+        if (newLength != newPacks.length) {
+            newPacks = Arrays.copyOf(newPacks, newLength);
+        }
+
+        synchronized (this) {
+            buildResTableLocked(newPacks);
+            if (invalidateCaches) {
+                invalidateCachesLocked(~0);
+            }
+        }
+    }
+
+    private void buildResTableLocked(@NonNull PackAssets[] packs) {
+        packAssets = packs;
+
         packageGroups.clear();
         for (int i = 0; i < packAssets.length; i++) {
             var pack = packAssets[i];
             int cookie = i;
 
-            var loadedRsc = pack.getLoadedResources();
+            var loadedResources = pack.getLoadedResources();
 
-            for (var pkg : loadedRsc.getPackages()) {
+            for (var loadedPackage : loadedResources.getPackages()) {
                 var pkgGroup = packageGroups.computeIfAbsent(
-                        pkg.getPackageName(), __ -> new PackageGroup());
+                        loadedPackage.getPackageName(), __ -> new PackageGroup());
 
-                pkgGroup.packages.add(pkg);
+                pkgGroup.packages.add(loadedPackage);
                 pkgGroup.cookies.add(cookie);
             }
         }
+    }
+
+    private void invalidateCachesLocked(int diff) {
+
+        if (diff == ~0) {
+            cachedBags.clear();
+            return;
+        }
+
+        cachedBags.values().removeIf(b -> (b.typeSpecFlags & diff) != 0);
     }
 
     @Nullable

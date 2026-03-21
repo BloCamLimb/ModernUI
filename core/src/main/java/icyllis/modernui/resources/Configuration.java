@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,8 +18,6 @@
 
 package icyllis.modernui.resources;
 
-/**
- * Retrieving data out of a compiled XML file.
- */
-public final class XMLBlock {
+//TODO reserved for future use
+public class Configuration {
 }

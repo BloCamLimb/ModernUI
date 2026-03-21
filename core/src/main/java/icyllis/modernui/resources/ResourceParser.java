@@ -93,7 +93,7 @@ public class ResourceParser {
 
     public boolean Parse(XMLStreamReader reader) {
         try {
-            if (reader.nextTag() == XMLResourceReader.START_ELEMENT &&
+            if (reader.nextTag() == XMLStreamConstants.START_ELEMENT &&
                     reader.getNamespaceURI() == null &&
                     reader.getLocalName().equals("resources")) {
                 return ParseResources(reader);

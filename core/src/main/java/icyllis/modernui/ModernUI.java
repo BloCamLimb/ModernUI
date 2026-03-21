@@ -166,12 +166,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 throw new RuntimeException("Multiple instances");
             }
         }
-        ResourcesBuilder rb = new ResourcesBuilder(R.ns);
-        SystemTheme.addToResources(rb);
-        ResourcesProvider resourcesProvider = rb.build();
-        Resources resources = new Resources();
-        resources.addSource(resourcesProvider);
-        mResources = resources;
+        mResources = Resources.getSystem();
     }
 
     /**

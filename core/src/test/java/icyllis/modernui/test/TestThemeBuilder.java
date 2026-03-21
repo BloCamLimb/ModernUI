@@ -32,13 +32,8 @@ public class TestThemeBuilder {
     public static void main(String[] args) {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
         System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
-        ResourcesBuilder builder = new ResourcesBuilder(R.ns);
 
-        SystemTheme.addToResources(builder);
-
-        ResourcesProvider provider = builder.build();
-        Resources resources = new Resources();
-        resources.addSource(provider);
+        Resources resources = Resources.getSystem();
         Resources.Theme theme = resources.newTheme();
         theme.applyStyle(R.style.Theme_Material3_Dark, true);
         String[] styleable = {

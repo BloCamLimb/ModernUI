@@ -31,7 +31,6 @@ import icyllis.modernui.resources.ResourceTypes.Res_value;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
-import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -39,8 +38,10 @@ import org.jetbrains.annotations.Contract;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.BiFunction;
 
 import static icyllis.modernui.resources.AssetManager.kMaxIterations;
@@ -49,43 +50,19 @@ import static icyllis.modernui.resources.AssetManager.kMaxIterations;
 public class Resources {
 
     public static final Marker MARKER = MarkerFactory.getMarker("Resources");
-    public static final String DEFAULT_NAMESPACE = R.ns;
+
+    private static final Object sLock = new Object();
+
+    @GuardedBy("sLock")
+    private static Resources sSystem;
 
     private final DisplayMetrics mMetrics = new DisplayMetrics();
 
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
 
-    String[] mStyleKeys;
-    int[] mStyleOffsets;
 
-    static final int MAP_ENTRY_HEADER_COLUMNS = 2;
-    static final int MAP_COLUMNS = 3;
 
-    static final int MAP_ENTRY_PARENT = 0;
-    static final int MAP_ENTRY_COUNT = 1;
-    static final int MAP_ENTRY_ENTRIES = 2;
-
-    static final int MAP_NAME = 0;
-    static final int MAP_DATA_TYPE = 1;
-    static final int MAP_DATA = 2;
-
-    /*
-        this is defined as:
-    struct map_entry {
-        int32_t parent; // index of keyStrings
-        int32_t count;
-        struct map {
-            uint32_t name;
-            uint32_t dataType;
-            uint32_t data;
-        } entries[count];
-    } data[0];
-     */
-    int[] mData;
-
-    Object2ObjectOpenHashMap<String, ResolvedBag> mCachedBags = new Object2ObjectOpenHashMap<>();
-
-    AssetManager mAssetManager = new AssetManager();
+    AssetManager mAssetManager;
 
     /**
      * Returns a default theme for the framework.
@@ -110,17 +87,71 @@ public class Resources {
         public NotFoundException() {
         }
 
-        public NotFoundException(String message) {
+        public NotFoundException(@Nullable String message) {
             super(message);
         }
 
-        public NotFoundException(String message, Exception cause) {
+        public NotFoundException(@Nullable String message, @Nullable Exception cause) {
             super(message, cause);
         }
     }
 
-    public Resources() {
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public interface UpdateCallbacks extends ResourcesLoader.UpdateCallbacks {
+        /**
+         * Invoked when a {@link Resources} instance has a {@link ResourcesLoader} added, removed,
+         * or reordered.
+         *
+         * @param resources the instance being updated
+         * @param newLoaders the new set of loaders for the instance
+         */
+        void onLoadersChanged(@NonNull Resources resources,
+                              @NonNull List<ResourcesLoader> newLoaders);
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public Resources(@NonNull AssetManager assets, @Nullable DisplayMetrics metrics,
+                     @Nullable Configuration config) {
+        this(null);
+        mAssetManager = assets;
+        if (metrics != null) {
+            mMetrics.setTo(metrics);
+        }
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public Resources(@Nullable ClassLoader classLoader) {
         mMetrics.setToDefaults();
+    }
+
+    private Resources() {
+        mMetrics.setToDefaults();
+
+        mAssetManager = AssetManager.getSystem();
+    }
+
+    @NonNull
+    public static Resources getSystem() {
+        synchronized (sLock) {
+            Resources ret = sSystem;
+            if (ret == null) {
+                ret = new Resources();
+                sSystem = ret;
+            }
+            return ret;
+        }
     }
 
     @ApiStatus.Internal
@@ -134,12 +165,12 @@ public class Resources {
         return new Theme();
     }
 
+    /**
+     * Returns the current display metrics that are in effect for this resources
+     * object. The returned object should be treated as read-only.
+     */
     public DisplayMetrics getDisplayMetrics() {
         return mMetrics;
-    }
-
-    public void addSource(ResourcesProvider provider) {
-        mAssetManager.setPacks(new PackAssets[]{provider.mPackAssets}, true);
     }
 
     public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue, boolean resolveRefs) {
@@ -268,147 +299,6 @@ public class Resources {
             throw nfe;
         }
     }
-
-    /*ResolvedBag getBag(@NonNull ResourceId resId) {
-        return getBag(resId.entry());
-    }
-
-    @SuppressWarnings("ConstantValue")
-    ResolvedBag getBag(@NonNull String style) {
-        var cached = mCachedBags.get(style);
-        if (cached != null) {
-            return cached;
-        }
-
-        int entryIndex = Arrays.binarySearch(mStyleKeys, style);
-        if (entryIndex < 0) {
-            return null;
-        }
-
-        int offset = mStyleOffsets[entryIndex];
-        int[] data = mData;
-
-        int parentId = data[offset + MAP_ENTRY_PARENT];
-        int entryCount = data[offset + MAP_ENTRY_COUNT];
-        offset += MAP_ENTRY_HEADER_COLUMNS;
-        if (parentId == -1) {
-            // no parent
-            ResolvedBag bag = new ResolvedBag();
-            assert MAP_COLUMNS == ResolvedBag.VALUE_COLUMNS;
-            if (entryCount > 0) {
-                // TODO assert entries already sorted
-                String[] keys = new String[entryCount * 2];
-                int[] values = new int[entryCount * 3];
-                for (int i = 0; i < entryCount; i++) {
-                    keys[i * 2 + 0] = DEFAULT_NAMESPACE;
-                    keys[i * 2 + 1] = mKeyStrings[data[offset + MAP_NAME]];
-                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] = data[offset + MAP_DATA_TYPE];
-                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] = data[offset + MAP_DATA];
-                    offset += MAP_COLUMNS;
-                }
-                bag.keys = keys;
-                bag.values = values;
-            }
-            mCachedBags.put(style, bag);
-            return bag;
-        }
-
-        var parentBag = getBag(mKeyStrings[parentId]);
-        if (parentBag == null) {
-            Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
-                    mKeyStrings[parentId], style);
-            return null;
-        }
-
-        ResolvedBag newBag = new ResolvedBag();
-        int parentCount = parentBag.getEntryCount();
-        int maxCount = parentCount + entryCount;
-        if (maxCount > 0) {
-            // allocate max possible array
-            String[] newKeys = new String[maxCount * 2];
-            int[] newValues = new int[maxCount * ResolvedBag.VALUE_COLUMNS];
-            int newIndex = 0;
-            String[] parentKeys = parentBag.keys;
-            int[] parentValues = parentBag.values;
-            int childIndex = 0;
-            int childOffset = offset;
-            int parentIndex = 0;
-
-            // merge two sorted arrays (parent and child)
-
-            while (childIndex < entryCount && parentIndex < parentCount) {
-                String childKey = mKeyStrings[data[childOffset + MAP_NAME]];
-                String parentKey = parentKeys[parentIndex * 2 + 1];
-
-                int keyCompare = childKey.compareTo(parentKey);
-
-                if (keyCompare <= 0) {
-                    // Use the child key if it comes before the parent
-                    // or is equal to the parent (overrides).
-                    newKeys[newIndex * 2 + 0] = DEFAULT_NAMESPACE;
-                    newKeys[newIndex * 2 + 1] = childKey;
-                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
-                            data[childOffset + MAP_DATA_TYPE];
-                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
-                            data[childOffset + MAP_DATA];
-                    childIndex++;
-                    childOffset += MAP_COLUMNS;
-                } else {
-                    newKeys[newIndex * 2 + 0] = DEFAULT_NAMESPACE;
-                    newKeys[newIndex * 2 + 1] = parentKey;
-                    System.arraycopy(parentValues, parentIndex * ResolvedBag.VALUE_COLUMNS,
-                            newValues, newIndex * ResolvedBag.VALUE_COLUMNS, ResolvedBag.VALUE_COLUMNS);
-                }
-
-                // assert already sorted
-                assert newIndex == 0 ||
-                        newKeys[newIndex * 2 + 1].compareTo(newKeys[(newIndex - 1) * 2 + 1]) >= 0;
-
-                if (keyCompare >= 0) {
-                    parentIndex++;
-                }
-                newIndex++;
-            }
-
-            while (childIndex < entryCount) {
-                String childKey = mKeyStrings[data[childOffset + MAP_NAME]];
-                newKeys[newIndex * 2 + 0] = DEFAULT_NAMESPACE;
-                newKeys[newIndex * 2 + 1] = childKey;
-                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
-                        data[childOffset + MAP_DATA_TYPE];
-                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
-                        data[childOffset + MAP_DATA];
-                childIndex++;
-                childOffset += MAP_COLUMNS;
-                newIndex++;
-            }
-
-            if (parentIndex < parentCount) {
-                int numToCopy = parentCount - parentIndex;
-                System.arraycopy(parentValues, parentIndex * ResolvedBag.VALUE_COLUMNS,
-                        newValues, newIndex * ResolvedBag.VALUE_COLUMNS, numToCopy * ResolvedBag.VALUE_COLUMNS);
-                for (int i = 0; i < numToCopy; i++) {
-                    String parentKey = parentKeys[parentIndex * 2 + 1];
-                    newKeys[newIndex * 2 + 0] = DEFAULT_NAMESPACE;
-                    newKeys[newIndex * 2 + 1] = parentKey;
-                    parentIndex++;
-                    newIndex++;
-                }
-            }
-
-            assert newIndex <= maxCount;
-            if (newIndex < maxCount) {
-                // trim to size
-                newKeys = Arrays.copyOf(newKeys, newIndex * 2);
-                newValues = Arrays.copyOf(newValues, newIndex * ResolvedBag.VALUE_COLUMNS);
-            }
-
-            newBag.keys = newKeys;
-            newBag.values = newValues;
-        }
-        mCachedBags.put(style, newBag);
-        return newBag;
-    }*/
 
     @ThreadSafe
     public final class Theme {
