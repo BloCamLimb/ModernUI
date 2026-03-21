@@ -16,8 +16,8 @@ include 'core-ktx'
 project(':core-ktx').name = 'ModernUI-Core-KTX'
 
 // extensions
-include 'x-awt'
-project(':x-awt').name = "ModernUI-AWT"
+/*include 'x-awt'
+project(':x-awt').name = "ModernUI-AWT"*/
 
 include 'x-markflow'
 project(':x-markflow').name = "ModernUI-Markflow"

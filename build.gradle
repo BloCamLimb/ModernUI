@@ -1,6 +1,6 @@
 plugins {
     id 'maven-publish'
-    id "org.jetbrains.kotlin.jvm" version "1.9.22" apply false
+    id "org.jetbrains.kotlin.jvm" version "2.3.20" apply false
     id 'org.jetbrains.dokka' version '2.1.0' apply false
 }
 
@@ -25,7 +25,7 @@ subprojects {
     group = 'icyllis.modernui'
     version = "${modernui_version}" as String
 
-    java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+    java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
     repositories {
         mavenCentral()
@@ -36,13 +36,32 @@ subprojects {
         compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
         compileOnly 'org.jetbrains:annotations:26.0.2'
         compileOnly 'org.jspecify:jspecify:1.0.0'
+
         testCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
         testCompileOnly 'org.jetbrains:annotations:26.0.2'
         testCompileOnly 'org.jspecify:jspecify:1.0.0'
 
         implementation platform("org.lwjgl:lwjgl-bom:${lwjgl_version}")
 
+        testImplementation platform("org.junit:junit-bom:${junit_version}")
+        testImplementation 'org.junit.jupiter:junit-jupiter'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+        testImplementation "com.code-intelligence:jazzer-junit:${jazzer_version}"
+        testRuntimeOnly "com.code-intelligence:jazzer:${jazzer_version}"
+
         dokkaPlugin 'org.jetbrains.dokka:android-documentation-plugin:2.1.0'
+    }
+
+    test {
+        useJUnitPlatform()
+
+        jvmArgs('-ea')
+
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+            exceptionFormat 'full'
+        }
     }
 
     tasks.withType(JavaCompile).configureEach {
@@ -52,5 +71,24 @@ subprojects {
 
     java {
         withSourcesJar()
+    }
+
+    tasks.register('fuzz', Test) {
+        group = 'verification'
+        description = 'Runs jazzer in fuzzing mode.'
+
+        testClassesDirs = testing.suites.test.sources.output.classesDirs
+        classpath = testing.suites.test.sources.runtimeClasspath
+
+        useJUnitPlatform()
+
+        jvmArgs('-ea')
+
+        environment 'JAZZER_FUZZ', '1'
+
+        testLogging {
+            events 'passed', 'skipped', 'failed'
+            exceptionFormat 'full'
+        }
     }
 }

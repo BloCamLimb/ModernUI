@@ -27,7 +27,8 @@ classes
 *.log
 logs
 
-/assets
+# private assets
+assets
 
-core/src/main/resources/assets/modernui/test/
-forge/src/main/java/icyllis/modernui/test/Main.java
+# CI
+.cifuzz-corpus
