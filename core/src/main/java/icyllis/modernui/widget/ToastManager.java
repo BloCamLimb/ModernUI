@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,6 +37,10 @@ import org.slf4j.MarkerFactory;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayDeque;
 
+/**
+ * @hide
+ * @hidden
+ */
 @ApiStatus.Internal
 public final class ToastManager {
 
@@ -119,14 +123,25 @@ public final class ToastManager {
                 ToastRecord record = getToastLocked(mCurrentToastShown);
                 mCurrentToastShown = null;
                 if (record != null) {
-                    cancelToastLocked(record);
+                    cancelToastLocked(record, true);
                 }
             }
         }
     }
 
-    private void cancelToastLocked(@NonNull ToastRecord record) {
-        mWindowManager.removeView(mTextView);
+    private void cancelToastLocked(@NonNull ToastRecord record, boolean fromCallback) {
+        boolean hide = fromCallback;
+
+        if (record.mToken == mCurrentToastShown) {
+            assert !fromCallback;
+            Core.getUiHandlerAsync().removeCallbacks(mDurationReached);
+            mCurrentToastShown = null;
+            hide = true;
+        }
+
+        if (hide) {
+            mWindowManager.removeView(mTextView);
+        }
         mToastQueue.remove(record);
 
         if (mToastQueue.size() > 0) {
@@ -158,7 +173,7 @@ public final class ToastManager {
         synchronized (mToastQueue) {
             ToastRecord r = getToastLocked(token);
             if (r != null) {
-                cancelToastLocked(r);
+                cancelToastLocked(r, false);
             } else {
                 Log.LOGGER.warn(MARKER, "Toast already cancelled. token={}", token);
             }
