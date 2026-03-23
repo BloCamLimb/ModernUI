@@ -86,4 +86,12 @@ public class DirectoryAssetsProvider implements AssetsProvider {
     @Override
     public void close() {
     }
+
+    /**
+     * @return the directory (root path of all assets)
+     */
+    @NonNull
+    public Path getRoot() {
+        return root;
+    }
 }

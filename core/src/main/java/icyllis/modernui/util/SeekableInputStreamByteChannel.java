@@ -53,6 +53,9 @@ import java.util.Objects;
  *     Channels.newInputStream and Files.newInputStream)</li>
  * </ul>
  * For FileInputStream, call FileInputStream.getChannel() may be preferred.
+ *
+ * @hide
+ * @hidden
  */
 @ApiStatus.Internal
 public class SeekableInputStreamByteChannel implements SeekableByteChannel {
@@ -71,6 +74,9 @@ public class SeekableInputStreamByteChannel implements SeekableByteChannel {
 
     private volatile boolean closed;
 
+    /**
+     * Will close the input stream when this channel is closed.
+     */
     public SeekableInputStreamByteChannel(@NonNull InputStream in, long pos, long size) {
         Objects.requireNonNull(in);
         Objects.checkIndex(pos, size);

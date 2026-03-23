@@ -22,7 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 
 /**
  * Represents an asset file.
@@ -34,7 +34,7 @@ public interface Asset {
     /**
      * Opens a stream for reading.
      * <p>
-     * The returned InputStream should support <em>seek</em> as much as possible.
+     * The returned InputStream may support <em>seek</em> (skip forwards and backwards).
      * If the asset represents a file on the OS file system, then the returned stream
      * should be a {@link java.io.FileInputStream}.
      * <p>
@@ -47,20 +47,25 @@ public interface Asset {
     InputStream openStream() throws IOException;
 
     /**
-     * Opens a channel for reading.
+     * Opens a byte channel for reading.
      * <p>
+     * This returns a SeekableByteChannel only if the asset natively supports seeking.
+     * Otherwise (e.g., for compressed assets), a {@link java.io.FileNotFoundException} is thrown.
+     * <p>
+     * This method is designed to avoid internal memory buffering. If the caller requires seek
+     * functionality for non-seekable assets, they should read the InputStream into a byte array
+     * or foreign memory and operate on it directly, rather than using a SeekableByteChannel abstraction.
+     * <p>
+     * This method may return a {@link java.nio.channels.FileChannel} directly if available.
      * There is no guarantee whether the channel is backed by off-heap or on-heap memory,
-     * nor whether the returned channel implements {@link java.nio.channels.SeekableByteChannel}.
-     * Typically, if the asset represents a file on the OS file system, a {@link java.nio.channels.FileChannel}
-     * is returned. In other cases, it is recommended to read via InputStream instead.
      * <p>
-     * The caller must close the returned ReadableByteChannel after use.
+     * The caller must close the returned SeekableByteChannel after use.
      *
      * @return a byte channel that reads this asset
      * @throws IOException I/O exception occurred
      */
     @NonNull
-    ReadableByteChannel openChannel() throws IOException;
+    SeekableByteChannel openChannel() throws IOException;
 
     /**
      * Returns the size of the file, in bytes.

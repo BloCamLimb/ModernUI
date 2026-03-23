@@ -18,15 +18,14 @@
 
 package icyllis.modernui.resources;
 
-
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.util.SeekableInputStreamByteChannel;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -61,10 +60,13 @@ public class ZipAsset implements Asset {
 
     @NonNull
     @Override
-    public ReadableByteChannel openChannel() throws IOException {
-        // we know that STORED entry is seekable, but we don't return a SeekableByteChannel
-        // implementation, because ModernUI framework currently does not rely on Channels for seeking.
-        return Channels.newChannel(openStream());
+    public SeekableByteChannel openChannel() throws IOException {
+        // we know that STORED entry is seekable
+        if (zipEntry.getMethod() == ZipEntry.STORED) {
+            return new SeekableInputStreamByteChannel(openStream(), 0, zipEntry.getSize());
+        }
+        throw new FileNotFoundException(zipEntry.getName() + " cannot be opened as a seekable byte channel, " +
+                "because it is compressed");
     }
 
     @Override
@@ -72,7 +74,8 @@ public class ZipAsset implements Asset {
         return zipEntry.getSize();
     }
 
-    public boolean isCompressed() {
-        return zipEntry.getMethod() != ZipEntry.STORED;
+    @NonNull
+    public ZipEntry getZipEntry() {
+        return zipEntry;
     }
 }

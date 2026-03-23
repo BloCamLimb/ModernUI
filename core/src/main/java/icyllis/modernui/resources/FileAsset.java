@@ -19,14 +19,15 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.util.SeekableInputStreamByteChannel;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -70,13 +71,20 @@ public class FileAsset implements Asset {
 
     @NonNull
     @Override
-    public ReadableByteChannel openChannel() throws IOException {
+    public SeekableByteChannel openChannel() throws IOException {
         if ("jar".equalsIgnoreCase(path.getFileSystem().provider().getScheme())) {
-            // if path is ZipFS, open a stream because it does not support seek
+            // if path is ZipFS, open a stream because it does not support seek natively
             var is = Files.newInputStream(path, OPEN_OPTIONS);
-            // we know that STORED entry is seekable, but we don't return a SeekableByteChannel
-            // implementation, because ModernUI framework currently does not rely on Channels for seeking.
-            return Channels.newChannel(is);
+            // we know that STORED entry is seekable, test it
+            if (IOUtil.testSeekable(is) < -1) {
+                return new SeekableInputStreamByteChannel(is, 0, attributes.size());
+            }
+            try {
+                is.close();
+            } catch (IOException ignored) {
+            }
+            throw new FileNotFoundException(path + " cannot be opened as a seekable byte channel, " +
+                    "because it is compressed");
         }
         return Files.newByteChannel(path, OPEN_OPTIONS);
     }
@@ -84,5 +92,15 @@ public class FileAsset implements Asset {
     @Override
     public long getSize() {
         return attributes.size();
+    }
+
+    @NonNull
+    public Path getPath() {
+        return path;
+    }
+
+    @NonNull
+    public BasicFileAttributes getAttributes() {
+        return attributes;
     }
 }

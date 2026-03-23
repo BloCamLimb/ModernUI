@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -59,7 +60,15 @@ public class ZipAssetsProvider implements AssetsProvider {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         zipFile.close();
+    }
+
+    /**
+     * @return the path of the zip file
+     */
+    @NonNull
+    public String getPath() {
+        return zipFile.getName();
     }
 }

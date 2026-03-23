@@ -24,7 +24,7 @@ import icyllis.modernui.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 
 /**
  * Interface responsible for opening and iterating through asset files.
@@ -64,7 +64,7 @@ public interface AssetsProvider extends AutoCloseable {
      * @see Asset#openChannel()
      */
     @NonNull
-    default ReadableByteChannel openChannel(@NonNull String path) throws IOException {
+    default SeekableByteChannel openChannel(@NonNull String path) throws IOException {
         Asset asset = getAsset(path);
         if (asset == null) {
             throw new FileNotFoundException(path);
