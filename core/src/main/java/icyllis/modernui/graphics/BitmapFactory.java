@@ -720,12 +720,12 @@ public final class BitmapFactory {
                 return 0;
             }
             int read = 0;
+            // File channel can read directly into the native buffer without
+            // going through the heap buffer. If it's not a file channel, then
+            // this typically performs a copy from the heap to native.
+            // Additionally, we require the channel to be in blocking mode.
+            ByteBuffer dst = STBIReadCallback.getData(data, size);
             if (ctx.channel != null) {
-                // File channel can read directly into the native buffer without
-                // going through the heap buffer. If it's not a file channel, then
-                // this typically performs a copy from the heap to native.
-                // Additionally, we require the channel to be in blocking mode.
-                ByteBuffer dst = STBIReadCallback.getData(data, size);
                 while (dst.hasRemaining()) {
                     try {
                         int n = ctx.channel.read(dst);
@@ -747,9 +747,7 @@ public final class BitmapFactory {
                     // If we have pushback buffer, consume it first
                     if (ctx.pos < ctx.end) {
                         request = Math.min(request, ctx.end - ctx.pos);
-                        JNINativeInterface.nGetByteArrayRegion(
-                                ctx.buffer, ctx.pos, request, data + read
-                        );
+                        dst.put(ctx.buffer, ctx.pos, request);
                         ctx.pos += request;
                         read += request;
                         continue;
@@ -767,9 +765,7 @@ public final class BitmapFactory {
                             break;
                         }
                         request = Math.min(request, n);
-                        JNINativeInterface.nGetByteArrayRegion(
-                                ctx.buffer, 0, request, data + read
-                        );
+                        dst.put(ctx.buffer, 0, request);
                         ctx.pos = request;
                         ctx.end = n;
                         read += request;
