@@ -173,15 +173,6 @@ public class Resources {
         return mMetrics;
     }
 
-    public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue, boolean resolveRefs) {
-        getValue(id.namespace(), id.type(), id.entry(), outValue, resolveRefs);
-    }
-
-    void getValue(@NonNull CharSequence namespace, @NonNull CharSequence typeName,
-                         @NonNull CharSequence entryName, @NonNull TypedValue outValue, boolean resolveRefs) {
-
-    }
-
     @Nullable
     CharSequence getPooledStringForCookie(int cookie, int id) {
         LoadedResources loadedResources = mAssetManager.getLoadedResources(cookie);
@@ -213,6 +204,48 @@ public class Resources {
             return ResourceId.attr(namespace, attribute);
         }
         return null;
+    }
+
+    // do post-processing before exposing it to public API users,
+    // freeze the 'object' field
+    boolean postProcess(@NonNull TypedValue outValue) {
+        switch (outValue.type & Res_value.DATA_TYPE_MASK) {
+            case TypedValue.TYPE_STRING -> {
+                if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
+                    return false;
+                }
+            }
+            case TypedValue.TYPE_REFERENCE -> {
+                int typeId = (outValue.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT;
+                if (typeId != 0) {
+                    // erase higher 8 bits
+                    outValue.type = TypedValue.TYPE_REFERENCE;
+                    if ((outValue.object = getReferenceIdForCookie(outValue.cookie, typeId, outValue.data)) == null) {
+                        return false;
+                    }
+                } else {
+                    outValue.object = null;
+                }
+            }
+            case TypedValue.TYPE_ATTRIBUTE -> {
+                if ((outValue.object = getAttributeIdForCookie(outValue.cookie, outValue.data)) == null) {
+                    return false;
+                }
+            }
+            default -> outValue.object = null;
+        }
+        return true;
+    }
+
+    public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
+                         boolean resolveRefs) throws NotFoundException {
+        boolean found = mAssetManager.getResource(id, true, outValue);
+        if (found) {
+            found = postProcess(outValue);
+        }
+        if (!found) {
+            throw new NotFoundException("Resource " + id);
+        }
     }
 
     @NonNull
@@ -557,34 +590,7 @@ public class Resources {
                     //TODO
                 }
 
-                // post-process
-                switch (outValue.type & Res_value.DATA_TYPE_MASK) {
-                    case TypedValue.TYPE_STRING -> {
-                        if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
-                            return false;
-                        }
-                    }
-                    case TypedValue.TYPE_REFERENCE -> {
-                        int typeId = (outValue.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT;
-                        if (typeId != 0) {
-                            // erase higher 8 bits
-                            outValue.type = TypedValue.TYPE_REFERENCE;
-                            if ((outValue.object = getReferenceIdForCookie(cookie, typeId, outValue.data)) == null) {
-                                return false;
-                            }
-                        } else {
-                            outValue.object = null;
-                        }
-                    }
-                    case TypedValue.TYPE_ATTRIBUTE -> {
-                        if ((outValue.object = getAttributeIdForCookie(outValue.cookie, outValue.data)) == null) {
-                            return false;
-                        }
-                    }
-                    default -> outValue.object = null;
-                }
-
-                return true;
+                return postProcess(outValue);
             }
         }
 

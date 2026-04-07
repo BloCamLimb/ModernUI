@@ -67,7 +67,7 @@ public class AssetManager {
         try {
             ResourcesBuilder resourcesBuilder = new ResourcesBuilder(R.ns);
             SystemTheme.addToResources(resourcesBuilder);
-            PackAssets pack = resourcesBuilder.buildPack();
+            PackAssets pack = resourcesBuilder.buildPack(new EmptyAssetsProvider());
 
             sSystemPackAssetsSet = Set.of(pack);
             sSystemPackAssets = new PackAssets[]{pack};
@@ -235,6 +235,26 @@ public class AssetManager {
         }
 
         cachedBags.values().removeIf(b -> (b.typeSpecFlags & diff) != 0);
+    }
+
+    public boolean getResource(@NonNull ResourceId resId,
+                               boolean mayBeBag,
+                               @NonNull TypedValue outValue) {
+        FindEntryResult entry = findEntry(resId.namespace(), resId.type(), resId.entry());
+        if (entry == null) {
+            return false;
+        }
+
+        if ((entry.entry.getShort(ResTable_entry.flags) & ResTable_entry.FLAG_COMPLEX) != 0) {
+
+            return false;
+        }
+
+        outValue.type = entry.entry.getShort(ResTable_entry.dataType) & 0xFFFF;
+        outValue.data = entry.entry.getInt(ResTable_entry.data);
+        outValue.cookie = entry.cookie;
+        outValue.flags = entry.typeFlags;
+        return true;
     }
 
     @Nullable

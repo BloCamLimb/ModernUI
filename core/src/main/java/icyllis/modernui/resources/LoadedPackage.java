@@ -146,16 +146,17 @@ public class LoadedPackage {
             return null;
         }
 
+        int entryFlags = typeChunk.data.getShort(entryOffset + ResTable_entry.flags) & 0xFFFF;
+
+        if ((entryFlags & ResTable_entry.FLAG_COMPLEX) == 0) {
+            return typeChunk.data.slice(entryOffset, ResTable_entry.SIZEOF)
+                    .order(ByteOrder.nativeOrder());
+        }
+
         int entrySize = typeChunk.data.getShort(entryOffset + ResTable_entry.size) & 0xFFFF;
 
         if (entrySize < ResTable_entry.SIZEOF || entryOffset > typeChunk.data.limit() - entrySize) {
             return null;
-        }
-
-        int entryFlags = typeChunk.data.getShort(entryOffset + ResTable_entry.flags) & 0xFFFF;
-        if ((entryFlags & ResTable_entry.FLAG_COMPLEX) == 0) {
-            return typeChunk.data.slice(entryOffset, entrySize)
-                    .order(ByteOrder.nativeOrder());
         }
 
         if (entrySize < ResTable_entry.SIZEOF_EXT) {

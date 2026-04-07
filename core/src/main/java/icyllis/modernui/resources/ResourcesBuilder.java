@@ -30,8 +30,10 @@ import icyllis.modernui.resources.ResourceTypes.ResTable_type;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
 import icyllis.modernui.util.ColorStateList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.WillClose;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -93,14 +95,15 @@ public class ResourcesBuilder {
 
     HashMap<String, Style> mStyleTable = new HashMap<>();
 
+    // type -> entry -> (dataType << 32) | data
+    HashMap<String, Object2LongOpenHashMap<String>> mValueTable = new HashMap<>();
+
     public ResourcesBuilder(@NonNull String namespace) {
         mNamespace = namespace;
         mTypeStringTable.defaultReturnValue(-1);
         mKeyStringTable.defaultReturnValue(-1);
         mGlobalStringTable.defaultReturnValue(-1);
         mFactoryTable.defaultReturnValue(-1);
-
-        storeTypeString("style");
     }
 
     int storeTypeString(String type) {
@@ -148,12 +151,24 @@ public class ResourcesBuilder {
         return newStyle(id.entry(), parent);
     }
 
+    @NonNull
+    Object2LongOpenHashMap<String> getType(@NonNull String type) {
+        return mValueTable.computeIfAbsent(type, __ -> new Object2LongOpenHashMap<>());
+    }
+
+    public void addString(@NonNull @AnyRes ResourceId id,
+                          @NonNull String value) {
+        assert id.namespace().equals(mNamespace);
+        getType(id.type()).put(id.entry(),
+                ((long) Res_value.TYPE_STRING << 32) | storeGlobalString(value));
+    }
+
     /**
      * @return
      * @throws IllegalStateException the runtime limit is exceeded
      */
     public ResourcesProvider build() {
-        PackAssets packAssets = buildPack();
+        PackAssets packAssets = buildPack(new EmptyAssetsProvider());
 
         return new ResourcesProvider(packAssets);
     }
@@ -163,7 +178,7 @@ public class ResourcesBuilder {
      * @hidden
      */
     @ApiStatus.Internal
-    public PackAssets buildPack() {
+    public PackAssets buildPack(@NonNull @WillClose AssetsProvider assetsProvider) {
         LoadedResources resources = new LoadedResources();
 
         mGlobalStringTable = null;
@@ -174,64 +189,124 @@ public class ResourcesBuilder {
         resources.factoryPool = mFactoryArray.toArray(new BiFunction[0]);
         mFactoryArray = null;
 
-        ArrayList<Style> styles = new ArrayList<>(mStyleTable.values());
-        mStyleTable = null;
-
-        Object2IntOpenHashMap<String> entryIndexTable = new Object2IntOpenHashMap<>(styles.size());
-        entryIndexTable.defaultReturnValue(-1);
-        int valuesSize = 0;
-        int offsetsSize = 4 * styles.size();
-        for (int i = 0; i < styles.size(); i++) {
-            var style = styles.get(i);
-            style.mEntries.sort(Style.STYLE_ENTRY_COMPARATOR);
-            // entry data
-            valuesSize += ResTable_entry.SIZEOF_EXT + ResTable_map.SIZEOF * style.mEntries.size();
-            entryIndexTable.put(style.mName, i);
-        }
-
-        int[] styleOffsets = new int[styles.size()];
-
-        // allocate heap buffer
-        ByteBuffer data = ByteBuffer.allocate(offsetsSize + valuesSize)
-                .order(ByteOrder.nativeOrder());
-        int offset = offsetsSize;
-        for (int i = 0; i < styles.size(); i++) {
-            var style = styles.get(i);
-            styleOffsets[i] = offset - offsetsSize;
-            data.putShort(offset + ResTable_entry.size, (short) ResTable_entry.SIZEOF_EXT);
-            data.putShort(offset + ResTable_entry.flags, (short) ResTable_entry.FLAG_COMPLEX);
-
-            int parentId = -1;
-            if (style.mParent != null) {
-                parentId = genId(style.mParent.namespace(), style.mParent.entry());
+        LoadedPackage.TypeSpec styleTypeSpec;
+        buildStyles: {
+            ArrayList<Style> styles = new ArrayList<>(mStyleTable.values());
+            mStyleTable = null;
+            if (styles.isEmpty()) {
+                styleTypeSpec = null;
+                break buildStyles;
             }
 
-            data.putInt(offset + ResTable_entry.parent, parentId);
-            data.putInt(offset + ResTable_entry.count, style.mEntries.size());
-            offset += ResTable_entry.SIZEOF_EXT;
-
-            var entries = style.mEntries;
-            for (int j = 0; j < entries.size(); j++) {
-                var entry = entries.get(j);
-                int mapName = genId(entry.ns, entry.attr);
-                data.putInt(offset + ResTable_map.name, mapName);
-                data.putShort(offset + ResTable_map.value + Res_value.type, (short) entry.dataType);
-                data.putInt(offset + ResTable_map.value + Res_value.data, entry.data);
-                offset += ResTable_map.SIZEOF;
+            Object2IntOpenHashMap<String> entryIndexTable = new Object2IntOpenHashMap<>(styles.size());
+            entryIndexTable.defaultReturnValue(-1);
+            int valuesSize = 0;
+            int offsetsSize = 4 * styles.size();
+            for (int i = 0; i < styles.size(); i++) {
+                var style = styles.get(i);
+                style.mEntries.sort(Style.STYLE_ENTRY_COMPARATOR);
+                // entry data
+                valuesSize += ResTable_entry.SIZEOF_EXT + ResTable_map.SIZEOF * style.mEntries.size();
+                entryIndexTable.put(style.mName, i);
             }
+
+            int[] styleOffsets = new int[styles.size()];
+
+            // allocate heap buffer
+            ByteBuffer data = ByteBuffer.allocate(offsetsSize + valuesSize)
+                    .order(ByteOrder.nativeOrder());
+            int offset = offsetsSize;
+            for (int i = 0; i < styles.size(); i++) {
+                var style = styles.get(i);
+                styleOffsets[i] = offset - offsetsSize;
+                data.putShort(offset + ResTable_entry.size, (short) ResTable_entry.SIZEOF_EXT);
+                data.putShort(offset + ResTable_entry.flags, (short) ResTable_entry.FLAG_COMPLEX);
+
+                int parentId = -1;
+                if (style.mParent != null) {
+                    parentId = genId(style.mParent.namespace(), style.mParent.entry());
+                }
+
+                data.putInt(offset + ResTable_entry.parent, parentId);
+                data.putInt(offset + ResTable_entry.count, style.mEntries.size());
+                offset += ResTable_entry.SIZEOF_EXT;
+
+                var entries = style.mEntries;
+                for (int j = 0; j < entries.size(); j++) {
+                    var entry = entries.get(j);
+                    int mapName = genId(entry.ns, entry.attr);
+                    data.putInt(offset + ResTable_map.name, mapName);
+                    data.putShort(offset + ResTable_map.value + Res_value.type, (short) entry.dataType);
+                    data.putInt(offset + ResTable_map.value + Res_value.data, entry.data);
+                    offset += ResTable_map.SIZEOF;
+                }
+            }
+            data.asIntBuffer().put(0, styleOffsets);
+            assert offset == offsetsSize + valuesSize;
+
+            LoadedPackage.TypeEntry typeEntry = new LoadedPackage.TypeEntry();
+            typeEntry.id = (byte) (storeTypeString("style") + 1);
+            typeEntry.entryCount = styles.size();
+            typeEntry.entriesStart = ResTable_type.SIZEOF + offsetsSize;
+            typeEntry.data = data;
+
+            styleTypeSpec = new LoadedPackage.TypeSpec(0, Collections.singletonList(typeEntry));
+            styleTypeSpec.id = typeEntry.id;
+            styleTypeSpec.entryIndexTable = entryIndexTable;
         }
-        data.asIntBuffer().put(0, styleOffsets);
-        assert offset == offsetsSize + valuesSize;
 
-        LoadedPackage.TypeEntry typeEntry = new LoadedPackage.TypeEntry();
-        typeEntry.id = (byte) (storeTypeString("style") + 1);
-        typeEntry.entryCount = styles.size();
-        typeEntry.entriesStart = ResTable_type.SIZEOF + offsetsSize;
-        typeEntry.data = data;
+        HashMap<String, LoadedPackage.TypeSpec> typeSpecs = new HashMap<>();
 
-        LoadedPackage.TypeSpec typeSpec = new LoadedPackage.TypeSpec(0, Collections.singletonList(typeEntry));
-        typeSpec.id = typeEntry.id;
-        typeSpec.entryIndexTable = entryIndexTable;
+        if (styleTypeSpec != null) {
+            typeSpecs.put("style", styleTypeSpec);
+        }
+
+        for (var typeE : mValueTable.entrySet()) {
+            String typeName = typeE.getKey();
+            Object2LongOpenHashMap<String> typeValues = typeE.getValue();
+
+            if (typeValues.isEmpty()) {
+                continue;
+            }
+
+            Object2IntOpenHashMap<String> entryIndexTable = new Object2IntOpenHashMap<>(typeValues.size());
+            entryIndexTable.defaultReturnValue(-1);
+            int valuesSize = ResTable_entry.SIZEOF * typeValues.size();
+            int offsetsSize = 4 * typeValues.size();
+            int i = 0;
+
+            int[] valueOffsets = new int[typeValues.size()];
+
+            // allocate heap buffer
+            ByteBuffer data = ByteBuffer.allocate(offsetsSize + valuesSize)
+                    .order(ByteOrder.nativeOrder());
+            int offset = offsetsSize;
+            for (var valueE : typeValues.object2LongEntrySet()) {
+                entryIndexTable.put(valueE.getKey(), i);
+
+                long packedValue = valueE.getLongValue();
+
+                valueOffsets[i] = offset - offsetsSize;
+                data.putShort(offset + ResTable_entry.dataType, (short) (packedValue >>> 32));
+                data.putShort(offset + ResTable_entry.flags, (short) 0);
+                data.putInt(offset + ResTable_entry.data, (int) packedValue);
+
+                offset += ResTable_entry.SIZEOF;
+            }
+            data.asIntBuffer().put(0, valueOffsets);
+            assert offset == offsetsSize + valuesSize;
+
+            LoadedPackage.TypeEntry typeEntry = new LoadedPackage.TypeEntry();
+            typeEntry.id = (byte) (storeTypeString(typeName) + 1);
+            typeEntry.entryCount = typeValues.size();
+            typeEntry.entriesStart = ResTable_type.SIZEOF + offsetsSize;
+            typeEntry.data = data;
+
+            var typeSpec = new LoadedPackage.TypeSpec(0, Collections.singletonList(typeEntry));
+            typeSpec.id = typeEntry.id;
+            typeSpec.entryIndexTable = entryIndexTable;
+            typeSpecs.put(typeName, typeSpec);
+        }
 
         resources.typeStringPool = new ResStringPool(mTypeStringArray.toArray(new String[0]));
         mTypeStringArray = null;
@@ -244,13 +319,12 @@ public class ResourcesBuilder {
         }
 
         LoadedPackage loadedPackage = new LoadedPackage(mNamespace);
-        loadedPackage.typeSpecs = new HashMap<>();
-        loadedPackage.typeSpecs.put("style", typeSpec);
+        loadedPackage.typeSpecs = typeSpecs;
 
         resources.packages = new LoadedPackage[]{loadedPackage};
 
         PackAssets packAssets = new PackAssets();
-        packAssets.assetsProvider = new EmptyAssetsProvider();
+        packAssets.assetsProvider = assetsProvider;
         packAssets.loadedResources = resources;
         return packAssets;
     }

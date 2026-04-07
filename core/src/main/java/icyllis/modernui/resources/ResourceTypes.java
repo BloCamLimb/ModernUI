@@ -264,8 +264,8 @@ public class ResourceTypes {
 
         // if NOT FLAG_COMPLEX:
         /*
-            uint16_t size;  // Number of bytes in this structure. SIZEOF = 8
-            uint16_t flags; // higher 8 bits encode dataType, lower 8 bits encode flags
+            uint16_t dataType;
+            uint16_t flags;
             uint32_t data;
          */
 
@@ -279,10 +279,11 @@ public class ResourceTypes {
          */
 
         //// field offsets
-        public static final int size = 0;
+        public static final int dataType = 0;
         public static final int flags = 2;
         public static final int data = 4;
 
+        public static final int size = 0;
         public static final int parent = 4;
         public static final int count = 8;
     }
