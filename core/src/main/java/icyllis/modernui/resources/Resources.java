@@ -239,7 +239,7 @@ public class Resources {
 
     public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
                          boolean resolveRefs) throws NotFoundException {
-        boolean found = mAssetManager.getResource(id, true, outValue);
+        boolean found = mAssetManager.getResource(id, outValue);
         if (found) {
             found = postProcess(outValue);
         }

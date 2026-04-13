@@ -143,27 +143,6 @@ public class AssetManager {
         public final IntArrayList cookies = new IntArrayList();
     }
 
-    public static class FindEntryResult {
-
-        public int cookie;
-        // The value of the resource table entry.
-        // Pointer to a ResTable_entry struct.
-        public ByteBuffer entry;
-        public int typeFlags;
-
-        public FindEntryResult(int cookie, ByteBuffer entry, int typeFlags) {
-            this.cookie = cookie;
-            this.entry = entry;
-            this.typeFlags = typeFlags;
-        }
-
-        public void set(FindEntryResult o) {
-            cookie = o.cookie;
-            entry = o.entry;
-            typeFlags = o.typeFlags;
-        }
-    }
-
     @Deprecated
     public AssetManager() {
     }
@@ -238,51 +217,37 @@ public class AssetManager {
     }
 
     public boolean getResource(@NonNull ResourceId resId,
-                               boolean mayBeBag,
                                @NonNull TypedValue outValue) {
-        FindEntryResult entry = findEntry(resId.namespace(), resId.type(), resId.entry());
-        if (entry == null) {
-            return false;
-        }
-
-        if ((entry.entry.getShort(ResTable_entry.flags) & ResTable_entry.FLAG_COMPLEX) != 0) {
-
-            return false;
-        }
-
-        outValue.type = entry.entry.getShort(ResTable_entry.dataType) & 0xFFFF;
-        outValue.data = entry.entry.getInt(ResTable_entry.data);
-        outValue.cookie = entry.cookie;
-        outValue.flags = entry.typeFlags;
-        return true;
+        Object entry = findEntry(resId.namespace(), resId.type(), resId.entry(),
+                outValue);
+        return entry == outValue;
     }
 
     @Nullable
     public ResolvedBag getBag(@NonNull ResourceId resId) {
-        return getBag(resId, null);
+        return getBag(resId, null, null);
     }
 
     @SuppressWarnings("PointlessArithmeticExpression")
     @Nullable
-    final ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds) {
+    final ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds,
+                             TypedValue value) {
         ResolvedBag cached = cachedBags.get(resId);
         if (cached != SENTINEL_BAG) {
             return cached;
         }
 
-        FindEntryResult entry = findEntry(resId.namespace(), resId.type(), resId.entry());
-        int entryFlags = 0;
-        int entrySize = 0;
-
-        if (entry != null) {
-            entrySize = entry.entry.getShort(ResTable_entry.size) & 0xFFFF;
-            entryFlags = entry.entry.getShort(ResTable_entry.flags) & 0xFFFF;
+        if (value == null) {
+            value = new TypedValue();
         }
+
+        Object entry = findEntry(resId.namespace(), resId.type(), resId.entry(),
+                value);
 
         ByteBuffer map = null;
 
-        if ((entryFlags & ResTable_entry.FLAG_COMPLEX) != 0) {
-            map = entry.entry;
+        if (entry instanceof ByteBuffer) {
+            map = (ByteBuffer) entry;
         }
 
         if (map == null) {
@@ -295,9 +260,11 @@ public class AssetManager {
             return null;
         }
 
+        int entrySize = map.getShort(ResTable_entry.size) & 0xFFFF;
         int parentId = map.getInt(ResTable_entry.parent);
         int entryCount = map.getInt(ResTable_entry.count);
-        int cookie = entry.cookie;
+        int cookie = value.cookie;
+        int typeFlags = value.flags;
         LoadedResources resources = getLoadedResources(cookie);
         if (resources == null) {
             return null; // impossible
@@ -352,13 +319,13 @@ public class AssetManager {
                 bag = new ResolvedBag();
                 bag.keys = keys;
                 bag.values = values;
-                bag.typeSpecFlags = entry.typeFlags;
+                bag.typeSpecFlags = typeFlags;
             }
             cachedBags.put(resId, bag);
             return bag;
         }
 
-        ResolvedBag parentBag = getBag(parentResId, childResIds);
+        ResolvedBag parentBag = getBag(parentResId, childResIds, value);
         if (parentBag == null) {
             Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
                     parentResId, resId);
@@ -471,14 +438,15 @@ public class AssetManager {
             newBag.keys = newKeys;
             newBag.values = newValues;
             // Combine flags from the parent and our own bag.
-            newBag.typeSpecFlags = entry.typeFlags | parentBag.typeSpecFlags;
+            newBag.typeSpecFlags = typeFlags | parentBag.typeSpecFlags;
         }
         cachedBags.put(resId, newBag);
         return newBag;
     }
 
     @Nullable
-    private FindEntryResult findEntry(String namespace, String typeString, String entryString) {
+    private Object findEntry(String namespace, String typeString, String entryString,
+                             @NonNull TypedValue outValue) {
         if (namespace == null || namespace.isEmpty() ||
                 typeString == null || typeString.isEmpty() ||
                 entryString == null || entryString.isEmpty()) {
@@ -490,12 +458,13 @@ public class AssetManager {
             return null;
         }
 
-        return findEntryInternal(packageGroup, typeString, entryString);
+        return findEntryInternal(packageGroup, typeString, entryString, outValue);
     }
 
     @Nullable
-    private FindEntryResult findEntryInternal(@NonNull PackageGroup packageGroup,
-                                              @NonNull String typeString, @NonNull String entryString) {
+    private Object findEntryInternal(@NonNull PackageGroup packageGroup,
+                                     @NonNull String typeString, @NonNull String entryString,
+                                     @NonNull TypedValue outValue) {
         int bestCookie = kInvalidCookie;
         LoadedPackage bestPackage = null;
         LoadedPackage.TypeEntry bestType = null;
@@ -541,16 +510,15 @@ public class AssetManager {
             return null;
         }
 
-        ByteBuffer bestEntry = bestPackage.getEntryFromOffset(bestType, bestOffset);
+        Object bestEntry = bestPackage.getEntryFromOffset(bestType, bestOffset, outValue);
         if (bestEntry == null) {
             return null;
         }
 
-        return new FindEntryResult(
-                bestCookie,
-                bestEntry,
-                typeFlags
-        );
+        outValue.cookie = bestCookie;
+        outValue.flags = typeFlags;
+
+        return bestEntry;
     }
 
     public PackAssets getPackAssets(int cookie) {

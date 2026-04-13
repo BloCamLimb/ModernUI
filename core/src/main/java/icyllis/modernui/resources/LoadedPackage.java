@@ -18,6 +18,8 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.resources.ResourceTypes.*;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -134,8 +136,15 @@ public class LoadedPackage {
         return typeChunk.data.getInt(entryIndex * 4);
     }
 
-    // Returns memory view to ResTable_entry struct.
-    public ByteBuffer getEntryFromOffset(TypeEntry typeChunk, int entryOffset) {
+    /**
+     * Returns memory view to ResTable_entry struct.
+     * <p>
+     * If ResTable_entry is not complex, returns simple TypedValue.
+     * If complex, returns a ByteBuffer slice. If invalid, returns null.
+     */
+    @Nullable
+    public Object getEntryFromOffset(@NonNull TypeEntry typeChunk, int entryOffset,
+                                     @Nullable TypedValue outValue) {
 
         if (!MathUtil.isAlign4(entryOffset)) {
             return null;
@@ -149,8 +158,12 @@ public class LoadedPackage {
         int entryFlags = typeChunk.data.getShort(entryOffset + ResTable_entry.flags) & 0xFFFF;
 
         if ((entryFlags & ResTable_entry.FLAG_COMPLEX) == 0) {
-            return typeChunk.data.slice(entryOffset, ResTable_entry.SIZEOF)
-                    .order(ByteOrder.nativeOrder());
+            if (outValue == null) {
+                outValue = new TypedValue();
+            }
+            outValue.type = typeChunk.data.getShort(entryOffset + ResTable_entry.dataType) & 0xFFFF;
+            outValue.data = typeChunk.data.getInt(entryOffset + ResTable_entry.data);
+            return outValue;
         }
 
         int entrySize = typeChunk.data.getShort(entryOffset + ResTable_entry.size) & 0xFFFF;
