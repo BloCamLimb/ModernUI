@@ -63,6 +63,7 @@ public interface Asset {
      *
      * @return a byte channel that reads this asset
      * @throws IOException I/O exception occurred
+     * @see #isCompressed()
      */
     @NonNull
     SeekableByteChannel openChannel() throws IOException;
@@ -75,6 +76,16 @@ public interface Asset {
      * May return 0 or -1 if unknown or there is an error.
      *
      * @return the file size, in bytes
+     * @see #isCompressed()
      */
     long getSize();
+
+    /**
+     * Returns whether the asset is compressed.
+     *
+     * @return true if compressed, false if uncompressed
+     * @see #getSize()
+     * @see #openChannel()
+     */
+    boolean isCompressed();
 }

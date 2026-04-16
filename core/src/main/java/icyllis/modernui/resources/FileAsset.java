@@ -72,7 +72,7 @@ public class FileAsset implements Asset {
     @NonNull
     @Override
     public SeekableByteChannel openChannel() throws IOException {
-        if ("jar".equalsIgnoreCase(path.getFileSystem().provider().getScheme())) {
+        if (isCompressed()) {
             // if path is ZipFS, open a stream because it does not support seek natively
             var is = Files.newInputStream(path, OPEN_OPTIONS);
             // we know that STORED entry is seekable, test it
@@ -92,6 +92,12 @@ public class FileAsset implements Asset {
     @Override
     public long getSize() {
         return attributes.size();
+    }
+
+    @Override
+    public boolean isCompressed() {
+        // if path is from ZipFS, we always consider it compressed
+        return "jar".equalsIgnoreCase(path.getFileSystem().provider().getScheme());
     }
 
     @NonNull

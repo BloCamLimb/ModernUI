@@ -74,6 +74,11 @@ public class ZipAsset implements Asset {
         return zipEntry.getSize();
     }
 
+    @Override
+    public boolean isCompressed() {
+        return zipEntry.getMethod() != ZipEntry.STORED;
+    }
+
     @NonNull
     public ZipEntry getZipEntry() {
         return zipEntry;
