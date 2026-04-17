@@ -41,7 +41,8 @@ public interface Asset {
      * The caller must close the returned InputStream after use.
      *
      * @return an input stream that reads this asset
-     * @throws IOException I/O exception occurred
+     * @throws IOException           I/O exception occurred
+     * @throws IllegalStateException associated zip file or file system is closed
      */
     @NonNull
     InputStream openStream() throws IOException;
@@ -62,7 +63,8 @@ public interface Asset {
      * The caller must close the returned SeekableByteChannel after use.
      *
      * @return a byte channel that reads this asset
-     * @throws IOException I/O exception occurred
+     * @throws IOException           I/O exception occurred
+     * @throws IllegalStateException associated zip file or file system is closed
      * @see #isCompressed()
      */
     @NonNull

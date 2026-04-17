@@ -21,6 +21,7 @@ package icyllis.modernui.util;
 import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -58,7 +59,7 @@ import java.util.Objects;
  * @hidden
  */
 @ApiStatus.Internal
-public class SeekableInputStreamByteChannel implements SeekableByteChannel {
+public class SeekableInputStreamChannel implements SeekableByteChannel {
 
     private static final int BUFFER_SIZE = 8192;
 
@@ -67,8 +68,10 @@ public class SeekableInputStreamByteChannel implements SeekableByteChannel {
     private final InputStream in;
 
     // temp buf when read() dst is a direct buffer
+    @GuardedBy("lock")
     private byte[] buf;
 
+    @GuardedBy("lock")
     private long pos;
     private final long size;
 
@@ -77,7 +80,7 @@ public class SeekableInputStreamByteChannel implements SeekableByteChannel {
     /**
      * Will close the input stream when this channel is closed.
      */
-    public SeekableInputStreamByteChannel(@NonNull InputStream in, long pos, long size) {
+    public SeekableInputStreamChannel(@NonNull InputStream in, long pos, long size) {
         Objects.requireNonNull(in);
         Objects.checkIndex(pos, size);
         this.pos = pos;
@@ -185,6 +188,7 @@ public class SeekableInputStreamByteChannel implements SeekableByteChannel {
     public void close() throws IOException {
         if (closed)
             return;
+        // double-checked Lock
         synchronized (lock) {
             if (closed)
                 return;

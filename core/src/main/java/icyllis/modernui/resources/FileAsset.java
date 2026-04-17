@@ -19,7 +19,6 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.util.SeekableInputStreamByteChannel;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
@@ -73,16 +72,6 @@ public class FileAsset implements Asset {
     @Override
     public SeekableByteChannel openChannel() throws IOException {
         if (isCompressed()) {
-            // if path is ZipFS, open a stream because it does not support seek natively
-            var is = Files.newInputStream(path, OPEN_OPTIONS);
-            // we know that STORED entry is seekable, test it
-            if (IOUtil.testSeekable(is) < -1) {
-                return new SeekableInputStreamByteChannel(is, 0, attributes.size());
-            }
-            try {
-                is.close();
-            } catch (IOException ignored) {
-            }
             throw new FileNotFoundException(path + " cannot be opened as a seekable byte channel, " +
                     "because it is compressed");
         }

@@ -19,7 +19,7 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.util.SeekableInputStreamByteChannel;
+import icyllis.modernui.util.SeekableInputStreamChannel;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.FileNotFoundException;
@@ -61,9 +61,10 @@ public class ZipAsset implements Asset {
     @NonNull
     @Override
     public SeekableByteChannel openChannel() throws IOException {
-        // we know that STORED entry is seekable
+        // we know that STORED entry is seekable, see
+        // https://github.com/openjdk/jdk/blob/master/test/jdk/java/util/zip/ZipFile/ZipFileInputStreamSkipTest.java
         if (zipEntry.getMethod() == ZipEntry.STORED) {
-            return new SeekableInputStreamByteChannel(openStream(), 0, zipEntry.getSize());
+            return new SeekableInputStreamChannel(openStream(), 0, zipEntry.getSize());
         }
         throw new FileNotFoundException(zipEntry.getName() + " cannot be opened as a seekable byte channel, " +
                 "because it is compressed");
