@@ -19,7 +19,9 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
@@ -90,4 +92,16 @@ public interface Asset {
      * @see #openChannel()
      */
     boolean isCompressed();
+
+    /**
+     * Returns a {@link File} object representing this asset.
+     * <p>
+     * This method returns a non-null value only if the asset represents a file on
+     * the <em>default file system</em>. For other cases, such as ZIP entries or
+     * virtual file systems, this returns {@code null}.
+     *
+     * @return a {@code File} object representing this asset, null otherwise
+     */
+    @Nullable
+    File toFile();
 }

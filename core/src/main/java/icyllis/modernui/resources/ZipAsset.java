@@ -19,9 +19,11 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.SeekableInputStreamChannel;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -78,6 +80,12 @@ public class ZipAsset implements Asset {
     @Override
     public boolean isCompressed() {
         return zipEntry.getMethod() != ZipEntry.STORED;
+    }
+
+    @Nullable
+    @Override
+    public File toFile() {
+        return null;
     }
 
     @NonNull

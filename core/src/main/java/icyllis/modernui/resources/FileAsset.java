@@ -19,6 +19,7 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
@@ -57,14 +58,13 @@ public class FileAsset implements Asset {
     @NonNull
     @Override
     public InputStream openStream() throws IOException {
-        try {
-            File file = path.toFile();
+        File file = toFile();
+        if (file != null) {
             // if the Path is a File, open FileInputStream so that we can support seek
             // or obtain the FileChannel through getChannel()
             return new FileInputStream(file);
-        } catch (RuntimeException ignored) {
-            // not a file, fallback to general case
         }
+        // not a file, fallback to general case
         return Files.newInputStream(path, OPEN_OPTIONS);
     }
 
@@ -87,6 +87,17 @@ public class FileAsset implements Asset {
     public boolean isCompressed() {
         // if path is from ZipFS, we always consider it compressed
         return "jar".equalsIgnoreCase(path.getFileSystem().provider().getScheme());
+    }
+
+    @Nullable
+    @Override
+    public File toFile() {
+        try {
+            return path.toFile();
+        } catch (RuntimeException e) {
+            // not a file
+            return null;
+        }
     }
 
     @NonNull
