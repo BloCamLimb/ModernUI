@@ -18,7 +18,12 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
+
+import javax.annotation.WillCloseWhenClosed;
+import java.lang.ref.Cleaner;
 
 /**
  * Represents a loaded asset pack.
@@ -31,11 +36,18 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public final class PackAssets implements AutoCloseable {
 
-    AssetsProvider assetsProvider;
+    private final AssetsProvider assetsProvider;
 
-    LoadedResources loadedResources;
+    private final LoadedResources loadedResources;
 
+    private final Cleaner.Cleanable cleanup;
 
+    public PackAssets(@NonNull @WillCloseWhenClosed AssetsProvider assetsProvider,
+                      @NonNull LoadedResources loadedResources) {
+        this.assetsProvider = assetsProvider;
+        this.loadedResources = loadedResources;
+        cleanup = Core.registerNativeResource(this, assetsProvider);
+    }
 
     public AssetsProvider getAssetsProvider() {
         return assetsProvider;
@@ -46,10 +58,7 @@ public final class PackAssets implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
-        if (assetsProvider != null) {
-            assetsProvider.close();
-            assetsProvider = null;
-        }
+    public void close() {
+        cleanup.clean();
     }
 }

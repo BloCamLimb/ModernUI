@@ -33,7 +33,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.WillClose;
+import javax.annotation.WillCloseWhenClosed;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -178,7 +178,7 @@ public class ResourcesBuilder {
      * @hidden
      */
     @ApiStatus.Internal
-    public PackAssets buildPack(@NonNull @WillClose AssetsProvider assetsProvider) {
+    public PackAssets buildPack(@NonNull @WillCloseWhenClosed AssetsProvider assetsProvider) {
         LoadedResources resources = new LoadedResources();
 
         mGlobalStringTable = null;
@@ -323,10 +323,7 @@ public class ResourcesBuilder {
 
         resources.packages = new LoadedPackage[]{loadedPackage};
 
-        PackAssets packAssets = new PackAssets();
-        packAssets.assetsProvider = assetsProvider;
-        packAssets.loadedResources = resources;
-        return packAssets;
+        return new PackAssets(assetsProvider, resources);
     }
 
     public class Style {

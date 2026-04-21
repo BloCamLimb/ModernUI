@@ -36,13 +36,11 @@ public class ResourcesProvider implements AutoCloseable {
     private int mUsageCount;
 
     private PackAssets mPackAssets;
-    private final Cleaner.Cleanable mCleanup;
 
     ResourcesProvider(@NonNull PackAssets packAssets) {
         mOpen = true;
         mUsageCount = 0;
         mPackAssets = packAssets;
-        mCleanup = Core.registerNativeResource(this, packAssets);
     }
 
     void incUsageCount() {
@@ -92,7 +90,7 @@ public class ResourcesProvider implements AutoCloseable {
             }
             mOpen = false;
         }
+        mPackAssets.close();
         mPackAssets = null;
-        mCleanup.clean();
     }
 }
