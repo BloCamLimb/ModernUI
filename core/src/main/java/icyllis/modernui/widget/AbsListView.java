@@ -4791,6 +4791,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      * @see #setBottomEdgeEffectColor(int)
      * @see #getBottomEdgeEffectColor()
      */
+    @Deprecated(forRemoval = true)
     public int getTopEdgeEffectColor() {
         return mEdgeGlowTop.getColor();
     }
@@ -4804,6 +4805,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      * @see #setBottomEdgeEffectColor(int)
      * @see #getTopEdgeEffectColor()
      */
+    @Deprecated(forRemoval = true)
     public int getBottomEdgeEffectColor() {
         return mEdgeGlowBottom.getColor();
     }

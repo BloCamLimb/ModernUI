@@ -1693,6 +1693,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @return Returns the current text color.
      */
+    @Deprecated(forRemoval = true)
     public final int getCurrentTextColor() {
         return mCurTextColor;
     }
@@ -1711,6 +1712,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return the color used to display the selection highlight
      * @see #setHighlightColor(int)
      */
+    @Deprecated(forRemoval = true)
     public int getHighlightColor() {
         return mHighlightColor;
     }
@@ -1812,6 +1814,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @return Returns the current hint text color.
      */
+    @Deprecated(forRemoval = true)
     public final int getCurrentHintTextColor() {
         return mCurHintTextColor;
     }

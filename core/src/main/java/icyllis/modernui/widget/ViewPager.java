@@ -784,6 +784,7 @@ public class ViewPager extends ViewGroup {
      * @see #getRightEdgeEffectColor()
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getLeftEdgeEffectColor() {
         return mLeftEdge.getColor();
     }
@@ -798,6 +799,7 @@ public class ViewPager extends ViewGroup {
      * @see #getLeftEdgeEffectColor()
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getRightEdgeEffectColor() {
         return mRightEdge.getColor();
     }

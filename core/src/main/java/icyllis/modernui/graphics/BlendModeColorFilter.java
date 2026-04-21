@@ -82,6 +82,7 @@ public final class BlendModeColorFilter extends ColorFilter {
         );
     }
 
+    @Deprecated(forRemoval = true)
     public int getColor() {
         return ((int) (mColor[0] * 255.0f + 0.5f) << 16) |
                 ((int) (mColor[1] * 255.0f + 0.5f) << 8) |

@@ -107,8 +107,11 @@ public class ColorDrawable extends Drawable {
      * Gets the drawable's color value.
      *
      * @return int The color to draw.
+     * @deprecated the signature of this method will be changed in future versions,
+     * cause a binary incompatibility
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getColor() {
         return mColorState.mUseColor;
     }

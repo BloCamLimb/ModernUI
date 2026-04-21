@@ -313,6 +313,7 @@ public class HorizontalScrollView extends FrameLayout {
      * @see #getRightEdgeEffectColor()
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getLeftEdgeEffectColor() {
         return mEdgeGlowLeft.getColor();
     }
@@ -327,6 +328,7 @@ public class HorizontalScrollView extends FrameLayout {
      * @see #getLeftEdgeEffectColor()
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getRightEdgeEffectColor() {
         return mEdgeGlowRight.getColor();
     }

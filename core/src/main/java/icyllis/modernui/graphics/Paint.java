@@ -459,8 +459,11 @@ public class Paint {
      * or legacy API compatibility. Otherwise, use {@link #getColor4f()}.
      *
      * @return the paint's color (and alpha).
+     * @deprecated the signature of this method will be changed in future versions,
+     * cause a binary incompatibility
      */
     @ApiStatus.Obsolete
+    @Deprecated(forRemoval = true)
     public int getColor() {
         return ((int) (mPaint.getAlpha() * 255.0f + 0.5f) << 24) |
                 ((int) (mPaint.getRed() * 255.0f + 0.5f) << 16) |
@@ -484,7 +487,7 @@ public class Paint {
     /**
      * Returns alpha and RGB used when stroking and filling. The color is four floating
      * point values, un-premultiplied. The color values are interpreted as being in
-     * the sRGB color space.
+     * the extended sRGB nonlinear color space.
      * <p>
      * Use {@link #getColor4f(float[])} to avoid creating a new array.
      *
@@ -499,7 +502,7 @@ public class Paint {
     /**
      * Returns alpha and RGB used when stroking and filling. The color is four floating
      * point values, un-premultiplied. The color values are interpreted as being in
-     * the sRGB color space.
+     * the extended sRGB nonlinear color space.
      *
      * @param dst a non-null array of 4 floats that will hold the result of the method
      * @return the passed float array that contains r,g,b,a values
@@ -516,12 +519,12 @@ public class Paint {
      * It's in sRGB space and independent of alpha.
      *
      * @see #getAlphaF()
-     * @see #getRedF()
-     * @see #getGreenF()
+     * @see #getRed()
+     * @see #getGreen()
      * @return red value
      * @since 3.13.0
      */
-    public float getRedF() {
+    public float getRed() {
         return mPaint.getRed();
     }
 
@@ -530,12 +533,12 @@ public class Paint {
      * It's in sRGB space and independent of alpha.
      *
      * @see #getAlphaF()
-     * @see #getRedF()
-     * @see #getBlueF()
+     * @see #getRed()
+     * @see #getBlue()
      * @return green value
      * @since 3.13.0
      */
-    public float getGreenF() {
+    public float getGreen() {
         return mPaint.getGreen();
     }
 
@@ -544,12 +547,12 @@ public class Paint {
      * It's in sRGB space and independent of alpha.
      *
      * @see #getAlphaF()
-     * @see #getGreenF()
-     * @see #getBlueF()
+     * @see #getGreen()
+     * @see #getBlue()
      * @return blue value
      * @since 3.13.0
      */
-    public float getBlueF() {
+    public float getBlue() {
         return mPaint.getBlue();
     }
 
@@ -560,6 +563,8 @@ public class Paint {
      * become 0.
      * <p>
      * Starting from 3.13.0, this method will no longer clamp R, G, B values to 0..1.
+     * Thus, the color is interpreted as extended sRGB color space, compatible with
+     * colors from any color space, as long as the rendering intent is relative.
      * The rendering pipeline still applies the gamut and transfer function to
      * out of range values.
      *
@@ -583,7 +588,10 @@ public class Paint {
      * or legacy API compatibility. Otherwise, use {@link #getAlphaF()}.
      *
      * @return the alpha component of the paint's color.
+     * @deprecated the signature of this method will be changed in future versions,
+     * cause a binary incompatibility
      */
+    @Deprecated(forRemoval = true)
     @ApiStatus.Obsolete
     public int getAlpha() {
         return (int) (mPaint.getAlpha() * 255.0f + 0.5f);
@@ -604,9 +612,9 @@ public class Paint {
     /**
      * Retrieves alpha/opacity from the color used when stroking and filling.
      *
-     * @see #getRedF()
-     * @see #getGreenF()
-     * @see #getBlueF()
+     * @see #getRed()
+     * @see #getGreen()
+     * @see #getBlue()
      * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
     public float getAlphaF() {
@@ -622,6 +630,19 @@ public class Paint {
      * @param a the alpha component [0..1] of the paint's color
      */
     public void setAlphaF(float a) {
+        mPaint.setAlpha(a);
+    }
+
+    /**
+     * Replaces alpha, leaving RGB unchanged.
+     * <code>a</code> is a value from 0.0 to 1.0.
+     * <code>a</code> set to 0.0 makes color fully transparent;
+     * <code>a</code> set to 1.0 makes color fully opaque.
+     *
+     * @param a the alpha component [0..1] of the paint's color
+     * @see 3.13.0
+     */
+    public void setAlpha(float a) {
         mPaint.setAlpha(a);
     }
 

@@ -418,7 +418,10 @@ public abstract class Drawable {
      * the value returned is specific to how that class treats alpha. The default
      * return value is 255 if the class does not override this method to return a value
      * specific to its use of alpha.
+     * @deprecated the signature of this method will be changed in future versions,
+     * cause a binary incompatibility
      */
+    @Deprecated(forRemoval = true)
     @IntRange(from = 0, to = 255)
     public int getAlpha() {
         return 0xFF;

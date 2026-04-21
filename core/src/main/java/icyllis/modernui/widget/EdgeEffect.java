@@ -379,8 +379,11 @@ public class EdgeEffect {
      * Return the color of this edge effect in argb.
      *
      * @return The color of this edge effect in argb
+     *      @deprecated the signature of this method will be changed in future versions,
+     *       cause a binary incompatibility
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getColor() {
         return mPaint.getColor();
     }

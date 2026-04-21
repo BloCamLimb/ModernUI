@@ -171,7 +171,10 @@ public class ColorStateList {
      *                     spec in this {@link ColorStateList} that matches the
      *                     stateSet.
      * @return the color associated with that set of states in this {@link ColorStateList}.
+     * @deprecated the signature of this method will be changed in future versions,
+     * cause a binary incompatibility
      */
+    @Deprecated(forRemoval = true)
     public int getColorForState(int[] stateSet, int defaultColor) {
         final int setLength = mStateSpecs.length;
         for (int i = 0; i < setLength; i++) {
@@ -189,6 +192,7 @@ public class ColorStateList {
      * @return the default color in this {@link ColorStateList}.
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getDefaultColor() {
         return mDefaultColor;
     }
@@ -213,6 +217,7 @@ public class ColorStateList {
      * @hidden
      */
     @ApiStatus.Internal
+    @Deprecated(forRemoval = true)
     public int[] getColors() {
         return mColors;
     }

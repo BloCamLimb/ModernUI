@@ -289,6 +289,7 @@ public class ScrollView extends FrameLayout {
      * @see #getBottomEdgeEffectColor()
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getTopEdgeEffectColor() {
         return mEdgeGlowTop.getColor();
     }
@@ -303,6 +304,7 @@ public class ScrollView extends FrameLayout {
      * @see #getTopEdgeEffectColor()
      */
     @ColorInt
+    @Deprecated(forRemoval = true)
     public int getBottomEdgeEffectColor() {
         return mEdgeGlowBottom.getColor();
     }
