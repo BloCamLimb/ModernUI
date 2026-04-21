@@ -216,6 +216,29 @@ public class AssetManager {
         cachedBags.values().removeIf(b -> (b.typeSpecFlags & diff) != 0);
     }
 
+    @Nullable
+    public Asset getNonAsset(String path) {
+        for (int i = 0; i < packAssets.length; i++) {
+            var pack = packAssets[i];
+
+            Asset asset = pack.getAssetsProvider().getAsset(path);
+            if (asset != null) {
+                return asset;
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public Asset getNonAsset(String path, int cookie) {
+        var pack = getPackAssets(cookie);
+        if (pack != null) {
+            return pack.getAssetsProvider().getAsset(path);
+        }
+        return null;
+    }
+
     public boolean getResource(@NonNull ResourceId resId,
                                @NonNull TypedValue outValue) {
         Object entry = findEntry(resId.namespace(), resId.type(), resId.entry(),

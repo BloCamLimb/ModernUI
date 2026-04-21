@@ -35,6 +35,12 @@ public final class PackAssets implements AutoCloseable {
 
     LoadedResources loadedResources;
 
+
+
+    public AssetsProvider getAssetsProvider() {
+        return assetsProvider;
+    }
+
     public LoadedResources getLoadedResources() {
         return loadedResources;
     }

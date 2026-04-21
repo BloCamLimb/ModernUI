@@ -40,6 +40,10 @@ import org.slf4j.MarkerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
+import java.io.FileNotFoundException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -63,6 +67,19 @@ public class Resources {
 
 
     AssetManager mAssetManager;
+
+    private static final VarHandle TMP_VALUE;
+
+    static {
+        try {
+            TMP_VALUE = MethodHandles.lookup().findVarHandle(Resources.class, "mTmpValue", TypedValue.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("FieldMayBeFinal")
+    private volatile TypedValue mTmpValue = new TypedValue();
 
     /**
      * Returns a default theme for the framework.
@@ -237,6 +254,7 @@ public class Resources {
         return true;
     }
 
+    @ApiStatus.Experimental
     public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
                          boolean resolveRefs) throws NotFoundException {
         boolean found = mAssetManager.getResource(id, outValue);
@@ -260,6 +278,74 @@ public class Resources {
     public ColorStateList loadColorStateList(@NonNull TypedValue value,
                                              @Nullable Theme theme) {
         return loadColorStateList(value, null, theme);
+    }
+
+    @NonNull
+    public Asset getRawResource(@NonNull ResourceId id)
+            throws NotFoundException {
+        TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
+        try {
+            TypedValue val = tmp != null ? tmp : new TypedValue();
+            return getRawResource(id, val);
+        } finally {
+            if (tmp != null) {
+                TMP_VALUE.setRelease(this, tmp);
+            }
+        }
+    }
+
+    @NonNull
+    public Asset getRawResource(@NonNull ResourceId id, @NonNull TypedValue outValue)
+            throws NotFoundException {
+        getValue(id, outValue, true);
+        var path = outValue.getString();
+        if (path == null) {
+            throw new NotFoundException("Resource ID " + id + " is not raw resource");
+        }
+        Asset asset = mAssetManager.getNonAsset(path.toString(), outValue.cookie);
+        if (asset == null) {
+            throw new NotFoundException("File "
+                    + path
+                    + " from resource ID " + id);
+        }
+        return asset;
+    }
+
+    @NonNull
+    public Asset getRawResource(@NonNull TypedValue value)
+            throws NotFoundException {
+        var path = value.getString();
+        if (path == null) {
+            throw new NotFoundException("Resource value " + value + " is not a string or cannot be resolved");
+        }
+        Asset asset = mAssetManager.getNonAsset(path.toString(), value.cookie);
+        if (asset == null) {
+            throw new NotFoundException("File "
+                    + path);
+        }
+        return asset;
+    }
+
+    /**
+     * Performs a sequential search across selected asset packs for a specific path.
+     * Returns the asset reference on the first match, or {@code null} otherwise.
+     * Enables access to the "assets" directory.
+     * <p>
+     * A valid path must:
+     * <ul>
+     * <li>use only forward slashes as separators, not backslashes</li>
+     * <li>contain only lowercase letters a to z, digits 0 to 9, dash (-), dot (.), underscore (_) in each segment</li>
+     * <li>not start with or end with a slash</li>
+     * <li>not use single dot (.) or dotdot (..) as a path segment</li>
+     * <li>not contain consecutive slashes (//)</li>
+     * </ul>
+     *
+     * @param path the path of the asset to search
+     * @return a reference to the asset, or null if not found
+     */
+    @Nullable
+    public Asset getAsset(@NonNull String path) {
+        return mAssetManager.getNonAsset("assets/" + path);
     }
 
     @SuppressWarnings("unchecked")

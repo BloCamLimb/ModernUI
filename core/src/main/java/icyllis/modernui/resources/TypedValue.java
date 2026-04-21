@@ -572,6 +572,18 @@ public class TypedValue {
     }
 
     /**
+     * Return the data for this value as a string.  Only use for values
+     * whose type is {@link #TYPE_STRING}.
+     */
+    @Nullable
+    public final CharSequence getString() {
+        if (type == TYPE_STRING) {
+            return (CharSequence) object;
+        }
+        return null;
+    }
+
+    /**
      * Return the data for this value as a resource id.  Only use for values
      * whose type is {@link #TYPE_ATTRIBUTE} or {@link #TYPE_REFERENCE},
      * to obtain unresolved references or attributes. In addition, for complex
