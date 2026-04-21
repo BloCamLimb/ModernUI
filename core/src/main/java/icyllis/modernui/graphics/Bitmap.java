@@ -2005,7 +2005,7 @@ public final class Bitmap implements AutoCloseable {
          * <p>
          * Only supports 8-bit per channel images ({@link Format#isChannelU8()} is true).
          */
-        PNG("*.png"),
+        PNG("*.png", "*.apng"),
 
         /**
          * Save as the TGA format. TGA is lossless and compressed (by default), and {@code quality}
@@ -2013,6 +2013,7 @@ public final class Bitmap implements AutoCloseable {
          * <p>
          * Only supports 8-bit per channel images ({@link Format#isChannelU8()} is true).
          */
+        @Deprecated(forRemoval = true)
         TGA("*.tga", "*.icb", "*.vda", "*.vst"),
 
         /**
@@ -2021,6 +2022,7 @@ public final class Bitmap implements AutoCloseable {
          * <p>
          * Only supports 8-bit per channel images ({@link Format#isChannelU8()} is true).
          */
+        @Deprecated(forRemoval = true)
         BMP("*.bmp", "*.dib"),
 
         /**
@@ -2030,15 +2032,15 @@ public final class Bitmap implements AutoCloseable {
          * <p>
          * Only supports 8-bit per channel images ({@link Format#isChannelU8()} is true).
          */
-        JPEG("*.jpg", "*.jpeg", "*.jpe", "*.jif", "*.jfif", "*.jfi"),
+        JPEG("*.jpeg", "*.jfif", "*.jpg", "*.jpe", "*.jif", "*.jfi"),
 
         /**
-         * Save as the Radiance RGBE format. RGBE allows pixels to have the dynamic range
+         * Save as the Radiance HDR format. HDR allows pixels to have the dynamic range
          * and precision of floating-point values, and {@code quality} is ignored.
          * <p>
          * Only supports 32-bit per channel images ({@link Format#isChannelHDR()} is true).
          */
-        HDR("*.hdr"),
+        HDR("*.hdr", "*.pic", "*.rgbe", "*.xyze"),
 
         /**
          * Save as the raw binary data, this is simply a memory dump.
@@ -2056,7 +2058,7 @@ public final class Bitmap implements AutoCloseable {
         }
 
         // read only formats
-        private static final String[] EXTRA_FILTERS = {"*.psd", "*.gif", "*.pic", "*.pnm", "*.pgm", "*.ppm"};
+        private static final String[] EXTRA_FILTERS = {"*.psd", "*.gif", "*.pnm", "*.pgm", "*.ppm"};
 
         @NonNull
         private final String[] filters;

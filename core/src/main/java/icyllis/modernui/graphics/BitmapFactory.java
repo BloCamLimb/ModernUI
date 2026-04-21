@@ -62,13 +62,9 @@ import static org.lwjgl.system.MemoryUtil.*;
  * <tr><th>Format Name</th><th>MIME Type</th><th>Typical Extensions</th></tr>
  * <tr><td>PNG</td><td>{@code image/png}</td><td>.png</td></tr>
  * <tr><td>GIF</td><td>{@code image/gif}</td><td>.gif</td></tr>
- * <tr><td>Windows Bitmap</td><td>{@code image/bmp}</td><td>.bmp, .dib</td></tr>
  * <tr><td>JPEG</td><td>{@code image/jpeg}</td><td>.jpg, .jpeg, .jfif</td></tr>
  * <tr><td>TIFF</td><td>{@code image/tiff}</td><td>.tiff, .tif</td></tr>
  * <tr><td>Radiance HDR</td><td>{@code image/vnd.radiance}</td><td>.hdr</td></tr>
- * <tr><td>Adobe Photoshop</td><td>{@code image/vnd.adobe.photoshop}</td><td>.psd</td></tr>
- * <tr><td>Truevision TGA</td><td>{@code image/x-tga}</td><td>.tga, .icb, .vda, .vst</td></tr>
- * <tr><td>Softimage PIC</td><td>{@code image/x-softimage-pic}</td><td>.pic</td></tr>
  * <tr><td>Netpbm PGM</td><td>{@code image/x-portable-graymap}</td><td>.pgm</td></tr>
  * <tr><td>Netpbm PPM</td><td>{@code image/x-portable-pixmap}</td><td>.ppm, .pnm</td></tr>
  * </table>
