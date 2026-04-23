@@ -320,7 +320,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             metrics.densityDpi = density;
             metrics.scaledDensity = metrics.density;
             LOGGER.info(MARKER, "Display metrics: {}", metrics);
-            mResources.updateMetrics(metrics);
+            mResources.updateConfiguration(null, metrics);
         }
 
         glfwSetWindowCloseCallback(mWindow.getHandle(), new GLFWWindowCloseCallback() {

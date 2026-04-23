@@ -42,7 +42,7 @@ import java.util.Set;
  * @hidden
  */
 @ApiStatus.Internal
-public class AssetManager {
+public final class AssetManager {
 
     public static final Marker MARKER = MarkerFactory.getMarker("AssetManager");
 
@@ -253,7 +253,7 @@ public class AssetManager {
 
     @SuppressWarnings("PointlessArithmeticExpression")
     @Nullable
-    final ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds,
+    ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds,
                              TypedValue value) {
         ResolvedBag cached = cachedBags.get(resId);
         if (cached != SENTINEL_BAG) {

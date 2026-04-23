@@ -98,7 +98,7 @@ public final class ToastManager {
         mTextView.setText(r.mText);
         mTextView.setTextSize(14);
         if (theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true))
-            mTextView.setTextColor(theme.getResources().loadColorStateList(value, theme));
+            mTextView.setTextColor(theme.getResources().loadColorStateList(value, null, theme));
         mTextView.setTypeface(ModernUI.getSelectedTypeface());
         mTextView.setMaxWidth(mTextView.dp(300));
         mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));

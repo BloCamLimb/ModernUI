@@ -18,6 +18,16 @@
 
 package icyllis.modernui.resources;
 
+import org.jetbrains.annotations.ApiStatus;
+
+/**
+ * @hide
+ * @hidden
+ */
+@ApiStatus.Internal
 //TODO reserved for future use
 public class Configuration {
+
+    public void setToDefaults() {
+    }
 }

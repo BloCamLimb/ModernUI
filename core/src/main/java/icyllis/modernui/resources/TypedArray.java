@@ -36,6 +36,10 @@ public class TypedArray {
         }
 
         attrs.mRecycled = false;
+        // We know that Resources.getAssets() and Resources.getImpl() may change
+        // during configuration changes. However, we do not capture these snapshots
+        // in case Resources holds a strong reference to the old ResourcesImpl or AssetManager
+        // through the TypedArray pool.
         attrs.mMetrics = res.getDisplayMetrics();
         attrs.resize(len);
         return attrs;
@@ -264,12 +268,16 @@ public class TypedArray {
         } else if (type >= TypedValue.TYPE_FIRST_INT
                 && type <= TypedValue.TYPE_LAST_INT) {
             return data[index + STYLE_DATA];
-        } else if (type == TypedValue.TYPE_STRING) {
+        } else if (type == TypedValue.TYPE_STRING ||
+                type == TypedValue.TYPE_FACTORY) {
             final TypedValue value = mValue;
             if (getValueAt(index, value)) {
-                final ColorStateList csl = mResources.loadColorStateList(
-                        value, mTheme);
-                return csl.getDefaultColor();
+                try {
+                    final ColorStateList csl = mResources.loadColorStateList(
+                            value, null, mTheme);
+                    return csl.getDefaultColor();
+                } catch (Resources.NotFoundException ignored) {
+                }
             }
             return defValue;
         } else if (type == TypedValue.TYPE_ATTRIBUTE) {
@@ -315,7 +323,10 @@ public class TypedArray {
                         "Failed to resolve attribute at index " + index + ": " + value
                                 + ", theme=" + mTheme);
             }
-            return mResources.loadColorStateList(value, mTheme);
+            try {
+                return mResources.loadColorStateList(value, null, mTheme);
+            } catch (Resources.NotFoundException ignored) {
+            }
         }
         return null;
     }
@@ -612,13 +623,13 @@ public class TypedArray {
             case TypedValue.TYPE_REFERENCE -> {
                 int typeId = type >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
                 if (typeId != 0) {
-                    return mResources.getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
+                    return mResources.getImpl().getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
                 } else {
                     return null;
                 }
             }
             case TypedValue.TYPE_ATTRIBUTE -> {
-                return mResources.getAttributeIdForCookie(data[index + STYLE_COOKIE], data[index + STYLE_DATA]);
+                return mResources.getImpl().getAttributeIdForCookie(data[index + STYLE_COOKIE], data[index + STYLE_DATA]);
             }
         }
         return null;
@@ -651,7 +662,10 @@ public class TypedArray {
                                 + ", theme=" + mTheme);
             }
 
-            return mResources.loadDrawable(value, null, mTheme);
+            try {
+                return mResources.loadDrawable(value, null, mTheme);
+            } catch (Resources.NotFoundException ignored) {
+            }
         }
         return null;
     }
@@ -790,28 +804,10 @@ public class TypedArray {
         outValue.data = data[offset + STYLE_DATA];
         outValue.cookie = data[offset + STYLE_COOKIE];
         outValue.flags = data[offset + STYLE_FLAGS];
-        switch (type & ResourceTypes.Res_value.DATA_TYPE_MASK) {
-            case TypedValue.TYPE_STRING -> {
-                outValue.object = loadStringValueAt(offset);
-            }
-            case TypedValue.TYPE_REFERENCE -> {
-                int typeId = type >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
-                if (typeId != 0) {
-                    outValue.type = TypedValue.TYPE_REFERENCE;
-                    outValue.object = mResources.getReferenceIdForCookie(outValue.cookie, typeId, outValue.data);
-                } else {
-                    outValue.object = null;
-                }
-            }
-            case TypedValue.TYPE_ATTRIBUTE -> {
-                outValue.object = mResources.getAttributeIdForCookie(outValue.cookie, outValue.data);
-            }
-            default -> outValue.object = null;
-        }
-        return true;
+        return mResources.getImpl().postProcess(outValue);
     }
 
-    @Nullable
+    /*@Nullable
     private CharSequence loadStringValueAt(int index) {
         final int[] data = mData;
         final int cookie = data[index + STYLE_COOKIE];
@@ -820,7 +816,7 @@ public class TypedArray {
             value = mResources.getPooledStringForCookie(cookie, data[index + STYLE_DATA]);
         }
         return value;
-    }
+    }*/
 
     protected TypedArray(Resources resources) {
         mResources = resources;

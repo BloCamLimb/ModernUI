@@ -24,7 +24,6 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.StyleableRes;
-import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.AssetManager.ResolvedBag;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
@@ -35,22 +34,21 @@ import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.UnmodifiableView;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
-import java.io.FileNotFoundException;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiFunction;
 
 import static icyllis.modernui.resources.AssetManager.kMaxIterations;
 
-@ApiStatus.Experimental
 public class Resources {
 
     public static final Marker MARKER = MarkerFactory.getMarker("Resources");
@@ -60,13 +58,13 @@ public class Resources {
     @GuardedBy("sLock")
     private static Resources sSystem;
 
-    private final DisplayMetrics mMetrics = new DisplayMetrics();
+    private ResourcesImpl mResourcesImpl;
 
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
 
 
 
-    AssetManager mAssetManager;
+
 
     private static final VarHandle TMP_VALUE;
 
@@ -80,6 +78,14 @@ public class Resources {
 
     @SuppressWarnings("FieldMayBeFinal")
     private volatile TypedValue mTmpValue = new TypedValue();
+
+    /**
+     * WeakReferences to Themes that were constructed from this Resources object.
+     * We keep track of these in case our underlying implementation is changed, in which case
+     * the Themes must also get updated ThemeImpls.
+     */
+    @GuardedBy("itself")
+    private final ArrayList<WeakReference<Theme>> mThemeRefs = new ArrayList<>();
 
     /**
      * Returns a default theme for the framework.
@@ -135,13 +141,10 @@ public class Resources {
      * @hidden
      */
     @ApiStatus.Internal
-    public Resources(@NonNull AssetManager assets, @Nullable DisplayMetrics metrics,
-                     @Nullable Configuration config) {
+    public Resources(@NonNull AssetManager assetManager, @Nullable DisplayMetrics metrics,
+                     @Nullable Configuration configuration) {
         this(null);
-        mAssetManager = assets;
-        if (metrics != null) {
-            mMetrics.setTo(metrics);
-        }
+        mResourcesImpl = new ResourcesImpl(assetManager, metrics, configuration);
     }
 
     /**
@@ -150,13 +153,14 @@ public class Resources {
      */
     @ApiStatus.Internal
     public Resources(@Nullable ClassLoader classLoader) {
-        mMetrics.setToDefaults();
+
     }
 
     private Resources() {
-        mMetrics.setToDefaults();
-
-        mAssetManager = AssetManager.getSystem();
+        mResourcesImpl = new ResourcesImpl(
+                AssetManager.getSystem(),
+                null, null
+        );
     }
 
     @NonNull
@@ -171,113 +175,136 @@ public class Resources {
         }
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
+    // called from UI thread only
     @ApiStatus.Internal
-    public void updateMetrics(DisplayMetrics metrics) {
-        if (metrics != null) {
-            mMetrics.setTo(metrics);
+    public void setImpl(ResourcesImpl impl) {
+        if (impl == mResourcesImpl) {
+            return;
+        }
+
+        // Modern UI changed:
+        // the assignment operation is moved inside the lock, just in case newTheme() cannot
+        // reference the latest Impl
+        synchronized (mThemeRefs) {
+            // ensure all themes are updated to the new ResourcesImpl
+            mResourcesImpl = impl;
+            var iter = mThemeRefs.iterator();
+            while (iter.hasNext()) {
+                var theme = iter.next().get();
+                if (theme == null)
+                    iter.remove();
+                else
+                    theme.rebase(impl);
+            }
         }
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public ResourcesImpl getImpl() {
+        return mResourcesImpl;
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public void updateConfiguration(Configuration config, DisplayMetrics metrics) {
+        mResourcesImpl.updateConfiguration(config, metrics);
+    }
+
+    /**
+     * Generate a new Theme object for this set of Resources.  It initially
+     * starts out empty.
+     * <p>
+     * This method can be called from any thread.
+     *
+     * @return the newly created Theme
+     */
+    @NonNull
     public final Theme newTheme() {
-        return new Theme();
+        synchronized (mThemeRefs) {
+            // put constructor inside lock to avoid race between newTheme and setImpl
+            var theme = new Theme(this, mResourcesImpl);
+            // AOSP's nextPowerOf2() is wrongly implemented, just don't use that and always
+            // clean up the whole list
+            mThemeRefs.removeIf(r -> r.refersTo(null));
+            mThemeRefs.add(new WeakReference<>(theme));
+            return theme;
+        }
     }
 
     /**
      * Returns the current display metrics that are in effect for this resources
      * object. The returned object should be treated as read-only.
      */
+    @UnmodifiableView
     public DisplayMetrics getDisplayMetrics() {
-        return mMetrics;
+        return mResourcesImpl.getDisplayMetrics();
     }
 
-    @Nullable
-    CharSequence getPooledStringForCookie(int cookie, int id) {
-        LoadedResources loadedResources = mAssetManager.getLoadedResources(cookie);
-        if (loadedResources == null) {
-            return null;
-        }
-        return loadedResources.getGlobalStringPool().getSequenceAt(id);
-    }
-
-    @Nullable
-    ResourceId getReferenceIdForCookie(int cookie, int typeId, int data) {
-        assert typeId > 0;
-        LoadedResources loadedResources = mAssetManager.getLoadedResources(cookie);
-        if (loadedResources == null) {
-            return null;
-        }
-        return loadedResources.lookupResourceId(null, data, typeId);
-    }
-
-    @Nullable
-    ResourceId getAttributeIdForCookie(int cookie, int data) {
-        LoadedResources loadedResources = mAssetManager.getLoadedResources(cookie);
-        if (loadedResources == null) {
-            return null;
-        }
-        String namespace = loadedResources.lookupPackageName(data >>> Res_value.PACKAGE_ID_SHIFT);
-        String attribute = loadedResources.getKeyStringPool().getStringAt(data & Res_value.KEY_INDEX_MASK);
-        if (namespace != null && attribute != null) {
-            return ResourceId.attr(namespace, attribute);
-        }
-        return null;
-    }
-
-    // do post-processing before exposing it to public API users,
-    // freeze the 'object' field
-    boolean postProcess(@NonNull TypedValue outValue) {
-        switch (outValue.type & Res_value.DATA_TYPE_MASK) {
-            case TypedValue.TYPE_STRING -> {
-                if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
-                    return false;
-                }
-            }
-            case TypedValue.TYPE_REFERENCE -> {
-                int typeId = (outValue.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT;
-                if (typeId != 0) {
-                    // erase higher 8 bits
-                    outValue.type = TypedValue.TYPE_REFERENCE;
-                    if ((outValue.object = getReferenceIdForCookie(outValue.cookie, typeId, outValue.data)) == null) {
-                        return false;
-                    }
-                } else {
-                    outValue.object = null;
-                }
-            }
-            case TypedValue.TYPE_ATTRIBUTE -> {
-                if ((outValue.object = getAttributeIdForCookie(outValue.cookie, outValue.data)) == null) {
-                    return false;
-                }
-            }
-            default -> outValue.object = null;
-        }
-        return true;
+    /**
+     * Return the current configuration that is in effect for this resource
+     * object. The returned object should be treated as read-only.
+     */
+    @UnmodifiableView
+    public Configuration getConfiguration() {
+        return mResourcesImpl.getConfiguration();
     }
 
     @ApiStatus.Experimental
     public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
                          boolean resolveRefs) throws NotFoundException {
-        boolean found = mAssetManager.getResource(id, outValue);
-        if (found) {
-            found = postProcess(outValue);
-        }
-        if (!found) {
-            throw new NotFoundException("Resource " + id);
+        mResourcesImpl.getValue(id, outValue, resolveRefs);
+    }
+
+    @NonNull
+    public ColorStateList getColorStateList(@NonNull ResourceId id,
+                                            @Nullable Theme theme)
+            throws NotFoundException {
+        TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
+        try {
+            TypedValue val = tmp != null ? tmp : new TypedValue();
+            return getColorStateList(id, val, theme);
+        } finally {
+            if (tmp != null) {
+                TMP_VALUE.setRelease(this, tmp);
+            }
         }
     }
 
     @NonNull
     public ColorStateList getColorStateList(@NonNull ResourceId id,
-                                            @Nullable Theme theme) {
-        final TypedValue value = new TypedValue();
-        getValue(id, value, true);
-        return loadColorStateList(value, id, theme);
+                                            @NonNull TypedValue value,
+                                            @Nullable Theme theme)
+            throws NotFoundException {
+        ResourcesImpl impl = mResourcesImpl;
+        impl.getValue(id, value, true);
+        return impl.loadColorStateList(this, value, id, theme);
     }
 
     @NonNull
     public ColorStateList loadColorStateList(@NonNull TypedValue value,
-                                             @Nullable Theme theme) {
-        return loadColorStateList(value, null, theme);
+                                             @Nullable ResourceId id,
+                                             @Nullable Theme theme)
+            throws NotFoundException {
+        return mResourcesImpl.loadColorStateList(this, value, id, theme);
+    }
+
+    @NonNull
+    public Drawable loadDrawable(@NonNull TypedValue value,
+                                 @Nullable ResourceId id,
+                                 @Nullable Theme theme)
+            throws NotFoundException {
+        return mResourcesImpl.loadDrawable(this, value, id, theme);
     }
 
     @NonNull
@@ -295,35 +322,17 @@ public class Resources {
     }
 
     @NonNull
-    public Asset getRawResource(@NonNull ResourceId id, @NonNull TypedValue outValue)
+    public Asset getRawResource(@NonNull ResourceId id, @NonNull TypedValue value)
             throws NotFoundException {
-        getValue(id, outValue, true);
-        var path = outValue.getString();
-        if (path == null) {
-            throw new NotFoundException("Resource ID " + id + " is not raw resource");
-        }
-        Asset asset = mAssetManager.getNonAsset(path.toString(), outValue.cookie);
-        if (asset == null) {
-            throw new NotFoundException("File "
-                    + path
-                    + " from resource ID " + id);
-        }
-        return asset;
+        ResourcesImpl impl = mResourcesImpl;
+        impl.getValue(id, value, true);
+        return impl.loadRawResource(value, id);
     }
 
     @NonNull
-    public Asset getRawResource(@NonNull TypedValue value)
+    public Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id)
             throws NotFoundException {
-        var path = value.getString();
-        if (path == null) {
-            throw new NotFoundException("Resource value " + value + " is not a string or cannot be resolved");
-        }
-        Asset asset = mAssetManager.getNonAsset(path.toString(), value.cookie);
-        if (asset == null) {
-            throw new NotFoundException("File "
-                    + path);
-        }
-        return asset;
+        return mResourcesImpl.loadRawResource(value, id);
     }
 
     /**
@@ -345,91 +354,43 @@ public class Resources {
      */
     @Nullable
     public Asset getAsset(@NonNull String path) {
-        return mAssetManager.getNonAsset("assets/" + path);
+        return mResourcesImpl.mAssetManager.getNonAsset("assets/" + path);
     }
 
-    @SuppressWarnings("unchecked")
-    ColorStateList loadColorStateList(@NonNull TypedValue value,
-                                      @Nullable ResourceId id,
-                                      @Nullable Theme theme) {
-        // Handle inline color definitions.
-        if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
-                && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
-            return ColorStateList.valueOf(value.data);
-        }
 
-        if (value.type == TypedValue.TYPE_FACTORY) {
-            LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
-            if (loadedResources != null) {
-                Object object = loadedResources.lookupFactory(value.data);
-                if (object != null) {
-                    object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
-                    if (object instanceof ColorStateList) {
-                        return (ColorStateList) object;
-                    }
-                }
-            }
-            throw new NotFoundException("Resource is not a color: " + value);
-        }
 
-        String name = id != null ? id.toString() : "(missing name)";
-        throw new NotFoundException(
-                "Can't find ColorStateList from drawable " + name);
-    }
 
-    @SuppressWarnings("unchecked")
-    Drawable loadDrawable(@NonNull TypedValue value,
-                          @Nullable ResourceId id,
-                          @Nullable Theme theme) {
-        try {
-            if (value.type == TypedValue.TYPE_FACTORY) {
-                LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
-                if (loadedResources != null) {
-                    Object object = loadedResources.lookupFactory(value.data);
-                    if (object != null) {
-                        object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
-                        if (object == null) {
-                            return null;
-                        }
-                        if (object instanceof Drawable) {
-                            return (Drawable) object;
-                        }
-                    }
-                }
-                throw new NotFoundException("Resource is not a drawable: " + value);
-            }
-
-            if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
-                    && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
-                return new ColorDrawable(value.data);
-            }
-
-            //TODO
-            return null;
-        } catch (Exception e) {
-            String name = id != null ? id.toString() : "(missing name)";
-
-            // The target drawable might fail to load for any number of
-            // reasons, but we always want to include the resource name.
-            // Since the client already expects this method to throw a
-            // NotFoundException, just throw one of those.
-            final NotFoundException nfe = new NotFoundException("Drawable " + name, e);
-            nfe.setStackTrace(new StackTraceElement[0]);
-            throw nfe;
-        }
-    }
 
     @ThreadSafe
-    public final class Theme {
+    public static final class Theme {
 
         private final Object mLock = new Object();
 
+        private final Resources mResources;
+        @GuardedBy("mLock")
+        private ResourcesImpl mResourcesImpl;
+
+        @GuardedBy("mLock")
         private final Resources.ThemeKey mKey = new Resources.ThemeKey();
         // a snapshot of key
+        @GuardedBy("mLock")
         private Resources.ThemeKey mKeyCopy = mKey.clone();
 
         // open addressing, namespace -> attribute -> entry
-        Object2ObjectOpenHashMap<String, Object2ObjectOpenHashMap<String, Entry>> mEntries;
+        @GuardedBy("mLock")
+        private Object2ObjectOpenHashMap<String, Object2ObjectOpenHashMap<String, Entry>> mEntries;
+
+        Theme(@NonNull Resources resources, ResourcesImpl resourcesImpl) {
+            mResourcesImpl = resourcesImpl;
+            mResources = resources;
+        }
+
+        void rebase(ResourcesImpl resourcesImpl) {
+            synchronized (mLock) {
+                mResourcesImpl = resourcesImpl;
+                //TODO invalidate mEntries
+            }
+        }
 
         /**
          * Place new attribute values into the theme.  The style resource
@@ -462,8 +423,9 @@ public class Resources {
             }
         }
 
+        @GuardedBy("mLock")
         private boolean applyStyleInternal(@NonNull ResourceId resId, boolean force) {
-            var bag = mAssetManager.getBag(resId);
+            var bag = mResourcesImpl.mAssetManager.getBag(resId);
             if (bag == null) {
                 return false;
             }
@@ -676,11 +638,11 @@ public class Resources {
                     //TODO
                 }
 
-                return postProcess(outValue);
+                return mResourcesImpl.postProcess(outValue);
             }
         }
 
-        static class Entry implements Cloneable {
+        static final class Entry implements Cloneable {
             int type;
             int data;
             int cookie;
@@ -708,7 +670,9 @@ public class Resources {
             return type == Res_value.TYPE_NULL && data != Res_value.DATA_NULL_EMPTY;
         }
 
-        boolean getAttribute(@NonNull String namespace, @NonNull String attribute,
+        @GuardedBy("mLock")
+        private boolean getAttribute(
+                             @NonNull String namespace, @NonNull String attribute,
                              @NonNull TypedValue outValue) {
             if (mEntries == null) {
                 return false;
@@ -725,7 +689,7 @@ public class Resources {
                 }
                 typeSpecFlags |= e.typeSpecFlags;
                 if (e.type == Res_value.TYPE_ATTRIBUTE) {
-                    LoadedResources loadedResources = mAssetManager.getLoadedResources(e.cookie);
+                    LoadedResources loadedResources = mResourcesImpl.mAssetManager.getLoadedResources(e.cookie);
                     if (loadedResources != null) {
                         namespace = loadedResources.lookupPackageName(e.data >>> Res_value.PACKAGE_ID_SHIFT);
                         attribute = loadedResources.getKeyStringPool().getStringAt(e.data & Res_value.KEY_INDEX_MASK);
@@ -745,13 +709,13 @@ public class Resources {
             return false;
         }
 
-        boolean resolveAttributeReference(@NonNull TypedValue value) {
+        private boolean resolveAttributeReference(@NonNull TypedValue value) {
             if (value.type != Res_value.TYPE_ATTRIBUTE) {
                 //TODO currently we have only style resources, where styles do not need resolve
                 return true;
             }
 
-            LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
+            LoadedResources loadedResources = mResourcesImpl.mAssetManager.getLoadedResources(value.cookie);
             if (loadedResources == null) {
                 return false;
             }
@@ -770,7 +734,9 @@ public class Resources {
             return true;
         }
 
-        void applyStyle(@Nullable AttributeSet set,
+        @GuardedBy("mLock")
+        private void applyStyle(
+                        @Nullable AttributeSet set,
                         @Nullable @AttrRes ResourceId defStyleAttr,
                         @Nullable @StyleRes ResourceId defStyleRes,
                         @NonNull String[] attrs,
@@ -781,18 +747,18 @@ public class Resources {
             AssetManager.ResolvedBag defStyleBag = null;
             if (defStyleAttr != null) {
                 if (getAttribute(defStyleAttr.namespace(), defStyleAttr.entry(), value)) {
-                    LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
+                    LoadedResources loadedResources = mResourcesImpl.mAssetManager.getLoadedResources(value.cookie);
                     if (loadedResources != null) {
                         ResourceId styleId = loadedResources.lookupResourceId(null,
                                 value.data, (value.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT);
                         if (styleId != null) {
-                            defStyleBag = mAssetManager.getBag(styleId);
+                            defStyleBag = mResourcesImpl.mAssetManager.getBag(styleId);
                         }
                     }
                 }
             }
             if (defStyleBag == null && defStyleRes != null) {
-                defStyleBag = mAssetManager.getBag(defStyleRes);
+                defStyleBag = mResourcesImpl.mAssetManager.getBag(defStyleRes);
             }
             defStyleAttrFinder.reset(defStyleBag);
 
@@ -839,7 +805,7 @@ public class Resources {
          * @return Resources to which this theme belongs.
          */
         public Resources getResources() {
-            return Resources.this;
+            return mResources;
         }
 
         public void setTo(@NonNull Theme other) {

@@ -333,13 +333,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         final Resources.Theme theme = context.getTheme();
         final TypedValue value = new TypedValue();
         if (theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true))
-            setTextColor(theme.getResources().loadColorStateList(value, theme));
+            setTextColor(theme.getResources().loadColorStateList(value, null, theme));
         if (theme.resolveAttribute(R.ns, R.attr.textColorHint, value, true))
-            setHintTextColor(theme.getResources().loadColorStateList(value, theme));
+            setHintTextColor(theme.getResources().loadColorStateList(value, null, theme));
         if (theme.resolveAttribute(R.ns, R.attr.textColorHighlight, value, true))
             setHighlightColor(value.data);
         if (theme.resolveAttribute(R.ns, R.attr.textColorLink, value, true))
-            setLinkTextColor(theme.getResources().loadColorStateList(value, theme));
+            setLinkTextColor(theme.getResources().loadColorStateList(value, null, theme));
 
         if (getDefaultEditable()) {
             setText("", BufferType.EDITABLE);

@@ -364,7 +364,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
         } else {
             theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true);
         }
-        tv.setTextColor(theme.getResources().loadColorStateList(value, theme));
+        tv.setTextColor(theme.getResources().loadColorStateList(value, null, theme));
         if (!dropdown) {
             tv.setTextAlignment(View.TEXT_ALIGNMENT_INHERIT);
         } // else GRAVITY

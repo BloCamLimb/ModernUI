@@ -142,7 +142,7 @@ public class ListMenuItemView extends LinearLayout
                 icon.setAutoMirrored(true);
                 mSubMenuArrowView.setImageDrawable(icon);
                 if (theme.resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
-                    mSubMenuArrowView.setImageTintList(context.getResources().loadColorStateList(value, theme));
+                    mSubMenuArrowView.setImageTintList(context.getResources().loadColorStateList(value, null, theme));
 
                 var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
                 params.gravity = Gravity.CENTER;

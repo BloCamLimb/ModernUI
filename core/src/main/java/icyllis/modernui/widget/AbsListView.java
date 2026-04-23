@@ -699,7 +699,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         ColorStateList tint = null;
         final TypedValue value = new TypedValue();
         if (context.getTheme().resolveAttribute(R.ns, R.attr.colorControlNormal, value, true)) {
-            tint = context.getResources().loadColorStateList(value, context.getTheme());
+            tint = context.getResources().loadColorStateList(value, null, context.getTheme());
         }
         setVerticalScrollBarEnabled(true);
         ShapeDrawable thumb = new ShapeDrawable();
