@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,24 +18,30 @@
 
 package icyllis.modernui.annotation;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Denotes that the annotated element represents a packed color
- * int, {@code 0xAARRGGBB}. If applied to an int array, every element
- * in the array represents a color integer. The color has
- * non-premultiplied alpha, 8-bit unsigned per channel, in sRGB color space.
+ * long, {@code 0xAAAABBBBGGGGRRRR}. If applied to a long array,
+ * every element in the array represents a color long. The color has
+ * non-premultiplied alpha, 16-bit floating-point per channel, in
+ * extended sRGB nonlinear color space.
  * <p>
  * Example:
  * <pre>{@code
- *  public abstract void setTextColor(@ColorInt int color);
+ *  public abstract void setTextColor(@ColorLong long color);
  * }</pre>
  * <p>
  * Note: this packing format is exactly mapped to
- * {@link icyllis.modernui.graphics.Bitmap.Format#BGRA_8888_PACK32}.
+ * {@link icyllis.modernui.graphics.Bitmap.Format#RGBA_F16}
+ * on little-endian machines.
  */
 @Documented
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.FIELD})
 @Retention(RetentionPolicy.CLASS)
-public @interface ColorInt {
+public @interface ColorLong {
 }
