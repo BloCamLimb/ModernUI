@@ -169,7 +169,7 @@ public class ResourcesLoader {
      */
     @ApiStatus.Internal
     @NonNull
-    public List<PackAssets> getApkAssets() {
+    public List<PackAssets> getPackAssets() {
         synchronized (mLock) {
             if (mPackAssets == null) {
                 return Collections.emptyList();

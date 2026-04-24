@@ -47,8 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static icyllis.modernui.resources.AssetManager.kMaxIterations;
-
 public class Resources {
 
     public static final Marker MARKER = MarkerFactory.getMarker("Resources");
@@ -179,7 +177,7 @@ public class Resources {
      * @hide
      * @hidden
      */
-    // called from UI thread only
+    // called from single thread only
     @ApiStatus.Internal
     public void setImpl(ResourcesImpl impl) {
         if (impl == mResourcesImpl) {
@@ -297,6 +295,31 @@ public class Resources {
                                              @Nullable Theme theme)
             throws NotFoundException {
         return mResourcesImpl.loadColorStateList(this, value, id, theme);
+    }
+
+    @NonNull
+    public Drawable getDrawable(@NonNull ResourceId id,
+                                @Nullable Theme theme)
+            throws NotFoundException {
+        TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
+        try {
+            TypedValue val = tmp != null ? tmp : new TypedValue();
+            return getDrawable(id, val, theme);
+        } finally {
+            if (tmp != null) {
+                TMP_VALUE.setRelease(this, tmp);
+            }
+        }
+    }
+
+    @NonNull
+    public Drawable getDrawable(@NonNull ResourceId id,
+                                @NonNull TypedValue value,
+                                @Nullable Theme theme)
+            throws NotFoundException {
+        ResourcesImpl impl = mResourcesImpl;
+        impl.getValue(id, value, true);
+        return impl.loadDrawable(this, value, id, theme);
     }
 
     @NonNull
@@ -425,7 +448,7 @@ public class Resources {
 
         @GuardedBy("mLock")
         private boolean applyStyleInternal(@NonNull ResourceId resId, boolean force) {
-            var bag = mResourcesImpl.mAssetManager.getBag(resId);
+            ResolvedBag bag = mResourcesImpl.mAssetManager.getBag(resId);
             if (bag == null) {
                 return false;
             }
@@ -678,7 +701,7 @@ public class Resources {
                 return false;
             }
             int typeSpecFlags = 0;
-            for (int __ = 0; __ < kMaxIterations; __++) {
+            for (int __ = 0; __ < AssetManager.kMaxIterations; __++) {
                 Object2ObjectOpenHashMap<String, Entry> group;
                 Entry e;
                 if ((group = mEntries.get(namespace)) == null || (e = group.get(attribute)) == null) {
@@ -744,7 +767,7 @@ public class Resources {
                         @NonNull TypedValue value,
                         @NonNull BagAttributeFinder defStyleAttrFinder) {
 
-            AssetManager.ResolvedBag defStyleBag = null;
+            ResolvedBag defStyleBag = null;
             if (defStyleAttr != null) {
                 if (getAttribute(defStyleAttr.namespace(), defStyleAttr.entry(), value)) {
                     LoadedResources loadedResources = mResourcesImpl.mAssetManager.getLoadedResources(value.cookie);

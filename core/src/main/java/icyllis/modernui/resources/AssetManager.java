@@ -26,6 +26,7 @@ import icyllis.modernui.util.Log;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Unmodifiable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -33,9 +34,10 @@ import javax.annotation.concurrent.GuardedBy;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @hide
@@ -48,15 +50,11 @@ public final class AssetManager {
 
     private static final Object sLock = new Object();
 
-    private static final PackAssets[] sEmptyPackAssets = {};
-
     @GuardedBy("sLock")
     private static AssetManager sSystem;
 
     @GuardedBy("sLock")
     private static PackAssets[] sSystemPackAssets;
-    @GuardedBy("sLock")
-    private static Set<PackAssets> sSystemPackAssetsSet;
 
     @GuardedBy("sLock")
     private static void createSystemAssets() {
@@ -69,10 +67,8 @@ public final class AssetManager {
             SystemTheme.addToResources(resourcesBuilder);
             PackAssets pack = resourcesBuilder.buildPack(new EmptyAssetsProvider());
 
-            sSystemPackAssetsSet = Set.of(pack);
             sSystemPackAssets = new PackAssets[]{pack};
-            sSystem = new AssetManager(true);
-            sSystem.setPackAssets(sEmptyPackAssets, false);
+            sSystem = new AssetManager(sSystemPackAssets, false, null);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create system AssetManager", e);
         }
@@ -143,53 +139,75 @@ public final class AssetManager {
         public final IntArrayList cookies = new IntArrayList();
     }
 
-    @Deprecated
-    public AssetManager() {
-    }
+    public static final class Builder {
+        private final ArrayList<PackAssets> mUserPackAssets = new ArrayList<>();
+        private final ArrayList<ResourcesLoader> mLoaders = new ArrayList<>();
 
-    private AssetManager(boolean sentinel) {
+        private boolean mNoInit = false;
 
-    }
-
-    /**
-     * Return a global shared asset manager that provides access to only
-     * system assets (no application assets).
-     */
-    public static AssetManager getSystem() {
-        synchronized (sLock) {
-            createSystemAssets();
-            return sSystem;
+        public Builder addPackAssets(PackAssets packAssets) {
+            mUserPackAssets.add(packAssets);
+            return this;
         }
-    }
 
-    public void setPackAssets(@NonNull PackAssets[] packs, boolean invalidateCaches) {
-        PackAssets[] newPacks = new PackAssets[sSystemPackAssets.length + packs.length];
+        public Builder addLoader(ResourcesLoader loader) {
+            mLoaders.add(loader);
+            return this;
+        }
 
-        System.arraycopy(sSystemPackAssets, 0, newPacks, 0, sSystemPackAssets.length);
+        public Builder setNoInit() {
+            mNoInit = true;
+            return this;
+        }
 
-        int newLength = sSystemPackAssets.length;
-        for (PackAssets pack : packs) {
-            if (!sSystemPackAssetsSet.contains(pack)) {
-                newPacks[newLength++] = pack;
+        @NonNull
+        public AssetManager build() {
+            // Retrieving the system PackAssets forces their creation as well.
+            getSystem();
+            final PackAssets[] systemPackAssets = sSystemPackAssets;
+
+            // Filter PackAssets so that assets provided by multiple loaders are only included once
+            // in the AssetManager assets. The last appearance of the PackAssets dictates its load
+            // order.
+            final ArrayList<PackAssets> loaderPackAssets = new ArrayList<>();
+            final HashSet<PackAssets> uniqueLoaderPackAssets = new HashSet<>();
+            for (int i = mLoaders.size() - 1; i >= 0; i--) {
+                final List<PackAssets> currentLoaderPackAssets = mLoaders.get(i).getPackAssets();
+                for (int j = currentLoaderPackAssets.size() - 1; j >= 0; j--) {
+                    final PackAssets packAssets = currentLoaderPackAssets.get(j);
+                    if (uniqueLoaderPackAssets.add(packAssets)) {
+                        loaderPackAssets.add(packAssets);
+                    }
+                }
             }
-        }
 
-        if (newLength != newPacks.length) {
-            newPacks = Arrays.copyOf(newPacks, newLength);
-        }
+            final int totalPackAssetCount = systemPackAssets.length + mUserPackAssets.size()
+                    + loaderPackAssets.size();
+            final PackAssets[] packAssets = new PackAssets[totalPackAssetCount];
 
-        synchronized (this) {
-            buildResTableLocked(newPacks);
-            if (invalidateCaches) {
-                invalidateCachesLocked(~0);
+            System.arraycopy(systemPackAssets, 0, packAssets, 0, systemPackAssets.length);
+
+            // Append user PackAssets after system PackAssets.
+            for (int i = 0, n = mUserPackAssets.size(); i < n; i++) {
+                packAssets[i + systemPackAssets.length] = mUserPackAssets.get(i);
             }
+
+            // Append PackAssets provided by loaders to the end.
+            for (int i = 0, n = loaderPackAssets.size(); i < n; i++) {
+                packAssets[i + systemPackAssets.length  + mUserPackAssets.size()] =
+                        loaderPackAssets.get(i);
+            }
+
+            return new AssetManager(packAssets, mNoInit,
+                    mLoaders.isEmpty() ? null
+                    : mLoaders.toArray(new ResourcesLoader[0]));
         }
     }
 
-    private void buildResTableLocked(@NonNull PackAssets[] packs) {
-        packAssets = packs;
+    private AssetManager(@NonNull PackAssets[] packAssets, boolean preset,
+                         @Nullable ResourcesLoader[] loaders) {
 
-        packageGroups.clear();
+        HashMap<String, PackageGroup> packageGroups = new HashMap<>();
         for (int i = 0; i < packAssets.length; i++) {
             var pack = packAssets[i];
             int cookie = i;
@@ -204,29 +222,53 @@ public final class AssetManager {
                 pkgGroup.cookies.add(cookie);
             }
         }
+
+        mLoaders = loaders;
+        mPackAssets = packAssets;
+        mPackageGroups = packageGroups;
+    }
+
+    /**
+     * Return a global shared asset manager that provides access to only
+     * system assets (no application assets).
+     */
+    public static AssetManager getSystem() {
+        synchronized (sLock) {
+            createSystemAssets();
+            return sSystem;
+        }
+    }
+
+    @NonNull
+    @Unmodifiable
+    public List<PackAssets> getPackAssets() {
+        return Arrays.asList(mPackAssets);
+    }
+
+    @NonNull
+    @Unmodifiable
+    public List<ResourcesLoader> getLoaders() {
+        return mLoaders == null ? Collections.emptyList() : Arrays.asList(mLoaders);
     }
 
     private void invalidateCachesLocked(int diff) {
 
         if (diff == ~0) {
-            cachedBags.clear();
+            mCachedBags.clear();
             return;
         }
 
-        cachedBags.values().removeIf(b -> (b.typeSpecFlags & diff) != 0);
+        mCachedBags.values().removeIf(b -> (b.typeSpecFlags & diff) != 0);
     }
 
     @Nullable
     public Asset getNonAsset(String path) {
-        for (int i = 0; i < packAssets.length; i++) {
-            var pack = packAssets[i];
-
+        for (var pack : mPackAssets) {
             Asset asset = pack.getAssetsProvider().getAsset(path);
             if (asset != null) {
                 return asset;
             }
         }
-
         return null;
     }
 
@@ -248,14 +290,16 @@ public final class AssetManager {
 
     @Nullable
     public ResolvedBag getBag(@NonNull ResourceId resId) {
-        return getBag(resId, null, null);
+        synchronized (this) {
+            return getBag(resId, null, null);
+        }
     }
 
     @SuppressWarnings("PointlessArithmeticExpression")
     @Nullable
-    ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds,
+    private ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds,
                              TypedValue value) {
-        ResolvedBag cached = cachedBags.get(resId);
+        ResolvedBag cached = mCachedBags.get(resId);
         if (cached != SENTINEL_BAG) {
             return cached;
         }
@@ -278,7 +322,7 @@ public final class AssetManager {
                 // If the parent bag we are looking for does not exist or is not a bag, cache it.
                 // Because the resId is declared within the package at this point.
                 // Otherwise, the resId is likely random and not worth caching.
-                cachedBags.put(resId, null);
+                mCachedBags.put(resId, null);
             }
             return null;
         }
@@ -344,7 +388,7 @@ public final class AssetManager {
                 bag.values = values;
                 bag.typeSpecFlags = typeFlags;
             }
-            cachedBags.put(resId, bag);
+            mCachedBags.put(resId, bag);
             return bag;
         }
 
@@ -352,7 +396,7 @@ public final class AssetManager {
         if (parentBag == null) {
             Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
                     parentResId, resId);
-            cachedBags.put(resId, null);
+            mCachedBags.put(resId, null);
             return null;
         }
 
@@ -463,7 +507,7 @@ public final class AssetManager {
             // Combine flags from the parent and our own bag.
             newBag.typeSpecFlags = typeFlags | parentBag.typeSpecFlags;
         }
-        cachedBags.put(resId, newBag);
+        mCachedBags.put(resId, newBag);
         return newBag;
     }
 
@@ -476,12 +520,14 @@ public final class AssetManager {
             return null;
         }
 
-        PackageGroup packageGroup = packageGroups.get(namespace);
+        PackageGroup packageGroup = mPackageGroups.get(namespace);
         if (packageGroup == null) {
             return null;
         }
 
-        return findEntryInternal(packageGroup, typeString, entryString, outValue);
+        synchronized (this) {
+            return findEntryInternal(packageGroup, typeString, entryString, outValue);
+        }
     }
 
     @Nullable
@@ -544,13 +590,15 @@ public final class AssetManager {
         return bestEntry;
     }
 
+    @Nullable
     public PackAssets getPackAssets(int cookie) {
-        if (cookie < 0 || cookie >= packAssets.length) {
+        if (cookie < 0 || cookie >= mPackAssets.length) {
             return null;
         }
-        return packAssets[cookie];
+        return mPackAssets[cookie];
     }
 
+    @Nullable
     public LoadedResources getLoadedResources(int cookie) {
         PackAssets assets = getPackAssets(cookie);
         if (assets == null) {
@@ -559,14 +607,16 @@ public final class AssetManager {
         return assets.getLoadedResources();
     }
 
-    private PackAssets[] packAssets;
-    private final HashMap<String, PackageGroup> packageGroups = new HashMap<>();
+    private final PackAssets[] mPackAssets;
+    private final HashMap<String, PackageGroup> mPackageGroups;
+
+    private final ResourcesLoader[] mLoaders;
 
     // Cached set of bags. We don't need the best lookup performance, use
     // OpenHashMap instead of HashMap to save memory (this map can be big)
-    Object2ObjectOpenHashMap<ResourceId, ResolvedBag> cachedBags = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<ResourceId, ResolvedBag> mCachedBags = new Object2ObjectOpenHashMap<>();
 
     {
-        cachedBags.defaultReturnValue(SENTINEL_BAG);
+        mCachedBags.defaultReturnValue(SENTINEL_BAG);
     }
 }
