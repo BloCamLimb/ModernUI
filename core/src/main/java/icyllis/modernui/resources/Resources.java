@@ -33,6 +33,7 @@ import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.slf4j.Marker;
@@ -98,23 +99,6 @@ public class Resources {
             return curTheme;
         }
         return R.style.Theme_Material3_Light;
-    }
-
-    /**
-     * This exception is thrown by the resource APIs when a requested resource
-     * can not be found.
-     */
-    public static class NotFoundException extends RuntimeException {
-        public NotFoundException() {
-        }
-
-        public NotFoundException(@Nullable String message) {
-            super(message);
-        }
-
-        public NotFoundException(@Nullable String message, @Nullable Exception cause) {
-            super(message, cause);
-        }
     }
 
     /**
@@ -258,16 +242,16 @@ public class Resources {
         return mResourcesImpl.getConfiguration();
     }
 
+    @CheckReturnValue
     @ApiStatus.Experimental
-    public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
-                         boolean resolveRefs) throws NotFoundException {
-        mResourcesImpl.getValue(id, outValue, resolveRefs);
+    public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
+                         boolean resolveRefs) {
+        return mResourcesImpl.getValue(id, outValue, resolveRefs);
     }
 
-    @NonNull
+    @Nullable
     public ColorStateList getColorStateList(@NonNull ResourceId id,
-                                            @Nullable Theme theme)
-            throws NotFoundException {
+                                            @Nullable Theme theme) {
         TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
         try {
             TypedValue val = tmp != null ? tmp : new TypedValue();
@@ -279,28 +263,27 @@ public class Resources {
         }
     }
 
-    @NonNull
+    @Nullable
     public ColorStateList getColorStateList(@NonNull ResourceId id,
                                             @NonNull TypedValue value,
-                                            @Nullable Theme theme)
-            throws NotFoundException {
+                                            @Nullable Theme theme) {
         ResourcesImpl impl = mResourcesImpl;
-        impl.getValue(id, value, true);
-        return impl.loadColorStateList(this, value, id, theme);
+        if (impl.getValue(id, value, true)) {
+            return impl.loadColorStateList(this, value, id, theme);
+        }
+        return null;
     }
 
-    @NonNull
+    @Nullable
     public ColorStateList loadColorStateList(@NonNull TypedValue value,
                                              @Nullable ResourceId id,
-                                             @Nullable Theme theme)
-            throws NotFoundException {
+                                             @Nullable Theme theme) {
         return mResourcesImpl.loadColorStateList(this, value, id, theme);
     }
 
-    @NonNull
+    @Nullable
     public Drawable getDrawable(@NonNull ResourceId id,
-                                @Nullable Theme theme)
-            throws NotFoundException {
+                                @Nullable Theme theme) {
         TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
         try {
             TypedValue val = tmp != null ? tmp : new TypedValue();
@@ -312,27 +295,26 @@ public class Resources {
         }
     }
 
-    @NonNull
+    @Nullable
     public Drawable getDrawable(@NonNull ResourceId id,
                                 @NonNull TypedValue value,
-                                @Nullable Theme theme)
-            throws NotFoundException {
+                                @Nullable Theme theme) {
         ResourcesImpl impl = mResourcesImpl;
-        impl.getValue(id, value, true);
-        return impl.loadDrawable(this, value, id, theme);
+        if (impl.getValue(id, value, true)) {
+            return impl.loadDrawable(this, value, id, theme);
+        }
+        return null;
     }
 
-    @NonNull
+    @Nullable
     public Drawable loadDrawable(@NonNull TypedValue value,
                                  @Nullable ResourceId id,
-                                 @Nullable Theme theme)
-            throws NotFoundException {
+                                 @Nullable Theme theme) {
         return mResourcesImpl.loadDrawable(this, value, id, theme);
     }
 
-    @NonNull
-    public Asset getRawResource(@NonNull ResourceId id)
-            throws NotFoundException {
+    @Nullable
+    public Asset getRawResource(@NonNull ResourceId id) {
         TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
         try {
             TypedValue val = tmp != null ? tmp : new TypedValue();
@@ -344,17 +326,17 @@ public class Resources {
         }
     }
 
-    @NonNull
-    public Asset getRawResource(@NonNull ResourceId id, @NonNull TypedValue value)
-            throws NotFoundException {
+    @Nullable
+    public Asset getRawResource(@NonNull ResourceId id, @NonNull TypedValue value) {
         ResourcesImpl impl = mResourcesImpl;
-        impl.getValue(id, value, true);
-        return impl.loadRawResource(value, id);
+        if (impl.getValue(id, value, true)) {
+            return impl.loadRawResource(value, id);
+        }
+        return null;
     }
 
-    @NonNull
-    public Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id)
-            throws NotFoundException {
+    @Nullable
+    public Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id) {
         return mResourcesImpl.loadRawResource(value, id);
     }
 

@@ -24,9 +24,13 @@ import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.CheckReturnValue;
 
 import java.util.function.BiFunction;
+
+import static icyllis.modernui.resources.Resources.MARKER;
 
 /**
  * The implementation of Resource access. This class contains the AssetManager and all caches
@@ -154,24 +158,22 @@ public final class ResourcesImpl {
         return true;
     }
 
-    public void getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
-                         boolean resolveRefs) throws Resources.NotFoundException {
+    @CheckReturnValue
+    public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
+                         boolean resolveRefs) {
         boolean found = mAssetManager.getResource(id, outValue);
         if (found) {
             found = postProcess(outValue);
         }
-        if (!found) {
-            throw new Resources.NotFoundException("Resource " + id);
-        }
+        return found;
     }
 
     @SuppressWarnings("unchecked")
-    @NonNull
+    @Nullable
     ColorStateList loadColorStateList(@NonNull Resources wrapper,
                                       @NonNull TypedValue value,
                                       @Nullable ResourceId id,
-                                      @Nullable Resources.Theme theme)
-            throws Resources.NotFoundException {
+                                      @Nullable Resources.Theme theme) {
         // Handle inline color definitions.
         if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
                 && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
@@ -189,21 +191,22 @@ public final class ResourcesImpl {
                     }
                 }
             }
-            throw new Resources.NotFoundException("Resource is not a color: " + value);
+            Log.LOGGER.error(MARKER, "Resource is not a color: {}", value);
+            return null;
         }
+        //TODO load plain XML
 
         String name = id != null ? id.toString() : "(missing name)";
-        throw new Resources.NotFoundException(
-                "Can't find ColorStateList from drawable " + name);
+        Log.LOGGER.error(MARKER, "Can't find ColorStateList from drawable {}", name);
+        return null;
     }
 
     @SuppressWarnings("unchecked")
-    @NonNull
+    @Nullable
     Drawable loadDrawable(@NonNull Resources wrapper,
                           @NonNull TypedValue value,
                           @Nullable ResourceId id,
-                          @Nullable Resources.Theme theme)
-            throws Resources.NotFoundException {
+                          @Nullable Resources.Theme theme) {
         try {
             if (value.type == TypedValue.TYPE_FACTORY) {
                 LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
@@ -216,7 +219,8 @@ public final class ResourcesImpl {
                         }
                     }
                 }
-                throw new Resources.NotFoundException("Resource is not a drawable: " + value);
+                Log.LOGGER.error(MARKER, "Resource is not a drawable: {}", value);
+                return null;
             }
 
             if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
@@ -225,29 +229,23 @@ public final class ResourcesImpl {
             }
 
             //TODO load plain XML
-            throw new Resources.NotFoundException("Resource is not a drawable: " + value);
+            Log.LOGGER.error(MARKER, "Resource is not a drawable: {}", value);
+            return null;
         } catch (Exception e) {
-            String name = id != null ? id.toString() : "(missing name)";
-
-            // The target drawable might fail to load for any number of
-            // reasons, but we always want to include the resource name.
-            // Since the client already expects this method to throw a
-            // NotFoundException, just throw one of those.
-            final Resources.NotFoundException nfe = new Resources.NotFoundException("Drawable " + name, e);
-            nfe.setStackTrace(new StackTraceElement[0]);
-            throw nfe;
+            Log.LOGGER.error(MARKER, "Drawable cannot load: {}", id != null ? id.toString() : value, e);
+            return null;
         }
     }
 
-    @NonNull
-    Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id)
-            throws Resources.NotFoundException {
+    @Nullable
+    Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id) {
         var path = value.getString();
         if (path == null) {
             String msg = id != null
                     ? "Resource ID " + id + " is not raw resource"
                     : "Resource value " + value + " is not a string or cannot be resolved";
-            throw new Resources.NotFoundException(msg);
+            Log.LOGGER.error(MARKER, msg);
+            return null;
         }
         Asset asset = mAssetManager.getNonAsset(path.toString(), value.cookie);
         if (asset == null) {
@@ -255,7 +253,8 @@ public final class ResourcesImpl {
             if (id != null) {
                 msg = msg + " from resource ID " + id;
             }
-            throw new Resources.NotFoundException(msg);
+            Log.LOGGER.error(MARKER, "{} cannot be found", msg);
+            return null;
         }
         return asset;
     }

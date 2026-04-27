@@ -272,11 +272,10 @@ public class TypedArray {
                 type == TypedValue.TYPE_FACTORY) {
             final TypedValue value = mValue;
             if (getValueAt(index, value)) {
-                try {
-                    final ColorStateList csl = mResources.loadColorStateList(
-                            value, null, mTheme);
+                final ColorStateList csl = mResources.loadColorStateList(
+                        value, null, mTheme);
+                if (csl != null) {
                     return csl.getDefaultColor();
-                } catch (Resources.NotFoundException ignored) {
                 }
             }
             return defValue;
@@ -323,10 +322,7 @@ public class TypedArray {
                         "Failed to resolve attribute at index " + index + ": " + value
                                 + ", theme=" + mTheme);
             }
-            try {
-                return mResources.loadColorStateList(value, null, mTheme);
-            } catch (Resources.NotFoundException ignored) {
-            }
+            return mResources.loadColorStateList(value, null, mTheme);
         }
         return null;
     }
@@ -662,10 +658,7 @@ public class TypedArray {
                                 + ", theme=" + mTheme);
             }
 
-            try {
-                return mResources.loadDrawable(value, null, mTheme);
-            } catch (Resources.NotFoundException ignored) {
-            }
+            return mResources.loadDrawable(value, null, mTheme);
         }
         return null;
     }
