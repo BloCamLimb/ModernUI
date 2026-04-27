@@ -21,10 +21,10 @@ package icyllis.modernui.resources;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.NoSuchFileException;
 
 /**
  * Interface responsible for opening and iterating through asset files.
@@ -55,7 +55,7 @@ public interface AssetsProvider extends AutoCloseable {
     default InputStream openStream(@NonNull String path) throws IOException {
         Asset asset = getAsset(path);
         if (asset == null) {
-            throw new FileNotFoundException(path);
+            throw new NoSuchFileException(path);
         }
         return asset.openStream();
     }
@@ -67,7 +67,7 @@ public interface AssetsProvider extends AutoCloseable {
     default SeekableByteChannel openChannel(@NonNull String path) throws IOException {
         Asset asset = getAsset(path);
         if (asset == null) {
-            throw new FileNotFoundException(path);
+            throw new NoSuchFileException(path);
         }
         return asset.openChannel();
     }

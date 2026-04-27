@@ -52,8 +52,8 @@ public interface Asset {
     /**
      * Opens a byte channel for reading.
      * <p>
-     * This returns a SeekableByteChannel only if the asset natively supports seeking.
-     * Otherwise (e.g., for compressed assets), a {@link java.io.FileNotFoundException} is thrown.
+     * This returns a SeekableByteChannel only if the asset is seekable (uncompressed).
+     * Otherwise (e.g., for compressed assets), a {@link java.util.zip.ZipException} is thrown.
      * <p>
      * This method is designed to avoid internal memory buffering. If the caller requires seek
      * functionality for non-seekable assets, they should read the InputStream into a byte array

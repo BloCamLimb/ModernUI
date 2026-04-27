@@ -24,7 +24,6 @@ import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
@@ -33,6 +32,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.zip.ZipException;
 
 /**
  * @hide
@@ -72,7 +72,7 @@ public class FileAsset implements Asset {
     @Override
     public SeekableByteChannel openChannel() throws IOException {
         if (isCompressed()) {
-            throw new FileNotFoundException(path + " cannot be opened as a seekable byte channel, " +
+            throw new ZipException(path + " cannot be opened as a seekable byte channel, " +
                     "because it is compressed");
         }
         return Files.newByteChannel(path, OPEN_OPTIONS);

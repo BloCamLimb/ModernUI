@@ -24,11 +24,12 @@ import icyllis.modernui.util.SeekableInputStreamChannel;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.NoSuchFileException;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
@@ -55,7 +56,7 @@ public class ZipAsset implements Asset {
     public InputStream openStream() throws IOException {
         var is = zipFile.getInputStream(zipEntry);
         if (is == null) {
-            throw new FileNotFoundException(zipEntry.getName());
+            throw new NoSuchFileException(zipEntry.getName());
         }
         return is;
     }
@@ -68,7 +69,7 @@ public class ZipAsset implements Asset {
         if (zipEntry.getMethod() == ZipEntry.STORED) {
             return new SeekableInputStreamChannel(openStream(), 0, zipEntry.getSize());
         }
-        throw new FileNotFoundException(zipEntry.getName() + " cannot be opened as a seekable byte channel, " +
+        throw new ZipException(zipEntry.getName() + " cannot be opened as a seekable byte channel, " +
                 "because it is compressed");
     }
 
