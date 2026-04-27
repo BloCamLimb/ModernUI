@@ -36,11 +36,6 @@ public class TypedArray {
         }
 
         attrs.mRecycled = false;
-        // We know that Resources.getAssets() and Resources.getImpl() may change
-        // during configuration changes. However, we do not capture these snapshots
-        // in case Resources holds a strong reference to the old ResourcesImpl or AssetManager
-        // through the TypedArray pool.
-        attrs.mMetrics = res.getDisplayMetrics();
         attrs.resize(len);
         return attrs;
     }
@@ -52,11 +47,12 @@ public class TypedArray {
     static final int STYLE_FLAGS = 3;
 
     private final Resources mResources;
-    private DisplayMetrics mMetrics;
 
     private boolean mRecycled;
 
     Resources.Theme mTheme;
+    DisplayMetrics mMetrics;
+    AssetManager mAssetManager;
 
     int[] mData;
     int[] mIndices;
@@ -619,13 +615,13 @@ public class TypedArray {
             case TypedValue.TYPE_REFERENCE -> {
                 int typeId = type >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
                 if (typeId != 0) {
-                    return mResources.getImpl().getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
+                    return mAssetManager.getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
                 } else {
                     return null;
                 }
             }
             case TypedValue.TYPE_ATTRIBUTE -> {
-                return mResources.getImpl().getAttributeIdForCookie(data[index + STYLE_COOKIE], data[index + STYLE_DATA]);
+                return mAssetManager.getAttributeIdForCookie(data[index + STYLE_COOKIE], data[index + STYLE_DATA]);
             }
         }
         return null;
@@ -780,9 +776,9 @@ public class TypedArray {
 
         mRecycled = true;
 
-        // These may have been set by the client.
+        // These are heave objects may have been set by the client.
         mTheme = null;
-        mValue.object = null;
+        mAssetManager = null;
 
         mResources.mTypedArrayPool.release(this);
     }
@@ -797,7 +793,7 @@ public class TypedArray {
         outValue.data = data[offset + STYLE_DATA];
         outValue.cookie = data[offset + STYLE_COOKIE];
         outValue.flags = data[offset + STYLE_FLAGS];
-        return mResources.getImpl().postProcess(outValue);
+        return mAssetManager.postProcess(outValue);
     }
 
     /*@Nullable
@@ -814,5 +810,6 @@ public class TypedArray {
     protected TypedArray(Resources resources) {
         mResources = resources;
         mMetrics = mResources.getDisplayMetrics();
+        mAssetManager = mResources.getImpl().mAssetManager;
     }
 }

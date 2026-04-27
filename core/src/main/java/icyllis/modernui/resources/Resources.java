@@ -47,6 +47,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Resources {
 
@@ -57,6 +58,11 @@ public class Resources {
     @GuardedBy("sLock")
     private static Resources sSystem;
 
+
+    // nonfair RW lock
+    private final ReentrantReadWriteLock mLock = new ReentrantReadWriteLock();
+
+    @GuardedBy("mLock")
     private ResourcesImpl mResourcesImpl;
 
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
@@ -78,13 +84,15 @@ public class Resources {
     @SuppressWarnings("FieldMayBeFinal")
     private volatile TypedValue mTmpValue = new TypedValue();
 
+
     /**
      * WeakReferences to Themes that were constructed from this Resources object.
      * We keep track of these in case our underlying implementation is changed, in which case
      * the Themes must also get updated ThemeImpls.
      */
-    @GuardedBy("itself")
+    @GuardedBy("mLock")
     private final ArrayList<WeakReference<Theme>> mThemeRefs = new ArrayList<>();
+
 
     /**
      * Returns a default theme for the framework.
@@ -161,17 +169,16 @@ public class Resources {
      * @hide
      * @hidden
      */
-    // called from single thread only
     @ApiStatus.Internal
     public void setImpl(ResourcesImpl impl) {
-        if (impl == mResourcesImpl) {
-            return;
-        }
+        // Modern UI changed: guarded with RW lock, avoid tainting the cache inside ResourcesImpl
+        // during Resources.load* operations
+        mLock.writeLock().lock();
+        try {
+            if (impl == mResourcesImpl) {
+                return;
+            }
 
-        // Modern UI changed:
-        // the assignment operation is moved inside the lock, just in case newTheme() cannot
-        // reference the latest Impl
-        synchronized (mThemeRefs) {
             // ensure all themes are updated to the new ResourcesImpl
             mResourcesImpl = impl;
             var iter = mThemeRefs.iterator();
@@ -182,6 +189,8 @@ public class Resources {
                 else
                     theme.rebase(impl);
             }
+        } finally {
+            mLock.writeLock().unlock();
         }
     }
 
@@ -213,7 +222,8 @@ public class Resources {
      */
     @NonNull
     public final Theme newTheme() {
-        synchronized (mThemeRefs) {
+        mLock.writeLock().lock();
+        try {
             // put constructor inside lock to avoid race between newTheme and setImpl
             var theme = new Theme(this, mResourcesImpl);
             // AOSP's nextPowerOf2() is wrongly implemented, just don't use that and always
@@ -221,6 +231,8 @@ public class Resources {
             mThemeRefs.removeIf(r -> r.refersTo(null));
             mThemeRefs.add(new WeakReference<>(theme));
             return theme;
+        } finally {
+            mLock.writeLock().unlock();
         }
     }
 
@@ -267,18 +279,29 @@ public class Resources {
     public ColorStateList getColorStateList(@NonNull ResourceId id,
                                             @NonNull TypedValue value,
                                             @Nullable Theme theme) {
-        ResourcesImpl impl = mResourcesImpl;
-        if (impl.getValue(id, value, true)) {
-            return impl.loadColorStateList(this, value, id, theme);
+        mLock.readLock().lock();
+        try {
+            ResourcesImpl impl = mResourcesImpl;
+            if (impl.getValue(id, value, true)) {
+                return impl.loadColorStateList(this, value, id, theme);
+            }
+            return null;
+        } finally {
+            mLock.readLock().unlock();
         }
-        return null;
     }
 
     @Nullable
     public ColorStateList loadColorStateList(@NonNull TypedValue value,
                                              @Nullable ResourceId id,
                                              @Nullable Theme theme) {
-        return mResourcesImpl.loadColorStateList(this, value, id, theme);
+        // ensure this.mResourcesImpl is not altered during the call
+        mLock.readLock().lock();
+        try {
+            return mResourcesImpl.loadColorStateList(this, value, id, theme);
+        } finally {
+            mLock.readLock().unlock();
+        }
     }
 
     @Nullable
@@ -299,18 +322,29 @@ public class Resources {
     public Drawable getDrawable(@NonNull ResourceId id,
                                 @NonNull TypedValue value,
                                 @Nullable Theme theme) {
-        ResourcesImpl impl = mResourcesImpl;
-        if (impl.getValue(id, value, true)) {
-            return impl.loadDrawable(this, value, id, theme);
+        mLock.readLock().lock();
+        try {
+            ResourcesImpl impl = mResourcesImpl;
+            if (impl.getValue(id, value, true)) {
+                return impl.loadDrawable(this, value, id, theme);
+            }
+            return null;
+        } finally {
+            mLock.readLock().unlock();
         }
-        return null;
     }
 
     @Nullable
     public Drawable loadDrawable(@NonNull TypedValue value,
                                  @Nullable ResourceId id,
                                  @Nullable Theme theme) {
-        return mResourcesImpl.loadDrawable(this, value, id, theme);
+        // ensure this.mResourcesImpl is not altered during the call
+        mLock.readLock().lock();
+        try {
+            return mResourcesImpl.loadDrawable(this, value, id, theme);
+        } finally {
+            mLock.readLock().unlock();
+        }
     }
 
     @Nullable
@@ -369,7 +403,7 @@ public class Resources {
     @ThreadSafe
     public static final class Theme {
 
-        private final Object mLock = new Object();
+        private final ReentrantReadWriteLock mLock = new ReentrantReadWriteLock();
 
         private final Resources mResources;
         @GuardedBy("mLock")
@@ -391,9 +425,12 @@ public class Resources {
         }
 
         void rebase(ResourcesImpl resourcesImpl) {
-            synchronized (mLock) {
+            mLock.writeLock().lock();
+            try {
                 mResourcesImpl = resourcesImpl;
                 //TODO invalidate mEntries
+            } finally {
+                mLock.writeLock().unlock();
             }
         }
 
@@ -414,17 +451,19 @@ public class Resources {
          * @param force If true, values in the style resource will always be
          *              used in the theme; otherwise, they will only be used
          *              if not already defined in the theme.
-         * @throws IllegalArgumentException if the resId is not a style or not found
+         * @return true if success, false if the resId is not a style or not found
          */
-        public void applyStyle(@NonNull @StyleRes ResourceId resId, boolean force) {
-            synchronized (mLock) {
+        public boolean applyStyle(@NonNull @StyleRes ResourceId resId, boolean force) {
+            mLock.writeLock().lock();
+            try {
                 boolean result = applyStyleInternal(resId, force);
-                if (!result) {
-                    throw new IllegalArgumentException("Failed to apply style " +
-                            resId + " to theme");
+                if (result) {
+                    mKey.append(resId, force);
+                    mKeyCopy = mKey.clone();
                 }
-                mKey.append(resId, force);
-                mKeyCopy = mKey.clone();
+                return result;
+            } finally {
+                mLock.writeLock().unlock();
             }
         }
 
@@ -582,11 +621,18 @@ public class Resources {
             final int len = attrs.length >> 1;
             final TypedArray array = TypedArray.obtain(getResources(), len);
 
-            synchronized (mLock) {
+            mLock.readLock().lock();
+            try {
                 applyStyle(set, defStyleAttr, defStyleRes,
                         attrs, array.mData, array.mIndices,
                         array.mValue,
                         array.mDefStyleAttrFinder);
+                // We know that Resources.getImpl() may change during configuration changes.
+                // We capture the ResourceImpl inside the lock.
+                array.mMetrics = mResourcesImpl.getDisplayMetrics();
+                array.mAssetManager = mResourcesImpl.mAssetManager;
+            } finally {
+                mLock.readLock().unlock();
             }
             array.mDefStyleAttrFinder.clear();
             array.mTheme = this;
@@ -631,7 +677,8 @@ public class Resources {
          */
         public boolean resolveAttribute(@NonNull String namespace, @NonNull String attribute,
                                         @NonNull TypedValue outValue, boolean resolveRefs) {
-            synchronized (mLock) {
+            mLock.readLock().lock();
+            try {
                 if (!getAttribute(namespace, attribute, outValue)) {
                     return false;
                 }
@@ -643,7 +690,9 @@ public class Resources {
                     //TODO
                 }
 
-                return mResourcesImpl.postProcess(outValue);
+                return mResourcesImpl.mAssetManager.postProcess(outValue);
+            } finally {
+                mLock.readLock().unlock();
             }
         }
 
@@ -817,40 +866,46 @@ public class Resources {
             if (this == other) {
                 return;
             }
-            synchronized (mLock) {
-                synchronized (other.mLock) {
-                    //TODO we also need to lock underlying Resources & AssetManager
-                    // and retrieve attribute values if they are different.
-                    // atm we just do deep copy.
-                    if (other.mEntries == null) {
-                        mEntries = null;
-                    } else {
-                        if (mEntries == null) {
-                            mEntries = new Object2ObjectOpenHashMap<>();
-                        }
-                        for (var oit = other.mEntries.object2ObjectEntrySet().fastIterator(); oit.hasNext(); ) {
-                            var oe = oit.next();
-                            Object2ObjectOpenHashMap<String, Entry> inner =
-                                    new Object2ObjectOpenHashMap<>(oe.getValue().size());
-                            for (var iit = oe.getValue().object2ObjectEntrySet().fastIterator(); iit.hasNext(); ) {
-                                var ie = iit.next();
-                                inner.put(ie.getKey(), ie.getValue().clone());
-                            }
-                            mEntries.put(oe.getKey(), inner);
-                        }
+            mLock.writeLock().lock();
+            other.mLock.readLock().lock();
+            try {
+                //TODO we also need to lock underlying Resources & AssetManager
+                // and retrieve attribute values if they are different.
+                // atm we just do deep copy.
+                if (other.mEntries == null) {
+                    mEntries = null;
+                } else {
+                    if (mEntries == null) {
+                        mEntries = new Object2ObjectOpenHashMap<>();
                     }
-
-                    mKey.setTo(other.getKey());
-                    mKeyCopy = mKey.clone();
+                    for (var oit = other.mEntries.object2ObjectEntrySet().fastIterator(); oit.hasNext(); ) {
+                        var oe = oit.next();
+                        Object2ObjectOpenHashMap<String, Entry> inner =
+                                new Object2ObjectOpenHashMap<>(oe.getValue().size());
+                        for (var iit = oe.getValue().object2ObjectEntrySet().fastIterator(); iit.hasNext(); ) {
+                            var ie = iit.next();
+                            inner.put(ie.getKey(), ie.getValue().clone());
+                        }
+                        mEntries.put(oe.getKey(), inner);
+                    }
                 }
+
+                mKey.setTo(other.getKey());
+                mKeyCopy = mKey.clone();
+            } finally {
+                other.mLock.readLock().unlock();
+                mLock.writeLock().unlock();
             }
         }
 
         public void clear() {
-            synchronized (mLock) {
+            mLock.writeLock().lock();
+            try {
                 mEntries = null;
                 mKey.clear();
                 mKeyCopy = mKey.clone();
+            } finally {
+                mLock.writeLock().unlock();
             }
         }
 
@@ -899,9 +954,8 @@ public class Resources {
         }
 
         ThemeKey getKey() {
-            synchronized (mLock) {
-                return mKeyCopy;
-            }
+            // in our use case, read lock is not needed here
+            return mKeyCopy;
         }
     }
 

@@ -591,6 +591,72 @@ public final class AssetManager {
     }
 
     @Nullable
+    CharSequence getPooledStringForCookie(int cookie, int id) {
+        LoadedResources loadedResources = getLoadedResources(cookie);
+        if (loadedResources == null) {
+            return null;
+        }
+        return loadedResources.getGlobalStringPool().getSequenceAt(id);
+    }
+
+    @Nullable
+    ResourceId getReferenceIdForCookie(int cookie, int typeId, int data) {
+        assert typeId > 0;
+        LoadedResources loadedResources = getLoadedResources(cookie);
+        if (loadedResources == null) {
+            return null;
+        }
+        return loadedResources.lookupResourceId(null, data, typeId);
+    }
+
+    @Nullable
+    ResourceId getAttributeIdForCookie(int cookie, int data) {
+        LoadedResources loadedResources = getLoadedResources(cookie);
+        if (loadedResources == null) {
+            return null;
+        }
+        String namespace = loadedResources.lookupPackageName(data >>> ResourceTypes.Res_value.PACKAGE_ID_SHIFT);
+        String attribute =
+                loadedResources.getKeyStringPool().getStringAt(data & ResourceTypes.Res_value.KEY_INDEX_MASK);
+        if (namespace != null && attribute != null) {
+            return ResourceId.attr(namespace, attribute);
+        }
+        return null;
+    }
+
+    // do post-processing before exposing it to public API users,
+    // freeze the 'object' field
+    boolean postProcess(@NonNull TypedValue outValue) {
+        switch (outValue.type & ResourceTypes.Res_value.DATA_TYPE_MASK) {
+            case TypedValue.TYPE_STRING -> {
+                if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
+                    return false;
+                }
+            }
+            case TypedValue.TYPE_REFERENCE -> {
+                int typeId =
+                        (outValue.type & ResourceTypes.Res_value.DATA_TYPE_ID_MASK) >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
+                if (typeId != 0) {
+                    // erase higher 8 bits
+                    outValue.type = TypedValue.TYPE_REFERENCE;
+                    if ((outValue.object = getReferenceIdForCookie(outValue.cookie, typeId, outValue.data)) == null) {
+                        return false;
+                    }
+                } else {
+                    outValue.object = null;
+                }
+            }
+            case TypedValue.TYPE_ATTRIBUTE -> {
+                if ((outValue.object = getAttributeIdForCookie(outValue.cookie, outValue.data)) == null) {
+                    return false;
+                }
+            }
+            default -> outValue.object = null;
+        }
+        return true;
+    }
+
+    @Nullable
     public PackAssets getPackAssets(int cookie) {
         if (cookie < 0 || cookie >= mPackAssets.length) {
             return null;
