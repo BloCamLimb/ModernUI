@@ -30,4 +30,9 @@ public class Configuration {
 
     public void setToDefaults() {
     }
+
+    public static boolean needNewResources(int configChanges,
+                                           int interestingChanges) {
+        return (configChanges & interestingChanges) != 0;
+    }
 }

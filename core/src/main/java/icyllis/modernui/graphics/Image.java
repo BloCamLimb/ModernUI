@@ -57,6 +57,9 @@ public class Image implements AutoCloseable {
     private volatile icyllis.arc3d.sketch.Image mImage;
     private final Cleaner.Cleanable mCleanup;
 
+    // keep a strong reference to prevent it from being garbage collected
+    private ConstantState mConstantState;
+
     int mDensity = DisplayMetrics.DENSITY_DEFAULT;
 
     private Image(@SharedPtr icyllis.arc3d.sketch.Image image) {
@@ -125,11 +128,14 @@ public class Image implements AutoCloseable {
         try {
             //TODO we previously make all images Mipmapped, but Arc3D currently does not support
             // Mipmapping correctly
+
+            // because the return value is owned by client, budgeted = false to
+            // ensure Arc3D GPU ResourceCache work correctly
             nativeImage = icyllis.arc3d.granite.TextureUtils.makeFromPixmap(
                     recordingContext,
                     bitmap.getPixmap(),
                     /*mipmapped*/ false,
-                    /*budgeted*/ true,
+                    /*budgeted*/ false,
                     "ImageFromBitmap"
             );
         } finally {
@@ -153,6 +159,7 @@ public class Image implements AutoCloseable {
      * @param entry     the sub path to the resource
      * @return the image
      */
+    @Deprecated
     @Nullable
     public static Image create(@NonNull String namespace, @NonNull String entry) {
         return ImageStore.getInstance().getOrCreate(namespace, "textures/" + entry);
@@ -163,7 +170,10 @@ public class Image implements AutoCloseable {
      * and color space of this image.
      *
      * @return image info
+     * @hide
+     * @hidden
      */
+    @ApiStatus.Internal
     @NonNull
     public ImageInfo getInfo() {
         return mImage.getInfo();
@@ -216,6 +226,7 @@ public class Image implements AutoCloseable {
     }
 
     /**
+     * @hide
      * @hidden
      */
     @ApiStatus.Internal
@@ -319,12 +330,20 @@ public class Image implements AutoCloseable {
      * <p>
      * When this object becomes phantom-reachable, the system will automatically
      * do this cleanup operation.
+     * <p>
+     * This method is thread safe and can be called multiple times.
      */
     @Override
     public void close() {
-        mImage = null;
-        // cleaner is thread safe
-        mCleanup.clean();
+        if (mImage == null) {
+            return;
+        }
+        // lock to ensure clone() thread-safe
+        synchronized (this) {
+            mImage = null;
+            // cleaner is thread safe, so no double check
+            mCleanup.clean();
+        }
     }
 
     /**
@@ -349,6 +368,8 @@ public class Image implements AutoCloseable {
      * Create a shallow copy of this image, this is equivalent to creating a
      * shared owner for the image. You may change the density or close the
      * returned Image without affecting the original Image.
+     * <p>
+     * This method is thread safe.
      *
      * @return a shallow copy of image
      * @throws IllegalStateException this image is already closed
@@ -358,23 +379,95 @@ public class Image implements AutoCloseable {
     public final Image clone() {
         icyllis.arc3d.sketch.Image image;
         try {
-            // this operation is not atomic
-            image = RefCnt.create(mImage);
+            synchronized (this) {
+                // this operation is not atomic
+                image = RefCnt.create(mImage);
+            }
         } finally {
+            // there may be lock elimination, this is still needed
             Reference.reachabilityFence(this);
         }
         if (image == null) {
             throw new IllegalStateException("Cannot clone a closed image!");
         }
+        // we disown this.mConstantState which is only used for the Resources API;
+        // it shouldn't be used in other scenarios.
         return new Image(image, mDensity);
     }
 
     /**
+     * Internally used by Resources API.
+     *
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public ConstantState getConstantState() {
+        // set mutual references
+        if (mConstantState == null) {
+            mConstantState = new ConstantState(this);
+        }
+        return mConstantState;
+    }
+
+    /**
+     * @hide
      * @hidden
      */
     @ApiStatus.Internal
     @RawPtr
     public icyllis.arc3d.sketch.Image getNativeImage() {
         return mImage;
+    }
+
+    /**
+     * Internally used by Resources API.
+     *
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final class ConstantState {
+
+        // CS -> Img0
+        // Img0 -> CS
+        // Img1 -> CS
+        // Img2 -> CS
+        // Drawable -> Img
+        // Cache -> weak CS
+        // Cache -> weak Drawable
+
+        private Image mImage; // Img0
+        private int mChangingConfigurations;
+
+        public ConstantState(Image image) {
+            mImage = image;
+        }
+
+        public void setChangingConfigurations(int changeConfigs) {
+            mChangingConfigurations = changeConfigs;
+        }
+
+        public int getChangingConfigurations() {
+            return mChangingConfigurations;
+        }
+
+        // the shared instance
+        public Image getImage() {
+            return mImage;
+        }
+
+        // a new instance that will not be closed when this.close() is called,
+        // and prevent this (and original mImage) from being GC.
+        public Image newImage() {
+            Image image = mImage.clone();
+            image.mConstantState = this;
+            return image;
+        }
+
+        public void close() {
+            mImage.close();
+            mImage = null;
+        }
     }
 }

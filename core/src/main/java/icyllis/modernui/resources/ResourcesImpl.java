@@ -20,6 +20,8 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.BitmapFactory;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
@@ -28,6 +30,7 @@ import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.CheckReturnValue;
 
+import java.nio.file.NoSuchFileException;
 import java.util.function.BiFunction;
 
 import static icyllis.modernui.resources.Resources.MARKER;
@@ -68,6 +71,9 @@ public final class ResourcesImpl {
 
     final AssetManager mAssetManager;
 
+    // cache of GPU textures or CPU bitmaps
+    private final ImageCache mImageCache = new ImageCache();
+
     public ResourcesImpl(@NonNull AssetManager assetManager, @Nullable DisplayMetrics metrics,
                          @Nullable Configuration configuration) {
         mAssetManager = assetManager;
@@ -81,6 +87,8 @@ public final class ResourcesImpl {
             if (metrics != null) {
                 mMetrics.setTo(metrics);
             }
+
+            mImageCache.onConfigurationChange(0);
         }
     }
 
@@ -94,7 +102,7 @@ public final class ResourcesImpl {
 
     @CheckReturnValue
     public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
-                         boolean resolveRefs) {
+                            boolean resolveRefs) {
         boolean found = mAssetManager.getResource(id, outValue);
         if (resolveRefs) {
             //TODO
@@ -128,13 +136,11 @@ public final class ResourcesImpl {
                     }
                 }
             }
-            Log.LOGGER.error(MARKER, "Resource is not a color: {}", value);
-            return null;
         }
         //TODO load plain XML
 
-        String name = id != null ? id.toString() : "(missing name)";
-        Log.LOGGER.error(MARKER, "Can't find ColorStateList from drawable {}", name);
+        Log.LOGGER.error(MARKER, "{} from resource ID {} is not a color",
+                value, id, new UnsupportedOperationException());
         return null;
     }
 
@@ -156,8 +162,6 @@ public final class ResourcesImpl {
                         }
                     }
                 }
-                Log.LOGGER.error(MARKER, "Resource is not a drawable: {}", value);
-                return null;
             }
 
             if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
@@ -166,10 +170,55 @@ public final class ResourcesImpl {
             }
 
             //TODO load plain XML
-            Log.LOGGER.error(MARKER, "Resource is not a drawable: {}", value);
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a drawable",
+                    value, id, new UnsupportedOperationException());
             return null;
         } catch (Exception e) {
-            Log.LOGGER.error(MARKER, "Drawable cannot load: {}", id != null ? id.toString() : value, e);
+            Log.LOGGER.error(MARKER, "Failed to load drawable. {} from resource ID {}",
+                    value, id, e);
+            return null;
+        }
+    }
+
+    @Nullable
+    Image loadImage(@NonNull TypedValue value, @Nullable ResourceId id,
+                    boolean needNewInstance) {
+        long key = (((long) value.cookie) << 32) | value.data;
+        long cacheGeneration = mImageCache.getGeneration();
+
+        Image image = mImageCache.getInstance(key, needNewInstance);
+        if (image != null) {
+            return image;
+        }
+
+        image = loadImageForCookie(value, id);
+        if (image == null) {
+            return null;
+        }
+
+        return mImageCache.putAndGet(key, image,
+                cacheGeneration, needNewInstance);
+    }
+
+    @Nullable
+    private Image loadImageForCookie(@NonNull TypedValue value, @Nullable ResourceId id) {
+        Asset asset = loadRawResource(value, id);
+        if (asset == null) {
+            return null;
+        }
+        try (var bitmap = asset.isCompressed()
+                ? BitmapFactory.decodeStream(asset.openStream())
+                : BitmapFactory.decodeChannel(asset.openChannel())) {
+            var newImage = Image.createTextureFromBitmap(bitmap);
+            if (newImage == null) {
+                //TODO create CPU image once supported by Arc3D, so this never fail
+                Log.LOGGER.error(MARKER, "Failed to create GPU image, resource ID {}, value {}",
+                        id, value);
+            }
+            return newImage;
+        } catch (Exception e) {
+            Log.LOGGER.error(MARKER, "Failed to decode image. File {} at cookie {} from resource ID {}",
+                    value.getString(), value.cookie, id, e);
             return null;
         }
     }
@@ -178,19 +227,14 @@ public final class ResourcesImpl {
     Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id) {
         var path = value.getString();
         if (path == null) {
-            String msg = id != null
-                    ? "Resource ID " + id + " is not raw resource"
-                    : "Resource value " + value + " is not a string or cannot be resolved";
-            Log.LOGGER.error(MARKER, msg);
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
+                    value, id, new UnsupportedOperationException());
             return null;
         }
         Asset asset = mAssetManager.getNonAsset(path.toString(), value.cookie);
         if (asset == null) {
-            String msg = "File " + path;
-            if (id != null) {
-                msg = msg + " from resource ID " + id;
-            }
-            Log.LOGGER.error(MARKER, "{} cannot be found", msg);
+            Log.LOGGER.error(MARKER, "File {} at cookie {} from resource ID {} cannot be found",
+                    path, value.cookie, id, new NoSuchFileException(path.toString()));
             return null;
         }
         return asset;
