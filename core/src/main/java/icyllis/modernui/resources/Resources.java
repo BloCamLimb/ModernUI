@@ -907,36 +907,74 @@ public class Resources {
             if (this == other) {
                 return;
             }
-            mLock.writeLock().lock();
-            other.mLock.readLock().lock();
-            try {
-                //TODO we also need to lock underlying Resources & AssetManager
-                // and retrieve attribute values if they are different.
-                // atm we just do deep copy.
-                if (other.mEntries == null) {
-                    mEntries = null;
-                } else {
-                    if (mEntries == null) {
-                        mEntries = new Object2ObjectOpenHashMap<>();
+
+            int thisHash = System.identityHashCode(this);
+            int otherHash = System.identityHashCode(other);
+
+            if (thisHash < otherHash) {
+                mLock.writeLock().lock();
+                try {
+                    other.mLock.readLock().lock();
+                    try {
+                        setToInternal(other);
+                    } finally {
+                        other.mLock.readLock().unlock();
                     }
-                    for (var oit = other.mEntries.object2ObjectEntrySet().fastIterator(); oit.hasNext(); ) {
-                        var oe = oit.next();
-                        Object2ObjectOpenHashMap<String, Entry> inner =
-                                new Object2ObjectOpenHashMap<>(oe.getValue().size());
-                        for (var iit = oe.getValue().object2ObjectEntrySet().fastIterator(); iit.hasNext(); ) {
-                            var ie = iit.next();
-                            inner.put(ie.getKey(), ie.getValue().clone());
+                } finally {
+                    mLock.writeLock().unlock();
+                }
+            } else if (thisHash > otherHash) {
+                other.mLock.readLock().lock();
+                try {
+                    mLock.writeLock().lock();
+                    try {
+                        setToInternal(other);
+                    } finally {
+                        mLock.writeLock().unlock();
+                    }
+                } finally {
+                    other.mLock.readLock().unlock();
+                }
+            } else {
+                synchronized (Theme.class) {
+                    mLock.writeLock().lock();
+                    try {
+                        other.mLock.readLock().lock();
+                        try {
+                            setToInternal(other);
+                        } finally {
+                            other.mLock.readLock().unlock();
                         }
-                        mEntries.put(oe.getKey(), inner);
+                    } finally {
+                        mLock.writeLock().unlock();
                     }
                 }
-
-                mKey.setTo(other.getKey());
-                mKeyCopy = mKey.clone();
-            } finally {
-                other.mLock.readLock().unlock();
-                mLock.writeLock().unlock();
             }
+        }
+
+        private void setToInternal(@NonNull Theme other) {
+            //TODO we also need to lock underlying AssetManager and retrieve attribute values
+            // if they are different. atm we assume both assetmanager are same, just do deep copy.
+            if (other.mEntries == null) {
+                mEntries = null;
+            } else {
+                if (mEntries == null) {
+                    mEntries = new Object2ObjectOpenHashMap<>();
+                }
+                for (var oit = other.mEntries.object2ObjectEntrySet().fastIterator(); oit.hasNext(); ) {
+                    var oe = oit.next();
+                    Object2ObjectOpenHashMap<String, Entry> inner =
+                            new Object2ObjectOpenHashMap<>(oe.getValue().size());
+                    for (var iit = oe.getValue().object2ObjectEntrySet().fastIterator(); iit.hasNext(); ) {
+                        var ie = iit.next();
+                        inner.put(ie.getKey(), ie.getValue().clone());
+                    }
+                    mEntries.put(oe.getKey(), inner);
+                }
+            }
+
+            mKey.setTo(other.getKey());
+            mKeyCopy = mKey.clone();
         }
 
         public void clear() {
