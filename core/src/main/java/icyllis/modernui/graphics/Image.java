@@ -18,12 +18,18 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.*;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.RefCnt;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.granite.RecordingContext;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.DisplayMetrics;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -158,6 +164,8 @@ public class Image implements AutoCloseable {
      * @param namespace the application namespace
      * @param entry     the sub path to the resource
      * @return the image
+     * @deprecated use the new Resources API, {@link Resources#getImage(ResourceId, boolean)},
+     * {@link Resources#getDrawable(ResourceId, Resources.Theme)}
      */
     @Deprecated
     @Nullable
@@ -304,6 +312,7 @@ public class Image implements AutoCloseable {
      * Returns whether the Image is completely opaque. Returns true if this
      * Image has no alpha channel, or is flagged to be known that all of its
      * pixels are opaque.
+     *
      * @return whether the image is opaque
      */
     public boolean isOpaque() {
@@ -368,6 +377,14 @@ public class Image implements AutoCloseable {
      * Create a shallow copy of this image, this is equivalent to creating a
      * shared owner for the image. You may change the density or close the
      * returned Image without affecting the original Image.
+     * <p>
+     * This method is rarely used. If this image originates from the Resources API
+     * and you wish to manage its lifecycle yourself, set the <var>needNewInstance</var>
+     * of {@link Resources#getImage(ResourceId, boolean)}
+     * to true instead of calling this method. If you created the image yourself,
+     * this method is typically unnecessary unless you intend to pass it to another owner;
+     * in cases where both you and the new owner will close their respective objects,
+     * using this method ensures mutual independence and timely release.
      * <p>
      * This method is thread safe.
      *

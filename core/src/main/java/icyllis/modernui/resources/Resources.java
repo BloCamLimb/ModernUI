@@ -24,6 +24,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.StyleableRes;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.AssetManager.ResolvedBag;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
@@ -47,8 +48,10 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+@ThreadSafe
 public class Resources {
 
     public static final Marker MARKER = MarkerFactory.getMarker("Resources");
@@ -97,6 +100,7 @@ public class Resources {
     /**
      * Returns a default theme for the framework.
      *
+     * @hide
      * @hidden
      * @param curTheme The current theme, or null if not specified.
      * @return A theme resource identifier
@@ -169,6 +173,7 @@ public class Resources {
      * @hide
      * @hidden
      */
+    // can be called from any thread, but it's recommended to call from UI thread
     @ApiStatus.Internal
     public void setImpl(ResourcesImpl impl) {
         // Modern UI changed: guarded with RW lock, avoid tainting the cache inside ResourcesImpl
@@ -207,6 +212,7 @@ public class Resources {
      * @hide
      * @hidden
      */
+    // should be called only from UI thread
     @ApiStatus.Internal
     public void updateConfiguration(Configuration config, DisplayMetrics metrics) {
         mResourcesImpl.updateConfiguration(config, metrics);
@@ -240,6 +246,7 @@ public class Resources {
      * Returns the current display metrics that are in effect for this resources
      * object. The returned object should be treated as read-only.
      */
+    @NonNull
     @UnmodifiableView
     public DisplayMetrics getDisplayMetrics() {
         return mResourcesImpl.getDisplayMetrics();
@@ -249,6 +256,7 @@ public class Resources {
      * Return the current configuration that is in effect for this resource
      * object. The returned object should be treated as read-only.
      */
+    @NonNull
     @UnmodifiableView
     public Configuration getConfiguration() {
         return mResourcesImpl.getConfiguration();
@@ -257,7 +265,7 @@ public class Resources {
     @CheckReturnValue
     @ApiStatus.Experimental
     public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
-                         boolean resolveRefs) {
+                            boolean resolveRefs) {
         return mResourcesImpl.getValue(id, outValue, resolveRefs);
     }
 
@@ -345,6 +353,38 @@ public class Resources {
         } finally {
             mLock.readLock().unlock();
         }
+    }
+
+    @Nullable
+    public Image getImage(@NonNull ResourceId id,
+                          boolean needNewInstance) {
+        TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
+        try {
+            TypedValue val = tmp != null ? tmp : new TypedValue();
+            return getImage(id, val, needNewInstance);
+        } finally {
+            if (tmp != null) {
+                TMP_VALUE.setRelease(this, tmp);
+            }
+        }
+    }
+
+    @Nullable
+    public Image getImage(@NonNull ResourceId id,
+                          @NonNull TypedValue value,
+                          boolean needNewInstance) {
+        ResourcesImpl impl = mResourcesImpl;
+        if (impl.getValue(id, value, true)) {
+            return impl.loadImage(value, id, needNewInstance);
+        }
+        return null;
+    }
+
+    @Nullable
+    public Image loadImage(@NonNull TypedValue value,
+                           @Nullable ResourceId id,
+                           boolean needNewInstance) {
+        return mResourcesImpl.loadImage(value, id, needNewInstance);
     }
 
     @Nullable
@@ -863,6 +903,7 @@ public class Resources {
         }
 
         public void setTo(@NonNull Theme other) {
+            Objects.requireNonNull(other);
             if (this == other) {
                 return;
             }
@@ -910,6 +951,7 @@ public class Resources {
         }
 
         /**
+         * @hide
          * @hidden
          */
         @NonNull
