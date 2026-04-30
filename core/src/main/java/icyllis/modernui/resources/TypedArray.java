@@ -776,7 +776,7 @@ public class TypedArray {
 
         mRecycled = true;
 
-        // These are heave objects may have been set by the client.
+        // These are heavy objects may have been set by the client.
         mTheme = null;
         mAssetManager = null;
 

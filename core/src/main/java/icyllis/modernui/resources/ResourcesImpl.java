@@ -23,7 +23,9 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
+import icyllis.modernui.graphics.drawable.ColorStateListDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Log;
@@ -74,6 +76,8 @@ public final class ResourcesImpl {
     // cache of GPU textures or CPU bitmaps
     private final ImageCache mImageCache = new ImageCache();
 
+    private final DrawableCache mDrawableCache = new DrawableCache();
+
     public ResourcesImpl(@NonNull AssetManager assetManager, @Nullable DisplayMetrics metrics,
                          @Nullable Configuration configuration) {
         mAssetManager = assetManager;
@@ -89,6 +93,7 @@ public final class ResourcesImpl {
             }
 
             mImageCache.onConfigurationChange(0);
+            mDrawableCache.onConfigurationChange(0);
         }
     }
 
@@ -160,6 +165,9 @@ public final class ResourcesImpl {
                         if (object instanceof Drawable) {
                             return (Drawable) object;
                         }
+                        if (object instanceof ColorStateList) {
+                            return new ColorStateListDrawable((ColorStateList) object);
+                        }
                     }
                 }
             }
@@ -169,7 +177,30 @@ public final class ResourcesImpl {
                 return new ColorDrawable(value.data);
             }
 
-            //TODO load plain XML
+            if (value.type == TypedValue.TYPE_STRING) {
+                long key = (((long) value.cookie) << 32) | value.data;
+                long cacheGeneration = mDrawableCache.getGeneration();
+
+                Drawable drawable = mDrawableCache.getInstance(key, wrapper, theme);
+                if (drawable != null) {
+                    return drawable;
+                }
+
+                drawable = loadDrawableForCookie(wrapper, value, id);
+                if (drawable == null) {
+                    return null;
+                }
+
+                Drawable.ConstantState cs = drawable.getConstantState();
+                if (cs != null) {
+                    mDrawableCache.put(key, theme, cs, cacheGeneration,
+                            false);
+                }
+
+                return drawable;
+            }
+
+
             Log.LOGGER.error(MARKER, "{} from resource ID {} is not a drawable",
                     value, id, new UnsupportedOperationException());
             return null;
@@ -178,6 +209,31 @@ public final class ResourcesImpl {
                     value, id, e);
             return null;
         }
+    }
+
+    @Nullable
+    private Drawable loadDrawableForCookie(@NonNull Resources wrapper,
+                                           @NonNull TypedValue value,
+                                           @Nullable ResourceId id) {
+        var string = value.getString();
+        if (string == null) {
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
+                    value, id, new UnsupportedOperationException());
+            return null;
+        }
+        var path = string.toString();
+
+        if (path.endsWith(".xml")) {
+            //TODO load plain XML
+            return null;
+        }
+
+        Image image = loadImage(value, id, false);
+        if (image == null) {
+            return null;
+        }
+
+        return new ImageDrawable(wrapper, image);
     }
 
     @Nullable
@@ -225,16 +281,17 @@ public final class ResourcesImpl {
 
     @Nullable
     Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id) {
-        var path = value.getString();
-        if (path == null) {
+        var string = value.getString();
+        if (string == null) {
             Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
                     value, id, new UnsupportedOperationException());
             return null;
         }
-        Asset asset = mAssetManager.getNonAsset(path.toString(), value.cookie);
+        var path = string.toString();
+        Asset asset = mAssetManager.getNonAsset(path, value.cookie);
         if (asset == null) {
             Log.LOGGER.error(MARKER, "File {} at cookie {} from resource ID {} cannot be found",
-                    path, value.cookie, id, new NoSuchFileException(path.toString()));
+                    path, value.cookie, id, new NoSuchFileException(path));
             return null;
         }
         return asset;

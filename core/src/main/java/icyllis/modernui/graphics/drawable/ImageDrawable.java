@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
@@ -74,7 +75,10 @@ public class ImageDrawable extends Drawable {
      * Create a drawable by opening a given file path and decoding the image.
      * <p>
      * This method may only be called from UI thread.
+     *
+     * @deprecated use the new Resources API, {@link Resources#getDrawable(ResourceId, Resources.Theme)}
      */
+    @Deprecated
     public ImageDrawable(@NonNull String namespace, @NonNull String path) {
         Image image = Image.create(namespace, path);
         init(new ImageState(image), null);
@@ -121,6 +125,12 @@ public class ImageDrawable extends Drawable {
 
     /**
      * Returns the image used by this drawable to render. May be null.
+     * <p>
+     * If this Drawable object was not created by you (for example, from Resources),
+     * then you must <em>not</em> close the returned Image.
+     * <p>
+     * This method and the returned object should be used only on the UI thread.
+     * Otherwise, clone it first, and close the new object after use.
      */
     @Nullable
     public final Image getImage() {

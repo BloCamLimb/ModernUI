@@ -33,12 +33,12 @@ import java.lang.ref.WeakReference;
  * @param <T> type of data to cache
  */
 abstract class ThemedResourceCache<T> {
-    public static final int UNDEFINED_GENERATION = -1;
+
     private ArrayMap<ThemeKey, LongSparseArray<WeakReference<T>>> mThemedEntries;
     private LongSparseArray<WeakReference<T>> mUnthemedEntries;
     private LongSparseArray<WeakReference<T>> mNullThemedEntries;
 
-    private int mGeneration;
+    private long mGeneration;
 
     /**
      * Adds a new theme-dependent entry to the cache.
@@ -49,7 +49,7 @@ abstract class ThemedResourceCache<T> {
      * @param entry the entry to cache
      * @param generation The generation of the cache to compare against before storing
      */
-    public void put(long key, @Nullable Theme theme, @NonNull T entry, int generation) {
+    public void put(long key, @Nullable Theme theme, @NonNull T entry, long generation) {
         put(key, theme, entry, generation, true);
     }
 
@@ -64,7 +64,7 @@ abstract class ThemedResourceCache<T> {
      * @param usesTheme {@code true} if the entry is affected theme changes,
      *                  {@code false} otherwise
      */
-    public void put(long key, @Nullable Theme theme, @NonNull T entry, int generation,
+    public void put(long key, @Nullable Theme theme, @NonNull T entry, long generation,
                     boolean usesTheme) {
         if (entry == null) {
             return;
@@ -77,8 +77,7 @@ abstract class ThemedResourceCache<T> {
             } else {
                 entries = getThemedLocked(theme, true);
             }
-            if (entries != null
-                    && ((generation == mGeneration) || (generation == UNDEFINED_GENERATION)))  {
+            if (entries != null && generation == mGeneration)  {
                 entries.put(key, new WeakReference<>(entry));
             }
         }
@@ -89,7 +88,8 @@ abstract class ThemedResourceCache<T> {
      *
      * @return The current generation
      */
-    public int getGeneration() {
+    public long getGeneration() {
+        // read lock is not needed here
         return mGeneration;
     }
 
@@ -250,17 +250,19 @@ abstract class ThemedResourceCache<T> {
                 && shouldInvalidateEntry(entry, configChanges));
     }
 
-    public synchronized void clear() {
-        if (mThemedEntries != null) {
-            mThemedEntries.clear();
-        }
+    public void clear() {
+        synchronized (this) {
+            if (mThemedEntries != null) {
+                mThemedEntries.clear();
+            }
 
-        if (mUnthemedEntries != null) {
-            mUnthemedEntries.clear();
-        }
+            if (mUnthemedEntries != null) {
+                mUnthemedEntries.clear();
+            }
 
-        if (mNullThemedEntries != null) {
-            mNullThemedEntries.clear();
+            if (mNullThemedEntries != null) {
+                mNullThemedEntries.clear();
+            }
         }
     }
 }
