@@ -1340,12 +1340,16 @@ public final class Bitmap implements AutoCloseable {
     @SharedPtr
     @Nullable
     public PixelRef refPixels() {
+        PixelRef pixels;
         try {
-            // this operation is not atomic
-            return RefCnt.create(mPixels);
+            synchronized (this) {
+                // this operation is not atomic
+                pixels = RefCnt.create(mPixels);
+            }
         } finally {
             Reference.reachabilityFence(this);
         }
+        return pixels;
     }
 
     /**
@@ -1511,13 +1515,20 @@ public final class Bitmap implements AutoCloseable {
      * <p>
      * The system can ensure that the native allocation of a Bitmap to be
      * released when the Bitmap object becomes phantom-reachable. However,
-     * it tends to take a very long time to perform automatic cleanup.
+     * it requires a GC cycle to perform automatic cleanup.
+     * <p>
+     * This method is thread safe and can be called multiple times.
      */
     @Override
     public void close() {
-        mPixels = null;
-        // cleaner is thread safe
-        mCleanup.clean();
+        if (mPixels == null) {
+            return;
+        }
+        synchronized (this) {
+            mPixels = null;
+            // cleaner is thread safe
+            mCleanup.clean();
+        }
     }
 
     /**
