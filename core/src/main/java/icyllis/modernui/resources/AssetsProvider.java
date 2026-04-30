@@ -71,4 +71,8 @@ public interface AssetsProvider extends AutoCloseable {
         }
         return asset.openChannel();
     }
+
+    default boolean closeIsNoop() {
+        return false;
+    }
 }

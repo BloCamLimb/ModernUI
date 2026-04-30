@@ -20,22 +20,46 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.TestFragment;
-import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.core.windows.WindowsNativeWindowBorder;
 import icyllis.modernui.fragment.Fragment;
+import icyllis.modernui.resources.AssetManager;
+import icyllis.modernui.resources.DirectoryAssetsProvider;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.ResourcesBuilder;
+import icyllis.modernui.resources.ResourcesImpl;
+import icyllis.modernui.resources.ResourcesLoader;
+import icyllis.modernui.resources.ResourcesProvider;
+import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Log;
 import org.lwjgl.glfw.GLFWNativeWin32;
 import org.lwjgl.system.Platform;
 
-public class TestWindowsNativeBorder {
+import java.nio.file.Path;
+
+public class MainLaunch {
 
     private static Runnable cleanup;
+
+    public static final String ns = "root_app";
+
+    public static class image {
+
+        public static final ResourceId test_path_src = new ResourceId(ns, "image", "test_path_src");
+    }
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "true");
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
         System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         try (ModernUI app = new ModernUI()) {
+
+            ResourcesLoader loader = loadExtraResources();
+
+            AssetManager newAssets = new AssetManager.Builder()
+                    .addLoader(loader)
+                    .build();
+            app.getResources().setImpl(new ResourcesImpl(newAssets, null, null));
+
             Fragment fragment = null;
             if (args.length > 0) {
                 try {
@@ -43,6 +67,14 @@ public class TestWindowsNativeBorder {
                             .newInstance();
                 } catch (Exception e) {
                     Log.LOGGER.warn("Cannot instantiate main fragment", e);
+                }
+                if (fragment == null) {
+                    try {
+                        fragment = (Fragment) Class.forName(MainLaunch.class.getPackageName() + "." + args[0]).getConstructor()
+                                .newInstance();
+                    } catch (Exception e) {
+                        Log.LOGGER.warn("Cannot instantiate main fragment", e);
+                    }
                 }
             }
             if (fragment == null) {
@@ -61,5 +93,18 @@ public class TestWindowsNativeBorder {
         }
         //AudioManager.getInstance().close();
         System.gc();
+    }
+
+    public static ResourcesLoader loadExtraResources() {
+
+        ResourcesBuilder rb = new ResourcesBuilder(ns);
+        rb.addString(image.test_path_src, "res/test_path_src.png");
+
+        Path currentDir = Path.of("").toAbsolutePath();
+        ResourcesProvider provider = rb.build(new DirectoryAssetsProvider(currentDir));
+
+        ResourcesLoader loader = new ResourcesLoader();
+        loader.addProvider(provider);
+        return loader;
     }
 }

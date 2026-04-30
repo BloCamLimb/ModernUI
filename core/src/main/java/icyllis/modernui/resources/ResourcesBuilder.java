@@ -168,7 +168,11 @@ public class ResourcesBuilder {
      * @throws IllegalStateException the runtime limit is exceeded
      */
     public ResourcesProvider build() {
-        PackAssets packAssets = buildPack(new EmptyAssetsProvider());
+        return build(new EmptyAssetsProvider());
+    }
+
+    public ResourcesProvider build(@NonNull @WillCloseWhenClosed AssetsProvider assetsProvider) {
+        PackAssets packAssets = buildPack(assetsProvider);
 
         return new ResourcesProvider(packAssets);
     }

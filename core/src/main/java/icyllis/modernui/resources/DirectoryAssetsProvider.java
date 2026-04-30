@@ -87,6 +87,11 @@ public class DirectoryAssetsProvider implements AssetsProvider {
     public void close() {
     }
 
+    @Override
+    public boolean closeIsNoop() {
+        return true;
+    }
+
     /**
      * @return the directory (root path of all assets)
      */

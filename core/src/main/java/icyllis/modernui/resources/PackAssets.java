@@ -46,7 +46,11 @@ public final class PackAssets implements AutoCloseable {
                       @NonNull LoadedResources loadedResources) {
         this.assetsProvider = assetsProvider;
         this.loadedResources = loadedResources;
-        cleanup = Core.registerNativeResource(this, assetsProvider);
+        if (assetsProvider.closeIsNoop()) {
+            cleanup = null;
+        } else {
+            cleanup = Core.registerNativeResource(this, assetsProvider);
+        }
     }
 
     public AssetsProvider getAssetsProvider() {
@@ -59,6 +63,8 @@ public final class PackAssets implements AutoCloseable {
 
     @Override
     public void close() {
-        cleanup.clean();
+        if (cleanup != null) {
+            cleanup.clean();
+        }
     }
 }
