@@ -151,6 +151,11 @@ public final class IOUtil {
         return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '.' || c == '_';
     }
 
+    @SuppressWarnings("unchecked")
+    public static <E extends Throwable> RuntimeException sneakyThrow(Throwable e) throws E {
+        throw (E) e;
+    }
+
     private IOUtil() {
     }
 }

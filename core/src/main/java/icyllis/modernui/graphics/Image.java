@@ -28,6 +28,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.resources.IOUtil;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.DisplayMetrics;
@@ -36,6 +37,8 @@ import org.jetbrains.annotations.ApiStatus;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 /**
  * {@code Image} describes a two-dimensional array of pixels to sample from. The pixels
@@ -79,37 +82,76 @@ public class Image implements AutoCloseable {
     }
 
     /**
-     * Create an image that backed by a GPU texture with the given bitmap.
-     * Whether the bitmap is immutable or not, the bitmap can be safely closed
-     * after the call.
+     * Creates an image backed by a GPU texture from the given bitmap.
      * <p>
-     * Must be called after render system and UI system are initialized successfully,
-     * must be called from UI thread.
+     * The bitmap may be safely closed after this call returns, regardless of whether
+     * it is immutable. However, it must remain open during the execution of this call.
      * <p>
-     * This method may fail if:
+     * As of version 3.13.0, this method is thread-safe and can be invoked from any
+     * thread except the internal rendering thread. Note that calling this from a
+     * non-UI thread will block the caller until the operation is completed on the UI thread.
+     * <p>
+     * <b>Legacy Note (Pre-3.13.0):</b> This method was restricted to the UI thread and
+     * required both the render and UI systems to be fully initialized before invocation.
+     * <p>
+     * This method may return {@code null} if:
      * <ul>
-     * <li>Bitmap is null or closed</li>
-     * <li>GPU device is lost (disconnected)</li>
-     * <li>The width or height of the bitmap exceeds the maximum dimension supported by the GPU</li>
-     * <li>The format of bitmap is not directly or indirectly supported by the GPU</li>
-     * <li>Unable to allocate sufficient GPU-only memory for the GPU texture</li>
-     * <li>Unable to allocate sufficient host memory for the staging buffer</li>
+     * <li>The bitmap is null or already closed.</li>
+     * <li>The GPU device is lost or disconnected.</li>
+     * <li>The GPU device is not yet initialized.</li>
+     * <li>The width or height of the bitmap exceeds the maximum texture dimension supported by the GPU.</li>
+     * <li>The bitmap format is not supported (directly or indirectly) by the GPU.</li>
+     * <li>Failed to allocate sufficient GPU-only memory for the texture.</li>
+     * <li>Failed to allocate sufficient host memory for the staging buffer.</li>
+     * <li>The UI thread is quitting.</li>
      * </ul>
      *
      * @param bitmap the source bitmap
-     * @return image, or null if failed
-     * @throws NullPointerException  no GPU context
-     * @throws IllegalStateException not call from UI thread
+     * @return the created image, or {@code null} if the operation failed.
      */
     @Nullable
-    public static Image createTextureFromBitmap(Bitmap bitmap) {
+    public static Image createTextureFromBitmap(@Nullable Bitmap bitmap) {
         if (bitmap == null || bitmap.isClosed()) {
             return null;
         }
-        return createTextureFromBitmap(
-                Core.requireUiRecordingContext(),
-                bitmap
+        var uiRecordingContext = Core.peekUiRecordingContext();
+        if (uiRecordingContext == null) {
+            return null;
+        }
+        if (Core.isOnUiThread()) {
+            return createTextureFromBitmap(
+                    uiRecordingContext,
+                    bitmap
+            );
+        }
+        if (Core.isOnRenderThread()) {
+            throw new IllegalStateException("Cannot be called from rendering thread");
+        }
+        FutureTask<Image> future = new FutureTask<>(() ->
+                createTextureFromBitmap(
+                        uiRecordingContext,
+                        bitmap
+                )
         );
+        if (!Core.getUiHandlerAsync().post(future)) {
+            return null;
+        }
+        boolean interrupted = false;
+        try {
+            for (;;) {
+                try {
+                    return future.get();
+                } catch (ExecutionException e) {
+                    var cause = e.getCause();
+                    throw IOUtil.sneakyThrow(cause != null ? cause : e);
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+        } finally {
+            if (interrupted)
+                Thread.currentThread().interrupt();
+        }
     }
 
     /**

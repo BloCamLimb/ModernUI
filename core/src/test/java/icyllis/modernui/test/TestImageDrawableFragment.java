@@ -30,6 +30,8 @@ import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ImageView;
 
+import java.util.concurrent.CompletableFuture;
+
 public class TestImageDrawableFragment extends Fragment {
 
     @Override
@@ -39,9 +41,11 @@ public class TestImageDrawableFragment extends Fragment {
         var context = requireContext();
         var imageView = new ImageView(context);
 
-        Drawable drawable = context.getResources().getDrawable(MainLaunch.image.test_path_src, null);
-        Log.i(null, "Loaded drawable " + drawable);
-        imageView.setImageDrawable(drawable);
+        CompletableFuture.runAsync(() -> {
+            Drawable drawable = context.getResources().getDrawable(MainLaunch.image.test_path_src, null);
+            Log.i(null, "Loaded drawable " + drawable);
+            imageView.post(() -> imageView.setImageDrawable(drawable));
+        });
 
         var lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER);

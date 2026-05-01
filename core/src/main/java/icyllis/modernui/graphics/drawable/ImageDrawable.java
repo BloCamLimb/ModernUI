@@ -101,7 +101,9 @@ public class ImageDrawable extends Drawable {
      * the given stream after read operation has completed. The stream will be at end if
      * read operation succeeds.
      * <p>
-     * This method may only be called from UI thread.
+     * As of version 3.13.0, this method is thread-safe and can be invoked from any
+     * thread except the internal rendering thread. Prior to version 3.13.0,
+     * this method may only be called from the UI thread.
      */
     public ImageDrawable(Resources res, @NonNull InputStream stream) {
         Image image = null;
