@@ -47,8 +47,6 @@ import icyllis.modernui.fragment.FragmentHostCallback;
 import icyllis.modernui.fragment.FragmentTransaction;
 import icyllis.modernui.fragment.OnBackPressedDispatcher;
 import icyllis.modernui.fragment.OnBackPressedDispatcherOwner;
-import icyllis.modernui.graphics.Bitmap;
-import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.LightingInfo;
@@ -63,9 +61,6 @@ import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.resources.ResourcesBuilder;
-import icyllis.modernui.resources.ResourcesProvider;
-import icyllis.modernui.resources.SystemTheme;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.DisplayMetrics;
@@ -89,11 +84,6 @@ import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.Configuration;
 import org.lwjgl.system.Platform;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Objects;
@@ -288,7 +278,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             windowCallback.accept(mWindow.getHandle());
         }
 
-        CompletableFuture.supplyAsync(() -> {
+        /*CompletableFuture.supplyAsync(() -> {
             try {
                 Bitmap i16 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo16x.png"));
                 Bitmap i32 = BitmapFactory.decodeStream(getResourceStream(ID, "AppLogo32x.png"));
@@ -298,7 +288,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 LOGGER.info(MARKER, "Failed to load window icons", e);
             }
             return null;
-        }).thenAcceptAsync(icons -> mWindow.setIcon(icons), Core.getMainThreadExecutor());
+        }).thenAcceptAsync(icons -> mWindow.setIcon(icons), Core.getMainThreadExecutor());*/
 
         if (monitor != null) {
             mWindow.center(monitor);
@@ -588,22 +578,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     @ApiStatus.Experimental
     public boolean hasRtlSupport() {
         return true;
-    }
-
-    @ApiStatus.Experimental
-    @NonNull
-    public InputStream getResourceStream(@NonNull String namespace, @NonNull String path) throws IOException {
-        InputStream stream = ModernUI.class.getResourceAsStream("/assets/" + namespace + "/" + path);
-        if (stream == null) {
-            throw new FileNotFoundException();
-        }
-        return stream;
-    }
-
-    @ApiStatus.Experimental
-    @NonNull
-    public ReadableByteChannel getResourceChannel(@NonNull String namespace, @NonNull String path) throws IOException {
-        return Channels.newChannel(getResourceStream(namespace, path));
     }
 
     /**

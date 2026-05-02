@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +24,7 @@ import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.granite.RecordingContext;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
@@ -39,6 +40,7 @@ import java.lang.ref.Reference;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
+import java.util.function.BiFunction;
 
 /**
  * {@code Image} describes a two-dimensional array of pixels to sample from. The pixels
@@ -196,6 +198,8 @@ public class Image implements AutoCloseable {
         return new Image(nativeImage); // move
     }
 
+    private static volatile BiFunction<String, String, Image> sLegacyFactory;
+
     /**
      * Creates a new image object representing the target resource image.
      * You should use a single image as the UI texture to avoid each icon creating its own image.
@@ -212,7 +216,34 @@ public class Image implements AutoCloseable {
     @Deprecated
     @Nullable
     public static Image create(@NonNull String namespace, @NonNull String entry) {
-        return ImageStore.getInstance().getOrCreate(namespace, "textures/" + entry);
+        var factory = sLegacyFactory;
+        if (factory != null) {
+            var result = factory.apply(namespace, "textures/" + entry);
+            if (result != null) {
+                return result;
+            }
+        }
+        var asset = ModernUI.getInstance().getResources()
+                .getAsset(namespace + "/textures/" + entry);
+        if (asset != null) {
+            try (var bitmap = asset.isCompressed()
+                    ? BitmapFactory.decodeStream(asset.openStream())
+                    : BitmapFactory.decodeChannel(asset.openChannel())) {
+                return Image.createTextureFromBitmap(bitmap);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static void setLegacyFactory(BiFunction<String, String, /*nullable*/ Image> /*noexcept*/ legacyFactory) {
+        sLegacyFactory = legacyFactory;
     }
 
     /**
