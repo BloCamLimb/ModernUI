@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,7 +77,7 @@ public class CheckboxButtonDrawable extends MaterialDrawable {
         }
         Paint paint = Paint.obtain();
         paint.setColor(mColor);
-        paint.setAlphaF(paint.getAlphaF() * mAlpha * (1 / 255f));
+        paint.setAlphaF(paint.getAlphaF() * mAlpha);
         final Rect r = getBounds();
         canvas.save();
         canvas.translate(r.exactCenterX(), r.exactCenterY());
@@ -96,7 +96,7 @@ public class CheckboxButtonDrawable extends MaterialDrawable {
         }
 
         paint.setColor(mIconColor);
-        paint.setAlphaF(mAlpha * (1 / 255f) * paint.getAlphaF());
+        paint.setAlphaF(mAlpha * paint.getAlphaF());
 
         if (mHoleRadius <= 0) {
             canvas.drawEdgeAAQuad(null, mLeftQuad, 0,

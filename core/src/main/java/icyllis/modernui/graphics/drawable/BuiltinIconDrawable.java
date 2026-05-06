@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Matrix;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.resources.Resources;
@@ -63,8 +64,8 @@ public class BuiltinIconDrawable extends Drawable {
     private final int mIconType;
 
     private ColorStateList mTint;
-    private int mColor = ~0;
-    private int mAlpha = 255;
+    private long mColor = Color.WHITE_LONG;
+    private float mAlpha = 1f;
 
     private boolean mAutoMirrored = false;
 
@@ -90,8 +91,8 @@ public class BuiltinIconDrawable extends Drawable {
     public void draw(@NonNull Canvas canvas) {
         var paint = Paint.obtain();
         paint.setColor(mColor);
-        paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
-        if (paint.getAlpha() != 0) {
+        paint.setAlpha(paint.getAlphaF() * mAlpha);
+        if (paint.getAlphaF() != 0) {
             var b = getBounds();
             // map (0, -960, 960, 0) to dst bounds, and mirror if needed
             float sx = b.width() / VIEWPORT_SIZE;
@@ -215,9 +216,9 @@ public class BuiltinIconDrawable extends Drawable {
         if (mTint != tint) {
             mTint = tint;
             if (tint != null) {
-                mColor = tint.getColorForState(getState(), ~0);
+                mColor = Color.pack(tint.getColorForState(getState(), ~0));
             } else {
-                mColor = ~0;
+                mColor = Color.WHITE_LONG;
             }
             invalidateSelf();
         }
@@ -226,7 +227,7 @@ public class BuiltinIconDrawable extends Drawable {
     @Override
     protected boolean onStateChange(@NonNull int[] stateSet) {
         if (mTint != null) {
-            mColor = mTint.getColorForState(stateSet, ~0);
+            mColor = Color.pack(mTint.getColorForState(stateSet, ~0));
             return true;
         }
         return false;
@@ -243,7 +244,7 @@ public class BuiltinIconDrawable extends Drawable {
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         if (mAlpha != alpha) {
             mAlpha = alpha;
             invalidateSelf();
@@ -251,7 +252,7 @@ public class BuiltinIconDrawable extends Drawable {
     }
 
     @Override
-    public int getAlpha() {
+    public float getAlpha() {
         return mAlpha;
     }
 

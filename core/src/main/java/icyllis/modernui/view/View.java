@@ -3166,12 +3166,12 @@ public class View implements Drawable.Callback {
                 cache.mState = ScrollCache.OFF;
                 return;
             } else {
-                int alpha = 255 - (int) (fraction * 255);
+                float alpha = 1.0f - fraction;
                 cache.mScrollBar.mutate().setAlpha(alpha);
             }
             invalidate = true;
         } else {
-            cache.mScrollBar.mutate().setAlpha(255);
+            cache.mScrollBar.mutate().setAlpha(1.0f);
         }
 
         final boolean drawHorizontalScrollBar = isHorizontalScrollBarEnabled();

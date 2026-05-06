@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -3285,7 +3285,7 @@ public class TabLayout extends HorizontalScrollView {
                     (int) bounds.right,
                     indicator.getBounds().bottom
             );
-            indicator.setAlpha((int) (alpha * 255F));
+            indicator.setAlpha(alpha);
         }
     }
 

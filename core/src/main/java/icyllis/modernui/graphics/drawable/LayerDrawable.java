@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -1024,7 +1024,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         final ChildDrawable[] array = mLayerState.mChildren;
         final int N = mLayerState.mNumChildren;
         for (int i = 0; i < N; i++) {
@@ -1036,7 +1036,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public int getAlpha() {
+    public float getAlpha() {
         final Drawable dr = getFirstNonNullDrawable();
         if (dr != null) {
             return dr.getAlpha();

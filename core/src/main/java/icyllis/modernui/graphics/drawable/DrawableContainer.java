@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     private Rect mHotspotBounds;
     private Drawable mCurrDrawable;
     private Drawable mLastDrawable;
-    private int mAlpha = 0xFF;
+    private float mAlpha = 1f;
 
     /**
      * Whether setAlpha() has been called at least once.
@@ -125,7 +125,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         if (!mHasAlpha || mAlpha != alpha) {
             mHasAlpha = true;
             mAlpha = alpha;
@@ -140,7 +140,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public int getAlpha() {
+    public float getAlpha() {
         return mAlpha;
     }
 
@@ -510,9 +510,9 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
                     mCurrDrawable.setAlpha(mAlpha);
                     mEnterAnimationEnd = 0;
                 } else {
-                    int animAlpha = (int) ((mEnterAnimationEnd - now) * 255)
+                    float animAlpha = (float) (mEnterAnimationEnd - now)
                             / mDrawableContainerState.mEnterFadeDuration;
-                    mCurrDrawable.setAlpha(((255 - animAlpha) * mAlpha) / 255);
+                    mCurrDrawable.setAlpha((1f - animAlpha) * mAlpha);
                     animating = true;
                 }
             }
@@ -526,9 +526,9 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
                     mLastDrawable = null;
                     mExitAnimationEnd = 0;
                 } else {
-                    int animAlpha = (int) ((mExitAnimationEnd - now) * 255)
+                    float animAlpha = (float) (mExitAnimationEnd - now)
                             / mDrawableContainerState.mExitFadeDuration;
-                    mLastDrawable.setAlpha((animAlpha * mAlpha) / 255);
+                    mLastDrawable.setAlpha(animAlpha * mAlpha);
                     animating = true;
                 }
             }

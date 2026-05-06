@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,7 +32,7 @@ public abstract class BaseIndeterminateDrawable extends Drawable implements Anim
 
     protected int mIndicatorColor = ~0;
     protected int mTrackColor = ~0;
-    protected int mAlpha = 255;
+    protected float mAlpha = 1f;
 
     protected Animator mAnimator;
 
@@ -59,7 +59,7 @@ public abstract class BaseIndeterminateDrawable extends Drawable implements Anim
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         if (mAlpha != alpha) {
             mAlpha = alpha;
             invalidateSelf();
@@ -67,7 +67,7 @@ public abstract class BaseIndeterminateDrawable extends Drawable implements Anim
     }
 
     @Override
-    public int getAlpha() {
+    public float getAlpha() {
         return mAlpha;
     }
 

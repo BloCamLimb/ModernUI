@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@ package icyllis.modernui.material;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import org.jetbrains.annotations.ApiStatus;
@@ -31,17 +32,17 @@ import org.jetbrains.annotations.ApiStatus;
 public abstract class MaterialDrawable extends Drawable {
 
     protected ColorStateList mTint;
-    protected int mColor = ~0;
-    protected int mAlpha = 255;
+    protected long mColor = Color.WHITE_LONG;
+    protected float mAlpha = 1f;
 
     @Override
     public void setTintList(@Nullable ColorStateList tint) {
         if (mTint != tint) {
             mTint = tint;
             if (tint != null) {
-                mColor = tint.getColorForState(getState(), ~0);
+                mColor = Color.pack(tint.getColorForState(getState(), ~0));
             } else {
-                mColor = ~0;
+                mColor = Color.WHITE_LONG;
             }
             invalidateSelf();
         }
@@ -50,7 +51,7 @@ public abstract class MaterialDrawable extends Drawable {
     @Override
     protected boolean onStateChange(@NonNull int[] stateSet) {
         if (mTint != null) {
-            mColor = mTint.getColorForState(stateSet, ~0);
+            mColor = Color.pack(mTint.getColorForState(stateSet, ~0));
             return true;
         }
         return false;
@@ -67,7 +68,7 @@ public abstract class MaterialDrawable extends Drawable {
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         if (mAlpha != alpha) {
             mAlpha = alpha;
             invalidateSelf();
@@ -75,7 +76,7 @@ public abstract class MaterialDrawable extends Drawable {
     }
 
     @Override
-    public int getAlpha() {
+    public float getAlpha() {
         return mAlpha;
     }
 }

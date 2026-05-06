@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -962,9 +962,29 @@ public final class Color {
     }
 
     /**
+     * Returns a new color with the same color components as the original, but with the
+     * specified alpha value. The alpha value will be clamped to the range [0.0, 1.0].
+     *
+     * @param color the base color to apply the alpha to
+     * @param alpha the new alpha component, where 0.0 is fully transparent and 1.0 is fully opaque
+     * @return a new color instance with the adjusted alpha channel
+     */
+    @ColorLong
+    public static long withAlpha(@ColorLong long color, float alpha) {
+        short a = MathUtil.floatToHalf(
+                MathUtil.pin(alpha, 0f, 1f)
+        );
+        return (color & 0xffffffffffffL) | ((a & 0xffffL) << 48);
+    }
+
+    /**
      * Converts the specified color long to an ARGB color int. A color int is
      * always in the {@link ColorSpace.Named#SRGB sRGB} color space, and
      * clamped to the range of 0..255 per channel.
+     * <p>
+     * This method narrows the color to 8bpc precision and sRGB gamut; do not
+     * use this method unless you explicitly intend to lose color precision
+     * and wide gamut.
      *
      * @param color the RGBA color in the extended sRGB nonlinear color space
      * @return An ARGB color in the sRGB color space
@@ -979,7 +999,7 @@ public final class Color {
         return (int) (MathUtil.pin(r, 0.0f, 1.0f) * 255 + .5f) << 16 |
                (int) (MathUtil.pin(g, 0.0f, 1.0f) * 255 + .5f) <<  8 |
                (int) (MathUtil.pin(b, 0.0f, 1.0f) * 255 + .5f)       |
-               (int) (a * 255 + .5f) << 24 ;
+               (int) (MathUtil.pin(a, 0.0f, 1.0f) * 255 + .5f) << 24 ;
     }
 
     /**

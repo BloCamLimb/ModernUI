@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,6 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
@@ -70,8 +69,8 @@ public class RadioButtonDrawable extends MaterialDrawable {
     public void draw(@NonNull Canvas canvas) {
         Paint paint = Paint.obtain();
         paint.setColor(mColor);
-        paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
-        if (paint.getAlpha() != 0) {
+        paint.setAlpha(paint.getAlphaF() * mAlpha);
+        if (paint.getAlphaF() != 0) {
             final Rect r = getBounds();
             canvas.save();
             canvas.translate(r.exactCenterX(), r.exactCenterY());

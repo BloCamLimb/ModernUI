@@ -53,7 +53,7 @@ public class RenderProperties {
     private Matrix mAnimationMatrix; // copy or null
 
     private boolean mForceToLayer = false;
-    private int mLayerAlpha;
+    private float mLayerAlpha;
     private BlendMode mLayerMode = null;
 
     private int mLeft = 0, mTop = 0, mRight = 0, mBottom = 0;
@@ -202,7 +202,7 @@ public class RenderProperties {
      */
     private boolean setLayerPaint(@Nullable Paint paint) {
         boolean changed = false;
-        int alpha = paint != null ? paint.getAlpha() : 0xFF;
+        float alpha = paint != null ? paint.getAlphaF() : 1f;
         if (mLayerAlpha != alpha) {
             mLayerAlpha = alpha;
             changed = true;
@@ -232,7 +232,7 @@ public class RenderProperties {
      *
      * @return the layer's alpha
      */
-    public int getLayerAlpha() {
+    public float getLayerAlpha() {
         return mLayerAlpha;
     }
 

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -468,11 +468,11 @@ public class ImageDrawable extends Drawable {
             useShader = paint.hasShader();
         }
 
-        final int restoreAlpha;
+        final float restoreAlpha;
         if (state.mBaseAlpha != 1.0f) {
             final Paint p = getPaint();
-            restoreAlpha = p.getAlpha();
-            p.setAlpha((int) (restoreAlpha * state.mBaseAlpha + 0.5f));
+            restoreAlpha = p.getAlphaF();
+            p.setAlpha(restoreAlpha * state.mBaseAlpha);
         } else {
             restoreAlpha = -1;
         }
@@ -573,12 +573,12 @@ public class ImageDrawable extends Drawable {
         // since only they are guaranteed to fill their bounds
         boolean opaqueOverShape = mImageState.mImage != null
                 && mImageState.mImage.isOpaque();
-        outline.setAlpha(opaqueOverShape ? getAlpha() / 255.0f : 0.0f);
+        outline.setAlpha(opaqueOverShape ? getAlpha() : 0.0f);
     }
 
     @Override
-    public void setAlpha(int alpha) {
-        final int oldAlpha = mImageState.mPaint.getAlpha();
+    public void setAlpha(float alpha) {
+        final float oldAlpha = mImageState.mPaint.getAlphaF();
         if (alpha != oldAlpha) {
             mImageState.mPaint.setAlpha(alpha);
             invalidateSelf();
@@ -586,8 +586,8 @@ public class ImageDrawable extends Drawable {
     }
 
     @Override
-    public int getAlpha() {
-        return mImageState.mPaint.getAlpha();
+    public float getAlpha() {
+        return mImageState.mPaint.getAlphaF();
     }
 
     @Override

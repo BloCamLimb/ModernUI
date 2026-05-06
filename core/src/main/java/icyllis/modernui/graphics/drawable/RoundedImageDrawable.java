@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -425,12 +425,12 @@ public class RoundedImageDrawable extends Drawable {
         float rad = Math.min(mCornerRadius,
                 Math.min(mDstRect.width(), mDstRect.height()) * 0.5f);
         outline.setRoundRect(mDstRect, rad);
-        outline.setAlpha(getAlpha() / 255.0f);
+        outline.setAlpha(getAlpha());
     }
 
     @Override
-    public void setAlpha(int alpha) {
-        final int oldAlpha = mPaint.getAlpha();
+    public void setAlpha(float alpha) {
+        final float oldAlpha = mPaint.getAlphaF();
         if (alpha != oldAlpha) {
             mPaint.setAlpha(alpha);
             invalidateSelf();
@@ -438,8 +438,8 @@ public class RoundedImageDrawable extends Drawable {
     }
 
     @Override
-    public int getAlpha() {
-        return mPaint.getAlpha();
+    public float getAlpha() {
+        return mPaint.getAlphaF();
     }
 
     @Override

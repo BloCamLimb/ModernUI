@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -169,15 +169,15 @@ public abstract class DrawableWrapper extends Drawable implements Drawable.Callb
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         if (mDrawable != null) {
             mDrawable.setAlpha(alpha);
         }
     }
 
     @Override
-    public int getAlpha() {
-        return mDrawable != null ? mDrawable.getAlpha() : 255;
+    public float getAlpha() {
+        return mDrawable != null ? mDrawable.getAlpha() : 1f;
     }
 
     @Override

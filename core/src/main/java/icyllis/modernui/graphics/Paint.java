@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
@@ -482,6 +483,22 @@ public class Paint {
      */
     public void setColor(@ColorInt int color) {
         mPaint.setColor(color);
+    }
+
+    /**
+     * Set the paint's solid color in extended sRGB nonlinear space.
+     * Note that the color is created using {@link Color#pack} methods,
+     * containing alpha as well as r,g,b. This 64-bit value is not premultiplied,
+     * meaning that its alpha can be any value, regardless of the values of r,g,b.
+     *
+     * @param color the new color (including alpha) to set in the paint.
+     */
+    public void setColor(@ColorLong long color) {
+        mPaint.setColor4f(
+                Color.red(color),
+                Color.green(color),
+                Color.blue(color),
+                Color.alpha(color));
     }
 
     /**

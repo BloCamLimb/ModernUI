@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,17 +76,17 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     @Override
     public void getOutline(@NonNull Outline outline) {
         outline.setRect(getBounds());
-        outline.setAlpha(getAlpha() / 255.0f);
+        outline.setAlpha(getAlpha());
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         mState.mAlpha = alpha;
         onStateChange(getState());
     }
 
     @Override
-    public int getAlpha() {
+    public float getAlpha() {
         return mState.mAlpha;
     }
 
@@ -122,10 +122,10 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     @Override
     protected boolean onStateChange(@NonNull int[] state) {
         if (mState.mColor != null) {
-            int color = mState.mColor.getColorForState(state, mState.mColor.getDefaultColor());
+            long color = Color.pack(mState.mColor.getColorForState(state, mState.mColor.getDefaultColor()));
 
             if (mState.mAlpha != -1) {
-                color = (color & 0xFFFFFF) | mState.mAlpha << 24;
+                color = Color.withAlpha(color, mState.mAlpha);
             }
 
             if (color != mColorDrawable.getColor()) {
@@ -175,7 +175,8 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
      */
     @NonNull
     public ColorStateList getColorStateList() {
-        return Objects.requireNonNullElseGet(mState.mColor, () -> ColorStateList.valueOf(mColorDrawable.getColor()));
+        //TODO wide color
+        return Objects.requireNonNullElseGet(mState.mColor, () -> ColorStateList.valueOf(Color.toArgb(mColorDrawable.getColor())));
     }
 
     @NonNull
@@ -209,7 +210,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
 
         ColorStateList mColor = null;
         ColorStateList mTint = null;
-        int mAlpha = -1;
+        float mAlpha = -1;
         BlendMode mBlendMode = DEFAULT_BLEND_MODE;
 
         ColorStateListDrawableState() {

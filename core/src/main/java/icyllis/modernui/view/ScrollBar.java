@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,7 @@ final class ScrollBar extends Drawable implements Drawable.Callback {
     private boolean mAlwaysDrawHorizontalTrack;
     private boolean mAlwaysDrawVerticalTrack;
 
-    private int mAlpha = 255;
+    private float mAlpha = 1f;
     private boolean mHasSetAlpha;
 
     ScrollBar() {
@@ -264,7 +264,7 @@ final class ScrollBar extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         mAlpha = alpha;
         mHasSetAlpha = true;
 
@@ -283,7 +283,7 @@ final class ScrollBar extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public int getAlpha() {
+    public float getAlpha() {
         return mAlpha;
     }
 

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -89,6 +89,7 @@ public class ShapeDrawable extends Drawable {
      * @param dstAlpha 0..255 no validation
      * @return result alpha
      */
+    @Deprecated
     public static int modulateAlpha(int srcAlpha, int dstAlpha) {
         int multiplier = dstAlpha + (dstAlpha >> 7);
         return srcAlpha * multiplier >> 8;
@@ -117,7 +118,7 @@ public class ShapeDrawable extends Drawable {
 
     final RectF mRect = new RectF();
 
-    private int mAlpha = 0xFF;  // modified by the caller
+    private float mAlpha = 1f;  // modified by the caller
     boolean mMutated;
 
     public ShapeDrawable() {
@@ -164,11 +165,11 @@ public class ShapeDrawable extends Drawable {
 
         // remember the alpha values, in case we temporarily overwrite them
         // when we modulate them with mAlpha
-        final int prevFillAlpha = mFillPaint.getAlpha();
-        final int prevStrokeAlpha = mStrokePaint != null ? mStrokePaint.getAlpha() : 0;
+        final float prevFillAlpha = mFillPaint.getAlphaF();
+        final float prevStrokeAlpha = mStrokePaint != null ? mStrokePaint.getAlphaF() : 0;
         // compute the modulate alpha values
-        final int currFillAlpha = modulateAlpha(prevFillAlpha, mAlpha);
-        final int currStrokeAlpha = modulateAlpha(prevStrokeAlpha, mAlpha);
+        final float currFillAlpha = prevFillAlpha * mAlpha;
+        final float currStrokeAlpha = prevStrokeAlpha * mAlpha;
 
         final ShapeState st = mShapeState;
         final ColorFilter colorFilter = mColorFilter != null ? mColorFilter : mBlendModeColorFilter;
@@ -182,7 +183,7 @@ public class ShapeDrawable extends Drawable {
         mFillPaint.setColorFilter(colorFilter);
         if (colorFilter != null && st.mSolidColors == null) {
             // Modern UI convention is white alpha
-            mFillPaint.setRGBA(255, 255, 255, mAlpha);
+            mFillPaint.setColor4f(1f, 1f, 1f, mAlpha);
         }
         // fixed by Modern UI: also check BlendMode/Shader/ColorFilter to determine there's fill or stroke
         final boolean haveFill = !mFillPaint.getNativePaint().nothingToDraw();
@@ -735,7 +736,7 @@ public class ShapeDrawable extends Drawable {
     }
 
     @Override
-    public void setAlpha(int alpha) {
+    public void setAlpha(float alpha) {
         if (alpha != mAlpha) {
             mAlpha = alpha;
             invalidateSelf();
@@ -743,7 +744,7 @@ public class ShapeDrawable extends Drawable {
     }
 
     @Override
-    public int getAlpha() {
+    public float getAlpha() {
         return mAlpha;
     }
 
@@ -815,9 +816,9 @@ public class ShapeDrawable extends Drawable {
         // either not have a stroke, or have same stroke/fill opacity
         boolean useFillOpacity = st.mOpaqueOverShape && (mShapeState.mStrokeWidth <= 0
                 || mStrokePaint == null
-                || mStrokePaint.getAlpha() == mFillPaint.getAlpha());
+                || mStrokePaint.getAlphaF() == mFillPaint.getAlphaF());
         outline.setAlpha(useFillOpacity
-                ? modulateAlpha(mFillPaint.getAlpha(), getAlpha()) / 255.0f
+                ? mFillPaint.getAlphaF() * getAlpha()
                 : 0.0f);
 
         switch (st.mShape) {

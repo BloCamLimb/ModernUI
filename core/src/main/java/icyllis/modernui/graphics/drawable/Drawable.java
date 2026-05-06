@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2020-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -408,23 +408,31 @@ public abstract class Drawable {
     /**
      * Specify an alpha value for the drawable. 0 means fully transparent, and
      * 255 means fully opaque.
+     *
+     * @deprecated use {@link #setAlpha(float)} instead
      */
+    @Deprecated
     public void setAlpha(@IntRange(from = 0, to = 255) int alpha) {
+        setAlpha(alpha * (1/255f));
     }
 
     /**
-     * Gets the current alpha value for the drawable. 0 means fully transparent,
-     * 255 means fully opaque. This method is implemented by Drawable subclasses and
-     * the value returned is specific to how that class treats alpha. The default
-     * return value is 255 if the class does not override this method to return a value
-     * specific to its use of alpha.
-     * @deprecated the signature of this method will be changed in future versions,
-     * cause a binary incompatibility
+     * Specify an alpha value for the drawable. 0.0 means fully transparent, and
+     * 1.0 means fully opaque.
      */
-    @Deprecated(forRemoval = true)
-    @IntRange(from = 0, to = 255)
-    public int getAlpha() {
-        return 0xFF;
+    public void setAlpha(@FloatRange(from = 0f, to = 1f) float alpha) {
+    }
+
+    /**
+     * Gets the current alpha value for the drawable. 0.0 means fully transparent,
+     * 1.0 means fully opaque. This method is implemented by Drawable subclasses and
+     * the value returned is specific to how that class treats alpha. The default
+     * return value is 1.0 if the class does not override this method to return a value
+     * specific to its use of alpha.
+     */
+    @FloatRange(from = 0f, to = 1f)
+    public float getAlpha() {
+        return 1f;
     }
 
     /**

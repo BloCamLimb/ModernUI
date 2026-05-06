@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,6 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import org.jetbrains.annotations.ApiStatus;
@@ -73,7 +72,7 @@ public class CircularIndeterminateDrawable extends BaseIndeterminateDrawable {
             paint.setStrokeWidth(mThickness);
             // circular indeterminate progress bar does not have a track, only draw the indicator
             paint.setColor(mIndicatorColor);
-            paint.setAlpha(ShapeDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
+            paint.setAlpha(paint.getAlphaF() * mAlpha);
             if (ValueAnimator.areAnimatorsEnabled()) {
                 canvas.save();
                 canvas.translate(r.exactCenterX(), r.exactCenterY());
