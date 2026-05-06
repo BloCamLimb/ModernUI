@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -231,6 +231,7 @@ class RippleForeground extends RippleComponent {
                                 rr, maxRadius * RIPPLE_SMOOTHNESS, false
                         )
                 );
+                p.setDither(true);
             }
             // mask is used in bounded case, where targetRadius should cover the full bounds,
             // then we draw the mask and ignore the circle with targetRadius
@@ -256,6 +257,7 @@ class RippleForeground extends RippleComponent {
             }
             p.setAlphaF(origAlpha);
             p.setShader(null);
+            p.setDither(false);
         }
     }
 

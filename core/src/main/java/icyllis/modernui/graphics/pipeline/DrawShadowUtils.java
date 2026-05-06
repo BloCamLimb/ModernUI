@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ public class DrawShadowUtils {
     public static final float kMaxAmbientRadius = 300*kAmbientHeightFactor*kAmbientGeomFactor;
 
     //TODO This value is not ideal and can underestimate the dirty area
-    public static final float kOutsetPerZ = 3f;
+    public static final float kOutsetPerZ = 5f;
 
     private static float divide_and_pin(float numer, float denom, float min, float max) {
         float result = MathUtil.pin(numer / denom, min, max);
