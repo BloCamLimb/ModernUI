@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,13 +19,12 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.Matrix4;
-import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Data structure that holds the properties for a RenderNode.
@@ -71,8 +70,8 @@ public class RenderProperties {
     private boolean mMatrixOrPivotDirty = false;
     private float mCameraDistance = 1;
     private boolean mCameraDistanceExplicitlySet = false;
-    private int mSpotShadowColor = Color.BLACK;
-    private int mAmbientShadowColor = Color.BLACK;
+    private long mSpotShadowColor = Color.BLACK_LONG;
+    private long mAmbientShadowColor = Color.BLACK_LONG;
 
     private final Outline mOutline = new Outline();
 
@@ -898,7 +897,7 @@ public class RenderProperties {
         return false;
     }
 
-    public boolean setSpotShadowColor(@ColorInt int color) {
+    public boolean setSpotShadowColor(@ColorLong long color) {
         if (mSpotShadowColor != color) {
             mSpotShadowColor = color;
             return true;
@@ -906,11 +905,11 @@ public class RenderProperties {
         return false;
     }
 
-    public @ColorInt int getSpotShadowColor() {
+    public @ColorLong long getSpotShadowColor() {
         return mSpotShadowColor;
     }
 
-    public boolean setAmbientShadowColor(@ColorInt int color) {
+    public boolean setAmbientShadowColor(@ColorLong long color) {
         if (mAmbientShadowColor != color) {
             mAmbientShadowColor = color;
             return true;
@@ -918,7 +917,7 @@ public class RenderProperties {
         return false;
     }
 
-    public @ColorInt int getAmbientShadowColor() {
+    public @ColorLong long getAmbientShadowColor() {
         return mAmbientShadowColor;
     }
 
@@ -1061,7 +1060,7 @@ public class RenderProperties {
      * @param position The position rectangle in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
      */
-    public boolean setPosition(@Nonnull Rect position) {
+    public boolean setPosition(@NonNull Rect position) {
         return setPosition(position.left, position.top, position.right, position.bottom);
     }
 

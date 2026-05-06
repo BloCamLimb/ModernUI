@@ -18,12 +18,12 @@
 
 package icyllis.modernui.graphics.pipeline;
 
-import icyllis.arc3d.core.Color;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.sketch.Canvas;
 import icyllis.arc3d.sketch.Paint;
 import icyllis.arc3d.sketch.RRect;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -54,7 +54,8 @@ public class DrawShadowUtils {
                                   Rect rect, float rad,
                                   float zPlane0, float zPlane1, float zPlane2,
                                   float lightX, float lightY, float lightZ,
-                                  float lightRadius, int ambientColor, int spotColor) {
+                                  float lightRadius, long ambientColor, float ambientAlpha,
+                                  long spotColor, float spotAlpha) {
         if (!MathUtil.isFinite(lightX, lightY, lightZ,
                 zPlane0, zPlane1, zPlane2) || !Float.isFinite(lightRadius)) {
             return;
@@ -66,7 +67,7 @@ public class DrawShadowUtils {
         Paint paint = new Paint();
         RRect r2 = new RRect();
 
-        if (Color.alpha(ambientColor) > 0) {
+        if (ambientAlpha > 0) {
             float devSpaceOutset = Math.min(zPlane2*kAmbientHeightFactor*kAmbientGeomFactor, kMaxAmbientRadius);
             float oneOverA = 1.0f + Math.max(zPlane2*kAmbientHeightFactor, 0.0f);
             float blurRadius = 0.5f*devSpaceOutset*oneOverA;
@@ -75,14 +76,17 @@ public class DrawShadowUtils {
             r2.setRectXY(rect.left-strokeWidth, rect.top-strokeWidth,
                     rect.right+strokeWidth, rect.bottom+strokeWidth,
                     rad+strokeWidth, rad+strokeWidth);
-            paint.setColor(ambientColor);
+            paint.setColor4f(Color.red(ambientColor),
+                    Color.green(ambientColor),
+                    Color.blue(ambientColor),
+                    ambientAlpha);
             if (blurRadius > 0) {
-                blurRadius = blurRadius * 1.73205080f + 1.0f;
+                blurRadius = blurRadius * 3;
             }
             canvas.drawBlurredRRect(r2, paint, blurRadius, 0.1f);
         }
 
-        if (Color.alpha(spotColor) > 0) {
+        if (spotAlpha > 0) {
             float occluderZ = rect.centerX() * zPlane0 + rect.centerY() * zPlane1 + zPlane2;
             float zRatio = divide_and_pin(occluderZ, lightZ - occluderZ, 0.0f, 0.95f);
             float blurRadius = lightRadius * zRatio;
@@ -100,9 +104,12 @@ public class DrawShadowUtils {
 
             r2.setRectXY(rect.left, rect.top, rect.right, rect.bottom,
                     rad, rad);
-            paint.setColor(spotColor);
+            paint.setColor4f(Color.red(spotColor),
+                    Color.green(spotColor),
+                    Color.blue(spotColor),
+                    spotAlpha);
             if (blurRadius > 0) {
-                blurRadius = blurRadius * 1.73205080f + 1.0f;
+                blurRadius = blurRadius * 3;
             }
             canvas.drawBlurredRRect(r2, paint, blurRadius, 0.1f);
 

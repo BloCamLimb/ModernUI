@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2020-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2020-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -544,15 +544,13 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             return;
         }
 
-        int ambientAlpha = (int) (mAmbientShadowAlpha * casterAlpha *
-                Color.alpha(casterProperties.getAmbientShadowColor()));
-        int spotAlpha = (int) (mSpotShadowAlpha * casterAlpha *
-                Color.alpha(casterProperties.getSpotShadowColor()));
-        if (ambientAlpha <= 0 && spotAlpha <= 0) {
+        float ambientAlpha = mAmbientShadowAlpha * casterAlpha *
+                Color.alpha(casterProperties.getAmbientShadowColor());
+        float spotAlpha = mSpotShadowAlpha * casterAlpha *
+                Color.alpha(casterProperties.getSpotShadowColor());
+        if (ambientAlpha <= 0.001f && spotAlpha <= 0.001f) {
             return;
         }
-        int ambientColor = (casterProperties.getAmbientShadowColor() & 0xFFFFFF) | (ambientAlpha << 24);
-        int spotColor = (casterProperties.getSpotShadowColor() & 0xFFFFFF) | (spotAlpha << 24);
 
         canvas.save();
         canvas.translate(child.mLeft, child.mTop);
@@ -583,7 +581,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 outlineRect, outlineRadius,
                 zPlane0, zPlane1, zPlane2,
                 LightingInfo.getLightX(), LightingInfo.getLightY(), LightingInfo.getLightZ(),
-                LightingInfo.getLightRadius(), ambientColor, spotColor
+                LightingInfo.getLightRadius(), casterProperties.getAmbientShadowColor(), ambientAlpha,
+                casterProperties.getSpotShadowColor(), spotAlpha
         );
 
         canvas.restore();

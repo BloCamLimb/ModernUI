@@ -323,6 +323,8 @@ public class TestFragment extends Fragment {
         AngularGradient mTestAngularGrad;
         DView mDView;
 
+        public static final long ONE_COLOR = Color.pack(0.4f, 0.8f, 1.0f, 1.0f);
+
         public TestLinearLayout(Context context) {
             super(context);
             setOrientation(VERTICAL);
@@ -710,12 +712,12 @@ public class TestFragment extends Fragment {
                         button.setOnClickListener(__ -> {
                             if (mDView.getElevation() < 20) {
                                 mDView.setElevation(30);
-                                mDView.setOutlineAmbientShadowColor(0xFF66CCFF);
+                                mDView.setOutlineAmbientShadowColor(ONE_COLOR);
                             } else {
                                 mDView.setElevation(10);
-                                mDView.setOutlineAmbientShadowColor(0xFF000000);
+                                mDView.setOutlineAmbientShadowColor(Color.BLACK_LONG);
                             }
-                            mDView.setOutlineSpotShadowColor(0xFF66CCFF);
+                            mDView.setOutlineSpotShadowColor(ONE_COLOR);
                         });
                     }
                     if ((i & 1) == 1) {

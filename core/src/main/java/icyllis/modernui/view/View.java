@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2020-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2020-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,7 @@ import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.CallSuper;
-import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
@@ -8483,17 +8483,17 @@ public class View implements Drawable.Callback {
      * @param color The color this View will cast for its elevation spot shadow.
      * @since 3.13
      */
-    public void setOutlineSpotShadowColor(@ColorInt int color) {
+    public void setOutlineSpotShadowColor(@ColorLong long color) {
         if (mRenderNode.setSpotShadowColor(color)) {
             invalidateViewProperty(true, true);
         }
     }
 
     /**
-     * @return The shadow color set by {@link #setOutlineSpotShadowColor(int)}, or black if nothing
+     * @return The shadow color set by {@link #setOutlineSpotShadowColor(long)}, or black if nothing
      * was set
      */
-    public @ColorInt int getOutlineSpotShadowColor() {
+    public @ColorLong long getOutlineSpotShadowColor() {
         return mRenderNode.getSpotShadowColor();
     }
 
@@ -8511,17 +8511,17 @@ public class View implements Drawable.Callback {
      * @param color The color this View will cast for its elevation shadow.
      * @since 3.13
      */
-    public void setOutlineAmbientShadowColor(@ColorInt int color) {
+    public void setOutlineAmbientShadowColor(@ColorLong long color) {
         if (mRenderNode.setAmbientShadowColor(color)) {
             invalidateViewProperty(true, true);
         }
     }
 
     /**
-     * @return The shadow color set by {@link #setOutlineAmbientShadowColor(int)}, or black if
+     * @return The shadow color set by {@link #setOutlineAmbientShadowColor(long)}, or black if
      * nothing was set
      */
-    public @ColorInt int getOutlineAmbientShadowColor() {
+    public @ColorLong long getOutlineAmbientShadowColor() {
         return mRenderNode.getAmbientShadowColor();
     }
 
