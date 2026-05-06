@@ -560,41 +560,12 @@ public final class Bitmap implements AutoCloseable {
      * <p>This affects how the framework will interpret the color at each pixel.</p>
      *
      * @param newColorSpace to assign to the bitmap
-     * @throws IllegalArgumentException If the specified color space is not {@link ColorSpace.Model#RGB RGB},
-     *                                  has a transfer function that is not an
-     *                                  {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, or whose
-     *                                  components min/max values reduce the numerical range compared to the
-     *                                  previously assigned color space.
      */
     public void setColorSpace(@Nullable ColorSpace newColorSpace) {
         var oldInfo = getInfo();
         var oldColorSpace = oldInfo.colorSpace();
         if (oldColorSpace == newColorSpace) {
             return;
-        }
-        if (newColorSpace != null) {
-            if (!(newColorSpace instanceof ColorSpace.Rgb rgbColorSpace)) {
-                throw new IllegalArgumentException("The new ColorSpace must use the RGB color model");
-            }
-            if (rgbColorSpace.getTransferParameters() == null) {
-                throw new IllegalArgumentException("The new ColorSpace must use an ICC parametric transfer function");
-            }
-        }
-        if (oldColorSpace != null && newColorSpace != null) {
-            for (int i = 0; i < oldColorSpace.getComponentCount(); i++) {
-                if (oldColorSpace.getMinValue(i) < newColorSpace.getMinValue(i)) {
-                    throw new IllegalArgumentException("The new ColorSpace cannot increase the "
-                            + "minimum value for any of the components compared to the current "
-                            + "ColorSpace. To perform this type of conversion create a new "
-                            + "Bitmap in the desired ColorSpace and draw this Bitmap into it.");
-                }
-                if (oldColorSpace.getMaxValue(i) > newColorSpace.getMaxValue(i)) {
-                    throw new IllegalArgumentException("The new ColorSpace cannot decrease the "
-                            + "maximum value for any of the components compared to the current "
-                            + "ColorSpace/ To perform this type of conversion create a new "
-                            + "Bitmap in the desired ColorSpace and draw this Bitmap into it.");
-                }
-            }
         }
         mPixmap = new Pixmap(oldInfo.makeColorSpace(newColorSpace), mPixmap);
     }
@@ -1907,9 +1878,6 @@ public final class Bitmap implements AutoCloseable {
 
         /**
          * The source (in CPU memory) color type of this format.
-         * <p>
-         * RGB is special, it's 3 bytes per pixel in CPU memory, but
-         * 4 bytes per pixel in GPU memory (implicitly).
          *
          * @hide
          * @hidden
@@ -1929,9 +1897,7 @@ public final class Bitmap implements AutoCloseable {
                 return ColorInfo.bytesPerPixel(mColorType);
             }
             return switch (this) {
-                case GRAY_16 -> 2;
-                case GRAY_ALPHA_1616, GRAY_F32 -> 4;
-                case RGB_161616 -> 6;
+                case GRAY_F32 -> 4;
                 case GRAY_ALPHA_F32 -> 8;
                 case RGB_F32 -> 12;
                 default -> 0;
@@ -1975,6 +1941,7 @@ public final class Bitmap implements AutoCloseable {
         /**
          * Is this format 32-bit per channel and encoded as float?
          */
+        @Deprecated
         public boolean isChannelHDR() {
             return ordinal() >> 2 == 2;
         }
