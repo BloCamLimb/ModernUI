@@ -46,6 +46,7 @@ import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.SparseArray;
+import icyllis.modernui.view.View;
 
 /**
  * A helper class that contains several {@link Drawable}s and selects which one to use.
@@ -310,7 +311,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    protected boolean onLayoutDirectionChanged(int layoutDirection) {
+    protected boolean onLayoutDirectionChanged(@View.ResolvedLayoutDir int layoutDirection) {
         // Let the container handle setting its own layout direction. Otherwise,
         // we're accessing potentially unused states.
         return mDrawableContainerState.setLayoutDirection(layoutDirection, getCurrentIndex());
@@ -630,6 +631,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         boolean mCanConstantState;
 
         boolean mMutated;
+        @View.ResolvedLayoutDir
         int mLayoutDirection;
 
         int mEnterFadeDuration = 0;
@@ -801,7 +803,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
             return null;
         }
 
-        final boolean setLayoutDirection(int layoutDirection, int currentIndex) {
+        final boolean setLayoutDirection(@View.ResolvedLayoutDir int layoutDirection, int currentIndex) {
             boolean changed = false;
 
             // No need to call createAllFutures, since future drawables will

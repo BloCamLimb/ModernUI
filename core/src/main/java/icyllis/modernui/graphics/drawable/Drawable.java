@@ -96,7 +96,7 @@ import java.util.Arrays;
  * At a minimum, custom drawable classes must implement the abstract methods on
  * Drawable and should override the {@link Drawable#draw(Canvas)} method to
  * draw content. Significantly, consider overriding the
- * {@link Drawable#setAlpha(int)} to handle alpha correctly.
+ * {@link Drawable#setAlpha(float)} to handle alpha correctly.
  */
 public abstract class Drawable {
 
@@ -112,6 +112,7 @@ public abstract class Drawable {
     private WeakReference<Callback> mCallback = null;
     private boolean mVisible = true;
 
+    @View.ResolvedLayoutDir
     private int mLayoutDirection;
 
     public static final int MAX_LEVEL = 10000;

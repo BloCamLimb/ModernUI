@@ -125,7 +125,7 @@ public class ColorDrawable extends Drawable {
 
     /**
      * Sets the drawable's color value. This action will clobber the results of
-     * prior calls to {@link #setAlpha} on this object, which side-affected
+     * prior calls to {@link #setAlpha(float)} on this object, which side-affected
      * the underlying color.
      *
      * @param color The color to draw.
@@ -136,7 +136,7 @@ public class ColorDrawable extends Drawable {
 
     /**
      * Sets the drawable's color value. This action will clobber the results of
-     * prior calls to {@link #setAlpha} on this object, which side-affected
+     * prior calls to {@link #setAlpha(float)} on this object, which side-affected
      * the underlying color.
      *
      * @param color The color to draw.
@@ -154,7 +154,7 @@ public class ColorDrawable extends Drawable {
      * combined with the alpha provided by setAlpha
      *
      * @return A value between 0.0 and 1.0.
-     * @see ColorDrawable#setAlpha(int)
+     * @see ColorDrawable#setAlpha(float)
      */
     @Override
     public float getAlpha() {

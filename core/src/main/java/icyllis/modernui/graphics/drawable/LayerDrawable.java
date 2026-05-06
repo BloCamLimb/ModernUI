@@ -1045,7 +1045,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
         }
     }
 
-    /*@Override
+    @Override
     public void setColorFilter(ColorFilter colorFilter) {
         final ChildDrawable[] array = mLayerState.mChildren;
         final int N = mLayerState.mNumChildren;
@@ -1055,7 +1055,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
                 dr.setColorFilter(colorFilter);
             }
         }
-    }*/
+    }
 
     @Override
     public void setTintList(ColorStateList tint) {

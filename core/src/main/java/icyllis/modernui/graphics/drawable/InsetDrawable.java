@@ -191,11 +191,6 @@ public class InsetDrawable extends DrawableWrapper {
                 + mState.mInsetBottom.mDimension;
     }
 
-    /*@Override
-    public void getOutline(@NonNull Outline outline) {
-        getDrawable().getOutline(outline);
-    }*/
-
     @Override
     DrawableWrapperState mutateConstantState() {
         mState = new InsetState(mState, null);
