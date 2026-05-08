@@ -848,11 +848,10 @@ public class ShapeDrawable extends Drawable {
     public void getOutline(@NonNull Outline outline) {
         final ShapeState st = mShapeState;
         final Rect bounds = getBounds();
-        // only report non-zero alpha if shape being drawn has consistent opacity over shape. Must
-        // either not have a stroke, or have same stroke/fill opacity
-        boolean useFillOpacity = st.mOpaqueOverShape && (mShapeState.mStrokeWidth <= 0
-                || mStrokePaint == null
-                || mStrokePaint.getAlphaF() == mFillPaint.getAlphaF());
+        // only report non-zero alpha if shape being drawn has consistent opacity over shape.
+        //
+        // Modern UI changed: does not need to have no stroke, or have same stroke/fill opacity
+        boolean useFillOpacity = st.mOpaqueOverShape;
         outline.setAlpha(useFillOpacity
                 ? mFillPaint.getAlphaF() * getAlpha()
                 : 0.0f);
