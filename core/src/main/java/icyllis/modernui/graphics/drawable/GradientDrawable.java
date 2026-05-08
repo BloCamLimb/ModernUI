@@ -151,13 +151,16 @@ public class GradientDrawable extends ShapeDrawable {
     void updateGradient() {
         final GradientState st = mGradientState;
 
-        int[] gradientColors = null;
+        float[] gradientColors = null;
         if (st.mGradientColors != null) {
-            gradientColors = new int[st.mGradientColors.length];
-            for (int i = 0; i < gradientColors.length; i++) {
+            gradientColors = new float[st.mGradientColors.length * 4];
+            for (int i = 0; i < st.mGradientColors.length; i++) {
                 if (st.mGradientColors[i] != null) {
-                    //TODO wide color
-                    gradientColors[i] = Color.toArgb(st.mGradientColors[i].getDefaultColor());
+                    long color = st.mGradientColors[i].getDefaultColor();
+                    gradientColors[i * 4] = Color.red(color);
+                    gradientColors[i * 4 + 1] = Color.green(color);
+                    gradientColors[i * 4 + 2] = Color.blue(color);
+                    gradientColors[i * 4 + 3] = Color.alpha(color);
                 }
             }
         }
@@ -203,7 +206,7 @@ public class GradientDrawable extends ShapeDrawable {
                 }
 
                 mFillPaint.setShader(new LinearGradient(x0, y0, x1, y1,
-                        gradientColors, st.mPositions, Shader.TileMode.CLAMP, null));
+                        gradientColors, null, st.mPositions, Shader.TileMode.CLAMP, null));
             } else if (st.mGradient == RADIAL_GRADIENT) {
                 x0 = r.left + r.width() * st.mCenterX;
                 y0 = r.top + r.height() * st.mCenterY;
@@ -232,7 +235,7 @@ public class GradientDrawable extends ShapeDrawable {
                 }
 
                 mFillPaint.setShader(new RadialGradient(x0, y0, radius,
-                        gradientColors, st.mPositions, Shader.TileMode.CLAMP, null));
+                        gradientColors, null, st.mPositions, Shader.TileMode.CLAMP, null));
             } else if (st.mGradient == ANGULAR_GRADIENT) {
                 x0 = r.left + r.width() * st.mCenterX;
                 y0 = r.top + r.height() * st.mCenterY;
@@ -242,7 +245,7 @@ public class GradientDrawable extends ShapeDrawable {
                 matrix.setRotate(-90 * MathUtil.DEG_TO_RAD, x0, y0);
 
                 mFillPaint.setShader(new AngularGradient(x0, y0, 0, sweep,
-                        gradientColors, st.mPositions, Shader.TileMode.CLAMP, matrix));
+                        gradientColors, null, st.mPositions, Shader.TileMode.CLAMP, matrix));
             }
 
             // If we don't have a solid color, the alpha channel must be
