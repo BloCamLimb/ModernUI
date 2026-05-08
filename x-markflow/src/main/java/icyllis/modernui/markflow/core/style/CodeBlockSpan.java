@@ -75,7 +75,7 @@ public class CodeBlockSpan extends MetricAffectingSpan
                            int top, int baseline, int bottom,
                            @NonNull Spanned text, int start, int end,
                            boolean first, @NonNull Layout layout) {
-        final int oldColor = p.getColor();
+        final var oldColor = p.getColorLong();
         p.setColor(mTheme.getCodeBlockBackgroundColor());
         c.drawRect(left, top, right, bottom, p);
         p.setColor(oldColor);

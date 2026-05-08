@@ -44,7 +44,7 @@ public class ThematicBreakSpan implements LeadingMarginSpan {
         int color = mTheme.getThematicBreakColor();
         if (color != 0) {
             var oldStyle = p.getStyle();
-            int oldColor = p.getColor();
+            var oldColor = p.getColorLong();
 
             p.setStyle(Paint.FILL);
             p.setColor(color);

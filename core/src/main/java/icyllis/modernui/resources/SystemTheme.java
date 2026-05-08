@@ -1589,7 +1589,7 @@ public class SystemTheme {
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
-                background.setColor(Color.TRANSPARENT);
+                background.setColor(Color.TRANSPARENT_LONG);
                 return new RippleDrawable(rippleColor, null, background);
             });
             style.addColor(R.attr.tint, (resources, theme) ->

@@ -457,7 +457,7 @@ public class Paint {
      * This method is obsolete and discouraged. Converting color to a
      * packed 32-bit integer (8-bit per channel) leads to precision loss.
      * Use this only if you specifically need to quantize color components for storage
-     * or legacy API compatibility. Otherwise, use {@link #getColor4f()}.
+     * or legacy API compatibility. Otherwise, use {@link #getColor4f()} or {@link #getColorLong()}.
      *
      * @return the paint's color (and alpha).
      * @deprecated the signature of this method will be changed in future versions,
@@ -470,6 +470,20 @@ public class Paint {
                 ((int) (mPaint.getRed() * 255.0f + 0.5f) << 16) |
                 ((int) (mPaint.getGreen() * 255.0f + 0.5f) << 8) |
                 (int) (mPaint.getBlue() * 255.0f + 0.5f);
+    }
+
+    /**
+     * Return the paint's solid color in sRGB. Note that the color is a 64-bit value
+     * containing alpha as well as r,g,b. This 64-bit value is not premultiplied,
+     * meaning that its alpha can be any value, regardless of the values of r,g,b.
+     *
+     * @return the paint's color (and alpha).
+     * @see Color
+     * @since 3.13
+     */
+    @ColorLong
+    public long getColorLong() {
+        return Color.pack(mPaint.getRed(), mPaint.getGreen(), mPaint.getBlue(), mPaint.getAlpha());
     }
 
     /**

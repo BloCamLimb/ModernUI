@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@ package icyllis.modernui.util;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.MathUtil;
@@ -39,26 +40,46 @@ import java.util.Arrays;
 // low-priority: this class should be moved to resources package in 4.0
 public class ColorStateList {
 
-    private static final int DEFAULT_COLOR = 0xFFFF0000;
-    private static final int[][] EMPTY = new int[][]{new int[0]};
+    private static final long DEFAULT_COLOR = Color.RED_SRGB;
+    private static final int[][] EMPTY = new int[][]{StateSet.WILD_CARD};
 
     /**
      * Thread-safe cache of single-color ColorStateLists.
      */
     @GuardedBy("itself")
-    private static final SparseArray<WeakReference<ColorStateList>> sCache = new SparseArray<>();
+    private static final LongSparseArray<WeakReference<ColorStateList>> sCache = new LongSparseArray<>();
+    @GuardedBy("sCache")
+    private static int sCacheNextPruneSize = 128;
 
     private final int[][] mStateSpecs;
-    private final int[] mColors;
-    private int mDefaultColor;
+    private final long[] mColors;
+    private long mDefaultColor;
     private boolean mIsOpaque;
 
     /**
      * Creates a ColorStateList that returns the specified mapping from
-     * states to colors. The given arrays should not be modified after construction.
+     * stateSpecs to colors. The given arrays must NOT be modified after construction.
      */
-    public ColorStateList(@NonNull int[][] states, @NonNull int[] colors) {
-        mStateSpecs = states;
+    public ColorStateList(@NonNull int[][] stateSpecs, @NonNull @ColorInt int[] colors) {
+        assert colors.length >= stateSpecs.length;
+        mStateSpecs = stateSpecs;
+
+        long[] wideColors = new long[colors.length];
+        for (int i = 0; i < wideColors.length; i++) {
+            wideColors[i] = Color.pack(colors[i]);
+        }
+        mColors = wideColors;
+
+        onColorsChanged();
+    }
+
+    /**
+     * Creates a ColorStateList that returns the specified mapping from
+     * stateSpecs to colors. The given arrays must NOT be modified after construction.
+     */
+    public ColorStateList(@NonNull int[][] stateSpecs, @NonNull @ColorLong long[] colors) {
+        assert colors.length >= stateSpecs.length;
+        mStateSpecs = stateSpecs;
         mColors = colors;
 
         onColorsChanged();
@@ -69,6 +90,15 @@ public class ColorStateList {
      */
     @NonNull
     public static ColorStateList valueOf(@ColorInt int color) {
+        return valueOf(Color.pack(color));
+    }
+
+    /**
+     * @return A ColorStateList containing a single color.
+     */
+    @NonNull
+    public static ColorStateList valueOf(@ColorLong long color) {
+        //TODO need optimize
         synchronized (sCache) {
             final int index = sCache.indexOfKey(color);
             if (index >= 0) {
@@ -89,7 +119,7 @@ public class ColorStateList {
                 }
             }
 
-            final ColorStateList csl = new ColorStateList(EMPTY, new int[]{color});
+            final ColorStateList csl = new ColorStateList(EMPTY, new long[]{color});
             sCache.put(color, new WeakReference<>(csl));
             return csl;
         }
@@ -104,10 +134,23 @@ public class ColorStateList {
      */
     @NonNull
     public ColorStateList withAlpha(int alpha) {
-        final int[] colors = new int[mColors.length];
-        final int len = colors.length;
-        for (int i = 0; i < len; i++) {
-            colors[i] = (mColors[i] & 0xFFFFFF) | (alpha << 24);
+        return withAlpha(alpha * (1/255f));
+    }
+
+    /**
+     * Creates a new ColorStateList that has the same states and colors as this
+     * one but where each color has the specified alpha value (0.0-1.0).
+     *
+     * @param alpha The new alpha channel value (0.0-1.0).
+     * @return A new color state list.
+     */
+    @NonNull
+    public ColorStateList withAlpha(float alpha) {
+        alpha = MathUtil.clamp(alpha, 0f, 1f);
+
+        final long[] colors = new long[mColors.length];
+        for (int i = 0; i < colors.length; i++) {
+            colors[i] = Color.withAlpha(mColors[i], alpha);
         }
 
         return new ColorStateList(mStateSpecs, colors);
@@ -137,7 +180,7 @@ public class ColorStateList {
      *
      * @return True if this color state list changes color based on state, false
      * otherwise.
-     * @see #getColorForState(int[], int)
+     * @see #getColorForState(int[], long)
      */
     public boolean isStateful() {
         return mStateSpecs.length >= 1 && mStateSpecs[0].length > 0;
@@ -153,7 +196,7 @@ public class ColorStateList {
 
     /**
      * Indicates whether this color state list is opaque, which means that every
-     * color returned from {@link #getColorForState(int[], int)} has an alpha
+     * color returned from {@link #getColorForState(int[], long)} has an alpha
      * value of 255.
      *
      * @return True if this color state list is opaque.
@@ -171,11 +214,8 @@ public class ColorStateList {
      *                     spec in this {@link ColorStateList} that matches the
      *                     stateSet.
      * @return the color associated with that set of states in this {@link ColorStateList}.
-     * @deprecated the signature of this method will be changed in future versions,
-     * cause a binary incompatibility
      */
-    @Deprecated(forRemoval = true)
-    public int getColorForState(int[] stateSet, int defaultColor) {
+    public long getColorForState(int[] stateSet, long defaultColor) {
         final int setLength = mStateSpecs.length;
         for (int i = 0; i < setLength; i++) {
             final int[] stateSpec = mStateSpecs[i];
@@ -191,9 +231,8 @@ public class ColorStateList {
      *
      * @return the default color in this {@link ColorStateList}.
      */
-    @ColorInt
-    @Deprecated(forRemoval = true)
-    public int getDefaultColor() {
+    @ColorLong
+    public long getDefaultColor() {
         return mDefaultColor;
     }
 
@@ -202,6 +241,7 @@ public class ColorStateList {
      * should not be modified.
      *
      * @return the states in this {@link ColorStateList}
+     * @hide
      * @hidden
      */
     @ApiStatus.Internal
@@ -214,11 +254,11 @@ public class ColorStateList {
      * should not be modified.
      *
      * @return the colors in this {@link ColorStateList}
+     * @hide
      * @hidden
      */
     @ApiStatus.Internal
-    @Deprecated(forRemoval = true)
-    public int[] getColors() {
+    public long[] getColors() {
         return mColors;
     }
 
@@ -232,6 +272,8 @@ public class ColorStateList {
      *
      * @param state the state to search for
      * @return {@code true} if the state if referenced, {@code false} otherwise
+     * @hide
+     * @hidden
      */
     @ApiStatus.Internal
     public boolean hasState(int state) {
@@ -257,11 +299,11 @@ public class ColorStateList {
      * Updates the default color and opacity.
      */
     private void onColorsChanged() {
-        int defaultColor = DEFAULT_COLOR;
+        long defaultColor = DEFAULT_COLOR;
         boolean isOpaque = true;
 
         final int[][] states = mStateSpecs;
-        final int[] colors = mColors;
+        final long[] colors = mColors;
         final int N = states.length;
         if (N > 0) {
             defaultColor = colors[0];
@@ -274,7 +316,7 @@ public class ColorStateList {
             }
 
             for (int i = 0; i < N; i++) {
-                if (colors[i] >>> 24 != 0xFF) {
+                if (Color.alpha(colors[i]) != 1.0f) {
                     isOpaque = false;
                     break;
                 }

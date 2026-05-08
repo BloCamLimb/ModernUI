@@ -67,7 +67,7 @@ public class HeadingSpan extends MetricAffectingSpan
         int color = mTheme.getHeadingBreakColor();
         if (color != 0 && (mLevel == 1 || mLevel == 2) && text.getSpanEnd(this) == end) {
             var oldStyle = p.getStyle();
-            int oldColor = p.getColor();
+            var oldColor = p.getColorLong();
 
             p.setStyle(Paint.FILL);
             p.setColor(color);

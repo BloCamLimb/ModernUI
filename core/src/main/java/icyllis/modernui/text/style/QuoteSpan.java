@@ -50,7 +50,7 @@ public class QuoteSpan implements LeadingMarginSpan {
                                   @NonNull CharSequence text, int start, int end,
                                   boolean first, @NonNull Layout layout) {
         var style = p.getStyle();
-        var color = p.getColor();
+        var color = p.getColorLong();
 
         p.setStyle(Paint.FILL);
         p.setColor(mColor);

@@ -40,7 +40,7 @@ public abstract class MaterialDrawable extends Drawable {
         if (mTint != tint) {
             mTint = tint;
             if (tint != null) {
-                mColor = Color.pack(tint.getColorForState(getState(), ~0));
+                mColor = tint.getColorForState(getState(), Color.WHITE_LONG);
             } else {
                 mColor = Color.WHITE_LONG;
             }
@@ -51,7 +51,7 @@ public abstract class MaterialDrawable extends Drawable {
     @Override
     protected boolean onStateChange(@NonNull int[] stateSet) {
         if (mTint != null) {
-            mColor = Color.pack(mTint.getColorForState(stateSet, ~0));
+            mColor = mTint.getColorForState(stateSet, Color.WHITE_LONG);
             return true;
         }
         return false;

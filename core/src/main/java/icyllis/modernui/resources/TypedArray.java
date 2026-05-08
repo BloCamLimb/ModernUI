@@ -23,6 +23,7 @@ import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleableRes;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
@@ -271,7 +272,7 @@ public class TypedArray {
                 final ColorStateList csl = mResources.loadColorStateList(
                         value, null, mTheme);
                 if (csl != null) {
-                    return csl.getDefaultColor();
+                    return Color.toArgb(csl.getDefaultColor());
                 }
             }
             return defValue;

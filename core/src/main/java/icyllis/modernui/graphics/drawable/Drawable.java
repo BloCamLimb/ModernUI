@@ -409,10 +409,12 @@ public abstract class Drawable {
     /**
      * Specify an alpha value for the drawable. 0 means fully transparent, and
      * 255 means fully opaque.
-     *
-     * @deprecated use {@link #setAlpha(float)} instead
+     * <p>
+     * As of version 3.13.0, the default implementation of this method
+     * invokes {@link #setAlpha(float)}, subclasses should implement that
+     * method to handle alpha.
      */
-    @Deprecated
+    @ApiStatus.Obsolete
     public void setAlpha(@IntRange(from = 0, to = 255) int alpha) {
         setAlpha(alpha * (1/255f));
     }
@@ -420,6 +422,8 @@ public abstract class Drawable {
     /**
      * Specify an alpha value for the drawable. 0.0 means fully transparent, and
      * 1.0 means fully opaque.
+     *
+     * @since 3.13.0
      */
     public void setAlpha(@FloatRange(from = 0f, to = 1f) float alpha) {
     }
@@ -430,6 +434,8 @@ public abstract class Drawable {
      * the value returned is specific to how that class treats alpha. The default
      * return value is 1.0 if the class does not override this method to return a value
      * specific to its use of alpha.
+     * <p>
+     * The method signature was changed in version 3.13.0.
      */
     @FloatRange(from = 0f, to = 1f)
     public float getAlpha() {
@@ -455,6 +461,28 @@ public abstract class Drawable {
      * @see #setTintBlendMode(BlendMode)
      */
     public void setTint(@ColorInt int tintColor) {
+        setTintList(ColorStateList.valueOf(tintColor));
+    }
+
+    /**
+     * Specifies tint color for this drawable.
+     * <p>
+     * A Drawable's drawing content will be blended together with its tint
+     * before it is drawn to the screen.
+     * </p>
+     * <p>
+     * To clear the tint, pass {@code null} to
+     * {@link #setTintList(ColorStateList)}.
+     * </p>
+     * <p class="note"><strong>Note:</strong> Setting a color filter via
+     * {@link #setColorFilter(ColorFilter)} overrides tint.
+     * </p>
+     *
+     * @param tintColor Color to use for tinting this drawable
+     * @see #setTintList(ColorStateList)
+     * @see #setTintBlendMode(BlendMode)
+     */
+    public void setTint(@ColorLong long tintColor) {
         setTintList(ColorStateList.valueOf(tintColor));
     }
 
@@ -898,7 +926,7 @@ public abstract class Drawable {
             return null;
         }
 
-        final int color = tint.getColorForState(getState(), Color.TRANSPARENT);
+        final long color = tint.getColorForState(getState(), Color.TRANSPARENT_LONG);
         if (blendFilter != null && blendFilter.getMode() == blendMode &&
                 blendFilter.getColor() == color) {
             return blendFilter;

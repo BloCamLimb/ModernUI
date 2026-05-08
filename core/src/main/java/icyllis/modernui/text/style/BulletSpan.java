@@ -59,7 +59,7 @@ public class BulletSpan implements LeadingMarginSpan {
             boolean restoreStrokeWidth = false;
             float oldStrokeWidth = 0;
             boolean restoreColor = mColor != 0;
-            int oldColor = restoreColor ? p.getColor() : 0;
+            var oldColor = restoreColor ? p.getColorLong() : 0;
 
             int width = mBlockMargin;
             int height = bottom - top;

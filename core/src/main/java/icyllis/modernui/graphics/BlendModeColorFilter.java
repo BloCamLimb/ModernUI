@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,8 +19,8 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorSpace;
-import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
@@ -37,8 +37,7 @@ import java.util.Objects;
 public final class BlendModeColorFilter extends ColorFilter {
 
     // non-premultiplied blend color in sRGB space
-    @Size(4)
-    private final float[] mColor;
+    private final long mColor;
     private final BlendMode mMode;
 
     @Nullable
@@ -54,51 +53,58 @@ public final class BlendModeColorFilter extends ColorFilter {
         );
     }
 
-    public BlendModeColorFilter(@NonNull @Size(4) float[] color,
-                                @Nullable ColorSpace colorSpace, @NonNull BlendMode mode) {
-        this(color[0], color[1], color[2], color[3], colorSpace, mode);
+    public BlendModeColorFilter(@ColorLong long color, @NonNull BlendMode mode) {
+        Objects.requireNonNull(mode);
+        mColor = color;
+        mMode = mode;
+
+        mColorFilter = icyllis.arc3d.sketch.effects.BlendModeColorFilter.make(
+                new float[]{Color.red(color), Color.green(color), Color.blue(color), Color.alpha(color)},
+                null, mode.getNativeBlendMode()
+        );
     }
 
     /**
      * Blend color is non-premultiplied and in sRGB space.
      */
     public BlendModeColorFilter(float r, float g, float b, float a, @NonNull BlendMode mode) {
-        this(r, g, b, a, null, mode);
+        Objects.requireNonNull(mode);
+        mColor = Color.pack(r, g, b, a);
+        mMode = mode;
+
+        mColorFilter = icyllis.arc3d.sketch.effects.BlendModeColorFilter.make(
+                new float[]{r, g, b, a}, null, mode.getNativeBlendMode()
+        );
+    }
+
+    public BlendModeColorFilter(@NonNull @Size(4) float[] color,
+                                @Nullable ColorSpace colorSpace, @NonNull BlendMode mode) {
+        Objects.requireNonNull(mode);
+
+        if (colorSpace != null && !colorSpace.isSrgb() &&
+                colorSpace != ColorSpace.get(ColorSpace.Named.EXTENDED_SRGB)) {
+            color = color.clone();
+            ColorSpace.connect(colorSpace,
+                            ColorSpace.get(ColorSpace.Named.EXTENDED_SRGB),
+                            ColorSpace.RenderIntent.RELATIVE)
+                    .transform(color);
+        }
+
+        mColor = Color.pack(color[0], color[1], color[2], color[color.length - 1]);
+        mMode = mode;
+
+        mColorFilter = icyllis.arc3d.sketch.effects.BlendModeColorFilter.make(
+                color, null, mode.getNativeBlendMode()
+        );
     }
 
     public BlendModeColorFilter(float r, float g, float b, float a,
                                 @Nullable ColorSpace colorSpace, @NonNull BlendMode mode) {
-        Objects.requireNonNull(mode);
-        mColor = new float[]{
-                MathUtil.pin(r, 0.0f, 1.0f),
-                MathUtil.pin(g, 0.0f, 1.0f),
-                MathUtil.pin(b, 0.0f, 1.0f),
-                MathUtil.pin(a, 0.0f, 1.0f)
-        };
-        mMode = mode;
-
-        mColorFilter = icyllis.arc3d.sketch.effects.BlendModeColorFilter.make(
-                mColor, colorSpace, mode.getNativeBlendMode()
-        );
+        this(new float[]{r, g, b, a}, colorSpace, mode);
     }
 
-    @Deprecated(forRemoval = true)
-    public int getColor() {
-        return ((int) (mColor[0] * 255.0f + 0.5f) << 16) |
-                ((int) (mColor[1] * 255.0f + 0.5f) << 8) |
-                (int) (mColor[2] * 255.0f + 0.5f) |
-                ((int) (mColor[3] * 255.0f + 0.5f) << 24);
-    }
-
-    @NonNull
-    public float[] getColor4f() {
-        return mColor.clone();
-    }
-
-    @NonNull
-    public float[] getColor4f(@NonNull @Size(4) float[] dst) {
-        System.arraycopy(mColor, 0, dst, 0, 4);
-        return dst;
+    public long getColor() {
+        return mColor;
     }
 
     @NonNull

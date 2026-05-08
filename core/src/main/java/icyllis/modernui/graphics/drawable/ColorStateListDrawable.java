@@ -23,8 +23,6 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.ColorStateList;
 
-import java.util.Objects;
-
 /**
  * A Drawable that manages a {@link ColorDrawable} to make it stateful and backed by a
  * {@link ColorStateList}.
@@ -122,7 +120,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     @Override
     protected boolean onStateChange(@NonNull int[] state) {
         if (mState.mColor != null) {
-            long color = Color.pack(mState.mColor.getColorForState(state, mState.mColor.getDefaultColor()));
+            long color = mState.mColor.getColorForState(state, mState.mColor.getDefaultColor());
 
             if (mState.mAlpha != -1) {
                 color = Color.withAlpha(color, mState.mAlpha);
@@ -175,8 +173,8 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
      */
     @NonNull
     public ColorStateList getColorStateList() {
-        //TODO wide color
-        return Objects.requireNonNullElseGet(mState.mColor, () -> ColorStateList.valueOf(Color.toArgb(mColorDrawable.getColor())));
+        ColorStateList color = mState.mColor;
+        return color != null ? color : ColorStateList.valueOf(mColorDrawable.getColor());
     }
 
     @NonNull

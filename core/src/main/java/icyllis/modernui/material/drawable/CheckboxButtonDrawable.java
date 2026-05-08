@@ -23,6 +23,7 @@ import icyllis.modernui.animation.Animator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.material.MaterialDrawable;
@@ -55,7 +56,7 @@ public class CheckboxButtonDrawable extends MaterialDrawable {
     private final float[] mRightQuad = new float[8];
 
     private ColorStateList mIconTint;
-    private int mIconColor = ~0;
+    private long mIconColor = Color.WHITE_LONG;
 
     // -1: init, 0: unchecked, 1: checked, 2: indeterminate
     private int mCurState = -1;
@@ -113,9 +114,9 @@ public class CheckboxButtonDrawable extends MaterialDrawable {
         if (mIconTint != iconTint) {
             mIconTint = iconTint;
             if (iconTint != null) {
-                mIconColor = iconTint.getColorForState(getState(), ~0);
+                mIconColor = iconTint.getColorForState(getState(), Color.WHITE_LONG);
             } else {
-                mIconColor = ~0;
+                mIconColor = Color.WHITE_LONG;
             }
             invalidateSelf();
         }
@@ -131,7 +132,7 @@ public class CheckboxButtonDrawable extends MaterialDrawable {
         boolean changed = super.onStateChange(stateSet);
 
         if (mIconTint != null) {
-            mIconColor = mIconTint.getColorForState(stateSet, ~0);
+            mIconColor = mIconTint.getColorForState(stateSet, Color.WHITE_LONG);
             changed = true;
         }
 

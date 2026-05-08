@@ -49,10 +49,10 @@ class TestContextMenu : Fragment() {
         view.background = GradientDrawable().apply {
             shape = GradientDrawable.RING
             gradientType = GradientDrawable.ANGULAR_GRADIENT
-            colors = intArrayOf(
+            setColors(intArrayOf(
                 Color.argb(255, 45, 212, 191),
                 Color.argb(255, 14, 165, 233)
-            )
+            ))
             setStroke(4, Color.argb(255, 255, 255, 255))
             isDither = true
             level = 9000

@@ -128,7 +128,7 @@ public class GradientDrawable extends ShapeDrawable {
     private float mGradientRadius;
 
     public GradientDrawable() {
-        this(new GradientState(DEFAULT_ORIENTATION, null), null);
+        this(new GradientState(DEFAULT_ORIENTATION, (int[]) null), null);
     }
 
     /**
@@ -136,6 +136,14 @@ public class GradientDrawable extends ShapeDrawable {
      * of colors for the gradient.
      */
     public GradientDrawable(@NonNull Orientation orientation, @Nullable @ColorInt int[] colors) {
+        this(new GradientState(orientation, colors), null);
+    }
+
+    /**
+     * Create a new gradient drawable given an orientation and an array
+     * of colors for the gradient.
+     */
+    public GradientDrawable(@NonNull Orientation orientation, @Nullable @ColorLong long[] colors) {
         this(new GradientState(orientation, colors), null);
     }
 
@@ -148,7 +156,8 @@ public class GradientDrawable extends ShapeDrawable {
             gradientColors = new int[st.mGradientColors.length];
             for (int i = 0; i < gradientColors.length; i++) {
                 if (st.mGradientColors[i] != null) {
-                    gradientColors[i] = st.mGradientColors[i].getDefaultColor();
+                    //TODO wide color
+                    gradientColors[i] = Color.toArgb(st.mGradientColors[i].getDefaultColor());
                 }
             }
         }
@@ -458,6 +467,24 @@ public class GradientDrawable extends ShapeDrawable {
     }
 
     /**
+     * Sets the colors used to draw the gradient.
+     * <p>
+     * Each color is specified as a wide color and the array must contain at
+     * least 2 colors.
+     * <p>
+     * <strong>Note</strong>: changing colors will affect all instances of a
+     * drawable loaded from a resource. It is recommended to invoke
+     * {@link #mutate()} before changing the colors.
+     *
+     * @param colors an array containing 2 or more wide colors
+     * @see #mutate()
+     * @see #setColor(long)
+     */
+    public void setColors(@Nullable @ColorLong long[] colors) {
+        setColors(colors, null);
+    }
+
+    /**
      * Sets the colors and offsets used to draw the gradient.
      * <p>
      * Each color is specified as an ARGB integer and the array must contain at
@@ -481,6 +508,29 @@ public class GradientDrawable extends ShapeDrawable {
     }
 
     /**
+     * Sets the colors and offsets used to draw the gradient.
+     * <p>
+     * Each color is specified as a wide long and the array must contain at
+     * least 2 colors.
+     * <p>
+     * <strong>Note</strong>: changing colors will affect all instances of a
+     * drawable loaded from a resource. It is recommended to invoke
+     * {@link #mutate()} before changing the colors.
+     *
+     * @param colors an array containing 2 or more wide colors
+     * @param offsets optional array of floating point parameters representing the positions
+     *                of the colors. Null evenly disperses the colors
+     * @see #mutate()
+     * @see #setColors(long[])
+     */
+    public void setColors(@Nullable @ColorLong long[] colors, @Nullable float[] offsets) {
+        mGradientState.setGradientColors(colors);
+        mGradientState.mPositions = offsets;
+        mShapeIsDirty = true;
+        invalidateSelf();
+    }
+
+    /**
      * Returns the colors used to draw the gradient, or {@code null} if the
      * gradient is drawn using a single color or no colors.
      *
@@ -488,11 +538,11 @@ public class GradientDrawable extends ShapeDrawable {
      * @see #setColors(int[] colors)
      */
     @Nullable
-    public int[] getColors() {
+    public long[] getColors() {
         if (mGradientState.mGradientColors == null) {
             return null;
         } else {
-            int[] colors = new int[mGradientState.mGradientColors.length];
+            long[] colors = new long[mGradientState.mGradientColors.length];
             for (int i = 0; i < mGradientState.mGradientColors.length; i++) {
                 if (mGradientState.mGradientColors[i] != null) {
                     colors[i] = mGradientState.mGradientColors[i].getDefaultColor();
@@ -557,6 +607,11 @@ public class GradientDrawable extends ShapeDrawable {
             setGradientColors(gradientColors);
         }
 
+        public GradientState(@NonNull Orientation orientation, @Nullable long[] gradientColors) {
+            mOrientation = orientation;
+            setGradientColors(gradientColors);
+        }
+
         public GradientState(@NonNull GradientState orig, @Nullable Resources res) {
             super(orig, res);
             mGradient = orig.mGradient;
@@ -601,6 +656,23 @@ public class GradientDrawable extends ShapeDrawable {
             computeOpacity();
         }
 
+        public void setGradientColors(@Nullable long[] colors) {
+            if (colors == null) {
+                mGradientColors = null;
+            } else {
+                // allocate new CSL array only if the size of the current array is different
+                // from the size of the given parameter
+                if (mGradientColors == null || mGradientColors.length != colors.length) {
+                    mGradientColors = new ColorStateList[colors.length];
+                }
+                for (int i = 0; i < colors.length; i++) {
+                    mGradientColors[i] = ColorStateList.valueOf(colors[i]);
+                }
+            }
+            mSolidColors = null;
+            computeOpacity();
+        }
+
         @Override
         public void setSolidColors(@Nullable ColorStateList colors) {
             mGradientColors = null;
@@ -614,7 +686,7 @@ public class GradientDrawable extends ShapeDrawable {
             if (mGradientColors != null) {
                 for (int i = 0; i < mGradientColors.length; i++) {
                     if (mGradientColors[i] != null
-                            && (mGradientColors[i].getDefaultColor() >>> 24) != 0xff) {
+                            && Color.alpha(mGradientColors[i].getDefaultColor()) != 1.0f) {
                         return;
                     }
                 }

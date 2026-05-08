@@ -1052,13 +1052,13 @@ public class TextLine {
                 if ((flags & TextPaint.UNDERLINE_FLAG) != 0) {
                     float thickness = fontSize / 18f;
                     float strokeTop = y + fontSize * (1f / 9f) - thickness * 0.5f + wp.baselineShift;
-                    paint.setColor(wp.getColor());
+                    paint.setColor(wp.getColorLong());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
                 if ((flags & TextPaint.STRIKETHROUGH_FLAG) != 0) {
                     float thickness = fontSize / 18f;
                     float strokeTop = y - fontSize * (1f / 3f) - thickness * 0.5f + wp.baselineShift;
-                    paint.setColor(wp.getColor());
+                    paint.setColor(wp.getColorLong());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
             }

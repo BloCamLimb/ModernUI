@@ -108,10 +108,10 @@ public class NumberSpan implements LeadingMarginSpan {
             } else {
                 x -= width;
             }
-            int oldColor = 0;
+            long oldColor = 0;
             int newColor = mColor;
             if (newColor != 0) {
-                oldColor = p.getColor();
+                oldColor = p.getColorLong();
                 p.setColor(newColor);
             }
             c.drawShapedText(mShapedNumber, x, baseline, p);

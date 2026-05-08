@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -137,7 +138,7 @@ public class ShapeDrawable extends Drawable {
 
             mRect.set(getBounds());
 
-            if (mStrokePaint != null && mStrokePaint.getColor() != Color.TRANSPARENT) {
+            if (mStrokePaint != null && mStrokePaint.getColorLong() != Color.TRANSPARENT_LONG) {
                 // the stroke align is center, inset half stroke width to fit in bounds
                 float inset = mStrokePaint.getStrokeWidth() * 0.5f;
                 mRect.inset(inset, inset);
@@ -191,7 +192,7 @@ public class ShapeDrawable extends Drawable {
         final boolean restoreStroke;
         if (mStrokePaint != null &&
                 mStrokePaint.getStrokeWidth() > 0 &&
-                mStrokePaint.getColor() != Color.TRANSPARENT) {
+                mStrokePaint.getColorLong() != Color.TRANSPARENT_LONG) {
             mStrokePaint.setAlpha(currStrokeAlpha);
             // stroke won't use dithering
             mStrokePaint.setColorFilter(colorFilter);
@@ -489,6 +490,24 @@ public class ShapeDrawable extends Drawable {
      * @see #getColor
      */
     public void setColor(@ColorInt int color) {
+        long wideColor = Color.pack(color);
+        mShapeState.setSolidColors(ColorStateList.valueOf(wideColor));
+        mFillPaint.setColor(wideColor);
+        invalidateSelf();
+    }
+
+    /**
+     * Changes this drawable to use a single color instead of a gradient.
+     * <p>
+     * <strong>Note</strong>: changing color will affect all instances of a
+     * drawable loaded from a resource. It is recommended to invoke
+     * {@link #mutate()} before changing the color.
+     *
+     * @param color The color used to fill the shape
+     * @see #mutate()
+     * @see #getColor
+     */
+    public void setColor(@ColorLong long color) {
         mShapeState.setSolidColors(ColorStateList.valueOf(color));
         mFillPaint.setColor(color);
         invalidateSelf();
@@ -510,10 +529,10 @@ public class ShapeDrawable extends Drawable {
      */
     public void setColor(@Nullable ColorStateList colorStateList) {
         if (colorStateList == null) {
-            setColor(Color.TRANSPARENT);
+            setColor(Color.TRANSPARENT_LONG);
         } else {
             final int[] stateSet = getState();
-            final int color = colorStateList.getColorForState(stateSet, Color.TRANSPARENT);
+            final long color = colorStateList.getColorForState(stateSet, Color.TRANSPARENT_LONG);
             mShapeState.setSolidColors(colorStateList);
             mFillPaint.setColor(color);
             invalidateSelf();
@@ -545,6 +564,23 @@ public class ShapeDrawable extends Drawable {
      * @see #mutate()
      */
     public void setStroke(int width, @ColorInt int color) {
+        long wideColor = Color.pack(color);
+        mShapeState.setStroke(width, ColorStateList.valueOf(wideColor));
+        setStrokeInternal(width, wideColor);
+    }
+
+    /**
+     * <p>Set the stroke width and color for the drawable. If width is zero,
+     * then no stroke is drawn.</p>
+     * <p><strong>Note</strong>: changing this property will affect all instances
+     * of a drawable loaded from a resource. It is recommended to invoke
+     * {@link #mutate()} before changing this property.</p>
+     *
+     * @param width The width in pixels of the stroke
+     * @param color The color of the stroke
+     * @see #mutate()
+     */
+    public void setStroke(int width, @ColorLong long color) {
         mShapeState.setStroke(width, ColorStateList.valueOf(color));
         setStrokeInternal(width, color);
     }
@@ -562,17 +598,17 @@ public class ShapeDrawable extends Drawable {
      */
     public void setStroke(int width, @Nullable ColorStateList colorStateList) {
         mShapeState.setStroke(width, colorStateList);
-        final int color;
+        final long color;
         if (colorStateList == null) {
-            color = Color.TRANSPARENT;
+            color = Color.TRANSPARENT_LONG;
         } else {
             final int[] stateSet = getState();
-            color = colorStateList.getColorForState(stateSet, Color.TRANSPARENT);
+            color = colorStateList.getColorForState(stateSet, Color.TRANSPARENT_LONG);
         }
         setStrokeInternal(width, color);
     }
 
-    private void setStrokeInternal(int width, int color) {
+    private void setStrokeInternal(int width, long color) {
         if (mStrokePaint == null) {
             mStrokePaint = new Paint();
             mStrokePaint.setStyle(Paint.STROKE);
@@ -682,8 +718,8 @@ public class ShapeDrawable extends Drawable {
         final ShapeState s = mShapeState;
         final ColorStateList solidColors = s.mSolidColors;
         if (solidColors != null) {
-            final int newColor = solidColors.getColorForState(stateSet, Color.TRANSPARENT);
-            final int oldColor = mFillPaint.getColor();
+            final long newColor = solidColors.getColorForState(stateSet, Color.TRANSPARENT_LONG);
+            final long oldColor = mFillPaint.getColorLong();
             if (oldColor != newColor) {
                 mFillPaint.setColor(newColor);
                 invalidateSelf = true;
@@ -694,8 +730,8 @@ public class ShapeDrawable extends Drawable {
         if (strokePaint != null) {
             final ColorStateList strokeColors = s.mStrokeColors;
             if (strokeColors != null) {
-                final int newColor = strokeColors.getColorForState(stateSet, Color.TRANSPARENT);
-                final int oldColor = strokePaint.getColor();
+                final long newColor = strokeColors.getColorForState(stateSet, Color.TRANSPARENT_LONG);
+                final long oldColor = strokePaint.getColorLong();
                 if (oldColor != newColor) {
                     strokePaint.setColor(newColor);
                     mShapeIsDirty = true;
@@ -850,7 +886,7 @@ public class ShapeDrawable extends Drawable {
             case HLINE -> {
                 final float halfStrokeWidth = mStrokePaint != null &&
                         mStrokePaint.getStrokeWidth() > 0 &&
-                        mStrokePaint.getColor() != Color.TRANSPARENT ?
+                        mStrokePaint.getColorLong() != Color.TRANSPARENT_LONG ?
                         mStrokePaint.getStrokeWidth() * 0.5f : bounds.height();
                 final float centerY = bounds.centerY();
                 final int top = (int) Math.floor(centerY - halfStrokeWidth);
@@ -860,7 +896,7 @@ public class ShapeDrawable extends Drawable {
             case VLINE -> {
                 final float halfStrokeWidth = mStrokePaint != null &&
                         mStrokePaint.getStrokeWidth() > 0 &&
-                        mStrokePaint.getColor() != Color.TRANSPARENT ?
+                        mStrokePaint.getColorLong() != Color.TRANSPARENT_LONG ?
                         mStrokePaint.getStrokeWidth() * 0.5f : bounds.width();
                 final float centerX = bounds.centerX();
                 final int left = (int) Math.floor(centerX - halfStrokeWidth);
@@ -1043,10 +1079,11 @@ public class ShapeDrawable extends Drawable {
 
         if (state.mSolidColors != null) {
             final int[] currentState = getState();
-            final int stateColor = state.mSolidColors.getColorForState(currentState, 0);
+            final long stateColor = state.mSolidColors.getColorForState(
+                    currentState, Color.TRANSPARENT_LONG);
             mFillPaint.setColor(stateColor);
         } else {
-            mFillPaint.setColor(Color.TRANSPARENT);
+            mFillPaint.setColor4f(0f, 0f, 0f, 0f);
         }
 
         mPadding = state.mPadding;
@@ -1058,8 +1095,8 @@ public class ShapeDrawable extends Drawable {
 
             if (state.mStrokeColors != null) {
                 final int[] currentState = getState();
-                final int strokeStateColor = state.mStrokeColors.getColorForState(
-                        currentState, Color.TRANSPARENT);
+                final long strokeStateColor = state.mStrokeColors.getColorForState(
+                        currentState, Color.TRANSPARENT_LONG);
                 mStrokePaint.setColor(strokeStateColor);
             }
         }

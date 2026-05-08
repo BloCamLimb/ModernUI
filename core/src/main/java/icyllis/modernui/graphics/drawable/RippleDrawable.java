@@ -35,7 +35,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.arc3d.core.Color;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -645,14 +644,14 @@ public class RippleDrawable extends LayerDrawable {
 
         // Grab the color for the current state and cut the alpha channel in
         // half so that the ripple and background together yield full alpha.
-        final int color = mState.mColor.getColorForState(getState(), Color.BLACK);
+        final long color = mState.mColor.getColorForState(getState(), Color.BLACK_LONG);
         final Paint p = mRipplePaint;
 
         if (mMaskRect != null) {
             // The ripple timing depends on the paint's alpha value, so we need
             // to push just the alpha channel into the paint and let the filter
             // handle the full-alpha color.
-            int maskColor = color | 0xFF000000;
+            long maskColor = Color.withAlpha(color, 1.0f);
             if (mMaskColorFilter == null || mMaskColorFilter.getColor() != maskColor) {
                 mMaskColorFilter = new BlendModeColorFilter(maskColor, BlendMode.SRC_IN);
             }

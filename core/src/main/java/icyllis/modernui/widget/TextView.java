@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,19 +37,13 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.FloatRange;
-import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.annotation.Px;
-import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.annotation.StyleableRes;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -155,9 +149,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private ColorStateList mHintTextColor;
     private ColorStateList mLinkTextColor;
 
-    private int mCurTextColor;
+    @ColorLong
+    private long mCurTextColor;
 
-    private int mCurHintTextColor;
+    @ColorLong
+    private long mCurHintTextColor;
 
     private Editable.Factory mEditableFactory = Editable.DEFAULT_FACTORY;
     private Spannable.Factory mSpannableFactory = Spannable.DEFAULT_FACTORY;
@@ -1656,7 +1652,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setTextColor(ColorStateList)
      * @see #getTextColors()
      */
-    public void setTextColor(int color) {
+    public void setTextColor(@ColorInt int color) {
         mTextColor = ColorStateList.valueOf(color);
         updateTextColors();
     }
@@ -1669,10 +1665,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setHintTextColor(ColorStateList)
      * @see #setLinkTextColor(ColorStateList)
      */
-    public void setTextColor(ColorStateList colors) {
-        if (colors == null) {
-            throw new NullPointerException();
-        }
+    public void setTextColor(@NonNull ColorStateList colors) {
+        Objects.requireNonNull(colors);
 
         mTextColor = colors;
         updateTextColors();
@@ -1680,6 +1674,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     /**
      * Gets the text colors for the different states (normal, selected, focused) of the TextView.
+     * This can be null if setTextColors was never be called.
      *
      * @see #setTextColor(ColorStateList)
      * @see #setTextColor(int)
@@ -1693,15 +1688,15 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @return Returns the current text color.
      */
-    @Deprecated(forRemoval = true)
-    public final int getCurrentTextColor() {
+    @ColorLong
+    public final long getCurrentTextColor() {
         return mCurTextColor;
     }
 
     /**
      * Sets the color used to display the selection highlight.
      */
-    public void setHighlightColor(int color) {
+    public void setHighlightColor(@ColorInt int color) {
         if (mHighlightColor != color) {
             mHighlightColor = color;
             invalidate();
@@ -1712,7 +1707,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return the color used to display the selection highlight
      * @see #setHighlightColor(int)
      */
-    @Deprecated(forRemoval = true)
+    @ColorInt
     public int getHighlightColor() {
         return mHighlightColor;
     }
@@ -1780,7 +1775,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #getHintTextColors()
      * @see #setTextColor(int)
      */
-    public final void setHintTextColor(int color) {
+    public final void setHintTextColor(@ColorInt int color) {
         mHintTextColor = ColorStateList.valueOf(color);
         updateTextColors();
     }
@@ -1814,8 +1809,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @return Returns the current hint text color.
      */
-    @Deprecated(forRemoval = true)
-    public final int getCurrentHintTextColor() {
+    @ColorLong
+    public final long getCurrentHintTextColor() {
         return mCurHintTextColor;
     }
 
@@ -1825,7 +1820,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setLinkTextColor(ColorStateList)
      * @see #getLinkTextColors()
      */
-    public final void setLinkTextColor(int color) {
+    public final void setLinkTextColor(@ColorInt int color) {
         mLinkTextColor = ColorStateList.valueOf(color);
         updateTextColors();
     }
@@ -2911,20 +2906,20 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private void updateTextColors() {
         boolean inval = false;
         final int[] drawableState = getDrawableState();
-        int color = mTextColor.getColorForState(drawableState, 0);
+        long color = mTextColor.getColorForState(drawableState, Color.TRANSPARENT_LONG);
         if (color != mCurTextColor) {
             mCurTextColor = color;
             inval = true;
         }
         if (mLinkTextColor != null) {
-            color = mLinkTextColor.getColorForState(drawableState, 0);
+            color = mLinkTextColor.getColorForState(drawableState, Color.TRANSPARENT_LONG);
             if (color != mTextPaint.linkColor) {
                 mTextPaint.linkColor = color;
                 inval = true;
             }
         }
         if (mHintTextColor != null) {
-            color = mHintTextColor.getColorForState(drawableState, 0);
+            color = mHintTextColor.getColorForState(drawableState, Color.TRANSPARENT_LONG);
             if (color != mCurHintTextColor) {
                 mCurHintTextColor = color;
                 if (mText.length() == 0) {
@@ -3000,7 +2995,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (mMovement != null && (isFocused() || isPressed()) && selStart >= 0) {
             final int selEnd = getSelectionEnd();
             Paint paint = Paint.obtain();
-            paint.setStrokeWidth(Math.max(1, dp(0.75f)));
+            paint.setStrokeWidth(1);
             if (selStart == selEnd) {
                 if (mEditor != null && mEditor.shouldRenderCursor()) {
                     if (mHighlightPathBogus) {
@@ -3011,7 +3006,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                         mHighlightPathBogus = false;
                     }
 
-                    paint.setColor(mTextPaint.getColor());
+                    paint.setColor(mTextPaint.getColorLong());
                     paint.setStyle(Paint.FILL);
 
                     if (cursorOffsetVertical != 0) canvas.translate(0, cursorOffsetVertical);
@@ -3119,7 +3114,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
         }
 
-        int color = mCurTextColor;
+        long color = mCurTextColor;
 
         if (mLayout == null) {
             assumeLayout();

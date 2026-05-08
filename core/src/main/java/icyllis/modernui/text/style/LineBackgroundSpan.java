@@ -101,7 +101,7 @@ public interface LineBackgroundSpan extends ParagraphStyle {
                                    int top, int baseline, int bottom,
                                    @NonNull CharSequence text, int start, int end,
                                    int lineNumber) {
-            final int color = paint.getColor();
+            final var color = paint.getColorLong();
             paint.setColor(mColor);
             canvas.drawRect(left, top, right, bottom, paint);
             paint.setColor(color);

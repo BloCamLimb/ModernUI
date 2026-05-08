@@ -20,9 +20,11 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.CharArrayIterator;
 import icyllis.modernui.graphics.text.CharSequenceIterator;
@@ -95,12 +97,14 @@ public class TextPaint extends Paint {
     private Locale mLocale;
     private float mTextSize;
 
+    private static final long DEFAULT_LINK_COLOR = Color.pack(0xff539bf5);
+
     // Special value 0 means no background paint
     @ColorInt
     public int bgColor;
     public int baselineShift;
-    @ColorInt
-    public int linkColor = 0xff539bf5;
+    @ColorLong
+    public long linkColor = DEFAULT_LINK_COLOR;
     public float density = 1.0f;
     /**
      * Special value 0 means no custom underline
