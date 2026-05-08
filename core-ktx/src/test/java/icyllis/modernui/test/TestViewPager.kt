@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * Copyright (C) 2024-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -61,8 +61,8 @@ class TestViewPager : Fragment() {
                 divider.shape = ShapeDrawable.HLINE
                 divider.setSize(-1, dp(1F))
                 val value = TypedValue()
-                context.theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true)
-                divider.setColor(value.data)
+                if (context.theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true))
+                    divider.color = context.resources.loadColorStateList(value, null, context.theme)
                 background = divider
             }, LinearLayout.LayoutParams(dp(960F), dp(1F)))
             addView(ViewPager(context).apply {
@@ -151,8 +151,8 @@ class TestViewPager : Fragment() {
                 tag = position
                 gravity = Gravity.CENTER
                 val value = TypedValue()
-                context.theme.resolveAttribute(R.ns, R.attr.colorSurface, value, true)
-                background = ColorDrawable(value.data)
+                if (context.theme.resolveAttribute(R.ns, R.attr.colorSurface, value, true))
+                    background = context.resources.loadDrawable(value, null, context.theme)
             }.also {
                 container.addView(it, 0)
             }

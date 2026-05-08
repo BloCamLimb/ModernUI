@@ -105,7 +105,7 @@ public final class ToastManager {
         mParams.y = mTextView.dp(64);
         ShapeDrawable bg = new ShapeDrawable();
         if (theme.resolveAttribute(R.ns, R.attr.colorBackground, value, true))
-            bg.setColor(value.data);
+            bg.setColor(mTextView.getContext().getResources().loadColorStateList(value, null, theme));
         bg.setCornerRadius(mTextView.dp(28));
         mTextView.setBackground(bg);
         mTextView.setElevation(mTextView.dp(2));

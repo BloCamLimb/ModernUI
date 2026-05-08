@@ -145,9 +145,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private static final int DEFAULT_LINE_BREAK_WORD_STYLE =
             LineBreakConfig.LINE_BREAK_WORD_STYLE_NONE;
 
-    private ColorStateList mTextColor;
-    private ColorStateList mHintTextColor;
-    private ColorStateList mLinkTextColor;
+    private @Nullable ColorStateList mTextColor;
+    private @Nullable ColorStateList mHintTextColor;
+    private @Nullable ColorStateList mLinkTextColor;
 
     @ColorLong
     private long mCurTextColor;
@@ -1665,20 +1665,18 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setHintTextColor(ColorStateList)
      * @see #setLinkTextColor(ColorStateList)
      */
-    public void setTextColor(@NonNull ColorStateList colors) {
-        Objects.requireNonNull(colors);
-
+    public void setTextColor(@Nullable ColorStateList colors) {
         mTextColor = colors;
         updateTextColors();
     }
 
     /**
      * Gets the text colors for the different states (normal, selected, focused) of the TextView.
-     * This can be null if setTextColors was never be called.
      *
      * @see #setTextColor(ColorStateList)
      * @see #setTextColor(int)
      */
+    @Nullable
     public final ColorStateList getTextColors() {
         return mTextColor;
     }
@@ -1788,7 +1786,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setTextColor(ColorStateList)
      * @see #setLinkTextColor(ColorStateList)
      */
-    public final void setHintTextColor(ColorStateList colors) {
+    public final void setHintTextColor(@Nullable ColorStateList colors) {
         mHintTextColor = colors;
         updateTextColors();
     }
@@ -1800,6 +1798,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setTextColor(ColorStateList)
      * @see #setLinkTextColor(ColorStateList)
      */
+    @Nullable
     public final ColorStateList getHintTextColors() {
         return mHintTextColor;
     }
@@ -1833,7 +1832,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setTextColor(ColorStateList)
      * @see #setHintTextColor(ColorStateList)
      */
-    public final void setLinkTextColor(ColorStateList colors) {
+    public final void setLinkTextColor(@Nullable ColorStateList colors) {
         mLinkTextColor = colors;
         updateTextColors();
     }
@@ -1844,6 +1843,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see #setLinkTextColor(ColorStateList)
      * @see #setLinkTextColor(int)
      */
+    @Nullable
     public final ColorStateList getLinkTextColors() {
         return mLinkTextColor;
     }
@@ -2906,10 +2906,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private void updateTextColors() {
         boolean inval = false;
         final int[] drawableState = getDrawableState();
-        long color = mTextColor.getColorForState(drawableState, Color.TRANSPARENT_LONG);
-        if (color != mCurTextColor) {
-            mCurTextColor = color;
-            inval = true;
+        long color;
+        if (mTextColor != null) {
+            color = mTextColor.getColorForState(drawableState, Color.TRANSPARENT_LONG);
+            if (color != mCurTextColor) {
+                mCurTextColor = color;
+                inval = true;
+            }
         }
         if (mLinkTextColor != null) {
             color = mLinkTextColor.getColorForState(drawableState, Color.TRANSPARENT_LONG);

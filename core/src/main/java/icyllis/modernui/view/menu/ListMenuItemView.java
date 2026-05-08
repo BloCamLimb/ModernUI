@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -92,7 +92,7 @@ public class ListMenuItemView extends LinearLayout
         divider.setSize(-1, dp(3));
         final TypedValue value = new TypedValue();
         if (theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true))
-            divider.setStroke(dp(1), value.data);
+            divider.setStroke(dp(1), context.getResources().loadColorStateList(value, null, theme));
         setDividerDrawable(divider);
         setDividerPadding(dp(2));
 

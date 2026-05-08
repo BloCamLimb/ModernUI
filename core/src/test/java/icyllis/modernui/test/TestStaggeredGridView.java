@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -459,8 +459,8 @@ public class TestStaggeredGridView extends Fragment {
             final int dp12 = layout.dp(12);
             ShapeDrawable bg = new ShapeDrawable();
             bg.setCornerRadius(dp12);
-            context.getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainerLow, value, true);
-            bg.setColor(value.data);
+            if (context.getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainerLow, value, true))
+                bg.setColor(context.getResources().loadColorStateList(value, null, context.getTheme()));
             layout.setBackground(bg);
             layout.setElevation(layout.dp(1));
         }

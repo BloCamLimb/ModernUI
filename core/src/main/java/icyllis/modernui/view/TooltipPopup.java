@@ -60,7 +60,7 @@ public class TooltipPopup {
         final TypedValue value = new TypedValue();
         mTextView.setTextAppearance(R.attr.textAppearanceBodySmall);
         if (theme.resolveAttribute(R.ns, R.attr.colorOnSurfaceInverse, value, true))
-            mTextView.setTextColor(value.data);
+            mTextView.setTextColor(context.getResources().loadColorStateList(value, null, theme));
         mTextView.setGravity(Gravity.CENTER_VERTICAL);
         mParams = new WindowManager.LayoutParams();
         mParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -70,7 +70,7 @@ public class TooltipPopup {
         var background = new ShapeDrawable();
         background.setShape(ShapeDrawable.RECTANGLE);
         if (theme.resolveAttribute(R.ns, R.attr.colorSurfaceInverse, value, true))
-            background.setColor(value.data);
+            background.setColor(context.getResources().loadColorStateList(value, null, theme));
         background.setCornerRadius(mTextView.dp(4));
         mTextView.setBackground(background);
     }

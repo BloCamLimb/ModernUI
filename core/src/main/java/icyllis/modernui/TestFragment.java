@@ -138,7 +138,8 @@ public class TestFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable DataSet savedInstanceState) {
-        var base = new ScrollView(getContext());
+        var context = requireContext();
+        var base = new ScrollView(context);
         base.setId(660);
 
         /*base.setBackground(new Drawable() {
@@ -172,9 +173,8 @@ public class TestFragment extends Fragment {
         }
         //base.setRotation(30);
         TypedValue value = new TypedValue();
-        requireContext().getTheme().resolveAttribute(R.ns, R.attr.colorSurface, value, true);
-        int colorSurface = value.data;
-        base.setBackground(new ColorDrawable(colorSurface));
+        context.getTheme().resolveAttribute(R.ns, R.attr.colorSurface, value, true);
+        base.setBackground(context.getResources().loadDrawable(value, null, context.getTheme()));
         return base;
     }
 
@@ -335,7 +335,7 @@ public class TestFragment extends Fragment {
                 divider.setShape(ShapeDrawable.HLINE);
                 divider.setSize(-1, dp(1));
                 context.getTheme().resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true);
-                divider.setColor(value.data);
+                divider.setColor(context.getResources().loadColorStateList(value, null, context.getTheme()));
                 setDividerDrawable(divider);
                 setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
             }

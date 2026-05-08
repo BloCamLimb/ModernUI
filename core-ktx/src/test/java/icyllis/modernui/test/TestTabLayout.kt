@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2025-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,8 +58,8 @@ class TestTabLayout : Fragment() {
                 shape = ShapeDrawable.HLINE
                 setSize(-1, dp(1F))
                 val value = TypedValue()
-                context.theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true)
-                setColor(value.data)
+                if (context.theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true))
+                    color = context.resources.loadColorStateList(value, null, context.theme)
             }
             addView(TabLayout(requireContext()).apply {
                 addTab(newTab().apply {

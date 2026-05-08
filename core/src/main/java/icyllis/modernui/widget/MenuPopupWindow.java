@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,6 +41,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.resources.ResourceId;
@@ -80,10 +81,13 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
     DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
         MenuDropDownListView view = new MenuDropDownListView(context, hijackFocus);
         view.setHoverListener(this);
-        //TODO use resources
         TypedValue value = new TypedValue();
-        context.getTheme().resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true);
-        view.setSelector(new RippleDrawable(ColorStateList.valueOf(value.data), null, new ColorDrawable(~0)));
+        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true)) {
+            ColorStateList color = context.getResources().loadColorStateList(value, null, context.getTheme());
+            if (color != null) {
+                view.setSelector(new RippleDrawable(color, null, new ColorDrawable(Color.WHITE_LONG)));
+            }
+        }
         return view;
     }
 

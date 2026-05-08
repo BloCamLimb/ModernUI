@@ -361,8 +361,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         }, Core.getUiThreadExecutor());*/
         TypedValue value = new TypedValue();
         getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainerLowest, value, true);
-        int colorSurfaceContainerLowest = value.data;
-        mDecor.setBackground(new ColorDrawable(colorSurfaceContainerLowest));
+        mDecor.setBackground(getResources().loadDrawable(value, null, getTheme()));
 
         mFragmentContainerView = new FragmentContainerView(this);
         mFragmentContainerView.setLayoutParams(new WindowManager.LayoutParams());
