@@ -343,7 +343,7 @@ public class TabLayout extends HorizontalScrollView {
     ColorStateList tabIconTint;
     ColorStateList tabRippleColorStateList;
     Drawable tabSelectedIndicator;
-    private int tabSelectedIndicatorColor = Color.TRANSPARENT;
+    private ColorStateList tabSelectedIndicatorColor;
 
     BlendMode tabIconTintMode;
     float tabTextSize;
@@ -447,7 +447,7 @@ public class TabLayout extends HorizontalScrollView {
         setSelectedTabIndicator(
                 a.getDrawable(3)); // tabIndicator
         setSelectedTabIndicatorColor(
-                a.getColor(6, Color.TRANSPARENT)); // tabIndicatorColor
+                a.getColorStateList(6)); // tabIndicatorColor
         // noinspection MagicConstant
         setSelectedTabIndicatorGravity(
                 a.getInt(8, INDICATOR_GRAVITY_BOTTOM)); // tabIndicatorGravity
@@ -528,8 +528,22 @@ public class TabLayout extends HorizontalScrollView {
      * @param color color to use for the indicator
      */
     public void setSelectedTabIndicatorColor(@ColorInt int color) {
+        setSelectedTabIndicatorColor(color != Color.TRANSPARENT ? ColorStateList.valueOf(color) : null);
+    }
+
+    /**
+     * Sets the tab indicator's color for the currently selected tab.
+     *
+     * <p>If the tab indicator color is not null, the indicator will be wrapped
+     * and tinted right before it is drawn by {@link SlidingTabIndicator#draw(Canvas)}. If you'd like
+     * the inherent color or the tinted color of a custom drawable to be used, make sure this color is
+     * set to null to avoid your color/tint being overridden.
+     *
+     * @param color color to use for the indicator
+     */
+    public void setSelectedTabIndicatorColor(@Nullable ColorStateList color) {
         this.tabSelectedIndicatorColor = color;
-        tabSelectedIndicator.setTint(tabSelectedIndicatorColor);
+        tabSelectedIndicator.setTintList(tabSelectedIndicatorColor);
         updateTabViews(false);
     }
 
@@ -1189,14 +1203,14 @@ public class TabLayout extends HorizontalScrollView {
      * {@link ShapeDrawable} line indicator.
      *
      * @param tabSelectedIndicator A drawable to use as the selected tab indicator.
-     * @see #setSelectedTabIndicatorColor(int)
+     * @see #setSelectedTabIndicatorColor(ColorStateList)
      */
     public void setSelectedTabIndicator(@Nullable Drawable tabSelectedIndicator) {
         if (tabSelectedIndicator == null) {
             tabSelectedIndicator = new ShapeDrawable();
         }
         this.tabSelectedIndicator = tabSelectedIndicator.mutate();
-        this.tabSelectedIndicator.setTint(tabSelectedIndicatorColor);
+        this.tabSelectedIndicator.setTintList(tabSelectedIndicatorColor);
         int indicatorHeight = this.tabSelectedIndicator.getIntrinsicHeight();
         slidingTabIndicator.setSelectedIndicatorHeight(indicatorHeight);
     }
