@@ -105,6 +105,13 @@ public final class ResourcesImpl {
         return mConfiguration;
     }
 
+    public void clearAllCaches() {
+        synchronized (mAccessLock) {
+            mImageCache.clear();
+            mDrawableCache.clear();
+        }
+    }
+
     @CheckReturnValue
     public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
                             boolean resolveRefs) {
