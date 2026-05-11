@@ -1,8 +1,11 @@
 plugins {
     id 'maven-publish'
-    id "org.jetbrains.kotlin.jvm" version "2.3.20" apply false
-    id 'org.jetbrains.dokka' version '2.1.0' apply false
+    id "org.jetbrains.kotlin.jvm" version "2.3.20"
+    id 'org.jetbrains.dokka' version '2.2.0'
 }
+
+apply plugin: 'java'
+apply plugin: 'java-library'
 
 publishing {
     repositories {
@@ -16,6 +19,22 @@ publishing {
         }
     }
 }
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
+    implementation("org.jetbrains.dokka:dokka-gradle-plugin:2.2.0")
+    dokkaPlugin 'org.jetbrains.dokka:android-documentation-plugin:2.2.0'
+    dokka(project(":ModernUI-Core"))
+    dokka(project(":ModernUI-Core-KTX"))
+    dokka(project(":ModernUI-Markflow"))
+}
+
+import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
 
 subprojects {
     apply plugin: 'java'
@@ -50,7 +69,25 @@ subprojects {
         testImplementation "com.code-intelligence:jazzer-junit:${jazzer_version}"
         testRuntimeOnly "com.code-intelligence:jazzer:${jazzer_version}"
 
-        dokkaPlugin 'org.jetbrains.dokka:android-documentation-plugin:2.1.0'
+        dokkaPlugin 'org.jetbrains.dokka:android-documentation-plugin:2.2.0'
+    }
+
+    dokka {
+        dokkaPublications {
+            html {
+                suppressInheritedMembers.set(true)
+                suppressObviousFunctions.set(true)
+            }
+        }
+        dokkaSourceSets {
+            configureEach {
+                documentedVisibilities.set([
+                        VisibilityModifier.Public,
+                        VisibilityModifier.Protected
+                ] as Set)
+                jdkVersion.set(17)
+            }
+        }
     }
 
     test {

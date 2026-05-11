@@ -8,6 +8,10 @@ configurations {
     shadow
 }
 
+repositories {
+    maven { url "https://central.sonatype.com/repository/maven-snapshots" }
+}
+
 dependencies {
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
