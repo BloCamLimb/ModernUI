@@ -47,7 +47,6 @@ import org.lwjgl.system.NativeType;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-import sun.misc.Unsafe;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -55,6 +54,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
@@ -838,7 +842,7 @@ public final class Bitmap implements AutoCloseable {
                         ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
                         ColorSpace.get(ColorSpace.Named.SRGB));
                 var dstPixmap = new Pixmap(dstInfo, dst,
-                        Unsafe.ARRAY_INT_BASE_OFFSET + ((long) offset << 2),
+                        (long) offset << 2,
                         stride << 2);
                 boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
                 assert res;
@@ -887,7 +891,7 @@ public final class Bitmap implements AutoCloseable {
                         ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
                         ColorSpace.get(ColorSpace.Named.SRGB));
                 var srcPixmap = new Pixmap(srcInfo, src,
-                        Unsafe.ARRAY_INT_BASE_OFFSET + ((long) offset << 2),
+                        (long) offset << 2,
                         stride << 2);
                 boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
                 assert res;
@@ -944,7 +948,7 @@ public final class Bitmap implements AutoCloseable {
                         ColorInfo.CT_RGBA_F32, getAlphaType(),
                         getColorSpace());
                 var dstPixmap = new Pixmap(dstInfo, dst,
-                        Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) offset << 4),
+                        (long) offset << 4,
                         stride << 4);
                 boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
                 assert res;
@@ -995,7 +999,7 @@ public final class Bitmap implements AutoCloseable {
                         ColorInfo.CT_RGBA_F32, getAlphaType(),
                         getColorSpace());
                 var srcPixmap = new Pixmap(srcInfo, src,
-                        Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) offset << 4),
+                        (long) offset << 4,
                         stride << 4);
                 boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
                 assert res;
@@ -1113,6 +1117,23 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
+    private static long bufferAddress(@NonNull java.nio.Buffer buffer) {
+        if (buffer.isDirect()) {
+            return MemoryUtil.memAddress(buffer);
+        }
+        int shift;
+        if (buffer instanceof ByteBuffer) {
+            shift = 0;
+        } else if (buffer instanceof ShortBuffer || buffer instanceof CharBuffer) {
+            shift = 1;
+        } else if (buffer instanceof IntBuffer || buffer instanceof FloatBuffer) {
+            shift = 2;
+        } else {
+            shift = 3;
+        }
+        return ((long) buffer.arrayOffset() + buffer.position()) << shift;
+    }
+
     /**
      * Copy the bitmap's pixels into the specified buffer. The buffer can be a
      * heap buffer, a direct buffer, or a native buffer (by wrapping an address).
@@ -1155,9 +1176,17 @@ public final class Bitmap implements AutoCloseable {
         checkOutOfBounds(srcX, srcY, width, height);
         try {
             var dstInfo = getInfo().makeWH(width, height);
+            var dstBase = dst.hasArray() ? dst.array() : null;
+            var dstAddress = bufferAddress(dst);
+            if (!ColorInfo.validMemoryAddress(dstInfo.colorType(), dstBase, dstAddress)) {
+                throw new IllegalArgumentException("Destination address does not match the alignment requirement");
+            }
+            if (!ColorInfo.validMemoryAddress(dstInfo.colorType(), null, rowBytes)) {
+                throw new IllegalArgumentException("Destination row bytes does not match the alignment requirement");
+            }
             var dstPixmap = new Pixmap(dstInfo,
-                    dst.hasArray() ? dst.array() : null,
-                    MemoryUtil.memAddress(dst),
+                    dstBase,
+                    dstAddress,
                     rowBytes);
             return mPixmap.readPixels(dstPixmap, srcX, srcY);
         } finally {
@@ -1202,7 +1231,7 @@ public final class Bitmap implements AutoCloseable {
         if (isImmutable()) {
             throw new IllegalStateException("Cannot write to immutable bitmap");
         }
-        if (src.isReadOnly()) {
+        if (src.isReadOnly() && !src.isDirect()) {
             // if we want to peek the underlying src.array(), it must not be read-only
             throw new IllegalArgumentException("Cannot copy from read-only buffer");
         }
@@ -1212,9 +1241,17 @@ public final class Bitmap implements AutoCloseable {
         checkOutOfBounds(dstX, dstY, width, height);
         try {
             var srcInfo = getInfo().makeWH(width, height);
+            var srcBase = src.hasArray() ? src.array() : null;
+            var srcAddress = bufferAddress(src);
+            if (!ColorInfo.validMemoryAddress(srcInfo.colorType(), srcBase, srcAddress)) {
+                throw new IllegalArgumentException("Source address does not match the alignment requirement");
+            }
+            if (!ColorInfo.validMemoryAddress(srcInfo.colorType(), null, rowBytes)) {
+                throw new IllegalArgumentException("Source row bytes does not match the alignment requirement");
+            }
             var srcPixmap = new Pixmap(srcInfo,
-                    src.hasArray() ? src.array() : null,
-                    MemoryUtil.memAddress(src),
+                    srcBase,
+                    srcAddress,
                     rowBytes);
             return mPixmap.writePixels(srcPixmap, dstX, dstY);
         } finally {
