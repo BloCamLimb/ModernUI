@@ -19,6 +19,8 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ColorSpaces;
+import icyllis.arc3d.core.ColorTransform;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.NonNull;
@@ -81,12 +83,11 @@ public final class BlendModeColorFilter extends ColorFilter {
                                 @Nullable ColorSpace colorSpace, @NonNull BlendMode mode) {
         Objects.requireNonNull(mode);
 
-        if (colorSpace != null && !colorSpace.isSrgb() &&
-                colorSpace != ColorSpace.get(ColorSpace.Named.EXTENDED_SRGB)) {
+        if (colorSpace != null && !colorSpace.isExtendedSRGB()) {
             color = color.clone();
-            ColorSpace.connect(colorSpace,
-                            ColorSpace.get(ColorSpace.Named.EXTENDED_SRGB),
-                            ColorSpace.RenderIntent.RELATIVE)
+            new ColorTransform(colorSpace,
+                            ColorSpaces.EXTENDED_SRGB,
+                            ColorTransform.RELATIVE_COLORIMETRIC)
                     .transform(color);
         }
 

@@ -19,6 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ColorSpaces;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -131,7 +132,7 @@ public class LinearGradient extends GradientShader {
                 startX, startY,
                 endX, endY,
                 colors,
-                colorSpace != null ? colorSpace : ColorSpace.get(ColorSpace.Named.SRGB),
+                colorSpace != null ? colorSpace : ColorSpaces.SRGB,
                 positions,
                 colorCount,
                 tileMode.nativeInt,

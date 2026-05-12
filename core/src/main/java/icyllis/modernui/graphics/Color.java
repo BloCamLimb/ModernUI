@@ -19,6 +19,9 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ColorSpaceRGB;
+import icyllis.arc3d.core.ColorSpaces;
+import icyllis.arc3d.core.ColorTransform;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.IntRange;
@@ -342,7 +345,7 @@ public final class Color {
     private final ColorSpace cs;
 
     private Color(float r, float g, float b, float a) {
-        this(r, g, b, a, ColorSpace.get(ColorSpace.Named.SRGB));
+        this(r, g, b, a, ColorSpaces.SRGB);
     }
 
     private Color(float r, float g, float b, float a, @NonNull ColorSpace colorSpace) {
@@ -374,16 +377,6 @@ public final class Color {
     }
 
     /**
-     * Returns the color model of this color.
-     *
-     * @return A non-null {@link ColorSpace.Model}
-     */
-    @NonNull
-    public ColorSpace.Model getModel() {
-        return cs.getModel();
-    }
-
-    /**
      * Indicates whether this color color is in a wide-gamut color space.
      * See {@link ColorSpace#isWideGamut()} for a definition of a wide-gamut
      * color space.
@@ -397,14 +390,14 @@ public final class Color {
     }
 
     /**
-     * Indicates whether this color is in the {@link ColorSpace.Named#SRGB sRGB}
+     * Indicates whether this color is in the {@link ColorSpaces#SRGB sRGB}
      * color space.
      *
      * @return True if this color is in the sRGB color space, false otherwise
      * @see #isWideGamut()
      */
     public boolean isSrgb() {
-        return cs.isSrgb();
+        return cs.isSRGB();
     }
 
     /**
@@ -423,7 +416,7 @@ public final class Color {
      * Packs this color into a color long, converts this color from its
      * color space to the extended sRGB nonlinear color space.
      * The conversion is done using the relative colorimetric intent as specified
-     * by {@link ColorSpace.RenderIntent#RELATIVE}.
+     * by {@link ColorTransform#RELATIVE_COLORIMETRIC}.
      *
      * @return A color long
      */
@@ -435,18 +428,40 @@ public final class Color {
     /**
      * Converts this color from its color space to the specified color space.
      * The conversion is done using the relative colorimetric intent as specified
-     * by {@link ColorSpace.RenderIntent#RELATIVE}.
+     * by {@link ColorTransform#RELATIVE_COLORIMETRIC}.
+     * <p>
+     * This method does not work for extended range colors, except both
+     * src and dst are intrinsically extended. Use {@link #convert(ColorSpace, boolean)}
+     * instead.
      *
      * @param colorSpace The destination color space, cannot be null
      * @return A non-null color instance in the specified color space
      */
     @NonNull
     public Color convert(@NonNull ColorSpace colorSpace) {
-        float[] col = ColorSpace.connect(cs, colorSpace,
-                ColorSpace.RenderIntent.RELATIVE)
-                .transform(new float[]{
+        return convert(colorSpace, false);
+    }
+
+    /**
+     * Converts this color from its color space to the specified color space.
+     * The conversion is done using the relative colorimetric intent as specified
+     * by {@link ColorTransform#RELATIVE_COLORIMETRIC}.
+     *
+     * @param colorSpace    The destination color space, cannot be null
+     * @param extendedRange Whether to convert in extended range
+     * @return A non-null color instance in the specified color space
+     */
+    @NonNull
+    public Color convert(@NonNull ColorSpace colorSpace, boolean extendedRange) {
+        var transform = new ColorTransform(cs, colorSpace,
+                ColorTransform.RELATIVE_COLORIMETRIC);
+        float[] col = new float[]{
                 comp1, comp2, comp3, comp4
-        });
+        };
+        if (extendedRange)
+            transform.transformExtended(col);
+        else
+            transform.transform(col);
         return new Color(col[0], col[1], col[2],
                 colorSpace.getComponentCount() == 4 ? col[3] : 0,
                 alpha, colorSpace);
@@ -454,7 +469,7 @@ public final class Color {
 
     /**
      * Converts this color to an ARGB color int. A color int is always in
-     * the {@link ColorSpace.Named#SRGB sRGB} color space. This implies
+     * the {@link ColorSpaces#SRGB sRGB} color space. This implies
      * a color space conversion is applied if needed.
      *
      * @return An ARGB color in the sRGB color space
@@ -462,23 +477,23 @@ public final class Color {
     @ColorInt
     public int toArgb() {
         // The transformation saturates the output
-        float[] rgb = ColorSpace.connect(cs,
-                        ColorSpace.get(ColorSpace.Named.SRGB),
-                        ColorSpace.RenderIntent.RELATIVE)
+        float[] rgb = new ColorTransform(cs,
+                        ColorSpaces.SRGB,
+                        ColorTransform.RELATIVE_COLORIMETRIC)
                 .transform(new float[]{
                         comp1, comp2, comp3, comp4
                 });
 
-        return (int) (MathUtil.pin(rgb[0], 0.0f, 1.0f) * 255 + .5f) << 16 |
-               (int) (MathUtil.pin(rgb[1], 0.0f, 1.0f) * 255 + .5f) <<  8 |
-               (int) (MathUtil.pin(rgb[2], 0.0f, 1.0f) * 255 + .5f)       |
+        return (int) (rgb[0] * 255 + .5f) << 16 |
+               (int) (rgb[1] * 255 + .5f) <<  8 |
+               (int) (rgb[2] * 255 + .5f)       |
                (int) (MathUtil.pin(alpha, 0.0f, 1.0f) * 255 + .5f) << 24 ;
     }
 
     /**
      * <p>Returns the value of the red component, no range limit.</p>
      *
-     * <p>If this color's color model is not {@link ColorSpace.Model#RGB RGB},
+     * <p>If this color's color model is not {@link ColorSpace#MODEL_RGB RGB},
      * calling this method is equivalent to <code>getComponent(0)</code>.</p>
      *
      * @see #alpha()
@@ -493,7 +508,7 @@ public final class Color {
     /**
      * <p>Returns the value of the green component, no range limit.</p>
      *
-     * <p>If this color's color model is not {@link ColorSpace.Model#RGB RGB},
+     * <p>If this color's color model is not {@link ColorSpace#MODEL_RGB RGB},
      * calling this method is equivalent to <code>getComponent(1)</code>.</p>
      *
      * @see #alpha()
@@ -508,7 +523,7 @@ public final class Color {
     /**
      * <p>Returns the value of the blue component, no range limit.</p>
      *
-     * <p>If this color's color model is not {@link ColorSpace.Model#RGB RGB},
+     * <p>If this color's color model is not {@link ColorSpace#MODEL_RGB RGB},
      * calling this method is equivalent to <code>getComponent(2)</code>.</p>
      *
      * @see #alpha()
@@ -631,15 +646,15 @@ public final class Color {
      *
      * @return A value between 0 (darkest black) and 1 (lightest white)
      * @throws IllegalArgumentException If this color's color space
-     *                                  does not use the {@link ColorSpace.Model#RGB RGB} color model
+     *                                  does not use the {@link ColorSpace#MODEL_RGB RGB} color model
      */
     public float luminance() {
-        if (cs.getModel() != ColorSpace.Model.RGB) {
+        if (cs.getModel() != ColorSpace.MODEL_RGB) {
             throw new IllegalArgumentException("The specified color must be encoded in an RGB " +
                     "color space. The supplied color space is " + cs.getModel());
         }
 
-        DoubleUnaryOperator eotf = ((ColorSpace.Rgb) cs).getEotf();
+        DoubleUnaryOperator eotf = ((ColorSpaceRGB) cs).getEOTF();
         double r = eotf.applyAsDouble(comp1);
         double g = eotf.applyAsDouble(comp2);
         double b = eotf.applyAsDouble(comp3);
@@ -705,7 +720,7 @@ public final class Color {
 
     /**
      * Creates a new <code>Color</code> instance from an ARGB color int.
-     * The resulting color is in the {@link ColorSpace.Named#SRGB sRGB}
+     * The resulting color is in the {@link ColorSpaces#SRGB sRGB}
      * color space.
      *
      * @param color The ARGB color int to create a <code>Color</code> from
@@ -721,7 +736,7 @@ public final class Color {
     }
 
     /**
-     * Creates a new opaque <code>Color</code> in the {@link ColorSpace.Named#SRGB sRGB}
+     * Creates a new opaque <code>Color</code> in the {@link ColorSpaces#SRGB sRGB}
      * color space with the specified red, green and blue component values.
      *
      * @param r The red component of the opaque sRGB color to create, in extended range
@@ -735,7 +750,7 @@ public final class Color {
     }
 
     /**
-     * Creates a new <code>Color</code> in the {@link ColorSpace.Named#SRGB sRGB}
+     * Creates a new <code>Color</code> in the {@link ColorSpaces#SRGB sRGB}
      * color space with the specified red, green, blue and alpha component values.
      *
      * @param r The red component of the sRGB color to create, in extended range
@@ -946,17 +961,15 @@ public final class Color {
     @ColorLong
     public static long pack(float red, float green, float blue, float alpha,
                             @NonNull ColorSpace colorSpace) {
-        ColorSpace extendedSRGB;
-        if (colorSpace.isSrgb() ||
-                colorSpace == (extendedSRGB = ColorSpace.get(ColorSpace.Named.EXTENDED_SRGB))) {
+        if (colorSpace.isExtendedSRGB()) {
             return pack(red, green, blue, alpha);
         }
 
         // CSS Color Module Level 4 requires relative colorimetric intent,
-        // we can convert all colors to an intermediate space.
-        float[] col = ColorSpace.connect(colorSpace, extendedSRGB,
-                        ColorSpace.RenderIntent.RELATIVE)
-                .transform(new float[]{red, green, blue}); //TODO unclamped version
+        // we can convert all colors to extended sRGB as an intermediate space.
+        float[] col = new ColorTransform(colorSpace, ColorSpaces.EXTENDED_SRGB,
+                        ColorTransform.RELATIVE_COLORIMETRIC)
+                .transformExtended(new float[]{red, green, blue});
 
         return pack(col[0], col[1], col[2], alpha);
     }
@@ -979,7 +992,7 @@ public final class Color {
 
     /**
      * Converts the specified color long to an ARGB color int. A color int is
-     * always in the {@link ColorSpace.Named#SRGB sRGB} color space, and
+     * always in the {@link ColorSpaces#SRGB sRGB} color space, and
      * clamped to the range of 0..255 per channel.
      * <p>
      * This method narrows the color to 8bpc precision and sRGB gamut; do not

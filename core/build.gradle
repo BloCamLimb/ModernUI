@@ -8,10 +8,6 @@ configurations {
     shadow
 }
 
-repositories {
-    maven { url "https://central.sonatype.com/repository/maven-snapshots" }
-}
-
 dependencies {
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
@@ -26,13 +22,13 @@ dependencies {
         transitive = false
     }*/
     //api(project(':external:Arc3D'))
-    api "icyllis.arc3d:arc3d-core:${arc3d_version}"
-    api "icyllis.arc3d:arc3d-sketch:${arc3d_version}"
-    api "icyllis.arc3d:arc3d-compiler:${arc3d_version}"
-    api "icyllis.arc3d:arc3d-engine:${arc3d_version}"
-    api "icyllis.arc3d:arc3d-granite:${arc3d_version}"
-    //api("icyllis.arc3d:arc3d-vulkan")
-    api "icyllis.arc3d:arc3d-opengl:${arc3d_version}"
+    api "dev.icyllis:arc3d-core:${arc3d_version}"
+    api "dev.icyllis:arc3d-sketch:${arc3d_version}"
+    api "dev.icyllis:arc3d-compiler:${arc3d_version}"
+    api "dev.icyllis:arc3d-engine:${arc3d_version}"
+    api "dev.icyllis:arc3d-granite:${arc3d_version}"
+    api "dev.icyllis:arc3d-vulkan:${arc3d_version}"
+    api "dev.icyllis:arc3d-opengl:${arc3d_version}"
     /*shadow(project(':external:Arc3D')) {
         transitive = false
     }*/

@@ -22,6 +22,7 @@ publishing {
 
 repositories {
     mavenCentral()
+    maven { url "https://central.sonatype.com/repository/maven-snapshots" }
     mavenLocal()
 }
 
@@ -48,6 +49,7 @@ subprojects {
 
     repositories {
         mavenCentral()
+        maven { url "https://central.sonatype.com/repository/maven-snapshots" }
         mavenLocal()
     }
 

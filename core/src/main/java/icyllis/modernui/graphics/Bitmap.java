@@ -20,15 +20,7 @@ package icyllis.modernui.graphics;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
-import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.ColorSpace;
-import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.PixelRef;
-import icyllis.arc3d.core.Pixmap;
-import icyllis.arc3d.core.RawPtr;
-import icyllis.arc3d.core.Rect2i;
-import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -161,7 +153,7 @@ public final class Bitmap implements AutoCloseable {
      * Creates a mutable bitmap and its allocation, the content are initialized to zeros.
      * <p>
      * The newly created bitmap will have non-premultiplied alpha if the format has an alpha channel.
-     * The newly created bitmap is in the {@link ColorSpace.Named#SRGB sRGB} color space,
+     * The newly created bitmap is in the {@link ColorSpaces#SRGB sRGB} color space,
      * unless the format is alpha only, in which case the color space is null.
      * You may change the format, alpha type, and color space after creating the bitmap.
      *
@@ -176,8 +168,8 @@ public final class Bitmap implements AutoCloseable {
                                       @Size(min = 1) int height,
                                       @NonNull Format format) {
         var colorSpace = format.isChannelHDR()
-                ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
-                : ColorSpace.get(ColorSpace.Named.SRGB);
+                ? ColorSpaces.LINEAR_EXTENDED_SRGB
+                : ColorSpaces.SRGB;
         return createBitmap(width, height, format, false, colorSpace);
     }
 
@@ -695,7 +687,7 @@ public final class Bitmap implements AutoCloseable {
      * Returns the {@link Color} at the specified location. Throws an exception
      * if x or y are out of bounds (negative or >= to the width or height
      * respectively). The returned color is a non-premultiplied ARGB value in
-     * the {@link ColorSpace.Named#SRGB sRGB} color space, the format is the
+     * the {@link ColorSpaces#SRGB sRGB} color space, the format is the
      * same as {@link Format#BGRA_8888_PACK32}.
      * <p>
      * If the max bits per channel for the color type is greater than 8, or colors are premultiplied,
@@ -800,7 +792,7 @@ public final class Bitmap implements AutoCloseable {
      * The stride parameter allows the caller to allow for gaps in the returned pixels
      * array between rows. For normal packed results, just pass width for the stride value.
      * The returned colors are non-premultiplied ARGB values in the
-     * {@link ColorSpace.Named#SRGB sRGB} color space, i.e. it has
+     * {@link ColorSpaces#SRGB sRGB} color space, i.e. it has
      * {@link Format#BGRA_8888_PACK32} pixel format.
      * <p>
      * If the max bits per channel of {@link #getFormat()} is greater than 8, or colors are
@@ -840,7 +832,7 @@ public final class Bitmap implements AutoCloseable {
             try {
                 var dstInfo = ImageInfo.make(width, height,
                         ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
-                        ColorSpace.get(ColorSpace.Named.SRGB));
+                        ColorSpaces.SRGB);
                 var dstPixmap = new Pixmap(dstInfo, dst,
                         (long) offset << 2,
                         stride << 2);
@@ -855,7 +847,7 @@ public final class Bitmap implements AutoCloseable {
     /**
      * Copies a Rect of pixels from src. Copy starts at (dstX, dstY), and does not exceed
      * (width, height). Each element in the array is a packed int representing a non-premultiplied
-     * ARGB {@link Color} in the {@link ColorSpace.Named#SRGB sRGB} color space, i.e. it has
+     * ARGB {@link Color} in the {@link ColorSpaces#SRGB sRGB} color space, i.e. it has
      * {@link Format#BGRA_8888_PACK32} pixel format. The stride parameter allows the caller
      * to allow for gaps in the source pixels array between rows. For normal packed pixels,
      * just pass width for the stride value.
@@ -889,7 +881,7 @@ public final class Bitmap implements AutoCloseable {
             try {
                 var srcInfo = ImageInfo.make(width, height,
                         ColorInfo.CT_BGRA_8888_NATIVE, ColorInfo.AT_UNPREMUL,
-                        ColorSpace.get(ColorSpace.Named.SRGB));
+                        ColorSpaces.SRGB);
                 var srcPixmap = new Pixmap(srcInfo, src,
                         (long) offset << 2,
                         stride << 2);

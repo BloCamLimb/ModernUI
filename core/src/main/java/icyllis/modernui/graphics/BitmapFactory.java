@@ -20,6 +20,8 @@ package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ColorSpaceRGB;
+import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -94,6 +96,8 @@ import static org.lwjgl.system.MemoryUtil.*;
  */
 public final class BitmapFactory {
 
+    //TODO get rid of stb_image and use ModernUI codec to support color management, PNGv3, HDR image...
+
     /**
      * Collects the options for the decoder and additional outputs from the decoder.
      *
@@ -135,18 +139,18 @@ public final class BitmapFactory {
          * color space. If it is null, or the request cannot be met,
          * the decoder will pick either the color space embedded in the image
          * or the color space best suited for the requested image format
-         * (for instance {@link ColorSpace.Named#SRGB sRGB} for
+         * (for instance {@link ColorSpaces#SRGB sRGB} for
          * {@link Bitmap.Format#RGBA_8888} format.</p>
          *
-         * <p class="note">Only {@link ColorSpace.Model#RGB} color spaces are
+         * <p class="note">Only {@link ColorSpace#MODEL_RGB} color spaces are
          * currently supported. An <code>IllegalArgumentException</code> will
          * be thrown by the decode methods when setting a non-RGB color space
-         * such as {@link ColorSpace.Named#CIE_LAB Lab}.</p>
+         * such as {@link ColorSpaces#CIE_LAB Lab}.</p>
          *
          * <p class="note">The specified color space's transfer function must be
-         * an {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}. An
+         * an {@link ColorSpaceRGB.TransferParameters ICC parametric curve}. An
          * <code>IllegalArgumentException</code> will be thrown by the decode methods
-         * if calling {@link ColorSpace.Rgb#getTransferParameters()} on the
+         * if calling {@link ColorSpaceRGB#getTransferParameters()} on the
          * specified color space returns null.</p>
          *
          * <p>After decode, the bitmap's color space is stored in
@@ -233,7 +237,7 @@ public final class BitmapFactory {
         if (opts == null) return;
 
         if (opts.inPreferredColorSpace != null) {
-            if (!(opts.inPreferredColorSpace instanceof ColorSpace.Rgb rgbColorSpace)) {
+            if (!(opts.inPreferredColorSpace instanceof ColorSpaceRGB rgbColorSpace)) {
                 throw new IllegalArgumentException("The destination color space must use the " +
                         "RGB color model");
             }
@@ -263,9 +267,9 @@ public final class BitmapFactory {
      * Decode a file path into a bitmap.
      * <p>
      * If the file cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
+     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
      * or if the specified color space's transfer function is not an
-     * {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, the method throws
+     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
      * {@link IllegalArgumentException}.
      *
      * @param file the file to be decoded
@@ -322,9 +326,9 @@ public final class BitmapFactory {
      * Decode a file path into a bitmap.
      * <p>
      * If the file cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
+     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
      * or if the specified color space's transfer function is not an
-     * {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, the method throws
+     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
      * {@link IllegalArgumentException}.
      *
      * @param path the file to be decoded
@@ -399,9 +403,9 @@ public final class BitmapFactory {
      * <em>does not</em> closed the given stream after read operation has completed.
      * <p>
      * If the stream cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
+     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
      * or if the specified color space's transfer function is not an
-     * {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, the method throws
+     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
      * {@link IllegalArgumentException}.
      *
      * @param stream the input stream to be decoded
@@ -470,9 +474,9 @@ public final class BitmapFactory {
      * <em>does not</em> closed the given channel after read operation has completed.
      * <p>
      * If the channel cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
+     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
      * or if the specified color space's transfer function is not an
-     * {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, the method throws
+     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
      * {@link IllegalArgumentException}.
      *
      * @param channel the readable channel to be decoded
@@ -547,9 +551,9 @@ public final class BitmapFactory {
      * Decode a bitmap from the specified byte array.
      * <p>
      * If the data cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
+     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
      * or if the specified color space's transfer function is not an
-     * {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, the method throws
+     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
      * {@link IllegalArgumentException}.
      *
      * @param data   byte array of compressed image data
@@ -604,9 +608,9 @@ public final class BitmapFactory {
      * And the buffer's position will remain unchanged after the call.
      * <p>
      * If the buffer cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace.Model#RGB RGB},
+     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
      * or if the specified color space's transfer function is not an
-     * {@link ColorSpace.Rgb.TransferParameters ICC parametric curve}, the method throws
+     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
      * {@link IllegalArgumentException}.
      *
      * @param buffer byte buffer of compressed image data
@@ -1047,8 +1051,8 @@ public final class BitmapFactory {
                     ? requiredFormat
                     : Bitmap.Format.get(channels_in_file, isU16, isHDR);
             ColorSpace cs = isHDR
-                    ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
-                    : ColorSpace.get(ColorSpace.Named.SRGB);
+                    ? ColorSpaces.LINEAR_EXTENDED_SRGB
+                    : ColorSpaces.SRGB;
             if (opts != null) {
                 opts.outWidth = width;
                 opts.outHeight = height;
@@ -1100,8 +1104,8 @@ public final class BitmapFactory {
                     channels_in_file = memGetInt(pOuts + 8);
             Bitmap.Format format = Bitmap.Format.get(channels_in_file, isU16, isHDR);
             ColorSpace cs = isHDR
-                    ? ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)
-                    : ColorSpace.get(ColorSpace.Named.SRGB);
+                    ? ColorSpaces.LINEAR_EXTENDED_SRGB
+                    : ColorSpaces.SRGB;
             opts.outWidth = width;
             opts.outHeight = height;
             opts.outFormat = format;

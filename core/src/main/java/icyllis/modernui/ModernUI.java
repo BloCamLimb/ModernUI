@@ -20,6 +20,7 @@ package icyllis.modernui;
 
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.engine.Engine;
@@ -663,7 +664,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                             Core.requireUiRecordingContext(),
                             ImageInfo.make(width, height,
                                     ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL,
-                                    ColorSpace.get(ColorSpace.Named.SRGB)),
+                                    ColorSpaces.SRGB),
                             false,
                             Engine.SurfaceOrigin.kUpperLeft,
                             null
