@@ -1,37 +1,17 @@
 import org.gradle.internal.os.OperatingSystem
 
-plugins {
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
-}
-
-configurations {
-    shadow
-}
-
 dependencies {
-    implementation "com.ibm.icu:icu4j:${icu4j_version}"
+    api "org.slf4j:slf4j-api:${slf4j_version}"
+    api "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
 
-    api "org.slf4j:slf4j-api:${slf4j_version}"
-    /*implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
-    implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
-    implementation "org.apache.logging.log4j:log4j-slf4j2-impl:${log4j_version}"*/
-
-    /*api("icyllis.arc3d:Arc3D")
-    shadow("icyllis.arc3d:Arc3D") {
-        transitive = false
-    }*/
-    //api(project(':external:Arc3D'))
     api "dev.icyllis:arc3d-core:${arc3d_version}"
     api "dev.icyllis:arc3d-sketch:${arc3d_version}"
     api "dev.icyllis:arc3d-compiler:${arc3d_version}"
     api "dev.icyllis:arc3d-engine:${arc3d_version}"
-    api "dev.icyllis:arc3d-granite:${arc3d_version}"
-    api "dev.icyllis:arc3d-vulkan:${arc3d_version}"
-    api "dev.icyllis:arc3d-opengl:${arc3d_version}"
-    /*shadow(project(':external:Arc3D')) {
-        transitive = false
-    }*/
+    implementation "dev.icyllis:arc3d-granite:${arc3d_version}"
+    implementation "dev.icyllis:arc3d-vulkan:${arc3d_version}"
+    implementation "dev.icyllis:arc3d-opengl:${arc3d_version}"
 
     def lwjglNatives
     switch (OperatingSystem.current()) {
@@ -52,90 +32,66 @@ dependencies {
             break
     }
 
-    implementation "org.lwjgl:lwjgl"
-    implementation "org.lwjgl:lwjgl-glfw"
-    implementation "org.lwjgl:lwjgl-jemalloc"
-    implementation "org.lwjgl:lwjgl-openal"
-    implementation "org.lwjgl:lwjgl-opengl"
-    implementation "org.lwjgl:lwjgl-stb"
-    implementation "org.lwjgl:lwjgl-tinyfd"
-    implementation "org.lwjgl:lwjgl-vma"
-    implementation "org.lwjgl:lwjgl-vulkan"
-    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-jemalloc::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-tinyfd::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-vma::$lwjglNatives"
-    if (lwjglNatives == "natives-macos" || lwjglNatives == "natives-macos-arm64") {
-        runtimeOnly "org.lwjgl:lwjgl-vulkan::$lwjglNatives"
-    }
+    compileOnly "org.lwjgl:lwjgl:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-openal:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-opengl:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-stb:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-vma:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-vulkan:${lwjgl_version}"
 
     testImplementation "org.slf4j:slf4j-simple:${slf4j_version}"
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
     testImplementation 'com.google.code.gson:gson:2.11.0'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
-}
 
-/*shadowJar {
-    archiveClassifier.set("shadow")
-    configurations = [project.configurations.shadow]
-}
+    testImplementation "org.lwjgl:lwjgl:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-glfw:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-openal:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-opengl:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-stb:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-vma:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-vulkan:${lwjgl_version}"
 
-tasks.register('shadowSourcesJar', Jar) {
-    archiveClassifier.set("shadow-sources")
-    from sourceSets.main.allSource
-    //from fileTree(new File(gradle.includedBuild("Arc3D").projectDir, "src/main/java"))
-    from project(':external:Arc3D').sourcesJar.archiveFile.map { zipTree(it) }
-}*/
+    testRuntimeOnly "org.lwjgl:lwjgl:${lwjgl_version}:$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}:$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}:$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-openal:${lwjgl_version}:$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-opengl:${lwjgl_version}:$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-stb:${lwjgl_version}:$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}:$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl-vma:${lwjgl_version}:$lwjglNatives"
+    if (lwjglNatives == "natives-macos" || lwjglNatives == "natives-macos-arm64") {
+        testRuntimeOnly "org.lwjgl:lwjgl-vulkan:${lwjgl_version}:$lwjglNatives"
+    }
+}
 
 tasks.register('copyDependencies', Copy) {
     from configurations.runtimeClasspath
     into layout.buildDirectory.dir("output/libs")
 }
 
-jar {
-    manifest {
-        attributes(
-                "Specification-Title": project.name,
-                "Specification-Vendor": "BloCamLimb",
-                "Specification-Version": "1",
-                "Implementation-Title": project.name,
-                "Implementation-Version": project.version,
-                "Implementation-Vendor": "BloCamLimb",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-        )
-    }
-}
-
 publishing {
     publications {
-        mavenCore(MavenPublication) {
-            artifact(jar.archiveFile) {
-                builtBy build
-            }
-            artifact(sourcesJar.archiveFile) {
-                builtBy build
-                classifier 'sources'
-            }
-            artifactId = project.name
-            groupId = project.group
-            version = project.version
+        mavenJava(MavenPublication) {
+            from components.java
 
             pom {
-                artifactId = project.name
-                groupId = project.group
-                version = project.version
-                name = rootProject.name
-                packaging = 'pom'
+                name = 'ModernUI'
+                description = 'ModernUI is a comprehensive UI engine and application framework with a fully self-hosted GPU rendering and composition pipeline, reactive UI architecture, and desktop application runtime.'
+                url = project.modernui_url
                 scm {
-                    url = 'https://github.com/BloCamLimb/ModernUI.git'
+                    connection = project.modernui_scm_connection
+                    developerConnection = project.modernui_scm_developerConnection
+                    url = project.modernui_scm_url
                 }
                 issueManagement {
-                    system = 'github'
-                    url = 'https://github.com/BloCamLimb/ModernUI/issues'
+                    system = project.modernui_issueManagement_system
+                    url = project.modernui_issueManagement_url
                 }
                 licenses {
                     license {
@@ -144,34 +100,20 @@ publishing {
                         distribution = 'repo'
                     }
                 }
-                withXml {
-                    def dependenciesNode = asNode().appendNode('dependencies')
-                    configurations.implementation.allDependencies.each {
-                        if (it.group == 'org.lwjgl' || it.group == 'icyllis.arc3d') return
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
-                        dependencyNode.appendNode('scope', 'compile')
-                    }
-                    configurations.compileOnly.allDependencies.each {
-                        if (it.group == 'org.lwjgl' || it.group == 'icyllis.arc3d') return
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
-                        dependencyNode.appendNode('scope', 'compile')
-                    }
-                    configurations.runtimeOnly.allDependencies.each {
-                        if (it.group == 'org.lwjgl' || it.group == 'icyllis.arc3d') return
-                        def dependencyNode = dependenciesNode.appendNode('dependency')
-                        dependencyNode.appendNode('groupId', it.group)
-                        dependencyNode.appendNode('artifactId', it.name)
-                        dependencyNode.appendNode('version', it.version)
-                        dependencyNode.appendNode('scope', 'runtime')
+                developers {
+                    developer {
+                        id = project.modernui_developer_id
+                        name = project.modernui_developer_name
+                        email = project.modernui_developer_email
+                        url = project.modernui_developer_url
                     }
                 }
             }
         }
     }
+}
+
+signing {
+    useGpgCmd()
+    sign(publishing.publications["mavenJava"])
 }

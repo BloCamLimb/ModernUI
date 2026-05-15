@@ -9,15 +9,16 @@ plugins {
 
 rootProject.name = 'ModernUI'
 
-include 'core'
-project(':core').name = 'ModernUI-Core'
+include 'modernui-core'
+project(':modernui-core').projectDir = file('core')
 
-include 'core-ktx'
-project(':core-ktx').name = 'ModernUI-Core-KTX'
+include 'modernui-core-ktx'
+project(':modernui-core-ktx').projectDir = file('core-ktx')
 
 // extensions
 /*include 'x-awt'
 project(':x-awt').name = "ModernUI-AWT"*/
 
-include 'x-markflow'
-project(':x-markflow').name = "ModernUI-Markflow"
+// will be moved to Resin Components
+/*include 'x-markflow'
+project(':x-markflow').name = "ModernUI-Markflow"*/
