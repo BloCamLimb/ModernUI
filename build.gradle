@@ -20,6 +20,9 @@ dependencies {
     dokkaPlugin 'org.jetbrains.dokka:android-documentation-plugin:2.2.0'
     dokka(project(":modernui-core"))
     dokka(project(":modernui-core-ktx"))
+
+    nmcpAggregation(project(":modernui-core"))
+    nmcpAggregation(project(":modernui-core-ktx"))
 }
 
 nmcpAggregation {
@@ -121,7 +124,7 @@ subprojects {
     jar {
         manifest {
             attributes(
-                    "Specification-Title": project.name,
+                    "Specification-Title": rootProject.name,
                     "Specification-Vendor": "BloCamLimb",
                     "Specification-Version": "1",
                     "Implementation-Title": project.name,
