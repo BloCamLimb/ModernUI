@@ -235,29 +235,50 @@ public final class Bitmap implements AutoCloseable {
      *
      * @param address         base address
      * @param rowBytes        size of one row of buffer; width times bpp, or larger
-     * @param freeFn          free function for address
+     * @param freeFn          free function for address, or null to only borrow memory
      * @param width           width of pixels
      * @param height          height of pixels
      * @param format          a color interpretation
      * @param isPremultiplied an alpha interpretation
-     * @param colorSpace      a color space describing the pixels
+     * @param colorSpace      a color space describing the pixels, null means no color management
      * @return a bitmap
+     * @throws IllegalArgumentException invalid arguments
      */
-    @ApiStatus.Experimental
     @NonNull
     public static Bitmap wrap(@NativeType("const void *") long address, int rowBytes,
                               @Nullable LongConsumer freeFn,
                               @Size(min = 1) int width, @Size(min = 1) int height,
                               @NonNull Format format, boolean isPremultiplied,
                               @Nullable ColorSpace colorSpace) {
+        if (address == NULL) {
+            throw new NullPointerException("address is null");
+        }
+        int colorType = format.getColorType();
+        if (!ColorInfo.validMemoryAddress(colorType, null, address)) {
+            throw new IllegalArgumentException("address=" + address + " does not match the alignment requirement");
+        }
         int alphaType = format.hasAlpha()
                 ? isPremultiplied
                 ? ColorInfo.AT_PREMUL
                 : ColorInfo.AT_UNPREMUL
                 : ColorInfo.AT_OPAQUE;
-        alphaType = ColorInfo.validateAlphaType(format.getColorType(), alphaType);
+        alphaType = ColorInfo.validateAlphaType(colorType, alphaType);
         ImageInfo info = ImageInfo.make(width, height,
-                format.getColorType(), alphaType, colorSpace);
+                colorType, alphaType, colorSpace);
+        if (!info.isValid()) {
+            throw new IllegalArgumentException(String.format("width=%d or height=%d is too large or non-positive",
+                    width, height));
+        }
+        int minRB = info.minRowBytes();
+        if (rowBytes == 0) {
+            rowBytes = minRB;
+        }
+        if (minRB == 0 || rowBytes < minRB ||
+                !ColorInfo.validMemoryAddress(colorType, null, rowBytes)) {
+            throw new IllegalArgumentException(String.format("rowBytes=%d does not match the alignment requirement, " +
+                            "or too small, or width=%d is too large; minimum required rowBytes=%d",
+                    rowBytes, width, minRB));
+        }
         return new Bitmap(format, info, address, rowBytes, freeFn);
     }
 
@@ -822,6 +843,9 @@ public final class Bitmap implements AutoCloseable {
         if (width == 0 || height == 0) {
             return; // nothing to do
         }
+        if (stride == 0) {
+            stride = width;
+        }
         checkOutOfBounds(srcX, srcY, width, height, offset, stride, dst.length);
         if (getColorType() == ColorInfo.CT_UNKNOWN) {
             for (int j = 0; j < height; ++j) {
@@ -876,6 +900,9 @@ public final class Bitmap implements AutoCloseable {
         if (width == 0 || height == 0) {
             return; // nothing to do
         }
+        if (stride == 0) {
+            stride = width;
+        }
         checkOutOfBounds(dstX, dstY, width, height, offset, stride, src.length);
         if (getColorType() != ColorInfo.CT_UNKNOWN) {
             try {
@@ -927,6 +954,9 @@ public final class Bitmap implements AutoCloseable {
         checkReleased();
         if (width == 0 || height == 0) {
             return; // nothing to do
+        }
+        if (stride == 0) {
+            stride = width;
         }
         checkOutOfBounds(srcX, srcY, width, height, offset, stride, dst.length >> 2);
         if (getColorType() == ColorInfo.CT_UNKNOWN) {
@@ -983,6 +1013,9 @@ public final class Bitmap implements AutoCloseable {
         }
         if (width == 0 || height == 0) {
             return; // nothing to do
+        }
+        if (stride == 0) {
+            stride = width;
         }
         checkOutOfBounds(dstX, dstY, width, height, offset, stride, src.length >> 2);
         if (getColorType() != ColorInfo.CT_UNKNOWN) {
