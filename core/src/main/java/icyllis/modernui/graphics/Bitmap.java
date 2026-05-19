@@ -167,7 +167,7 @@ public final class Bitmap implements AutoCloseable {
     public static Bitmap createBitmap(@Size(min = 1) int width,
                                       @Size(min = 1) int height,
                                       @NonNull Format format) {
-        var colorSpace = format.isChannelHDR()
+        var colorSpace = format == Format.RGBA_F32
                 ? ColorSpaces.LINEAR_EXTENDED_SRGB
                 : ColorSpaces.SRGB;
         return createBitmap(width, height, format, false, colorSpace);
@@ -1719,21 +1719,6 @@ public final class Bitmap implements AutoCloseable {
          */
         RGBA_16161616   (4, ColorInfo.CT_RGBA_16161616  ),
         /**
-         * Unsupported, DO NOT USE.
-         */
-        @ApiStatus.Internal
-        GRAY_F32        (1, ColorInfo.CT_UNKNOWN        ),
-        /**
-         * Unsupported, DO NOT USE.
-         */
-        @ApiStatus.Internal
-        GRAY_ALPHA_F32  (2, ColorInfo.CT_UNKNOWN        ),
-        /**
-         * Unsupported, DO NOT USE.
-         */
-        @ApiStatus.Internal
-        RGB_F32         (3, ColorInfo.CT_UNKNOWN        ),
-        /**
          * RGB, with alpha, four channels, 32-bit floating-point per channel.
          * Basic data type: float.
          * <pre>
@@ -1880,6 +1865,7 @@ public final class Bitmap implements AutoCloseable {
          * but the alpha channel is always filled with 0xFF and/or considered opaque.
          * This may be faster than {@link #RGB_888} when doing pixel operations.
          */
+        @ApiStatus.Experimental
         RGBX_8888       (4, ColorInfo.CT_RGBX_8888      ),
         /**
          * RGB, with alpha, four channels, 8-bit unsigned per channel.
@@ -1921,14 +1907,13 @@ public final class Bitmap implements AutoCloseable {
         BGRA_8888_PACK32(4, ColorInfo.CT_BGRA_8888_NATIVE);
         //@formatter:on
 
-        private static final Format[] FORMATS = values();
-
         private final int mChannels;
         private final int mColorType;
 
         Format(int chs, int ct) {
             mChannels = chs;
             mColorType = ct;
+            assert mColorType != ColorInfo.CT_UNKNOWN;
         }
 
         /**
@@ -1955,15 +1940,7 @@ public final class Bitmap implements AutoCloseable {
          * Returns the number of bytes per pixel.
          */
         public int getBytesPerPixel() {
-            if (mColorType != ColorInfo.CT_UNKNOWN) {
-                return ColorInfo.bytesPerPixel(mColorType);
-            }
-            return switch (this) {
-                case GRAY_F32 -> 4;
-                case GRAY_ALPHA_F32 -> 8;
-                case RGB_F32 -> 12;
-                default -> 0;
-            };
+            return ColorInfo.bytesPerPixel(mColorType);
         }
 
         /**
@@ -2001,37 +1978,17 @@ public final class Bitmap implements AutoCloseable {
         }
 
         /**
-         * Is this format 32-bit per channel and encoded as float?
-         */
-        @Deprecated
-        public boolean isChannelHDR() {
-            return ordinal() >> 2 == 2;
-        }
-
-        /**
          * Does this format have alpha channel?
          */
         public boolean hasAlpha() {
-            if (mColorType != ColorInfo.CT_UNKNOWN) {
-                return (ColorInfo.colorTypeChannelFlags(mColorType) & icyllis.arc3d.core.Color.COLOR_CHANNEL_FLAG_ALPHA) != 0;
-            }
-            return (ordinal() & 1) == 1;
+            return (ColorInfo.colorTypeChannelFlags(mColorType) & icyllis.arc3d.core.Color.COLOR_CHANNEL_FLAG_ALPHA) != 0;
         }
 
         /**
-         * @hide
-         * @hidden
+         * Does this format contains only alpha channel?
          */
-        @ApiStatus.Internal
-        @NonNull
-        public static Format get(int chs, boolean u16, boolean hdr) {
-            if (chs < 1 || chs > 4) {
-                throw new IllegalArgumentException();
-            }
-            if (u16 && hdr) {
-                throw new IllegalArgumentException();
-            }
-            return FORMATS[(chs - 1) | (u16 ? 4 : 0) | (hdr ? 8 : 0)];
+        public boolean isAlphaOnly() {
+            return ColorInfo.colorTypeIsAlphaOnly(mColorType);
         }
     }
 
@@ -2145,7 +2102,7 @@ public final class Bitmap implements AutoCloseable {
                             NULL, width, height, format.getChannels(), data, quality) != 0;
                 }
                 case HDR -> {
-                    if (!format.isChannelHDR()) {
+                    if (format != Format.RGBA_F32) {
                         throw new IOException("Only 32-bit per channel images can be saved as "
                                 + this + ", found " + format);
                     }

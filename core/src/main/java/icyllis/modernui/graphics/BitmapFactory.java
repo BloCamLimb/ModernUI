@@ -641,7 +641,7 @@ public final class BitmapFactory {
         final boolean isU16, isHDR;
         if (opts != null && opts.inPreferredFormat != null) {
             isU16 = opts.inPreferredFormat.isChannelU16();
-            isHDR = opts.inPreferredFormat.isChannelHDR();
+            isHDR = opts.inPreferredFormat == Bitmap.Format.RGBA_F32;
         } else {
             isHDR = STBImage.nstbi_is_hdr_from_memory(buf, len) != 0;
             isU16 = !isHDR && STBImage.nstbi_is_16_bit_from_memory(buf, len) != 0;
@@ -869,7 +869,7 @@ public final class BitmapFactory {
         final boolean isU16, isHDR;
         if (!info && opts != null && opts.inPreferredFormat != null) {
             isU16 = opts.inPreferredFormat.isChannelU16();
-            isHDR = opts.inPreferredFormat.isChannelHDR();
+            isHDR = opts.inPreferredFormat == Bitmap.Format.RGBA_F32;
         } else {
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 int n = Math.min(length, 128);
@@ -921,7 +921,7 @@ public final class BitmapFactory {
         final boolean isU16, isHDR;
         if (!info && opts != null && opts.inPreferredFormat != null) {
             isU16 = opts.inPreferredFormat.isChannelU16();
-            isHDR = opts.inPreferredFormat.isChannelHDR();
+            isHDR = opts.inPreferredFormat == Bitmap.Format.RGBA_F32;
         } else {
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 ByteBuffer p = stack.malloc(n);
@@ -971,7 +971,7 @@ public final class BitmapFactory {
             final boolean isU16, isHDR;
             if (!info && opts != null && opts.inPreferredFormat != null) {
                 isU16 = opts.inPreferredFormat.isChannelU16();
-                isHDR = opts.inPreferredFormat.isChannelHDR();
+                isHDR = opts.inPreferredFormat == Bitmap.Format.RGBA_F32;
             } else {
                 final long start = channel.position();
                 isHDR = STBImage.nstbi_is_hdr_from_callbacks(callbacks, user) != 0;
@@ -1010,7 +1010,7 @@ public final class BitmapFactory {
             final long address;
             final int requiredChannels = requiredFormat != null
                     ? requiredFormat.getChannels()
-                    : STBImage.STBI_default;
+                    : isHDR ? 4 : STBImage.STBI_default;
             if (callbacks != NULL) {
                 if (isHDR) {
                     address = STBImage.nstbi_loadf_from_callbacks(callbacks, context,
@@ -1049,7 +1049,7 @@ public final class BitmapFactory {
             // determine the final format we got
             Bitmap.Format format = requiredFormat != null
                     ? requiredFormat
-                    : Bitmap.Format.get(channels_in_file, isU16, isHDR);
+                    : chooseFormat(channels_in_file, isU16, isHDR);
             ColorSpace cs = isHDR
                     ? ColorSpaces.LINEAR_EXTENDED_SRGB
                     : ColorSpaces.SRGB;
@@ -1102,7 +1102,7 @@ public final class BitmapFactory {
             int width = memGetInt(pOuts),
                     height = memGetInt(pOuts + 4),
                     channels_in_file = memGetInt(pOuts + 8);
-            Bitmap.Format format = Bitmap.Format.get(channels_in_file, isU16, isHDR);
+            Bitmap.Format format = chooseFormat(channels_in_file, isU16, isHDR);
             ColorSpace cs = isHDR
                     ? ColorSpaces.LINEAR_EXTENDED_SRGB
                     : ColorSpaces.SRGB;
@@ -1111,6 +1111,26 @@ public final class BitmapFactory {
             opts.outFormat = format;
             opts.outColorSpace = cs;
         }
+    }
+
+    private static Bitmap.Format chooseFormat(int chs, boolean u16, boolean hdr) {
+        if (hdr)
+            return Bitmap.Format.RGBA_F32;
+        if (u16)
+            switch (chs) {
+                case 1: return Bitmap.Format.GRAY_16;
+                case 2: return Bitmap.Format.GRAY_ALPHA_1616;
+                case 3: return Bitmap.Format.RGB_161616;
+                case 4: return Bitmap.Format.RGBA_16161616;
+            }
+        else
+            switch (chs) {
+                case 1: return Bitmap.Format.GRAY_8;
+                case 2: return Bitmap.Format.GRAY_ALPHA_88;
+                case 3: return Bitmap.Format.RGB_888;
+                case 4: return Bitmap.Format.RGBA_8888;
+            }
+        throw new IllegalArgumentException();
     }
 
     //TODO TIFF is todo
