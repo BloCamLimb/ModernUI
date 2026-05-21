@@ -304,13 +304,17 @@ public final class ActivityWindow extends Window {
             cursorY = y.get(0);
         }
         int mods = 0;
-        if (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-                glfwGetKey(w, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
-            mods |= KeyEvent.META_CTRL_ON;
-        }
         if (glfwGetKey(w, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
                 glfwGetKey(w, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
             mods |= KeyEvent.META_SHIFT_ON;
+        }
+        if (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
+                glfwGetKey(w, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+            mods |= KeyEvent.META_CONTROL_ON;
+        }
+        if (glfwGetKey(w, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS ||
+                glfwGetKey(w, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS) {
+            mods |= KeyEvent.META_SUPER_ON;
         }
         final long now = Core.timeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);

@@ -233,7 +233,7 @@ public interface MenuItem {
      * Change both the numeric and alphabetic shortcut associated with this
      * item. Note that the shortcut will be triggered when the key that
      * generates the given character is pressed along with the corresponding
-     * modifier key. The default modifier is {@link KeyEvent#META_CTRL_ON} in
+     * modifier key. The default modifier is {@link KeyEvent#META_SHORTCUT_ON} in
      * case nothing is specified. Also note that case is not significant and
      * that alphabetic shortcut characters will be handled in lower case.
      * <p>
@@ -259,19 +259,21 @@ public interface MenuItem {
      * @param numericChar      The numeric shortcut key. This is the shortcut when
      *                         using a numeric (e.g., 12-key) keyboard.
      * @param numericModifiers The numeric modifier associated with the shortcut. It should
-     *                         be a combination of {@link KeyEvent#META_CTRL_ON},
-     *                         {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON}.
+     *                         be a combination of {@link KeyEvent#META_CONTROL_ON},
+     *                         {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON},
+     *                         {@link KeyEvent#META_SUPER_ON}.
      * @param alphaChar        The alphabetic shortcut key. This is the shortcut when
      *                         using a keyboard with alphabetic keys.
      * @param alphaModifiers   The alphabetic modifier associated with the shortcut. It should
-     *                         be a combination of {@link KeyEvent#META_CTRL_ON},
-     *                         {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON}.
+     *                         be a combination of {@link KeyEvent#META_CONTROL_ON},
+     *                         {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON},
+     *                         {@link KeyEvent#META_SUPER_ON}.
      * @return This Item so additional setters can be called.
      */
     default MenuItem setShortcut(char numericChar, char alphaChar, int numericModifiers,
                                  int alphaModifiers) {
-        if ((alphaModifiers & Menu.SUPPORTED_MODIFIERS_MASK) == KeyEvent.META_CTRL_ON
-                && (numericModifiers & Menu.SUPPORTED_MODIFIERS_MASK) == KeyEvent.META_CTRL_ON) {
+        if ((alphaModifiers & Menu.SUPPORTED_MODIFIERS_MASK) == KeyEvent.META_SHORTCUT_ON
+                && (numericModifiers & Menu.SUPPORTED_MODIFIERS_MASK) == KeyEvent.META_SHORTCUT_ON) {
             return setShortcut(numericChar, alphaChar);
         } else {
             return this;
@@ -297,12 +299,13 @@ public interface MenuItem {
      * @param numericChar      The numeric shortcut key.  This is the shortcut when
      *                         using a 12-key (numeric) keyboard.
      * @param numericModifiers The modifier associated with the shortcut. It should
-     *                         be a combination of {@link KeyEvent#META_CTRL_ON},
-     *                         {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON}.
+     *                         be a combination of {@link KeyEvent#META_CONTROL_ON},
+     *                         {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON},
+     *                         {@link KeyEvent#META_SUPER_ON}.
      * @return This Item so additional setters can be called.
      */
     default MenuItem setNumericShortcut(char numericChar, int numericModifiers) {
-        if ((numericModifiers & Menu.SUPPORTED_MODIFIERS_MASK) == KeyEvent.META_CTRL_ON) {
+        if ((numericModifiers & Menu.SUPPORTED_MODIFIERS_MASK) == KeyEvent.META_SHORTCUT_ON) {
             return setNumericShortcut(numericChar);
         } else {
             return this;
@@ -318,20 +321,21 @@ public interface MenuItem {
 
     /**
      * Return the modifiers for this menu item's numeric (12-key) shortcut.
-     * The modifier is a combination of {@link KeyEvent#META_CTRL_ON},
-     * {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON}.
+     * The modifier is a combination of {@link KeyEvent#META_CONTROL_ON},
+     * {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON},
+     * {@link KeyEvent#META_SUPER_ON}.
      *
      * @return Modifier associated with the numeric shortcut.
      */
     default int getNumericModifiers() {
-        return KeyEvent.META_CTRL_ON;
+        return KeyEvent.META_SHORTCUT_ON;
     }
 
     /**
      * Change the alphabetic shortcut associated with this item. The shortcut
      * will be triggered when the key that generates the given character is
      * pressed along with the corresponding modifier key. The default modifier
-     * is {@link KeyEvent#META_CTRL_ON} in case nothing is specified. Case is
+     * is {@link KeyEvent#META_SHORTCUT_ON} in case nothing is specified. Case is
      * not significant and shortcut characters will be displayed in lower case.
      * Note that menu items with the characters '\b' or '\n' as shortcuts will
      * get triggered by the Delete key or Carriage Return key, respectively.
@@ -357,12 +361,13 @@ public interface MenuItem {
      * @param alphaChar      The alphabetic shortcut key. This is the shortcut when
      *                       using a keyboard with alphabetic keys.
      * @param alphaModifiers The modifier associated with the shortcut. It should
-     *                       be a combination of {@link KeyEvent#META_CTRL_ON},
-     *                       {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON}.
+     *                       be a combination of {@link KeyEvent#META_CONTROL_ON},
+     *                       {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON},
+     *                       {@link KeyEvent#META_SUPER_ON}.
      * @return This Item so additional setters can be called.
      */
     default MenuItem setAlphabeticShortcut(char alphaChar, int alphaModifiers) {
-        if ((alphaModifiers & Menu.SUPPORTED_MODIFIERS_MASK) == KeyEvent.META_CTRL_ON) {
+        if ((alphaModifiers & Menu.SUPPORTED_MODIFIERS_MASK) == KeyEvent.META_SHORTCUT_ON) {
             return setAlphabeticShortcut(alphaChar);
         } else {
             return this;
@@ -378,13 +383,14 @@ public interface MenuItem {
 
     /**
      * Return the modifier for this menu item's alphabetic shortcut.
-     * The modifier is a combination of {@link KeyEvent#META_CTRL_ON},
-     * {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON}.
+     * The modifier is a combination of {@link KeyEvent#META_CONTROL_ON},
+     * {@link KeyEvent#META_ALT_ON}, {@link KeyEvent#META_SHIFT_ON},
+     * {@link KeyEvent#META_SUPER_ON}.
      *
      * @return Modifier associated with the keyboard shortcut.
      */
     default int getAlphabeticModifiers() {
-        return KeyEvent.META_CTRL_ON;
+        return KeyEvent.META_SHORTCUT_ON;
     }
 
     /**

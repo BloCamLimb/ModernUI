@@ -514,14 +514,14 @@ public class HorizontalScrollView extends FrameLayout {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             switch (event.getKeyCode()) {
                 case KeyEvent.KEY_LEFT:
-                    if (!event.isAltPressed()) {
+                    if (KeyEvent.IS_MACOS ? !event.isSuperPressed() : !event.isAltPressed()) {
                         handled = arrowScroll(View.FOCUS_LEFT);
                     } else {
                         handled = fullScroll(View.FOCUS_LEFT);
                     }
                     break;
                 case KeyEvent.KEY_RIGHT:
-                    if (!event.isAltPressed()) {
+                    if (KeyEvent.IS_MACOS ? !event.isSuperPressed() : !event.isAltPressed()) {
                         handled = arrowScroll(View.FOCUS_RIGHT);
                     } else {
                         handled = fullScroll(View.FOCUS_RIGHT);

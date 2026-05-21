@@ -1031,7 +1031,7 @@ public final class MotionEvent extends InputEvent {
      * Returns false if a different combination of modifier keys are pressed.
      * <p>
      * If the specified modifier mask includes non-directional modifiers, such as
-     * {@link GLFW#GLFW_MOD_SHIFT}, then this method ensures that the modifier
+     * {@link KeyEvent#META_SHIFT_ON}, then this method ensures that the modifier
      * is pressed on either side.
      * </p>
      *
@@ -1043,7 +1043,7 @@ public final class MotionEvent extends InputEvent {
         if (modifiers == 0) {
             return mModifiers == 0;
         }
-        return (mModifiers & modifiers) == modifiers;
+        return mModifiers == modifiers;
     }
 
     /**
@@ -1056,17 +1056,26 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
-     * Returns the pressed state of the CTRL key. If it's running on OSX,
-     * returns the pressed state of the SUPER key.
+     * Returns the pressed state of the CONTROL key.
      *
-     * @return true if the CTRL key is pressed, false otherwise
+     * @return true if the CONTROL key is pressed, false otherwise
      */
+    public boolean isControlPressed() {
+        return (mModifiers & KeyEvent.META_CONTROL_ON) != 0;
+    }
+
+    /**
+     * This is same as {@link #isShortcutPressed()}.
+     *
+     * @deprecated use {@link #isShortcutPressed()} to avoid confusion
+     */
+    @Deprecated
     public boolean isCtrlPressed() {
         return (mModifiers & KeyEvent.META_CTRL_ON) != 0;
     }
 
     /**
-     * Returns the pressed state of the ALT key.
+     * Returns the pressed state of the ALT key (a.k.a. OPTION key).
      *
      * @return true if the ALT key is pressed, false otherwise
      */
@@ -1075,12 +1084,22 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
-     * Returns the pressed state of the SUPER key (a.k.a. META or WIN key).
+     * Returns the pressed state of the SUPER key (a.k.a. META or WINDOWS or COMMAND key).
      *
      * @return true if the SUPER key is pressed, false otherwise
      */
     public boolean isSuperPressed() {
-        return (mModifiers & GLFW.GLFW_MOD_SUPER) != 0;
+        return (mModifiers & KeyEvent.META_SUPER_ON) != 0;
+    }
+
+    /**
+     * If it's running on macOS, returns the pressed state of the COMMAND key.
+     * Otherwise, returns the pressed state of the CONTROL key.
+     *
+     * @return true if the shortcut key is pressed, false otherwise
+     */
+    public boolean isShortcutPressed() {
+        return (mModifiers & KeyEvent.META_SHORTCUT_ON) != 0;
     }
 
     /**

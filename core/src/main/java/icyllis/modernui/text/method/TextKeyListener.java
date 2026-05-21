@@ -223,7 +223,7 @@ public final class TextKeyListener {
     private boolean backspaceOrForwardDelete(TextView view, Editable content,
                                              KeyEvent event, boolean isForwardDelete) {
         // Ensure the key event does not have modifiers except ALT or SHIFT or CTRL.
-        if ((event.getModifiers() & ~(KeyEvent.META_SHIFT_ON | KeyEvent.META_ALT_ON | KeyEvent.META_CTRL_ON)) != 0) {
+        if ((event.getModifiers() & ~(KeyEvent.META_SHIFT_ON | KeyEvent.META_ALT_ON | KeyEvent.META_SHORTCUT_ON)) != 0) {
             return false;
         }
 
@@ -233,20 +233,28 @@ public final class TextKeyListener {
         }
 
         // MetaKeyKeyListener doesn't track control key state. Need to check the KeyEvent instead.
-        boolean isCtrlActive = event.isCtrlPressed();
         boolean isShiftActive = event.isShiftPressed();
-        boolean isAltActive = event.isAltPressed();
 
-        if (isCtrlActive) {
-            if (isAltActive || isShiftActive) {
-                // Ctrl+Alt, Ctrl+Shift, Ctrl+Alt+Shift should not delete any characters.
-                return false;
+        if (KeyEvent.IS_MACOS) {
+            if (event.isAltPressed()) {
+                if (isShiftActive || event.isSuperPressed()) {
+                    // Option+Cmd, Option+Shift, Option+Shift+Cmd should not delete any characters.
+                    return false;
+                }
+                return deleteUntilWordBoundary(view, content, isForwardDelete);
             }
-            return deleteUntilWordBoundary(view, content, isForwardDelete);
+        } else {
+            if (event.isControlPressed()) {
+                if (event.isAltPressed() || isShiftActive) {
+                    // Ctrl+Alt, Ctrl+Shift, Ctrl+Alt+Shift should not delete any characters.
+                    return false;
+                }
+                return deleteUntilWordBoundary(view, content, isForwardDelete);
+            }
         }
 
-        // Alt+Backspace or Alt+ForwardDelete deletes the current line, if possible.
-        if (isAltActive && deleteLine(view, content)) {
+        // (Cmd/Alt)+Backspace or (Cmd/Alt)+ForwardDelete deletes the current line, if possible.
+        if ((KeyEvent.IS_MACOS ? event.isSuperPressed() : event.isAltPressed()) && deleteLine(view, content)) {
             return true;
         }
 

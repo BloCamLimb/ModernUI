@@ -4928,7 +4928,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     @Override
     public boolean onKeyShortcut(int keyCode, @NonNull KeyEvent event) {
-        if (event.hasModifiers(KeyEvent.META_CTRL_ON)) {
+        if (event.hasModifiers(KeyEvent.META_SHORTCUT_ON)) {
             // Handle Ctrl-only shortcuts.
             switch (keyCode) {
                 case KeyEvent.KEY_X:

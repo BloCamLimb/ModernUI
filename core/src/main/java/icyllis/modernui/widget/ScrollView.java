@@ -483,14 +483,35 @@ public class ScrollView extends FrameLayout {
         boolean handled = false;
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             switch (event.getKeyCode()) {
-                case KeyEvent.KEY_UP -> handled = arrowScroll(View.FOCUS_UP);
-                case KeyEvent.KEY_DOWN -> handled = arrowScroll(View.FOCUS_DOWN);
-                case KeyEvent.KEY_HOME -> handled = fullScroll(View.FOCUS_UP);
-                case KeyEvent.KEY_END -> handled = fullScroll(View.FOCUS_DOWN);
-                case KeyEvent.KEY_SPACE -> handled = pageScroll(event.isShiftPressed() ? View.FOCUS_UP :
-                        View.FOCUS_DOWN);
-                case KeyEvent.KEY_PAGE_UP -> handled = pageScroll(View.FOCUS_UP);
-                case KeyEvent.KEY_PAGE_DOWN -> handled = pageScroll(View.FOCUS_DOWN);
+                case KeyEvent.KEY_UP:
+                    if (KeyEvent.IS_MACOS ? !event.isSuperPressed() : !event.isAltPressed()) {
+                        handled = arrowScroll(View.FOCUS_UP);
+                    } else {
+                        handled = fullScroll(View.FOCUS_UP);
+                    }
+                    break;
+                case KeyEvent.KEY_DOWN:
+                    if (KeyEvent.IS_MACOS ? !event.isSuperPressed() : !event.isAltPressed()) {
+                        handled = arrowScroll(View.FOCUS_DOWN);
+                    } else {
+                        handled = fullScroll(View.FOCUS_DOWN);
+                    }
+                    break;
+                case KeyEvent.KEY_HOME:
+                    handled = fullScroll(View.FOCUS_UP);
+                    break;
+                case KeyEvent.KEY_END:
+                    handled = fullScroll(View.FOCUS_DOWN);
+                    break;
+                case KeyEvent.KEY_SPACE:
+                    pageScroll(event.isShiftPressed() ? View.FOCUS_UP : View.FOCUS_DOWN);
+                    break;
+                case KeyEvent.KEY_PAGE_UP:
+                    handled = pageScroll(View.FOCUS_UP);
+                    break;
+                case KeyEvent.KEY_PAGE_DOWN:
+                    handled = pageScroll(View.FOCUS_DOWN);
+                    break;
             }
         }
 

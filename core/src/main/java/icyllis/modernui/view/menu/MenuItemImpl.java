@@ -24,7 +24,6 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
-import org.lwjgl.system.Platform;
 
 public final class MenuItemImpl implements MenuItem {
 
@@ -39,9 +38,9 @@ public final class MenuItemImpl implements MenuItem {
     private CharSequence mTitle;
     private CharSequence mTitleCondensed;
     private char mShortcutNumericChar;
-    private int mShortcutNumericModifiers = KeyEvent.META_CTRL_ON;
+    private int mShortcutNumericModifiers = KeyEvent.META_SHORTCUT_ON;
     private char mShortcutAlphabeticChar;
-    private int mShortcutAlphabeticModifiers = KeyEvent.META_CTRL_ON;
+    private int mShortcutAlphabeticModifiers = KeyEvent.META_SHORTCUT_ON;
 
     /**
      * The icon's drawable which is only created as needed
@@ -296,15 +295,16 @@ public final class MenuItemImpl implements MenuItem {
 
         final int modifiers =
                 mMenu.isQwertyMode() ? mShortcutAlphabeticModifiers : mShortcutNumericModifiers;
-        //TODO localisation and deal with SUPER key
-        if (Platform.get() == Platform.MACOSX) {
+        if (KeyEvent.IS_MACOS) {
+            appendModifier(sb, modifiers, KeyEvent.META_CONTROL_ON, "⌃");
             appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "⌥");
             appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "⇧");
-            appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "⌘");
+            appendModifier(sb, modifiers, KeyEvent.META_SUPER_ON, "⌘");
         } else {
-            appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "Ctrl+");
+            appendModifier(sb, modifiers, KeyEvent.META_CONTROL_ON, "Ctrl+");
             appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "Alt+");
             appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "Shift+");
+            appendModifier(sb, modifiers, KeyEvent.META_SUPER_ON, "Win+");
         }
 
         sb.append(Character.toUpperCase(shortcut));
