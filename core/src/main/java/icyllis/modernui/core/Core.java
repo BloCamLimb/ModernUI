@@ -24,6 +24,8 @@ import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.GraniteUtil;
 import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.opengl.GLUtil;
+import icyllis.arc3d.vulkan.VKUtil;
+import icyllis.arc3d.vulkan.VulkanBackendContext;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.RenderThread;
@@ -271,7 +273,7 @@ public final class Core {
         LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
         LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
         StringBuilder sb = new StringBuilder("\n");
-        ((icyllis.arc3d.opengl.GLCaps) dc.getCaps()).dump(sb, false);
+        dc.getCaps().dump(sb, false);
         LOGGER.info(MARKER, "OpenGL caps: {}", sb);
         return true;
     }
@@ -358,10 +360,9 @@ public final class Core {
         }, "GL-Error-Dialog").start();
     }
 
-    //TODO WIP
     @RenderThread
-    public static boolean initVulkan() {
-        return initVulkan(new ContextOptions());
+    public static boolean initVulkan(@NonNull VulkanBackendContext backendContext) {
+        return initVulkan(backendContext, new ContextOptions());
     }
 
     /**
@@ -372,9 +373,9 @@ public final class Core {
      *
      * @return true if successful
      */
-    //TODO WIP
     @RenderThread
-    public static boolean initVulkan(@NonNull ContextOptions options) {
+    public static boolean initVulkan(@NonNull VulkanBackendContext backendContext,
+                                     @NonNull ContextOptions options) {
         final ImmediateContext dc;
         synchronized (Core.class) {
             if (sImmediateContext != null) {
@@ -388,24 +389,20 @@ public final class Core {
             } else if (Thread.currentThread() != sRenderThread) {
                 throw new IllegalStateException();
             }
-            if (true) {
+            initContextOptions(options);
+            dc = VKUtil.makeVulkan(backendContext, options);
+            if (dc == null) {
                 return false;
             }
-            /*try {
-                var vkManager = VulkanManager.getInstance();
-                vkManager.initialize();
-                initContextOptions(options);
-                dc = vkManager.createContext(options);
-                if (dc == null) {
-                    return false;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (!GraniteUtil.init(dc)) {
+                dc.unref();
                 return false;
-            }*/
-
+            }
             sImmediateContext = dc;
         }
+        StringBuilder sb = new StringBuilder("\n");
+        dc.getCaps().dump(sb, false);
+        LOGGER.info(MARKER, "Vulkan caps: {}", sb);
         return true;
     }
 
