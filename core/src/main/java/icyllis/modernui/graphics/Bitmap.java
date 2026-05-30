@@ -58,6 +58,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -118,7 +119,7 @@ public final class Bitmap implements AutoCloseable {
     private final Cleaner.Cleanable mCleanup;
 
     /*
-     * Represents whether the Bitmap's content is requested to be premultiplied.
+     * Represents whether the Bitmap's content is requested to be premultiplied or opaque.
      * Note that isPremultiplied() does not directly return this value, because
      * isPremultiplied() may never return true for a 565 Bitmap or a bitmap
      * without alpha.
@@ -129,22 +130,23 @@ public final class Bitmap implements AutoCloseable {
      * The actual bitmap's alpha type is kept up to date by
      * pushing down this preference for every format change.
      */
-    private boolean mRequestPremultiplied;
+    @ColorInfo.AlphaType
+    private int mRequestAlphaType;
 
     Bitmap(@NonNull Format format, @NonNull ImageInfo info, long addr, int rowBytes,
            @Nullable LongConsumer freeFn) {
         mFormat = format;
         mPixmap = new Pixmap(info, null, addr, rowBytes);
-        mRequestPremultiplied = info.alphaType() == ColorInfo.AT_PREMUL;
+        mRequestAlphaType = info.alphaType();
         var pixels = new PixelRef(info.width(), info.height(), null, addr, rowBytes, freeFn);
         mCleanup = Core.registerNativeResource(this, pixels);
         mPixels = pixels;
     }
 
-    Bitmap(@NonNull Format format, @NonNull Pixmap pixmap, @NonNull PixelRef pixels) {
+    Bitmap(@NonNull Format format, @NonNull Pixmap pixmap, int requestAlphaType, @NonNull PixelRef pixels) {
         mFormat = format;
         mPixmap = pixmap;
-        mRequestPremultiplied = pixmap.getInfo().alphaType() == ColorInfo.AT_PREMUL;
+        mRequestAlphaType = requestAlphaType;
         mCleanup = Core.registerNativeResource(this, pixels);
         mPixels = pixels;
     }
@@ -484,7 +486,7 @@ public final class Bitmap implements AutoCloseable {
         var newColorType = format.getColorType();
         if (info.colorType() != newColorType) {
             var newAlphaType = ColorInfo.validateAlphaType(newColorType,
-                    mRequestPremultiplied ? ColorInfo.AT_PREMUL : ColorInfo.AT_UNPREMUL);
+                    mRequestAlphaType);
             var newInfo = ImageInfo.make(
                     info.width(), info.height(),
                     newColorType, newAlphaType,
@@ -550,11 +552,11 @@ public final class Bitmap implements AutoCloseable {
      */
     public void setPremultiplied(boolean premultiplied) {
         assert mPixels != null;
-        mRequestPremultiplied = premultiplied;
+        mRequestAlphaType = premultiplied ? ColorInfo.AT_PREMUL : ColorInfo.AT_UNPREMUL;
         if (hasAlpha()) {
             var info = getInfo();
             var newAlphaType = ColorInfo.validateAlphaType(info.colorType(),
-                    premultiplied ? ColorInfo.AT_PREMUL : ColorInfo.AT_UNPREMUL);
+                    mRequestAlphaType);
             if (info.alphaType() != newAlphaType) {
                 mPixmap = new Pixmap(info.makeAlphaType(newAlphaType), mPixmap);
             }
@@ -1599,6 +1601,46 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
+     * Create a shallow copy of this bitmap as a sub-image view restricted to the
+     * specified rectangular region, without copying or reordering pixel data.
+     * This is equivalent to creating a shared owner for the pixel memory.
+     * The sub-image shares the same underlying pixel memory, only differing in its
+     * logical origin and dimensions within the shared buffer. You may reinterpret
+     * or close the returned Bitmap without affecting the original Bitmap, but
+     * modifications to the pixel memory will be reflected in all shared owners at
+     * the same time.
+     * <p>
+     * Note that since the pixel memory is shared, it is not safe for multiple
+     * owners to modify the pixel memory at the same time, which will further cause
+     * memory safety issues.
+     *
+     * @param x      the x coordinate of the sub-image origin in the source bitmap
+     * @param y      the y coordinate of the sub-image origin in the source bitmap
+     * @param width  the width of the sub-image region
+     * @param height the height of the sub-image region
+     * @return a shallow copy of bitmap representing the sub-image view
+     * @throws IllegalArgumentException if x, y, width, height exceed the bounds of the bitmap
+     * @throws IllegalStateException    this bitmap is already closed
+     * @see #clone()
+     * @since 3.13
+     */
+    @NonNull
+    public Bitmap subImage(int x, int y, int width, int height) {
+        checkOutOfBounds(x, y, width, height);
+        PixelRef pixels = refPixels();
+        if (pixels == null) {
+            throw new IllegalStateException("Cannot clone a recycled bitmap!");
+        }
+        var subPixmap = mPixmap.makeSubset(new Rect2i(
+                x, y, x + width, y + height
+        ));
+        if (subPixmap == null) {
+            throw new IllegalArgumentException(); // impossible
+        }
+        return new Bitmap(mFormat, subPixmap, mRequestAlphaType, pixels); // move
+    }
+
+    /**
      * Create a shallow copy of this bitmap, this is equivalent to creating a
      * shared owner for the pixel memory. You may reinterpret or close the
      * returned Bitmap without affecting the original Bitmap, but modifications
@@ -1610,6 +1652,7 @@ public final class Bitmap implements AutoCloseable {
      *
      * @return a shallow copy of bitmap
      * @throws IllegalStateException this bitmap is already closed
+     * @see #subImage(int, int, int, int)
      */
     @SuppressWarnings("MethodDoesntCallSuperMethod")
     @NonNull
@@ -1618,7 +1661,7 @@ public final class Bitmap implements AutoCloseable {
         if (pixels == null) {
             throw new IllegalStateException("Cannot clone a recycled bitmap!");
         }
-        return new Bitmap(mFormat, mPixmap, pixels); // move
+        return new Bitmap(mFormat, mPixmap, mRequestAlphaType, pixels); // move
     }
 
     /**

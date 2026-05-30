@@ -86,6 +86,10 @@ public class Image implements AutoCloseable {
     /**
      * Creates an image backed by a GPU texture from the given bitmap.
      * <p>
+     * If you want to create an image for a specific sub-region of the given bitmap,
+     * you should first call {@link Bitmap#subImage(int, int, int, int)} to obtain
+     * the sub-image view, and then pass the resulting bitmap to this method.
+     * <p>
      * The bitmap may be safely closed after this call returns, regardless of whether
      * it is immutable. However, it must remain open during the execution of this call.
      * <p>
