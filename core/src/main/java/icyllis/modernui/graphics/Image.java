@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.RawPtr;
@@ -327,7 +328,7 @@ public class Image implements AutoCloseable {
     /**
      * <p>Returns the density for this image.</p>
      *
-     * <p>The default density is {@link DisplayMetrics#DENSITY_DEFAULT}..</p>
+     * <p>The default density is {@link DisplayMetrics#DENSITY_DEFAULT}.</p>
      *
      * @return A scaling factor of the default density or {@link #DENSITY_NONE}
      * if the scaling factor is unknown.
@@ -351,6 +352,7 @@ public class Image implements AutoCloseable {
      * @see DisplayMetrics#DENSITY_DEFAULT
      * @see DisplayMetrics#densityDpi
      * @see #DENSITY_NONE
+     * @see #clone()
      */
     public void setDensity(int density) {
         mDensity = density;
@@ -397,12 +399,44 @@ public class Image implements AutoCloseable {
     }
 
     /**
+     * Indicates whether the pixels stored in this bitmap are stored in a premultiplied format.
+     * <p>
+     * When a pixel is premultiplied, the RGB components have already been multiplied by
+     * the alpha component. For instance, if the original color is a 50% translucent red
+     * {@code (1.0, 0.0, 0.0, 0.5)}, its premultiplied form is {@code (0.5, 0.0, 0.0, 0.5)}.
+     *
+     * @return true if the underlying pixels are premultiplied, false otherwise
+     * @since 3.13.0
+     */
+    public boolean isPremultiplied() {
+        return mImage.getAlphaType() == ColorInfo.AT_PREMUL;
+    }
+
+    /**
      * Returns the color space associated with this image. If the color
      * space is unknown, this method returns null.
      */
     @Nullable
     public ColorSpace getColorSpace() {
         return mImage.getColorSpace();
+    }
+
+    /**
+     * Returns whether this image is backed by a CPU bitmap.
+     *
+     * @since 3.13.0
+     */
+    public boolean isRasterBacked() {
+        return mImage.isRasterBacked();
+    }
+
+    /**
+     * Returns whether this image is backed by a GPU texture.
+     *
+     * @since 3.13.0
+     */
+    public boolean isTextureBacked() {
+        return mImage.isTextureBacked();
     }
 
     /**

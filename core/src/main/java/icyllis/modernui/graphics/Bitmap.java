@@ -73,9 +73,8 @@ import static org.lwjgl.system.MemoryUtil.*;
  * <p>
  * Bitmap is created with immutable width, height, row bytes, and memory allocation
  * (memory address), its contents may be changed. You can allocate zero-initialized
- * Bitmap via the static factory methods in this class, i.e. {@link #createBitmap(int, int, Format)}.
- * You can also obtain Bitmap from encoded data (PNG, TGA, BMP, JPEG, HDR, PSD, PBM, PGM, and PPM) via
- * {@link BitmapFactory}.
+ * Bitmap via the static factory methods in this class, i.e. {@link #createBitmap}.
+ * You can also obtain Bitmap from encoded data via {@link BitmapFactory}.
  * <p>
  * The color space of Bitmap defaults to sRGB and can only be in RGB model space
  * or null, color space may be changed via {@link #setColorSpace(ColorSpace)}.
@@ -164,6 +163,7 @@ public final class Bitmap implements AutoCloseable {
      * @param format the number of channels and the bit depth
      * @throws IllegalArgumentException width or height out of range
      * @throws OutOfMemoryError         out of native memory
+     * @see #createBitmap(int, int, Format, boolean, ColorSpace)
      */
     @NonNull
     public static Bitmap createBitmap(@Size(min = 1) int width,
@@ -418,13 +418,30 @@ public final class Bitmap implements AutoCloseable {
 
     /**
      * Returns the number of bytes that can be used to store this bitmap's pixels.
+     * <p>
+     * This method is obsolete in favor of {@link #getByteSize()}.
      */
+    @ApiStatus.Obsolete
     public long getSize() {
         if (mPixels == null) {
             LOGGER.warn(MARKER, "Called getSize() on a recycle()'d bitmap! This is undefined behavior!");
             return 0;
         }
         return (long) getRowBytes() * getHeight();
+    }
+
+    /**
+     * Returns the minimum number of bytes that can be used to store this bitmap's pixels.
+     *
+     * @return the minimum size, in bytes; or 0 if failed
+     * @since 3.13.0
+     */
+    public long getByteSize() {
+        if (mPixels == null) {
+            LOGGER.warn(MARKER, "Called getByteSize() on a recycle()'d bitmap! This is undefined behavior!");
+            return 0;
+        }
+        return mPixmap.getInfo().computeByteSize(getRowBytes());
     }
 
     /**
@@ -470,9 +487,14 @@ public final class Bitmap implements AutoCloseable {
      * If the bytes-per-pixel of new format and original format do not match, an
      * {@link IllegalArgumentException} will be thrown and the bitmap will not
      * be modified.
+     * <p>
+     * If the new format introduces an alpha channel, any previously recorded
+     * alpha type state configured via {@link #setPremultiplied(boolean)} will
+     * become active and govern subsequent sampling or blending.
      *
      * @param format a new interpretation of existing pixel data
      * @throws IllegalArgumentException bpp of new format is not equal to bpp of original format
+     * @see #setPremultiplied(boolean)
      */
     public void setFormat(@NonNull Format format) {
         if (format.getBytesPerPixel() == 0) {
@@ -498,40 +520,123 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * Returns the number of channels.
+     * Returns the number of channels of the bitmap's format.
+     *
+     * @return the number of channels
      */
     public int getChannels() {
         return mFormat.getChannels();
     }
 
     /**
-     * Returns true if the bitmap's format supports per-pixel alpha, and
-     * if the pixels may contain non-opaque alpha values. For some formats,
-     * this is always false (e.g. {@link Format#RGB_888}), since they do
-     * not support per-pixel alpha. However, for formats that do, the
-     * bitmap may be flagged to be known that all of its pixels are opaque.
-     * In this case hasAlpha() will also return false. If a format such as
-     * {@link Format#RGBA_8888} is not so flagged, it will return true
-     * by default.
+     * Checks solely whether the bitmap's current format contains an alpha channel.
+     * <p>
+     * This method only inspects the channel configuration of the {@link Format} and does not
+     * check the actual pixel values or the opacity flag.
+     * <p>
+     * <b>Note on Version Compatibility:</b> Prior to version 3.13.0, this method behaved
+     * identically to {@link #isOpaque()}. Starting from version 3.13.0, {@link #isOpaque()}
+     * was introduced to explicitly handle runtime pixel opacity checks, and this method
+     * was regressed to strictly inspect the format's channel capabilities.
+     *
+     * @return true if the bitmap's format supports an alpha channel, false otherwise
+     * @see #isOpaque()
+     * @see #isPremultiplied()
      */
     public boolean hasAlpha() {
-        assert mPixels != null;
-        return !getInfo().isOpaque();
+        return mFormat.hasAlpha();
     }
 
     /**
-     * <p>Indicates whether pixels stored in this bitmaps are stored premultiplied.
-     * When a pixel is premultiplied, the RGB components have been multiplied by
-     * the alpha component. For instance, if the original color is a 50%
-     * translucent red <code>(128, 255, 0, 0)</code>, the premultiplied form is
-     * <code>(128, 128, 0, 0)</code>.</p>
+     * Returns whether the bitmap has only an alpha channel (i.e. a transparency mask).
+     * If so, then when drawn its color depends on the solid color of Paint, or
+     * Paint's shader if set.
      *
-     * <p>This method only returns true if {@link #hasAlpha()} returns true.
-     * A bitmap with no alpha channel can be used both as a premultiplied and
-     * as a non premultiplied bitmap.</p>
+     * @return whether the bitmap is alpha only
+     * @since 3.13.0
+     */
+    public boolean isAlphaMask() {
+        return mFormat.isAlphaOnly();
+    }
+
+    /**
+     * Returns true if the bitmap's format does not support per-pixel alpha
+     * (where the alpha value is implicitly 1.0), or if the bitmap is flagged
+     * to indicate that all of its pixels are known to be opaque (meaning their
+     * alpha values are explicitly 1.0).
+     * <p>
+     * Due to state exclusivity, if this method returns true on a format that supports alpha,
+     * {@link #isPremultiplied()} is guaranteed to return false.
+     * <p>
+     * If a format that supports alpha (such as {@link Format#RGBA_8888}) is not explicitly
+     * flagged as opaque, this method returns false by default. Conversely, for formats
+     * without an alpha channel (e.g., {@link Format#RGB_888}), this method <strong>always</strong>
+     * returns true.
      *
-     * @return true if the underlying pixels have been premultiplied, false
-     * otherwise
+     * @return true if the bitmap is guaranteed to be opaque
+     * @see #setOpaque(boolean)
+     * @see #hasAlpha()
+     * @since 3.13.0
+     */
+    public boolean isOpaque() {
+        assert mPixels != null;
+        return getInfo().isOpaque();
+    }
+
+    /**
+     * Sets whether the bitmap is flagged as opaque. Note that this method only
+     * modifies the internal metadata flag and does not alter the actual pixel data.
+     * <p>
+     * <strong>State Conflict Warning:</strong> This flag is mutually exclusive with the
+     * premultiplied state. Setting {@code setOpaque(true)} will immediately override and
+     * invalidate any previous premultiplied configuration, causing {@link #isPremultiplied()}
+     * to return false.
+     * <p>
+     * <strong>Equivalence Behavior:</strong> Calling {@code setOpaque(false)} is strictly
+     * equivalent to calling {@code setPremultiplied(false)}. Both actions downgrade the
+     * bitmap's alpha type to an unpremultiplied (straight alpha) state.
+     * <p>
+     * When an {@link Image} object is created using a bitmap flagged as opaque,
+     * the GPU pipeline can leverage this hint to execute occlusion culling
+     * (such as Early-Z) during rendering, significantly improving fill-rate performance.
+     *
+     * @param opaque true to flag the bitmap as known-opaque (disabling premultiplication),
+     *               false to treat it as unpremultiplied/straight alpha
+     * @see #isOpaque()
+     * @see #setPremultiplied(boolean)
+     * @since 3.13.0
+     */
+    public void setOpaque(boolean opaque) {
+        assert mPixels != null;
+        int requestAlphaType = opaque ? ColorInfo.AT_OPAQUE : ColorInfo.AT_UNPREMUL;
+        if (mRequestAlphaType == requestAlphaType) {
+            return;
+        }
+        mRequestAlphaType = requestAlphaType;
+        var info = getInfo();
+        var newAlphaType = ColorInfo.validateAlphaType(info.colorType(),
+                mRequestAlphaType);
+        if (info.alphaType() != newAlphaType) {
+            mPixmap = new Pixmap(info.makeAlphaType(newAlphaType), mPixmap);
+        }
+    }
+
+    /**
+     * Indicates whether the pixels stored in this bitmap are stored in a premultiplied format.
+     * <p>
+     * When a pixel is premultiplied, the RGB components have already been multiplied by
+     * the alpha component. For instance, if the original color is a 50% translucent red
+     * {@code (1.0, 0.0, 0.0, 0.5)}, its premultiplied form is {@code (0.5, 0.0, 0.0, 0.5)}.
+     * <p>
+     * <strong>State Exclusivity:</strong> This method will <strong>always</strong> return false
+     * if {@link #isOpaque()} returns true, as an opaque bitmap cannot logically have
+     * premultiplied transparent alpha transitions.
+     * <p>
+     * This method only returns true if {@link #hasAlpha()} returns true and the bitmap has been
+     * explicitly configured via {@code setPremultiplied(true)}.
+     *
+     * @return true if the underlying pixels are premultiplied, false otherwise
+     * @see #setPremultiplied(boolean)
      */
     public boolean isPremultiplied() {
         assert mPixels != null;
@@ -541,18 +646,36 @@ public final class Bitmap implements AutoCloseable {
     /**
      * Sets whether the bitmap should treat its data as premultiplied or not.
      * <p>
-     * By calling this method, further operations will reinterpret the colors
-     * using the specified alpha type, existing pixel data will remain unchanged.
+     * Calling this method causes further operations (such as texture sampling or blending)
+     * to reinterpret the color channels using the specified alpha type. The existing raw
+     * pixel data remains completely unchanged.
+     * <p>
+     * <strong>State Conflict Warning:</strong> This configuration is mutually exclusive with
+     * the opaque flag. Setting {@code setPremultiplied(true)} will immediately override and
+     * invalidate the opaque status, causing {@link #isOpaque()} to return false (provided the
+     * format supports alpha).
+     * <p>
+     * <strong>Equivalence Behavior:</strong> Calling {@code setPremultiplied(false)} is
+     * strictly equivalent to calling {@code setOpaque(false)}. Both actions reset the
+     * bitmap's alpha type to an unpremultiplied (straight alpha) state.
      * <p>
      * If the current format does not have an alpha channel ({@link #hasAlpha()} returns false),
-     * then the specified alpha type is recorded and will work in the future,
-     * see {@link #setFormat(Format)}.
+     * the specified alpha type is still recorded internally. It will remain dormant and take
+     * effect if the format is later changed to one with an alpha channel via {@link #setFormat(Format)}.
      *
-     * @param premultiplied whether premultiplied alpha type is requested
+     * @param premultiplied true if the pixel data should be interpreted as premultiplied
+     *                      (disabling the opaque flag), false to reset to unpremultiplied/straight alpha
+     * @see #isPremultiplied()
+     * @see #setOpaque(boolean)
+     * @see #setFormat(Format)
      */
     public void setPremultiplied(boolean premultiplied) {
         assert mPixels != null;
-        mRequestAlphaType = premultiplied ? ColorInfo.AT_PREMUL : ColorInfo.AT_UNPREMUL;
+        int requestAlphaType = premultiplied ? ColorInfo.AT_PREMUL : ColorInfo.AT_UNPREMUL;
+        if (mRequestAlphaType == requestAlphaType) {
+            return;
+        }
+        mRequestAlphaType = requestAlphaType;
         if (hasAlpha()) {
             var info = getInfo();
             var newAlphaType = ColorInfo.validateAlphaType(info.colorType(),
