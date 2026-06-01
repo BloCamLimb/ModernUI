@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.transition;
@@ -21,13 +21,13 @@ package icyllis.modernui.transition;
 
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import org.intellij.lang.annotations.MagicConstant;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -56,18 +56,18 @@ public class Slide extends Visibility {
         /**
          * Returns the translation value for view when it goes out of the scene
          */
-        float getGoneX(@Nonnull ViewGroup sceneRoot, @Nonnull View view);
+        float getGoneX(@NonNull ViewGroup sceneRoot, @NonNull View view);
 
         /**
          * Returns the translation value for view when it goes out of the scene
          */
-        float getGoneY(@Nonnull ViewGroup sceneRoot, @Nonnull View view);
+        float getGoneY(@NonNull ViewGroup sceneRoot, @NonNull View view);
     }
 
     private abstract static class CalculateSlideHorizontal implements CalculateSlide {
 
         @Override
-        public float getGoneY(@Nonnull ViewGroup sceneRoot, @Nonnull View view) {
+        public float getGoneY(@NonNull ViewGroup sceneRoot, @NonNull View view) {
             return view.getTranslationY();
         }
     }
@@ -75,7 +75,7 @@ public class Slide extends Visibility {
     private abstract static class CalculateSlideVertical implements CalculateSlide {
 
         @Override
-        public float getGoneX(@Nonnull ViewGroup sceneRoot, @Nonnull View view) {
+        public float getGoneX(@NonNull ViewGroup sceneRoot, @NonNull View view) {
             return view.getTranslationX();
         }
     }
@@ -83,7 +83,7 @@ public class Slide extends Visibility {
     private static final CalculateSlide sCalculateLeft = new CalculateSlideHorizontal() {
 
         @Override
-        public float getGoneX(@Nonnull ViewGroup sceneRoot, @Nonnull View view) {
+        public float getGoneX(@NonNull ViewGroup sceneRoot, @NonNull View view) {
             return view.getTranslationX() - sceneRoot.getWidth();
         }
     };
@@ -91,7 +91,7 @@ public class Slide extends Visibility {
     private static final CalculateSlide sCalculateStart = new CalculateSlideHorizontal() {
 
         @Override
-        public float getGoneX(@Nonnull ViewGroup sceneRoot, @Nonnull View view) {
+        public float getGoneX(@NonNull ViewGroup sceneRoot, @NonNull View view) {
             final boolean isRtl = sceneRoot.isLayoutRtl();
             final float x;
             if (isRtl) {
@@ -106,7 +106,7 @@ public class Slide extends Visibility {
     private static final CalculateSlide sCalculateTop = new CalculateSlideVertical() {
 
         @Override
-        public float getGoneY(@Nonnull ViewGroup sceneRoot, @Nonnull View view) {
+        public float getGoneY(@NonNull ViewGroup sceneRoot, @NonNull View view) {
             return view.getTranslationY() - sceneRoot.getHeight();
         }
     };
@@ -114,7 +114,7 @@ public class Slide extends Visibility {
     private static final CalculateSlide sCalculateRight = new CalculateSlideHorizontal() {
 
         @Override
-        public float getGoneX(@Nonnull ViewGroup sceneRoot, @Nonnull View view) {
+        public float getGoneX(@NonNull ViewGroup sceneRoot, @NonNull View view) {
             return view.getTranslationX() + sceneRoot.getWidth();
         }
     };
@@ -122,7 +122,7 @@ public class Slide extends Visibility {
     private static final CalculateSlide sCalculateEnd = new CalculateSlideHorizontal() {
 
         @Override
-        public float getGoneX(@Nonnull ViewGroup sceneRoot, @Nonnull View view) {
+        public float getGoneX(@NonNull ViewGroup sceneRoot, @NonNull View view) {
             final boolean isRtl = sceneRoot.isLayoutRtl();
             final float x;
             if (isRtl) {
@@ -137,7 +137,7 @@ public class Slide extends Visibility {
     private static final CalculateSlide sCalculateBottom = new CalculateSlideVertical() {
 
         @Override
-        public float getGoneY(@Nonnull ViewGroup sceneRoot, @Nonnull View view) {
+        public float getGoneY(@NonNull ViewGroup sceneRoot, @NonNull View view) {
             return view.getTranslationY() + sceneRoot.getHeight();
         }
     };
@@ -165,13 +165,13 @@ public class Slide extends Visibility {
     }
 
     @Override
-    public void captureStartValues(@Nonnull TransitionValues transitionValues) {
+    public void captureStartValues(@NonNull TransitionValues transitionValues) {
         super.captureStartValues(transitionValues);
         captureValues(transitionValues);
     }
 
     @Override
-    public void captureEndValues(@Nonnull TransitionValues transitionValues) {
+    public void captureEndValues(@NonNull TransitionValues transitionValues) {
         super.captureEndValues(transitionValues);
         captureValues(transitionValues);
     }

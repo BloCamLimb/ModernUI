@@ -1,25 +1,26 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+
 import java.util.Iterator;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
@@ -62,7 +63,7 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
      * @return the previous value associated with the specified key,
      * or {@code null} if there was no mapping for the key
      */
-    public E putIfAbsent(@Nonnull E e) {
+    public E putIfAbsent(@NonNull E e) {
         Node<E> node = find(e.get());
         if (node != null) {
             return node.mElement;
@@ -71,7 +72,7 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
         return null;
     }
 
-    protected Node<E> put(@Nonnull E e) {
+    protected Node<E> put(@NonNull E e) {
         final Node<E> l = mTail;
         final Node<E> node = new Node<>(l, e, null);
         mTail = node;
@@ -91,7 +92,7 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
      * or {@code null} if there was no mapping for the key
      */
     @Nullable
-    public E remove(@Nonnull T key) {
+    public E remove(@NonNull T key) {
         Node<E> n = find(key);
         if (n == null) {
             return null;
@@ -131,7 +132,7 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
      * @return an ascending iterator, which doesn't include new elements added during an
      * iteration.
      */
-    @Nonnull
+    @NonNull
     @Override
     public Iterator<E> iterator() {
         var iterator = new AscendingIterator<>(mHead, mTail);
@@ -143,7 +144,7 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
      * @return a descending iterator, which doesn't include new elements added during an
      * iteration.
      */
-    @Nonnull
+    @NonNull
     public Iterator<E> descendingIterator() {
         var iterator = new DescendingIterator<>(mTail, mHead);
         mIterators.put(iterator, Boolean.FALSE);
@@ -153,7 +154,7 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
     /**
      * return an iterator with additions.
      */
-    @Nonnull
+    @NonNull
     public Iterator<E> iteratorWithAdditions() {
         var iterator = new IteratorWithAdditions();
         mIterators.put(iterator, Boolean.FALSE);
@@ -245,7 +246,7 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
         }
 
         @Override
-        public void remove(@Nonnull Node<E> node) {
+        public void remove(@NonNull Node<E> node) {
             if (mExpectedEnd == node && node == mNext) {
                 mNext = null;
                 mExpectedEnd = null;
@@ -280,9 +281,9 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
             return result;
         }
 
-        abstract Node<E> forward(@Nonnull Node<E> node);
+        abstract Node<E> forward(@NonNull Node<E> node);
 
-        abstract Node<E> backward(@Nonnull Node<E> node);
+        abstract Node<E> backward(@NonNull Node<E> node);
     }
 
     static class AscendingIterator<E> extends SafeIterator<E> {
@@ -292,12 +293,12 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
         }
 
         @Override
-        Node<E> forward(@Nonnull Node<E> node) {
+        Node<E> forward(@NonNull Node<E> node) {
             return node.mNext;
         }
 
         @Override
-        Node<E> backward(@Nonnull Node<E> node) {
+        Node<E> backward(@NonNull Node<E> node) {
             return node.mPrev;
         }
     }
@@ -309,12 +310,12 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
         }
 
         @Override
-        Node<E> forward(@Nonnull Node<E> node) {
+        Node<E> forward(@NonNull Node<E> node) {
             return node.mPrev;
         }
 
         @Override
-        Node<E> backward(@Nonnull Node<E> node) {
+        Node<E> backward(@NonNull Node<E> node) {
             return node.mNext;
         }
     }
@@ -328,7 +329,7 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
         }
 
         @Override
-        public void remove(@Nonnull Node<E> node) {
+        public void remove(@NonNull Node<E> node) {
             if (node == mCurrent) {
                 mCurrent = mCurrent.mPrev;
                 mBeforeHead = mCurrent == null;
@@ -357,6 +358,6 @@ public class SafeLinkedList<T, E extends Supplier<T>> implements Iterable<E> {
 
     interface SafeRemove<V> {
 
-        void remove(@Nonnull Node<V> node);
+        void remove(@NonNull Node<V> node);
     }
 }

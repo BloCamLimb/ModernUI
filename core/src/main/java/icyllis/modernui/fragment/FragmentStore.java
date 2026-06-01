@@ -1,28 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.ViewGroup;
 import org.slf4j.Marker;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.*;
@@ -41,7 +41,7 @@ final class FragmentStore {
     FragmentStore() {
     }
 
-    void setViewModel(@Nonnull FragmentManagerViewModel viewModel) {
+    void setViewModel(@NonNull FragmentManagerViewModel viewModel) {
         mViewModel = viewModel;
     }
 
@@ -69,7 +69,7 @@ final class FragmentStore {
         }
     }
 
-    void makeActive(@Nonnull FragmentStateManager active) {
+    void makeActive(@NonNull FragmentStateManager active) {
         Fragment f = active.getFragment();
         if (mActive.put(f.mWho, active) == null) {
             if (f.mRetainInstanceChangedWhileDetached) {
@@ -83,7 +83,7 @@ final class FragmentStore {
         }
     }
 
-    void addFragment(@Nonnull Fragment fragment) {
+    void addFragment(@NonNull Fragment fragment) {
         if (mAdded.contains(fragment)) {
             throw new IllegalStateException("Fragment already added: " + fragment);
         }
@@ -125,14 +125,14 @@ final class FragmentStore {
         }
     }
 
-    void removeFragment(@Nonnull Fragment fragment) {
+    void removeFragment(@NonNull Fragment fragment) {
         synchronized (mAdded) {
             mAdded.remove(fragment);
         }
         fragment.mAdded = false;
     }
 
-    void makeInactive(@Nonnull FragmentStateManager inactive) {
+    void makeInactive(@NonNull FragmentStateManager inactive) {
         Fragment f = inactive.getFragment();
 
         if (f.mRetainInstance) {
@@ -179,7 +179,7 @@ final class FragmentStore {
         }
     }
 
-    @Nonnull
+    @NonNull
     List<FragmentStateManager> getActiveFragmentStateManagers() {
         ArrayList<FragmentStateManager> list = new ArrayList<>();
         for (var manager : mActive.values()) {
@@ -190,7 +190,7 @@ final class FragmentStore {
         return list;
     }
 
-    @Nonnull
+    @NonNull
     List<Fragment> getFragments() {
         if (mAdded.isEmpty()) {
             return Collections.emptyList();
@@ -200,7 +200,7 @@ final class FragmentStore {
         }
     }
 
-    @Nonnull
+    @NonNull
     List<Fragment> getActiveFragments() {
         ArrayList<Fragment> list = new ArrayList<>();
         for (var manager : mActive.values()) {
@@ -264,17 +264,17 @@ final class FragmentStore {
         return null;
     }
 
-    boolean containsActiveFragment(@Nonnull String who) {
+    boolean containsActiveFragment(@NonNull String who) {
         return mActive.get(who) != null;
     }
 
     @Nullable
-    FragmentStateManager getFragmentStateManager(@Nonnull String who) {
+    FragmentStateManager getFragmentStateManager(@NonNull String who) {
         return mActive.get(who);
     }
 
     @Nullable
-    Fragment findFragmentByWho(@Nonnull String who) {
+    Fragment findFragmentByWho(@NonNull String who) {
         for (var manager : mActive.values()) {
             if (manager != null) {
                 Fragment f = manager.getFragment();
@@ -287,7 +287,7 @@ final class FragmentStore {
     }
 
     @Nullable
-    Fragment findActiveFragment(@Nonnull String who) {
+    Fragment findActiveFragment(@NonNull String who) {
         FragmentStateManager manager = mActive.get(who);
         if (manager != null) {
             return manager.getFragment();
@@ -312,7 +312,7 @@ final class FragmentStore {
      * @return The correct index for the given fragment relative to other fragments in the same
      * container, or -1 if there are no fragments in the same container.
      */
-    int findFragmentIndexInContainer(@Nonnull Fragment f) {
+    int findFragmentIndexInContainer(@NonNull Fragment f) {
         final ViewGroup container = f.mContainer;
 
         if (container == null) {
@@ -343,8 +343,8 @@ final class FragmentStore {
         return -1;
     }
 
-    void dump(@Nonnull String prefix, @Nullable FileDescriptor fd,
-              @Nonnull PrintWriter writer, @Nullable String... args) {
+    void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
+              @NonNull PrintWriter writer, @Nullable String... args) {
         String innerPrefix = prefix + "    ";
 
         if (!mActive.isEmpty()) {

@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -2992,7 +2992,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         if (velocity > 0) {
             return true;
         }
-        // Not used by Modern UI, the following branch should return false
+        // Not used by ModernUI, the following branch should return false
         float distance = 0;//edgeEffect.getDistance() * getHeight();
 
         // This is flinging without the spring, so let's see if it will fling past the overscroll
@@ -5379,7 +5379,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             final ArrayList<View>[] scrapViews = mScrapViews;
             for (int i = 0; i < viewTypeCount; ++i) {
                 final ArrayList<View> scrapPile = scrapViews[i];
-                // Fixed by Modern UI
+                // Fixed by ModernUI
                 for (int j = scrapPile.size() - 1; j >= maxViews; j--) {
                     View v = scrapPile.remove(j);
                     if (v.isTemporarilyDetached()) {
@@ -5460,7 +5460,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
 
         private void clearScrap(@NonNull final ArrayList<View> scrap) {
-            // Fixed by Modern UI
+            // Fixed by ModernUI
             for (int j = scrap.size() - 1; j >= 0; j--) {
                 View v = scrap.remove(j);
                 if (v.isTemporarilyDetached()) {

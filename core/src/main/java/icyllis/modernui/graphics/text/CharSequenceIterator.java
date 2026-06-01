@@ -1,26 +1,26 @@
 /*
- * Modern UI.
- * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.graphics.text;
 
+import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import java.text.CharacterIterator;
 import java.util.Objects;
 
@@ -38,11 +38,11 @@ public class CharSequenceIterator implements CharacterIterator {
     // invariant: start <= pos <= end
     private int pos;
 
-    public CharSequenceIterator(@Nonnull CharSequence text) {
+    public CharSequenceIterator(@NonNull CharSequence text) {
         this(text, 0, text.length());
     }
 
-    public CharSequenceIterator(@Nonnull CharSequence text, int start, int end) {
+    public CharSequenceIterator(@NonNull CharSequence text, int start, int end) {
         pos = Objects.checkFromToIndex(start, end, text.length());
         this.text = text;
         this.start = start;

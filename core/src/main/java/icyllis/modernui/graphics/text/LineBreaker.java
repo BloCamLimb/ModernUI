@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.graphics.text;
@@ -21,10 +21,9 @@ package icyllis.modernui.graphics.text;
 import com.ibm.icu.text.BreakIterator;
 import com.ibm.icu.util.ULocale;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.text.CharacterIterator;
 import java.util.*;
 
@@ -51,13 +50,13 @@ public class LineBreaker {
                 || c == 0x3000;
     }
 
-    @Nonnull
+    @NonNull
     private final char[] mTextBuf;
-    @Nonnull
+    @NonNull
     private final MeasuredText mMeasuredText;
-    @Nonnull
+    @NonNull
     private final LineWidth mLineWidthLimits;
-    @Nonnull
+    @NonNull
     private final TabStops mTabStops;
 
     private int mLineNum = 0;
@@ -71,8 +70,8 @@ public class LineBreaker {
 
     private final List<BreakPoint> mBreakPoints = new ArrayList<>();
 
-    public LineBreaker(@Nonnull char[] textBuf, @Nonnull MeasuredText measuredText, @Nonnull LineWidth lineWidthLimits,
-                       @Nonnull TabStops tabStops) {
+    public LineBreaker(@NonNull char[] textBuf, @NonNull MeasuredText measuredText, @NonNull LineWidth lineWidthLimits,
+                       @NonNull TabStops tabStops) {
         mTextBuf = textBuf;
         mMeasuredText = measuredText;
         mLineWidthLimits = lineWidthLimits;
@@ -94,9 +93,9 @@ public class LineBreaker {
      * @param lineNumber   a line number (index offset) of this paragraph
      * @return the result of line break
      */
-    @Nonnull
+    @NonNull
     public static Result computeLineBreaks(@Nullable MeasuredText measuredText,
-                                           @Nonnull ParagraphConstraints constraints,
+                                           @NonNull ParagraphConstraints constraints,
                                            @Nullable int[] indents, int lineNumber) {
         if (measuredText == null || measuredText.getTextBuf().length == 0) {
             return new Result();
@@ -272,7 +271,7 @@ public class LineBreaker {
         return mBreakPoints.isEmpty() ? 0 : mBreakPoints.get(mBreakPoints.size() - 1).mOffset;
     }
 
-    @Nonnull
+    @NonNull
     private Result getResult() {
         int prevBreakOffset = 0;
         final int size = mBreakPoints.size();
@@ -473,7 +472,7 @@ public class LineBreaker {
 
         private static final BreakPoint[] EMPTY_ARRAY = {};
 
-        @Nonnull
+        @NonNull
         private final BreakPoint[] mBreakPoints;
         private final int[] mAscents;
         private final int[] mDescents;
@@ -484,7 +483,7 @@ public class LineBreaker {
             mDescents = IntArrays.EMPTY_ARRAY;
         }
 
-        private Result(@Nonnull BreakPoint[] breakPoints, int[] ascents, int[] descents) {
+        private Result(@NonNull BreakPoint[] breakPoints, int[] ascents, int[] descents) {
             mBreakPoints = breakPoints;
             mAscents = ascents;
             mDescents = descents;

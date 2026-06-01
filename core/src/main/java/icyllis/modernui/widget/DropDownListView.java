@@ -1,35 +1,36 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
-
-import javax.annotation.Nonnull;
 
 /**
  * Wrapper class for a ListView. This wrapper can hijack the focus to
  * make sure the list uses the appropriate drawables and states when
  * displayed on screen within a drop down. The focus is never actually
  * passed to the drop down in this mode; the list only looks focused.
+ *
+ * @hidden
  */
 @ApiStatus.Internal
 public class DropDownListView extends ListView {
@@ -93,7 +94,7 @@ public class DropDownListView extends ListView {
     }
 
     @Override
-    public boolean onTouchEvent(@Nonnull MotionEvent ev) {
+    public boolean onTouchEvent(@NonNull MotionEvent ev) {
         if (mResolveHoverRunnable != null) {
             // Resolved hover event as hover => touch transition.
             mResolveHoverRunnable.cancel();
@@ -103,7 +104,7 @@ public class DropDownListView extends ListView {
     }
 
     @Override
-    public boolean onHoverEvent(@Nonnull MotionEvent ev) {
+    public boolean onHoverEvent(@NonNull MotionEvent ev) {
         final int action = ev.getAction();
         if (action == MotionEvent.ACTION_HOVER_EXIT && mResolveHoverRunnable == null) {
             // This may be transitioning to TOUCH_DOWN. Postpone drawable state
@@ -155,7 +156,7 @@ public class DropDownListView extends ListView {
      *
      * @return whether the event was handled
      */
-    public boolean onForwardedEvent(@Nonnull MotionEvent event) {
+    public boolean onForwardedEvent(@NonNull MotionEvent event) {
         boolean handledEvent = true;
         boolean clearPressedItem = false;
 
@@ -228,7 +229,7 @@ public class DropDownListView extends ListView {
         }
     }
 
-    private void setPressedItem(@Nonnull View child, int position, float x, float y) {
+    private void setPressedItem(@NonNull View child, int position, float x, float y) {
         mDrawsInPressedState = true;
 
         // Ordering is essential. First, update the container's pressed state.

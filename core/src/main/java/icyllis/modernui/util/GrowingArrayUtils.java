@@ -1,24 +1,25 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.util;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
+
 import java.lang.reflect.Array;
 
 /**
@@ -51,8 +52,8 @@ public final class GrowingArrayUtils {
      * @return the array to which the element was appended. This may be different than the given
      * array.
      */
-    @Nonnull
-    public static <T> T[] append(@Nonnull T[] array, int currentSize, T element) {
+    @NonNull
+    public static <T> T[] append(@NonNull T[] array, int currentSize, T element) {
         assert currentSize <= array.length;
 
         if (currentSize >= array.length) {
@@ -72,8 +73,8 @@ public final class GrowingArrayUtils {
     /**
      * Primitive int version of {@link #append(Object[], int, Object)}.
      */
-    @Nonnull
-    public static int[] append(@Nonnull int[] array, int currentSize, int element) {
+    @NonNull
+    public static int[] append(@NonNull int[] array, int currentSize, int element) {
         assert currentSize <= array.length;
 
         if (currentSize >= array.length) {
@@ -88,8 +89,8 @@ public final class GrowingArrayUtils {
     /**
      * Primitive long version of {@link #append(Object[], int, Object)}.
      */
-    @Nonnull
-    public static long[] append(@Nonnull long[] array, int currentSize, long element) {
+    @NonNull
+    public static long[] append(@NonNull long[] array, int currentSize, long element) {
         assert currentSize <= array.length;
 
         if (currentSize >= array.length) {
@@ -104,8 +105,8 @@ public final class GrowingArrayUtils {
     /**
      * Primitive boolean version of {@link #append(Object[], int, Object)}.
      */
-    @Nonnull
-    public static boolean[] append(@Nonnull boolean[] array, int currentSize, boolean element) {
+    @NonNull
+    public static boolean[] append(@NonNull boolean[] array, int currentSize, boolean element) {
         assert currentSize <= array.length;
 
         if (currentSize >= array.length) {
@@ -128,8 +129,8 @@ public final class GrowingArrayUtils {
      * @return the array to which the element was appended. This may be different than the given
      * array.
      */
-    @Nonnull
-    public static <T> T[] insert(@Nonnull T[] array, int currentSize, int index, T element) {
+    @NonNull
+    public static <T> T[] insert(@NonNull T[] array, int currentSize, int index, T element) {
         assert currentSize <= array.length;
 
         if (currentSize < array.length) {
@@ -153,8 +154,8 @@ public final class GrowingArrayUtils {
     /**
      * Primitive int version of {@link #insert(Object[], int, int, Object)}.
      */
-    @Nonnull
-    public static int[] insert(@Nonnull int[] array, int currentSize, int index, int element) {
+    @NonNull
+    public static int[] insert(@NonNull int[] array, int currentSize, int index, int element) {
         assert currentSize <= array.length;
 
         if (currentSize < array.length) {
@@ -173,8 +174,8 @@ public final class GrowingArrayUtils {
     /**
      * Primitive long version of {@link #insert(Object[], int, int, Object)}.
      */
-    @Nonnull
-    public static long[] insert(@Nonnull long[] array, int currentSize, int index, long element) {
+    @NonNull
+    public static long[] insert(@NonNull long[] array, int currentSize, int index, long element) {
         assert currentSize <= array.length;
 
         if (currentSize < array.length) {
@@ -193,8 +194,8 @@ public final class GrowingArrayUtils {
     /**
      * Primitive boolean version of {@link #insert(Object[], int, int, Object)}.
      */
-    @Nonnull
-    public static boolean[] insert(@Nonnull boolean[] array, int currentSize, int index, boolean element) {
+    @NonNull
+    public static boolean[] insert(@NonNull boolean[] array, int currentSize, int index, boolean element) {
         assert currentSize <= array.length;
 
         if (currentSize < array.length) {

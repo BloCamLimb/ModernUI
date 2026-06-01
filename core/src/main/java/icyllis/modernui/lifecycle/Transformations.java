@@ -1,27 +1,27 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -67,9 +67,9 @@ public final class Transformations {
      * {@code mapFunction} to each value set.
      */
     @UiThread
-    @Nonnull
-    public static <X, Y> LiveData<Y> map(@Nonnull LiveData<X> source,
-                                         @Nonnull final Function<? super X, ? extends Y> mapFunction) {
+    @NonNull
+    public static <X, Y> LiveData<Y> map(@NonNull LiveData<X> source,
+                                         @NonNull final Function<? super X, ? extends Y> mapFunction) {
         final MediatorLiveData<Y> result = new MediatorLiveData<>();
         result.addSource(source, x -> result.setValue(mapFunction.apply(x)));
         return result;
@@ -125,9 +125,9 @@ public final class Transformations {
      * value set
      */
     @UiThread
-    @Nonnull
-    public static <X, Y> LiveData<Y> switchMap(@Nonnull LiveData<X> source,
-                                               @Nonnull final Function<? super X, ? extends LiveData<? extends Y>> switchMapFunction) {
+    @NonNull
+    public static <X, Y> LiveData<Y> switchMap(@NonNull LiveData<X> source,
+                                               @NonNull final Function<? super X, ? extends LiveData<? extends Y>> switchMapFunction) {
         final MediatorLiveData<Y> result = new MediatorLiveData<>();
         result.addSource(source, new Observer<>() {
             private LiveData<? extends Y> mSource;
@@ -160,8 +160,8 @@ public final class Transformations {
      * @return a new {@link LiveData} of type {@code X}
      */
     @UiThread
-    @Nonnull
-    public static <X> LiveData<X> distinctUntilChanged(@Nonnull LiveData<X> source) {
+    @NonNull
+    public static <X> LiveData<X> distinctUntilChanged(@NonNull LiveData<X> source) {
         final MediatorLiveData<X> result = new MediatorLiveData<>();
         result.addSource(source, new Observer<>() {
             private boolean mFirstChanged;

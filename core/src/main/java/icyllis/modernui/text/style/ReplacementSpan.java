@@ -1,30 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.text.FontMetricsInt;
-import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.text.TextPaint;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public abstract class ReplacementSpan extends MetricAffectingSpan {
 
@@ -33,7 +31,7 @@ public abstract class ReplacementSpan extends MetricAffectingSpan {
      * explicitly instead of affecting Paint properties.
      */
     @Override
-    public final void updateMeasureState(@Nonnull TextPaint paint) {
+    public final void updateMeasureState(@NonNull TextPaint paint) {
     }
 
     /**
@@ -50,7 +48,7 @@ public abstract class ReplacementSpan extends MetricAffectingSpan {
      * @param fm    Font metrics, can be null.
      * @return Width of the span.
      */
-    public abstract int getSize(@Nonnull TextPaint paint, CharSequence text,
+    public abstract int getSize(@NonNull TextPaint paint, CharSequence text,
                                 int start, int end, @Nullable FontMetricsInt fm);
 
     /**
@@ -66,7 +64,7 @@ public abstract class ReplacementSpan extends MetricAffectingSpan {
      * @param bottom Bottom of the line.
      * @param paint  Paint instance.
      */
-    public abstract void draw(@Nonnull Canvas canvas, CharSequence text,
+    public abstract void draw(@NonNull Canvas canvas, CharSequence text,
                               int start, int end, float x, int top, int y, int bottom,
-                              @Nonnull TextPaint paint);
+                              @NonNull TextPaint paint);
 }

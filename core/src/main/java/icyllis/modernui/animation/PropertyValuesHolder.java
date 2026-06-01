@@ -1,28 +1,27 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.util.Property;
-
-import javax.annotation.Nonnull;
 
 /**
  * This class holds information about a property and the values that that property
@@ -81,8 +80,8 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @param values The values that the named property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @Nonnull
-    public static PropertyValuesHolder ofInt(@Nonnull int... values) {
+    @NonNull
+    public static PropertyValuesHolder ofInt(@NonNull int... values) {
         return new IntPropertyValuesHolder(values);
     }
 
@@ -94,9 +93,9 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @param values   The values that the property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @Nonnull
+    @NonNull
     public static PropertyValuesHolder ofInt(IntProperty<?> property,
-                                             @Nonnull int... values) {
+                                             @NonNull int... values) {
         return new IntPropertyValuesHolder(property, values);
     }
 
@@ -106,8 +105,8 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @param values The values that the named property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @Nonnull
-    public static PropertyValuesHolder ofFloat(@Nonnull float... values) {
+    @NonNull
+    public static PropertyValuesHolder ofFloat(@NonNull float... values) {
         return new FloatPropertyValuesHolder(values);
     }
 
@@ -119,9 +118,9 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @param values   The values that the property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @Nonnull
+    @NonNull
     public static PropertyValuesHolder ofFloat(FloatProperty<?> property,
-                                               @Nonnull float... values) {
+                                               @NonNull float... values) {
         return new FloatPropertyValuesHolder(property, values);
     }
 
@@ -141,9 +140,9 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @param values    The values that the named property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @Nonnull
+    @NonNull
     @SafeVarargs
-    public static <V> PropertyValuesHolder ofObject(TypeEvaluator<V> evaluator, @Nonnull V... values) {
+    public static <V> PropertyValuesHolder ofObject(TypeEvaluator<V> evaluator, @NonNull V... values) {
         PropertyValuesHolder pvh = new PropertyValuesHolder();
         pvh.setObjectValues((Object[]) values);
         pvh.setEvaluator(evaluator);
@@ -167,10 +166,10 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @param values    The values that the property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
-    @Nonnull
+    @NonNull
     @SafeVarargs
     public static <V> PropertyValuesHolder ofObject(Property<?, V> property, TypeEvaluator<V> evaluator,
-                                                    @Nonnull V... values) {
+                                                    @NonNull V... values) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(property);
         pvh.setObjectValues((Object[]) values);
         pvh.setEvaluator(evaluator);
@@ -201,10 +200,10 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @see #setConverter(TypeConverter)
      * @see TypeConverter
      */
-    @Nonnull
+    @NonNull
     @SafeVarargs
     public static <V, P> PropertyValuesHolder ofObject(Property<?, P> property, TypeConverter<V, P> converter,
-                                                       TypeEvaluator<V> evaluator, @Nonnull V... values) {
+                                                       TypeEvaluator<V> evaluator, @NonNull V... values) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(property);
         pvh.setConverter(converter);
         pvh.setObjectValues((Object[]) values);
@@ -228,8 +227,8 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param values The set of values to animate between.
      */
-    @Nonnull
-    public static PropertyValuesHolder ofKeyframe(@Nonnull Keyframe... values) {
+    @NonNull
+    public static PropertyValuesHolder ofKeyframe(@NonNull Keyframe... values) {
         Keyframes keyframes = KeyframeSet.ofKeyframe(values);
         if (keyframes instanceof Keyframes.IntKeyframes) {
             return new IntPropertyValuesHolder((Keyframes.IntKeyframes) keyframes);
@@ -259,8 +258,8 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @param property The property associated with this set of values.
      * @param values   The set of values to animate between.
      */
-    @Nonnull
-    public static PropertyValuesHolder ofKeyframe(Property<?, ?> property, @Nonnull Keyframe... values) {
+    @NonNull
+    public static PropertyValuesHolder ofKeyframe(Property<?, ?> property, @NonNull Keyframe... values) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(property);
         pvh.setKeyframes(values);
         return pvh;
@@ -284,9 +283,9 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @param converter Converts the animated object to the Property type.
      * @param values    The set of values to animate between.
      */
-    @Nonnull
+    @NonNull
     public static <P> PropertyValuesHolder ofKeyframe(Property<?, P> property, TypeConverter<?, P> converter,
-                                                      @Nonnull Keyframe... values) {
+                                                      @NonNull Keyframe... values) {
         PropertyValuesHolder pvh = new PropertyValuesHolder(property);
         pvh.setConverter(converter);
         pvh.setKeyframes(values);
@@ -308,8 +307,8 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @throws IllegalArgumentException some keyframes are not int keyframes, or less than two
      * @see Keyframe#ofInt(float, int)
      */
-    @Nonnull
-    public static PropertyValuesHolder ofKeyframe(IntProperty<?> property, @Nonnull Keyframe... values) {
+    @NonNull
+    public static PropertyValuesHolder ofKeyframe(IntProperty<?> property, @NonNull Keyframe... values) {
         Keyframes keyframes = KeyframeSet.ofKeyframe(values);
         if (keyframes instanceof Keyframes.IntKeyframes) {
             return new IntPropertyValuesHolder(property, (Keyframes.IntKeyframes) keyframes);
@@ -333,8 +332,8 @@ public sealed class PropertyValuesHolder implements Cloneable {
      * @throws IllegalArgumentException some keyframes are not float keyframes, or less than two
      * @see Keyframe#ofFloat(float, float)
      */
-    @Nonnull
-    public static PropertyValuesHolder ofKeyframe(FloatProperty<?> property, @Nonnull Keyframe... values) {
+    @NonNull
+    public static PropertyValuesHolder ofKeyframe(FloatProperty<?> property, @NonNull Keyframe... values) {
         Keyframes keyframes = KeyframeSet.ofKeyframe(values);
         if (keyframes instanceof Keyframes.FloatKeyframes) {
             return new FloatPropertyValuesHolder(property, (Keyframes.FloatKeyframes) keyframes);
@@ -356,7 +355,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param values One or more values that the animation will animate between.
      */
-    public void setIntValues(@Nonnull int... values) {
+    public void setIntValues(@NonNull int... values) {
         throw new UnsupportedOperationException();
     }
 
@@ -373,7 +372,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param values One or more values that the animation will animate between.
      */
-    public void setFloatValues(@Nonnull float... values) {
+    public void setFloatValues(@NonNull float... values) {
         throw new UnsupportedOperationException();
     }
 
@@ -382,7 +381,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param values One or more values that the animation will animate between.
      */
-    public void setKeyframes(@Nonnull Keyframe... values) {
+    public void setKeyframes(@NonNull Keyframe... values) {
         mKeyframes = KeyframeSet.ofKeyframe(values);
     }
 
@@ -404,7 +403,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param values One or more values that the animation will animate between.
      */
-    public void setObjectValues(@Nonnull Object... values) {
+    public void setObjectValues(@NonNull Object... values) {
         mKeyframes = KeyframeSet.ofObject(values);
         if (mEvaluator != null) {
             mKeyframes.setEvaluator(mEvaluator);
@@ -433,7 +432,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param target The object on which the setter (and possibly getter) exist.
      */
-    void setupSetterAndGetter(@Nonnull Object target) {
+    void setupSetterAndGetter(@NonNull Object target) {
         if (mProperty != null) {
             Object testValue = null;
             Keyframe[] keyframes = mKeyframes.getKeyframes();
@@ -471,7 +470,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param target The object which holds the start values that should be set.
      */
-    void setupStartValue(@Nonnull Object target) {
+    void setupStartValue(@NonNull Object target) {
         if (mProperty == null) {
             return;
         }
@@ -490,7 +489,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param target The object which holds the start values that should be set.
      */
-    void setupEndValue(@Nonnull Object target) {
+    void setupEndValue(@NonNull Object target) {
         if (mProperty == null) {
             return;
         }
@@ -522,7 +521,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
      *
      * @param target The target object on which the value is set
      */
-    void setAnimatedValue(@Nonnull Object target) {
+    void setAnimatedValue(@NonNull Object target) {
         if (mProperty != null) {
             mProperty.set(target, getAnimatedValue());
         }
@@ -609,7 +608,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
 
         private int mIntAnimatedValue;
 
-        private IntPropertyValuesHolder(@Nonnull Keyframes.IntKeyframes keyframes) {
+        private IntPropertyValuesHolder(@NonNull Keyframes.IntKeyframes keyframes) {
             mKeyframes = keyframes;
         }
 
@@ -618,16 +617,16 @@ public sealed class PropertyValuesHolder implements Cloneable {
          *
          * @param property The property for this holder.
          */
-        private IntPropertyValuesHolder(IntProperty<?> property, @Nonnull Keyframes.IntKeyframes keyframes) {
+        private IntPropertyValuesHolder(IntProperty<?> property, @NonNull Keyframes.IntKeyframes keyframes) {
             super(property);
             mKeyframes = keyframes;
         }
 
-        private IntPropertyValuesHolder(@Nonnull int... values) {
+        private IntPropertyValuesHolder(@NonNull int... values) {
             setIntValues(values);
         }
 
-        private IntPropertyValuesHolder(IntProperty<?> property, @Nonnull int... values) {
+        private IntPropertyValuesHolder(IntProperty<?> property, @NonNull int... values) {
             super(property);
             setIntValues(values);
         }
@@ -641,12 +640,12 @@ public sealed class PropertyValuesHolder implements Cloneable {
         }
 
         @Override
-        public void setIntValues(@Nonnull int... values) {
+        public void setIntValues(@NonNull int... values) {
             mKeyframes = KeyframeSet.ofInt(values);
         }
 
         @Override
-        public void setKeyframes(@Nonnull Keyframe... values) {
+        public void setKeyframes(@NonNull Keyframe... values) {
             super.setKeyframes(values);
             if (!(mKeyframes instanceof Keyframes.IntKeyframes)) {
                 throw new IllegalArgumentException();
@@ -654,12 +653,12 @@ public sealed class PropertyValuesHolder implements Cloneable {
         }
 
         @Override
-        public void setObjectValues(@Nonnull Object... values) {
+        public void setObjectValues(@NonNull Object... values) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        void setAnimatedValue(@Nonnull Object target) {
+        void setAnimatedValue(@NonNull Object target) {
             if (mProperty != null) {
                 ((IntProperty) mProperty).setValue(target, mIntAnimatedValue);
             }
@@ -690,7 +689,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
 
         private float mFloatAnimatedValue;
 
-        private FloatPropertyValuesHolder(@Nonnull Keyframes.FloatKeyframes keyframes) {
+        private FloatPropertyValuesHolder(@NonNull Keyframes.FloatKeyframes keyframes) {
             mKeyframes = keyframes;
         }
 
@@ -700,16 +699,16 @@ public sealed class PropertyValuesHolder implements Cloneable {
          * @param property The property for this holder.
          */
         private FloatPropertyValuesHolder(FloatProperty<?> property,
-                                          @Nonnull Keyframes.FloatKeyframes keyframes) {
+                                          @NonNull Keyframes.FloatKeyframes keyframes) {
             super(property);
             mKeyframes = keyframes;
         }
 
-        private FloatPropertyValuesHolder(@Nonnull float... values) {
+        private FloatPropertyValuesHolder(@NonNull float... values) {
             setFloatValues(values);
         }
 
-        private FloatPropertyValuesHolder(FloatProperty<?> property, @Nonnull float... values) {
+        private FloatPropertyValuesHolder(FloatProperty<?> property, @NonNull float... values) {
             super(property);
             setFloatValues(values);
         }
@@ -723,12 +722,12 @@ public sealed class PropertyValuesHolder implements Cloneable {
         }
 
         @Override
-        public void setFloatValues(@Nonnull float... values) {
+        public void setFloatValues(@NonNull float... values) {
             mKeyframes = KeyframeSet.ofFloat(values);
         }
 
         @Override
-        public void setKeyframes(@Nonnull Keyframe... values) {
+        public void setKeyframes(@NonNull Keyframe... values) {
             super.setKeyframes(values);
             if (!(mKeyframes instanceof Keyframes.FloatKeyframes)) {
                 throw new IllegalArgumentException();
@@ -736,12 +735,12 @@ public sealed class PropertyValuesHolder implements Cloneable {
         }
 
         @Override
-        public void setObjectValues(@Nonnull Object... values) {
+        public void setObjectValues(@NonNull Object... values) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        void setAnimatedValue(@Nonnull Object target) {
+        void setAnimatedValue(@NonNull Object target) {
             if (mProperty != null) {
                 ((FloatProperty) mProperty).setValue(target, mFloatAnimatedValue);
             }

@@ -1,28 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.View;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -31,25 +31,25 @@ import java.util.concurrent.CopyOnWriteArrayList;
 final class FragmentLifecycleCallbacksDispatcher {
 
     private static final class FragmentLifecycleCallbacksHolder {
-        @Nonnull
+        @NonNull
         final FragmentLifecycleCallbacks mCallback;
         final boolean mRecursive;
 
-        FragmentLifecycleCallbacksHolder(@Nonnull FragmentLifecycleCallbacks callback,
+        FragmentLifecycleCallbacksHolder(@NonNull FragmentLifecycleCallbacks callback,
                                          boolean recursive) {
             mCallback = callback;
             mRecursive = recursive;
         }
     }
 
-    @Nonnull
+    @NonNull
     private final CopyOnWriteArrayList<FragmentLifecycleCallbacksHolder>
             mLifecycleCallbacks = new CopyOnWriteArrayList<>();
 
-    @Nonnull
+    @NonNull
     private final FragmentManager mFragmentManager;
 
-    FragmentLifecycleCallbacksDispatcher(@Nonnull FragmentManager fragmentManager) {
+    FragmentLifecycleCallbacksDispatcher(@NonNull FragmentManager fragmentManager) {
         mFragmentManager = fragmentManager;
     }
 
@@ -61,7 +61,7 @@ final class FragmentLifecycleCallbacksDispatcher {
      * @param cb        Callbacks to register
      * @param recursive true to automatically register this callback for all child FragmentManagers
      */
-    public void registerFragmentLifecycleCallbacks(@Nonnull FragmentLifecycleCallbacks cb,
+    public void registerFragmentLifecycleCallbacks(@NonNull FragmentLifecycleCallbacks cb,
                                                    boolean recursive) {
         mLifecycleCallbacks.add(new FragmentLifecycleCallbacksHolder(cb, recursive));
     }
@@ -73,7 +73,7 @@ final class FragmentLifecycleCallbacksDispatcher {
      *
      * @param cb Callbacks to unregister
      */
-    public void unregisterFragmentLifecycleCallbacks(@Nonnull FragmentLifecycleCallbacks cb) {
+    public void unregisterFragmentLifecycleCallbacks(@NonNull FragmentLifecycleCallbacks cb) {
         synchronized (mLifecycleCallbacks) {
             for (int i = 0, count = mLifecycleCallbacks.size(); i < count; i++) {
                 if (mLifecycleCallbacks.get(i).mCallback == cb) {
@@ -84,7 +84,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentPreAttached(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentPreAttached(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();
@@ -98,7 +98,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentAttached(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentAttached(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();
@@ -112,7 +112,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentPreCreated(@Nonnull Fragment f,
+    void dispatchOnFragmentPreCreated(@NonNull Fragment f,
                                       @Nullable DataSet savedInstanceState, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
@@ -128,7 +128,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentCreated(@Nonnull Fragment f,
+    void dispatchOnFragmentCreated(@NonNull Fragment f,
                                    @Nullable DataSet savedInstanceState, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
@@ -144,7 +144,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentViewCreated(@Nonnull Fragment f, @Nonnull View v,
+    void dispatchOnFragmentViewCreated(@NonNull Fragment f, @NonNull View v,
                                        @Nullable DataSet savedInstanceState, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
@@ -160,7 +160,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentStarted(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentStarted(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();
@@ -174,7 +174,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentResumed(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentResumed(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();
@@ -188,7 +188,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentPaused(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentPaused(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();
@@ -202,7 +202,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentStopped(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentStopped(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();
@@ -216,7 +216,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentSaveInstanceState(@Nonnull Fragment f, @Nonnull DataSet outState,
+    void dispatchOnFragmentSaveInstanceState(@NonNull Fragment f, @NonNull DataSet outState,
                                              boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
@@ -232,7 +232,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentViewDestroyed(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentViewDestroyed(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();
@@ -246,7 +246,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentDestroyed(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentDestroyed(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();
@@ -260,7 +260,7 @@ final class FragmentLifecycleCallbacksDispatcher {
         }
     }
 
-    void dispatchOnFragmentDetached(@Nonnull Fragment f, boolean onlyRecursive) {
+    void dispatchOnFragmentDetached(@NonNull Fragment f, boolean onlyRecursive) {
         Fragment parent = mFragmentManager.getParent();
         if (parent != null) {
             FragmentManager parentManager = parent.getParentFragmentManager();

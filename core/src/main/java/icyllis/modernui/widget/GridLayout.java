@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.widget;
@@ -510,7 +510,7 @@ public class GridLayout extends ViewGroup {
     }
 
     static Alignment getAlignment(int gravity, boolean horizontal) {
-        // Bug fixed by Modern UI, add Relative mask
+        // Bug fixed by ModernUI, add Relative mask
         int mask = horizontal ? RELATIVE_HORIZONTAL_GRAVITY_MASK : VERTICAL_GRAVITY_MASK;
         int shift = horizontal ? AXIS_X_SHIFT : AXIS_Y_SHIFT;
         int flags = (gravity & mask) >> shift;

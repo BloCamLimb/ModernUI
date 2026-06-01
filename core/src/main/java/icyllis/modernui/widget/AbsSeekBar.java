@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -86,7 +86,7 @@ public abstract class AbsSeekBar extends ProgressBar {
      */
     boolean mIsUserSeekable = true;
 
-    // Added by Modern UI
+    // Added by ModernUI
     boolean mIsUserAnimatable = false;
 
     /**
@@ -646,7 +646,7 @@ public abstract class AbsSeekBar extends ProgressBar {
             final Rect tempRect = mTempRect;
             thumbDrawable.copyBounds(tempRect);
             tempRect.offset(mPaddingLeft - mThumbOffset, mPaddingTop);
-            // Modern UI changed: outset the rect instead of inset
+            // ModernUI changed: outset the rect instead of inset
             tempRect.left -= thumbDrawable.getIntrinsicWidth();
             tempRect.right += thumbDrawable.getIntrinsicWidth();
 
@@ -678,7 +678,7 @@ public abstract class AbsSeekBar extends ProgressBar {
 
             final int saveCount = canvas.save();
 
-            // Modern UI changed: respect thumbOffset
+            // ModernUI changed: respect thumbOffset
             final Drawable thumb = mThumb;
             int available = getWidth() - mPaddingLeft - mPaddingRight;
             if (thumb != null) {
@@ -690,7 +690,7 @@ public abstract class AbsSeekBar extends ProgressBar {
             } else {
                 canvas.translate(mPaddingLeft, getHeight() / 2f);
             }
-            // Modern UI changed: cannot less than 1px per tick
+            // ModernUI changed: cannot less than 1px per tick
             count = Math.min(count, available / w);
             if (count > 1) {
                 final float spacing = available / (float) count;
@@ -717,7 +717,7 @@ public abstract class AbsSeekBar extends ProgressBar {
         }
     }
 
-    // Modern UI added
+    // ModernUI added
     private boolean isInVerticalScrollingContainer() {
         ViewParent p = getParent();
         while (p instanceof ViewGroup parent) {

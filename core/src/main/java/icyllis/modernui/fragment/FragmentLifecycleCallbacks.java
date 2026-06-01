@@ -1,29 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Callback interface for listening to fragment state changes that happen
@@ -39,7 +38,7 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentPreAttached(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentPreAttached(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 
     /**
@@ -49,7 +48,7 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentAttached(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentAttached(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 
     /**
@@ -61,7 +60,7 @@ public interface FragmentLifecycleCallbacks {
      * @param f                  Fragment changing state
      * @param savedInstanceState Saved instance bundle from a previous instance
      */
-    default void onFragmentPreCreated(@Nonnull FragmentManager fm, @Nonnull Fragment f,
+    default void onFragmentPreCreated(@NonNull FragmentManager fm, @NonNull Fragment f,
                                       @Nullable DataSet savedInstanceState) {
     }
 
@@ -74,7 +73,7 @@ public interface FragmentLifecycleCallbacks {
      * @param f                  Fragment changing state
      * @param savedInstanceState Saved instance bundle from a previous instance
      */
-    default void onFragmentCreated(@Nonnull FragmentManager fm, @Nonnull Fragment f,
+    default void onFragmentCreated(@NonNull FragmentManager fm, @NonNull Fragment f,
                                    @Nullable DataSet savedInstanceState) {
     }
 
@@ -87,8 +86,8 @@ public interface FragmentLifecycleCallbacks {
      * @param v                  View returned by the fragment
      * @param savedInstanceState Saved instance bundle from a previous instance
      */
-    default void onFragmentViewCreated(@Nonnull FragmentManager fm, @Nonnull Fragment f,
-                                       @Nonnull View v, @Nullable DataSet savedInstanceState) {
+    default void onFragmentViewCreated(@NonNull FragmentManager fm, @NonNull Fragment f,
+                                       @NonNull View v, @Nullable DataSet savedInstanceState) {
     }
 
     /**
@@ -98,7 +97,7 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentStarted(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentStarted(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 
     /**
@@ -108,7 +107,7 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentResumed(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentResumed(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 
     /**
@@ -118,7 +117,7 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentPaused(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentPaused(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 
     /**
@@ -128,7 +127,7 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentStopped(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentStopped(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 
     /**
@@ -139,8 +138,8 @@ public interface FragmentLifecycleCallbacks {
      * @param f        Fragment changing state
      * @param outState Saved state bundle for the fragment
      */
-    default void onFragmentSaveInstanceState(@Nonnull FragmentManager fm, @Nonnull Fragment f,
-                                             @Nonnull DataSet outState) {
+    default void onFragmentSaveInstanceState(@NonNull FragmentManager fm, @NonNull Fragment f,
+                                             @NonNull DataSet outState) {
     }
 
     /**
@@ -150,7 +149,7 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentViewDestroyed(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentViewDestroyed(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 
     /**
@@ -160,7 +159,7 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentDestroyed(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentDestroyed(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 
     /**
@@ -170,6 +169,6 @@ public interface FragmentLifecycleCallbacks {
      * @param fm Host FragmentManager
      * @param f  Fragment changing state
      */
-    default void onFragmentDetached(@Nonnull FragmentManager fm, @Nonnull Fragment f) {
+    default void onFragmentDetached(@NonNull FragmentManager fm, @NonNull Fragment f) {
     }
 }

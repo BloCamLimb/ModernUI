@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2023-2025 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -729,7 +729,7 @@ public class ViewPager extends ViewGroup {
         mMarginDrawable = d;
         if (d != null)
             refreshDrawableState();
-        // Fixed by Modern UI: we have edge effect, cannot skip draw
+        // Fixed by ModernUI: we have edge effect, cannot skip draw
         //setWillNotDraw(d == null);
         invalidate();
     }
@@ -2256,11 +2256,11 @@ public class ViewPager extends ViewGroup {
             if (!mLeftEdge.isFinished()) {
                 final int restoreCount = canvas.save();
                 final int height = getHeight() - getPaddingTop() - getPaddingBottom();
-                // Fixed by Modern UI
+                // Fixed by ModernUI
                 final int width = getClientWidth();
 
                 canvas.rotate(270);
-                // Fixed by Modern UI
+                // Fixed by ModernUI
                 canvas.translate(-height + getPaddingTop(), mFirstOffset * width + getPaddingRight());
                 mLeftEdge.setSize(/* width= */height, /* height= */width);
                 needsInvalidate |= mLeftEdge.draw(canvas);
@@ -2268,12 +2268,12 @@ public class ViewPager extends ViewGroup {
             }
             if (!mRightEdge.isFinished()) {
                 final int restoreCount = canvas.save();
-                // Fixed by Modern UI
+                // Fixed by ModernUI
                 final int width = getClientWidth();
                 final int height = getHeight() - getPaddingTop() - getPaddingBottom();
 
                 canvas.rotate(90);
-                // Fixed by Modern UI
+                // Fixed by ModernUI
                 canvas.translate(-getPaddingTop(), -(mLastOffset + 1) * width - getPaddingLeft());
                 mRightEdge.setSize(/* width= */height, /* height= */width);
                 needsInvalidate |= mRightEdge.draw(canvas);

@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.widget;
@@ -59,7 +59,6 @@ public class TableRow extends LinearLayout {
      *
      * @param columnIndex the index of the column
      * @param collapsed   true if the column must be collapsed, false otherwise
-     *                    {@hide}
      */
     void setColumnCollapsed(int columnIndex, boolean collapsed) {
         final View child = getVirtualChildAt(columnIndex);
@@ -245,7 +244,6 @@ public class TableRow extends LinearLayout {
      * @param widthMeasureSpec the width constraint imposed by our parent
      * @return an array of integers corresponding to the width of each cell, or
      * column, in this row
-     * {@hide}
      */
     int[] getColumnsWidths(int widthMeasureSpec, int heightMeasureSpec) {
         final int numColumns = getVirtualChildCount();
@@ -298,7 +296,6 @@ public class TableRow extends LinearLayout {
      *                     honor
      * @throws IllegalArgumentException when columnWidths' length is smaller
      *                                  than the number of children in this row
-     *                                  {@hide}
      */
     void setColumnsWidthConstraints(int[] columnWidths) {
         if (columnWidths == null || columnWidths.length < getVirtualChildCount()) {

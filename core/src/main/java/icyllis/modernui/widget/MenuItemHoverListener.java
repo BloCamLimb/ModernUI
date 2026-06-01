@@ -1,27 +1,26 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.menu.MenuBuilder;
-
-import javax.annotation.Nonnull;
 
 /**
  * An interface notified when a menu item is hovered. Useful for cases when hover should trigger
@@ -38,7 +37,7 @@ public interface MenuItemHoverListener {
      * @param menu the item's parent menu
      * @param item the hovered menu item
      */
-    void onItemHoverExit(@Nonnull MenuBuilder menu, @Nonnull MenuItem item);
+    void onItemHoverExit(@NonNull MenuBuilder menu, @NonNull MenuItem item);
 
     /**
      * Called when hover enters a menu item.
@@ -46,5 +45,5 @@ public interface MenuItemHoverListener {
      * @param menu the item's parent menu
      * @param item the hovered menu item
      */
-    void onItemHoverEnter(@Nonnull MenuBuilder menu, @Nonnull MenuItem item);
+    void onItemHoverEnter(@NonNull MenuBuilder menu, @NonNull MenuItem item);
 }

@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.widget;
@@ -51,7 +51,7 @@ public class GridView extends AbsListView {
      * @see #setStretchMode(int)
      */
     public static final int STRETCH_COLUMN_WIDTH = 2;
-    // Modern UI changed: this is removed due to several bugs
+    // ModernUI changed: this is removed due to several bugs
     /*
      * Stretches the spacing between columns. The spacing is uniform.
      *
@@ -956,7 +956,7 @@ public class GridView extends AbsListView {
 
         mItemCount = mAdapter == null ? 0 : mAdapter.getCount();
         final int count = mItemCount;
-        // Modern UI changed: avoid unnecessary measurement if heightMode is EXACTLY
+        // ModernUI changed: avoid unnecessary measurement if heightMode is EXACTLY
         if (count > 0 && (heightMode == MeasureSpec.UNSPECIFIED ||
                 heightMode == MeasureSpec.AT_MOST)) {
             final View child = obtainView(0, mIsScrap);
@@ -968,7 +968,7 @@ public class GridView extends AbsListView {
 
             if (mRecycler.shouldRecycleViewType(
                     ((LayoutParams) child.getLayoutParams()).viewType)) {
-                // Modern UI changed: position to 0
+                // ModernUI changed: position to 0
                 mRecycler.addScrapView(child, 0);
             }
         }
@@ -996,7 +996,7 @@ public class GridView extends AbsListView {
         }
 
         if (widthMode == MeasureSpec.AT_MOST) {
-            // Modern UI fixed:
+            // ModernUI fixed:
             if (didNotInitiallyFit) {
                 widthSize |= MEASURED_STATE_TOO_SMALL;
             }
@@ -1023,7 +1023,7 @@ public class GridView extends AbsListView {
 
         child.measure(childWidthSpec, childHeightSpec);
 
-        // Modern UI changed: ensure needToMeasure is true in the future,
+        // ModernUI changed: ensure needToMeasure is true in the future,
         // since measureSpec is changed in the same layout pass
         child.forceLayout();
     }

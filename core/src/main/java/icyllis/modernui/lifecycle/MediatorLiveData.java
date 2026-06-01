@@ -1,28 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.annotation.CallSuper;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 /**
@@ -87,7 +87,7 @@ public class MediatorLiveData<T> extends MutableLiveData<T> {
      * @param <S>       The type of data hold by {@code source} LiveData
      */
     @UiThread
-    public <S> void addSource(@Nonnull LiveData<S> source, @Nonnull Observer<? super S> onChanged) {
+    public <S> void addSource(@NonNull LiveData<S> source, @NonNull Observer<? super S> onChanged) {
         Source<S> e = new Source<>(source, onChanged);
         Source<?> existing = mSources.putIfAbsent(e);
         if (existing != null && existing.mObserver != onChanged) {
@@ -109,7 +109,7 @@ public class MediatorLiveData<T> extends MutableLiveData<T> {
      * @param <S>      the type of data hold by {@code source} LiveData
      */
     @UiThread
-    public <S> void removeSource(@Nonnull LiveData<S> toRemote) {
+    public <S> void removeSource(@NonNull LiveData<S> toRemote) {
         Source<?> source = mSources.remove(toRemote);
         if (source != null) {
             source.unplug();

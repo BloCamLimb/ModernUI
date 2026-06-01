@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.text.style;
@@ -64,7 +64,7 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * and on the right for lines in a right-to-left paragraph. The default
      * implementation is to call {@link #getLeadingMargin(boolean)}.
      * <p>
-     * Added by Modern UI.
+     * Added by ModernUI.
      *
      * @param paint the base paint (read-only)
      * @param first true if the request is for the first line of a paragraph,
@@ -83,7 +83,7 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * The trailing margin is on the right for lines in a left-to-right paragraph,
      * and on the left for lines in a right-to-left paragraph.
      * <p>
-     * Added by Modern UI.
+     * Added by ModernUI.
      *
      * @param paint the base paint (read-only)
      * @return the offset for the margin.
@@ -126,7 +126,7 @@ public interface LeadingMarginSpan extends ParagraphStyle {
      * <var>dir</var>. This method allows to draw the trailing margin at the same time,
      * not just the leading margin.
      * <p>
-     * Added by Modern UI.
+     * Added by ModernUI.
      *
      * @param c        the canvas
      * @param p        the paint. This should be left unchanged on exit.

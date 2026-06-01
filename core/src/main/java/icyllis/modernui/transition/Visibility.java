@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.transition;
@@ -21,12 +21,12 @@ package icyllis.modernui.transition;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import org.intellij.lang.annotations.MagicConstant;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -119,7 +119,7 @@ public abstract class Visibility extends Transition {
         return sTransitionProperties;
     }
 
-    private void captureValues(@Nonnull TransitionValues transitionValues) {
+    private void captureValues(@NonNull TransitionValues transitionValues) {
         int visibility = transitionValues.view.getVisibility();
         transitionValues.values.put(PROPNAME_VISIBILITY, visibility);
         transitionValues.values.put(PROPNAME_PARENT, transitionValues.view.getParent());
@@ -129,12 +129,12 @@ public abstract class Visibility extends Transition {
     }
 
     @Override
-    public void captureStartValues(@Nonnull TransitionValues transitionValues) {
+    public void captureStartValues(@NonNull TransitionValues transitionValues) {
         captureValues(transitionValues);
     }
 
     @Override
-    public void captureEndValues(@Nonnull TransitionValues transitionValues) {
+    public void captureEndValues(@NonNull TransitionValues transitionValues) {
         captureValues(transitionValues);
     }
 
@@ -218,7 +218,7 @@ public abstract class Visibility extends Transition {
 
     @Nullable
     @Override
-    public Animator createAnimator(@Nonnull ViewGroup sceneRoot,
+    public Animator createAnimator(@NonNull ViewGroup sceneRoot,
                                    @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         VisibilityInfo visInfo = getVisibilityChangeInfo(startValues, endValues);
         if (visInfo.mVisibilityChange
@@ -414,13 +414,13 @@ public abstract class Visibility extends Transition {
                     addListener(new TransitionListener() {
 
                         @Override
-                        public void onTransitionPause(@Nonnull Transition transition) {
+                        public void onTransitionPause(@NonNull Transition transition) {
                             //ViewGroupUtils.getOverlay(overlayHost).remove(finalOverlayView);
                             overlayHost.endViewTransition(finalOverlayView);
                         }
 
                         @Override
-                        public void onTransitionResume(@Nonnull Transition transition) {
+                        public void onTransitionResume(@NonNull Transition transition) {
                             if (finalOverlayView.getParent() == null) {
                                 //ViewGroupUtils.getOverlay(overlayHost).add(finalOverlayView);
                                 overlayHost.startViewTransition(finalOverlayView);
@@ -430,7 +430,7 @@ public abstract class Visibility extends Transition {
                         }
 
                         @Override
-                        public void onTransitionEnd(@Nonnull Transition transition) {
+                        public void onTransitionEnd(@NonNull Transition transition) {
                             startView.setTag(R.id.save_overlay_view, null);
                             //ViewGroupUtils.getOverlay(overlayHost).remove(finalOverlayView);
                             overlayHost.endViewTransition(finalOverlayView);
@@ -508,7 +508,7 @@ public abstract class Visibility extends Transition {
         private boolean mLayoutSuppressed;
         boolean mCanceled = false;
 
-        DisappearListener(@Nonnull View view, int finalVisibility, boolean suppressLayout) {
+        DisappearListener(@NonNull View view, int finalVisibility, boolean suppressLayout) {
             mView = view;
             mFinalVisibility = finalVisibility;
             mParent = (ViewGroup) view.getParent();
@@ -520,7 +520,7 @@ public abstract class Visibility extends Transition {
         // This overrides both AnimatorListenerAdapter and
         // AnimatorUtilsApi14.AnimatorPauseListenerCompat
         @Override
-        public void onAnimationPause(@Nonnull Animator animation) {
+        public void onAnimationPause(@NonNull Animator animation) {
             if (!mCanceled) {
                 mView.setTransitionVisibility(mFinalVisibility);
             }
@@ -529,52 +529,52 @@ public abstract class Visibility extends Transition {
         // This overrides both AnimatorListenerAdapter and
         // AnimatorUtilsApi14.AnimatorPauseListenerCompat
         @Override
-        public void onAnimationResume(@Nonnull Animator animation) {
+        public void onAnimationResume(@NonNull Animator animation) {
             if (!mCanceled) {
                 mView.setTransitionVisibility(View.VISIBLE);
             }
         }
 
         @Override
-        public void onAnimationCancel(@Nonnull Animator animation) {
+        public void onAnimationCancel(@NonNull Animator animation) {
             mCanceled = true;
         }
 
         @Override
-        public void onAnimationRepeat(@Nonnull Animator animation) {
+        public void onAnimationRepeat(@NonNull Animator animation) {
         }
 
         @Override
-        public void onAnimationStart(@Nonnull Animator animation) {
+        public void onAnimationStart(@NonNull Animator animation) {
         }
 
         @Override
-        public void onAnimationEnd(@Nonnull Animator animation) {
+        public void onAnimationEnd(@NonNull Animator animation) {
             hideViewWhenNotCanceled();
         }
 
         @Override
-        public void onTransitionStart(@Nonnull Transition transition) {
+        public void onTransitionStart(@NonNull Transition transition) {
             // Do nothing
         }
 
         @Override
-        public void onTransitionEnd(@Nonnull Transition transition) {
+        public void onTransitionEnd(@NonNull Transition transition) {
             hideViewWhenNotCanceled();
             transition.removeListener(this);
         }
 
         @Override
-        public void onTransitionCancel(@Nonnull Transition transition) {
+        public void onTransitionCancel(@NonNull Transition transition) {
         }
 
         @Override
-        public void onTransitionPause(@Nonnull Transition transition) {
+        public void onTransitionPause(@NonNull Transition transition) {
             suppressLayout(false);
         }
 
         @Override
-        public void onTransitionResume(@Nonnull Transition transition) {
+        public void onTransitionResume(@NonNull Transition transition) {
             suppressLayout(true);
         }
 

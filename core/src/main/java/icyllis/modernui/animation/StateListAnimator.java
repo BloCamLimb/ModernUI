@@ -1,29 +1,29 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
@@ -49,7 +49,7 @@ public class StateListAnimator implements Cloneable {
     private void initAnimatorListener() {
         mAnimatorListener = new AnimatorListener() {
             @Override
-            public void onAnimationEnd(@Nonnull Animator animation) {
+            public void onAnimationEnd(@NonNull Animator animation) {
                 animation.setTarget(null);
                 if (mRunningAnimator == animation) {
                     mRunningAnimator = null;
@@ -65,7 +65,7 @@ public class StateListAnimator implements Cloneable {
      * @param spec     The drawable state spec to match against
      * @param animator The animator to run when the spec match
      */
-    public void addState(@Nonnull int[] spec, @Nonnull Animator animator) {
+    public void addState(@NonNull int[] spec, @NonNull Animator animator) {
         animator.addListener(mAnimatorListener);
         mSpecs.add(spec);
         mAnimators.add(animator);
@@ -106,7 +106,7 @@ public class StateListAnimator implements Cloneable {
      * Called by View
      */
     @ApiStatus.Internal
-    public void setState(@Nonnull int[] state) {
+    public void setState(@NonNull int[] state) {
         int match = -1;
         final int size = mSpecs.size();
         for (int i = 0; i < size; i++) {
@@ -128,7 +128,7 @@ public class StateListAnimator implements Cloneable {
         }
     }
 
-    private void start(@Nonnull Animator animator) {
+    private void start(@NonNull Animator animator) {
         animator.setTarget(getTarget());
         mRunningAnimator = animator;
         mRunningAnimator.start();

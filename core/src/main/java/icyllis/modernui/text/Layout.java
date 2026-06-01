@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -353,7 +353,7 @@ public abstract class Layout {
                     if (span instanceof LeadingMarginSpan2) {
                         int count = ((LeadingMarginSpan2) span).getLeadingMarginLineCount();
                         int startLine = getLineForOffset(sp.getSpanStart(span));
-                        // Fixed by Modern UI:
+                        // Fixed by ModernUI:
                         // if there is more than one LeadingMarginSpan2, use the count that is greatest
                         useFirstLineMargin |= lineNum < startLine + count;
                     }

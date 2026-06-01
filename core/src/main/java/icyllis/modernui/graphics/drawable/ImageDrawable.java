@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.graphics.drawable;
@@ -146,11 +146,11 @@ public class ImageDrawable extends Drawable {
     public void setImage(@Nullable Image image) {
         if (mImageState.mImage != image) {
             mImageState.mImage = image;
-            // Added by Modern UI
+            // Added by ModernUI
             if (image != null) {
                 image.getBounds(mImageState.mSrcRect);
             }
-            // Added by Modern UI
+            // Added by ModernUI
             mDstRectAndInsetsDirty = true;
             invalidateSelf();
         }
@@ -169,7 +169,7 @@ public class ImageDrawable extends Drawable {
         }
         if (mTargetDensity != density) {
             mTargetDensity = density;
-            // Added by Modern UI
+            // Added by ModernUI
             mDstRectAndInsetsDirty = true;
             invalidateSelf();
         }
@@ -536,7 +536,7 @@ public class ImageDrawable extends Drawable {
             Matrix matrix = new Matrix();
 
             if (needMirroring) {
-                // fixed by Modern UI
+                // fixed by ModernUI
                 matrix.setScaleTranslate(-1.0f, 1.0f, mDstRect.width(), 0);
             }
 

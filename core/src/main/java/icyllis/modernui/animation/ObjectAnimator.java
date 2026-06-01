@@ -1,29 +1,29 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.util.Property;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
@@ -82,9 +82,9 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values   A set of values (at least 1) that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
-    public static <T> ObjectAnimator ofInt(@Nullable T target, @Nonnull IntProperty<T> property,
-                                           @Nonnull int... values) {
+    @NonNull
+    public static <T> ObjectAnimator ofInt(@Nullable T target, @NonNull IntProperty<T> property,
+                                           @NonNull int... values) {
         return ofPropertyValuesHolder(target, PropertyValuesHolder.ofInt(property, values));
     }
 
@@ -101,9 +101,9 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values   A set of values (at least 1) that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
-    public static <T> ObjectAnimator ofArgb(@Nullable T target, @Nonnull IntProperty<T> property,
-                                            @Nonnull int... values) {
+    @NonNull
+    public static <T> ObjectAnimator ofArgb(@Nullable T target, @NonNull IntProperty<T> property,
+                                            @NonNull int... values) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofInt(property, values);
         pvh.setEvaluator(ColorEvaluator.getInstance());
         return ofPropertyValuesHolder(target, pvh);
@@ -122,9 +122,9 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values   A set of values (at least 1) that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
-    public static <T> ObjectAnimator ofFloat(@Nullable T target, @Nonnull FloatProperty<T> property,
-                                             @Nonnull float... values) {
+    @NonNull
+    public static <T> ObjectAnimator ofFloat(@Nullable T target, @NonNull FloatProperty<T> property,
+                                             @NonNull float... values) {
         return ofPropertyValuesHolder(target, PropertyValuesHolder.ofFloat(property, values));
     }
 
@@ -149,10 +149,10 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values    A set of values (at least 1) that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
+    @NonNull
     @SafeVarargs
-    public static <T, V> ObjectAnimator ofObject(@Nullable T target, @Nonnull Property<T, V> property,
-                                                 @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+    public static <T, V> ObjectAnimator ofObject(@Nullable T target, @NonNull Property<T, V> property,
+                                                 @NonNull TypeEvaluator<V> evaluator, @NonNull V... values) {
         return ofPropertyValuesHolder(target, PropertyValuesHolder.ofObject(property, evaluator, values));
     }
 
@@ -181,11 +181,11 @@ public final class ObjectAnimator extends ValueAnimator {
      * @param values    A set of values (at least 1) that the animation will animate between over time.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
+    @NonNull
     @SafeVarargs
-    public static <T, V, P> ObjectAnimator ofObject(@Nullable T target, @Nonnull Property<T, P> property,
-                                                    @Nonnull TypeConverter<V, P> converter,
-                                                    @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+    public static <T, V, P> ObjectAnimator ofObject(@Nullable T target, @NonNull Property<T, P> property,
+                                                    @NonNull TypeConverter<V, P> converter,
+                                                    @NonNull TypeEvaluator<V> evaluator, @NonNull V... values) {
         return ofPropertyValuesHolder(target, PropertyValuesHolder.ofObject(property, converter, evaluator, values));
     }
 
@@ -206,9 +206,9 @@ public final class ObjectAnimator extends ValueAnimator {
      *               over time. Must not null, but can be empty.
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
+    @NonNull
     public static ObjectAnimator ofPropertyValuesHolder(@Nullable Object target,
-                                                        @Nonnull PropertyValuesHolder... values) {
+                                                        @NonNull PropertyValuesHolder... values) {
         ObjectAnimator anim = new ObjectAnimator();
         anim.setTarget(target);
         anim.setValues(values);

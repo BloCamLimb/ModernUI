@@ -1,30 +1,30 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.transition;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.ArrayMap;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewTreeObserver;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
@@ -61,7 +61,7 @@ public class TransitionManager {
      *                   entered. A value of null will result in the default behavior of
      *                   using the default transition instead.
      */
-    public void setTransition(@Nonnull Scene scene, @Nullable Transition transition) {
+    public void setTransition(@NonNull Scene scene, @Nullable Transition transition) {
         mSceneTransitions.put(scene, transition);
     }
 
@@ -77,7 +77,7 @@ public class TransitionManager {
      *                   entered. A value of null will result in the default behavior of
      *                   using the default transition instead.
      */
-    public void setTransition(@Nonnull Scene fromScene, @Nonnull Scene toScene,
+    public void setTransition(@NonNull Scene fromScene, @NonNull Scene toScene,
                               @Nullable Transition transition) {
         ArrayMap<Scene, Transition> sceneTransitionMap = mScenePairTransitions.get(toScene);
         if (sceneTransitionMap == null) {
@@ -97,7 +97,7 @@ public class TransitionManager {
      * Transition was specified for this scene change, the default transition
      * will be used instead.
      */
-    private Transition getTransition(@Nonnull Scene scene) {
+    private Transition getTransition(@NonNull Scene scene) {
         Transition transition;
         ViewGroup sceneRoot = scene.getSceneRoot();
         // TODO: cached in Scene instead? long-term, cache in View itself
@@ -126,7 +126,7 @@ public class TransitionManager {
      * @param scene      The scene being entered
      * @param transition The transition to play for this scene change
      */
-    private static void changeScene(@Nonnull Scene scene, @Nullable Transition transition) {
+    private static void changeScene(@NonNull Scene scene, @Nullable Transition transition) {
         final ViewGroup sceneRoot = scene.getSceneRoot();
 
         if (!sPendingTransitions.contains(sceneRoot)) {
@@ -152,7 +152,7 @@ public class TransitionManager {
         }
     }
 
-    @Nonnull
+    @NonNull
     static ArrayMap<ViewGroup, ArrayList<Transition>> getRunningTransitions() {
         WeakReference<ArrayMap<ViewGroup, ArrayList<Transition>>> runningTransitions =
                 sRunningTransitions.get();
@@ -242,7 +242,7 @@ public class TransitionManager {
             currentTransitions.add(mTransition);
             mTransition.addListener(new TransitionListener() {
                 @Override
-                public void onTransitionEnd(@Nonnull Transition transition) {
+                public void onTransitionEnd(@NonNull Transition transition) {
                     ArrayList<Transition> currentTransitions = runningTransitions.get(mSceneRoot);
                     currentTransitions.remove(transition);
                     transition.removeListener(this);
@@ -289,7 +289,7 @@ public class TransitionManager {
      *
      * @param scene The Scene to change to
      */
-    public void transitionTo(@Nonnull Scene scene) {
+    public void transitionTo(@NonNull Scene scene) {
         // Auto transition if there is no transition declared for the Scene, but there is
         // a root or parent view
         changeScene(scene, getTransition(scene));
@@ -301,7 +301,7 @@ public class TransitionManager {
      *
      * @param scene The Scene to change to
      */
-    public static void go(@Nonnull Scene scene) {
+    public static void go(@NonNull Scene scene) {
         changeScene(scene, sDefaultTransition);
     }
 
@@ -319,7 +319,7 @@ public class TransitionManager {
      * @param transition The transition to use for this scene change. A
      *                   value of null causes the scene change to happen with no transition.
      */
-    public static void go(@Nonnull Scene scene, @Nullable Transition transition) {
+    public static void go(@NonNull Scene scene, @Nullable Transition transition) {
         changeScene(scene, transition);
     }
 
@@ -332,7 +332,7 @@ public class TransitionManager {
      *
      * @param sceneRoot The root of the View hierarchy to run the transition on.
      */
-    public static void beginDelayedTransition(@Nonnull final ViewGroup sceneRoot) {
+    public static void beginDelayedTransition(@NonNull final ViewGroup sceneRoot) {
         beginDelayedTransition(sceneRoot, null);
     }
 
@@ -359,7 +359,7 @@ public class TransitionManager {
      * @param transition The transition to use for this change. A
      *                   value of null causes the TransitionManager to use the default transition.
      */
-    public static void beginDelayedTransition(@Nonnull final ViewGroup sceneRoot,
+    public static void beginDelayedTransition(@NonNull final ViewGroup sceneRoot,
                                               @Nullable Transition transition) {
         if (!sPendingTransitions.contains(sceneRoot) && sceneRoot.isLaidOut()) {
             sPendingTransitions.add(sceneRoot);

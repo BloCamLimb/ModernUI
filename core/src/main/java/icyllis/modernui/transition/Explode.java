@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.transition;
@@ -21,12 +21,11 @@ package icyllis.modernui.transition;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * This transition tracks changes to the visibility of target views in the
@@ -49,7 +48,7 @@ public class Explode extends Visibility {
         setPropagation(new CircularPropagation());
     }
 
-    private void captureValues(@Nonnull TransitionValues transitionValues) {
+    private void captureValues(@NonNull TransitionValues transitionValues) {
         View view = transitionValues.view;
         view.getLocationInWindow(mTempLoc);
         int left = mTempLoc[0];
@@ -60,13 +59,13 @@ public class Explode extends Visibility {
     }
 
     @Override
-    public void captureStartValues(@Nonnull TransitionValues transitionValues) {
+    public void captureStartValues(@NonNull TransitionValues transitionValues) {
         super.captureStartValues(transitionValues);
         captureValues(transitionValues);
     }
 
     @Override
-    public void captureEndValues(@Nonnull TransitionValues transitionValues) {
+    public void captureEndValues(@NonNull TransitionValues transitionValues) {
         super.captureEndValues(transitionValues);
         captureValues(transitionValues);
     }
@@ -119,7 +118,7 @@ public class Explode extends Visibility {
                 viewPosX, viewPosY, startX, startY, endX, endY, TimeInterpolator.ACCELERATE, this);
     }
 
-    private void calculateOut(@Nonnull View sceneRoot, Rect bounds, int[] outVector) {
+    private void calculateOut(@NonNull View sceneRoot, Rect bounds, int[] outVector) {
         sceneRoot.getLocationInWindow(mTempLoc);
         int sceneRootX = mTempLoc[0];
         int sceneRootY = mTempLoc[1];
@@ -158,7 +157,7 @@ public class Explode extends Visibility {
         outVector[1] = Math.round(maxDistance * yVector);
     }
 
-    private static float calculateMaxDistance(@Nonnull View sceneRoot, int focalX, int focalY) {
+    private static float calculateMaxDistance(@NonNull View sceneRoot, int focalX, int focalY) {
         int maxX = Math.max(focalX, sceneRoot.getWidth() - focalX);
         int maxY = Math.max(focalY, sceneRoot.getHeight() - focalY);
         return calculateDistance(maxX, maxY);

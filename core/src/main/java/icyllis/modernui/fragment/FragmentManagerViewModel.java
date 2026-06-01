@@ -1,30 +1,30 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.lifecycle.ViewModel;
 import icyllis.modernui.lifecycle.ViewModelProvider;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import org.slf4j.Marker;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -41,16 +41,16 @@ final class FragmentManagerViewModel extends ViewModel {
     private static final Marker MARKER = FragmentManager.MARKER;
 
     private static final ViewModelProvider.Factory FACTORY = new ViewModelProvider.Factory() {
-        @Nonnull
+        @NonNull
         @Override
         @SuppressWarnings("unchecked")
-        public <T extends ViewModel> T create(@Nonnull Class<T> modelClass) {
+        public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
             FragmentManagerViewModel viewModel = new FragmentManagerViewModel();
             return (T) viewModel;
         }
     };
 
-    @Nonnull
+    @NonNull
     static FragmentManagerViewModel getInstance(ViewModelStore viewModelStore) {
         return new ViewModelProvider(viewModelStore, FACTORY).get(FragmentManagerViewModel.class);
     }
@@ -96,43 +96,43 @@ final class FragmentManagerViewModel extends ViewModel {
         return mHasBeenCleared;
     }
 
-    void addRetainedFragment(@Nonnull Fragment fragment) {
+    void addRetainedFragment(@NonNull Fragment fragment) {
         if (!mIsStateSaved) {
             mRetainedFragments.putIfAbsent(fragment.mWho, fragment);
         }
     }
 
     @Nullable
-    Fragment findRetainedFragmentByWho(@Nonnull String who) {
+    Fragment findRetainedFragmentByWho(@NonNull String who) {
         return mRetainedFragments.get(who);
     }
 
-    @Nonnull
+    @NonNull
     Collection<Fragment> getRetainedFragments() {
         return new ArrayList<>(mRetainedFragments.values());
     }
 
-    boolean shouldDestroy(@Nonnull Fragment fragment) {
+    boolean shouldDestroy(@NonNull Fragment fragment) {
         return mHasBeenCleared || !mRetainedFragments.containsKey(fragment.mWho);
     }
 
-    void removeRetainedFragment(@Nonnull Fragment fragment) {
+    void removeRetainedFragment(@NonNull Fragment fragment) {
         if (!mIsStateSaved) {
             mRetainedFragments.remove(fragment.mWho);
         }
     }
 
-    @Nonnull
-    FragmentManagerViewModel getChildViewModel(@Nonnull Fragment f) {
+    @NonNull
+    FragmentManagerViewModel getChildViewModel(@NonNull Fragment f) {
         return mChildViewModels.computeIfAbsent(f.mWho, i -> new FragmentManagerViewModel());
     }
 
-    @Nonnull
-    ViewModelStore getViewModelStore(@Nonnull Fragment f) {
+    @NonNull
+    ViewModelStore getViewModelStore(@NonNull Fragment f) {
         return mViewModelStores.computeIfAbsent(f.mWho, i -> new ViewModelStore());
     }
 
-    void clearViewModelState(@Nonnull Fragment f) {
+    void clearViewModelState(@NonNull Fragment f) {
         // Clear and remove the Fragment's child non config state
         FragmentManagerViewModel childViewModel = mChildViewModels.remove(f.mWho);
         if (childViewModel != null) {
@@ -165,7 +165,7 @@ final class FragmentManagerViewModel extends ViewModel {
         return result;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder("FragmentManagerViewModel{");

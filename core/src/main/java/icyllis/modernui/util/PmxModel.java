@@ -1,24 +1,25 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.util;
 
-import javax.annotation.Nonnull;
+import icyllis.modernui.annotation.NonNull;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -28,7 +29,10 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * PMX (Polygon Model Extended) 2.1, PMX Model, PMX Parser
+ * 
+ * @hidden
  */
+@Deprecated
 public class PmxModel {
 
     public float mPmxVersion;
@@ -45,8 +49,8 @@ public class PmxModel {
     public PmxModel() {
     }
 
-    @Nonnull
-    public static PmxModel decode(@Nonnull FileChannel channel) throws IOException {
+    @NonNull
+    public static PmxModel decode(@NonNull FileChannel channel) throws IOException {
         ByteBuffer buf = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
         buf.order(ByteOrder.LITTLE_ENDIAN);
         buf.rewind();
@@ -55,7 +59,7 @@ public class PmxModel {
         return model;
     }
 
-    private void read(@Nonnull ByteBuffer buf) {
+    private void read(@NonNull ByteBuffer buf) {
         // Signature "PMX "
         if (buf.get() != 0x50 || buf.get() != 0x4D || buf.get() != 0x58 || buf.get() != 0x20) {
             throw new IllegalStateException("Not PMX format");
@@ -77,8 +81,8 @@ public class PmxModel {
         mModelCommentEn = readText(buf);
     }
 
-    @Nonnull
-    private String readText(@Nonnull ByteBuffer buf) {
+    @NonNull
+    private String readText(@NonNull ByteBuffer buf) {
         int len = buf.getInt();
         if (len == 0) {
             return "";

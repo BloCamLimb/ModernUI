@@ -1,31 +1,31 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.util;
 
+import icyllis.modernui.annotation.NonNull;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -131,7 +131,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     /**
      * Create a new ArrayMap with the mappings from the given Map.
      */
-    public ArrayMap(@Nonnull Map<K, V> map) {
+    public ArrayMap(@NonNull Map<K, V> map) {
         this(0, false);
         putAll(map);
     }
@@ -486,7 +486,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      * @param map The map whose contents are to be retrieved.
      */
     @Override
-    public void putAll(@Nonnull Map<? extends K, ? extends V> map) {
+    public void putAll(@NonNull Map<? extends K, ? extends V> map) {
         if (map instanceof ArrayMap<? extends K, ? extends V> array) {
             final int size = array.mSize;
             ensureCapacity(mSize + size);
@@ -664,7 +664,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      * this map contains itself as a key or a value, the string "(this Map)"
      * will appear in its place.
      */
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         if (isEmpty()) {
@@ -728,7 +728,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      * @return Returns true if this array map contains a key for every entry
      * in <var>collection</var>, else returns false.
      */
-    public boolean containsAll(@Nonnull Collection<?> collection) {
+    public boolean containsAll(@NonNull Collection<?> collection) {
         for (Object o : collection) {
             if (!containsKey(o)) {
                 return false;
@@ -743,7 +743,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      * @param collection The collection whose contents are to be used to remove keys.
      * @return Returns true if any keys were removed from the array map, else false.
      */
-    public boolean removeAll(@Nonnull Collection<?> collection) {
+    public boolean removeAll(@NonNull Collection<?> collection) {
         int oldSize = mSize;
         for (Object o : collection) {
             remove(o);
@@ -758,7 +758,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      *                   keys to keep.
      * @return Returns true if any keys were removed from the array map, else false.
      */
-    public boolean retainAll(@Nonnull Collection<?> collection) {
+    public boolean retainAll(@NonNull Collection<?> collection) {
         int oldSize = mSize;
         Iterator<K> it = new ArrayIterator<>(0);
         while (it.hasNext()) {
@@ -799,7 +799,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean addAll(@Nonnull Collection<? extends Map.Entry<K, V>> collection) {
+        public boolean addAll(@NonNull Collection<? extends Map.Entry<K, V>> collection) {
             int oldSize = mSize;
             for (Map.Entry<K, V> entry : collection) {
                 put(entry.getKey(), entry.getValue());
@@ -828,7 +828,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return mSize == 0;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<Map.Entry<K, V>> iterator() {
             return new MapIterator();
@@ -840,12 +840,12 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean removeAll(@Nonnull Collection<?> collection) {
+        public boolean removeAll(@NonNull Collection<?> collection) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean retainAll(@Nonnull Collection<?> collection) {
+        public boolean retainAll(@NonNull Collection<?> collection) {
             throw new UnsupportedOperationException();
         }
 
@@ -860,7 +860,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public <T> T[] toArray(@Nonnull T[] array) {
+        public <T> T[] toArray(@NonNull T[] array) {
             throw new UnsupportedOperationException();
         }
 
@@ -917,7 +917,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean addAll(@Nonnull Collection<? extends K> collection) {
+        public boolean addAll(@NonNull Collection<? extends K> collection) {
             throw new UnsupportedOperationException();
         }
 
@@ -932,7 +932,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean containsAll(@Nonnull Collection<?> collection) {
+        public boolean containsAll(@NonNull Collection<?> collection) {
             return ArrayMap.this.containsAll(collection);
         }
 
@@ -941,7 +941,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return mSize == 0;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<K> iterator() {
             return new ArrayIterator<>(0);
@@ -958,12 +958,12 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean removeAll(@Nonnull Collection<?> collection) {
+        public boolean removeAll(@NonNull Collection<?> collection) {
             return ArrayMap.this.removeAll(collection);
         }
 
         @Override
-        public boolean retainAll(@Nonnull Collection<?> collection) {
+        public boolean retainAll(@NonNull Collection<?> collection) {
             return ArrayMap.this.retainAll(collection);
         }
 
@@ -972,7 +972,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return mSize;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Object[] toArray() {
             final int N = mSize;
@@ -983,9 +983,9 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return result;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public <T> T[] toArray(@Nonnull T[] array) {
+        public <T> T[] toArray(@NonNull T[] array) {
             final int N = mSize;
             if (array.length < N) {
                 array = (T[]) Array.newInstance(array.getClass().getComponentType(), N);
@@ -1050,7 +1050,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean addAll(@Nonnull Collection<? extends V> collection) {
+        public boolean addAll(@NonNull Collection<? extends V> collection) {
             throw new UnsupportedOperationException();
         }
 
@@ -1065,7 +1065,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean containsAll(@Nonnull Collection<?> collection) {
+        public boolean containsAll(@NonNull Collection<?> collection) {
             for (Object o : collection) {
                 if (!contains(o)) {
                     return false;
@@ -1079,7 +1079,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return mSize == 0;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Iterator<V> iterator() {
             return new ArrayIterator<>(1);
@@ -1096,7 +1096,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean removeAll(@Nonnull Collection<?> collection) {
+        public boolean removeAll(@NonNull Collection<?> collection) {
             int size = mSize;
             boolean changed = false;
             for (int i = 0; i < size; i++) {
@@ -1112,7 +1112,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean retainAll(@Nonnull Collection<?> collection) {
+        public boolean retainAll(@NonNull Collection<?> collection) {
             int size = mSize;
             boolean changed = false;
             for (int i = 0; i < size; i++) {
@@ -1132,7 +1132,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return mSize;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Object[] toArray() {
             final int size = mSize;
@@ -1143,9 +1143,9 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return result;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public <T> T[] toArray(@Nonnull T[] array) {
+        public <T> T[] toArray(@NonNull T[] array) {
             final int size = mSize;
             if (array.length < size) {
                 array = (T[]) Array.newInstance(array.getClass().getComponentType(), size);
@@ -1283,14 +1283,14 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                     (value == null ? 0 : value.hashCode());
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public String toString() {
             return getKey() + "=" + getValue();
         }
     }
 
-    int indexOf(@Nonnull Object key, int hash) {
+    int indexOf(@NonNull Object key, int hash) {
         final int N = mSize;
 
         // Important fast case: if nothing is in here, nothing to look for.
@@ -1433,7 +1433,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      * Make sure <b>NOT</b> to call this method with arrays that can still be modified. In other
      * words, don't pass mHashes or mArray in directly.
      */
-    private static void freeArrays(@Nonnull final int[] hashes, @Nonnull final Object[] array, final int size) {
+    private static void freeArrays(@NonNull final int[] hashes, @NonNull final Object[] array, final int size) {
         if (hashes.length == (BASE_SIZE * 2)) {
             synchronized (sTwiceBaseCacheLock) {
                 if (mTwiceBaseCacheSize < CACHE_SIZE) {

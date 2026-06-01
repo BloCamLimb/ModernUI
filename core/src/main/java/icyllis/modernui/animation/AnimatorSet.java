@@ -1,30 +1,30 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Looper;
 import icyllis.modernui.util.ArrayMap;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -186,7 +186,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
     // fixes their side.
     private AnimatorListener mAnimationEndListener = new AnimatorListener() {
         @Override
-        public void onAnimationEnd(@Nonnull Animator animation) {
+        public void onAnimationEnd(@NonNull Animator animation) {
             if (mNodeMap.get(animation) == null) {
                 throw new RuntimeException("Error: animation ended is not in the node map");
             }
@@ -285,7 +285,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      *
      * @return The list of child animations of this AnimatorSet.
      */
-    @Nonnull
+    @NonNull
     public ArrayList<Animator> getChildAnimations() {
         ArrayList<Animator> childList = new ArrayList<>();
         for (Node node : mNodes) {
@@ -699,7 +699,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
     }
 
     // Returns true if set is empty or contains nothing but animator sets with no start delay.
-    private static boolean isEmptySet(@Nonnull AnimatorSet set) {
+    private static boolean isEmptySet(@NonNull AnimatorSet set) {
         if (set.getStartDelay() > 0) {
             return false;
         }
@@ -1101,7 +1101,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      * @param node         child animator node
      * @param animPlayTime unscaled play time (including start delay) for the child animator
      */
-    private void pulseFrame(@Nonnull Node node, long animPlayTime) {
+    private void pulseFrame(@NonNull Node node, long animPlayTime) {
         if (!node.mEnded) {
             float durationScale = ValueAnimator.sDurationScale;
             durationScale = durationScale == 0 ? 1 : durationScale;
@@ -1258,7 +1258,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
         handler.addFrameCallback(this, 0);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public AnimatorSet clone() {
         final AnimatorSet anim = (AnimatorSet) super.clone();
@@ -1285,7 +1285,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
         anim.mEvents = new ArrayList<>();
         anim.mAnimationEndListener = new AnimatorListener() {
             @Override
-            public void onAnimationEnd(@Nonnull Animator animation) {
+            public void onAnimationEnd(@NonNull Animator animation) {
                 final Node node = anim.mNodeMap.get(animation);
                 if (node == null) {
                     throw new RuntimeException("Error: animation ended is not in the node"
@@ -1361,7 +1361,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
         start(true, true);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("AnimatorSet@" + Integer.toHexString(hashCode()) + "{");
@@ -1585,7 +1585,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      * the graph, all the nodes on the cycle will be marked to start at {@link #DURATION_INFINITE},
      * meaning they will ever play.
      */
-    private void updatePlayTime(@Nonnull Node parent, @Nonnull ArrayList<Node> visited) {
+    private void updatePlayTime(@NonNull Node parent, @NonNull ArrayList<Node> visited) {
         if (parent.mChildNodes == null) {
             if (parent == mRootNode) {
                 // All the animators are in a cycle
@@ -1641,7 +1641,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
     }
 
     // Recursively find all the siblings
-    private void findSiblings(Node node, @Nonnull ArrayList<Node> siblings) {
+    private void findSiblings(Node node, @NonNull ArrayList<Node> siblings) {
         if (!siblings.contains(node)) {
             siblings.add(node);
             if (node.mSiblings == null) {
@@ -1673,8 +1673,8 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
         return mTotalDuration;
     }
 
-    @Nonnull
-    private Node getNodeForAnimation(@Nonnull Animator anim) {
+    @NonNull
+    private Node getNodeForAnimation(@NonNull Animator anim) {
         Node node = mNodeMap.get(anim);
         if (node == null) {
             node = new Node(anim);
@@ -1741,7 +1741,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
             this.mAnimation = animation;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public Node clone() {
             try {
@@ -1962,7 +1962,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
          * @param anim The animation that is the dependency for the other animations passed into
          *             the other methods of this Builder object.
          */
-        Builder(@Nonnull Animator anim) {
+        Builder(@NonNull Animator anim) {
             mDependencyDirty = true;
             mCurrentNode = getNodeForAnimation(anim);
         }
@@ -1974,7 +1974,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
          * @param anim The animation that will play when the animation supplied to the
          *             {@link AnimatorSet#play(Animator)} method starts.
          */
-        public Builder with(@Nonnull Animator anim) {
+        public Builder with(@NonNull Animator anim) {
             Node node = getNodeForAnimation(anim);
             mCurrentNode.addSibling(node);
             return this;
@@ -1988,7 +1988,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
          * @param anim The animation that will play when the animation supplied to the
          *             {@link AnimatorSet#play(Animator)} method ends.
          */
-        public Builder before(@Nonnull Animator anim) {
+        public Builder before(@NonNull Animator anim) {
             Node node = getNodeForAnimation(anim);
             mCurrentNode.addChild(node);
             return this;
@@ -2002,7 +2002,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
          * @param anim The animation whose end will cause the animation supplied to the
          *             {@link AnimatorSet#play(Animator)} method to play.
          */
-        public Builder after(@Nonnull Animator anim) {
+        public Builder after(@NonNull Animator anim) {
             Node node = getNodeForAnimation(anim);
             mCurrentNode.addParent(node);
             return this;

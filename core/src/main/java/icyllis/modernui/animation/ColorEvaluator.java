@@ -1,26 +1,25 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
-
-import javax.annotation.Nonnull;
 
 /**
  * This evaluator can be used to perform type interpolation between integer
@@ -40,7 +39,7 @@ public final class ColorEvaluator implements TypeEvaluator<Integer> {
      *
      * @return An instance of <code>ColorEvaluator</code>.
      */
-    @Nonnull
+    @NonNull
     public static ColorEvaluator getInstance() {
         return sInstance;
     }
@@ -99,7 +98,7 @@ public final class ColorEvaluator implements TypeEvaluator<Integer> {
     /**
      * @see #evaluate(float, int, int)
      */
-    @Nonnull
+    @NonNull
     @Override
     public Integer evaluate(float fraction, Integer startValue, Integer endValue) {
         return evaluate(fraction, startValue.intValue(), endValue.intValue());

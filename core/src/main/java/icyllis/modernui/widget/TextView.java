@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -2452,7 +2452,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                                     + "PrecomputedText: " + precomputed.getParams()
                                     + "TextView: " + getTextMetricsParams());
                 case PrecomputedText.Params.NEED_RECOMPUTE:
-                    // Modern UI fixed: Google's bug
+                    // ModernUI fixed: Google's bug
                     text = PrecomputedText.create(precomputed, getTextMetricsParams());
                     break;
                 case PrecomputedText.Params.USABLE:
@@ -3360,7 +3360,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
 
         Layout.Alignment alignment = getLayoutAlignment();
-        // Bug fixed by Modern UI
+        // Bug fixed by ModernUI
         final boolean testDirChange = !bringIntoView && mSingleLine && mLayout != null;
         bringIntoView |= testDirChange && mLayout.getAlignment() != alignment;
         int oldDir = 0;
@@ -3476,7 +3476,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             result = builder.build();
         } else {
             if (boring == UNKNOWN_BORING) {
-                // Modern UI changed:
+                // ModernUI changed:
                 if (mTransformed.length() - 500 > wantWidth) {
                     // When the width MeasureSpec of the TextView is EXACTLY and the number of
                     // characters exceeds the pixel width, the layout is unlikely to be boring,
@@ -4272,7 +4272,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         final int selectionStart = getSelectionStart();
         final int selectionEnd = getSelectionEnd();
 
-        // Fixed by Modern UI
+        // Fixed by ModernUI
         return selectionStart >= 0 && selectionEnd >= 0 && selectionStart != selectionEnd;
     }
 
@@ -5427,7 +5427,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     private static class ChangeWatcher implements TextWatcher, SpanWatcher {
-        // Modern UI changed:
+        // ModernUI changed:
         // Make this class a static nested class that holds a weak reference to the original TextView.
         // Also, check the ownership of the text to avoid memory leaks and unexpected behaviors,
         // similar to what DynamicLayout.ChangeWatcher does.

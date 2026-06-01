@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
@@ -21,9 +21,8 @@ package icyllis.modernui.animation;
 import icyllis.modernui.animation.Keyframe.FloatKeyframe;
 import icyllis.modernui.animation.Keyframe.IntKeyframe;
 import icyllis.modernui.animation.Keyframe.ObjectKeyframe;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.Log;
-
-import javax.annotation.Nonnull;
 
 /**
  * This class holds a collection of Keyframe objects and is called by ValueAnimator to calculate
@@ -36,15 +35,15 @@ public class KeyframeSet implements Keyframes {
     final Keyframe[] mKeyframes;
     TypeEvaluator mEvaluator;
 
-    KeyframeSet(@Nonnull Keyframe... keyframes) {
+    KeyframeSet(@NonNull Keyframe... keyframes) {
         if (keyframes.length < 2) {
             throw new IllegalArgumentException("Keyframes < 2");
         }
         mKeyframes = keyframes;
     }
 
-    @Nonnull
-    public static IntKeyframeSet ofInt(@Nonnull int... values) {
+    @NonNull
+    public static IntKeyframeSet ofInt(@NonNull int... values) {
         if (values.length == 0) {
             throw new IllegalArgumentException("Length == 0");
         }
@@ -61,8 +60,8 @@ public class KeyframeSet implements Keyframes {
         return new IntKeyframeSet(keyframes);
     }
 
-    @Nonnull
-    public static FloatKeyframeSet ofFloat(@Nonnull float... values) {
+    @NonNull
+    public static FloatKeyframeSet ofFloat(@NonNull float... values) {
         if (values.length == 0) {
             throw new IllegalArgumentException("Length == 0");
         }
@@ -89,8 +88,8 @@ public class KeyframeSet implements Keyframes {
         return new FloatKeyframeSet(keyframes);
     }
 
-    @Nonnull
-    public static Keyframes ofObject(@Nonnull Object... values) {
+    @NonNull
+    public static Keyframes ofObject(@NonNull Object... values) {
         if (values.length == 0) {
             throw new IllegalArgumentException("Length == 0");
         }
@@ -107,8 +106,8 @@ public class KeyframeSet implements Keyframes {
         return new KeyframeSet(keyframes);
     }
 
-    @Nonnull
-    public static KeyframeSet ofKeyframe(@Nonnull Keyframe... keyframes) {
+    @NonNull
+    public static KeyframeSet ofKeyframe(@NonNull Keyframe... keyframes) {
         if (keyframes.length < 2) {
             throw new IllegalArgumentException("Keyframes < 2");
         }

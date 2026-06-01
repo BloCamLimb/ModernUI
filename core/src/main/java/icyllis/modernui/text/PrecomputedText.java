@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.text;
@@ -328,7 +328,7 @@ public final class PrecomputedText extends SpannableString {
                             params.mLineBreakConfig);
             switch (checkResult) {
                 case Params.USABLE:
-                    // Modern UI changed: we can't simply return hintPct, instead,
+                    // ModernUI changed: we can't simply return hintPct, instead,
                     // reuse measure results, but copy spans and remove no-copy spans
                     paraInfo = hintPct.getParagraphInfo();
                     break;
@@ -398,7 +398,7 @@ public final class PrecomputedText extends SpannableString {
                             @Nullable ParagraphInfo[] paraInfo) {
         super(text);    // <- no-copy spans will be removed
         if (paraInfo == null) {
-            // Modern UI fixed: google bug, if the source text has NoCopy-MetricAffectingSpan,
+            // ModernUI fixed: google bug, if the source text has NoCopy-MetricAffectingSpan,
             // then measure results from 'text' and 'this' are different.
             // Therefore, we use 'this' to measure.
             paraInfo = createMeasuredParagraphs(

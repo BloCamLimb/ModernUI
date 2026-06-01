@@ -1,27 +1,27 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.util.Log;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
@@ -49,13 +49,13 @@ public class ViewModelProvider {
          * @param <T>        The type parameter for the ViewModel.
          * @return a newly created ViewModel
          */
-        @Nonnull
-        <T extends ViewModel> T create(@Nonnull Class<T> modelClass);
+        @NonNull
+        <T extends ViewModel> T create(@NonNull Class<T> modelClass);
     }
 
     static class OnRequeryFactory {
 
-        void onRequery(@Nonnull ViewModel viewModel) {
+        void onRequery(@NonNull ViewModel viewModel) {
         }
     }
 
@@ -75,13 +75,13 @@ public class ViewModelProvider {
          * @param <T>        The type parameter for the ViewModel.
          * @return a newly created ViewModel
          */
-        @Nonnull
-        public abstract <T extends ViewModel> T create(@Nonnull String key,
-                                                       @Nonnull Class<T> modelClass);
+        @NonNull
+        public abstract <T extends ViewModel> T create(@NonNull String key,
+                                                       @NonNull Class<T> modelClass);
 
-        @Nonnull
+        @NonNull
         @Override
-        public final <T extends ViewModel> T create(@Nonnull Class<T> modelClass) {
+        public final <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
             throw new UnsupportedOperationException("create(String, Class<?>) must be called on "
                     + "implementations of KeyedFactory");
         }
@@ -98,7 +98,7 @@ public class ViewModelProvider {
      * {@link ViewModelStoreOwner#getDefaultViewModelProviderFactory() default factory}
      * if it returns not null. Otherwise, a {@link NewInstanceFactory} will be used.
      */
-    public ViewModelProvider(@Nonnull ViewModelStoreOwner owner) {
+    public ViewModelProvider(@NonNull ViewModelStoreOwner owner) {
         this(owner.getViewModelStore(), Objects.requireNonNullElseGet(
                 owner.getDefaultViewModelProviderFactory(), NewInstanceFactory::getInstance));
     }
@@ -112,7 +112,7 @@ public class ViewModelProvider {
      * @param factory a {@code Factory} which will be used to instantiate
      *                new {@code ViewModels}
      */
-    public ViewModelProvider(@Nonnull ViewModelStoreOwner owner, @Nonnull Factory factory) {
+    public ViewModelProvider(@NonNull ViewModelStoreOwner owner, @NonNull Factory factory) {
         this(owner.getViewModelStore(), factory);
     }
 
@@ -124,7 +124,7 @@ public class ViewModelProvider {
      * @param factory factory a {@code Factory} which will be used to instantiate
      *                new {@code ViewModels}
      */
-    public ViewModelProvider(@Nonnull ViewModelStore store, @Nonnull Factory factory) {
+    public ViewModelProvider(@NonNull ViewModelStore store, @NonNull Factory factory) {
         mFactory = factory;
         mViewModelStore = store;
     }
@@ -142,9 +142,9 @@ public class ViewModelProvider {
      * @param <T>        The type parameter for the ViewModel.
      * @return A ViewModel that is an instance of the given type {@code T}.
      */
-    @Nonnull
+    @NonNull
     @UiThread
-    public <T extends ViewModel> T get(@Nonnull Class<T> modelClass) {
+    public <T extends ViewModel> T get(@NonNull Class<T> modelClass) {
         String canonicalName = modelClass.getCanonicalName();
         if (canonicalName == null) {
             throw new IllegalArgumentException("Local and anonymous classes can not be ViewModels");
@@ -167,9 +167,9 @@ public class ViewModelProvider {
      * @return A ViewModel that is an instance of the given type {@code T}.
      */
     @SuppressWarnings("unchecked")
-    @Nonnull
+    @NonNull
     @UiThread
-    public <T extends ViewModel> T get(@Nonnull String key, @Nonnull Class<T> modelClass) {
+    public <T extends ViewModel> T get(@NonNull String key, @NonNull Class<T> modelClass) {
         ViewModel viewModel = mViewModelStore.get(key);
 
         if (modelClass.isInstance(viewModel)) {
@@ -204,7 +204,7 @@ public class ViewModelProvider {
          *
          * @return A valid {@link NewInstanceFactory}
          */
-        @Nonnull
+        @NonNull
         static NewInstanceFactory getInstance() {
             if (sInstance == null) {
                 sInstance = new NewInstanceFactory();
@@ -212,9 +212,9 @@ public class ViewModelProvider {
             return sInstance;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public <T extends ViewModel> T create(@Nonnull Class<T> modelClass) {
+        public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
             try {
                 return modelClass.getDeclaredConstructor().newInstance();
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {

@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2020-2023 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -35,6 +35,8 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ArrayMap;
@@ -45,8 +47,6 @@ import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 
@@ -568,7 +568,7 @@ public class RelativeLayout extends ViewGroup {
      * {@code p1} is to the left of {@code p2}, or a positive number
      * otherwise
      */
-    private int compareLayoutPosition(@Nonnull LayoutParams p1, @Nonnull LayoutParams p2) {
+    private int compareLayoutPosition(@NonNull LayoutParams p1, @NonNull LayoutParams p2) {
         final int topDiff = p1.mTop - p2.mTop;
         if (topDiff != 0) {
             return topDiff;
@@ -586,7 +586,7 @@ public class RelativeLayout extends ViewGroup {
      * @param myWidth  Width of the RelativeLayout
      * @param myHeight Height of the RelativeLayout
      */
-    private void measureChild(@Nonnull View child, @Nonnull LayoutParams params, int myWidth, int myHeight) {
+    private void measureChild(@NonNull View child, @NonNull LayoutParams params, int myWidth, int myHeight) {
         int childWidthMeasureSpec = getChildMeasureSpec(params.mLeft,
                 params.mRight, params.width,
                 params.leftMargin, params.rightMargin,
@@ -1010,9 +1010,9 @@ public class RelativeLayout extends ViewGroup {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams lp) {
+    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams lp) {
         if (lp instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) lp);
         } else if (lp instanceof MarginLayoutParams) {
@@ -1021,7 +1021,7 @@ public class RelativeLayout extends ViewGroup {
         return new LayoutParams(lp);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -1072,11 +1072,11 @@ public class RelativeLayout extends ViewGroup {
             super(width, height);
         }
 
-        public LayoutParams(@Nonnull ViewGroup.LayoutParams source) {
+        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
             super(source);
         }
 
-        public LayoutParams(@Nonnull MarginLayoutParams source) {
+        public LayoutParams(@NonNull MarginLayoutParams source) {
             super(source);
         }
 
@@ -1086,7 +1086,7 @@ public class RelativeLayout extends ViewGroup {
          *
          * @param source the layout params to copy from.
          */
-        public LayoutParams(@Nonnull LayoutParams source) {
+        public LayoutParams(@NonNull LayoutParams source) {
             super(source);
             mNeedsLayoutResolution = source.mNeedsLayoutResolution;
             mRulesChanged = source.mRulesChanged;
@@ -1357,7 +1357,7 @@ public class RelativeLayout extends ViewGroup {
          *
          * @param view The view to be added as a node to the graph.
          */
-        void add(@Nonnull View view) {
+        void add(@NonNull View view) {
             final int id = view.getId();
             final Node node = Node.acquire(view);
 
@@ -1416,7 +1416,7 @@ public class RelativeLayout extends ViewGroup {
          *                    dependencies
          * @return A list of node, each being a root of the graph
          */
-        @Nonnull
+        @NonNull
         private ArrayDeque<Node> findRoots(int[] rulesFilter) {
             final ArrayList<Node> nodes = mNodes;
 
@@ -1493,7 +1493,7 @@ public class RelativeLayout extends ViewGroup {
             // activities, that's why we give it a rather high limit
             private static final Pools.Pool<Node> sPool = Pools.newSynchronizedPool(100);
 
-            @Nonnull
+            @NonNull
             static Node acquire(View view) {
                 Node node = sPool.acquire();
                 if (node == null) {

@@ -1,33 +1,32 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.text.style;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
-import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.text.TextPaint;
 import org.intellij.lang.annotations.MagicConstant;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.ref.WeakReference;
 
@@ -140,7 +139,7 @@ public abstract class DynamicDrawableSpan extends ReplacementSpan {
     public abstract Drawable getDrawable();
 
     @Override
-    public int getSize(@Nonnull TextPaint paint, CharSequence text,
+    public int getSize(@NonNull TextPaint paint, CharSequence text,
                        int start, int end, @Nullable FontMetricsInt fm) {
         Drawable d = getCachedDrawable();
         Rect rect = d.getBounds();
@@ -154,9 +153,9 @@ public abstract class DynamicDrawableSpan extends ReplacementSpan {
     }
 
     @Override
-    public void draw(@Nonnull Canvas canvas, CharSequence text,
+    public void draw(@NonNull Canvas canvas, CharSequence text,
                      int start, int end, float x, int top, int y, int bottom,
-                     @Nonnull TextPaint paint) {
+                     @NonNull TextPaint paint) {
         Drawable b = getCachedDrawable();
         canvas.save();
 

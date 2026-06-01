@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui;
@@ -100,7 +100,7 @@ import static icyllis.modernui.core.Core.MARKER;
 import static icyllis.modernui.util.Log.LOGGER;
 
 /**
- * The core class of Modern UI.
+ * The core class of ModernUI.
  */
 public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner {
 
@@ -161,9 +161,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     }
 
     /**
-     * Get Modern UI instance.
+     * Get ModernUI instance.
      *
-     * @return the Modern UI
+     * @return the ModernUI
      */
     public static ModernUI getInstance() {
         return sInstance;
@@ -197,7 +197,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     }
 
     /**
-     * Runs the Modern UI with the default application setups.
+     * Runs the ModernUI with the default application setups.
      * This method is only called by the <code>main()</code> on the main thread.
      */
     @MainThread
@@ -206,7 +206,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     }
 
     /**
-     * Runs the Modern UI with the default application setups.
+     * Runs the ModernUI with the default application setups.
      * This method is only called by the <code>main()</code> on the main thread.
      *
      * @hidden
@@ -262,10 +262,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         //glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
         if (monitor == null) {
             LOGGER.info(MARKER, "No monitor connected");
-            mWindow = ActivityWindow.createMainWindow("Modern UI", 1280, 720);
+            mWindow = ActivityWindow.createMainWindow("ModernUI", 1280, 720);
         } else {
             VideoMode mode = monitor.getCurrentMode();
-            mWindow = ActivityWindow.createMainWindow("Modern UI",
+            mWindow = ActivityWindow.createMainWindow("ModernUI",
                     (int) (mode.getWidth() * 0.75), (int) (mode.getHeight() * 0.75));
         }
 

@@ -1,30 +1,30 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2025 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.CallSuper;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Looper;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -246,7 +246,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * through this interpolator to calculate the interpolated fraction, which is then used to
      * calculate the animated values.
      */
-    @Nonnull
+    @NonNull
     private TimeInterpolator mInterpolator = TimeInterpolator.ACCELERATE_DECELERATE;
 
     /**
@@ -296,8 +296,8 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * @param values A set of values that the animation will animate between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
-    public static ValueAnimator ofInt(@Nonnull int... values) {
+    @NonNull
+    public static ValueAnimator ofInt(@NonNull int... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setValues(PropertyValuesHolder.ofInt(values));
         return anim;
@@ -314,8 +314,8 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * @param values A set of values that the animation will animate between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
-    public static ValueAnimator ofArgb(@Nonnull int... values) {
+    @NonNull
+    public static ValueAnimator ofArgb(@NonNull int... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setValues(PropertyValuesHolder.ofInt(values));
         anim.setEvaluator(ColorEvaluator.getInstance());
@@ -333,8 +333,8 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * @param values A set of values that the animation will animate between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
-    public static ValueAnimator ofFloat(@Nonnull float... values) {
+    @NonNull
+    public static ValueAnimator ofFloat(@NonNull float... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setValues(PropertyValuesHolder.ofFloat(values));
         return anim;
@@ -363,9 +363,9 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * @param values    A set of values that the animation will animate between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @Nonnull
+    @NonNull
     @SafeVarargs
-    public static <V> ValueAnimator ofObject(@Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+    public static <V> ValueAnimator ofObject(@NonNull TypeEvaluator<V> evaluator, @NonNull V... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setValues(PropertyValuesHolder.ofObject(evaluator, values));
         return anim;
@@ -379,7 +379,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      *
      * @param values The set of values, per property, being animated between.
      */
-    public void setValues(@Nonnull PropertyValuesHolder... values) {
+    public void setValues(@NonNull PropertyValuesHolder... values) {
         mValues = values;
         // New property/values/target should cause re-initialization prior to starting
         mInitialized = false;
@@ -393,7 +393,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * @return The array of PropertyValuesHolder objects which hold the values, per property,
      * that define the animation.
      */
-    @Nonnull
+    @NonNull
     public PropertyValuesHolder[] getValues() {
         return mValues;
     }
@@ -697,7 +697,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      *
      * @param listener the listener to be added to the current set of listeners for this animation.
      */
-    public void addUpdateListener(@Nonnull AnimatorUpdateListener listener) {
+    public void addUpdateListener(@NonNull AnimatorUpdateListener listener) {
         if (mUpdateListeners == null) {
             mUpdateListeners = new ArrayList<>();
         }
@@ -720,7 +720,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * @param listener the listener to be removed from the current set of update listeners
      *                 for this animation.
      */
-    public void removeUpdateListener(@Nonnull AnimatorUpdateListener listener) {
+    public void removeUpdateListener(@NonNull AnimatorUpdateListener listener) {
         if (mUpdateListeners == null) {
             return;
         }
@@ -749,7 +749,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      *
      * @return The timing interpolator for this animation.
      */
-    @Nonnull
+    @NonNull
     @Override
     public TimeInterpolator getInterpolator() {
         return mInterpolator;
@@ -1360,6 +1360,6 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
          *
          * @param animation The animation which was repeated.
          */
-        void onAnimationUpdate(@Nonnull ValueAnimator animation);
+        void onAnimationUpdate(@NonNull ValueAnimator animation);
     }
 }

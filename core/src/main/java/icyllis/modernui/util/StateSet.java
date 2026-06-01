@@ -1,27 +1,26 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.util;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.view.View;
-
-import javax.annotation.Nonnull;
 
 /**
  * State sets are arrays of positive ints where each element
@@ -112,7 +111,7 @@ public final class StateSet {
      *
      * @param state a state set or state spec.
      */
-    public static boolean isWildCard(@Nonnull int[] state) {
+    public static boolean isWildCard(@NonNull int[] state) {
         return state.length == 0 || state[0] == 0;
     }
 
@@ -123,7 +122,7 @@ public final class StateSet {
      *                  prohibited (if negative) {@link View} states.
      * @param stateSet  an array of {@link View} states
      */
-    public static boolean stateSetMatches(@Nonnull int[] stateSpec, @Nonnull int[] stateSet) {
+    public static boolean stateSetMatches(@NonNull int[] stateSpec, @NonNull int[] stateSet) {
         CYCLE:
         for (int stateSpecState : stateSpec) {
             if (stateSpecState == 0) {
@@ -175,7 +174,7 @@ public final class StateSet {
      *                  prohibited (if negative) {@link View} states.
      * @param state     a {@link View} state
      */
-    public static boolean stateSetMatches(@Nonnull int[] stateSpec, int state) {
+    public static boolean stateSetMatches(@NonNull int[] stateSpec, int state) {
         for (int stateSpecState : stateSpec) {
             if (stateSpecState == 0) {
                 // We've reached the end of the cases to match against.
@@ -203,7 +202,7 @@ public final class StateSet {
      * @param attr       an attribute we're looking for.
      * @return {@code true} if the attribute is contained in the state specs.
      */
-    public static boolean containsAttribute(@Nonnull int[][] stateSpecs, int attr) {
+    public static boolean containsAttribute(@NonNull int[][] stateSpecs, int attr) {
         for (int[] spec : stateSpecs) {
             for (int specAttr : spec) {
                 if (specAttr == attr || -specAttr == attr) {
@@ -214,8 +213,8 @@ public final class StateSet {
         return false;
     }
 
-    @Nonnull
-    public static int[] trimStateSet(@Nonnull int[] states, int newSize) {
+    @NonNull
+    public static int[] trimStateSet(@NonNull int[] states, int newSize) {
         if (states.length == newSize) {
             return states;
         }

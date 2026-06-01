@@ -1,25 +1,26 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.text.style.UpdateLayout;
@@ -28,8 +29,6 @@ import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
@@ -41,8 +40,8 @@ public class DynamicLayout extends Layout {
     /**
      * Obtain a builder for constructing DynamicLayout objects.
      */
-    @Nonnull
-    public static Builder builder(@Nonnull CharSequence base, @Nonnull TextPaint paint,
+    @NonNull
+    public static Builder builder(@NonNull CharSequence base, @NonNull TextPaint paint,
                                   int width) {
         Builder b = sPool.acquire();
         if (b == null) {
@@ -115,8 +114,8 @@ public class DynamicLayout extends Layout {
          * @param display the transformed text
          * @return this builder, useful for chaining
          */
-        @Nonnull
-        public Builder setDisplayText(@Nonnull CharSequence display) {
+        @NonNull
+        public Builder setDisplayText(@NonNull CharSequence display) {
             mDisplay = display;
             return this;
         }
@@ -127,8 +126,8 @@ public class DynamicLayout extends Layout {
          * @param alignment Alignment for the resulting {@link DynamicLayout}
          * @return this builder, useful for chaining
          */
-        @Nonnull
-        public Builder setAlignment(@Nonnull Alignment alignment) {
+        @NonNull
+        public Builder setAlignment(@NonNull Alignment alignment) {
             mAlignment = alignment;
             return this;
         }
@@ -141,8 +140,8 @@ public class DynamicLayout extends Layout {
          * @param textDir text direction heuristic for resolving bidi behavior.
          * @return this builder, useful for chaining
          */
-        @Nonnull
-        public Builder setTextDirection(@Nonnull TextDirectionHeuristic textDir) {
+        @NonNull
+        public Builder setTextDirection(@NonNull TextDirectionHeuristic textDir) {
             mTextDir = textDir;
             return this;
         }
@@ -172,7 +171,7 @@ public class DynamicLayout extends Layout {
          * @param includePad whether to include padding
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setIncludePad(boolean includePad) {
             mIncludePad = includePad;
             return this;
@@ -191,7 +190,7 @@ public class DynamicLayout extends Layout {
          * @param fallbackLineSpacing whether to expand line spacing based on fallback fonts
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setFallbackLineSpacing(boolean fallbackLineSpacing) {
             mFallbackLineSpacing = fallbackLineSpacing;
             return this;
@@ -204,7 +203,7 @@ public class DynamicLayout extends Layout {
          * @param ellipsizedWidth width used for ellipsizing, in pixels
          * @return this builder, useful for chaining
          */
-        @Nonnull
+        @NonNull
         public Builder setEllipsizedWidth(int ellipsizedWidth) {
             mEllipsizedWidth = ellipsizedWidth;
             return this;
@@ -248,7 +247,7 @@ public class DynamicLayout extends Layout {
          *
          * @return the newly constructed {@link DynamicLayout} object
          */
-        @Nonnull
+        @NonNull
         public DynamicLayout build() {
             final DynamicLayout result = new DynamicLayout(this);
             recycle();
@@ -317,7 +316,7 @@ public class DynamicLayout extends Layout {
 
     private int mTopPadding, mBottomPadding;
 
-    private DynamicLayout(@Nonnull Builder b) {
+    private DynamicLayout(@NonNull Builder b) {
         super(createEllipsizer(b.mEllipsize, b.mDisplay),
                 b.mPaint, b.mWidth, b.mAlignment, b.mTextDir,
                 b.mSpacingMult, b.mSpacingAdd);
@@ -329,9 +328,9 @@ public class DynamicLayout extends Layout {
         generate(b);
     }
 
-    @Nonnull
+    @NonNull
     private static CharSequence createEllipsizer(@Nullable TextUtils.TruncateAt ellipsize,
-                                                 @Nonnull CharSequence display) {
+                                                 @NonNull CharSequence display) {
         if (ellipsize == null) {
             return display;
         } else if (display instanceof Spanned) {
@@ -341,7 +340,7 @@ public class DynamicLayout extends Layout {
         }
     }
 
-    private void generate(@Nonnull Builder b) {
+    private void generate(@NonNull Builder b) {
         mBase = b.mBase;
         mFallbackLineSpacing = b.mFallbackLineSpacing;
         if (b.mEllipsize != null) {

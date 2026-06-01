@@ -1,28 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Core;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.function.Supplier;
 
@@ -105,7 +105,7 @@ public abstract class LiveData<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private void considerNotify(@Nonnull ObserverWrapper observer) {
+    private void considerNotify(@NonNull ObserverWrapper observer) {
         if (!observer.mActive) {
             return;
         }
@@ -178,7 +178,7 @@ public abstract class LiveData<T> {
      * @param observer The observer that will receive the events
      */
     @UiThread
-    public void observe(@Nonnull LifecycleOwner owner, @Nonnull Observer<? super T> observer) {
+    public void observe(@NonNull LifecycleOwner owner, @NonNull Observer<? super T> observer) {
         Core.checkUiThread();
         if (owner.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) {
             // ignore
@@ -211,7 +211,7 @@ public abstract class LiveData<T> {
      * @param observer The observer that will receive the events
      */
     @UiThread
-    public void observeForever(@Nonnull Observer<? super T> observer) {
+    public void observeForever(@NonNull Observer<? super T> observer) {
         Core.checkUiThread();
         AlwaysActiveObserver wrapper = new AlwaysActiveObserver(observer);
         ObserverWrapper existing = mObservers.putIfAbsent(wrapper);
@@ -231,7 +231,7 @@ public abstract class LiveData<T> {
      * @param observer The Observer to receive events.
      */
     @UiThread
-    public void removeObserver(@Nonnull final Observer<? super T> observer) {
+    public void removeObserver(@NonNull final Observer<? super T> observer) {
         Core.checkUiThread();
         ObserverWrapper removed = mObservers.remove(observer);
         if (removed == null) {
@@ -247,7 +247,7 @@ public abstract class LiveData<T> {
      * @param owner The {@code LifecycleOwner} scope for the observers to be removed.
      */
     @UiThread
-    public void removeObservers(@Nonnull final LifecycleOwner owner) {
+    public void removeObservers(@NonNull final LifecycleOwner owner) {
         Core.checkUiThread();
         for (var entry : mObservers) {
             if (entry.isAttachedTo(owner)) {
@@ -361,10 +361,10 @@ public abstract class LiveData<T> {
 
     class LifecycleBoundObserver extends ObserverWrapper implements LifecycleObserver {
 
-        @Nonnull
+        @NonNull
         final LifecycleOwner mOwner;
 
-        LifecycleBoundObserver(@Nonnull LifecycleOwner owner, Observer<? super T> observer) {
+        LifecycleBoundObserver(@NonNull LifecycleOwner owner, Observer<? super T> observer) {
             super(observer);
             mOwner = owner;
         }
@@ -375,8 +375,8 @@ public abstract class LiveData<T> {
         }
 
         @Override
-        public void onStateChanged(@Nonnull LifecycleOwner source,
-                                   @Nonnull Lifecycle.Event event) {
+        public void onStateChanged(@NonNull LifecycleOwner source,
+                                   @NonNull Lifecycle.Event event) {
             if (mOwner.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) {
                 removeObserver(mObserver);
                 return;

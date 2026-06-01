@@ -1,23 +1,24 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.core.HandlerThread;
 import icyllis.modernui.core.Looper;
@@ -25,8 +26,6 @@ import icyllis.modernui.core.Message;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-
-import javax.annotation.Nonnull;
 
 import static icyllis.modernui.util.Log.LOGGER;
 
@@ -230,7 +229,7 @@ public abstract class Filter {
          *
          * @param msg the filtering request
          */
-        public void handleMessage(@Nonnull Message msg) {
+        public void handleMessage(@NonNull Message msg) {
             int what = msg.what;
             Message message;
             switch (what) {
@@ -288,7 +287,7 @@ public abstract class Filter {
          * @param msg the filtering results
          */
         @Override
-        public void handleMessage(@Nonnull Message msg) {
+        public void handleMessage(@NonNull Message msg) {
             RequestArguments args = (RequestArguments) msg.obj;
 
             publishResults(args.constraint, args.results);

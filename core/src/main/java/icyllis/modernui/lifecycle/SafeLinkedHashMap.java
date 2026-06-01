@@ -1,25 +1,26 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+
 import java.util.HashMap;
 import java.util.function.Supplier;
 
@@ -43,7 +44,7 @@ public class SafeLinkedHashMap<T, E extends Supplier<T>> extends SafeLinkedList<
     }
 
     @Override
-    public E putIfAbsent(@Nonnull E e) {
+    public E putIfAbsent(@NonNull E e) {
         Node<E> node = find(e.get());
         if (node != null) {
             return node.mElement;
@@ -53,7 +54,7 @@ public class SafeLinkedHashMap<T, E extends Supplier<T>> extends SafeLinkedList<
     }
 
     @Override
-    public E remove(@Nonnull T token) {
+    public E remove(@NonNull T token) {
         E removed = super.remove(token);
         mHashMap.remove(token);
         return removed;
@@ -63,7 +64,7 @@ public class SafeLinkedHashMap<T, E extends Supplier<T>> extends SafeLinkedList<
      * Returns {@code true} if this map contains a mapping for the specified
      * token.
      */
-    public boolean contains(@Nonnull T token) {
+    public boolean contains(@NonNull T token) {
         return mHashMap.containsKey(token);
     }
 

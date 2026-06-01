@@ -1,35 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2021-2025 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
- */
-
-/*
- * Copyright (C) 2010 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.text;
@@ -59,14 +43,14 @@ abstract sealed class SpannableStringInternal implements Spanned, GetChars
     private int[] mSpanData;
     private int mSpanCount;
 
-    // Modern UI added:
+    // ModernUI added:
     // when span count is less than 16, linear search is faster and has a small footprint;
     // otherwise, use open-addressing hash map to handle a large number of spans
     private static final int HASHING_THRESHOLD = 16;
     @Nullable
     private Reference2IntOpenHashMap<Object> mIndexOfSpan;
 
-    // Modern UI changed: optimize substring, never copy NoCopySpan,
+    // ModernUI changed: optimize substring, never copy NoCopySpan,
     // never copy PARAGRAPH span if not at paragraph boundary
     SpannableStringInternal(@NonNull CharSequence source, int start, int end) {
         if (start == 0 && end == source.length())
@@ -144,7 +128,7 @@ abstract sealed class SpannableStringInternal implements Spanned, GetChars
         if (count == 0) return;
 
         if (!hasNoCopySpan && start == 0 && end == src.length()) {
-            // Modern UI: also trim the array to size
+            // ModernUI: also trim the array to size
             assert count == src.mSpanCount;
             mSpanCount = src.mSpanCount;
             mSpans = new Object[mSpanCount];
@@ -166,7 +150,7 @@ abstract sealed class SpannableStringInternal implements Spanned, GetChars
                         || (srcSpans[i] instanceof NoCopySpan)) {
                     continue;
                 }
-                // Modern UI added: paragraph boundary check
+                // ModernUI added: paragraph boundary check
                 if ((spanFlags & Spannable.SPAN_PARAGRAPH) == Spannable.SPAN_PARAGRAPH) {
                     if (isIndexFollowsNextLine(spanStart) || isIndexFollowsNextLine(spanEnd)) {
                         continue;
@@ -320,7 +304,7 @@ abstract sealed class SpannableStringInternal implements Spanned, GetChars
         final Object[] spans = mSpans;
         final int[] data = mSpanData;
 
-        // Modern UI changed:
+        // ModernUI changed:
         int i;
         if (mIndexOfSpan != null) {
             i = mIndexOfSpan.removeInt(span);
@@ -345,9 +329,9 @@ abstract sealed class SpannableStringInternal implements Spanned, GetChars
             }
 
             mSpanCount--;
-            // Modern UI added: also null out reference to avoid leak
+            // ModernUI added: also null out reference to avoid leak
             spans[mSpanCount] = null;
-            // Modern UI changed:
+            // ModernUI changed:
             if (mIndexOfSpan != null) {
                 for (int j = i; j < mSpanCount; j++) {
                     mIndexOfSpan.put(spans[j], j);
@@ -497,7 +481,7 @@ abstract sealed class SpannableStringInternal implements Spanned, GetChars
         return !dest.isEmpty();
     }
 
-    // Modern UI added:
+    // ModernUI added:
     private int indexOfSpan(@NonNull Object span) {
         int i;
         if (mIndexOfSpan != null) {
@@ -621,7 +605,7 @@ abstract sealed class SpannableStringInternal implements Spanned, GetChars
     @Override
     public boolean equals(Object o) {
         if (o instanceof final Spanned other) {
-            // Modern UI changed:
+            // ModernUI changed:
             if (other instanceof SpannableStringInternal) {
                 if (!mText.equals(other.toString())) {
                     return false;

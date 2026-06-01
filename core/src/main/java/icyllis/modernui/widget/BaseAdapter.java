@@ -1,30 +1,29 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.DataSetObservable;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Common base class of common implementation for an {@link Adapter} that can be
@@ -42,12 +41,12 @@ public abstract class BaseAdapter implements ListAdapter, SpinnerAdapter {
     }
 
     @Override
-    public void registerDataSetObserver(@Nonnull DataSetObserver observer) {
+    public void registerDataSetObserver(@NonNull DataSetObserver observer) {
         mDataSetObservable.registerObserver(observer);
     }
 
     @Override
-    public void unregisterDataSetObserver(@Nonnull DataSetObserver observer) {
+    public void unregisterDataSetObserver(@NonNull DataSetObserver observer) {
         mDataSetObservable.unregisterObserver(observer);
     }
 
@@ -80,7 +79,7 @@ public abstract class BaseAdapter implements ListAdapter, SpinnerAdapter {
 
     @Nullable
     @Override
-    public View getDropDownView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
+    public View getDropDownView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         return getView(position, convertView, parent);
     }
 

@@ -1,30 +1,30 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
 import icyllis.modernui.view.ViewTreeObserver;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -836,7 +836,7 @@ public class LayoutTransition {
         // Remove the animation from the cache when it ends
         anim.addListener(new AnimatorListener() {
             @Override
-            public void onAnimationStart(@Nonnull Animator animator) {
+            public void onAnimationStart(@NonNull Animator animator) {
                 if (hasListeners()) {
                     for (TransitionListener listener : mListeners) {
                         listener.startTransition(LayoutTransition.this, parent, child,
@@ -848,7 +848,7 @@ public class LayoutTransition {
             }
 
             @Override
-            public void onAnimationEnd(@Nonnull Animator animator) {
+            public void onAnimationEnd(@NonNull Animator animator) {
                 currentChangingAnimations.remove(child);
                 if (hasListeners()) {
                     for (TransitionListener listener : mListeners) {
@@ -861,7 +861,7 @@ public class LayoutTransition {
             }
 
             @Override
-            public void onAnimationCancel(@Nonnull Animator animator) {
+            public void onAnimationCancel(@NonNull Animator animator) {
                 child.removeOnLayoutChangeListener(listener);
                 layoutChangeListenerMap.remove(child);
             }
@@ -1049,7 +1049,7 @@ public class LayoutTransition {
         }
         anim.addListener(new AnimatorListener() {
             @Override
-            public void onAnimationEnd(@Nonnull Animator anim) {
+            public void onAnimationEnd(@NonNull Animator anim) {
                 currentAppearingAnimations.remove(child);
                 if (hasListeners()) {
                     for (TransitionListener listener : mListeners) {
@@ -1091,7 +1091,7 @@ public class LayoutTransition {
         final float preAnimAlpha = child.getTransitionAlpha();
         anim.addListener(new AnimatorListener() {
             @Override
-            public void onAnimationEnd(@Nonnull Animator anim) {
+            public void onAnimationEnd(@NonNull Animator anim) {
                 currentDisappearingAnimations.remove(child);
                 child.setTransitionAlpha(preAnimAlpha);
                 if (hasListeners()) {
@@ -1121,7 +1121,7 @@ public class LayoutTransition {
      *                      affect CHANGE_APPEARING or CHANGE_DISAPPEARING animations.
      */
     @SuppressWarnings("unchecked")
-    private void addChild(@Nonnull ViewGroup parent, View child, boolean changesLayout) {
+    private void addChild(@NonNull ViewGroup parent, View child, boolean changesLayout) {
         if (parent.getWindowVisibility() != View.VISIBLE) {
             return;
         }
@@ -1162,7 +1162,7 @@ public class LayoutTransition {
      * @param parent The ViewGroup whose layout() method has been called.
      * @hidden
      */
-    public void layoutChange(@Nonnull ViewGroup parent) {
+    public void layoutChange(@NonNull ViewGroup parent) {
         if (parent.getWindowVisibility() != View.VISIBLE) {
             return;
         }
@@ -1216,7 +1216,7 @@ public class LayoutTransition {
      *                      affect CHANGE_APPEARING or CHANGE_DISAPPEARING animations.
      */
     @SuppressWarnings("unchecked")
-    private void removeChild(@Nonnull ViewGroup parent, View child, boolean changesLayout) {
+    private void removeChild(@NonNull ViewGroup parent, View child, boolean changesLayout) {
         if (parent.getWindowVisibility() != View.VISIBLE) {
             return;
         }

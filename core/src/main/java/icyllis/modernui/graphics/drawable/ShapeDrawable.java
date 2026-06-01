@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2023-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.graphics.drawable;
@@ -147,7 +147,7 @@ public class ShapeDrawable extends Drawable {
             updateGradient();
         }
         if (mShapeState.mStrokeWidth > 0) {
-            // fixed by Modern UI: do not skip stroke-only draw
+            // fixed by ModernUI: do not skip stroke-only draw
             return getBounds().isEmpty();
         } else {
             return mRect.isEmpty();
@@ -183,10 +183,10 @@ public class ShapeDrawable extends Drawable {
         mFillPaint.setDither(st.mDither);
         mFillPaint.setColorFilter(colorFilter);
         if (colorFilter != null && st.mSolidColors == null) {
-            // Modern UI convention is white alpha
+            // ModernUI convention is white alpha
             mFillPaint.setColor4f(1f, 1f, 1f, mAlpha);
         }
-        // fixed by Modern UI: also check BlendMode/Shader/ColorFilter to determine there's fill or stroke
+        // fixed by ModernUI: also check BlendMode/Shader/ColorFilter to determine there's fill or stroke
         final boolean haveFill = !mFillPaint.getNativePaint().nothingToDraw();
         final boolean haveStroke;
         final boolean restoreStroke;
@@ -286,7 +286,7 @@ public class ShapeDrawable extends Drawable {
                         mStrokePaint.setStrokeCap(cap);
                         canvas.drawLine(r.left, y, r.right, y, mStrokePaint);
                     } else {
-                        // Modern UI added, both are the same
+                        // ModernUI added, both are the same
                         canvas.drawLine(r.left, y, r.right, y, cap, r.height(), mFillPaint);
                     }
                 }
@@ -297,7 +297,7 @@ public class ShapeDrawable extends Drawable {
                         mStrokePaint.setStrokeCap(cap);
                         canvas.drawLine(x, r.top, x, r.bottom, mStrokePaint);
                     } else {
-                        // Modern UI added, both are the same
+                        // ModernUI added, both are the same
                         canvas.drawLine(x, r.top, x, r.bottom, cap, r.width(), mFillPaint);
                     }
                 }
@@ -850,7 +850,7 @@ public class ShapeDrawable extends Drawable {
         final Rect bounds = getBounds();
         // only report non-zero alpha if shape being drawn has consistent opacity over shape.
         //
-        // Modern UI changed: does not need to have no stroke, or have same stroke/fill opacity
+        // ModernUI changed: does not need to have no stroke, or have same stroke/fill opacity
         boolean useFillOpacity = st.mOpaqueOverShape;
         outline.setAlpha(useFillOpacity
                 ? mFillPaint.getAlphaF() * getAlpha()

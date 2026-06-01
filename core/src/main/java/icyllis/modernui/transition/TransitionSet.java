@@ -1,29 +1,29 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.transition;
 
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 /**
@@ -91,7 +91,7 @@ public class TransitionSet extends Transition {
      *                 transitions in sequence.
      * @return This transitionSet object.
      */
-    @Nonnull
+    @NonNull
     public TransitionSet setOrdering(int ordering) {
         switch (ordering) {
             case ORDERING_SEQUENTIAL -> mPlayTogether = false;
@@ -130,8 +130,8 @@ public class TransitionSet extends Transition {
      * @param transition A non-null child transition to be added to this set.
      * @return This transitionSet object.
      */
-    @Nonnull
-    public TransitionSet addTransition(@Nonnull Transition transition) {
+    @NonNull
+    public TransitionSet addTransition(@NonNull Transition transition) {
         addTransitionInternal(transition);
         if (mDuration >= 0) {
             transition.setDuration(mDuration);
@@ -151,7 +151,7 @@ public class TransitionSet extends Transition {
         return this;
     }
 
-    private void addTransitionInternal(@Nonnull Transition transition) {
+    private void addTransitionInternal(@NonNull Transition transition) {
         mTransitions.add(transition);
         transition.mParent = this;
     }
@@ -189,7 +189,7 @@ public class TransitionSet extends Transition {
      * @param duration The length of the animation, in milliseconds.
      * @return This transitionSet object.
      */
-    @Nonnull
+    @NonNull
     @Override
     public TransitionSet setDuration(long duration) {
         super.setDuration(duration);
@@ -201,13 +201,13 @@ public class TransitionSet extends Transition {
         return this;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public TransitionSet setStartDelay(long startDelay) {
         return (TransitionSet) super.setStartDelay(startDelay);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public TransitionSet setInterpolator(@Nullable TimeInterpolator interpolator) {
         mChangeFlags |= FLAG_CHANGE_INTERPOLATOR;
@@ -219,16 +219,16 @@ public class TransitionSet extends Transition {
         return (TransitionSet) super.setInterpolator(interpolator);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TransitionSet addTarget(@Nonnull View target) {
+    public TransitionSet addTarget(@NonNull View target) {
         for (Transition transition : mTransitions) {
             transition.addTarget(target);
         }
         return (TransitionSet) super.addTarget(target);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public TransitionSet addTarget(int targetId) {
         for (Transition transition : mTransitions) {
@@ -237,31 +237,31 @@ public class TransitionSet extends Transition {
         return (TransitionSet) super.addTarget(targetId);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TransitionSet addTarget(@Nonnull String targetName) {
+    public TransitionSet addTarget(@NonNull String targetName) {
         for (Transition transition : mTransitions) {
             transition.addTarget(targetName);
         }
         return (TransitionSet) super.addTarget(targetName);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TransitionSet addTarget(@Nonnull Class<?> targetType) {
+    public TransitionSet addTarget(@NonNull Class<?> targetType) {
         for (Transition transition : mTransitions) {
             transition.addTarget(targetType);
         }
         return (TransitionSet) super.addTarget(targetType);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TransitionSet addListener(@Nonnull TransitionListener listener) {
+    public TransitionSet addListener(@NonNull TransitionListener listener) {
         return (TransitionSet) super.addListener(listener);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public TransitionSet removeTarget(int targetId) {
         for (Transition transition : mTransitions) {
@@ -270,52 +270,52 @@ public class TransitionSet extends Transition {
         return (TransitionSet) super.removeTarget(targetId);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TransitionSet removeTarget(@Nonnull View target) {
+    public TransitionSet removeTarget(@NonNull View target) {
         for (Transition transition : mTransitions) {
             transition.removeTarget(target);
         }
         return (TransitionSet) super.removeTarget(target);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TransitionSet removeTarget(@Nonnull Class<?> target) {
+    public TransitionSet removeTarget(@NonNull Class<?> target) {
         for (Transition transition : mTransitions) {
             transition.removeTarget(target);
         }
         return (TransitionSet) super.removeTarget(target);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TransitionSet removeTarget(@Nonnull String target) {
+    public TransitionSet removeTarget(@NonNull String target) {
         for (Transition transition : mTransitions) {
             transition.removeTarget(target);
         }
         return (TransitionSet) super.removeTarget(target);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Transition excludeTarget(@Nonnull View target, boolean exclude) {
+    public Transition excludeTarget(@NonNull View target, boolean exclude) {
         for (Transition transition : mTransitions) {
             transition.excludeTarget(target, exclude);
         }
         return super.excludeTarget(target, exclude);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Transition excludeTarget(@Nonnull String targetName, boolean exclude) {
+    public Transition excludeTarget(@NonNull String targetName, boolean exclude) {
         for (Transition transition : mTransitions) {
             transition.excludeTarget(targetName, exclude);
         }
         return super.excludeTarget(targetName, exclude);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Transition excludeTarget(int targetId, boolean exclude) {
         for (Transition transition : mTransitions) {
@@ -324,18 +324,18 @@ public class TransitionSet extends Transition {
         return super.excludeTarget(targetId, exclude);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public Transition excludeTarget(@Nonnull Class<?> type, boolean exclude) {
+    public Transition excludeTarget(@NonNull Class<?> type, boolean exclude) {
         for (Transition transition : mTransitions) {
             transition.excludeTarget(type, exclude);
         }
         return super.excludeTarget(type, exclude);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TransitionSet removeListener(@Nonnull TransitionListener listener) {
+    public TransitionSet removeListener(@NonNull TransitionListener listener) {
         return (TransitionSet) super.removeListener(listener);
     }
 
@@ -356,8 +356,8 @@ public class TransitionSet extends Transition {
      * @param transition The transition to be removed.
      * @return This transitionSet object.
      */
-    @Nonnull
-    public TransitionSet removeTransition(@Nonnull Transition transition) {
+    @NonNull
+    public TransitionSet removeTransition(@NonNull Transition transition) {
         mTransitions.remove(transition);
         transition.mParent = null;
         return this;
@@ -384,12 +384,12 @@ public class TransitionSet extends Transition {
 
         final TransitionSet mTransitionSet;
 
-        TransitionSetListener(@Nonnull TransitionSet transitionSet) {
+        TransitionSetListener(@NonNull TransitionSet transitionSet) {
             mTransitionSet = transitionSet;
         }
 
         @Override
-        public void onTransitionStart(@Nonnull Transition transition) {
+        public void onTransitionStart(@NonNull Transition transition) {
             if (!mTransitionSet.mStarted) {
                 mTransitionSet.start();
                 mTransitionSet.mStarted = true;
@@ -397,7 +397,7 @@ public class TransitionSet extends Transition {
         }
 
         @Override
-        public void onTransitionEnd(@Nonnull Transition transition) {
+        public void onTransitionEnd(@NonNull Transition transition) {
             --mTransitionSet.mCurrentListeners;
             if (mTransitionSet.mCurrentListeners == 0) {
                 // All child trans
@@ -409,11 +409,11 @@ public class TransitionSet extends Transition {
     }
 
     @Override
-    protected void createAnimators(@Nonnull ViewGroup sceneRoot,
-                                   @Nonnull TransitionValuesMaps startValues,
-                                   @Nonnull TransitionValuesMaps endValues,
-                                   @Nonnull ArrayList<TransitionValues> startValuesList,
-                                   @Nonnull ArrayList<TransitionValues> endValuesList) {
+    protected void createAnimators(@NonNull ViewGroup sceneRoot,
+                                   @NonNull TransitionValuesMaps startValues,
+                                   @NonNull TransitionValuesMaps endValues,
+                                   @NonNull ArrayList<TransitionValues> startValuesList,
+                                   @NonNull ArrayList<TransitionValues> endValuesList) {
         long startDelay = getStartDelay();
         int numTransitions = mTransitions.size();
         for (int i = 0; i < numTransitions; i++) {
@@ -449,7 +449,7 @@ public class TransitionSet extends Transition {
                 final Transition nextTransition = mTransitions.get(i);
                 previousTransition.addListener(new TransitionListener() {
                     @Override
-                    public void onTransitionEnd(@Nonnull Transition transition) {
+                    public void onTransitionEnd(@NonNull Transition transition) {
                         nextTransition.runAnimators();
                         transition.removeListener(this);
                     }
@@ -467,7 +467,7 @@ public class TransitionSet extends Transition {
     }
 
     @Override
-    public void captureStartValues(@Nonnull TransitionValues transitionValues) {
+    public void captureStartValues(@NonNull TransitionValues transitionValues) {
         if (isValidTarget(transitionValues.view)) {
             for (Transition childTransition : mTransitions) {
                 if (childTransition.isValidTarget(transitionValues.view)) {
@@ -479,7 +479,7 @@ public class TransitionSet extends Transition {
     }
 
     @Override
-    public void captureEndValues(@Nonnull TransitionValues transitionValues) {
+    public void captureEndValues(@NonNull TransitionValues transitionValues) {
         if (isValidTarget(transitionValues.view)) {
             for (Transition childTransition : mTransitions) {
                 if (childTransition.isValidTarget(transitionValues.view)) {
@@ -491,7 +491,7 @@ public class TransitionSet extends Transition {
     }
 
     @Override
-    void capturePropagationValues(@Nonnull TransitionValues transitionValues) {
+    void capturePropagationValues(@NonNull TransitionValues transitionValues) {
         super.capturePropagationValues(transitionValues);
         for (Transition transition : mTransitions) {
             transition.capturePropagationValues(transitionValues);
@@ -507,7 +507,7 @@ public class TransitionSet extends Transition {
     }
 
     @Override
-    public void resume(@Nonnull View sceneRoot) {
+    public void resume(@NonNull View sceneRoot) {
         super.resume(sceneRoot);
         for (Transition transition : mTransitions) {
             transition.resume(sceneRoot);
@@ -523,7 +523,7 @@ public class TransitionSet extends Transition {
     }
 
     @Override
-    void forceToEnd(@Nonnull ViewGroup sceneRoot) {
+    void forceToEnd(@NonNull ViewGroup sceneRoot) {
         super.forceToEnd(sceneRoot);
         for (Transition transition : mTransitions) {
             transition.forceToEnd(sceneRoot);

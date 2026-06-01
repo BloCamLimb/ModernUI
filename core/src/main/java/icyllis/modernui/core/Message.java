@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2024 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.core;
@@ -74,7 +74,7 @@ public final class Message {
     // sometimes we store linked lists of these things
     Message next;
 
-    // Modern UI changed: not worth recycling small objects on desktop JVMs.
+    // ModernUI changed: not worth recycling small objects on desktop JVMs.
     // A Message takes up 56 bytes. Under 16 threads concurrency:
     // 'new' + 'GC' takes 25-28 CPU cycles,
     // whereas pooling 'obtain' + 'recycle' takes 300 CPU cycles.
@@ -95,7 +95,7 @@ public final class Message {
         if (NO_POOLING) {
             return new Message();
         }
-        // Modern UI changed: if pooling, this is still 8% faster than Android
+        // ModernUI changed: if pooling, this is still 8% faster than Android
         final Message m;
         synchronized (sPoolSync) {
             m = sPool;

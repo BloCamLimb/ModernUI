@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.graphics.text;
@@ -22,10 +22,10 @@ import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import com.ibm.icu.lang.UProperty;
 import com.ibm.icu.text.BreakIterator;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.text.CharacterIterator;
 import java.util.Locale;
 
@@ -85,7 +85,7 @@ public final class GraphemeBreak {
     private GraphemeBreak() {
     }
 
-    public static int getTextRunCursorICU(@Nonnull CharacterIterator text, @Nonnull Locale locale,
+    public static int getTextRunCursorICU(@NonNull CharacterIterator text, @NonNull Locale locale,
                                           int offset, int op) {
         final int original = offset;
         BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
@@ -113,7 +113,7 @@ public final class GraphemeBreak {
         return offset == BreakIterator.DONE ? original : offset;
     }
 
-    public static int getTextRunCursorImpl(@Nullable float[] advances, @Nonnull CharSequence buf, int start, int count,
+    public static int getTextRunCursorImpl(@Nullable float[] advances, @NonNull CharSequence buf, int start, int count,
                                            int offset, int op) {
         switch (op) {
             case AFTER:
@@ -146,7 +146,7 @@ public final class GraphemeBreak {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean isGraphemeBreak(@Nullable float[] advances, @Nonnull CharSequence buf, int start, int count,
+    public static boolean isGraphemeBreak(@Nullable float[] advances, @NonNull CharSequence buf, int start, int count,
                                           final int offset) {
         // This implementation closely follows Unicode Standard Annex #29 on
         // Unicode Text Segmentation (http://www.unicode.org/reports/tr29/),

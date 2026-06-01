@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.text.method;
@@ -21,12 +21,12 @@ package icyllis.modernui.text.method;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UProperty;
 import com.ibm.icu.text.DecimalFormatSymbols;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.SpannableStringBuilder;
 import icyllis.modernui.text.Spanned;
 import it.unimi.dsi.fastutil.chars.CharLinkedOpenHashSet;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.HashMap;
 import java.util.Locale;
@@ -69,8 +69,8 @@ public class DigitsInputFilter extends NumberInputFilter {
     private String mSignChars = DEFAULT_SIGN_CHARS;
 
     // Takes a sign string and strips off its bidi controls, if any.
-    @Nonnull
-    private static String stripBidiControls(@Nonnull String sign) {
+    @NonNull
+    private static String stripBidiControls(@NonNull String sign) {
         // For the sake of simplicity, we operate on code units, since all bidi controls are
         // in the BMP. We also expect the string to be very short (almost always 1 character), so we
         // don't need to use StringBuilder.
@@ -84,7 +84,7 @@ public class DigitsInputFilter extends NumberInputFilter {
         return result.toString();
     }
 
-    private DigitsInputFilter(@Nonnull final String accepted) {
+    private DigitsInputFilter(@NonNull final String accepted) {
         mSign = false;
         mDecimal = false;
         mStringMode = true;
@@ -154,7 +154,7 @@ public class DigitsInputFilter extends NumberInputFilter {
         mAccepted = COMPATIBILITY_CHARACTERS[kind];
     }
 
-    @Nonnull
+    @NonNull
     @Override
     protected char[] getAcceptedChars() {
         return mAccepted;
@@ -171,7 +171,7 @@ public class DigitsInputFilter extends NumberInputFilter {
     /**
      * Returns a DigitsKeyListener that accepts the locale-appropriate digits.
      */
-    @Nonnull
+    @NonNull
     public static DigitsInputFilter getInstance(@Nullable Locale locale) {
         return getInstance(locale, false, false);
     }
@@ -185,7 +185,7 @@ public class DigitsInputFilter extends NumberInputFilter {
      * locale-appropriate plus or minus sign (only at the beginning) and/or the locale-appropriate
      * decimal separator (only one per field) if specified.
      */
-    @Nonnull
+    @NonNull
     public static DigitsInputFilter getInstance(@Nullable Locale locale, boolean sign, boolean decimal) {
         final int kind = (sign ? SIGN : 0) | (decimal ? DECIMAL : 0);
         synchronized (sLocaleCacheLock) {
@@ -210,8 +210,8 @@ public class DigitsInputFilter extends NumberInputFilter {
      * that appear in the specified String.  Note that not all characters
      * may be available on every keyboard.
      */
-    @Nonnull
-    public static DigitsInputFilter getInstance(@Nonnull String accepted) {
+    @NonNull
+    public static DigitsInputFilter getInstance(@NonNull String accepted) {
         DigitsInputFilter result;
         synchronized (sStringCacheLock) {
             result = sStringInstanceCache.get(accepted);
@@ -229,8 +229,8 @@ public class DigitsInputFilter extends NumberInputFilter {
      *
      * @hide
      */
-    @Nonnull
-    public static DigitsInputFilter getInstance(@Nullable Locale locale, @Nonnull DigitsInputFilter listener) {
+    @NonNull
+    public static DigitsInputFilter getInstance(@Nullable Locale locale, @NonNull DigitsInputFilter listener) {
         if (listener.mStringMode) {
             return listener; // string-mode has no locale
         } else {
@@ -239,8 +239,8 @@ public class DigitsInputFilter extends NumberInputFilter {
     }
 
     @Override
-    public CharSequence filter(@Nonnull CharSequence source, int start, int end,
-                               @Nonnull Spanned dest, int dstart, int dend) {
+    public CharSequence filter(@NonNull CharSequence source, int start, int end,
+                               @NonNull Spanned dest, int dstart, int dend) {
         CharSequence out = super.filter(source, start, end, dest, dstart, dend);
 
         if (!mSign && !mDecimal) {

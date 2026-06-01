@@ -1,23 +1,25 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2023 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui;
+package icyllis.modernui.test;
 
+import icyllis.modernui.ModernUI;
+import icyllis.modernui.R;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
@@ -35,7 +37,6 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.BuiltinIconDrawable;
-import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.graphics.text.FontFamily;
@@ -72,7 +73,6 @@ import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
 
-import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Iterator;
@@ -863,24 +863,24 @@ public class TestFragment extends Fragment {
         private static final FloatProperty<TestLinearLayout> sRoundRectLengthProp = new FloatProperty<>("roundRectLen"
         ) {
             @Override
-            public void setValue(@Nonnull TestLinearLayout object, float value) {
+            public void setValue(@NonNull TestLinearLayout object, float value) {
                 object.mRoundRectLen = value;
             }
 
             @Override
-            public Float get(@Nonnull TestLinearLayout object) {
+            public Float get(@NonNull TestLinearLayout object) {
                 return object.mRoundRectLen;
             }
         };
 
         private static final FloatProperty<TestLinearLayout> sSmoothRadiusProp = new FloatProperty<>("smoothRadius") {
             @Override
-            public void setValue(@Nonnull TestLinearLayout object, float value) {
+            public void setValue(@NonNull TestLinearLayout object, float value) {
                 object.mSmoothRadius = value;
             }
 
             @Override
-            public Float get(@Nonnull TestLinearLayout object) {
+            public Float get(@NonNull TestLinearLayout object) {
                 return object.mSmoothRadius;
             }
         };
@@ -895,7 +895,7 @@ public class TestFragment extends Fragment {
         }
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas) {
+        protected void onDraw(@NonNull Canvas canvas) {
             super.onDraw(canvas);
             if (true) {
                 return;
@@ -1025,7 +1025,7 @@ public class TestFragment extends Fragment {
             }*/
 
             @Override
-            protected void onDraw(@Nonnull Canvas canvas) {
+            protected void onDraw(@NonNull Canvas canvas) {
 
                 int x = getWidth() / 2 - 20;
                 canvas.drawShapedText(mText, x, offsetY + 24, mTextPaint);
@@ -1099,7 +1099,7 @@ public class TestFragment extends Fragment {
             }
         }
 
-        public void draw(@Nonnull Canvas canvas, float cx, float cy) {
+        public void draw(@NonNull Canvas canvas, float cx, float cy) {
             var paint = Paint.obtain();
             if (mCircular) {
                 long time = Core.timeMillis();

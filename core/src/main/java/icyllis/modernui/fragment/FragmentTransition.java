@@ -1,23 +1,25 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.CancellationSignal;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.transition.Transition;
@@ -28,8 +30,6 @@ import icyllis.modernui.view.OneShotPreDrawListener;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +47,7 @@ final class FragmentTransition {
      * Utility to find the String key in {@code map} that maps to {@code value}.
      */
     @Nullable
-    static String findKeyForValue(@Nonnull ArrayMap<String, String> map, @Nonnull String value) {
+    static String findKeyForValue(@NonNull ArrayMap<String, String> map, @NonNull String value) {
         final int numElements = map.size();
         for (int i = 0; i < numElements; i++) {
             if (value.equals(map.valueAt(i))) {
@@ -62,8 +62,8 @@ final class FragmentTransition {
      * that has a key in {@code namedViews}. This is a useful equivalent to
      * {@link ArrayMap#retainAll(Collection)} for values.
      */
-    static void retainValues(@Nonnull ArrayMap<String, String> nameOverrides,
-                             @Nonnull ArrayMap<String, View> namedViews) {
+    static void retainValues(@NonNull ArrayMap<String, String> nameOverrides,
+                             @NonNull ArrayMap<String, View> namedViews) {
         for (int i = nameOverrides.size() - 1; i >= 0; i--) {
             final String targetName = nameOverrides.valueAt(i);
             if (!namedViews.containsKey(targetName)) {
@@ -123,8 +123,8 @@ final class FragmentTransition {
      * ArrayList, ArrayList, Map)} must be called after this to complete setting the shared element
      * name overrides. This must be called before
      */
-    @Nonnull
-    static ArrayList<String> prepareSetNameOverridesReordered(@Nonnull ArrayList<View> sharedElementsIn) {
+    @NonNull
+    static ArrayList<String> prepareSetNameOverridesReordered(@NonNull ArrayList<View> sharedElementsIn) {
         final ArrayList<String> names = new ArrayList<>();
         for (final View view : sharedElementsIn) {
             names.add(view.getTransitionName());
@@ -138,11 +138,11 @@ final class FragmentTransition {
      * outgoing shared elements. This also temporarily clears the shared element names of the
      * outgoing shared elements. Must be called after
      */
-    static void setNameOverridesReordered(@Nonnull final View sceneRoot,
-                                          @Nonnull final ArrayList<View> sharedElementsOut,
-                                          @Nonnull final ArrayList<View> sharedElementsIn,
-                                          @Nonnull final ArrayList<String> inNames,
-                                          @Nonnull final Map<String, String> nameOverrides) {
+    static void setNameOverridesReordered(@NonNull final View sceneRoot,
+                                          @NonNull final ArrayList<View> sharedElementsOut,
+                                          @NonNull final ArrayList<View> sharedElementsIn,
+                                          @NonNull final ArrayList<String> inNames,
+                                          @NonNull final Map<String, String> nameOverrides) {
         final int numSharedElements = sharedElementsIn.size();
         final ArrayList<String> outNames = new ArrayList<>();
 
@@ -171,9 +171,9 @@ final class FragmentTransition {
         });
     }
 
-    static void setSharedElementTargets(@Nonnull TransitionSet transition,
-                                        @Nonnull View nonExistentView,
-                                        @Nonnull ArrayList<View> sharedViews) {
+    static void setSharedElementTargets(@NonNull TransitionSet transition,
+                                        @NonNull View nonExistentView,
+                                        @NonNull ArrayList<View> sharedViews) {
         final List<View> views = transition.getTargets();
         views.clear();
         for (final View view : sharedViews) {
@@ -184,7 +184,7 @@ final class FragmentTransition {
         addTargets(transition, sharedViews);
     }
 
-    static void setEpicenter(@Nonnull Transition transition, View view) {
+    static void setEpicenter(@NonNull Transition transition, View view) {
         if (view != null) {
             final Rect epicenter = new Rect();
             view.getBoundsOnScreen(epicenter);
@@ -204,7 +204,7 @@ final class FragmentTransition {
         }
     }
 
-    static void addTargets(@Nullable Transition transition, @Nonnull ArrayList<View> views) {
+    static void addTargets(@Nullable Transition transition, @NonNull ArrayList<View> views) {
         if (transition == null) {
             return;
         }
@@ -225,7 +225,7 @@ final class FragmentTransition {
         }
     }
 
-    @Nonnull
+    @NonNull
     static TransitionSet mergeTransitionsTogether(@Nullable Transition transition1, @Nullable Transition transition2,
                                                   @Nullable Transition transition3) {
         TransitionSet transitionSet = new TransitionSet();
@@ -241,11 +241,11 @@ final class FragmentTransition {
         return transitionSet;
     }
 
-    static void scheduleHideFragmentView(@Nonnull Transition exitTransition, final View fragmentView,
+    static void scheduleHideFragmentView(@NonNull Transition exitTransition, final View fragmentView,
                                          final ArrayList<View> exitingViews) {
         exitTransition.addListener(new TransitionListener() {
             @Override
-            public void onTransitionStart(@Nonnull Transition transition) {
+            public void onTransitionStart(@NonNull Transition transition) {
                 // If any of the exiting views are not shared elements, the TransitionManager
                 // adds additional listeners to the this transition. If those listeners are
                 // DisappearListeners for a view that is going away, they can change the state of
@@ -257,7 +257,7 @@ final class FragmentTransition {
             }
 
             @Override
-            public void onTransitionEnd(@Nonnull Transition transition) {
+            public void onTransitionEnd(@NonNull Transition transition) {
                 transition.removeListener(this);
                 fragmentView.setVisibility(View.GONE);
                 for (View exitingView : exitingViews) {
@@ -296,13 +296,13 @@ final class FragmentTransition {
     }
 
     static void scheduleRemoveTargets(
-            @Nonnull final Transition overallTransition,
+            @NonNull final Transition overallTransition,
             @Nullable final Transition enterTransition, final ArrayList<View> enteringViews,
             @Nullable final Transition exitTransition, final ArrayList<View> exitingViews,
             @Nullable final Transition sharedElementTransition, final ArrayList<View> sharedElementsIn) {
         overallTransition.addListener(new TransitionListener() {
             @Override
-            public void onTransitionStart(@Nonnull Transition transition) {
+            public void onTransitionStart(@NonNull Transition transition) {
                 if (enterTransition != null) {
                     replaceTargets(enterTransition, enteringViews, null);
                 }
@@ -315,19 +315,19 @@ final class FragmentTransition {
             }
 
             @Override
-            public void onTransitionEnd(@Nonnull Transition transition) {
+            public void onTransitionEnd(@NonNull Transition transition) {
                 transition.removeListener(this);
             }
         });
     }
 
-    static void setListenerForTransitionEnd(@Nonnull final Transition transition,
-                                            @Nonnull final CancellationSignal signal,
-                                            @Nonnull final Runnable transitionCompleteRunnable) {
+    static void setListenerForTransitionEnd(@NonNull final Transition transition,
+                                            @NonNull final CancellationSignal signal,
+                                            @NonNull final Runnable transitionCompleteRunnable) {
         signal.setOnCancelListener(transition::cancel);
         transition.addListener(new TransitionListener() {
             @Override
-            public void onTransitionEnd(@Nonnull Transition transition) {
+            public void onTransitionEnd(@NonNull Transition transition) {
                 transitionCompleteRunnable.run();
             }
         });
@@ -370,7 +370,7 @@ final class FragmentTransition {
      * Uses a breadth-first scheme to add startView and all of its children to views.
      * It won't add a child if it is already in views or if it has a transition name.
      */
-    static void bfsAddViewChildren(@Nonnull final List<View> views, @Nonnull final View startView) {
+    static void bfsAddViewChildren(@NonNull final List<View> views, @NonNull final View startView) {
         final int startIndex = views.size();
         if (containedBeforeIndex(views, startView, startIndex)) {
             return; // This child is already in the list, so all its children are also.
@@ -409,7 +409,7 @@ final class FragmentTransition {
     /**
      * Returns true if there are any targets based on ID, transition or type.
      */
-    private static boolean hasSimpleTarget(@Nonnull Transition transition) {
+    private static boolean hasSimpleTarget(@NonNull Transition transition) {
         return !isNullOrEmpty(transition.getTargetIds())
                 || !isNullOrEmpty(transition.getTargetNames())
                 || !isNullOrEmpty(transition.getTargetTypes());

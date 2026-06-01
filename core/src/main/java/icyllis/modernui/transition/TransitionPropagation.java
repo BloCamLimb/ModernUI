@@ -1,27 +1,26 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.transition;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.ViewGroup;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Extend <code>TransitionPropagation</code> to customize start delays for Animators created
@@ -50,8 +49,8 @@ public abstract class TransitionPropagation {
      * used in the Transition so that the smallest delay will be 0. Returned values may be
      * negative.
      */
-    public abstract long getStartDelay(@Nonnull ViewGroup sceneRoot,
-                                       @Nonnull Transition transition,
+    public abstract long getStartDelay(@NonNull ViewGroup sceneRoot,
+                                       @NonNull Transition transition,
                                        @Nullable TransitionValues startValues,
                                        @Nullable TransitionValues endValues);
 
@@ -79,7 +78,7 @@ public abstract class TransitionPropagation {
      *                         view.getRotation())</code>. The target view will already be stored in
      *                         the transitionValues structure when this method is called.
      */
-    public abstract void captureValues(@Nonnull TransitionValues transitionValues);
+    public abstract void captureValues(@NonNull TransitionValues transitionValues);
 
     /**
      * Returns the set of property names stored in the {@link TransitionValues}

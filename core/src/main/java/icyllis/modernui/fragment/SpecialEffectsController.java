@@ -1,31 +1,31 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.CallSuper;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.CancellationSignal;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,9 +48,9 @@ abstract class SpecialEffectsController {
      * @param container ViewGroup to find the associated SpecialEffectsController for.
      * @return a SpecialEffectsController for the given container
      */
-    @Nonnull
+    @NonNull
     static SpecialEffectsController getOrCreateController(
-            @Nonnull ViewGroup container, @Nonnull FragmentManager fragmentManager) {
+            @NonNull ViewGroup container, @NonNull FragmentManager fragmentManager) {
         SpecialEffectsControllerFactory factory =
                 fragmentManager.getSpecialEffectsControllerFactory();
         return getOrCreateController(container, factory);
@@ -65,10 +65,10 @@ abstract class SpecialEffectsController {
      *                  not already exist for this container.
      * @return a SpecialEffectsController for the given container
      */
-    @Nonnull
+    @NonNull
     static SpecialEffectsController getOrCreateController(
-            @Nonnull ViewGroup container,
-            @Nonnull SpecialEffectsControllerFactory factory) {
+            @NonNull ViewGroup container,
+            @NonNull SpecialEffectsControllerFactory factory) {
         Object controller = container.getTag(R.id.special_effects_controller_view_tag);
         if (controller instanceof SpecialEffectsController) {
             return (SpecialEffectsController) controller;
@@ -87,11 +87,11 @@ abstract class SpecialEffectsController {
     boolean mOperationDirectionIsPop = false;
     boolean mIsContainerPostponed = false;
 
-    SpecialEffectsController(@Nonnull ViewGroup container) {
+    SpecialEffectsController(@NonNull ViewGroup container) {
         mContainer = container;
     }
 
-    @Nonnull
+    @NonNull
     public ViewGroup getContainer() {
         return mContainer;
     }
@@ -111,7 +111,7 @@ abstract class SpecialEffectsController {
      */
     @Nullable
     Operation.LifecycleImpact getAwaitingCompletionLifecycleImpact(
-            @Nonnull FragmentStateManager fragmentStateManager) {
+            @NonNull FragmentStateManager fragmentStateManager) {
         Operation.LifecycleImpact lifecycleImpact = null;
         // First search through pending operations
         Operation pendingOperation = findPendingOperation(fragmentStateManager.getFragment());
@@ -129,7 +129,7 @@ abstract class SpecialEffectsController {
     }
 
     @Nullable
-    private Operation findPendingOperation(@Nonnull Fragment fragment) {
+    private Operation findPendingOperation(@NonNull Fragment fragment) {
         for (Operation operation : mPendingOperations) {
             if (operation.getFragment().equals(fragment) && !operation.isCanceled()) {
                 return operation;
@@ -139,7 +139,7 @@ abstract class SpecialEffectsController {
     }
 
     @Nullable
-    private Operation findRunningOperation(@Nonnull Fragment fragment) {
+    private Operation findRunningOperation(@NonNull Fragment fragment) {
         for (Operation operation : mRunningOperations) {
             if (operation.getFragment().equals(fragment) && !operation.isCanceled()) {
                 return operation;
@@ -148,8 +148,8 @@ abstract class SpecialEffectsController {
         return null;
     }
 
-    void enqueueAdd(@Nonnull Operation.State finalState,
-                    @Nonnull FragmentStateManager fragmentStateManager) {
+    void enqueueAdd(@NonNull Operation.State finalState,
+                    @NonNull FragmentStateManager fragmentStateManager) {
         if (FragmentManager.TRACE) {
             LOGGER.info(FragmentManager.MARKER,
                     "SpecialEffectsController: Enqueuing add operation for fragment {}",
@@ -158,7 +158,7 @@ abstract class SpecialEffectsController {
         enqueue(finalState, Operation.LifecycleImpact.ADDING, fragmentStateManager);
     }
 
-    void enqueueShow(@Nonnull FragmentStateManager fragmentStateManager) {
+    void enqueueShow(@NonNull FragmentStateManager fragmentStateManager) {
         if (FragmentManager.TRACE) {
             LOGGER.info(FragmentManager.MARKER,
                     "SpecialEffectsController: Enqueuing show operation for fragment {}",
@@ -167,7 +167,7 @@ abstract class SpecialEffectsController {
         enqueue(Operation.State.VISIBLE, Operation.LifecycleImpact.NONE, fragmentStateManager);
     }
 
-    void enqueueHide(@Nonnull FragmentStateManager fragmentStateManager) {
+    void enqueueHide(@NonNull FragmentStateManager fragmentStateManager) {
         if (FragmentManager.TRACE) {
             LOGGER.info(FragmentManager.MARKER,
                     "SpecialEffectsController: Enqueuing hide operation for fragment {}",
@@ -176,7 +176,7 @@ abstract class SpecialEffectsController {
         enqueue(Operation.State.GONE, Operation.LifecycleImpact.NONE, fragmentStateManager);
     }
 
-    void enqueueRemove(@Nonnull FragmentStateManager fragmentStateManager) {
+    void enqueueRemove(@NonNull FragmentStateManager fragmentStateManager) {
         if (FragmentManager.TRACE) {
             LOGGER.info(FragmentManager.MARKER,
                     "SpecialEffectsController: Enqueuing remove operation for fragment {}",
@@ -185,9 +185,9 @@ abstract class SpecialEffectsController {
         enqueue(Operation.State.REMOVED, Operation.LifecycleImpact.REMOVING, fragmentStateManager);
     }
 
-    private void enqueue(@Nonnull Operation.State finalState,
-                         @Nonnull Operation.LifecycleImpact lifecycleImpact,
-                         @Nonnull final FragmentStateManager fragmentStateManager) {
+    private void enqueue(@NonNull Operation.State finalState,
+                         @NonNull Operation.LifecycleImpact lifecycleImpact,
+                         @NonNull final FragmentStateManager fragmentStateManager) {
         synchronized (mPendingOperations) {
             final CancellationSignal signal = new CancellationSignal();
             Operation existingOperation =
@@ -376,7 +376,7 @@ abstract class SpecialEffectsController {
      *                   This can be used to control the direction of any special effects if they
      *                   are not symmetric.
      */
-    abstract void executeOperations(@Nonnull List<Operation> operations, boolean isPop);
+    abstract void executeOperations(@NonNull List<Operation> operations, boolean isPop);
 
     /**
      * Class representing an ongoing special effects operation.
@@ -414,8 +414,8 @@ abstract class SpecialEffectsController {
              * @param view The view to get the current visibility from.
              * @return A new State from the view's visibility.
              */
-            @Nonnull
-            static State from(@Nonnull View view) {
+            @NonNull
+            static State from(@NonNull View view) {
                 // We should consider views with an alpha of 0 as INVISIBLE.
                 if (view.getAlpha() == 0f && view.getVisibility() == View.VISIBLE) {
                     return INVISIBLE;
@@ -429,7 +429,7 @@ abstract class SpecialEffectsController {
              * @param visibility The visibility constant to translate into a State.
              * @return A new State from the visibility.
              */
-            @Nonnull
+            @NonNull
             static State from(int visibility) {
                 return switch (visibility) {
                     case View.VISIBLE -> VISIBLE;
@@ -444,7 +444,7 @@ abstract class SpecialEffectsController {
              *
              * @param view The View to apply this state to.
              */
-            void applyState(@Nonnull View view) {
+            void applyState(@NonNull View view) {
                 switch (this) {
                     case REMOVED -> {
                         ViewGroup parent = (ViewGroup) view.getParent();
@@ -500,15 +500,15 @@ abstract class SpecialEffectsController {
             REMOVING,
         }
 
-        @Nonnull
+        @NonNull
         private State mFinalState;
-        @Nonnull
+        @NonNull
         private LifecycleImpact mLifecycleImpact;
-        @Nonnull
+        @NonNull
         private final Fragment mFragment;
-        @Nonnull
+        @NonNull
         private final List<Runnable> mCompletionListeners = new ArrayList<>();
-        @Nonnull
+        @NonNull
         private final HashSet<CancellationSignal> mSpecialEffectsSignals = new HashSet<>();
 
         private boolean mIsCanceled = false;
@@ -522,8 +522,8 @@ abstract class SpecialEffectsController {
          * @param fragment           The Fragment being affected.
          * @param cancellationSignal A signal for handling cancellation
          */
-        Operation(@Nonnull State finalState, @Nonnull LifecycleImpact lifecycleImpact,
-                  @Nonnull Fragment fragment, @Nonnull CancellationSignal cancellationSignal) {
+        Operation(@NonNull State finalState, @NonNull LifecycleImpact lifecycleImpact,
+                  @NonNull Fragment fragment, @NonNull CancellationSignal cancellationSignal) {
             mFinalState = finalState;
             mLifecycleImpact = lifecycleImpact;
             mFragment = fragment;
@@ -536,7 +536,7 @@ abstract class SpecialEffectsController {
          *
          * @return The final state after this operation should be.
          */
-        @Nonnull
+        @NonNull
         public State getFinalState() {
             return mFinalState;
         }
@@ -546,7 +546,7 @@ abstract class SpecialEffectsController {
          *
          * @return How this Operation affects the lifecycle of the fragment.
          */
-        @Nonnull
+        @NonNull
         LifecycleImpact getLifecycleImpact() {
             return mLifecycleImpact;
         }
@@ -556,7 +556,7 @@ abstract class SpecialEffectsController {
          *
          * @return An {@link Fragment#isAdded() added} Fragment.
          */
-        @Nonnull
+        @NonNull
         public final Fragment getFragment() {
             return mFragment;
         }
@@ -565,7 +565,7 @@ abstract class SpecialEffectsController {
             return mIsCanceled;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public String toString() {
             return "Operation " +
@@ -601,7 +601,7 @@ abstract class SpecialEffectsController {
             }
         }
 
-        final void mergeWith(@Nonnull State finalState, @Nonnull LifecycleImpact lifecycleImpact) {
+        final void mergeWith(@NonNull State finalState, @NonNull LifecycleImpact lifecycleImpact) {
             switch (lifecycleImpact) {
                 case ADDING:
                     if (mFinalState == State.REMOVED) {
@@ -640,7 +640,7 @@ abstract class SpecialEffectsController {
             }
         }
 
-        final void addCompletionListener(@Nonnull Runnable listener) {
+        final void addCompletionListener(@NonNull Runnable listener) {
             mCompletionListeners.add(listener);
         }
 
@@ -655,7 +655,7 @@ abstract class SpecialEffectsController {
          *
          * @param signal A CancellationSignal that can be used to cancel this special effect.
          */
-        public final void markStartedSpecialEffect(@Nonnull CancellationSignal signal) {
+        public final void markStartedSpecialEffect(@NonNull CancellationSignal signal) {
             onStart();
             mSpecialEffectsSignals.add(signal);
         }
@@ -667,7 +667,7 @@ abstract class SpecialEffectsController {
          * This calls through to {@link Operation#complete()} when the last special effect is
          * complete.
          */
-        public final void completeSpecialEffect(@Nonnull CancellationSignal signal) {
+        public final void completeSpecialEffect(@NonNull CancellationSignal signal) {
             if (mSpecialEffectsSignals.remove(signal) && mSpecialEffectsSignals.isEmpty()) {
                 complete();
             }
@@ -699,13 +699,13 @@ abstract class SpecialEffectsController {
 
     private static class FragmentStateManagerOperation extends Operation {
 
-        @Nonnull
+        @NonNull
         private final FragmentStateManager mFragmentStateManager;
 
-        FragmentStateManagerOperation(@Nonnull State finalState,
-                                      @Nonnull LifecycleImpact lifecycleImpact,
-                                      @Nonnull FragmentStateManager fragmentStateManager,
-                                      @Nonnull CancellationSignal cancellationSignal) {
+        FragmentStateManagerOperation(@NonNull State finalState,
+                                      @NonNull LifecycleImpact lifecycleImpact,
+                                      @NonNull FragmentStateManager fragmentStateManager,
+                                      @NonNull CancellationSignal cancellationSignal) {
             super(finalState, lifecycleImpact, fragmentStateManager.getFragment(),
                     cancellationSignal);
             mFragmentStateManager = fragmentStateManager;

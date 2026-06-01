@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2020-2025 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -56,6 +56,7 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.View.OnCreateContextMenuListener;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.AdapterView;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -730,6 +731,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onAttach(@NonNull Context context) {
         mCalled = true;
     }
@@ -791,6 +793,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onCreate(@Nullable DataSet savedInstanceState) {
         mCalled = true;
         restoreChildFragmentState(savedInstanceState);
@@ -903,6 +906,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onViewStateRestored(@Nullable DataSet savedInstanceState) {
         mCalled = true;
     }
@@ -912,6 +916,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onStart() {
         mCalled = true;
     }
@@ -921,6 +926,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onResume() {
         mCalled = true;
     }
@@ -965,6 +971,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onPause() {
         mCalled = true;
     }
@@ -974,6 +981,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onStop() {
         mCalled = true;
     }
@@ -989,6 +997,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onDestroyView() {
         mCalled = true;
     }
@@ -999,6 +1008,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onDestroy() {
         mCalled = true;
     }
@@ -1034,6 +1044,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
      */
     @UiThread
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onDetach() {
         mCalled = true;
     }

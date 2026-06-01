@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2020-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -135,7 +135,7 @@ import static icyllis.modernui.util.Log.LOGGER;
  * {@link #setVisibility(int)}.</li>
  * </ul>
  * <p><em>
- * Note: Modern UI view system is responsible for measuring, laying out and
+ * Note: ModernUI view system is responsible for measuring, laying out and
  * drawing views. You should not call methods that perform these actions on
  * views yourself unless you are actually implementing a {@link ViewGroup}.
  * </em></p>
@@ -2987,6 +2987,7 @@ public class View implements Drawable.Callback {
      * @param canvas the canvas to draw content
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     public void draw(@NonNull Canvas canvas) {
         drawBackground(canvas);
 
@@ -5404,6 +5405,7 @@ public class View implements Drawable.Callback {
      *                              from (in addition to direction).  Will be <code>null</code> otherwise.
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     protected void onFocusChanged(boolean gainFocus, @FocusDirection int direction,
                                   @Nullable Rect previouslyFocusedRect) {
         if (!gainFocus) {
@@ -8644,8 +8646,8 @@ public class View implements Drawable.Callback {
      *
      * @see #onDetachedFromWindow()
      */
-    @MustBeInvokedByOverriders
     @CallSuper
+    @MustBeInvokedByOverriders
     protected void onAttachedToWindow() {
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
 
@@ -9718,6 +9720,7 @@ public class View implements Drawable.Callback {
      * handle possible request-during-layout errors correctly.</p>
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     public void requestLayout() {
         if (mMeasureCache != null) mMeasureCache.clear();
 
@@ -9779,6 +9782,7 @@ public class View implements Drawable.Callback {
      * @param y hotspot y coordinate
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     public void drawableHotspotChanged(float x, float y) {
         if (mBackground != null) {
             mBackground.setHotspot(x, y);
@@ -10099,6 +10103,7 @@ public class View implements Drawable.Callback {
      * @see #drawableStateChanged()
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     protected boolean verifyDrawable(@NonNull Drawable drawable) {
         // Avoid verifying the scroll bar drawable so that we don't end up in
         // an invalidation loop. This effectively prevents the scroll bar
@@ -10119,6 +10124,7 @@ public class View implements Drawable.Callback {
      * @see Drawable#setState(int[])
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     protected void drawableStateChanged() {
         final int[] state = getDrawableState();
         boolean changed = false;
@@ -10277,6 +10283,7 @@ public class View implements Drawable.Callback {
      * attached to this view.
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     public void jumpDrawablesToCurrentState() {
         if (mBackground != null) {
             mBackground.jumpToCurrentState();
@@ -11262,6 +11269,7 @@ public class View implements Drawable.Callback {
      *                  and this view's window is also visible
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     public void onVisibilityAggregated(boolean isVisible) {
         // Update our internal visibility tracking so we can detect changes
         boolean oldVisible = isAggregatedVisible();
@@ -12685,6 +12693,7 @@ public class View implements Drawable.Callback {
      * a container View.
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     public void dispatchStartTemporaryDetach() {
         mPrivateFlags3 |= PFLAG3_TEMPORARY_DETACH;
         onStartTemporaryDetach();
@@ -12706,6 +12715,7 @@ public class View implements Drawable.Callback {
      * a container View.
      */
     @CallSuper
+    @MustBeInvokedByOverriders
     public void dispatchFinishTemporaryDetach() {
         mPrivateFlags3 &= ~PFLAG3_TEMPORARY_DETACH;
         onFinishTemporaryDetach();
@@ -12826,7 +12836,7 @@ public class View implements Drawable.Callback {
                 }
             }
         }
-        // Modern UI added: context menu
+        // ModernUI added: context menu
         if (keyCode == KeyEvent.KEY_MENU) {
             if ((mViewFlags & ENABLED_MASK) == DISABLED) {
                 return true;
@@ -13094,7 +13104,7 @@ public class View implements Drawable.Callback {
                 mTooltipInfo.clearAnchorPos();
             }
             mTooltipInfo.mTooltipText = tooltipText;
-            // Modern UI changed: Reshow
+            // ModernUI changed: Reshow
             if (mTooltipInfo.mTooltipPopup != null && !mTooltipInfo.mTooltipFromLongClick) {
                 hideTooltip();
                 // Schedule showing the tooltip after a timeout.
@@ -13160,7 +13170,7 @@ public class View implements Drawable.Callback {
     }
 
     private boolean showLongClickTooltip(int x, int y) {
-        // Modern UI changed: long click timeout is always longer than hover tooltip timeout,
+        // ModernUI changed: long click timeout is always longer than hover tooltip timeout,
         // so this is not necessary (actually dead code)
         if (mTooltipInfo != null && mTooltipInfo.mTooltipPopup == null) {
             removeCallbacks(mTooltipInfo.mShowTooltipRunnable);

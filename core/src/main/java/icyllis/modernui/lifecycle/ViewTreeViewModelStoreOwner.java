@@ -1,29 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewParent;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Accessors for finding a view tree-local {@link ViewModelStoreOwner} that allows access to a
@@ -49,7 +48,7 @@ public class ViewTreeViewModelStoreOwner {
      * @param view                Root view associated with the viewModelStoreOwner
      * @param viewModelStoreOwner ViewModelStoreOwner associated with the given view
      */
-    public static void set(@Nonnull View view, @Nullable ViewModelStoreOwner viewModelStoreOwner) {
+    public static void set(@NonNull View view, @Nullable ViewModelStoreOwner viewModelStoreOwner) {
         view.setTag(R.id.view_tree_view_model_store_owner, viewModelStoreOwner);
     }
 
@@ -62,7 +61,7 @@ public class ViewTreeViewModelStoreOwner {
      * of its ancestors
      */
     @Nullable
-    public static ViewModelStoreOwner get(@Nonnull View view) {
+    public static ViewModelStoreOwner get(@NonNull View view) {
         ViewModelStoreOwner found = (ViewModelStoreOwner) view.getTag(R.id.view_tree_view_model_store_owner);
         if (found != null) return found;
         ViewParent parent = view.getParent();

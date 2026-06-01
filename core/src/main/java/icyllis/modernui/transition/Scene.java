@@ -1,29 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.transition;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A scene represents the collection of values that various properties in the
@@ -48,7 +47,7 @@ public class Scene {
      * @param sceneRoot The root of the hierarchy in which scene changes
      *                  and transitions will take place.
      */
-    public Scene(@Nonnull ViewGroup sceneRoot) {
+    public Scene(@NonNull ViewGroup sceneRoot) {
         mSceneRoot = sceneRoot;
     }
 
@@ -62,7 +61,7 @@ public class Scene {
      * @param layout    The view hierarchy of this scene, added as a child
      *                  of sceneRoot when this scene is entered.
      */
-    public Scene(@Nonnull ViewGroup sceneRoot, @Nonnull View layout) {
+    public Scene(@NonNull ViewGroup sceneRoot, @NonNull View layout) {
         mSceneRoot = sceneRoot;
         mLayout = layout;
     }
@@ -74,7 +73,7 @@ public class Scene {
      *
      * @return The root of the view hierarchy affected by this scene.
      */
-    @Nonnull
+    @NonNull
     public ViewGroup getSceneRoot() {
         return mSceneRoot;
     }
@@ -129,7 +128,7 @@ public class Scene {
      *
      * @param sceneRoot The ViewGroup on which the current scene is being set
      */
-    static void setCurrentScene(@Nonnull ViewGroup sceneRoot, @Nullable Scene scene) {
+    static void setCurrentScene(@NonNull ViewGroup sceneRoot, @Nullable Scene scene) {
         sceneRoot.setTag(R.id.transition_current_scene, scene);
     }
 
@@ -142,7 +141,7 @@ public class Scene {
      * no Scene is currently set.
      */
     @Nullable
-    public static Scene getCurrentScene(@Nonnull ViewGroup sceneRoot) {
+    public static Scene getCurrentScene(@NonNull ViewGroup sceneRoot) {
         return (Scene) sceneRoot.getTag(R.id.transition_current_scene);
     }
 

@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.widget;
@@ -27,8 +27,6 @@ import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.*;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-
-import javax.annotation.Nonnull;
 
 /**
  * Helper class used by TextView to handle editable text views.
@@ -230,7 +228,7 @@ public class Editor {
     /**
      * Handles touch events on an editable text view, implementing cursor movement, selection, etc.
      */
-    void onTouchEvent(@Nonnull MotionEvent event) {
+    void onTouchEvent(@NonNull MotionEvent event) {
         final int action = event.getAction();
         final boolean filterOutEvent;
         if ((action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP)
@@ -257,7 +255,7 @@ public class Editor {
         }
     }
 
-    void onTouchUpEvent(@Nonnull MotionEvent event) {
+    void onTouchUpEvent(@NonNull MotionEvent event) {
         boolean selectAllGotFocus = mSelectAllOnFocus && mTextView.didTouchFocusSelect();
         CharSequence text = mTextView.getText();
         if (!selectAllGotFocus) {
@@ -312,7 +310,7 @@ public class Editor {
         if (mIsBeingLongClicked) {
             return;
         }
-        // Added by Modern UI
+        // Added by ModernUI
         final int offset;
         if (Float.isNaN(mContextMenuAnchorX)
                 || Float.isNaN(mContextMenuAnchorY)) {
@@ -323,7 +321,7 @@ public class Editor {
         if (offset == -1) {
             return;
         }
-        // Fixed by Modern UI
+        // Fixed by ModernUI
         final int min = Math.min(mTextView.getSelectionStart(), mTextView.getSelectionEnd());
         final int max = Math.max(mTextView.getSelectionStart(), mTextView.getSelectionEnd());
         final boolean isOnSelection = mTextView.hasSelection()

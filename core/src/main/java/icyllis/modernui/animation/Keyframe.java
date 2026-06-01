@@ -1,25 +1,25 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.animation;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * This class holds a time/value pair for an animation. The Keyframe class is used
@@ -77,7 +77,7 @@ public abstract class Keyframe {
      *                 the time in this keyframe, and the value animated from as the time passes the time in
      *                 this keyframe.
      */
-    @Nonnull
+    @NonNull
     public static Keyframe ofInt(float fraction, int value) {
         return new IntKeyframe(fraction, value);
     }
@@ -94,7 +94,7 @@ public abstract class Keyframe {
      * @param fraction The time, expressed as a value between 0 and 1, representing the fraction
      *                 of time elapsed of the overall animation duration.
      */
-    @Nonnull
+    @NonNull
     public static Keyframe ofInt(float fraction) {
         return new IntKeyframe(fraction);
     }
@@ -111,7 +111,7 @@ public abstract class Keyframe {
      *                 the time in this keyframe, and the value animated from as the time passes the time in
      *                 this keyframe.
      */
-    @Nonnull
+    @NonNull
     public static Keyframe ofFloat(float fraction, float value) {
         return new FloatKeyframe(fraction, value);
     }
@@ -128,7 +128,7 @@ public abstract class Keyframe {
      * @param fraction The time, expressed as a value between 0 and 1, representing the fraction
      *                 of time elapsed of the overall animation duration.
      */
-    @Nonnull
+    @NonNull
     public static Keyframe ofFloat(float fraction) {
         return new FloatKeyframe(fraction);
     }
@@ -145,7 +145,7 @@ public abstract class Keyframe {
      *                 the time in this keyframe, and the value animated from as the time passes the time in
      *                 this keyframe.
      */
-    @Nonnull
+    @NonNull
     public static Keyframe ofObject(float fraction, Object value) {
         return new ObjectKeyframe(fraction, value);
     }
@@ -162,7 +162,7 @@ public abstract class Keyframe {
      * @param fraction The time, expressed as a value between 0 and 1, representing the fraction
      *                 of time elapsed of the overall animation duration.
      */
-    @Nonnull
+    @NonNull
     public static Keyframe ofObject(float fraction) {
         return new ObjectKeyframe(fraction, null);
     }
@@ -231,7 +231,7 @@ public abstract class Keyframe {
         mInterpolator = interpolator;
     }
 
-    @Nonnull
+    @NonNull
     public abstract Keyframe copy();
 
     static final class ObjectKeyframe extends Keyframe {
@@ -258,7 +258,7 @@ public abstract class Keyframe {
             mHasValue = (value != null);
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public ObjectKeyframe copy() {
             ObjectKeyframe kfClone = new ObjectKeyframe(getFraction(), hasValue() ? mValue : null);
@@ -302,7 +302,7 @@ public abstract class Keyframe {
             }
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public IntKeyframe copy() {
             IntKeyframe kfClone = mHasValue ?
@@ -348,7 +348,7 @@ public abstract class Keyframe {
             }
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public FloatKeyframe copy() {
             FloatKeyframe kfClone = mHasValue ?

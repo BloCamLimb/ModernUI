@@ -1,30 +1,30 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.lifecycle.ViewModel;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.util.DataSet;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,25 +38,25 @@ import java.util.Objects;
  */
 public final class FragmentController {
 
-    @Nonnull
+    @NonNull
     private final FragmentHostCallback<?> mHost;
 
     /**
      * Returns a {@link FragmentController}.
      */
-    @Nonnull
-    public static FragmentController createController(@Nonnull FragmentHostCallback<?> callbacks) {
+    @NonNull
+    public static FragmentController createController(@NonNull FragmentHostCallback<?> callbacks) {
         return new FragmentController(Objects.requireNonNull(callbacks));
     }
 
-    private FragmentController(@Nonnull FragmentHostCallback<?> callbacks) {
+    private FragmentController(@NonNull FragmentHostCallback<?> callbacks) {
         mHost = callbacks;
     }
 
     /**
      * Returns a {@link FragmentManager} for this controller.
      */
-    @Nonnull
+    @NonNull
     public FragmentManager getFragmentManager() {
         return mHost.mFragmentManager;
     }
@@ -65,7 +65,7 @@ public final class FragmentController {
      * Returns a fragment with the given identifier.
      */
     @Nullable
-    public Fragment findFragmentByWho(@Nonnull String who) {
+    public Fragment findFragmentByWho(@NonNull String who) {
         return mHost.mFragmentManager.findFragmentByWho(who);
     }
 
@@ -79,7 +79,7 @@ public final class FragmentController {
     /**
      * Returns the list of active fragments.
      */
-    @Nonnull
+    @NonNull
     public List<Fragment> getActiveFragments() {
         return mHost.mFragmentManager.getActiveFragments();
     }

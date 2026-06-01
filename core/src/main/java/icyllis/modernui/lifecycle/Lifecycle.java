@@ -1,27 +1,26 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Defines an object that has a Lifecycle. {@link icyllis.modernui.fragment.Fragment}
@@ -58,7 +57,7 @@ public abstract class Lifecycle {
      * @param observer The observer to notify.
      */
     @UiThread
-    public abstract void addObserver(@Nonnull LifecycleObserver observer);
+    public abstract void addObserver(@NonNull LifecycleObserver observer);
 
     /**
      * Removes the given observer from the observers list.
@@ -74,7 +73,7 @@ public abstract class Lifecycle {
      * @param observer The observer to be removed.
      */
     @UiThread
-    public abstract void removeObserver(@Nonnull LifecycleObserver observer);
+    public abstract void removeObserver(@NonNull LifecycleObserver observer);
 
     /**
      * Returns the current state of the Lifecycle.
@@ -82,7 +81,7 @@ public abstract class Lifecycle {
      * @return The current state of the Lifecycle.
      */
     @UiThread
-    @Nonnull
+    @NonNull
     public abstract State getCurrentState();
 
     public enum Event {
@@ -120,7 +119,7 @@ public abstract class Lifecycle {
          * @return the event moving down the lifecycle phases from state
          */
         @Nullable
-        public static Event downFrom(@Nonnull State state) {
+        public static Event downFrom(@NonNull State state) {
             return switch (state) {
                 case CREATED -> ON_DESTROY;
                 case STARTED -> ON_STOP;
@@ -138,7 +137,7 @@ public abstract class Lifecycle {
          * @return the event moving down the lifecycle phases to state
          */
         @Nullable
-        public static Event downTo(@Nonnull State state) {
+        public static Event downTo(@NonNull State state) {
             return switch (state) {
                 case DESTROYED -> ON_DESTROY;
                 case CREATED -> ON_STOP;
@@ -156,7 +155,7 @@ public abstract class Lifecycle {
          * @return the event moving up the lifecycle phases from state
          */
         @Nullable
-        public static Event upFrom(@Nonnull State state) {
+        public static Event upFrom(@NonNull State state) {
             return switch (state) {
                 case INITIALIZED -> ON_CREATE;
                 case CREATED -> ON_START;
@@ -174,7 +173,7 @@ public abstract class Lifecycle {
          * @return the event moving up the lifecycle phases to state
          */
         @Nullable
-        public static Event upTo(@Nonnull State state) {
+        public static Event upTo(@NonNull State state) {
             return switch (state) {
                 case CREATED -> ON_CREATE;
                 case STARTED -> ON_START;
@@ -189,7 +188,7 @@ public abstract class Lifecycle {
          *
          * @return the state that will result from this event
          */
-        @Nonnull
+        @NonNull
         public State getTargetState() {
             return switch (this) {
                 case ON_CREATE, ON_STOP -> State.CREATED;
@@ -237,7 +236,7 @@ public abstract class Lifecycle {
          * @param state State to compare with
          * @return true if this State is greater or equal to the given {@code state}
          */
-        public boolean isAtLeast(@Nonnull State state) {
+        public boolean isAtLeast(@NonNull State state) {
             return compareTo(state) >= 0;
         }
     }

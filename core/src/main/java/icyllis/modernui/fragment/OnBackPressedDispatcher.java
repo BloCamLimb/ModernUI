@@ -1,30 +1,30 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.lifecycle.LifecycleObserver;
 import icyllis.modernui.lifecycle.LifecycleOwner;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Iterator;
 
@@ -73,7 +73,7 @@ public final class OnBackPressedDispatcher {
      * @see #onBackPressed()
      */
     @UiThread
-    public void addCallback(@Nonnull OnBackPressedCallback onBackPressedCallback) {
+    public void addCallback(@NonNull OnBackPressedCallback onBackPressedCallback) {
         addCancellableCallback(onBackPressedCallback);
     }
 
@@ -89,8 +89,8 @@ public final class OnBackPressedDispatcher {
      * the callback and remove it from the set of OnBackPressedCallbacks.
      */
     @UiThread
-    @Nonnull
-    OnBackPressedCallback.Cancellable addCancellableCallback(@Nonnull OnBackPressedCallback onBackPressedCallback) {
+    @NonNull
+    OnBackPressedCallback.Cancellable addCancellableCallback(@NonNull OnBackPressedCallback onBackPressedCallback) {
         mOnBackPressedCallbacks.add(onBackPressedCallback);
         OnBackPressedCancellable cancellable = new OnBackPressedCancellable(onBackPressedCallback);
         onBackPressedCallback.addCancellable(cancellable);
@@ -121,7 +121,7 @@ public final class OnBackPressedDispatcher {
      * @see #onBackPressed()
      */
     @UiThread
-    public void addCallback(@Nonnull LifecycleOwner owner, @Nonnull OnBackPressedCallback callback) {
+    public void addCallback(@NonNull LifecycleOwner owner, @NonNull OnBackPressedCallback callback) {
         Lifecycle lifecycle = owner.getLifecycle();
         if (lifecycle.getCurrentState() == Lifecycle.State.DESTROYED) {
             return;
@@ -196,15 +196,15 @@ public final class OnBackPressedDispatcher {
         @Nullable
         private OnBackPressedCallback.Cancellable mCurrentCancellable;
 
-        LifecycleOnBackPressedCancellable(@Nonnull Lifecycle lifecycle,
-                                          @Nonnull OnBackPressedCallback onBackPressedCallback) {
+        LifecycleOnBackPressedCancellable(@NonNull Lifecycle lifecycle,
+                                          @NonNull OnBackPressedCallback onBackPressedCallback) {
             mLifecycle = lifecycle;
             mOnBackPressedCallback = onBackPressedCallback;
             lifecycle.addObserver(this);
         }
 
         @Override
-        public void onStateChanged(@Nonnull LifecycleOwner source, @Nonnull Lifecycle.Event event) {
+        public void onStateChanged(@NonNull LifecycleOwner source, @NonNull Lifecycle.Event event) {
             if (event == Lifecycle.Event.ON_START) {
                 mCurrentCancellable = addCancellableCallback(mOnBackPressedCallback);
             } else if (event == Lifecycle.Event.ON_STOP) {

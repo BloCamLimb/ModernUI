@@ -1,29 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.transition;
 
 import icyllis.modernui.R;
 import icyllis.modernui.animation.*;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * This class is used by Slide and Explode to create an animator that goes from the start
@@ -52,9 +51,9 @@ final class TranslationAnimationCreator {
      * a previous interruption, in which case it moves from the current position to (endX, endY).
      */
     @Nullable
-    static Animator createAnimation(@Nonnull View view, @Nonnull TransitionValues values,
+    static Animator createAnimation(@NonNull View view, @NonNull TransitionValues values,
                                     int viewPosX, int viewPosY, float startX, float startY, float endX, float endY,
-                                    @Nullable TimeInterpolator interpolator, @Nonnull Transition transition) {
+                                    @Nullable TimeInterpolator interpolator, @NonNull Transition transition) {
         float terminalX = view.getTranslationX();
         float terminalY = view.getTranslationY();
         int[] startPosition = (int[]) values.view.getTag(R.id.transition_position);
@@ -110,7 +109,7 @@ final class TranslationAnimationCreator {
         }
 
         @Override
-        public void onAnimationCancel(@Nonnull Animator animation) {
+        public void onAnimationCancel(@NonNull Animator animation) {
             if (mTransitionPosition == null) {
                 mTransitionPosition = new int[2];
             }
@@ -120,7 +119,7 @@ final class TranslationAnimationCreator {
         }
 
         @Override
-        public void onAnimationPause(@Nonnull Animator animator) {
+        public void onAnimationPause(@NonNull Animator animator) {
             mPausedX = mMovingView.getTranslationX();
             mPausedY = mMovingView.getTranslationY();
             mMovingView.setTranslationX(mTerminalX);
@@ -128,13 +127,13 @@ final class TranslationAnimationCreator {
         }
 
         @Override
-        public void onAnimationResume(@Nonnull Animator animator) {
+        public void onAnimationResume(@NonNull Animator animator) {
             mMovingView.setTranslationX(mPausedX);
             mMovingView.setTranslationY(mPausedY);
         }
 
         @Override
-        public void onTransitionEnd(@Nonnull Transition transition) {
+        public void onTransitionEnd(@NonNull Transition transition) {
             mMovingView.setTranslationX(mTerminalX);
             mMovingView.setTranslationY(mTerminalY);
             transition.removeListener(this);

@@ -1,26 +1,25 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.lifecycle.*;
-
-import javax.annotation.Nonnull;
 
 class FragmentViewLifecycleOwner implements LifecycleOwner, ViewModelStoreOwner {
 
@@ -31,7 +30,7 @@ class FragmentViewLifecycleOwner implements LifecycleOwner, ViewModelStoreOwner 
 
     private LifecycleRegistry mLifecycleRegistry;
 
-    FragmentViewLifecycleOwner(@Nonnull Fragment fragment, @Nonnull ViewModelStore viewModelStore) {
+    FragmentViewLifecycleOwner(@NonNull Fragment fragment, @NonNull ViewModelStore viewModelStore) {
         mFragment = fragment;
         mViewModelStore = viewModelStore;
     }
@@ -52,25 +51,25 @@ class FragmentViewLifecycleOwner implements LifecycleOwner, ViewModelStoreOwner 
         return mLifecycleRegistry != null;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Lifecycle getLifecycle() {
         initialize();
         return mLifecycleRegistry;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public ViewModelStore getViewModelStore() {
         initialize();
         return mViewModelStore;
     }
 
-    void setCurrentState(@Nonnull Lifecycle.State state) {
+    void setCurrentState(@NonNull Lifecycle.State state) {
         mLifecycleRegistry.setCurrentState(state);
     }
 
-    void handleLifecycleEvent(@Nonnull Lifecycle.Event event) {
+    void handleLifecycleEvent(@NonNull Lifecycle.Event event) {
         mLifecycleRegistry.handleLifecycleEvent(event);
     }
 

@@ -1,28 +1,28 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 package icyllis.modernui.lifecycle;
 
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Core;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -85,7 +85,7 @@ public class LifecycleRegistry extends Lifecycle {
      *
      * @param provider The owner LifecycleOwner
      */
-    public LifecycleRegistry(@Nonnull LifecycleOwner provider) {
+    public LifecycleRegistry(@NonNull LifecycleOwner provider) {
         mLifecycleOwner = new WeakReference<>(provider);
         mState = INITIALIZED;
     }
@@ -96,7 +96,7 @@ public class LifecycleRegistry extends Lifecycle {
      * @param state new state
      */
     @UiThread
-    public void setCurrentState(@Nonnull State state) {
+    public void setCurrentState(@NonNull State state) {
         Core.checkUiThread();
         moveToState(state);
     }
@@ -109,7 +109,7 @@ public class LifecycleRegistry extends Lifecycle {
      *
      * @param event The event that was received
      */
-    public void handleLifecycleEvent(@Nonnull Event event) {
+    public void handleLifecycleEvent(@NonNull Event event) {
         Core.checkUiThread();
         moveToState(event.getTargetState());
     }
@@ -148,7 +148,7 @@ public class LifecycleRegistry extends Lifecycle {
     }
 
     @Override
-    public void addObserver(@Nonnull LifecycleObserver observer) {
+    public void addObserver(@NonNull LifecycleObserver observer) {
         Core.checkUiThread();
         State initialState = mState == DESTROYED ? DESTROYED : INITIALIZED;
         ObserverWithState statefulObserver = new ObserverWithState(observer, initialState);
@@ -195,7 +195,7 @@ public class LifecycleRegistry extends Lifecycle {
     }
 
     @Override
-    public void removeObserver(@Nonnull LifecycleObserver observer) {
+    public void removeObserver(@NonNull LifecycleObserver observer) {
         Core.checkUiThread();
         // we consciously decided not to send destruction events here in opposition to addObserver.
         // Our reasons for that:
@@ -222,7 +222,7 @@ public class LifecycleRegistry extends Lifecycle {
         return mObserverMap.size();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public State getCurrentState() {
         return mState;
@@ -287,7 +287,7 @@ public class LifecycleRegistry extends Lifecycle {
         mNewEventOccurred = false;
     }
 
-    static State min(@Nonnull State state1, @Nullable State state2) {
+    static State min(@NonNull State state1, @Nullable State state2) {
         return state2 != null && state2.compareTo(state1) < 0 ? state2 : state1;
     }
 
@@ -306,7 +306,7 @@ public class LifecycleRegistry extends Lifecycle {
             return mLifecycleObserver;
         }
 
-        void dispatchEvent(LifecycleOwner owner, @Nonnull Event event) {
+        void dispatchEvent(LifecycleOwner owner, @NonNull Event event) {
             State newState = event.getTargetState();
             mState = min(mState, newState);
             switch (event) {

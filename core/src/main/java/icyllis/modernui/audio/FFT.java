@@ -1,19 +1,19 @@
 /*
- * Modern UI.
- * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
+ * ModernUI.
+ * Copyright (C) 2021-2026 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
 /*
@@ -36,8 +36,8 @@
 
 package icyllis.modernui.audio;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 
 /**
  * Provides Fast Fourier Transform. It is an efficient way to calculate the Complex Discrete Fourier
@@ -105,7 +105,7 @@ public class FFT {
      * @param timeSize   the length of the sample buffers you will be analyzing
      * @param sampleRate the sample rate of the audio you will be analyzing
      */
-    @Nonnull
+    @NonNull
     public static FFT create(int timeSize, int sampleRate) {
         if (timeSize > 0 & (timeSize & (timeSize - 1)) != 0) {
             throw new IllegalArgumentException("timeSize must be a power of two");
@@ -120,7 +120,7 @@ public class FFT {
      * @param offset  the offset to start at in the buffer, the exceeded part of next timeSize()
      *                samples from the starting index in the buffer will be filled with zeros.
      */
-    public void forward(@Nonnull float[] samples, int offset) {
+    public void forward(@NonNull float[] samples, int offset) {
         if (offset < 0 || offset >= samples.length) {
             throw new IllegalArgumentException();
         }
@@ -154,7 +154,7 @@ public class FFT {
      * @param offset the offset to start at in the buffer, the exceeded part of next timeSize() *
      *               samples from the starting index in the buffer will be filled with zeros.
      */
-    public void forward(@Nonnull float[] real, @Nonnull float[] imag, int offset) {
+    public void forward(@NonNull float[] real, @NonNull float[] imag, int offset) {
         if (offset < 0 || real.length != imag.length || offset >= real.length) {
             throw new IllegalArgumentException();
         }

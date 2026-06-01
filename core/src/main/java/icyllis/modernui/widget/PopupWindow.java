@@ -1,19 +1,19 @@
 /*
- * Modern UI.
+ * ModernUI.
  * Copyright (C) 2022-2025 BloCamLimb. All rights reserved.
  *
- * Modern UI is free software; you can redistribute it and/or
+ * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * Modern UI is distributed in the hope that it will be useful,
+ * ModernUI is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
+ * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -81,7 +81,7 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
  * and passing a {@link Transition}.
  * </p>
  * <p>
- * This is a modified version from Android. Modern UI implementations require the
+ * This is a modified version from Android. ModernUI implementations require the
  * root view must be a {@link WindowGroup} for its behavior to intercept input events.
  * We don't need its anchoring feature, because it will calculate all transformation matrices.
  * Firstly, the performance is slightly lower, and we don't want the position of pop-up window
