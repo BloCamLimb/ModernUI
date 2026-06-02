@@ -76,15 +76,15 @@ import static org.lwjgl.system.MemoryUtil.*;
  * Bitmap via the static factory methods in this class, i.e. {@link #createBitmap}.
  * You can also obtain Bitmap from encoded data via {@link BitmapFactory}.
  * <p>
- * The color space of Bitmap defaults to sRGB and can only be in RGB model space
- * or null, color space may be changed via {@link #setColorSpace(ColorSpace)}.
+ * The color space of Bitmap may be changed via {@link #setColorSpace(ColorSpace)}.
  * The alpha defaults to non-premultiplied (independent of RGB channels),
  * alpha type may be changed via {@link #setPremultiplied(boolean)}.
  * The Bitmap's format may also be changed via {@link #setFormat(Format)},
  * as long as the bytes-per-pixel of the old and new formats are the same.
- * For example, when using BitmapFactory to read a single channel image,
- * the default format is GRAY_8. You can re-interpret it as ALPHA_8 type via
- * {@link #setFormat(Format)}, and the image data remains unchanged.
+ * For example, when using {@link BitmapFactory} to read a single channel image,
+ * the default format is {@link Format#GRAY_8}. You can re-interpret it as
+ * {@link Format#ALPHA_8} type via {@link #setFormat(Format)}, and the image
+ * data remains unchanged.
  * <p>
  * The Bitmap provides several methods for manipulating the pixel data,
  * there are single pixel and bulk access methods, which may perform zero or more
@@ -533,11 +533,6 @@ public final class Bitmap implements AutoCloseable {
      * <p>
      * This method only inspects the channel configuration of the {@link Format} and does not
      * check the actual pixel values or the opacity flag.
-     * <p>
-     * <b>Note on Version Compatibility:</b> Prior to version 3.13.0, this method behaved
-     * identically to {@link #isOpaque()}. Starting from version 3.13.0, {@link #isOpaque()}
-     * was introduced to explicitly handle runtime pixel opacity checks, and this method
-     * was regressed to strictly inspect the format's channel capabilities.
      *
      * @return true if the bitmap's format supports an alpha channel, false otherwise
      * @see #isOpaque()

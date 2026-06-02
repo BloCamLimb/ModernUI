@@ -40,15 +40,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.ToIntFunction;
 
 /**
- * Not stable
+ * This class allows to build an asset pack at runtime. The resources it creates
+ * are all under a single namespace.
  *
- * @hidden
+ * @since 3.13
  */
-@ApiStatus.Internal
 public class ResourcesBuilder {
 
     String mNamespace;
@@ -135,16 +136,61 @@ public class ResourcesBuilder {
         return (packageId << Res_value.PACKAGE_ID_SHIFT) | storeKeyString(entry);
     }
 
+    /**
+     * @return the namespace for all resources
+     */
+    public String getNamespace() {
+        return mNamespace;
+    }
+
+    /**
+     * Find an existing style builder.
+     *
+     * @param name the style name
+     * @return the style builder for the style, if any
+     * @see #newStyle(String, ResourceId)
+     */
+    @Nullable
+    public Style getStyle(@NonNull @StyleRes String name) {
+        return mStyleTable.get(name);
+    }
+
+    /**
+     * Adds a style resource, returns the style builder to fill attribute values.
+     * <p>
+     * The final resource id is {@code new ResourceId(getNamespace(), "style", name)}.
+     *
+     * @param name   the style name
+     * @param parent the parent of the style, if any
+     * @return the style builder for the style
+     */
     public Style newStyle(@NonNull @StyleRes String name,
                           @Nullable @StyleRes ResourceId parent) {
         assert parent == null || parent.type().equals("style");
-        Style builder = new Style(name, parent);
-        if (mStyleTable.putIfAbsent(name, builder) == null) {
+        Style builder = mStyleTable.get(name);
+        if (builder == null) {
+            builder = new Style(name, parent);
+            mStyleTable.put(name, builder);
             return builder;
         }
-        throw new IllegalStateException("style is already defined");
+        if (Objects.equals(builder.mParent, parent)) {
+            return builder;
+        }
+        throw new IllegalStateException(
+                String.format("style %s is already defined with parent %s", name, builder.mParent));
     }
 
+    /**
+     * Adds a style resource, returns the style builder to fill attribute values.
+     * <p>
+     * For the resource id, its namespace must be {@link #getNamespace()},
+     * and its type must be {@code "style"}.
+     *
+     * @param id     the style resource id
+     * @param parent the parent of the style, if any
+     * @return the style builder for the style
+     * @see #newStyle(String, ResourceId)
+     */
     public Style newStyle(@NonNull @StyleRes ResourceId id,
                           @Nullable @StyleRes ResourceId parent) {
         assert id.namespace().equals(mNamespace) && id.type().equals("style");
@@ -156,6 +202,12 @@ public class ResourcesBuilder {
         return mValueTable.computeIfAbsent(type, __ -> new Object2LongOpenHashMap<>());
     }
 
+    /**
+     * Adds a string resource.
+     *
+     * @param id    the string resource id
+     * @param value the resource value
+     */
     public void addString(@NonNull @AnyRes ResourceId id,
                           @NonNull String value) {
         assert id.namespace().equals(mNamespace);
@@ -164,13 +216,22 @@ public class ResourcesBuilder {
     }
 
     /**
-     * @return
+     * Creates the asset pack. The builder cannot be reused.
+     *
+     * @return a newly-created asset pack
      * @throws IllegalStateException the runtime limit is exceeded
      */
     public ResourcesProvider build() {
         return build(new EmptyAssetsProvider());
     }
 
+    /**
+     * Creates the asset pack. The builder cannot be reused.
+     *
+     * @param assetsProvider the provider for additional assets
+     * @return a newly-created asset pack
+     * @throws IllegalStateException the runtime limit is exceeded
+     */
     public ResourcesProvider build(@NonNull @WillCloseWhenClosed AssetsProvider assetsProvider) {
         PackAssets packAssets = buildPack(assetsProvider);
 
@@ -330,6 +391,9 @@ public class ResourcesBuilder {
         return new PackAssets(assetsProvider, resources);
     }
 
+    /**
+     * A style under construction.
+     */
     public class Style {
 
         String mName;
