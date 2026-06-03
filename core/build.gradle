@@ -9,9 +9,9 @@ dependencies {
     api "dev.icyllis:arc3d-sketch:${arc3d_version}"
     api "dev.icyllis:arc3d-compiler:${arc3d_version}"
     api "dev.icyllis:arc3d-engine:${arc3d_version}"
-    implementation "dev.icyllis:arc3d-granite:${arc3d_version}"
-    implementation "dev.icyllis:arc3d-vulkan:${arc3d_version}"
-    implementation "dev.icyllis:arc3d-opengl:${arc3d_version}"
+    api "dev.icyllis:arc3d-granite:${arc3d_version}"
+    api "dev.icyllis:arc3d-vulkan:${arc3d_version}"
+    api "dev.icyllis:arc3d-opengl:${arc3d_version}"
 
     def lwjglNatives
     switch (OperatingSystem.current()) {
