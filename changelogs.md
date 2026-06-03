@@ -1,5 +1,250 @@
 Changelogs
 ===
+### ModernUI 3.13.0 (2026-06-03)
+#### Core Framework
+##### View
+* Add real CONTROL modifier, and update keybinds for macOS
+* Fix Toast.cancel()
+* Add method to set camera distance explicitly
+* Add methods to change ambient/spot shadow color
+* Allow shadow casting in reveal animations
+* Fix several dirty area accumulation issues that can cause ghosting
+##### Graphics
+* Ensure running on LWJGL 3.4.2 and binary-compatible with LWJGL 3.3.1
+* Update Vulkan initialization
+* Add Bitmap.subImage() to create sub-image view
+* Add methods to describe alpha type of Bitmap and Image exactly
+* Remove unsupported bitmap formats, deprecate RGBX_8888 (use new setOpaque() instead)
+* Add validation to Bitmap.wrap(), and handle 0 rowBytes/stride
+* ShapeDrawable's outline no longer relies on stroke opacity
+* Migrate everything to wide gamut, extended range colors
+* Refactor Drawable's alpha to float type, add wide color setters
+* Add dithering to ripple effects
+* Remove the RGB space and range restriction on Bitmap.setColorSpace(),
+  this means you can use extended range colors (like extended Display P3) and CIE XYZ colors
+* Allow Image.createTextureFromBitmap to be called from non-UI threads
+* Fix race between Bitmap.close() and Bitmap.clone()
+* Refactor image (GPU) cache;
+  fix thread-safety of Image.clone();
+  texture-backed image is no longer budgeted
+* Add new color packing format, which encodes extended range colors
+  in 16-bit floating-point, in extended color space, using relative colorimetric rendering intent
+* Refactor several int color getters to long colors
+* Deprecate BMP and TGA support, will be removed in future
+* Optimize saving bitmap to path
+* Final refactor for ColorSpace-related classes
+* Add more Vulkan caps, and add caps dump
+* Add option to indicate that zero-to-one depth is used in OpenGL
+* Improve error logging
+* Simplify builtin color space access, fix some bugs
+* Refactor ColorTransform and color space methods
+* Introduce separate ChromaticAdaptation class
+* Change ColorSpace.Model to int constants
+* Update renderer test, Vulkan renderer
+* Complete the entire Vulkan rendering backend
+* ColorShader now takes original ColorSpace to handle absolute colorimetric intent
+* Make computeByteSize() return 0 for invalid row bytes
+* Add XYZ D65 space
+* Add Oklab support
+* Improve color space transformation
+  + Optimize XYZ<->RGB conversion
+  + Always uses abs response to handle extended range
+  + Simplify RGB<->RGB transform computation (skip PCS)
+  + Fix absolute rendering intent behavior
+* Remove references to Unsafe, now Arc3D no longer needs Unsafe
+* A8 and BW conversions no longer directly use Unsafe
+* Pixmap clear no longer uses Unsafe
+* Update usage of image offset=0
+* No longer use Unsafe for copyImage()
+* Update pixel op and mem tests
+* Update low-precision load/store ops
+  + No longer use LUT for 565 expansion, use only integer arithmetic, add 10-bit store ops
+* Change dither method from bayer matrix to R2 sequence
+* Replace Unsafe load ops
+* Replace Unsafe store ops with separate u and hb versions
+  + Note that addr for heap is interpreted as byte offset to the first element,
+    without array base offset anymore
+* Add validation for pixel memory address
+* Add unclamped/extended ColorSpace transformations
+* Avoid unnecessary object create for non-strict subset ImageShader
+* Relax range check in MathUtil, many checks are too strict, relax to handle unsigned integers
+* Add analytic 2D signed distance field generator
+* Fix unaligned memory access in building vertices
+* Add channel-based IIO stream impl
+* Add background compilation executor option
+* Workaround macOS OpenGL driver bug on depth-only draw pass
+* Add method to wrap backend image for interop
+* Use persistent mapping for Vulkan, similar to OpenGL, non-readback and host-visible
+* Ensure RenderPassSet is deduplicated and kept alive
+* Limit max engine max vertex bindings to 8
+* Add option to limit max in-flight command buffers
+* Update surface create parameters
+* Add support for hairline text
+* Switch to Marlin Stroker and deprecate old PathStroker
+* Introduce immutable path data, and refactor Path class
+* Add Record canvas and BigRecord
+* Fix byte offset in Bitmap batch pixel copy operations
+* Add command buffer destructor
+* Delete many legacy usages of format
+* Add Vulkan graphics pipeline
+* Fix optimal pixel transfer buffer alignment
+* Rework the whole OpenGL texture format table (make it Vulkan-like)
+* Add more command buffer parameters
+* Add Vulkan queue management
+* Finish Vulkan descriptor set management
+* Implement Vulkan memory barrier management
+* Add RenderPassDesc to pipeline builder
+* Migrate to descriptor set layout for pipeline desc
+* Add immutable samplers to vkSetLayout
+* Sampler are now global objects
+* Add Vulkan buffer
+* Fix OpenGL readback buffer should not host-coherent or persistently mapped
+* Distinguish between BufferBindInfo and BufferSliceInfo
+* Add Vulkan sampler
+* Add Vulkan command buffer
+* Add Vulkan render pass management
+* Add Vulkan image view management
+* Add Vulkan framebuffers and framebuffer cache
+* Introduce consistent way to describe render pass and framebuffer
+  + Clarify the usage of placeholder attachments and apply them in GL backend.
+  + Fix some bugs in VulkanRenderPass creation.
+* Add full Vulkan render pass creation
+* Add definition for Vulkan compatible render passes
+* Move actual pipeline destruction to executing thread to ensure thread safety
+* Purge framebuffers only when needed instead of every frame
+* Refactor FramebufferDesc and RenderPassDesc
+* Add engine-level image formats
+* Add methods for wide gamut and extended range colors
+* Fix all the alignment issues for pixel operations
+* Support some new bitmap formats: GRAY_16, GRAY_ALPHA_1616, RGB_161616
+* Add method to create Vulkan descriptor pool
+* Fix unaligned access in vectorized setPixel/Bitmap.clear()
+* Add Vulkan descriptor set pool
+* Add descriptor set layout
+* Fix ARGB mask swizzle, and reserve SDF mask type
+* Implement occlusion culling for the entire Granite Renderer
+* Separate paint and style, and use clip stack to handle fullscreen clear
+* Cleanup paint key and pipeline construction
+* Improve paint color handling and fix
+  + If step solid color is used, the color of KeyContext will no longer be calculated since it's not used.
+  + If shader is constant color, reduce to solid color.
+  + Fix the case where step solid color is not used and the paint is solid color,
+    then it should be in destination space.
+* Use a single paint block across multiple draws, by grouping
+  pipeline analysis, pipeline building, and pipeline data gathering together
+* Separate image view and image proxy classes
+* Fix root of a cubic equation
+* Fix fragment textures should come before geometry textures
+* The sorting algorithm was changed from TimSort to BM Quicksort
+* Improve pipeline descriptor and fixes
+* LowerLeft surface origin is now partially supported (mainly for OpenGL backbuffer)
+* Add all enum values to ShaderDataType
+* Allow RRect effect producing hard edge and coverage AA
+* Fix RecordingContext destructor
+* Refactor GPU hierarchical clipping (see source code for details)
+* Fix Matrix.mapPoints()
+* Add more bounds check methods to Rect2*
+* Replace small-size zeroing at 4-byte aligned addresses with a custom loop
+* Avoid per-pipeline uniform deduplication
+  + Avoid redundant deduplication while allowing uniform data to be shared
+    across pipelines, simplify the logic.
+  + Additionally, the size of BindBufferRange is the size of uniform block,
+    not the padded stride.
+* Refactor buffer allocator for all kinds of buffers
+  + All the get*Pointer methods now return BufferSubAllocator, it allows
+    the caller to perform multiple sub-allocations and also allows multiple
+    buffers to be suballocated in parallel (for UBO).
+  + It also allows specifying an extra alignment offset for the start of
+    each new vertex format, so that buffer binding offsets can be expressed
+    using baseInstance and baseVertex, reducing the number of buffer bindings.
+  + For mesh draw, we use the concepts of append and static data to simplify.
+    Improvements to UBO allocation, exception handling.
+* Rework TextureDataGatherer for new render code
+* Fix error shader
+* Fix Matrix4 constructor
+* Add NullSurface for mock tests
+* Remove UByte index type
+* Merge geometry definition and remove SimpleShape
+* Fix degenerate line stroke and stroke-stroke is not drawn
+* Use jacobian matrix to compute device-space gradient for AA-box
+* Fix VertexInputLayout masks
+* Improve GL error handling
+* Switching from JNI to "Java JNI" (FFM) to call GL/GLES functions
+* Allow extensions in GLSL codegen, and fix usage of extensions
+* Allow creating devices from GL 3.2 contexts; use the reported GLSL version
+
+(Many optimizations and fixes are not listed above)
+
+##### Resources
+This version introduces a brand-new resources system, many APIs have been added,
+but are not listed below.
+* Add Resources.getImage()
+* Remove the runtime exception thrown by Resources
+* Ensure thread safety for all Resources API classes,
+  fix several thread-safety issues in resources (AOSP bug)
+* Add SeekableInputStreamChannel, allow seeking in ZIP instead of stream reading
+* Optimize & fix decoding image from buffers
+* Optimize image MIME type decoding
+* Optimize decoding images from streams and paths
+* New methods to declare/add resources at runtime
+* Add Asset, AssetsProvider for retrieving assets
+* Allow multiple packages and namespaces in Resources
+##### Widget
+* Fix TabLayout.setSelectedTabIndicatorColor() behavior
+* Add StaggeredGridView
+* Fix initial columns of GridView not AUTO_FIT
+* Fix ImageView bounds not set when layout unchanged and view detached
+* Fix RTL is not resolved in GridView children (AOSP bug)
+* Optimize GridView.onMeasure, avoid unnecessary measurement
+* Fix some views in AbsListView never get detached (AOSP bug)
+##### Text
+* Link clicking on selectable text now checks actual cursor position
+* Optimize MeasuredParagraph.buildForStaticLayout in edge cases
+* Refactor PrecomputedText, many improvements and bug fixes (AOSP bug)
+* Optimize SpannableString.equals()
+* Add indexOfSpan map to SpannableStringInternal for performance,
+  also null out reference in removeSpan() to avoid leaks (AOSP bug)
+* No longer truncate leading/trailing spaces in TextUtils.ellipsize
+* Avoid leaks in TextView's spannable (AOSP bug), also check text object identity to match DynamicLayout
+* Refactor BoringLayout
+  + The legacy BoringLayout only works for LTR only text, now BoringLayout
+    works for bidirectional text. And no longer work for simple Spanned text.
+    It heavily depends on ShapedText API now, so you can think it's a high
+    level wrapper over ShapedText. The bidi, ellipsizer, and text blob building
+    are inlined in the BoringLayout class to improve performance.
+* Add method to TextPaint to obtain total advance and per-cluster advances for a bidi run
+* Add create flags for text array version of ShapedText
+* Add constructor for ShapedText to create layout from icu.Bidi
+* Move drawTextRun() from TextUtils to Canvas
+* Merge leading/trailing margin in text.Layout, improve performance
+* Fix Bidi heuristics being incorrect in some cases
+* Move all font options from Paint to TextPaint subclass
+* Move TabStops to internal package, and public TextPaint.getInternalPaint()
+* Move GetChars and TextRunShaper to graphics package
+* Fix concurrency issue of EmojiFont
+* Optimize several methods for measuring and shaping text
+* Add LineBreakConfig to text.DynamicLayout
+* Optimize GraphemeBreak and cursor movement
+* Fix cluster advance computation, use font-dependent clusters
+  (HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS), instead of Unicode GCB
+* Improve toString(), substring() performance for several classes
+* Improve SpannedString and SpannableString constructor performance;
+  always ignore NoCopySpan; never copy PARAGRAPH span if not at paragraph boundary
+* Fix SpannableString visibility
+#### Arc3D Shader Compiler
+* Keep tracking scope-level symbol table in AST nodes,
+  also make scope level for switch block
+#### Build
+* Maven artifact is changed from `icyllis.modernui:ModernUI-Core` to `dev.icyllis:modernui-core`
+* Update dokka build
+* Add junit platform
+* Gradle 8.8 -> 9.3.1
+* Java 17 -> 25 (for compiler and building, the target JVM is still 17)
+* Kotlin 1.9.22 -> 2.3.20 (compiler and stblib)
+* Update to Arc3D 2026.2.0 (Arc3D is now modular)
+* Use Arc3D from central repo instead of local clone
+
+
 ### ModernUI 3.12.0 (2025-08-26)
 #### Core Framework
 * Fix disappearing transitions caused by removing views in batches cannot be seen
