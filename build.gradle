@@ -1,3 +1,4 @@
+import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
 
 plugins {
@@ -31,6 +32,26 @@ nmcpAggregation {
         password = project.findProperty("central_maven_token")
 
         publishingType = "USER_MANAGED"
+    }
+}
+
+ext {
+    switch (OperatingSystem.current()) {
+        case OperatingSystem.WINDOWS:
+            def osArch = System.getProperty("os.arch")
+            lwjglNatives = osArch.contains("64")
+                    ? "natives-windows${osArch.startsWith("aarch64") ? "-arm64" : ""}"
+                    : "natives-windows-x86"
+            break
+        case OperatingSystem.MAC_OS:
+            lwjglNatives = System.getProperty("os.arch").startsWith("aarch64") ? "natives-macos-arm64" : "natives-macos"
+            break
+        default:
+            def osArch = System.getProperty("os.arch")
+            lwjglNatives = osArch.startsWith("arm") || osArch.startsWith("aarch64")
+                    ? "natives-linux-${osArch.contains("64") || osArch.startsWith("armv8") ? "arm64" : "arm32"}"
+                    : "natives-linux"
+            break
     }
 }
 

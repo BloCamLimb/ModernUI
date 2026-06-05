@@ -1,4 +1,4 @@
-import org.gradle.internal.os.OperatingSystem
+
 
 dependencies {
     api "org.slf4j:slf4j-api:${slf4j_version}"
@@ -12,25 +12,6 @@ dependencies {
     api "dev.icyllis:arc3d-granite:${arc3d_version}"
     api "dev.icyllis:arc3d-vulkan:${arc3d_version}"
     api "dev.icyllis:arc3d-opengl:${arc3d_version}"
-
-    def lwjglNatives
-    switch (OperatingSystem.current()) {
-        case OperatingSystem.WINDOWS:
-            def osArch = System.getProperty("os.arch")
-            lwjglNatives = osArch.contains("64")
-                    ? "natives-windows${osArch.startsWith("aarch64") ? "-arm64" : ""}"
-                    : "natives-windows-x86"
-            break
-        case OperatingSystem.MAC_OS:
-            lwjglNatives = System.getProperty("os.arch").startsWith("aarch64") ? "natives-macos-arm64" : "natives-macos"
-            break
-        default:
-            def osArch = System.getProperty("os.arch")
-            lwjglNatives = osArch.startsWith("arm") || osArch.startsWith("aarch64")
-                    ? "natives-linux-${osArch.contains("64") || osArch.startsWith("armv8") ? "arm64" : "arm32"}"
-                    : "natives-linux"
-            break
-    }
 
     compileOnly "org.lwjgl:lwjgl:${lwjgl_version}"
     compileOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}"
@@ -59,17 +40,17 @@ dependencies {
     testImplementation "org.lwjgl:lwjgl-vma:${lwjgl_version}"
     testImplementation "org.lwjgl:lwjgl-vulkan:${lwjgl_version}"
 
-    testRuntimeOnly "org.lwjgl:lwjgl:${lwjgl_version}:$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}:$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}:$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-openal:${lwjgl_version}:$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-opengl:${lwjgl_version}:$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-opengles:${lwjgl_version}:$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-stb:${lwjgl_version}:$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}:$lwjglNatives"
-    testRuntimeOnly "org.lwjgl:lwjgl-vma:${lwjgl_version}:$lwjglNatives"
-    if (lwjglNatives == "natives-macos" || lwjglNatives == "natives-macos-arm64") {
-        testRuntimeOnly "org.lwjgl:lwjgl-vulkan:${lwjgl_version}:$lwjglNatives"
+    testRuntimeOnly "org.lwjgl:lwjgl:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-openal:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-opengl:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-opengles:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-stb:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-vma:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    if (rootProject.ext.lwjglNatives == "natives-macos" || rootProject.ext.lwjglNatives == "natives-macos-arm64") {
+        testRuntimeOnly "org.lwjgl:lwjgl-vulkan:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
     }
 }
 

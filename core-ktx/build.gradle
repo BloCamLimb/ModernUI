@@ -8,6 +8,30 @@ kotlin.jvmToolchain(25)
 dependencies {
     api project(':modernui-core')
     testImplementation "org.slf4j:slf4j-simple:${slf4j_version}"
+
+    testImplementation "org.lwjgl:lwjgl:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-glfw:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-openal:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-opengl:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-opengles:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-stb:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-vma:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-vulkan:${lwjgl_version}"
+
+    testRuntimeOnly "org.lwjgl:lwjgl:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-openal:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-opengl:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-opengles:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-stb:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-tinyfd:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-vma:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    if (rootProject.ext.lwjglNatives == "natives-macos" || rootProject.ext.lwjglNatives == "natives-macos-arm64") {
+        testRuntimeOnly "org.lwjgl:lwjgl-vulkan:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    }
 }
 
 // for IntelliJ IDEA, you must set up this in IDEA Settings, Kotlin Compiler

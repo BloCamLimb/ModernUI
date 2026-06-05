@@ -19,9 +19,9 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorSpace;
-import icyllis.arc3d.core.ColorSpaceRGB;
 import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ColorTransform;
+import icyllis.arc3d.core.RGBColorSpace;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.IntRange;
@@ -654,7 +654,7 @@ public final class Color {
                     "color space. The supplied color space is " + cs.getModel());
         }
 
-        DoubleUnaryOperator eotf = ((ColorSpaceRGB) cs).getEOTF();
+        DoubleUnaryOperator eotf = ((RGBColorSpace) cs).getEOTF();
         double r = eotf.applyAsDouble(comp1);
         double g = eotf.applyAsDouble(comp2);
         double b = eotf.applyAsDouble(comp3);

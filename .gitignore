@@ -27,6 +27,7 @@ classes
 *.psd
 *.log
 logs
+docs/javadoc
 
 # private assets
 assets

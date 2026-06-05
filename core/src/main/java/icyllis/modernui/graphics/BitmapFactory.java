@@ -20,7 +20,6 @@ package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpace;
-import icyllis.arc3d.core.ColorSpaceRGB;
 import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.modernui.annotation.NonNull;
@@ -140,18 +139,7 @@ public final class BitmapFactory {
          * the decoder will pick either the color space embedded in the image
          * or the color space best suited for the requested image format
          * (for instance {@link ColorSpaces#SRGB sRGB} for
-         * {@link Bitmap.Format#RGBA_8888} format.</p>
-         *
-         * <p class="note">Only {@link ColorSpace#MODEL_RGB} color spaces are
-         * currently supported. An <code>IllegalArgumentException</code> will
-         * be thrown by the decode methods when setting a non-RGB color space
-         * such as {@link ColorSpaces#CIE_LAB Lab}.</p>
-         *
-         * <p class="note">The specified color space's transfer function must be
-         * an {@link ColorSpaceRGB.TransferParameters ICC parametric curve}. An
-         * <code>IllegalArgumentException</code> will be thrown by the decode methods
-         * if calling {@link ColorSpaceRGB#getTransferParameters()} on the
-         * specified color space returns null.</p>
+         * {@link Bitmap.Format#RGBA_8888} format).</p>
          *
          * <p>After decode, the bitmap's color space is stored in
          * {@link #outColorSpace}.</p>
@@ -234,18 +222,6 @@ public final class BitmapFactory {
     }
 
     private static void validate(Options opts) {
-        if (opts == null) return;
-
-        if (opts.inPreferredColorSpace != null) {
-            if (!(opts.inPreferredColorSpace instanceof ColorSpaceRGB rgbColorSpace)) {
-                throw new IllegalArgumentException("The destination color space must use the " +
-                        "RGB color model");
-            }
-            if (rgbColorSpace.getTransferParameters() == null) {
-                throw new IllegalArgumentException("The destination color space must use an " +
-                        "ICC parametric transfer function");
-            }
-        }
     }
 
     /**
@@ -267,10 +243,7 @@ public final class BitmapFactory {
      * Decode a file path into a bitmap.
      * <p>
      * If the file cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
-     * or if the specified color space's transfer function is not an
-     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
-     * {@link IllegalArgumentException}.
+     * on the halfway.
      *
      * @param file the file to be decoded
      * @param opts the decoder options
@@ -326,10 +299,7 @@ public final class BitmapFactory {
      * Decode a file path into a bitmap.
      * <p>
      * If the file cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
-     * or if the specified color space's transfer function is not an
-     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
-     * {@link IllegalArgumentException}.
+     * on the halfway.
      *
      * @param path the file to be decoded
      * @param opts the decoder options
@@ -403,10 +373,7 @@ public final class BitmapFactory {
      * <em>does not</em> closed the given stream after read operation has completed.
      * <p>
      * If the stream cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
-     * or if the specified color space's transfer function is not an
-     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
-     * {@link IllegalArgumentException}.
+     * on the halfway.
      *
      * @param stream the input stream to be decoded
      * @param opts   the decoder options
@@ -474,10 +441,7 @@ public final class BitmapFactory {
      * <em>does not</em> closed the given channel after read operation has completed.
      * <p>
      * If the channel cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
-     * or if the specified color space's transfer function is not an
-     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
-     * {@link IllegalArgumentException}.
+     * on the halfway.
      *
      * @param channel the readable channel to be decoded
      * @param opts    the decoder options
@@ -551,10 +515,7 @@ public final class BitmapFactory {
      * Decode a bitmap from the specified byte array.
      * <p>
      * If the data cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
-     * or if the specified color space's transfer function is not an
-     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
-     * {@link IllegalArgumentException}.
+     * on the halfway.
      *
      * @param data   byte array of compressed image data
      * @param offset offset into image data for where the decoder should begin parsing
@@ -572,7 +533,7 @@ public final class BitmapFactory {
         }
         validate(opts);
         final Bitmap bm = decodeHeapBuffer(data, offset, length,
-                    opts, false);
+                opts, false);
         assert bm != null;
         return bm;
     }
@@ -608,10 +569,7 @@ public final class BitmapFactory {
      * And the buffer's position will remain unchanged after the call.
      * <p>
      * If the buffer cannot be decoded into a bitmap, the method throws {@link IOException}
-     * on the halfway. If the specified color space is not {@link ColorSpace#MODEL_RGB RGB},
-     * or if the specified color space's transfer function is not an
-     * {@link ColorSpaceRGB.TransferParameters ICC parametric curve}, the method throws
-     * {@link IllegalArgumentException}.
+     * on the halfway.
      *
      * @param buffer byte buffer of compressed image data
      * @param opts   the decoder options
@@ -1118,17 +1076,25 @@ public final class BitmapFactory {
             return Bitmap.Format.RGBA_F32;
         if (u16)
             switch (chs) {
-                case 1: return Bitmap.Format.GRAY_16;
-                case 2: return Bitmap.Format.GRAY_ALPHA_1616;
-                case 3: return Bitmap.Format.RGB_161616;
-                case 4: return Bitmap.Format.RGBA_16161616;
+                case 1:
+                    return Bitmap.Format.GRAY_16;
+                case 2:
+                    return Bitmap.Format.GRAY_ALPHA_1616;
+                case 3:
+                    return Bitmap.Format.RGB_161616;
+                case 4:
+                    return Bitmap.Format.RGBA_16161616;
             }
         else
             switch (chs) {
-                case 1: return Bitmap.Format.GRAY_8;
-                case 2: return Bitmap.Format.GRAY_ALPHA_88;
-                case 3: return Bitmap.Format.RGB_888;
-                case 4: return Bitmap.Format.RGBA_8888;
+                case 1:
+                    return Bitmap.Format.GRAY_8;
+                case 2:
+                    return Bitmap.Format.GRAY_ALPHA_88;
+                case 3:
+                    return Bitmap.Format.RGB_888;
+                case 4:
+                    return Bitmap.Format.RGBA_8888;
             }
         throw new IllegalArgumentException();
     }
