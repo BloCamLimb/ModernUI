@@ -1,0 +1,36 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+.vscode
+
+# gradle
+build
+.gradle
+.kotlin
+
+# other
+eclipse
+resource
+run
+classes
+*.psd
+*.log
+logs
+docs/javadoc
+
+# private assets
+assets
+
+# CI
+.cifuzz-corpus
