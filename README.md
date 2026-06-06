@@ -1,5 +1,5 @@
 # ModernUI
-[![MavenCore](https://img.shields.io/badge/dynamic/xml?color=orange&label=Core%20Version&query=%2Fmetadata%2Fversioning%2Flatest&url=https%3A%2F%2Fmaven.izzel.io%2Freleases%2Ficyllis%2Fmodernui%2FModernUI-Core%2Fmaven-metadata.xml)]()
+![Maven Central Version](https://img.shields.io/maven-central/v/dev.icyllis/modernui-core)
 [![Discord](https://img.shields.io/discord/696234198767501363?color=green&label=Discord&style=flat)](https://discord.gg/kmyGKt2)
 ### Overview
 ModernUI is a cross-platform UI runtime focused on high-performance rendering, layout, and text systems for desktop environments.
@@ -44,6 +44,7 @@ Native-like appearance can be provided as an optional layer through styling and 
 (needs a link here when available)
 
 Repository of the documentation: https://github.com/BloCamLimb/ModernUI-Docs
+API References (javadoc): https://docs.icyllis.dev/api/modernui/index.html
 
 ### FAQ
 (needs a link to documentation here)
