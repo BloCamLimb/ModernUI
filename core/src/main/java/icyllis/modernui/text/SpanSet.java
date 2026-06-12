@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * A cached set of spans. Caches the result of {@link Spanned#getSpans(int, int, Class, java.util.List)} and then
@@ -85,9 +86,9 @@ public final class SpanSet<E> extends ArrayList<E> {
         }
         if (length > 0) {
             // These arrays may end up being too large because of the discarded empty spans
-            spanStarts = new int[length];
-            spanEnds = new int[length];
-            spanFlags = new int[length];
+            spanStarts = spanStarts == null ? new int[length] : Arrays.copyOf(spanStarts, length);
+            spanEnds = spanEnds == null ? new int[length] : Arrays.copyOf(spanEnds, length);
+            spanFlags = spanFlags == null ? new int[length] : Arrays.copyOf(spanFlags, length);
         }
     }
 
