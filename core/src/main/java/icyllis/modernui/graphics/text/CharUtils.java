@@ -21,12 +21,28 @@ package icyllis.modernui.graphics.text;
 import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.CharBuffer;
 
 public final class CharUtils {
 
     //TODO may be replaced by a SpinLock
     private static final char[][] sTemp = new char[4][];
+
+    // Java 25
+    private static final MethodHandle GET_CHARS;
+
+    static {
+        MethodHandle getChars = null;
+        try {
+            getChars = MethodHandles.lookup().findVirtual(
+                    CharSequence.class, "getChars", MethodType.methodType(void.class, int.class, int.class, char[].class, int.class));
+        } catch (NoSuchMethodException | IllegalAccessException ignored) {
+        }
+        GET_CHARS = getChars;
+    }
 
     private CharUtils() {
     }
@@ -94,7 +110,13 @@ public final class CharUtils {
      */
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
                                 @NonNull char[] dst, int dstBegin) {
-        if (s instanceof String)
+        if (GET_CHARS != null) // Java 25
+            try {
+                GET_CHARS.invokeExact(s, srcBegin, srcEnd, dst, dstBegin);
+            } catch (Throwable e) {
+                throw new RuntimeException(e);
+            }
+        else if (s instanceof String)
             ((String) s).getChars(srcBegin, srcEnd, dst, dstBegin);
         else if (s instanceof GetChars)
             ((GetChars) s).getChars(srcBegin, srcEnd, dst, dstBegin);
