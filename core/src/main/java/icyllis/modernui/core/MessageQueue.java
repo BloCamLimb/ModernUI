@@ -21,12 +21,12 @@ package icyllis.modernui.core;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.Log;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -42,8 +42,8 @@ public final class MessageQueue {
     private static final Marker MARKER = MarkerFactory.getMarker("MessageQueue");
     private static final boolean DEBUG = false;
 
-    // Null means the main thread, otherwise the looper thread
-    private final Thread mThread;
+    final Thread mThread;
+    private final Poller mPoller;
 
     @GuardedBy("this")
     Message mMessages;
@@ -52,7 +52,7 @@ public final class MessageQueue {
     private IdleHandler[] mPendingIdleHandlers;
     @GuardedBy("this")
     private boolean mQuitting;
-    private volatile boolean mPolling;
+    private final AtomicBoolean mPolling = new AtomicBoolean();
 
     // Indicates whether next() is blocked waiting in pollOnce() with a non-zero timeout.
     @GuardedBy("this")
@@ -64,8 +64,17 @@ public final class MessageQueue {
     @GuardedBy("this")
     private int mNextBarrierToken;
 
-    MessageQueue(Thread thread) {
+    MessageQueue(Thread thread, Poller poller) {
         mThread = thread;
+        mPoller = poller;
+    }
+
+    /**
+     * Returns the {@link Thread} associated with this MessageQueue.
+     */
+    @NonNull
+    public Thread getThread() {
+        return mThread;
     }
 
     /**
@@ -126,7 +135,7 @@ public final class MessageQueue {
     public boolean isPolling() {
         synchronized (this) {
             // If the loop is quitting then it must not be idling.
-            return !mQuitting && mPolling;
+            return !mQuitting && mPolling.getOpaque();
         }
     }
 
@@ -141,38 +150,20 @@ public final class MessageQueue {
         int pendingIdleHandlerCount = -1; // -1 only during first iteration
         int nextPollTimeoutMillis = 0;
         for (;;) {
-            if (mThread == null) {
-                // Handling main thread
-                mPolling = true;
-                if (nextPollTimeoutMillis < 0) {
-                    GLFW.glfwWaitEvents();
-                } else if (nextPollTimeoutMillis == 0) {
-                    GLFW.glfwPollEvents();
-                } else {
-                    // There is a GLFW bug on Windows:
-                    // glfwWaitEventsTimeout doesn't process QS_SENDMESSAGE on Windows, if our
-                    // MessageQueue is not empty, running TinyFileDialogs on a background thread
-                    // will cause glfwWaitEventsTimeout won't process Dialogs input event.
-                    //
-                    // Workaround is running TinyFileDialogs on main thread and cause our UI to
-                    // block, or always use glfwWaitEvents/glfwPollEvents (Minecraft does this).
-                    // If ModernUI runs independently, UI thread is main thread. If ModernUI
-                    // runs with Minecraft, UI thread is another thread. Thus, the conclusion is
-                    // to run TinyFileDialogs on the UI thread.
-                    //
-                    // UI thread never block render thread, so this doesn't matter.
-                    GLFW.glfwWaitEventsTimeout(nextPollTimeoutMillis / 1000D);
-                }
-                mPolling = false;
+            if (nextPollTimeoutMillis != 0) {
+                mPolling.setOpaque(true);
+            }
+            if (mPoller != null) {
+                mPoller.pollOnce(mThread, nextPollTimeoutMillis);
             } else {
-                // Blocking
-                mPolling = true;
                 if (nextPollTimeoutMillis < 0) {
                     LockSupport.park();
                 } else if (nextPollTimeoutMillis > 0) {
                     LockSupport.parkNanos(nextPollTimeoutMillis * 1000000L);
                 }
-                mPolling = false;
+            }
+            if (nextPollTimeoutMillis != 0) {
+                mPolling.setOpaque(false);
             }
 
             synchronized (this) {
@@ -212,6 +203,9 @@ public final class MessageQueue {
                 // Process the quit message now that all pending messages have been handled.
                 if (mQuitting) {
                     mDisposed = true;
+                    if (mPoller != null) {
+                        mPoller.destroy();
+                    }
                     return null;
                 }
 
@@ -276,8 +270,8 @@ public final class MessageQueue {
                 removeAllMessagesLocked();
             }
 
-            if (mThread == null) {
-                GLFW.glfwPostEmptyEvent();
+            if (mPoller != null) {
+                mPoller.wake(mThread);
             } else {
                 LockSupport.unpark(mThread);
             }
@@ -368,8 +362,8 @@ public final class MessageQueue {
             // If the loop is quitting then it is already awake.
             // We can assume mDisposed is false because mQuitting is false.
             if (needWake && !mQuitting) {
-                if (mThread == null) {
-                    GLFW.glfwPostEmptyEvent();
+                if (mPoller != null) {
+                    mPoller.wake(mThread);
                 } else {
                     LockSupport.unpark(mThread);
                 }
@@ -426,8 +420,8 @@ public final class MessageQueue {
 
             // We can assume mDisposed is false because mQuitting is false.
             if (needWake) {
-                if (mThread == null) {
-                    GLFW.glfwPostEmptyEvent();
+                if (mPoller != null) {
+                    mPoller.wake(mThread);
                 } else {
                     LockSupport.unpark(mThread);
                 }

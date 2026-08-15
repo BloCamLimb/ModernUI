@@ -42,7 +42,6 @@ import org.lwjgl.opengl.GLDebugMessageARBCallback;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -80,6 +79,8 @@ public final class Core {
     public static final Marker MARKER = MarkerFactory.getMarker("Core");
 
     private static final Cleaner sCleaner = Cleaner.create();
+
+    private static volatile Looper sMainLooper;
 
     private static volatile Thread sMainThread;
     private static volatile Thread sRenderThread;
@@ -183,6 +184,51 @@ public final class Core {
     }
 
     /**
+     * Prepare the main event loop. This must be called from the entry point of the application.
+     */
+    @ApiStatus.Internal
+    @MainThread
+    public static void prepareMainLooper() {
+        Core.checkMainThread();
+        if (sMainLooper != null) {
+            throw new IllegalStateException();
+        }
+        sMainLooper = Looper.prepare(new Poller() {
+            @Override
+            public void pollOnce(Thread thread, long timeoutMillis) {
+                if (timeoutMillis < 0) {
+                    GLFW.glfwWaitEvents();
+                } else if (timeoutMillis == 0) {
+                    GLFW.glfwPollEvents();
+                } else {
+                    // There is a GLFW bug on Windows:
+                    // glfwWaitEventsTimeout doesn't process QS_SENDMESSAGE on Windows, if our
+                    // MessageQueue is not empty, running TinyFileDialogs on a background thread
+                    // will cause glfwWaitEventsTimeout won't process Dialogs input event.
+                    //
+                    // Workaround is running TinyFileDialogs on main thread and cause our UI to
+                    // block, or always use glfwWaitEvents/glfwPollEvents (Minecraft does this).
+                    // If ModernUI runs independently, UI thread is main thread. If ModernUI
+                    // runs with Minecraft, UI thread is another thread. Thus, the conclusion is
+                    // to run TinyFileDialogs on the UI thread.
+                    //
+                    // UI thread never block render thread, so this doesn't matter.
+                    GLFW.glfwWaitEventsTimeout(timeoutMillis / 1000D);
+                }
+            }
+
+            @Override
+            public void wake(Thread thread) {
+                GLFW.glfwPostEmptyEvent();
+            }
+
+            @Override
+            public void destroy() {
+            }
+        });
+    }
+
+    /**
      * Terminates the GLFW.
      */
     @MainThread
@@ -216,6 +262,13 @@ public final class Core {
      */
     public static boolean isOnMainThread() {
         return Thread.currentThread() == sMainThread;
+    }
+
+    /**
+     * Returns the application's main looper, which lives in the main thread of the application.
+     */
+    public static Looper getMainLooper() {
+        return sMainLooper;
     }
 
     @NonNull
@@ -350,14 +403,14 @@ public final class Core {
         final String glVendor = GL11C.glGetString(GL11C.GL_VENDOR);
         final String glRenderer = GL11C.glGetString(GL11C.GL_RENDERER);
         final String glVersion = GL11C.glGetString(GL11C.GL_VERSION);
-        new Thread(() -> {
+        /*new Thread(() -> {
             String solution = "Please make sure you have up-to-date GPU drivers. " +
                     "Also make sure Java applications run with the discrete GPU if you have multiple GPUs.";
             TinyFileDialogs.tinyfd_messageBox("Failed to launch ModernUI",
                     "GPU: " + glVendor + " " + glRenderer + ", OpenGL: " + glVersion + ". " +
                             "OpenGL 3.3 or OpenGL ES 3.0 is required.\n" + solution,
                     "ok", "error", true);
-        }, "GL-Error-Dialog").start();
+        }, "GL-Error-Dialog").start();*/
     }
 
     @RenderThread
@@ -457,10 +510,10 @@ public final class Core {
         if (sMainHandlerAsync == null) {
             synchronized (Core.class) {
                 if (sMainHandlerAsync == null) {
-                    if (Looper.getMainLooper() == null) {
+                    if (getMainLooper() == null) {
                         throw new IllegalStateException("The main event loop does not exist.");
                     }
-                    sMainHandlerAsync = Handler.createAsync(Looper.getMainLooper());
+                    sMainHandlerAsync = Handler.createAsync(getMainLooper());
                 }
             }
         }
@@ -473,7 +526,7 @@ public final class Core {
      * @param r the runnable
      */
     public static void postOnMainThread(@NonNull Runnable r) {
-        if (Looper.getMainLooper() == null) {
+        if (getMainLooper() == null) {
             sMainCalls.offer(r);
         } else {
             getMainHandlerAsync().post(r);
@@ -525,7 +578,7 @@ public final class Core {
 
                 final Looper looper;
                 if (sUiThread == sMainThread) {
-                    looper = Looper.getMainLooper();
+                    looper = getMainLooper();
                 } else {
                     looper = Looper.prepare();
                 }

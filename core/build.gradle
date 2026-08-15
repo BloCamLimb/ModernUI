@@ -15,6 +15,7 @@ dependencies {
 
     compileOnly "org.lwjgl:lwjgl:${lwjgl_version}"
     compileOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}"
+    compileOnly "org.lwjgl:lwjgl-sdl:${lwjgl_version}"
     compileOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}"
     compileOnly "org.lwjgl:lwjgl-openal:${lwjgl_version}"
     compileOnly "org.lwjgl:lwjgl-opengl:${lwjgl_version}"
@@ -31,6 +32,7 @@ dependencies {
 
     testImplementation "org.lwjgl:lwjgl:${lwjgl_version}"
     testImplementation "org.lwjgl:lwjgl-glfw:${lwjgl_version}"
+    testImplementation "org.lwjgl:lwjgl-sdl:${lwjgl_version}"
     testImplementation "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}"
     testImplementation "org.lwjgl:lwjgl-openal:${lwjgl_version}"
     testImplementation "org.lwjgl:lwjgl-opengl:${lwjgl_version}"
@@ -42,6 +44,7 @@ dependencies {
 
     testRuntimeOnly "org.lwjgl:lwjgl:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
     testRuntimeOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
+    testRuntimeOnly "org.lwjgl:lwjgl-sdl:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
     testRuntimeOnly "org.lwjgl:lwjgl-jemalloc:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
     testRuntimeOnly "org.lwjgl:lwjgl-openal:${lwjgl_version}:${rootProject.ext.lwjglNatives}"
     testRuntimeOnly "org.lwjgl:lwjgl-opengl:${lwjgl_version}:${rootProject.ext.lwjglNatives}"

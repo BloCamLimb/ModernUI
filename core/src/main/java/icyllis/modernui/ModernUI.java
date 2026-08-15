@@ -219,7 +219,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         Core.initialize();
 
         LOGGER.debug(MARKER, "Preparing main thread");
-        Looper.prepareMainLooper();
+        Core.prepareMainLooper();
 
         var loadTypeface = CompletableFuture.runAsync(this::loadDefaultTypeface);
 
@@ -487,7 +487,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         mFragmentController.dispatchDestroy();
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
 
-        Looper.getMainLooper().quitSafely();
+        Core.getMainLooper().quitSafely();
     }
 
     @NonNull

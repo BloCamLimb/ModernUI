@@ -44,25 +44,22 @@ import org.slf4j.MarkerFactory;
 /**
  * Class used to run a message loop for a thread.  Threads by default do
  * not have a message loop associated with them; to create one, call
- * {@link #prepareMainLooper} in the thread that is to run the loop, and then
- * {@link #loop} to have it process messages until the loop is stopped.
+ * {@link #prepare()} in the thread that is to run the loop, and then
+ * {@link #loop()} to have it process messages until the loop is stopped.
  *
  * <p>Most interaction with a message loop is through the
  * {@link Handler} class.
- *
- * <p>Modified from Android Open Source Project.
  */
+// Modified from Android Open Source Project.
 public final class Looper {
 
     private static final Marker MARKER = MarkerFactory.getMarker("Looper");
 
     // sThreadLocal.get() will return null unless you've called prepare().
     static final ThreadLocal<Looper> sThreadLocal = new ThreadLocal<>();
-    private static volatile Looper sMainLooper;
     private static volatile Observer sObserver;
 
     final MessageQueue mQueue;
-    final Thread mThread;
     private boolean mInLoop;
 
     /**
@@ -87,40 +84,28 @@ public final class Looper {
      * This gives you a chance to create handlers that then reference
      * this looper, before actually starting the loop. Be sure to call
      * {@link #loop()} after calling this method, and end it by calling
-     * {@link #quit()}.
+     * {@link #quit()} or {@link #quitSafely()}.
      *
      * @throws RuntimeException initializes twice
      */
     @NonNull
     public static Looper prepare() {
+        return prepare(null);
+    }
+
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @NonNull
+    public static Looper prepare(@Nullable Poller poller) {
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Looper may be created per thread");
         }
-        final Looper looper = new Looper(false);
+        final Looper looper = new Looper(poller);
         sThreadLocal.set(looper);
         return looper;
-    }
-
-    /**
-     * Prepare the main event loop. This must be called from the entry point of the application.
-     */
-    @ApiStatus.Internal
-    @MainThread
-    public static void prepareMainLooper() {
-        Core.checkMainThread();
-        if (sMainLooper != null) {
-            throw new IllegalStateException();
-        }
-        final Looper me = new Looper(true);
-        sThreadLocal.set(me);
-        sMainLooper = me;
-    }
-
-    /**
-     * Returns the application's main looper, which lives in the main thread of the application.
-     */
-    public static Looper getMainLooper() {
-        return sMainLooper;
     }
 
     /**
@@ -237,16 +222,15 @@ public final class Looper {
         return sThreadLocal.get().mQueue;
     }
 
-    private Looper(boolean main) {
-        mThread = Thread.currentThread();
-        mQueue = new MessageQueue(main ? null : mThread);
+    private Looper(@Nullable Poller poller) {
+        mQueue = new MessageQueue(Thread.currentThread(), poller);
     }
 
     /**
      * Returns true if the current thread is this looper's thread.
      */
     public boolean isCurrentThread() {
-        return Thread.currentThread() == mThread;
+        return Thread.currentThread() == mQueue.mThread;
     }
 
     /**
@@ -300,7 +284,7 @@ public final class Looper {
      */
     @NonNull
     public Thread getThread() {
-        return mThread;
+        return mQueue.mThread;
     }
 
     /**
@@ -316,7 +300,8 @@ public final class Looper {
     @NonNull
     @Override
     public String toString() {
-        return "Looper (" + mThread.getName() + ", tid " + mThread.getId()
+        Thread thread = getThread();
+        return "Looper (" + thread.getName() + ", tid " + thread.getId()
                 + ") {" + Integer.toHexString(System.identityHashCode(this)) + "}";
     }
 

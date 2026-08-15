@@ -121,7 +121,8 @@ public class Handler {
      *                 each {@link Message} that is sent to it or {@link Runnable} that is posted to it.
      */
     private Handler(Looper looper, Callback callback, boolean async) {
-        mQueue = Objects.requireNonNull(looper, "No Looper").mQueue;
+        Objects.requireNonNull(looper, "No Looper");
+        mQueue = looper.mQueue;
         mCallback = callback;
         mAsynchronous = async;
     }
@@ -576,6 +577,14 @@ public class Handler {
     }
 
     /**
+     * Returns the {@link Thread} associated with this Handler's {@link MessageQueue}.
+     */
+    @NonNull
+    public final Thread getThread() {
+        return mQueue.mThread;
+    }
+
+    /**
      * Returns the {@link MessageQueue} object associated with this Handler.
      */
     @NonNull
@@ -587,8 +596,7 @@ public class Handler {
      * Returns whether this handler was queued from the current thread.
      */
     public final boolean isCurrentThread() {
-        Looper looper = Looper.myLooper();
-        return looper != null && looper.mQueue == mQueue;
+        return Thread.currentThread() == mQueue.mThread;
     }
 
     @Override
