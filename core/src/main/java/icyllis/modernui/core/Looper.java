@@ -116,12 +116,17 @@ public final class Looper {
     }
 
     /**
-     * Poll and deliver single message, return true if the outer loop should continue.
+     * Poll and deliver single message, return true if the outer loop should continue in blocking mode.
+     *
+     * @hide
+     * @hidden
      */
-    private static boolean poll(@NonNull final Looper me) {
-        Message msg = me.mQueue.next(); // might block
+    @ApiStatus.Internal
+    public static boolean poll(@NonNull final Looper me, boolean block) {
+        Message msg = me.mQueue.next(block); // might block
         if (msg == null) {
-            // No message indicates that the message queue is quitting.
+            // In blocking mode, no message indicates that the message queue is quitting.
+            // Otherwise, it indicates that there are no messages at this moment.
             return false;
         }
 
@@ -185,7 +190,7 @@ public final class Looper {
         me.mInLoop = true;
         me.mSlowDeliveryDetected = false;
         //noinspection StatementWithEmptyBody
-        while (poll(me))
+        while (poll(me, true))
             ;
     }
 

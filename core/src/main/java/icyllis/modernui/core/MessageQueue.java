@@ -140,7 +140,7 @@ public final class MessageQueue {
     }
 
     @Nullable
-    Message next() {
+    Message next(boolean block) {
         // Return here if the message loop has already quit and been disposed.
         // This can happen if the application tries to restart a looper after quit
         // which is not supported.
@@ -154,7 +154,7 @@ public final class MessageQueue {
                 mPolling.setOpaque(true);
             }
             if (mPoller != null) {
-                mPoller.pollOnce(mThread, nextPollTimeoutMillis);
+                mPoller.poll(mThread, nextPollTimeoutMillis);
             } else {
                 if (nextPollTimeoutMillis < 0) {
                     LockSupport.park();
@@ -204,8 +204,13 @@ public final class MessageQueue {
                 if (mQuitting) {
                     mDisposed = true;
                     if (mPoller != null) {
-                        mPoller.destroy();
+                        mPoller.destroy(mThread);
                     }
+                    return null;
+                }
+
+                // Early return in non-blocking mode.
+                if (!block) {
                     return null;
                 }
 

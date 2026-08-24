@@ -1,6 +1,6 @@
 /*
  * ModernUI.
- * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,21 +18,17 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.NonNull;
-import org.jetbrains.annotations.ApiStatus;
-
 /**
  * A {@link Thread} that has a {@link Looper}.
  * The {@link Looper} can then be used to create {@link Handler}s.
  * <p>
  * Note that just like with a regular {@link Thread}, {@link #start()} must still be called.
  */
-public class HandlerThread extends Thread {
+public class LooperThread extends Thread {
 
     private Looper mLooper;
-    private Handler mHandler;
 
-    public HandlerThread(String name) {
+    public LooperThread(String name) {
         super(name);
     }
 
@@ -88,18 +84,6 @@ public class HandlerThread extends Thread {
         }
 
         return mLooper;
-    }
-
-    /**
-     * @return a shared {@link Handler} associated with this thread
-     */
-    @ApiStatus.Internal
-    @NonNull
-    public Handler getThreadHandler() {
-        if (mHandler == null) {
-            mHandler = new Handler(getLooper());
-        }
-        return mHandler;
     }
 
     /**

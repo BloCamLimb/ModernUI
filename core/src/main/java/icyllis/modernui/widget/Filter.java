@@ -20,8 +20,8 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.HandlerThread;
 import icyllis.modernui.core.Looper;
+import icyllis.modernui.core.LooperThread;
 import icyllis.modernui.core.Message;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
@@ -51,7 +51,7 @@ public abstract class Filter {
     private static final int FINISH_TOKEN = 0xDEADBEEF;
 
     private Handler mThreadHandler;
-    private HandlerThread mHandlerThread;
+    private LooperThread mLooperThread;
     private final Handler mResultHandler;
 
     private Delayer mDelayer;
@@ -107,9 +107,9 @@ public abstract class Filter {
     public final void filter(CharSequence constraint, FilterListener listener) {
         synchronized (mLock) {
             if (mThreadHandler == null) {
-                mHandlerThread = new HandlerThread(THREAD_NAME);
-                mHandlerThread.start();
-                mThreadHandler = new RequestHandler(mHandlerThread.getLooper());
+                mLooperThread = new LooperThread(THREAD_NAME);
+                mLooperThread.start();
+                mThreadHandler = new RequestHandler(mLooperThread.getLooper());
             }
 
             final long delay = (mDelayer == null) ? 0 : mDelayer.getPostingDelay(constraint);
@@ -256,9 +256,9 @@ public abstract class Filter {
                 case FINISH_TOKEN:
                     synchronized (mLock) {
                         if (mThreadHandler != null) {
-                            mHandlerThread.quit();
+                            mLooperThread.quit();
                             mThreadHandler = null;
-                            mHandlerThread = null;
+                            mLooperThread = null;
                         }
                     }
                     break;

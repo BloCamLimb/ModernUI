@@ -29,9 +29,9 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public interface Poller {
 
-    void pollOnce(Thread thread, long timeoutMillis);
+    void poll(Thread thread, long timeoutMillis);
 
     void wake(Thread thread);
 
-    void destroy();
+    void destroy(Thread thread);
 }

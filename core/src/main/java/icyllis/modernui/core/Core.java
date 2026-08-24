@@ -195,7 +195,7 @@ public final class Core {
         }
         sMainLooper = Looper.prepare(new Poller() {
             @Override
-            public void pollOnce(Thread thread, long timeoutMillis) {
+            public void poll(Thread thread, long timeoutMillis) {
                 if (timeoutMillis < 0) {
                     GLFW.glfwWaitEvents();
                 } else if (timeoutMillis == 0) {
@@ -223,7 +223,7 @@ public final class Core {
             }
 
             @Override
-            public void destroy() {
+            public void destroy(Thread thread) {
             }
         });
     }
