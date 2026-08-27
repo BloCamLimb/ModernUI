@@ -24,7 +24,6 @@ import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.graphics.Matrix;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
-import org.lwjgl.glfw.GLFW;
 
 /**
  * Object that indicates movement events (mouse, touchpad etc.).
@@ -1056,20 +1055,10 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
-     * Returns the pressed state of the CONTROL key.
+     * Returns the pressed state of the CTRL key.
      *
-     * @return true if the CONTROL key is pressed, false otherwise
+     * @return true if the CTRL key is pressed, false otherwise
      */
-    public boolean isControlPressed() {
-        return (mModifiers & KeyEvent.META_CONTROL_ON) != 0;
-    }
-
-    /**
-     * This is same as {@link #isShortcutPressed()}.
-     *
-     * @deprecated use {@link #isShortcutPressed()} to avoid confusion
-     */
-    @Deprecated
     public boolean isCtrlPressed() {
         return (mModifiers & KeyEvent.META_CTRL_ON) != 0;
     }
@@ -1084,17 +1073,17 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
-     * Returns the pressed state of the SUPER key (a.k.a. META or WINDOWS or COMMAND key).
+     * Returns the pressed state of the META key (a.k.a. SUPER or GUI or WINDOWS or COMMAND key).
      *
-     * @return true if the SUPER key is pressed, false otherwise
+     * @return true if the META key is pressed, false otherwise
      */
-    public boolean isSuperPressed() {
-        return (mModifiers & KeyEvent.META_SUPER_ON) != 0;
+    public boolean isMetaPressed() {
+        return (mModifiers & KeyEvent.META_META_ON) != 0;
     }
 
     /**
      * If it's running on macOS, returns the pressed state of the COMMAND key.
-     * Otherwise, returns the pressed state of the CONTROL key.
+     * Otherwise, returns the pressed state of the CTRL key.
      *
      * @return true if the shortcut key is pressed, false otherwise
      */
@@ -1108,7 +1097,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the CAPS LOCK key is on, false otherwise
      */
     public boolean isCapsLockOn() {
-        return (mModifiers & GLFW.GLFW_MOD_CAPS_LOCK) != 0;
+        return (mModifiers & KeyEvent.META_CAPS_LOCK_ON) != 0;
     }
 
     /**
@@ -1117,7 +1106,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the NUM LOCK key is on, false otherwise
      */
     public boolean isNumLockOn() {
-        return (mModifiers & GLFW.GLFW_MOD_NUM_LOCK) != 0;
+        return (mModifiers & KeyEvent.META_NUM_LOCK_ON) != 0;
     }
 
     @NonNull

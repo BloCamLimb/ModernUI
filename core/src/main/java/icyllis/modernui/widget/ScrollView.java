@@ -484,14 +484,14 @@ public class ScrollView extends FrameLayout {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             switch (event.getKeyCode()) {
                 case KeyEvent.KEY_UP:
-                    if (KeyEvent.IS_MACOS ? !event.isSuperPressed() : !event.isAltPressed()) {
+                    if (KeyEvent.IS_MACOS ? !event.isMetaPressed() : !event.isAltPressed()) {
                         handled = arrowScroll(View.FOCUS_UP);
                     } else {
                         handled = fullScroll(View.FOCUS_UP);
                     }
                     break;
                 case KeyEvent.KEY_DOWN:
-                    if (KeyEvent.IS_MACOS ? !event.isSuperPressed() : !event.isAltPressed()) {
+                    if (KeyEvent.IS_MACOS ? !event.isMetaPressed() : !event.isAltPressed()) {
                         handled = arrowScroll(View.FOCUS_DOWN);
                     } else {
                         handled = fullScroll(View.FOCUS_DOWN);

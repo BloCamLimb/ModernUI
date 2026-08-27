@@ -68,8 +68,8 @@ public interface Menu {
     /**
      * A mask of all supported modifiers for MenuItem's keyboard shortcuts
      */
-    int SUPPORTED_MODIFIERS_MASK = KeyEvent.META_CONTROL_ON | KeyEvent.META_ALT_ON |
-            KeyEvent.META_SHIFT_ON | KeyEvent.META_SUPER_ON;
+    int SUPPORTED_MODIFIERS_MASK = KeyEvent.META_CTRL_ON | KeyEvent.META_ALT_ON |
+            KeyEvent.META_SHIFT_ON | KeyEvent.META_META_ON;
 
     /**
      * Value to use for group and item identifier integers when you don't care

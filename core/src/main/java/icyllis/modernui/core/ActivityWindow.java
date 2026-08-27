@@ -200,9 +200,28 @@ public final class ActivityWindow extends Window {
 
     private void onKeyCallback(long w, int key, int scancode, int action, int mods) {
         if (mRoot != null) {
+            int metaState = 0;
+            if ((mods & GLFW_MOD_SHIFT) != 0) {
+                metaState |= KeyEvent.META_SHIFT_ON | KeyEvent.META_LEFT_SHIFT_ON | KeyEvent.META_RIGHT_SHIFT_ON;
+            }
+            if ((mods & GLFW_MOD_CONTROL) != 0) {
+                metaState |= KeyEvent.META_CTRL_ON | KeyEvent.META_LEFT_CTRL_ON | KeyEvent.META_RIGHT_CTRL_ON;
+            }
+            if ((mods & GLFW_MOD_ALT) != 0) {
+                metaState |= KeyEvent.META_ALT_ON | KeyEvent.META_LEFT_ALT_ON | KeyEvent.META_RIGHT_ALT_ON;
+            }
+            if ((mods & GLFW_MOD_SUPER) != 0) {
+                metaState |= KeyEvent.META_META_ON | KeyEvent.META_LEFT_META_ON | KeyEvent.META_RIGHT_META_ON;;
+            }
+            if ((mods & GLFW_MOD_CAPS_LOCK) != 0) {
+                metaState |= KeyEvent.META_CAPS_LOCK_ON;
+            }
+            if ((mods & GLFW_MOD_NUM_LOCK) != 0) {
+                metaState |= KeyEvent.META_NUM_LOCK_ON;
+            }
             KeyEvent keyEvent = KeyEvent.obtain(Core.timeNanos(),
                     action == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN,
-                    key, 0, mods, scancode, 0);
+                    key, metaState, 0, scancode, action == GLFW_REPEAT ? KeyEvent.FLAG_REPEAT : 0, 0);
             mRoot.enqueueInputEvent(keyEvent);
         }
     }
@@ -304,17 +323,23 @@ public final class ActivityWindow extends Window {
             cursorY = y.get(0);
         }
         int mods = 0;
-        if (glfwGetKey(w, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
-                glfwGetKey(w, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
-            mods |= KeyEvent.META_SHIFT_ON;
+        if (glfwGetKey(w, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+            mods |= KeyEvent.META_SHIFT_ON | KeyEvent.META_LEFT_SHIFT_ON;
         }
-        if (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-                glfwGetKey(w, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
-            mods |= KeyEvent.META_CONTROL_ON;
+        if (glfwGetKey(w, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+            mods |= KeyEvent.META_SHIFT_ON | KeyEvent.META_RIGHT_SHIFT_ON;
         }
-        if (glfwGetKey(w, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS ||
-                glfwGetKey(w, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS) {
-            mods |= KeyEvent.META_SUPER_ON;
+        if (glfwGetKey(w, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+            mods |= KeyEvent.META_CTRL_ON | KeyEvent.META_LEFT_CTRL_ON;
+        }
+        if (glfwGetKey(w, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS) {
+            mods |= KeyEvent.META_CTRL_ON | KeyEvent.META_RIGHT_CTRL_ON;
+        }
+        if (glfwGetKey(w, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS) {
+            mods |= KeyEvent.META_META_ON | KeyEvent.META_LEFT_META_ON;
+        }
+        if (glfwGetKey(w, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS) {
+            mods |= KeyEvent.META_META_ON | KeyEvent.META_RIGHT_META_ON;
         }
         final long now = Core.timeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);

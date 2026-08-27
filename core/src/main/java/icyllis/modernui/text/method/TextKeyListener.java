@@ -237,14 +237,14 @@ public final class TextKeyListener {
 
         if (KeyEvent.IS_MACOS) {
             if (event.isAltPressed()) {
-                if (isShiftActive || event.isSuperPressed()) {
+                if (isShiftActive || event.isMetaPressed()) {
                     // Option+Cmd, Option+Shift, Option+Shift+Cmd should not delete any characters.
                     return false;
                 }
                 return deleteUntilWordBoundary(view, content, isForwardDelete);
             }
         } else {
-            if (event.isControlPressed()) {
+            if (event.isCtrlPressed()) {
                 if (event.isAltPressed() || isShiftActive) {
                     // Ctrl+Alt, Ctrl+Shift, Ctrl+Alt+Shift should not delete any characters.
                     return false;
@@ -254,7 +254,7 @@ public final class TextKeyListener {
         }
 
         // (Cmd/Alt)+Backspace or (Cmd/Alt)+ForwardDelete deletes the current line, if possible.
-        if ((KeyEvent.IS_MACOS ? event.isSuperPressed() : event.isAltPressed()) && deleteLine(view, content)) {
+        if ((KeyEvent.IS_MACOS ? event.isMetaPressed() : event.isAltPressed()) && deleteLine(view, content)) {
             return true;
         }
 

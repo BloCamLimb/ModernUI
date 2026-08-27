@@ -296,15 +296,15 @@ public final class MenuItemImpl implements MenuItem {
         final int modifiers =
                 mMenu.isQwertyMode() ? mShortcutAlphabeticModifiers : mShortcutNumericModifiers;
         if (KeyEvent.IS_MACOS) {
-            appendModifier(sb, modifiers, KeyEvent.META_CONTROL_ON, "⌃");
+            appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "⌃");
             appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "⌥");
             appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "⇧");
-            appendModifier(sb, modifiers, KeyEvent.META_SUPER_ON, "⌘");
+            appendModifier(sb, modifiers, KeyEvent.META_META_ON, "⌘");
         } else {
-            appendModifier(sb, modifiers, KeyEvent.META_CONTROL_ON, "Ctrl+");
+            appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "Ctrl+");
             appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "Alt+");
             appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "Shift+");
-            appendModifier(sb, modifiers, KeyEvent.META_SUPER_ON, "Win+");
+            appendModifier(sb, modifiers, KeyEvent.META_META_ON, "Win+");
         }
 
         sb.append(Character.toUpperCase(shortcut));
