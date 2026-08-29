@@ -27,6 +27,10 @@ package icyllis.modernui.widget;
  */
 public interface ListAdapter extends Adapter {
 
+    int ALL = 0;
+    int NONE = 1;
+    int PARTIAL = 2;
+
     /**
      * Indicates whether all the items in this adapter are enabled. If the
      * value returned by this method changes over time, there is no guarantee

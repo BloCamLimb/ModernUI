@@ -4799,7 +4799,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         // should be restricting the focus to remain within this view, thus we'll also receive
         // the key up event, occasionally key up events will get dropped and we don't want to
         // prevent the user from traversing out of this on the next key down.
-        if (event.getRepeatCount() == 0 && !KeyEvent.isModifierKey(keyCode)) {
+        if (!event.isRepeat() && !KeyEvent.isModifierKey(keyCode)) {
             mPreventDefaultMovement = false;
         }
 
@@ -4842,7 +4842,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         if (mMovement != null && mLayout != null) {
             if (mSpannable != null && mMovement.onKeyDown(this, mSpannable, keyCode, event)) {
-                if (event.getRepeatCount() == 0 && !KeyEvent.isModifierKey(keyCode)) {
+                if (!event.isRepeat() && !KeyEvent.isModifierKey(keyCode)) {
                     mPreventDefaultMovement = true;
                 }
                 return true;

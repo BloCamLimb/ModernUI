@@ -66,6 +66,8 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     private int mPointerIconType = PointerIcon.TYPE_DEFAULT;
 
+    final Rect mWinFrame = new Rect();
+
     protected View mView;
     private int mWidth;
     private int mHeight;
@@ -81,6 +83,8 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
+    public final WindowManager.LayoutParams mWindowAttributes = new WindowManager.LayoutParams();
+
     protected ViewRoot() {
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
         mWidth = -1;
@@ -88,40 +92,6 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         mDirty = new Rect();
         mChoreographer = Choreographer.getInstance();
         mAttachInfo = new AttachInfo(this, mHandler, this);
-
-        try {
-            Class.forName("icyllis.modernui.text.BoringLayout");
-            Class.forName("icyllis.modernui.graphics.text.CharArrayIterator");
-            Class.forName("icyllis.modernui.graphics.text.CharSequenceIterator");
-            Class.forName("icyllis.modernui.text.Directions");
-            Class.forName("icyllis.modernui.text.DynamicLayout");
-            Class.forName("icyllis.modernui.graphics.text.GraphemeBreak");
-            Class.forName("icyllis.modernui.text.Layout");
-            Class.forName("icyllis.modernui.graphics.text.LayoutCache");
-            Class.forName("icyllis.modernui.graphics.text.LayoutPiece");
-            Class.forName("icyllis.modernui.graphics.text.LineBreaker");
-            Class.forName("icyllis.modernui.text.MeasuredParagraph");
-            Class.forName("icyllis.modernui.graphics.text.MeasuredText");
-            Class.forName("icyllis.modernui.text.PrecomputedText");
-            Class.forName("icyllis.modernui.text.Selection");
-            Class.forName("icyllis.modernui.text.SpannableString");
-            Class.forName("icyllis.modernui.text.SpannableStringBuilder");
-            Class.forName("icyllis.modernui.text.SpannableStringInternal");
-            Class.forName("icyllis.modernui.text.StaticLayout");
-            Class.forName("icyllis.modernui.text.TabStops");
-            Class.forName("icyllis.modernui.text.TextDirectionHeuristics");
-            Class.forName("icyllis.modernui.text.TextLine");
-            Class.forName("icyllis.modernui.text.TextPaint");
-            Class.forName("icyllis.modernui.text.TextUtils");
-            Class.forName("icyllis.modernui.text.Typeface");
-
-            Class.forName("icyllis.modernui.widget.Editor");
-            Class.forName("icyllis.modernui.widget.LinearLayout");
-            Class.forName("icyllis.modernui.widget.ScrollView");
-            Class.forName("icyllis.modernui.widget.TextView");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     protected boolean handleMessage(@NonNull Message msg) {
@@ -500,7 +470,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                         // If a modifier is held, try to interpret the key as a shortcut.
                         if (event.getAction() == KeyEvent.ACTION_DOWN
                                 && !event.hasNoModifiers()
-                                && event.getRepeatCount() == 0
+                                && !event.isRepeat()
                                 && !KeyEvent.isModifierKey(event.getKeyCode())
                                 && groupNavigationDirection == 0) {
                             if (mView.dispatchKeyShortcutEvent(event)) {
@@ -600,7 +570,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                                 v, mTempRect);
                     }
                     if (v.requestFocus(direction, mTempRect)) {
-                        boolean isFastScrolling = event.getRepeatCount() > 0;
+                        boolean isFastScrolling = event.isRepeat();
                         /*playSoundEffect(
                                 SoundEffectConstants.getConstantForFocusDirection(direction,
                                         isFastScrolling));*/

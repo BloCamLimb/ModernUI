@@ -1894,7 +1894,7 @@ public class ListView extends AbsListView {
         if ((keyCode == KeyEvent.KEY_ENTER || keyCode == KeyEvent.KEY_KP_ENTER)
                 && event.hasNoModifiers() && action != KeyEvent.ACTION_UP) {
             handled = resurrectSelectionIfNeeded();
-            if (!handled && event.getRepeatCount() == 0 && getChildCount() > 0) {
+            if (!handled && !event.isRepeat() && getChildCount() > 0) {
                 keyPressed();
                 handled = true;
             }

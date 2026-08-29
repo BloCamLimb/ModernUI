@@ -12789,7 +12789,7 @@ public class View implements Drawable.Callback {
             if ((mViewFlags & ENABLED_MASK) == DISABLED) {
                 return true;
             }
-            if (event.getRepeatCount() == 0) {
+            if (!event.isRepeat()) {
                 // Long clickable items don't necessarily have to be clickable.
                 final boolean clickable = (mViewFlags & CLICKABLE) == CLICKABLE
                         || (mViewFlags & LONG_CLICKABLE) == LONG_CLICKABLE;
@@ -13222,7 +13222,7 @@ public class View implements Drawable.Callback {
     void handleTooltipKey(KeyEvent event) {
         switch (event.getAction()) {
             case KeyEvent.ACTION_DOWN -> {
-                if (event.getRepeatCount() == 0) {
+                if (!event.isRepeat()) {
                     hideTooltip();
                 }
             }

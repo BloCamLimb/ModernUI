@@ -1891,7 +1891,7 @@ public class PopupWindow {
                     return super.dispatchKeyEvent(event);
                 }
 
-                if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN && !event.isRepeat()) {
                     final KeyEvent.DispatcherState state = getKeyDispatcherState();
                     state.startTracking(event, this);
                     return true;
