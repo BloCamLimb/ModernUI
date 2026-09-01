@@ -30,16 +30,15 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
-import icyllis.modernui.resources.IOUtil;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.util.Unchecked;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.function.BiFunction;
 
@@ -143,22 +142,7 @@ public class Image implements AutoCloseable {
         if (!Core.getUiHandlerAsync().post(future)) {
             return null;
         }
-        boolean interrupted = false;
-        try {
-            for (;;) {
-                try {
-                    return future.get();
-                } catch (ExecutionException e) {
-                    var cause = e.getCause();
-                    throw IOUtil.sneakyThrow(cause != null ? cause : e);
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                }
-            }
-        } finally {
-            if (interrupted)
-                Thread.currentThread().interrupt();
-        }
+        return Unchecked.getUninterruptibly(future);
     }
 
     /**
