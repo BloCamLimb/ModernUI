@@ -16,14 +16,17 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.view;
 
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Core;
+import icyllis.modernui.core.Handler;
+import icyllis.modernui.core.Looper;
+import icyllis.modernui.core.Message;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;

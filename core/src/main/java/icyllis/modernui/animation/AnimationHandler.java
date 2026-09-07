@@ -20,7 +20,7 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.core.Choreographer;
+import icyllis.modernui.view.Choreographer;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 

@@ -1,6 +1,6 @@
 /*
  * ModernUI.
- * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
+ * Copyright (C) 2026 BloCamLimb. All rights reserved.
  *
  * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,8 +16,16 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.renderer;
 
-//TODO
-public class VirtualWindowViewRoot {
+import org.jetbrains.annotations.ApiStatus;
+
+/**
+ * Represents the surface and its swap chain of a platform window,
+ * depending on the video driver and current graphics API.
+ *
+ * @hidden
+ */
+@ApiStatus.Internal
+public abstract class WindowSurface {
 }

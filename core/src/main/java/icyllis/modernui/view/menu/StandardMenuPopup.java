@@ -40,10 +40,13 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
 import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.InternalConfig;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -150,7 +153,9 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
         mPopupStyleAttr = popupStyleAttr;
         mPopupStyleRes = popupStyleRes;
 
-        mPopupMaxWidth = anchorView.getRootView().getMeasuredWidth() / 2;
+        final Resources res = context.getResources();
+        mPopupMaxWidth = Math.max(res.getDisplayMetrics().widthPixels / 2,
+                (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, InternalConfig.prefDialogWidth, res.getDisplayMetrics()));
 
         mAnchorView = anchorView;
 

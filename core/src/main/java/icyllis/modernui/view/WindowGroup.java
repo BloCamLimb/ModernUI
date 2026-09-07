@@ -29,6 +29,7 @@ import org.jetbrains.annotations.ApiStatus;
  *
  * @hidden
  */
+@Deprecated
 //TODO this class needs to be refactored on top of ViewRoot
 @ApiStatus.Internal
 public final class WindowGroup extends ViewGroup implements WindowManager {

@@ -19,7 +19,6 @@
 package icyllis.modernui;
 
 import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.RefCnt;
@@ -52,7 +51,6 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.LightingInfo;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.lifecycle.Lifecycle;
@@ -622,7 +620,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         private final Rect mGlobalRect = new Rect();
 
-        Surface mSurface;
         Recording mLastFrameTask;
 
         @Override
@@ -656,38 +653,21 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         @Override
         public void setFrame(int width, int height) {
             super.setFrame(width, height);
-            if (mSurface == null ||
-                    mSurface.getWidth() != width ||
-                    mSurface.getHeight() != height) {
-                if (width > 0 && height > 0) {
-                    mSurface = RefCnt.move(mSurface, GraniteSurface.makeRenderTarget(
-                            Core.requireUiRecordingContext(),
-                            ImageInfo.make(width, height,
-                                    ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL,
-                                    ColorSpaces.SRGB),
-                            false,
-                            Engine.SurfaceOrigin.kUpperLeft,
-                            null
-                    ));
+            //TODO make these configurable somewhere
+            final DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+            final float zRatio = Math.min(width, height)
+                    / (450f * displayMetrics.density);
+            final float zWeightedAdjustment = (zRatio + 2) / 3f;
+            final float lightZ = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DP, 500, displayMetrics
+            ) * zWeightedAdjustment;
+            final float lightRadius = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DP, 800, displayMetrics
+            );
 
-                    //TODO make these configurable somewhere
-                    final DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-                    final float zRatio = Math.min(width, height)
-                            / (450f * displayMetrics.density);
-                    final float zWeightedAdjustment = (zRatio + 2) / 3f;
-                    final float lightZ = TypedValue.applyDimension(
-                            TypedValue.COMPLEX_UNIT_DP, 500, displayMetrics
-                    ) * zWeightedAdjustment;
-                    final float lightRadius = TypedValue.applyDimension(
-                            TypedValue.COMPLEX_UNIT_DP, 800, displayMetrics
-                    );
-
-                    LightingInfo.setLightGeometry(width / 2f, 0, lightZ, lightRadius);
-                }
-            }
+            LightingInfo.setLightGeometry(width / 2f, 0, lightZ, lightRadius);
         }
 
-        @Override
         protected Canvas beginDrawLocked(int width, int height) {
             if (mSurface != null && width > 0 && height > 0) {
                 return new ArcCanvas(mSurface.getCanvas());
@@ -695,7 +675,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             return null;
         }
 
-        @Override
         protected void endDrawLocked(@NonNull Canvas canvas) {
             Recording recording = Core.requireUiRecordingContext().snap();
             synchronized (mRenderLock) {
@@ -743,15 +722,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             } else {
                 LOGGER.error("Failed to add draw commands");
             }
-        }
-
-        @Override
-        public void playSoundEffect(int effectId) {
-        }
-
-        @Override
-        public boolean performHapticFeedback(int effectId, boolean always) {
-            return false;
         }
 
         @Override

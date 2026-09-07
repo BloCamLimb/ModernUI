@@ -37,7 +37,7 @@ import java.util.Arrays;
  * states that a view must either be in or not be in and the color specifies the color associated
  * with that spec.
  */
-// low-priority: this class should be moved to resources package in 4.0
+// low-priority: this class should be moved to graphics package in 4.0
 public class ColorStateList {
 
     private static final long DEFAULT_COLOR = Color.RED_SRGB;

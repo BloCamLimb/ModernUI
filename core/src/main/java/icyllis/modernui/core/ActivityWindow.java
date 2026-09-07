@@ -35,6 +35,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 /**
  * The activity window is the default implementation for almost everything.
  */
+@Deprecated
 public final class ActivityWindow extends Window {
 
     private static volatile ActivityWindow sMainWindow;

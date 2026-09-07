@@ -18,10 +18,18 @@
 
 package icyllis.modernui.view;
 
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.ColorSpaces;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.pipeline.ArcCanvas;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.View.FocusDirection;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
@@ -32,10 +40,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BooleanSupplier;
 
 /**
- * The top of a view hierarchy, implementing the needed protocol between View and the Window.
+ * The top of a view hierarchy, implementing the needed protocol between View
+ * and the Stage.  This is for the most part an internal implementation
+ * detail of {@link WindowStage}.
+ *
+ * @hidden
  */
 @ApiStatus.Internal
-public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
+public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     protected static final Marker MARKER = MarkerFactory.getMarker("ViewRoot");
 
@@ -47,15 +59,24 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     private final ConcurrentLinkedQueue<InputEvent> mInputEvents = new ConcurrentLinkedQueue<>();
 
-    protected boolean mTraversalScheduled;
+    public boolean mTraversalScheduled;
     int mTraversalBarrier;
-    private boolean mWillDrawSoon;
-    private boolean mIsDrawing;
-    private boolean mLayoutRequested;
+    boolean mWillDrawSoon;
+    /** Set to true while in performTraversals for detecting when die(true) is called from internal
+     * callbacks such as onMeasure, onPreDraw, onDraw and deferring doDie() until later. */
+    boolean mIsInTraversal;
+    boolean mLayoutRequested;
+    boolean mFirst;
+
+    boolean mReportNextDraw;
+
     boolean mFullRedrawNeeded;
+    boolean mForceNextWindowRelayout;
+
+    boolean mIsDrawing;
 
     private boolean mInLayout = false;
-    ArrayList<View> mLayoutRequesters = new ArrayList<>();
+    final ArrayList<View> mLayoutRequesters = new ArrayList<>();
     boolean mHandlingLayoutInLayoutRequest = false;
 
     private boolean hasDragOperation;
@@ -66,12 +87,29 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     private int mPointerIconType = PointerIcon.TYPE_DEFAULT;
 
+    boolean mAdded;
+
+    // window frame in screen
     final Rect mWinFrame = new Rect();
+    private final Rect mLastLayoutFrame = new Rect();
+
+    private int mMeasuredWidth;
+    private int mMeasuredHeight;
 
     protected View mView;
     private int mWidth;
     private int mHeight;
     private Rect mDirty;
+
+    int mViewVisibility;
+    boolean mAppVisible = true;
+    // Used for tracking app visibility updates separately in case we get double change. This will
+    // make sure that we always call relayout for the corresponding window.
+    private boolean mAppVisibilityChanged;
+
+    // Set to true if the owner of this window is in the stopped state,
+    // so the window should no longer be active.
+    boolean mStopped = false;
 
     public final Handler mHandler;
     public final Choreographer mChoreographer;
@@ -83,7 +121,13 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
+    boolean mWindowAttributesChanged = false;
     public final WindowManager.LayoutParams mWindowAttributes = new WindowManager.LayoutParams();
+
+    public WindowStage mStage;
+
+    public Surface mSurface;
+    public boolean mNeedsRendererSetup;
 
     protected ViewRoot() {
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
@@ -187,6 +231,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             mTraversalScheduled = true;
             mTraversalBarrier = mHandler.getQueue().postSyncBarrier();
             mChoreographer.postCallback(Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
+            mStage.scheduleComposition();
         }
     }
 
@@ -209,84 +254,345 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         }
     }
 
-    private void performTraversal() {
-        final View host = mView;
-
-        if (host == null)
-            return;
-
-        mWillDrawSoon = true;
-
-        int width = mWidth;
-        int height = mHeight;
-        if (width != host.getMeasuredWidth() || height != host.getMeasuredHeight()) {
-            mFullRedrawNeeded = true;
-            mLayoutRequested = true;
+    /**
+     * Figures out the measure spec for the root view in a window based on its
+     * layout params.
+     *
+     * @param windowSize The available width or height of the window.
+     * @param measurement The layout width or height requested in the layout params.
+     * @return The measure spec to use to measure the root view.
+     */
+    private static int getRootMeasureSpec(int windowSize, int measurement) {
+        int measureSpec;
+        switch (measurement) {
+            case ViewGroup.LayoutParams.MATCH_PARENT:
+                // Window can't resize. Force root view to be windowSize.
+                measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.EXACTLY);
+                break;
+            case ViewGroup.LayoutParams.WRAP_CONTENT:
+                // Window can resize. Set max size for root view.
+                measureSpec = MeasureSpec.makeMeasureSpec(windowSize, MeasureSpec.AT_MOST);
+                break;
+            default:
+                // Window wants to be an exact size. Force root view to be that size.
+                measureSpec = MeasureSpec.makeMeasureSpec(measurement, MeasureSpec.EXACTLY);
+                break;
         }
-        if (mLayoutRequested) {
-            //long startTime = RenderCore.timeNanos();
+        return measureSpec;
+    }
 
-            int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
-            int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
+    private boolean measureHierarchy(
+            final View host, final WindowManager.LayoutParams lp,
+            final Resources res, final int desiredWindowWidth, final int desiredWindowHeight) {
+        int childWidthMeasureSpec;
+        int childHeightMeasureSpec;
+        boolean windowSizeMayChange = false;
 
-            host.measure(widthSpec, heightSpec);
-
-            mInLayout = true;
-            host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());
-            mInLayout = false;
-
-            int numViewsRequestingLayout = mLayoutRequesters.size();
-            if (numViewsRequestingLayout > 0) {
-                // requestLayout() was called during layout.
-                // If no layout-request flags are set on the requesting views, there is no problem.
-                // If some requests are still pending, then we need to clear those flags and do
-                // a full request/measure/layout pass to handle this situation.
-                ArrayList<View> validLayoutRequesters = getValidLayoutRequesters(mLayoutRequesters,
-                        false);
-                if (validLayoutRequesters != null) {
-                    // Set this flag to indicate that any further requests are happening during
-                    // the second pass, which may result in posting those requests to the next
-                    // frame instead
-                    mHandlingLayoutInLayoutRequest = true;
-
-                    // Process fresh layout requests, then measure and layout
-                    for (final View view : validLayoutRequesters) {
-                        view.requestLayout();
-                    }
-                    host.measure(widthSpec, heightSpec);
-                    mInLayout = true;
-                    host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());
-
-                    mHandlingLayoutInLayoutRequest = false;
-
-                    // Check the valid requests again, this time without checking/clearing the
-                    // layout flags, since requests happening during the second pass get noop'd
-                    validLayoutRequesters = getValidLayoutRequesters(mLayoutRequesters, true);
-                    if (validLayoutRequesters != null) {
-                        final ArrayList<View> finalRequesters = validLayoutRequesters;
-                        // Post second-pass requests to the next frame
-                        mHandler.post(() -> {
-                            for (final View view : finalRequesters) {
-                                view.requestLayout();
-                            }
-                        });
+        boolean goodMeasure = false;
+        if (lp.width == ViewGroup.LayoutParams.WRAP_CONTENT) {
+            // On large screens, we don't want to allow dialogs to just
+            // stretch to fill the entire width of the screen to display
+            // one line of text.  First try doing the layout at a smaller
+            // size to see if it will fit.
+            final DisplayMetrics displayMetrics = res.getDisplayMetrics();
+            int baseSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, InternalConfig.prefDialogWidth,
+                    displayMetrics);
+            if (baseSize != 0 && desiredWindowWidth > baseSize) {
+                childWidthMeasureSpec = getRootMeasureSpec(baseSize, lp.width);
+                childHeightMeasureSpec = getRootMeasureSpec(desiredWindowHeight, lp.height);
+                performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+                if ((host.getMeasuredWidthAndState()&View.MEASURED_STATE_TOO_SMALL) == 0) {
+                    goodMeasure = true;
+                } else {
+                    // Didn't fit in that size... try expanding a bit.
+                    baseSize = (baseSize+desiredWindowWidth)/2;
+                    childWidthMeasureSpec = getRootMeasureSpec(baseSize, lp.width);
+                    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+                    if ((host.getMeasuredWidthAndState()&View.MEASURED_STATE_TOO_SMALL) == 0) {
+                        goodMeasure = true;
                     }
                 }
             }
-            mInLayout = false;
+        }
 
-            /*ModernUI.LOGGER.info(MARKER, "Layout done in {} ms, window size: {}x{}",
-                    (RenderCore.timeNanos() - startTime) / 1000000.0, width, height);*/
+        if (!goodMeasure) {
+            childWidthMeasureSpec = getRootMeasureSpec(desiredWindowWidth, lp.width);
+            childHeightMeasureSpec = getRootMeasureSpec(desiredWindowHeight, lp.height);
+            performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+            if (mWidth != host.getMeasuredWidth() || mHeight != host.getMeasuredHeight()) {
+                windowSizeMayChange = true;
+            }
+        }
+
+        return windowSizeMayChange;
+    }
+
+    private void performMeasure(int childWidthMeasureSpec, int childHeightMeasureSpec) {
+        if (mView == null) {
+            return;
+        }
+        mView.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+        mMeasuredWidth = mView.getMeasuredWidth();
+        mMeasuredHeight = mView.getMeasuredHeight();
+    }
+
+    private void performLayout(WindowManager.LayoutParams lp, int desiredWindowWidth,
+                               int desiredWindowHeight) {
+        mInLayout = true;
+
+        final View host = mView;
+        if (host == null) {
+            return;
+        }
+
+        host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());
+
+        mInLayout = false;
+        int numViewsRequestingLayout = mLayoutRequesters.size();
+        if (numViewsRequestingLayout > 0) {
+            // requestLayout() was called during layout.
+            // If no layout-request flags are set on the requesting views, there is no problem.
+            // If some requests are still pending, then we need to clear those flags and do
+            // a full request/measure/layout pass to handle this situation.
+            ArrayList<View> validLayoutRequesters = getValidLayoutRequesters(mLayoutRequesters,
+                    false);
+            if (validLayoutRequesters != null) {
+                // Set this flag to indicate that any further requests are happening during
+                // the second pass, which may result in posting those requests to the next
+                // frame instead
+                mHandlingLayoutInLayoutRequest = true;
+
+                // Process fresh layout requests, then measure and layout
+                int numValidRequests = validLayoutRequesters.size();
+                for (int i = 0; i < numValidRequests; ++i) {
+                    final View view = validLayoutRequesters.get(i);
+                    view.requestLayout();
+                }
+                measureHierarchy(host, lp, mView.getContext().getResources(),
+                        desiredWindowWidth, desiredWindowHeight);
+                mInLayout = true;
+                host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());
+
+                mHandlingLayoutInLayoutRequest = false;
+
+                // Check the valid requests again, this time without checking/clearing the
+                // layout flags, since requests happening during the second pass get noop'd
+                validLayoutRequesters = getValidLayoutRequesters(mLayoutRequesters, true);
+                if (validLayoutRequesters != null) {
+                    final ArrayList<View> finalRequesters = validLayoutRequesters;
+                    // Post second-pass requests to the next frame
+                    mHandler.post(() -> {
+                        int finalNumValidRequests = finalRequesters.size();
+                        for (int i = 0; i < finalNumValidRequests; ++i) {
+                            final View view = finalRequesters.get(i);
+                            view.requestLayout();
+                        }
+                    });
+                }
+            }
+
+        }
+        mInLayout = false;
+    }
+
+    private void performTraversal() {
+        final View host = mView;
+
+        if (host == null || !mAdded) {
+            return;
+        }
+
+        mIsInTraversal = true;
+        mWillDrawSoon = true;
+
+        boolean windowSizeMayChange = false;
+        WindowManager.LayoutParams lp = mWindowAttributes;
+
+        int desiredWindowWidth;
+        int desiredWindowHeight;
+
+        final int viewVisibility = getHostVisibility();
+        final boolean viewVisibilityChanged = !mFirst
+                && (mViewVisibility != viewVisibility
+                // Also check for possible double visibility update, which will make current
+                // viewVisibility value equal to mViewVisibility and we may miss it.
+                || mAppVisibilityChanged);
+        mAppVisibilityChanged = false;
+        final boolean viewUserVisibilityChanged = !mFirst &&
+                ((mViewVisibility == View.VISIBLE) != (viewVisibility == View.VISIBLE));
+
+        WindowManager.LayoutParams params = null;
+        Rect frame = mWinFrame;
+        if (mFirst) {
+            mFullRedrawNeeded = true;
+            mLayoutRequested = true;
+
+            if (lp.width == ViewGroup.LayoutParams.WRAP_CONTENT
+                    || lp.height == ViewGroup.LayoutParams.WRAP_CONTENT) {
+                // For wrap content, we have to remeasure later on anyways. Use size consistent with
+                // below so we get best use of the measure cache.
+                desiredWindowWidth = mStage.getWidth();
+                desiredWindowHeight = mStage.getHeight();
+            } else {
+                // After addToDisplay, the frame contains the frameHint from window manager, which
+                // for most windows is going to be the same size as the result of relayoutWindow.
+                // Using this here allows us to avoid remeasuring after relayoutWindow
+                desiredWindowWidth = frame.width();
+                desiredWindowHeight = frame.height();
+            }
+
+            mAttachInfo.mWindowVisibility = viewVisibility;
+            // Set the layout direction if it has not been set before (inherit is the default)
+            //TODO
+            /*if (mViewLayoutDirectionInitial == View.LAYOUT_DIRECTION_INHERIT) {
+                host.setLayoutDirection(config.getLayoutDirection());
+            }*/
+            host.dispatchAttachedToWindow(mAttachInfo, 0);
+            //mAttachInfo.mTreeObserver.dispatchOnWindowAttachedChange(true);
+        } else {
+            desiredWindowWidth = frame.width();
+            desiredWindowHeight = frame.height();
+            if (desiredWindowWidth != mWidth || desiredWindowHeight != mHeight) {
+                mFullRedrawNeeded = true;
+                mLayoutRequested = true;
+                windowSizeMayChange = true;
+            }
+        }
+
+        if (viewVisibilityChanged) {
+            mAttachInfo.mWindowVisibility = viewVisibility;
+            host.dispatchWindowVisibilityChanged(viewVisibility);
+            //mAttachInfo.mTreeObserver.dispatchOnWindowVisibilityChange(viewVisibility);
+            if (viewUserVisibilityChanged) {
+                host.dispatchVisibilityAggregated(viewVisibility == View.VISIBLE);
+            }
+        }
+
+        boolean layoutRequested = mLayoutRequested && (!mStopped || mReportNextDraw);
+        if (layoutRequested) {
+            if (!mFirst) {
+                if (lp.width == ViewGroup.LayoutParams.WRAP_CONTENT
+                        || lp.height == ViewGroup.LayoutParams.WRAP_CONTENT) {
+                    windowSizeMayChange = true;
+
+                    desiredWindowWidth = mStage.getWidth();
+                    desiredWindowHeight = mStage.getHeight();
+                }
+            }
+
+            // Ask host how big it wants to be
+            windowSizeMayChange |= measureHierarchy(host, lp, mView.getContext().getResources(),
+                    desiredWindowWidth, desiredWindowHeight);
+        }
+
+        if (mFirst || mAttachInfo.mViewVisibilityChanged) {
+            mAttachInfo.mViewVisibilityChanged = false;
+        }
+
+        if (layoutRequested) {
+            // Clear this now, so that if anything requests a layout in the
+            // rest of this function we will catch it and re-run a full
+            // layout pass.
             mLayoutRequested = false;
+        }
+
+        boolean windowShouldResize = layoutRequested && windowSizeMayChange
+                && ((mWidth != host.getMeasuredWidth() || mHeight != host.getMeasuredHeight())
+                || (lp.width == ViewGroup.LayoutParams.WRAP_CONTENT &&
+                frame.width() < desiredWindowWidth && frame.width() != mWidth)
+                || (lp.height == ViewGroup.LayoutParams.WRAP_CONTENT &&
+                frame.height() < desiredWindowHeight && frame.height() != mHeight));
+
+        final boolean isViewVisible = viewVisibility == View.VISIBLE;
+
+        final boolean windowAttributesChanged = mWindowAttributesChanged;
+        if (windowAttributesChanged) {
+            mWindowAttributesChanged = false;
+            params = lp;
+        }
+
+        if (mFirst || windowShouldResize || viewVisibilityChanged || params != null
+                || mForceNextWindowRelayout) {
+
+            mForceNextWindowRelayout = false;
+
+            relayoutWindow(lp);
+
+            //mAttachInfo.mWindowLeft = frame.left;
+            //mAttachInfo.mWindowTop = frame.top;
+
+            // !!FIXME!! This next section handles the case where we did not get the
+            // window size we asked for. We should avoid this by getting a maximum size from
+            // the window session beforehand.
+            if (mWidth != frame.width() || mHeight != frame.height()) {
+                mWidth = frame.width();
+                mHeight = frame.height();
+            }
+
+            Point surfaceSize = new Point();
+            computeSurfaceSize(lp, frame, surfaceSize);
+
+            if (mSurface == null ||
+                    mSurface.getWidth() != surfaceSize.x ||
+                    mSurface.getHeight() != surfaceSize.y ||
+                    mNeedsRendererSetup) {
+                if (mSurface != null) {
+                    mSurface.unref();
+                }
+                mSurface = mStage.getRenderPipeline().createSurface(
+                        ImageInfo.make(surfaceSize.x, surfaceSize.y,
+                                ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL,
+                                ColorSpaces.SRGB)
+                );
+                mNeedsRendererSetup = false;
+
+                mFullRedrawNeeded = true;
+            }
+        }
+
+        final boolean didLayout = layoutRequested && (!mStopped || mReportNextDraw);
+        if (didLayout) {
+            performLayout(lp, mWidth, mHeight);
 
             mAttachInfo.mTreeObserver.dispatchOnGlobalLayout();
         }
 
+        if (mFirst) {
+            if (!mAttachInfo.mInTouchMode) {
+                // handle first focus request
+                if (mView != null) {
+                    if (!mView.hasFocus()) {
+                        mView.restoreDefaultFocus();
+                    }
+                }
+            } else {
+                // Some views (like ScrollView) won't hand focus to descendants that aren't within
+                // their viewport. Before layout, there's a good change these views are size 0
+                // which means no children can get focus. After layout, this view now has size, but
+                // is not guaranteed to hand-off focus to a focusable child (specifically, the edge-
+                // case where the child has a size prior to layout and thus won't trigger
+                // focusableViewAvailable).
+                View focused = mView.findFocus();
+                if (focused instanceof ViewGroup
+                        && ((ViewGroup) focused).getDescendantFocusability()
+                        == ViewGroup.FOCUS_AFTER_DESCENDANTS) {
+                    focused.restoreDefaultFocus();
+                }
+            }
+        }
+
+        mFirst = false;
         mWillDrawSoon = false;
+        mViewVisibility = viewVisibility;
 
         boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw();
 
-        if (!cancelDraw) {
+        if (!isViewVisible) {
+
+        } else if (cancelDraw) {
+            // Try again
+            scheduleTraversals();
+        } else {
             if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
                 for (LayoutTransition pendingTransition : mPendingTransitions) {
                     pendingTransition.startChangingAnimations();
@@ -294,42 +600,60 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 mPendingTransitions.clear();
             }
 
-            if (mAttachInfo.mViewScrollChanged) {
-                mAttachInfo.mViewScrollChanged = false;
-                mAttachInfo.mTreeObserver.dispatchOnScrollChanged();
-            }
-
-            mIsDrawing = true;
-
-            final Rect dirty = mDirty;
-            if (mFullRedrawNeeded) {
-                dirty.set(0, 0, mWidth, mHeight);
-            }
-            mFullRedrawNeeded = false;
-
-            if (!dirty.isEmpty()) {
-                Canvas canvas = beginDrawLocked(width, height);
-                if (canvas != null) {
-                    canvas.save();
-                    canvas.clipRect(dirty);
-
-                    canvas.drawColor(0, BlendMode.CLEAR);
-
-                    dirty.setEmpty();
-
-                    host.mPrivateFlags |= View.PFLAG_DRAWN;
-
-                    host.draw(canvas);
-                    canvas.restore();
-
-                    endDrawLocked(canvas);
-                }
-            }
-
-            mIsDrawing = false;
-        } else {
-            scheduleTraversals();
+            performDraw();
         }
+
+        mIsInTraversal = false;
+
+        if (!cancelDraw) {
+            mReportNextDraw = false;
+        }
+    }
+
+    private void performDraw() {
+        if (mAttachInfo.mViewScrollChanged) {
+            mAttachInfo.mViewScrollChanged = false;
+            mAttachInfo.mTreeObserver.dispatchOnScrollChanged();
+        }
+
+        mIsDrawing = true;
+
+        final Rect dirty = mDirty;
+        if (mFullRedrawNeeded) {
+            dirty.set(0, 0, mWidth, mHeight);
+        }
+        mFullRedrawNeeded = false;
+
+        View host = mView;
+        assert host != null;
+
+        if (!dirty.isEmpty() && mSurface != null) {
+            Canvas canvas = new ArcCanvas(mSurface.getCanvas());
+
+            canvas.save();
+            if (!dirty.contains(0, 0, mWidth, mHeight)) {
+                // clip only when there's subset, to include surface insets if full draw needed
+                canvas.clipRect(dirty);
+            }
+
+            canvas.drawColor(0, BlendMode.CLEAR);
+
+            dirty.setEmpty();
+
+            host.mPrivateFlags |= View.PFLAG_DRAWN;
+
+            host.draw(canvas);
+            canvas.restore();
+
+            mStage.markForComposition();
+            endDrawLocked(canvas);
+        }
+
+        mIsDrawing = false;
+    }
+
+    @Deprecated
+    protected void endDrawLocked(@NonNull Canvas canvas) {
     }
 
     /**
@@ -436,10 +760,12 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         return !mHandlingLayoutInLayoutRequest;
     }
 
-    @Nullable
-    protected abstract Canvas beginDrawLocked(int width, int height);
-    
-    protected abstract void endDrawLocked(@NonNull Canvas canvas);
+    public void relayoutWindow(WindowManager.LayoutParams params) {
+        computeFrames(params, mStage.mFrame, mMeasuredWidth, mMeasuredHeight,
+                mWinFrame);
+
+        mLastLayoutFrame.set(mWinFrame);
+    }
 
     @MainThread
     public void enqueueInputEvent(@NonNull InputEvent event) {
@@ -732,6 +1058,15 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         }
     }
 
+    @Override
+    public void playSoundEffect(int effectId) {
+    }
+
+    @Override
+    public boolean performHapticFeedback(int effectId, boolean always) {
+        return false;
+    }
+
     final class InvalidateOnAnimationRunnable implements Runnable {
 
         private boolean mPosted;
@@ -921,6 +1256,11 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     public void bringChildToFront(View child) {
     }
 
+    int getHostVisibility() {
+        return mView != null && mAppVisible
+                ? mView.getVisibility() : View.GONE;
+    }
+
     @Override
     public void focusableViewAvailable(View v) {
         Core.checkUiThread();
@@ -1066,41 +1406,77 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         }
     }
 
-    /*@Deprecated
-    public static class LayoutParams extends ViewGroup.LayoutParams {
+    public static final int UNSPECIFIED_LENGTH = -1;
 
-        *//*
-     * X position for this window.  With the default gravity it is ignored.
-     * When using {@link Gravity#LEFT} or {@link Gravity#RIGHT} it provides
-     * an offset from the given edge.
-     *//*
-        public int x;
+    public static void computeFrames(
+            @NonNull WindowManager.LayoutParams attrs,
+            @NonNull Rect parentFrame,
+            int requestedWidth, int requestedHeight,
+            @NonNull Rect outFrame) {
 
-        *//*
-     * Y position for this window.  With the default gravity it is ignored.
-     * When using {@link Gravity#TOP} or {@link Gravity#BOTTOM} it provides
-     * an offset from the given edge.
-     *//*
-        public int y;
+        final int pw = parentFrame.width();
+        final int ph = parentFrame.height();
+        int rw = requestedWidth;
+        int rh = requestedHeight;
+        float x, y;
+        int w, h;
 
-        *//*
-     * Placement of window within the screen as per {@link Gravity}.
-     *
-     * @see Gravity
-     *//*
-        public int gravity = Gravity.TOP_LEFT;
-
-        public LayoutParams() {
-            super(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        if (rw == UNSPECIFIED_LENGTH) {
+            rw = attrs.width >= 0 ? attrs.width : pw;
+        }
+        if (rh == UNSPECIFIED_LENGTH) {
+            rh = attrs.height >= 0 ? attrs.height : ph;
         }
 
-        public LayoutParams(int width, int height) {
-            super(width, height);
+        if (attrs.width == WindowManager.LayoutParams.MATCH_PARENT) {
+            w = pw;
+        } else {
+            w = rw;
+        }
+        if (attrs.height == WindowManager.LayoutParams.MATCH_PARENT) {
+            h = ph;
+        } else {
+            h = rh;
         }
 
-        public LayoutParams(int width, int height, int gravity) {
-            super(width, height);
-            this.gravity = gravity;
+        x = attrs.x;
+        y = attrs.y;
+
+        w = Math.min(w, pw);
+        h = Math.min(h, ph);
+
+        final boolean fitToDisplay = (attrs.type != WindowManager.LayoutParams.TYPE_BASE_APPLICATION);
+
+        // Set frame
+        Gravity.apply(attrs.gravity, w, h, parentFrame,
+                (int) (x + attrs.horizontalMargin * pw),
+                (int) (y + attrs.verticalMargin * ph), outFrame);
+
+        if (fitToDisplay) {
+            Gravity.applyDisplay(attrs.gravity, parentFrame, outFrame);
         }
-    }*/
+    }
+
+    public static void computeSurfaceSize(
+            @NonNull WindowManager.LayoutParams attrs,
+            @NonNull Rect winFrame,
+            @NonNull Point outSurfaceSize) {
+        int width;
+        int height;
+        width = winFrame.width();
+        height = winFrame.height();
+
+        if (width < 1) {
+            width = 1;
+        }
+        if (height < 1) {
+            height = 1;
+        }
+
+        final Rect surfaceInsets = attrs.surfaceInsets;
+        width += surfaceInsets.left + surfaceInsets.right;
+        height += surfaceInsets.top + surfaceInsets.bottom;
+
+        outSurfaceSize.set(width, height);
+    }
 }

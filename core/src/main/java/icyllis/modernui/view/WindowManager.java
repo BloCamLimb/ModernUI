@@ -104,9 +104,39 @@ public interface WindowManager extends ViewManager {
 
         public static final int LAST_SYSTEM_WINDOW = 2999;
 
-        public static final int FLAG_NOT_FOCUSABLE = 0x00000008;
 
-        public static final int FLAG_NOT_TOUCH_MODAL = 0x00000020;
+        /** Window flag: everything behind this window will be dimmed.
+         *  Use {@link #dimAmount} to control the amount of dim. */
+        public static final int FLAG_DIM_BEHIND        = 0x00000002;
+
+        /** Window flag: enable blur behind for this window. */
+        public static final int FLAG_BLUR_BEHIND        = 0x00000004;
+
+        /** Window flag: this window won't ever get key input focus, so the
+         * user can not send key or other button events to it.  Those will
+         * instead go to whatever focusable window is behind it.  This flag
+         * will also enable {@link #FLAG_NOT_TOUCH_MODAL} whether or not that
+         * is explicitly set.
+         */
+        public static final int FLAG_NOT_FOCUSABLE      = 0x00000008;
+
+        public static final int FLAG_NOT_TOUCHABLE      = 0x00000010;
+
+        public static final int FLAG_NOT_TOUCH_MODAL    = 0x00000020;
+
+        /** Window flag: turn on dithering when compositing this window to
+         *  the screen. */
+        public static final int FLAG_DITHER             = 0x00001000;
+
+        /** Window flag: if you have set {@link #FLAG_NOT_TOUCH_MODAL}, you
+         * can set this flag to receive a single special MotionEvent with
+         * the action
+         * {@link MotionEvent#ACTION_OUTSIDE MotionEvent.ACTION_OUTSIDE} for
+         * touches that occur outside of your window.  Note that you will not
+         * receive the full down/move/up gesture, only the location of the
+         * first down as an ACTION_OUTSIDE.
+         */
+        public static final int FLAG_WATCH_OUTSIDE_TOUCH = 0x00040000;
 
         public int flags;
 

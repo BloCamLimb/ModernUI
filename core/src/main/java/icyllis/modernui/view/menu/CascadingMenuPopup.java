@@ -34,6 +34,7 @@ import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
 import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.InternalConfig;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.View;
@@ -236,7 +237,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
 
         final Resources res = context.getResources();
         mMenuMaxWidth = Math.max(res.getDisplayMetrics().widthPixels / 2,
-                (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, 320, res.getDisplayMetrics()));
+                (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP, InternalConfig.prefDialogWidth, res.getDisplayMetrics()));
 
         mSubMenuHoverHandler = new Handler(Looper.myLooper());
     }

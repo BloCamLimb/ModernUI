@@ -44,6 +44,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  * <p>
  * Most window methods must be only called on main thread.
  */
+@Deprecated
 @NotThreadSafe
 public class Window implements AutoCloseable {
 
