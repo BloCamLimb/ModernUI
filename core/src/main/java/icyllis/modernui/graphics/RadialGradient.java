@@ -147,10 +147,8 @@ public class RadialGradient extends GradientShader {
         } else {
             mLocalMatrix = null;
         }
-        if (!shader.isTriviallyCounted()) {
-            assert false;
-            mCleanup = Core.registerNativeResource(this, shader);
-        }
+        mCleanup = shader.registerWithCleaner(Core.cleaner(), this);
+        assert mCleanup == null;
         mShader = shader;
     }
 
@@ -161,10 +159,8 @@ public class RadialGradient extends GradientShader {
         } else {
             mLocalMatrix = null;
         }
-        if (!newShader.isTriviallyCounted()) {
-            assert false;
-            mCleanup = Core.registerNativeResource(this, newShader);
-        }
+        mCleanup = newShader.registerWithCleaner(Core.cleaner(), this);
+        assert mCleanup == null;
         mShader = newShader;
     }
 

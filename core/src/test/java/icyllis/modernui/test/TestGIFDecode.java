@@ -18,7 +18,6 @@
 
 package icyllis.modernui.test;
 
-import icyllis.arc3d.core.image.GIFDecoder;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.util.Log;
 import org.lwjgl.system.MemoryUtil;
@@ -33,7 +32,7 @@ public class TestGIFDecode {
 
     public static void main(String[] args) {
         System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
-        String get = Bitmap.openDialogGet(null, null, null);
+        /*String get = Bitmap.openDialogGet(null, null, null);
         if (get != null) {
             Path p = Path.of(get);
             byte[] data;
@@ -61,6 +60,6 @@ public class TestGIFDecode {
             } finally {
                 MemoryUtil.memFree(pixels);
             }
-        }
+        }*/
     }
 }

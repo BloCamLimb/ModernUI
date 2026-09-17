@@ -205,7 +205,8 @@ public class ImageShader extends Shader {
         } else {
             mLocalMatrix = null;
         }
-        mCleanup = Core.registerNativeResource(this, shader);
+        mCleanup = shader.registerWithCleaner(Core.cleaner(), this);
+        assert mCleanup != null;
         mShader = shader;
     }
 
@@ -216,7 +217,8 @@ public class ImageShader extends Shader {
         } else {
             mLocalMatrix = null;
         }
-        mCleanup = Core.registerNativeResource(this, newShader);
+        mCleanup = newShader.registerWithCleaner(Core.cleaner(), this);
+        assert mCleanup != null;
         mShader = newShader;
     }
 

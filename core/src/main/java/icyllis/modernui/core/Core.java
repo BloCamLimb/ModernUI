@@ -149,6 +149,11 @@ public final class Core {
         });
     }
 
+    @NonNull
+    public static Cleaner cleaner() {
+        return sCleaner;
+    }
+
     /**
      * Initializes the GLFW and the main thread.
      * <p>

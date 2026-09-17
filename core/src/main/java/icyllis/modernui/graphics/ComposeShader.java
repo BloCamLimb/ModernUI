@@ -50,9 +50,7 @@ public class ComposeShader extends Shader {
         if (shader == null) {
             throw new IllegalStateException("unreachable");
         }
-        if (!shader.isTriviallyCounted()) {
-            mCleanup = Core.registerNativeResource(this, shader);
-        }
+        mCleanup = shader.registerWithCleaner(Core.cleaner(), this);
         mShader = shader;
     }
 }

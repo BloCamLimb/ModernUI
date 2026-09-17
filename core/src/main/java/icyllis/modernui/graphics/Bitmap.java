@@ -980,7 +980,7 @@ public final class Bitmap implements AutoCloseable {
                 var dstPixmap = new Pixmap(dstInfo, dst,
                         (long) offset << 2,
                         stride << 2);
-                boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+                boolean res = dstPixmap.setPixels(mPixmap, srcX, srcY, 0, 0, width, height);
                 assert res;
             } finally {
                 Reference.reachabilityFence(this);
@@ -1032,7 +1032,7 @@ public final class Bitmap implements AutoCloseable {
                 var srcPixmap = new Pixmap(srcInfo, src,
                         (long) offset << 2,
                         stride << 2);
-                boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+                boolean res = mPixmap.setPixels(srcPixmap, 0, 0, dstX, dstY, width, height);
                 assert res;
             } finally {
                 Reference.reachabilityFence(this);
@@ -1092,7 +1092,7 @@ public final class Bitmap implements AutoCloseable {
                 var dstPixmap = new Pixmap(dstInfo, dst,
                         (long) offset << 4,
                         stride << 4);
-                boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+                boolean res = dstPixmap.setPixels(mPixmap, srcX, srcY, 0, 0, width, height);
                 assert res;
             } finally {
                 Reference.reachabilityFence(this);
@@ -1146,7 +1146,7 @@ public final class Bitmap implements AutoCloseable {
                 var srcPixmap = new Pixmap(srcInfo, src,
                         (long) offset << 4,
                         stride << 4);
-                boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+                boolean res = mPixmap.setPixels(srcPixmap, 0, 0, dstX, dstY, width, height);
                 assert res;
             } finally {
                 Reference.reachabilityFence(this);
@@ -1199,7 +1199,7 @@ public final class Bitmap implements AutoCloseable {
             } else {
                 var dstPixmap = dst.getPixmap().makeSubset(dstRect);
                 assert dstPixmap != null;
-                boolean res = mPixmap.readPixels(dstPixmap, srcX, srcY);
+                boolean res = dstPixmap.setPixels(mPixmap, srcX, srcY, 0, 0, width, height);
                 assert res;
             }
         } finally {
@@ -1253,7 +1253,7 @@ public final class Bitmap implements AutoCloseable {
             } else {
                 var srcPixmap = src.getPixmap().makeSubset(srcRect);
                 assert srcPixmap != null;
-                boolean res = mPixmap.writePixels(srcPixmap, dstX, dstY);
+                boolean res = mPixmap.setPixels(srcPixmap, 0, 0, dstX, dstY, width, height);
                 assert res;
             }
         } finally {
@@ -1333,7 +1333,7 @@ public final class Bitmap implements AutoCloseable {
                     dstBase,
                     dstAddress,
                     rowBytes);
-            return mPixmap.readPixels(dstPixmap, srcX, srcY);
+            return dstPixmap.setPixels(mPixmap, srcX, srcY, 0, 0, width, height);
         } finally {
             Reference.reachabilityFence(dst);
             Reference.reachabilityFence(this);
@@ -1398,7 +1398,7 @@ public final class Bitmap implements AutoCloseable {
                     srcBase,
                     srcAddress,
                     rowBytes);
-            return mPixmap.writePixels(srcPixmap, dstX, dstY);
+            return mPixmap.setPixels(srcPixmap, 0, 0, dstX, dstY, width, height);
         } finally {
             Reference.reachabilityFence(src);
             Reference.reachabilityFence(this);
