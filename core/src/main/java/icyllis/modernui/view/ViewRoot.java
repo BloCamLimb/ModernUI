@@ -41,8 +41,7 @@ import java.util.function.BooleanSupplier;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View
- * and the Stage.  This is for the most part an internal implementation
- * detail of {@link WindowStage}.
+ * and Stage.
  *
  * @hidden
  */
@@ -90,7 +89,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     boolean mAdded;
 
     // window frame in screen
-    final Rect mWinFrame = new Rect();
+    public final Rect mWinFrame = new Rect();
     private final Rect mLastLayoutFrame = new Rect();
 
     private int mMeasuredWidth;
@@ -124,12 +123,13 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     boolean mWindowAttributesChanged = false;
     public final WindowManager.LayoutParams mWindowAttributes = new WindowManager.LayoutParams();
 
-    public WindowStage mStage;
+    public Stage mStage;
 
     public Surface mSurface;
     public boolean mNeedsRendererSetup;
 
-    protected ViewRoot() {
+    public ViewRoot(Context context, Stage stage) {
+        mStage = stage;
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
         mWidth = -1;
         mHeight = -1;
@@ -231,7 +231,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             mTraversalScheduled = true;
             mTraversalBarrier = mHandler.getQueue().postSyncBarrier();
             mChoreographer.postCallback(Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
-            mStage.scheduleComposition();
+            mStage.postComposition();
         }
     }
 
@@ -761,8 +761,8 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     public void relayoutWindow(WindowManager.LayoutParams params) {
-        computeFrames(params, mStage.mFrame, mMeasuredWidth, mMeasuredHeight,
-                mWinFrame);
+        computeFrames(params, mStage.getWidth(), mStage.getHeight(),
+                mMeasuredWidth, mMeasuredHeight, mWinFrame);
 
         mLastLayoutFrame.set(mWinFrame);
     }
@@ -1410,31 +1410,29 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     public static void computeFrames(
             @NonNull WindowManager.LayoutParams attrs,
-            @NonNull Rect parentFrame,
+            int parentWidth, int parentHeight,
             int requestedWidth, int requestedHeight,
             @NonNull Rect outFrame) {
 
-        final int pw = parentFrame.width();
-        final int ph = parentFrame.height();
         int rw = requestedWidth;
         int rh = requestedHeight;
         float x, y;
         int w, h;
 
         if (rw == UNSPECIFIED_LENGTH) {
-            rw = attrs.width >= 0 ? attrs.width : pw;
+            rw = attrs.width >= 0 ? attrs.width : parentWidth;
         }
         if (rh == UNSPECIFIED_LENGTH) {
-            rh = attrs.height >= 0 ? attrs.height : ph;
+            rh = attrs.height >= 0 ? attrs.height : parentHeight;
         }
 
         if (attrs.width == WindowManager.LayoutParams.MATCH_PARENT) {
-            w = pw;
+            w = parentWidth;
         } else {
             w = rw;
         }
         if (attrs.height == WindowManager.LayoutParams.MATCH_PARENT) {
-            h = ph;
+            h = parentHeight;
         } else {
             h = rh;
         }
@@ -1442,15 +1440,16 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         x = attrs.x;
         y = attrs.y;
 
-        w = Math.min(w, pw);
-        h = Math.min(h, ph);
+        w = Math.min(w, parentWidth);
+        h = Math.min(h, parentHeight);
 
         final boolean fitToDisplay = (attrs.type != WindowManager.LayoutParams.TYPE_BASE_APPLICATION);
 
         // Set frame
+        Rect parentFrame = new Rect(0, 0, parentWidth, parentHeight);
         Gravity.apply(attrs.gravity, w, h, parentFrame,
-                (int) (x + attrs.horizontalMargin * pw),
-                (int) (y + attrs.verticalMargin * ph), outFrame);
+                (int) (x + attrs.horizontalMargin * parentWidth),
+                (int) (y + attrs.verticalMargin * parentHeight), outFrame);
 
         if (fitToDisplay) {
             Gravity.applyDisplay(attrs.gravity, parentFrame, outFrame);

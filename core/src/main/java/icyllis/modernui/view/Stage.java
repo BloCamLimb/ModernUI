@@ -18,5 +18,42 @@
 
 package icyllis.modernui.view;
 
-public interface Stage {
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.renderer.RenderPipeline;
+import org.jetbrains.annotations.ApiStatus;
+
+/**
+ * Stage represents a logical screen/display that hosts an application window
+ * and optional dialog windows (such as context menus, toasts, tooltips).
+ *
+ * @hidden
+ */
+@ApiStatus.Internal
+public interface Stage extends WindowManager {
+
+    /**
+     * Returns the framebuffer width for this window in pixels.
+     *
+     * @return the framebuffer width
+     */
+    int getWidth();
+
+    /**
+     * Returns the framebuffer height for this window in pixels.
+     *
+     * @return the framebuffer height
+     */
+    int getHeight();
+
+    /**
+     * Called when any ViewRoot scheduleTraversals() is called, to post a composition callback.
+     */
+    void postComposition();
+
+    /**
+     * Called when any ViewRoot draw() is called, so that it's dirty and needs actual composition.
+     */
+    void markForComposition();
+
+    RenderPipeline getRenderPipeline();
 }

@@ -16,17 +16,11 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.core;
 
 import icyllis.modernui.animation.AnimationUtils;
-import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
-import icyllis.modernui.core.Message;
-import icyllis.modernui.graphics.Canvas;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -48,16 +42,16 @@ import static icyllis.modernui.util.Log.LOGGER;
  * </p>
  * <ul>
  * <li>To post an animation to be processed on a regular time basis synchronized with
- * display frame rendering, use {@link ValueAnimator#start()}.</li>
+ * display frame rendering, use {@link icyllis.modernui.animation.ValueAnimator#start()}.</li>
  * <li>To post a {@link Runnable} to be invoked once at the beginning of the next display
- * frame, use {@link View#postOnAnimation}.</li>
+ * frame, use {@link icyllis.modernui.view.View#postOnAnimation}.</li>
  * <li>To post a {@link Runnable} to be invoked once at the beginning of the next display
- * frame after a delay, use {@link View#postOnAnimationDelayed}.</li>
- * <li>To post a call to {@link View#invalidate()} to occur once at the beginning of the
- * next display frame, use {@link View#postInvalidateOnAnimation()}.</li>
- * <li>To ensure that the contents of a {@link View} scroll smoothly and are drawn in
+ * frame after a delay, use {@link icyllis.modernui.view.View#postOnAnimationDelayed}.</li>
+ * <li>To post a call to {@link icyllis.modernui.view.View#invalidate()} to occur once at the beginning of the
+ * next display frame, use {@link icyllis.modernui.view.View#postInvalidateOnAnimation()}.</li>
+ * <li>To ensure that the contents of a {@link icyllis.modernui.view.View} scroll smoothly and are drawn in
  * sync with display frame rendering, do nothing.  This already happens automatically.
- * {@link View#draw(Canvas)} will be called at the appropriate time.</li>
+ * {@link icyllis.modernui.view.View#draw(icyllis.modernui.graphics.Canvas)} will be called at the appropriate time.</li>
  * </ul>
  * <p>
  * However, there are a few cases where you might want to use the functions of the

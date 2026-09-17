@@ -16,23 +16,26 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.app;
 
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.Choreographer;
 import icyllis.modernui.renderer.RenderPipeline;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
 
 /**
+ * Composite all window stages and then submit to RHI thread.
+ *
  * @hidden
  */
 @ApiStatus.Internal
-public class Compositor {
+public final class Compositor {
 
     final Choreographer mChoreographer;
 
-    boolean mCompositionScheduled;
+    boolean mCompositionPosted;
 
     final Runnable mCompositionRunnable = this::doComposition;
 
@@ -45,9 +48,9 @@ public class Compositor {
         mChoreographer = Choreographer.getInstance();
     }
 
-    public void scheduleComposition() {
-        if (!mCompositionScheduled) {
-            mCompositionScheduled = true;
+    public void postComposition() {
+        if (!mCompositionPosted) {
+            mCompositionPosted = true;
 
             mChoreographer.postCallback(Choreographer.CALLBACK_COMMIT, mCompositionRunnable, null);
         }
@@ -58,10 +61,10 @@ public class Compositor {
     }
 
     void doComposition() {
-        if (!mCompositionScheduled) {
+        if (!mCompositionPosted) {
             return;
         }
-        mCompositionScheduled = false;
+        mCompositionPosted = false;
 
     }
 

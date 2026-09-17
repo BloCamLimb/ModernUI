@@ -16,13 +16,20 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.app;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.renderer.RenderPipeline;
 import icyllis.modernui.renderer.WindowSurface;
+import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.Stage;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewRoot;
+import icyllis.modernui.view.WindowManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.sdl.SDLEvents;
 import org.lwjgl.sdl.SDLKeyboard;
@@ -58,8 +65,6 @@ public final class WindowStage implements Stage {
     // size in pixels
     private int mWidth;
     private int mHeight;
-    // keep sync with (0, 0, mWidth, mHeight)
-    final Rect mFrame = new Rect();
 
     // Z-ordered
     ArrayList<ViewRoot> mRoots = new ArrayList<>();
@@ -328,7 +333,6 @@ public final class WindowStage implements Stage {
     }
 
     public void handleResize() {
-        mFrame.set(0, 0, mWidth, mHeight);
 
         for (int i = 0; i < mRoots.size(); i++) {
             mRoots.get(i).requestLayout();
@@ -377,15 +381,39 @@ public final class WindowStage implements Stage {
 
     }
 
-    public void scheduleComposition() {
-        mCompositor.scheduleComposition();
+    @Override
+    public void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
+        if (!(params instanceof LayoutParams)) {
+            throw new IllegalArgumentException("Params must be WindowManager.LayoutParams");
+        }
+        addWindow(view, (LayoutParams) params);
     }
 
-    public RenderPipeline getRenderPipeline() {
-        return mCompositor.getRenderPipeline();
+    @Override
+    public void updateViewLayout(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
+        if (!(params instanceof LayoutParams)) {
+            throw new IllegalArgumentException("Params must be WindowManager.LayoutParams");
+        }
+        updateWindowLayout(view, (LayoutParams) params);
     }
 
+    @Override
+    public void removeView(@NonNull View view) {
+        removeWindow(view, false);
+    }
+
+    @Override
+    public void postComposition() {
+        mCompositor.postComposition();
+    }
+
+    @Override
     public void markForComposition() {
 
+    }
+
+    @Override
+    public RenderPipeline getRenderPipeline() {
+        return mCompositor.getRenderPipeline();
     }
 }

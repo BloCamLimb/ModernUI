@@ -34,6 +34,7 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.ActivityWindow;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.core.Looper;
@@ -66,6 +67,7 @@ import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.PointerIcon;
+import icyllis.modernui.view.Stage;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewRoot;
 import icyllis.modernui.view.WindowGroup;
@@ -331,7 +333,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         Core.initUiThread();
 
-        mRoot = new ViewRootImpl();
+        mRoot = new ViewRootImpl(this, null);
         mRoot.loadSystemProperties(() -> Boolean.getBoolean("icyllis.modernui.display.debug.layout"));
 
         mDecor = new WindowGroup(this);
@@ -621,6 +623,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         private final Rect mGlobalRect = new Rect();
 
         Recording mLastFrameTask;
+
+        public ViewRootImpl(Context context, Stage stage) {
+            super(context, stage);
+        }
 
         @Override
         protected boolean dispatchTouchEvent(MotionEvent event) {
