@@ -32,8 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * A Parcel is a message container for a sequence of bytes, that performs
@@ -48,6 +46,7 @@ import java.util.zip.GZIPOutputStream;
  * @since 3.9
  */
 //TODO review
+@ApiStatus.Experimental
 public class Parcel {
 
     /**
@@ -96,55 +95,6 @@ public class Parcel {
      */
     @ApiStatus.Internal
     public Parcel() {
-    }
-
-    /**
-     * Reads a compressed DataSet from a GZIP file.
-     * <p>
-     * The stream should be a FileInputStream or a ChannelInputStream over FileChannel,
-     * and will be closed after the method call.
-     *
-     * @param stream a FileInputStream or a ChannelInputStream over FileChannel
-     * @return the data set
-     */
-    @NonNull
-    private static DataSet inflate(@NonNull InputStream stream,
-                                   @Nullable ClassLoader loader) throws IOException {
-        try (var in = new IOStreamParcel(new GZIPInputStream(
-                new BufferedInputStream(stream, 4096)), null)) {
-            var res = in.readDataSet(loader);
-            if (res == null) {
-                throw new IOException("Insufficient data");
-            }
-            return res;
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof IOException ioe) {
-                throw ioe;
-            }
-            throw e;
-        }
-    }
-
-    /**
-     * Writes and compresses a DataSet to a GZIP file.
-     * <p>
-     * The stream should be a FileOutputStream or a ChannelOutputStream over FileChannel,
-     * and will be closed after the method call.
-     *
-     * @param stream a FileOutputStream or a ChannelOutputStream over FileChannel
-     * @param source the data set
-     */
-    private static void deflate(@NonNull OutputStream stream,
-                                @NonNull DataSet source) throws IOException {
-        try (var out = new IOStreamParcel(null, new GZIPOutputStream(
-                new BufferedOutputStream(stream, 4096)))) {
-            out.writeDataSet(source);
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof IOException ioe) {
-                throw ioe;
-            }
-            throw e;
-        }
     }
 
     protected void ensureCapacity(int len) {

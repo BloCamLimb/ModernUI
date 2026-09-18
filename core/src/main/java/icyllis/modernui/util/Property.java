@@ -27,6 +27,7 @@ package icyllis.modernui.util;
  * @param <T> the class on which the property is declared.
  * @param <V> the type that this property represents.
  */
+//TODO refactor using LambdaMetafactory
 public abstract class Property<T, V> {
 
     private final String mName;
