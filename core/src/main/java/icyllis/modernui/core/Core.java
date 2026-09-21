@@ -18,14 +18,9 @@
 
 package icyllis.modernui.core;
 
-import icyllis.arc3d.engine.ContextOptions;
-import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.granite.GraniteUtil;
 import icyllis.arc3d.granite.RecordingContext;
-import icyllis.arc3d.opengl.GLUtil;
-import icyllis.arc3d.vulkan.VKUtil;
-import icyllis.arc3d.vulkan.VulkanBackendContext;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.RenderThread;
@@ -34,18 +29,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11C;
-import org.lwjgl.opengl.GLCapabilities;
-import org.lwjgl.opengl.GLDebugMessageAMDCallback;
-import org.lwjgl.opengl.GLDebugMessageARBCallback;
-import org.lwjgl.opengl.GLDebugMessageCallback;
+import org.lwjgl.sdl.SDLMisc;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-import org.slf4j.helpers.NOPLogger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -62,12 +50,9 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 
-import static icyllis.arc3d.opengl.GLUtil.*;
 import static icyllis.modernui.util.Log.LOGGER;
-import static org.lwjgl.opengl.AMDDebugOutput.glDebugMessageCallbackAMD;
-import static org.lwjgl.opengl.ARBDebugOutput.glDebugMessageCallbackARB;
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL43C.*;
+import static org.lwjgl.sdl.SDLError.SDL_GetError;
+import static org.lwjgl.sdl.SDLMisc.SDL_OpenURL;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -81,16 +66,16 @@ public final class Core {
     private static final Cleaner sCleaner = Cleaner.create();
 
     private static volatile Looper sMainLooper;
+    private static volatile Looper sUiLooper;
 
     private static volatile Thread sMainThread;
     private static volatile Thread sRenderThread;
     private static volatile Thread sUiThread;
 
+    private static volatile Handler sMainHandler;
     private static volatile Handler sMainHandlerAsync;
     private static volatile Handler sUiHandler;
     private static volatile Handler sUiHandlerAsync;
-
-    private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
 
     private static final Executor sMainThreadExecutor = Core::executeOnMainThread;
     private static final Executor sUiThreadExecutor = Core::executeOnUiThread;
@@ -188,6 +173,11 @@ public final class Core {
         }
     }
 
+    public static void setMainThread() {
+        sMainThread = Thread.currentThread();
+        sMainLooper = Looper.myLooper();
+    }
+
     /**
      * Prepare the main event loop. This must be called from the entry point of the application.
      */
@@ -276,192 +266,9 @@ public final class Core {
         return sMainLooper;
     }
 
-    @NonNull
-    private static ContextOptions initContextOptions(@NonNull ContextOptions options) {
-        if (options.mLogger == null || options.mLogger == NOPLogger.NOP_LOGGER) {
-            options.mLogger = LoggerFactory.getLogger("Arc3D");
-        }
-        return options;
-    }
-
-    @RenderThread
-    public static boolean initOpenGL() {
-        return initOpenGL(new ContextOptions());
-    }
-
-    /**
-     * Initializes OpenGL pipeline and the render thread.
-     * <p>
-     * Before calling this method, it is necessary to ensure that the GL library is loaded
-     * and that the current thread has an OpenGL context for a certain platform window.
-     *
-     * @return true if successful
-     */
-    @RenderThread
-    public static boolean initOpenGL(@NonNull ContextOptions options) {
-        final ImmediateContext dc;
-        synchronized (Core.class) {
-            if (sImmediateContext != null) {
-                if (sImmediateContext.getBackend() != Engine.BackendApi.kOpenGL) {
-                    throw new IllegalStateException();
-                }
-                return true;
-            }
-            if (sRenderThread == null) {
-                sRenderThread = Thread.currentThread();
-            } else if (Thread.currentThread() != sRenderThread) {
-                throw new IllegalStateException();
-            }
-            initContextOptions(options);
-            dc = GLUtil.makeOpenGL(options);
-            if (dc == null) {
-                return false;
-            }
-            if (!GraniteUtil.init(dc)) {
-                dc.unref();
-                return false;
-            }
-            sImmediateContext = dc;
-        }
-        final String glVendor = GL11C.glGetString(GL11C.GL_VENDOR);
-        final String glRenderer = GL11C.glGetString(GL11C.GL_RENDERER);
-        final String glVersion = GL11C.glGetString(GL11C.GL_VERSION);
-
-        LOGGER.info(MARKER, "OpenGL vendor: {}", glVendor);
-        LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
-        LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
-        StringBuilder sb = new StringBuilder("\n");
-        dc.getCaps().dump(sb, false);
-        LOGGER.info(MARKER, "OpenGL caps: {}", sb);
-        return true;
-    }
-
-    @RenderThread
-    public static void glSetupDebugCallback() {
-
-        GLCapabilities caps = GL.getCapabilities();
-
-        if (glGetPointer(GL_DEBUG_CALLBACK_FUNCTION) == NULL) {
-            if (caps.OpenGL43 || caps.GL_KHR_debug) {
-                LOGGER.debug(MARKER, "Using OpenGL 4.3 for debug logging");
-                glDebugMessageCallback(Core::glDebugMessage, NULL);
-                glEnable(GL_DEBUG_OUTPUT);
-            } else if (caps.GL_ARB_debug_output) {
-                LOGGER.debug(MARKER, "Using ARB_debug_output for debug logging");
-                GLDebugMessageARBCallback proc = new GLDebugMessageARBCallback() {
-                    @Override
-                    public void invoke(int source, int type, int id, int severity, int length, long message,
-                                       long userParam) {
-                        LOGGER.info(MARKER, "0x{}[{},{},{}]: {}", Integer.toHexString(id),
-                                getSourceARB(source), getTypeARB(type), getSeverityARB(severity),
-                                GLDebugMessageARBCallback.getMessage(length, message));
-                    }
-                };
-                glDebugMessageCallbackARB(proc, NULL);
-            } else if (caps.GL_AMD_debug_output) {
-                LOGGER.debug(MARKER, "Using AMD_debug_output for debug logging");
-                GLDebugMessageAMDCallback proc = new GLDebugMessageAMDCallback() {
-                    @Override
-                    public void invoke(int id, int category, int severity, int length, long message,
-                                       long userParam) {
-                        LOGGER.info(MARKER, "0x{}[{},{}]: {}", Integer.toHexString(id),
-                                getCategoryAMD(category), getSeverityAMD(severity),
-                                GLDebugMessageAMDCallback.getMessage(length, message));
-                    }
-                };
-                glDebugMessageCallbackAMD(proc, NULL);
-            } else {
-                LOGGER.debug(MARKER, "No debug callback function was used...");
-            }
-        } else {
-            LOGGER.debug(MARKER, "The debug callback function is already set.");
-        }
-    }
-
-    public static void glDebugMessage(int source, int type, int id, int severity, int length, long message,
-                                      long userParam) {
-        switch (severity) {
-            case GL_DEBUG_SEVERITY_HIGH -> LOGGER.error(MARKER, "({}|{}|0x{}) {}",
-                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
-                    GLDebugMessageCallback.getMessage(length, message));
-            case GL_DEBUG_SEVERITY_MEDIUM -> LOGGER.warn(MARKER, "({}|{}|0x{}) {}",
-                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
-                    GLDebugMessageCallback.getMessage(length, message));
-            case GL_DEBUG_SEVERITY_LOW -> LOGGER.info(MARKER, "({}|{}|0x{}) {}",
-                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
-                    GLDebugMessageCallback.getMessage(length, message));
-            case GL_DEBUG_SEVERITY_NOTIFICATION -> LOGGER.debug(MARKER, "({}|{}|0x{}) {}",
-                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
-                    GLDebugMessageCallback.getMessage(length, message));
-        }
-    }
-
-    /**
-     * Show a dialog that lists unsupported extensions after initialized.
-     */
-    @RenderThread
-    public static void glShowCapsErrorDialog() {
-        Core.checkRenderThread();
-        if (sImmediateContext != null) {
-            return;
-        }
-        final String glVendor = GL11C.glGetString(GL11C.GL_VENDOR);
-        final String glRenderer = GL11C.glGetString(GL11C.GL_RENDERER);
-        final String glVersion = GL11C.glGetString(GL11C.GL_VERSION);
-        /*new Thread(() -> {
-            String solution = "Please make sure you have up-to-date GPU drivers. " +
-                    "Also make sure Java applications run with the discrete GPU if you have multiple GPUs.";
-            TinyFileDialogs.tinyfd_messageBox("Failed to launch ModernUI",
-                    "GPU: " + glVendor + " " + glRenderer + ", OpenGL: " + glVersion + ". " +
-                            "OpenGL 3.3 or OpenGL ES 3.0 is required.\n" + solution,
-                    "ok", "error", true);
-        }, "GL-Error-Dialog").start();*/
-    }
-
-    @RenderThread
-    public static boolean initVulkan(@NonNull VulkanBackendContext backendContext) {
-        return initVulkan(backendContext, new ContextOptions());
-    }
-
-    /**
-     * Initializes Vulkan pipeline and the render thread.
-     * <p>
-     * Before calling this method, it is necessary to ensure that the VK library is loaded
-     * and that Vulkan is available for the current platform.
-     *
-     * @return true if successful
-     */
-    @RenderThread
-    public static boolean initVulkan(@NonNull VulkanBackendContext backendContext,
-                                     @NonNull ContextOptions options) {
-        final ImmediateContext dc;
-        synchronized (Core.class) {
-            if (sImmediateContext != null) {
-                if (sImmediateContext.getBackend() != Engine.BackendApi.kVulkan) {
-                    throw new IllegalStateException();
-                }
-                return true;
-            }
-            if (sRenderThread == null) {
-                sRenderThread = Thread.currentThread();
-            } else if (Thread.currentThread() != sRenderThread) {
-                throw new IllegalStateException();
-            }
-            initContextOptions(options);
-            dc = VKUtil.makeVulkan(backendContext, options);
-            if (dc == null) {
-                return false;
-            }
-            if (!GraniteUtil.init(dc)) {
-                dc.unref();
-                return false;
-            }
-            sImmediateContext = dc;
-        }
-        StringBuilder sb = new StringBuilder("\n");
-        dc.getCaps().dump(sb, false);
-        LOGGER.info(MARKER, "Vulkan caps: {}", sb);
-        return true;
+    public static void setRenderThread(@RawPtr ImmediateContext immediateContext) {
+        sRenderThread = Thread.currentThread();
+        sImmediateContext = immediateContext;
     }
 
     /**
@@ -531,11 +338,7 @@ public final class Core {
      * @param r the runnable
      */
     public static void postOnMainThread(@NonNull Runnable r) {
-        if (getMainLooper() == null) {
-            sMainCalls.offer(r);
-        } else {
-            getMainHandlerAsync().post(r);
-        }
+        getMainHandlerAsync().post(r);
     }
 
     /**
@@ -557,14 +360,11 @@ public final class Core {
         return sMainThreadExecutor;
     }
 
-    /**
-     * Flush main thread calls if the main thread is not a looper thread.
-     */
-    public static void flushMainCalls() {
-        //noinspection UnnecessaryLocalVariable
-        final ConcurrentLinkedQueue<Runnable> queue = sMainCalls;
-        Runnable r;
-        while ((r = queue.poll()) != null) r.run();
+    public static void setUiThread(@RawPtr RecordingContext uiRecordingContext) {
+        sUiThread = Thread.currentThread();
+        if (sUiThread == sMainThread) {
+            sUiLooper = getMainLooper();
+        }
     }
 
     /**
@@ -790,24 +590,12 @@ public final class Core {
      * @return true on success, false on failure
      */
     public static boolean openURI(@NonNull URI uri) {
-        try {
-            String s = uri.toString();
-            String[] cmd = switch (Platform.get()) {
-                case WINDOWS -> new String[]{"rundll32", "url.dll,FileProtocolHandler", s};
-                case MACOSX -> new String[]{"open", s};
-                default -> new String[]{"xdg-open", "file".equals(uri.getScheme())
-                        ? s.replace("file:", "file://")
-                        : s};
-            };
-            Process proc = Runtime.getRuntime().exec(cmd);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getErrorStream()))) {
-                reader.lines().forEach(line -> LOGGER.error(MARKER, line));
-            }
-            return true;
-        } catch (Exception e) {
-            LOGGER.error(MARKER, "Failed to open URI: {}", uri, e);
+        String s = uri.toString();
+        if (!SDL_OpenURL(s)) {
+            LOGGER.error(MARKER, "Failed to open URI {}, error: {}", uri, SDL_GetError());
             return false;
         }
+        return true;
     }
 
     /**
@@ -817,9 +605,9 @@ public final class Core {
      */
     public static boolean openURI(@NonNull String uri) {
         try {
-            return openURI(URI.create(uri));
+            return openURI(new URI(uri));
         } catch (Exception e) {
-            LOGGER.error(MARKER, "Failed to open URI: {}", uri, e);
+            LOGGER.error(MARKER, "Failed to open URI {}", uri, e);
             return false;
         }
     }

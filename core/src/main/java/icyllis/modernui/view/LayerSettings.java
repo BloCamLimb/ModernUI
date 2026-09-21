@@ -18,47 +18,24 @@
 
 package icyllis.modernui.view;
 
-import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.sketch.Image;
 import icyllis.arc3d.sketch.Surface;
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Stage represents a logical screen/display that hosts an application window
- * and optional dialog windows (such as context menus, toasts, tooltips).
+ * Finalized layer info.
  *
  * @hidden
  */
-// UI thread
 @ApiStatus.Internal
-public interface Stage extends WindowManager {
+public class LayerSettings {
 
-    /**
-     * Returns the framebuffer width for this window in pixels.
-     *
-     * @return the framebuffer width
-     */
-    int getWidth();
-
-    /**
-     * Returns the framebuffer height for this window in pixels.
-     *
-     * @return the framebuffer height
-     */
-    int getHeight();
-
-    /**
-     * Called when any ViewRoot scheduleTraversals() is called, to post a composition callback.
-     */
-    void postComposition();
-
-    /**
-     * Called when any ViewRoot draw() is called, so that it's dirty and needs actual composition.
-     */
-    void markForComposition();
-
-    @Nullable
+    // either
     @SharedPtr
-    Surface createSurface(ImageInfo info);
+    public Surface sourceSurf;
+    @SharedPtr
+    public Image sourceImage;
+
+    public float offsetX, offsetY;
 }

@@ -143,10 +143,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
     private final Object mThemeLock = new Object();
 
-    private final Resources mResources;
-    private Resources.Theme mTheme;
-    private ResourceId mThemeResource;
-
     private Image mBackgroundImage;
 
     public ModernUI() {
@@ -157,7 +153,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 throw new RuntimeException("Multiple instances");
             }
         }
-        mResources = Resources.getSystem();
     }
 
     /**
@@ -311,7 +306,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             metrics.densityDpi = density;
             metrics.scaledDensity = metrics.density;
             LOGGER.info(MARKER, "Display metrics: {}", metrics);
-            mResources.updateConfiguration(null, metrics);
+            getResources().updateConfiguration(null, metrics);
         }
 
         glfwSetWindowCloseCallback(mWindow.getHandle(), new GLFWWindowCloseCallback() {
@@ -431,14 +426,14 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         final Window window = mWindow;
         window.makeCurrent();
         try {
-            if (!Core.initOpenGL()) {
-                Core.glShowCapsErrorDialog();
-                throw new IllegalStateException("Failed to initialize OpenGL");
-            }
+            //if (!Core.initOpenGL()) {
+                //Core.glShowCapsErrorDialog();
+                //throw new IllegalStateException("Failed to initialize OpenGL");
+            //}
             mRenderLooper = Looper.prepare();
             mRenderHandler = new Handler(mRenderLooper);
 
-            Core.glSetupDebugCallback();
+            //Core.glSetupDebugCallback();
         } finally {
             latch.countDown();
         }
@@ -494,41 +489,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     @Override
     public Lifecycle getLifecycle() {
         return mLifecycleRegistry;
-    }
-
-    @Override
-    public Resources getResources() {
-        return mResources;
-    }
-
-    @Override
-    public void setTheme(@Nullable ResourceId resId) {
-        synchronized (mThemeLock) {
-            mThemeResource = resId;
-
-            if (mTheme == null) {
-                return;
-            }
-
-            mTheme.clear();
-            mThemeResource = Resources.selectDefaultTheme(mThemeResource);
-            mTheme.applyStyle(mThemeResource, true);
-        }
-    }
-
-    @Override
-    public Resources.Theme getTheme() {
-        synchronized (mThemeLock) {
-            if (mTheme != null) {
-                return mTheme;
-            }
-
-            mTheme = mResources.newTheme();
-            mThemeResource = Resources.selectDefaultTheme(mThemeResource);
-            mTheme.applyStyle(mThemeResource, true);
-
-            return mTheme;
-        }
     }
 
     /**

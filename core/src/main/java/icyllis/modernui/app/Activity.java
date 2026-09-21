@@ -19,7 +19,10 @@
 package icyllis.modernui.app;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.view.WindowManager;
 import icyllis.modernui.widget.ToastManager;
 import org.jetbrains.annotations.ApiStatus;
@@ -28,9 +31,54 @@ import org.jetbrains.annotations.ApiStatus;
  * Reserved for future use.
  */
 @ApiStatus.Experimental
-public abstract class Activity extends Context {
+public class Activity extends Context {
 
     private volatile ToastManager mToastManager;
+
+    private final Object mThemeLock = new Object();
+
+    private final Resources mResources;
+    private Resources.Theme mTheme;
+    private ResourceId mThemeResource;
+
+    public Activity() {
+        mResources = Resources.getSystem();
+    }
+
+    @Override
+    public Resources getResources() {
+        return mResources;
+    }
+
+    @Override
+    public void setTheme(@Nullable ResourceId resId) {
+        synchronized (mThemeLock) {
+            mThemeResource = resId;
+
+            if (mTheme == null) {
+                return;
+            }
+
+            mTheme.clear();
+            mThemeResource = Resources.selectDefaultTheme(mThemeResource);
+            mTheme.applyStyle(mThemeResource, true);
+        }
+    }
+
+    @Override
+    public Resources.Theme getTheme() {
+        synchronized (mThemeLock) {
+            if (mTheme != null) {
+                return mTheme;
+            }
+
+            mTheme = mResources.newTheme();
+            mThemeResource = Resources.selectDefaultTheme(mThemeResource);
+            mTheme.applyStyle(mThemeResource, true);
+
+            return mTheme;
+        }
+    }
 
     @ApiStatus.Internal
     public ToastManager getToastManager() {

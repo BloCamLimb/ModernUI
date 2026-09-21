@@ -21,11 +21,25 @@ package icyllis.modernui.view;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.SamplingOptions;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.animation.LayoutTransition;
-import icyllis.modernui.annotation.*;
-import icyllis.modernui.core.*;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.Choreographer;
+import icyllis.modernui.core.Context;
+import icyllis.modernui.core.Core;
+import icyllis.modernui.core.Handler;
+import icyllis.modernui.core.Looper;
+import icyllis.modernui.core.Message;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Point;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
@@ -36,6 +50,7 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BooleanSupplier;
 
@@ -61,8 +76,10 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     public boolean mTraversalScheduled;
     int mTraversalBarrier;
     boolean mWillDrawSoon;
-    /** Set to true while in performTraversals for detecting when die(true) is called from internal
-     * callbacks such as onMeasure, onPreDraw, onDraw and deferring doDie() until later. */
+    /**
+     * Set to true while in performTraversals for detecting when die(true) is called from internal
+     * callbacks such as onMeasure, onPreDraw, onDraw and deferring doDie() until later.
+     */
     boolean mIsInTraversal;
     boolean mLayoutRequested;
     boolean mFirst;
@@ -258,7 +275,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
      * Figures out the measure spec for the root view in a window based on its
      * layout params.
      *
-     * @param windowSize The available width or height of the window.
+     * @param windowSize  The available width or height of the window.
      * @param measurement The layout width or height requested in the layout params.
      * @return The measure spec to use to measure the root view.
      */
@@ -301,14 +318,14 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 childWidthMeasureSpec = getRootMeasureSpec(baseSize, lp.width);
                 childHeightMeasureSpec = getRootMeasureSpec(desiredWindowHeight, lp.height);
                 performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
-                if ((host.getMeasuredWidthAndState()&View.MEASURED_STATE_TOO_SMALL) == 0) {
+                if ((host.getMeasuredWidthAndState() & View.MEASURED_STATE_TOO_SMALL) == 0) {
                     goodMeasure = true;
                 } else {
                     // Didn't fit in that size... try expanding a bit.
-                    baseSize = (baseSize+desiredWindowWidth)/2;
+                    baseSize = (baseSize + desiredWindowWidth) / 2;
                     childWidthMeasureSpec = getRootMeasureSpec(baseSize, lp.width);
                     performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
-                    if ((host.getMeasuredWidthAndState()&View.MEASURED_STATE_TOO_SMALL) == 0) {
+                    if ((host.getMeasuredWidthAndState() & View.MEASURED_STATE_TOO_SMALL) == 0) {
                         goodMeasure = true;
                     }
                 }
@@ -539,7 +556,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 if (mSurface != null) {
                     mSurface.unref();
                 }
-                mSurface = mStage.getRenderPipeline().createSurface(
+                mSurface = mStage.createSurface(
                         ImageInfo.make(surfaceSize.x, surfaceSize.y,
                                 ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL,
                                 ColorSpaces.SRGB)
@@ -650,6 +667,18 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         }
 
         mIsDrawing = false;
+    }
+
+    public void collectCompositionLayers(List<LayerSettings> out) {
+        if (mSurface != null) {
+            LayerSettings settings = new LayerSettings();
+            mSurface.ref();
+            settings.sourceSurf = mSurface;
+            var surfaceInsets = mWindowAttributes.surfaceInsets;
+            settings.offsetX = mWinFrame.left - surfaceInsets.left;
+            settings.offsetY = mWinFrame.top - surfaceInsets.top;
+            out.add(settings);
+        }
     }
 
     @Deprecated

@@ -18,12 +18,17 @@
 
 package icyllis.modernui.app;
 
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.SamplingOptions;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.granite.GraniteSurface;
+import icyllis.arc3d.sketch.NullSurface;
+import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.renderer.RenderPipeline;
 import icyllis.modernui.renderer.WindowSurface;
 import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.LayerSettings;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.Stage;
 import icyllis.modernui.view.View;
@@ -39,6 +44,7 @@ import org.lwjgl.sdl.SDL_KeyboardEvent;
 import org.lwjgl.sdl.SDL_MouseButtonEvent;
 import org.lwjgl.sdl.SDL_MouseMotionEvent;
 import org.lwjgl.sdl.SDL_WindowEvent;
+import org.lwjgl.system.NativeType;
 
 import java.util.ArrayList;
 
@@ -77,8 +83,17 @@ public final class WindowStage implements Stage {
 
     Compositor mCompositor;
 
-    WindowSurface mSurface;
+    private WindowSurface mSurface;
+    private boolean mMarkForComposition = false;
 
+    public WindowStage(long window) {
+        mWindow = window;
+    }
+
+    @NativeType("SDL_Window *")
+    public long getWindow() {
+        return mWindow;
+    }
 
     /**
      * Returns the framebuffer width for this window in pixels.
@@ -134,6 +149,14 @@ public final class WindowStage implements Stage {
      */
     public int getScreenHeight() {
         return mScreenHeight;
+    }
+
+    public void setSurface(WindowSurface surface) {
+        mSurface = surface;
+    }
+
+    public WindowSurface getSurface() {
+        return mSurface;
     }
 
     public void onKeyboardEvent(@NonNull SDL_KeyboardEvent event) {
@@ -404,16 +427,69 @@ public final class WindowStage implements Stage {
 
     @Override
     public void postComposition() {
-        mCompositor.postComposition();
+        if (mCompositor != null) {
+            mCompositor.postComposition();
+        }
     }
 
     @Override
     public void markForComposition() {
+        mMarkForComposition = true;
+    }
 
+    public boolean checkForComposition() {
+        if (mMarkForComposition) {
+            mMarkForComposition = false;
+            return true;
+        }
+        return false;
+    }
+
+    void doComposition(
+            icyllis.arc3d.sketch.Canvas canvas) {
+        ArrayList<@SharedPtr LayerSettings> layers = new ArrayList<>();
+        for (int i = 0; i < mRoots.size(); i++) {
+            mRoots.get(i).collectCompositionLayers(layers);
+        }
+
+        for (int i = 0; i < layers.size(); i++) {
+            var layer = layers.get(i);
+
+            @SharedPtr
+            icyllis.arc3d.sketch.Image image;
+            if (layer.sourceImage != null) {
+                image = layer.sourceImage; // move
+            } else if (layer.sourceSurf instanceof GraniteSurface graniteSurface) {
+                image = graniteSurface.asImage();
+            } else {
+                image = layer.sourceSurf.makeImageSnapshot();
+            }
+            if (image != null) {
+                canvas.drawImage(image,
+                        layer.offsetX, layer.offsetY,
+                        SamplingOptions.NEAREST, null);
+                image.unref();
+            }
+
+            if (layer.sourceSurf != null) {
+                layer.sourceSurf.unref();
+            }
+        }
     }
 
     @Override
-    public RenderPipeline getRenderPipeline() {
-        return mCompositor.getRenderPipeline();
+    public Surface createSurface(ImageInfo info) {
+        @SharedPtr
+        Surface surf = null;
+        if (mCompositor != null) {
+            surf = mCompositor.createSurface(info);
+        }
+        if (surf != null) {
+            return surf;
+        }
+
+        surf = NullSurface.make(info.width(), info.height());
+
+        return surf;
     }
 }

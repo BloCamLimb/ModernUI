@@ -16,7 +16,7 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.renderer;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ContextOptions;

@@ -18,9 +18,19 @@
 
 package icyllis.modernui.app;
 
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.core.SharedPtr;
+import icyllis.arc3d.engine.Engine;
+import icyllis.arc3d.granite.GraniteSurface;
+import icyllis.arc3d.granite.RecordingContext;
+import icyllis.arc3d.sketch.Surface;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Choreographer;
+import icyllis.modernui.renderer.FrameTask;
 import icyllis.modernui.renderer.RenderPipeline;
+import icyllis.modernui.renderer.WindowSurface;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
@@ -30,6 +40,7 @@ import java.util.ArrayList;
  *
  * @hidden
  */
+@SuppressWarnings({"ForLoopReplaceableByForEach", "ToArrayCallWithZeroLengthArrayArgument"})
 @ApiStatus.Internal
 public final class Compositor {
 
@@ -44,7 +55,8 @@ public final class Compositor {
     final ArrayList<WindowStage> mAllStages = new ArrayList<>();
 
     @UiThread
-    public Compositor() {
+    public Compositor(@NonNull RenderPipeline renderPipeline) {
+        mRenderPipeline = renderPipeline;
         mChoreographer = Choreographer.getInstance();
     }
 
@@ -56,8 +68,11 @@ public final class Compositor {
         }
     }
 
-    public void addWindowStage(WindowStage stage) {
+    public void addWindowStage(@NonNull WindowStage stage) {
         mAllStages.add(stage);
+        stage.mCompositor = this;
+        WindowSurface surface = mRenderPipeline.createWindowSurface(stage.getWindow());
+        stage.setSurface(surface);
     }
 
     void doComposition() {
@@ -66,9 +81,54 @@ public final class Compositor {
         }
         mCompositionPosted = false;
 
+        RecordingContext recordingContext = mRenderPipeline.getUiRecordingContext();
+        if (recordingContext == null) {
+            return;
+        }
+        ArrayList<FrameTask> frameTasks = new ArrayList<>();
+
+        for (int i = 0; i < mAllStages.size(); i++) {
+            WindowStage stage = mAllStages.get(i);
+            if (!stage.checkForComposition()) {
+                continue;
+            }
+
+            WindowSurface surface = stage.getSurface();
+
+            Surface drawingSurface = surface.getCurrentSurface();
+
+            stage.doComposition(drawingSurface.getCanvas());
+
+            FrameTask task = new FrameTask();
+            task.surface = surface;
+            if (mRenderPipeline.requiresPerSurfaceRecording()) {
+                task.surfaceBoundRecording = recordingContext.snap();
+            }
+            frameTasks.add(task);
+        }
+
+        if (!frameTasks.isEmpty()) {
+            if (!mRenderPipeline.requiresPerSurfaceRecording()) {
+                // all tasks go to the first window surface
+                frameTasks.get(0).surfaceBoundRecording = recordingContext.snap();
+            }
+            mRenderPipeline.postRender(frameTasks.toArray(new FrameTask[frameTasks.size()]));
+        }
     }
 
-    public RenderPipeline getRenderPipeline() {
-        return mRenderPipeline;
+    @Nullable
+    @SharedPtr
+    public Surface createSurface(ImageInfo info) {
+        var gpuContext = mRenderPipeline.getUiRecordingContext();
+        if (gpuContext != null) {
+            return GraniteSurface.makeRenderTarget(
+                    gpuContext,
+                    info,
+                    false,
+                    Engine.SurfaceOrigin.kUpperLeft,
+                    null
+            );
+        }
+        return null;
     }
 }
