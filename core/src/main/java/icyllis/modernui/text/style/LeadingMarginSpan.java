@@ -21,7 +21,7 @@ package icyllis.modernui.text.style;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.text.*;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 import org.jetbrains.annotations.ApiStatus;
 
 /**

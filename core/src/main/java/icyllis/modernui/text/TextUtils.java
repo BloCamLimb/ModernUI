@@ -26,8 +26,8 @@ import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.MeasuredText;
+import icyllis.modernui.system.Parcel;
 import icyllis.modernui.text.style.*;
-import icyllis.modernui.util.Parcel;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 

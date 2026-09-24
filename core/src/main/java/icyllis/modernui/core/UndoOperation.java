@@ -18,8 +18,10 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.util.Parcel;
-import icyllis.modernui.util.Parcelable;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.system.Parcel;
+import icyllis.modernui.system.Parcelable;
 
 /**
  * A single undoable operation.<br>You must subclass this to implement the state
@@ -45,7 +47,7 @@ public abstract class UndoOperation<DATA> implements Parcelable {
     /**
      * Construct from a Parcel.
      */
-    protected UndoOperation(Parcel src, ClassLoader loader) {
+    protected UndoOperation(@NonNull Parcel src, @Nullable ClassLoader loader) {
     }
 
     /**

@@ -16,22 +16,27 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.util;
+package icyllis.modernui.system;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.util.DataSet;
+import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.system.MemoryUtil;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.io.*;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
 import java.nio.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A Parcel is a message container for a sequence of bytes, that performs
@@ -45,9 +50,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see Parcelable
  * @since 3.9
  */
-//TODO review
+//TODO redesign in future
 @ApiStatus.Experimental
 public class Parcel {
+
+    private static final Marker MARKER = MarkerFactory.getMarker("Parcel");
 
     /**
      * Value types, version 3.7, do not change.
@@ -83,9 +90,7 @@ public class Parcel {
             VAL_OBJECT_ARRAY = 118,
             VAL_SERIALIZABLE = 127;
 
-    // ModernUI: ConcurrentHashMap for better performance
-    private static final ConcurrentHashMap<ClassLoader, ConcurrentHashMap<String, Parcelable.Creator<?>>>
-            gCreators = new ConcurrentHashMap<>();
+
 
     //TODO ByteBuffer heap and native?
     protected ByteBuffer mNativeBuffer;
@@ -395,7 +400,7 @@ public class Parcel {
             case VAL_UUID -> readUUID();
             case VAL_INSTANT -> readInstant();
             case VAL_DATA_SET -> readDataSet(loader);
-            case VAL_PARCELABLE -> readParcelable0(loader, clazz);
+            case VAL_PARCELABLE -> readParcelable0(loader, (Class<? extends Parcelable>) clazz);
             case VAL_CHAR_SEQUENCE -> readCharSequence();
             case VAL_LIST -> readList(loader, elemType);
             case VAL_OBJECT_ARRAY -> {
@@ -456,95 +461,175 @@ public class Parcel {
     }
 
     @Nullable
-    public <T> T readParcelable(@Nullable ClassLoader loader,
+    public <T extends Parcelable> T readParcelable(@Nullable ClassLoader loader,
                                 @NonNull Class<T> clazz) {
         return readParcelable0(loader, Objects.requireNonNull(clazz));
     }
 
-    @SuppressWarnings("unchecked")
     @Nullable
-    public <T> T readParcelable0(@Nullable ClassLoader loader,
+    public <T extends Parcelable> T readParcelable0(@Nullable ClassLoader loader,
                                  @Nullable Class<T> clazz) {
-        Parcelable.Creator<?> creator = readParcelableCreator0(loader, clazz);
+        Parcelable.Creator<T> creator = readParcelableCreator0(loader, clazz);
         if (creator == null) {
             return null;
         }
-        if (creator instanceof Parcelable.ClassLoaderCreator<?>) {
-            return (T) ((Parcelable.ClassLoaderCreator<?>) creator).createFromParcel(this, loader);
+        if (creator instanceof Parcelable.ClassLoaderCreator<T>) {
+            return ((Parcelable.ClassLoaderCreator<T>) creator).createFromParcel(this, loader);
         }
-        return (T) creator.createFromParcel(this);
+        return creator.createFromParcel(this);
     }
 
     @Nullable
-    public <T> Parcelable.Creator<T> readParcelableCreator(
+    public <T extends Parcelable> Parcelable.Creator<T> readParcelableCreator(
             @Nullable ClassLoader loader,
             @NonNull Class<T> clazz) {
         return readParcelableCreator0(loader, Objects.requireNonNull(clazz));
     }
 
+    // ModernUI changed:
+    private static Parcelable.Creator<?> makeFactory(@NonNull Class<? extends Parcelable> type) {
+        var lookup = MethodHandles.lookup();
+        try {
+            // try private version first
+            var privLookup = MethodHandles.privateLookupIn(type, lookup);
+            // declare a hidden class in target class to avoid class loader leaks
+            try {
+                var ctor = privLookup.findConstructor(
+                        type,
+                        MethodType.methodType(void.class, Parcel.class, ClassLoader.class)
+                );
+                var cs = LambdaMetafactory.metafactory(
+                        privLookup,
+                        "createFromParcel",
+                        MethodType.methodType(Parcelable.ClassLoaderCreator.class),
+                        MethodType.methodType(Parcelable.class, Parcel.class, ClassLoader.class),
+                        ctor,
+                        MethodType.methodType(type, Parcel.class, ClassLoader.class)
+                );
+                return (Parcelable.ClassLoaderCreator<?>) cs.getTarget().invoke();
+            } catch (NoSuchMethodException ignored) {
+                // fallback
+            } catch (Throwable e) {
+                Log.LOGGER.error(MARKER, "Unexpected error during making Parcelable.ClassLoaderCreator", e);
+            }
+            try {
+                var ctor = privLookup.findConstructor(
+                        type,
+                        MethodType.methodType(void.class, Parcel.class)
+                );
+                var cs = LambdaMetafactory.metafactory(
+                        privLookup,
+                        "createFromParcel",
+                        MethodType.methodType(Parcelable.Creator.class),
+                        MethodType.methodType(Parcelable.class, Parcel.class),
+                        ctor,
+                        MethodType.methodType(type, Parcel.class)
+                );
+                return (Parcelable.Creator<?>) cs.getTarget().invoke();
+            } catch (NoSuchMethodException ignored) {
+                // fallback
+            } catch (Throwable e) {
+                Log.LOGGER.error(MARKER, "Unexpected error during making Parcelable.Creator", e);
+            }
+        } catch (IllegalAccessException ignored) {
+            // no private access, fallback
+        }
+
+        // In the public version, we will use an adapter instead of a hidden class,
+        // because we don't know where to declare the hidden class.
+        // Since LambdaMetafactory will use ClassOption.STRONG, if we declare in this class,
+        // it will cause target class loader leak.
+        try {
+            var ctor = lookup.findConstructor(
+                    type,
+                    MethodType.methodType(void.class, Parcel.class, ClassLoader.class)
+            );
+            // make an adapter
+            return (Parcelable.ClassLoaderCreator<?>) (src, loader) -> {
+                try {
+                    return (Parcelable) ctor.invokeExact(src, loader);
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            };
+        } catch (NoSuchMethodException ignored) {
+            // fallback
+        } catch (IllegalAccessException e) {
+            throw new BadParcelableException("IllegalAccessException when unmarshalling: ", e);
+        }
+        try {
+            var ctor = lookup.findConstructor(
+                    type,
+                    MethodType.methodType(void.class, Parcel.class)
+            );
+            // make an adapter
+            return src -> {
+                try {
+                    return (Parcelable) ctor.invokeExact(src);
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            };
+        } catch (NoSuchMethodException ignored) {
+            // fallback
+        } catch (IllegalAccessException e) {
+            throw new BadParcelableException("IllegalAccessException when unmarshalling: ", e);
+        }
+
+        throw new BadParcelableException("Parcelable protocol requires a public "
+                + "constructor taking either (Parcel, ClassLoader) or (Parcel) "
+                + "on " + type);
+    }
+
+    // ModernUI changed: use ClassValue for better lookup performance and to avoid class loader leaks
+    private static final ClassValue<Parcelable.Creator<?>>
+            gCreators = new ClassValue<>() {
+        @SuppressWarnings("unchecked")
+        @Override
+        protected Parcelable.Creator<?> computeValue(@NonNull Class<?> type) {
+            return makeFactory((Class<? extends Parcelable>) type);
+        }
+    };
+
+    @SuppressWarnings("unchecked")
+    @NonNull
+    public static <T extends Parcelable> Parcelable.Creator<T> getParcelableCreator(@NonNull Class<T> type) {
+        Parcelable.Creator<?> creator = gCreators.get(type);
+        Objects.requireNonNull(creator);
+        return (Parcelable.Creator<T>) creator;
+    }
+
     @SuppressWarnings("unchecked")
     @Nullable
-    private <T> Parcelable.Creator<T> readParcelableCreator0(
+    private <T extends Parcelable> Parcelable.Creator<T> readParcelableCreator0(
             @Nullable ClassLoader loader,
             @Nullable Class<T> clazz) {
         final var name = readString();
         if (name == null) {
             return null;
         }
-        final var map = gCreators.computeIfAbsent(loader, __ -> new ConcurrentHashMap<>());
-        Parcelable.Creator<?> creator = map.get(name);
-        if (creator != null) {
-            if (clazz != null) {
-                var target = creator.getClass().getEnclosingClass();
-                if (!clazz.isAssignableFrom(target)) {
-                    throw new BadParcelableException("Parcelable creator " + name + " is not "
-                            + "a subclass of required class " + clazz.getName()
-                            + " provided in the parameter");
-                }
-            }
-            return (Parcelable.Creator<T>) creator;
-        }
 
+        Class<?> target;
         try {
-            var target = (loader == null ? Parcel.class.getClassLoader() : loader)
+            target = (loader == null ? Parcel.class.getClassLoader() : loader)
                     .loadClass(name);
             if (!Parcelable.class.isAssignableFrom(target)) {
                 throw new BadParcelableException("Parcelable protocol requires subclassing "
-                        + "from Parcelable on class " + name);
+                        + "from Parcelable on " + target);
             }
             if (clazz != null) {
                 if (!clazz.isAssignableFrom(target)) {
-                    throw new BadParcelableException("Parcelable creator " + name + " is not "
-                            + "a subclass of required class " + clazz.getName()
+                    throw new BadParcelableException("Parcelable " + target + " is not "
+                            + "a subclass of required " + clazz
                             + " provided in the parameter");
                 }
             }
-            var f = target.getField("CREATOR");
-            if ((f.getModifiers() & Modifier.STATIC) == 0) {
-                throw new BadParcelableException("Parcelable protocol requires "
-                        + "the CREATOR object to be static on class " + name);
-            }
-            if (!Parcelable.Creator.class.isAssignableFrom(f.getType())) {
-                throw new BadParcelableException("Parcelable protocol requires a "
-                        + "Parcelable.Creator object called "
-                        + "CREATOR on class " + name);
-            }
-            creator = (Parcelable.Creator<?>) f.get(null);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException("Parcelable protocol requires a "
-                    + "Parcelable.Creator object called "
-                    + "CREATOR on class " + name, e);
-        } catch (ClassNotFoundException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new BadParcelableException(
+                    "ClassNotFoundException when unmarshalling: " + name, e);
         }
-        if (creator == null) {
-            throw new BadParcelableException("Parcelable protocol requires a "
-                    + "non-null Parcelable.Creator object called "
-                    + "CREATOR on class " + name);
-        }
-
-        // ModernUI: just like Android, there's always a race
-        map.put(name, creator);
+        Parcelable.Creator<?> creator = gCreators.get(target);
+        Objects.requireNonNull(creator);
 
         return (Parcelable.Creator<T>) creator;
     }
@@ -934,15 +1019,14 @@ public class Parcel {
      *
      * @param source the data set to write
      */
+    @Deprecated
     public void writeDataSet(@Nullable DataSet source) {
         if (source == null) {
             writeInt(-1);
             return;
         }
         writeInt(source.size());
-        var it = source.new FastEntryIterator();
-        while (it.hasNext()) {
-            var e = it.next();
+        for (var e : source.entrySet()) {
             writeString(e.getKey());
             writeValue(e.getValue());
         }
@@ -954,6 +1038,7 @@ public class Parcel {
      * @param loader the class loader for {@link Parcelable} classes
      * @return the newly created data set
      */
+    @Deprecated
     @Nullable
     public DataSet readDataSet(@Nullable ClassLoader loader) {
         int n = readInt();

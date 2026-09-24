@@ -21,7 +21,7 @@ package icyllis.modernui.text.style;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.*;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 
 public class TypefaceSpan extends MetricAffectingSpan implements ParcelableSpan {
 

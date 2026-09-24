@@ -21,6 +21,7 @@ package icyllis.modernui.util;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
+import icyllis.modernui.system.Parcel;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -45,13 +46,9 @@ import java.util.function.Consumer;
  */
 //TODO still unstable?
 @SuppressWarnings({"unchecked", "unused"})
-public final class DataSet implements Map<String, Object>, Parcelable {
+public final class DataSet implements Map<String, Object> {
 
     private static final Marker MARKER = MarkerFactory.getMarker("DataSet");
-
-    @NonNull
-    public static final Parcelable.ClassLoaderCreator<DataSet> CREATOR
-            = Parcel::readDataSet;
 
     // derived from LinkedOpenHashMap
 
@@ -123,7 +120,7 @@ public final class DataSet implements Map<String, Object>, Parcelable {
         mThreshold = (int) (DEFAULT_INITIAL_SIZE * DEFAULT_LOAD_FACTOR);
     }
 
-    DataSet(int n) {
+    public DataSet(int n) {
         n = (int) Math.ceil(n / DEFAULT_LOAD_FACTOR);
         n = Math.max(n, DEFAULT_INITIAL_SIZE);
         if (n > 1 << Integer.SIZE - 2)
@@ -1862,11 +1859,6 @@ public final class DataSet implements Map<String, Object>, Parcelable {
         public void clear() {
             DataSet.this.clear();
         }
-    }
-
-    @Override
-    public void writeToParcel(@NonNull Parcel dest, int flags) {
-        dest.writeDataSet(this);
     }
 
     @Override

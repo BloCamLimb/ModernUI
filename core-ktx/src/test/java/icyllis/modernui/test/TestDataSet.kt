@@ -19,7 +19,7 @@
 package icyllis.modernui.test
 
 import icyllis.modernui.util.DataSet
-import icyllis.modernui.util.Parcel
+import icyllis.modernui.system.Parcel
 
 fun main() {
     System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug")

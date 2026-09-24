@@ -32,6 +32,8 @@ package icyllis.modernui.widget;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Parcel;
+import icyllis.modernui.system.Parcelable;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -685,7 +687,7 @@ class ExpandableListConnector extends BaseAdapter implements Filterable {
             }
         }
 
-        GroupMetadata expandedGm = GroupMetadata.obtain(
+        GroupMetadata expandedGm = new GroupMetadata(
                 GroupMetadata.REFRESH,
                 GroupMetadata.REFRESH,
                 posMetadata.position.groupPos,
@@ -882,7 +884,7 @@ class ExpandableListConnector extends BaseAdapter implements Filterable {
      * position to either a) group position for groups, or b) child position for
      * children
      */
-    static class GroupMetadata implements Parcelable, Comparable<GroupMetadata> {
+    public static class GroupMetadata implements Parcelable, Comparable<GroupMetadata> {
         final static int REFRESH = -1;
 
         /**
@@ -911,13 +913,19 @@ class ExpandableListConnector extends BaseAdapter implements Filterable {
         private GroupMetadata() {
         }
 
-        static GroupMetadata obtain(int flPos, int lastChildFlPos, int gPos, long gId) {
-            GroupMetadata gm = new GroupMetadata();
-            gm.flPos = flPos;
-            gm.lastChildFlPos = lastChildFlPos;
-            gm.gPos = gPos;
-            gm.gId = gId;
-            return gm;
+        public GroupMetadata(int flPos, int lastChildFlPos, int gPos, long gId) {
+            this.flPos = flPos;
+            this.lastChildFlPos = lastChildFlPos;
+            this.gPos = gPos;
+            this.gId = gId;
+        }
+
+        @SuppressWarnings("unused")
+        public GroupMetadata(@NonNull Parcel src) {
+            this(src.readInt(),
+                    src.readInt(),
+                    src.readInt(),
+                    src.readLong());
         }
 
         @Override
@@ -932,15 +940,6 @@ class ExpandableListConnector extends BaseAdapter implements Filterable {
             dest.writeInt(gPos);
             dest.writeLong(gId);
         }
-
-        @SuppressWarnings("unused")
-        public static final Parcelable.Creator<GroupMetadata> CREATOR =
-                in -> GroupMetadata.obtain(
-                        in.readInt(),
-                        in.readInt(),
-                        in.readInt(),
-                        in.readLong());
-
     }
 
     /**

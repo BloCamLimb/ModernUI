@@ -20,7 +20,7 @@ package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 
 /**
  * The span that moves the position of the text baseline higher.

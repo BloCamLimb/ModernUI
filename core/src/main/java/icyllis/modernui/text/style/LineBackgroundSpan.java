@@ -24,7 +24,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 
 /**
  * Used to change the background of lines where the span is attached to.

@@ -21,7 +21,7 @@ package icyllis.modernui.text.style;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.*;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -49,8 +49,8 @@ public class LocaleSpan extends MetricAffectingSpan implements ParcelableSpan {
         mLocale = locale;
     }
 
-    public LocaleSpan(@NonNull Parcel source) {
-        String tag = source.readString8();
+    public LocaleSpan(@NonNull Parcel src) {
+        String tag = src.readString8();
         if (tag == null || tag.isEmpty()) {
             mLocale = null;
         } else {

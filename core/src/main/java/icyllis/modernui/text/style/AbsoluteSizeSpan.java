@@ -20,7 +20,7 @@ package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 
 /**
  * A span that changes the size of the text it's attached to.

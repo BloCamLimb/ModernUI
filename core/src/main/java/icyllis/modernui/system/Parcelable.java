@@ -16,7 +16,7 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.util;
+package icyllis.modernui.system;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -31,18 +31,22 @@ import java.lang.annotation.RetentionPolicy;
  * serialization. Instances can be written to and restored from a {@link Parcel},
  * avoiding the heavy overhead of {@link java.io.Externalizable}.
  * <br>
- * Classes implementing the {@code Parcelable} interface must also have a
- * non-null static field called <var>CREATOR</var> of a type that implements the
- * {@link Creator} or {@link ClassLoaderCreator} interface.
+ * Classes implementing the {@code Parcelable} interface should be public, export
+ * its package at least to {@code java.base}. Apps should also open their packages
+ * that contain Parcelable classes to {@code icyllis.modernui.core} module to ensure
+ * performance. Additionally, Parcelable classes must also have one of the
+ * following two (ordered by priority) for construction:
+ * <ol>
+ *     <li>public constructor taking ({@link Parcel} src, {@link ClassLoader} loader)</li>
+ *     <li>public constructor taking ({@link Parcel} src)</li>
+ * </ol>
+ * You may refer to {@link Creator} and {@link ClassLoaderCreator} to see the detailed
+ * explanation of the parameters.
  *
  * <p>A typical implementation of {@code Parcelable} is:</p>
  *
  * <pre>{@code
  * public class MyParcelable implements Parcelable {
- *
- *     public static final Parcelable.Creator<MyParcelable> CREATOR
- *             = MyParcelable::new;
- *
  *     private final int mData;
  *
  *     public MyParcelable(@NonNull Parcel src) {
@@ -58,15 +62,28 @@ import java.lang.annotation.RetentionPolicy;
  * @see Parcel
  * @since 3.7
  */
-//TODO refactor
 @ApiStatus.Experimental
 public interface Parcelable {
 
     @ApiStatus.Internal
-    @MagicConstant()
+    @MagicConstant(flags = {
+            PARCELABLE_WRITE_RETURN_VALUE
+    })
     @Retention(RetentionPolicy.SOURCE)
     @interface WriteFlags {
     }
+
+    /**
+     * Flag for use with {@link #writeToParcel}: the object being written
+     * is a return value, that is the result of a function such as
+     * <code>Parcelable someFunction()</code>,
+     * <code>void someFunction(out Parcelable)</code>, or
+     * <code>void someFunction(inout Parcelable)</code>.
+     * <p>
+     * This is used to transfer the ownership of the object, some implementations
+     * may want to release resources at this point.
+     */
+    int PARCELABLE_WRITE_RETURN_VALUE = 0x0001;
 
     /**
      * The subclass implements the method to flatten its contents by calling
@@ -78,11 +95,29 @@ public interface Parcelable {
     void writeToParcel(@NonNull Parcel dest, @WriteFlags int flags);
 
     /**
-     * Interface that must be implemented and provided as a public <var>CREATOR</var>
-     * field that creates instances of your {@link Parcelable} class from a {@link Parcel}.
+     * The subclass implements the method to unflatten its contents by calling
+     * the methods of {@link Parcel} for its primitive values.
+     * <p>
+     * This is an optional operation: if a subclass is designed to be immutable,
+     * this method should not be implemented. The default implementation will
+     * throw {@link UnsupportedOperationException}.
+     *
+     * @param src the parcel to read the object's data from
+     */
+    default void readFromParcel(@NonNull Parcel src) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Interface used to create {@link Parcelable} instances.
+     * <p>
+     * Subclasses should not implement this interface directly; instead, they should
+     * declare a public constructor that matches the parameters of this interface.
+     * Apps should also open their packages that contain Parcelable classes to
+     * {@code icyllis.modernui.core} module to ensure performance.
      */
     @FunctionalInterface
-    interface Creator<T> {
+    interface Creator<T extends Parcelable> {
 
         /**
          * Create a new instance of the {@link Parcelable} class, instantiating it
@@ -100,7 +135,7 @@ public interface Parcelable {
      * {@link ClassLoader} the object is being created in.
      */
     @FunctionalInterface
-    interface ClassLoaderCreator<T> extends Creator<T> {
+    interface ClassLoaderCreator<T extends Parcelable> extends Creator<T> {
 
         @Override
         default T createFromParcel(@NonNull Parcel source) {

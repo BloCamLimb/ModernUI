@@ -16,7 +16,7 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.util;
+package icyllis.modernui.system;
 
 /**
  * Exception thrown when a {@link Parcelable} is malformed or otherwise invalid.

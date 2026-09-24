@@ -20,7 +20,7 @@ package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 
 /**
  * Uniformly scales the size of the text to which it's attached by a certain proportion.

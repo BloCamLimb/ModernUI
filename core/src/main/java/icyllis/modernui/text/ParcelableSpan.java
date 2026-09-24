@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.util.Parcelable;
+import icyllis.modernui.system.Parcelable;
 import org.jetbrains.annotations.ApiStatus;
 
 /**

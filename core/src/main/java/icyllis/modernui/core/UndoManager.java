@@ -18,9 +18,9 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.system.Parcel;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.ArrayMap;
-import icyllis.modernui.util.Parcel;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -165,12 +165,12 @@ public class UndoManager {
         }
     }
 
-    UndoOwner restoreOwner(Parcel in) {
-        int idx = in.readInt();
+    UndoOwner restoreOwner(Parcel p) {
+        int idx = p.readInt();
         UndoOwner owner = mStateOwners[idx];
         if (owner == null) {
-            String tag = in.readString();
-            int opCount = in.readInt();
+            String tag = p.readString();
+            int opCount = p.readInt();
             owner = new UndoOwner(tag, this);
             owner.mOpCount = opCount;
             mStateOwners[idx] = owner;

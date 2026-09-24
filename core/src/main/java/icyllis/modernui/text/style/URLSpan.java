@@ -39,7 +39,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 import icyllis.modernui.view.View;
 
 /**

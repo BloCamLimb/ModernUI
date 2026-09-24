@@ -19,11 +19,12 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.*;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.text.method.WordIterator;
-import icyllis.modernui.util.Parcel;
+import icyllis.modernui.system.Parcel;
 import icyllis.modernui.view.*;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -596,9 +597,6 @@ public class Editor {
      */
     public static class EditOperation extends UndoOperation<Editor> {
 
-        @SuppressWarnings("unused")
-        public static final ClassLoaderCreator<EditOperation> CREATOR = EditOperation::new;
-
         private static final int TYPE_INSERT = 0;
         private static final int TYPE_DELETE = 1;
         private static final int TYPE_REPLACE = 2;
@@ -637,7 +635,8 @@ public class Editor {
             mNewCursorPos = dstart + mNewText.length();
         }
 
-        public EditOperation(Parcel src, ClassLoader loader) {
+        @SuppressWarnings("unused")
+        public EditOperation(@NonNull Parcel src, @Nullable ClassLoader loader) {
             super(src, loader);
             mType = src.readInt();
             mOldText = src.readString();
