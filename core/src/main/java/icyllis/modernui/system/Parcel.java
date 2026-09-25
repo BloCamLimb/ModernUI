@@ -28,15 +28,26 @@ import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
-import java.nio.*;
+import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.WeakHashMap;
+import java.util.concurrent.locks.StampedLock;
 
 /**
  * A Parcel is a message container for a sequence of bytes, that performs
@@ -52,7 +63,7 @@ import java.util.*;
  */
 //TODO redesign in future
 @ApiStatus.Experimental
-public class Parcel {
+public final class Parcel {
 
     private static final Marker MARKER = MarkerFactory.getMarker("Parcel");
 
@@ -91,9 +102,7 @@ public class Parcel {
             VAL_SERIALIZABLE = 127;
 
 
-
-    //TODO ByteBuffer heap and native?
-    protected ByteBuffer mNativeBuffer;
+    private ByteBuffer mNativeBuffer;
 
     /**
      * @see #freeData()
@@ -102,7 +111,7 @@ public class Parcel {
     public Parcel() {
     }
 
-    protected void ensureCapacity(int len) {
+    private void ensureCapacity(int len) {
         if (mNativeBuffer != null && mNativeBuffer.remaining() >= len) {
             return;
         }
@@ -114,7 +123,7 @@ public class Parcel {
         setCapacity((int) Math.max(size, 128));
     }
 
-    protected void setCapacity(int size) {
+    private void setCapacity(int size) {
         if (mNativeBuffer != null && mNativeBuffer.capacity() >= size) {
             mNativeBuffer.limit(size);
         } else if (mNativeBuffer == null) {
@@ -308,9 +317,6 @@ public class Parcel {
         } else if (v instanceof UUID) {
             writeByte(VAL_UUID);
             writeUUID((UUID) v);
-        } else if (v instanceof Instant) {
-            writeByte(VAL_INSTANT);
-            writeInstant((Instant) v);
         } else if (v instanceof int[]) {
             writeByte(VAL_INT_ARRAY);
             writeIntArray((int[]) v);
@@ -398,7 +404,6 @@ public class Parcel {
             case VAL_CHAR_ARRAY -> readCharArray();
             case VAL_STRING -> readString();
             case VAL_UUID -> readUUID();
-            case VAL_INSTANT -> readInstant();
             case VAL_DATA_SET -> readDataSet(loader);
             case VAL_PARCELABLE -> readParcelable0(loader, (Class<? extends Parcelable>) clazz);
             case VAL_CHAR_SEQUENCE -> readCharSequence();
@@ -440,7 +445,7 @@ public class Parcel {
      * @param parcelableFlags Contextual flags as per
      *                        {@link Parcelable#writeToParcel(Parcel, int) Parcelable.writeToParcel()}.
      */
-    public final void writeParcelable(@Nullable Parcelable p, int parcelableFlags) {
+    public final void writeParcelable(@Nullable Parcelable p, @Parcelable.WriteFlags int parcelableFlags) {
         if (p == null) {
             writeString(null);
             return;
@@ -462,13 +467,13 @@ public class Parcel {
 
     @Nullable
     public <T extends Parcelable> T readParcelable(@Nullable ClassLoader loader,
-                                @NonNull Class<T> clazz) {
+                                                   @NonNull Class<T> clazz) {
         return readParcelable0(loader, Objects.requireNonNull(clazz));
     }
 
     @Nullable
     public <T extends Parcelable> T readParcelable0(@Nullable ClassLoader loader,
-                                 @Nullable Class<T> clazz) {
+                                                    @Nullable Class<T> clazz) {
         Parcelable.Creator<T> creator = readParcelableCreator0(loader, clazz);
         if (creator == null) {
             return null;
@@ -486,11 +491,105 @@ public class Parcel {
         return readParcelableCreator0(loader, Objects.requireNonNull(clazz));
     }
 
+    // ModernUI changed: fast lookup cache
+    private static final class NameCache extends HashMap<String, WeakReference<Class<?>>> {
+        private final StampedLock lock = new StampedLock();
+
+        Class<?> compute(@NonNull ClassLoader loader, @NonNull String name) {
+            long stamp = lock.tryOptimisticRead();
+            WeakReference<Class<?>> value = get(name);
+            if (lock.validate(stamp)) {
+                if (value != null) return value.get();
+            } else {
+                stamp = lock.readLock();
+                try {
+                    value = get(name);
+                    if (value != null) return value.get();
+                } finally {
+                    lock.unlockRead(stamp);
+                }
+            }
+
+            Class<?> target;
+            try {
+                target = loader.loadClass(name);
+                if (!Parcelable.class.isAssignableFrom(target)) {
+                    throw new BadParcelableException("Parcelable protocol requires subclassing "
+                            + "from Parcelable on " + target);
+                }
+            } catch (ClassNotFoundException e) {
+                throw new BadParcelableException(
+                        "ClassNotFoundException when unmarshalling: " + name, e);
+            }
+            WeakReference<Class<?>> computed = new WeakReference<>(target);
+
+            long ws = lock.writeLock();
+            try {
+                WeakReference<Class<?>> existing = putIfAbsent(name, computed);
+                if (existing == null) {
+                    return computed.get();
+                } else {
+                    // there's race, just discard the newly created value
+                    return existing.get();
+                }
+            } finally {
+                lock.unlockWrite(ws);
+            }
+        }
+    }
+
+    // it's safe to use WeakHashMap with StampedLock, expungeStaleEntries is safe
+    private static final WeakHashMap<ClassLoader, NameCache> sClassCache = new WeakHashMap<>();
+    private static final StampedLock sCacheLock = new StampedLock();
+
+    // ModernUI changed: fast lookup cache
+    private static NameCache getClassNameCache(@NonNull ClassLoader loader) {
+        long stamp = sCacheLock.tryOptimisticRead();
+        NameCache value = sClassCache.get(loader);
+        if (sCacheLock.validate(stamp)) {
+            if (value != null) return value;
+        } else {
+            stamp = sCacheLock.readLock();
+            try {
+                value = sClassCache.get(loader);
+                if (value != null) return value;
+            } finally {
+                sCacheLock.unlockRead(stamp);
+            }
+        }
+
+        final NameCache computed = new NameCache();
+
+        long ws = sCacheLock.writeLock();
+        try {
+            NameCache existing = sClassCache.putIfAbsent(loader, computed);
+            if (existing == null) {
+                return computed;
+            } else {
+                // there's race, just discard the newly created value
+                return existing;
+            }
+        } finally {
+            sCacheLock.unlockWrite(ws);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @NonNull
+    public static Class<? extends Parcelable> getParcelableClass(@NonNull ClassLoader loader, @NonNull String name) {
+        Objects.requireNonNull(loader);
+        Objects.requireNonNull(name);
+        NameCache classCache = getClassNameCache(loader);
+        Class<?> target = classCache.compute(loader, name);
+        Objects.requireNonNull(target);
+        return (Class<? extends Parcelable>) target;
+    }
+
     // ModernUI changed:
     private static Parcelable.Creator<?> makeFactory(@NonNull Class<? extends Parcelable> type) {
         var lookup = MethodHandles.lookup();
         try {
-            // try private version first
+            // try private version first, each createFromParcel is about 2.5ns
             var privLookup = MethodHandles.privateLookupIn(type, lookup);
             // declare a hidden class in target class to avoid class loader leaks
             try {
@@ -538,11 +637,13 @@ public class Parcel {
         // In the public version, we will use an adapter instead of a hidden class,
         // because we don't know where to declare the hidden class.
         // Since LambdaMetafactory will use ClassOption.STRONG, if we declare in this class,
-        // it will cause target class loader leak.
+        // it will cause target class loader leak. Each createFromParcel is about 6ns
         try {
             var ctor = lookup.findConstructor(
                     type,
                     MethodType.methodType(void.class, Parcel.class, ClassLoader.class)
+            ).asType(
+                    MethodType.methodType(Parcelable.class, Parcel.class, ClassLoader.class)
             );
             // make an adapter
             return (Parcelable.ClassLoaderCreator<?>) (src, loader) -> {
@@ -561,6 +662,8 @@ public class Parcel {
             var ctor = lookup.findConstructor(
                     type,
                     MethodType.methodType(void.class, Parcel.class)
+            ).asType(
+                    MethodType.methodType(Parcelable.class, Parcel.class)
             );
             // make an adapter
             return src -> {
@@ -594,6 +697,7 @@ public class Parcel {
     @SuppressWarnings("unchecked")
     @NonNull
     public static <T extends Parcelable> Parcelable.Creator<T> getParcelableCreator(@NonNull Class<T> type) {
+        Objects.requireNonNull(type);
         Parcelable.Creator<?> creator = gCreators.get(type);
         Objects.requireNonNull(creator);
         return (Parcelable.Creator<T>) creator;
@@ -609,24 +713,16 @@ public class Parcel {
             return null;
         }
 
-        Class<?> target;
-        try {
-            target = (loader == null ? Parcel.class.getClassLoader() : loader)
-                    .loadClass(name);
-            if (!Parcelable.class.isAssignableFrom(target)) {
-                throw new BadParcelableException("Parcelable protocol requires subclassing "
-                        + "from Parcelable on " + target);
+        ClassLoader actualLoader = (loader == null ? Parcel.class.getClassLoader() : loader);
+        NameCache classCache = getClassNameCache(actualLoader);
+
+        Class<?> target = classCache.compute(actualLoader, name);
+        if (clazz != null) {
+            if (!clazz.isAssignableFrom(target)) {
+                throw new BadParcelableException("Parcelable " + target + " is not "
+                        + "a subclass of required " + clazz
+                        + " provided in the parameter");
             }
-            if (clazz != null) {
-                if (!clazz.isAssignableFrom(target)) {
-                    throw new BadParcelableException("Parcelable " + target + " is not "
-                            + "a subclass of required " + clazz
-                            + " provided in the parameter");
-                }
-            }
-        } catch (ClassNotFoundException e) {
-            throw new BadParcelableException(
-                    "ClassNotFoundException when unmarshalling: " + name, e);
         }
         Parcelable.Creator<?> creator = gCreators.get(target);
         Objects.requireNonNull(creator);
@@ -1066,22 +1162,6 @@ public class Parcel {
     @NonNull
     public UUID readUUID() {
         return new UUID(readLong(), readLong());
-    }
-
-    /**
-     * Write Instant as a value.
-     */
-    public void writeInstant(@NonNull Instant value) {
-        writeLong(value.getEpochSecond());
-        writeInt(value.getNano());
-    }
-
-    /**
-     * Read Instant as a value.
-     */
-    @NonNull
-    public Instant readInstant() {
-        return Instant.ofEpochSecond(readLong(), readInt());
     }
 
     @ApiStatus.Internal
