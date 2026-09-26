@@ -41,7 +41,6 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.View;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -276,7 +275,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
      *
      * @param index The index of the layer, must be in the range
      *              {@code 0...getNumberOfLayers()-1}.
-     * @return The id of the layer or {@link View#NO_ID} if the
+     * @return The id of the layer or {@code -1} if the
      * layer has no id.
      * @see #setId(int, int)
      */
@@ -1454,7 +1453,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public boolean onLayoutDirectionChanged(@View.ResolvedLayoutDir int layoutDirection) {
+    public boolean onLayoutDirectionChanged(int layoutDirection) {
         boolean changed = false;
 
         final ChildDrawable[] array = mLayerState.mChildren;
@@ -1481,7 +1480,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
         public int mWidth = -1;
         public int mHeight = -1;
         public int mGravity = Gravity.NO_GRAVITY;
-        public int mId = View.NO_ID;
+        public int mId = -1;
 
         ChildDrawable(int density) {
             mDensity = density;

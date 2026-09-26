@@ -21,7 +21,6 @@ package icyllis.modernui.text;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.ParagraphStyle;
-import icyllis.modernui.widget.TextView;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -90,11 +89,11 @@ public interface Spannable extends Spanned {
     }
 
     /**
-     * Factory used by {@link TextView} to create new {@link Spannable Spannables}.
+     * Factory used by TextView to create new {@link Spannable Spannables}.
      * You can subclass it to provide something other than {@link SpannableString}.
      *
      * @see #DEFAULT_FACTORY
-     * @see TextView#setSpannableFactory(Factory)
+     * @see icyllis.modernui.widget.TextView#setSpannableFactory(Factory)
      */
     @FunctionalInterface
     interface Factory {

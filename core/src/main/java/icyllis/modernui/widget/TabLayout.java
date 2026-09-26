@@ -59,10 +59,10 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.resources.TextAppearance;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Layout;
+import icyllis.modernui.text.TextAppearance;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
@@ -471,7 +471,7 @@ public class TabLayout extends HorizontalScrollView {
                 R.style.TextAppearance_Material3_TitleSmall);
 
         // Text colors/sizes come from the text appearance first
-        final TextAppearance ta = new TextAppearance(context, tabTextAppearance);
+        final TextAppearance ta = new TextAppearance(context.getTheme(), tabTextAppearance);
         tabTextSize = ta.mTextSize;
 
         if (a.hasValue(20)) { // tabTextColor

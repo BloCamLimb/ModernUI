@@ -25,7 +25,6 @@ import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
-import icyllis.modernui.view.View;
 
 /**
  * Drawable container with only one child element.
@@ -195,7 +194,7 @@ public abstract class DrawableWrapper extends Drawable implements Drawable.Callb
     }
 
     @Override
-    public boolean onLayoutDirectionChanged(@View.ResolvedLayoutDir int layoutDirection) {
+    public boolean onLayoutDirectionChanged(int layoutDirection) {
         return mDrawable != null && mDrawable.setLayoutDirection(layoutDirection);
     }
 

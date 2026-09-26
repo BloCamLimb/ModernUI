@@ -52,8 +52,8 @@ import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.ResourceUtils;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.resources.TextAppearance;
 import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.method.LinkMovementMethod;
@@ -62,14 +62,12 @@ import icyllis.modernui.text.method.PasswordTransformationMethod;
 import icyllis.modernui.text.method.SingleLineTransformationMethod;
 import icyllis.modernui.text.method.TextKeyListener;
 import icyllis.modernui.text.method.TransformationMethod;
-import icyllis.modernui.text.method.WordIterator;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.ClickableSpan;
 import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.text.style.UpdateAppearance;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.KeyEvent;
@@ -365,7 +363,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 attrs, defStyleAttr, defStyleRes, STYLEABLE);
         ResourceId ap = a.getResourceId(4); // textAppearance
         if (ap != null) {
-            appearance = new TextAppearance(context, ap);
+            appearance = new TextAppearance(context.getTheme(), ap);
         } else {
             appearance = new TextAppearance();
         }
@@ -1314,7 +1312,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public void setTextAppearance(ResourceId resId) {
         if (resId != null) {
-            TextAppearance textAppearance = new TextAppearance(getContext(), resId);
+            TextAppearance textAppearance = new TextAppearance(getContext().getTheme(), resId);
             applyTextAppearance(textAppearance);
         }
     }

@@ -40,7 +40,6 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.system.Parcel;
-import icyllis.modernui.view.View;
 
 /**
  * Implementation of the {@link ClickableSpan} that allows setting a url string. When
@@ -95,7 +94,7 @@ public class URLSpan extends ClickableSpan implements ParcelableSpan {
     }
 
     @Override
-    public void onClick(@NonNull View widget) {
+    public void onClick(@NonNull Object widget) {
         Core.openURI(mURL);
     }
 

@@ -28,7 +28,7 @@ import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.modernui.system.Parcel;
 import icyllis.modernui.text.style.*;
-import icyllis.modernui.view.View;
+import icyllis.modernui.util.LayoutDirection;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.io.IOException;
@@ -972,17 +972,16 @@ public final class TextUtils {
      *
      * @param locale the Locale for which we want the layout direction. Can be null.
      * @return the layout direction. This may be one of:
-     * {@link View#LAYOUT_DIRECTION_LTR} or
-     * {@link View#LAYOUT_DIRECTION_RTL}.
+     * {@link LayoutDirection#LTR} or
+     * {@link LayoutDirection#RTL}.
      * <p>
      * Be careful: this code will need to be updated when vertical scripts will be supported
      */
-    @View.ResolvedLayoutDir
     public static int getLayoutDirectionFromLocale(@Nullable Locale locale) {
         return (locale != null && !locale.equals(Locale.ROOT)
                 && ULocale.forLocale(locale).isRightToLeft())
-                ? View.LAYOUT_DIRECTION_RTL
-                : View.LAYOUT_DIRECTION_LTR;
+                ? LayoutDirection.RTL
+                : LayoutDirection.LTR;
     }
 
     /**

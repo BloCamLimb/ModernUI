@@ -37,7 +37,6 @@ package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,7 +66,7 @@ public abstract class ClickableSpan extends CharacterStyle implements UpdateAppe
     /**
      * Performs the click action associated with this span.
      */
-    public abstract void onClick(@NonNull View widget);
+    public abstract void onClick(@NonNull Object widget);
 
     /**
      * Makes the text underlined and in the link color.

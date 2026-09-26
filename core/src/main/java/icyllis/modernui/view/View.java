@@ -1240,7 +1240,11 @@ public class View implements Drawable.Callback {
             LAYOUT_DIRECTION_LTR,
             LAYOUT_DIRECTION_RTL,
             LAYOUT_DIRECTION_INHERIT,
-            LAYOUT_DIRECTION_LOCALE
+            LAYOUT_DIRECTION_LOCALE,
+            LayoutDirection.LTR,
+            LayoutDirection.RTL,
+            LayoutDirection.INHERIT,
+            LayoutDirection.LOCALE
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface LayoutDir {

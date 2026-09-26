@@ -20,9 +20,6 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.R;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.resources.ResourcesProvider;
-import icyllis.modernui.resources.SystemTheme;
-import icyllis.modernui.resources.ResourcesBuilder;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.Log;

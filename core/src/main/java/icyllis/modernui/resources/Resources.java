@@ -1033,13 +1033,21 @@ public class Resources {
                     '}';
         }
 
-        ThemeKey getKey() {
+        /**
+         * @hidden
+         */
+        @ApiStatus.Internal
+        public ThemeKey getKey() {
             // in our use case, read lock is not needed here
             return mKeyCopy;
         }
     }
 
-    static final class ThemeKey implements Cloneable {
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final class ThemeKey implements Cloneable {
         Object[] mResId;
         boolean[] mForce;
 

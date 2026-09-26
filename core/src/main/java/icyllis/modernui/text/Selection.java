@@ -19,7 +19,6 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.BreakIterator;
-import icyllis.modernui.text.method.WordIterator;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;

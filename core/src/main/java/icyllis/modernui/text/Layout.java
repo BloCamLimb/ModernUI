@@ -43,11 +43,9 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LineBreaker;
-import icyllis.modernui.text.method.TextKeyListener;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.util.GrowingArrayUtils;
-import icyllis.modernui.view.KeyEvent;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -1743,8 +1741,8 @@ public abstract class Layout {
         boolean clamped = shouldClampCursor(line);
         float h1 = getPrimaryHorizontal(point, clamped) - 0.5f;
 
-        int caps = TextKeyListener.getMetaState(buffer, KeyEvent.META_SHIFT_ON);
-        int fn = TextKeyListener.getMetaState(buffer, KeyEvent.META_ALT_ON);
+        int caps = 0;
+        int fn = 0;
         int dist = (bottom - top) >> 3;
         top += dist;
         bottom -= dist;

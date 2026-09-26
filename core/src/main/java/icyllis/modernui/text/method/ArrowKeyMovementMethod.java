@@ -21,6 +21,7 @@ package icyllis.modernui.text.method;
 import icyllis.modernui.text.Layout;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.text.Spannable;
+import icyllis.modernui.text.WordIterator;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;

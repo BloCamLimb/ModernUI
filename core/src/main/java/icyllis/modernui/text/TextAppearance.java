@@ -16,13 +16,15 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.text;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Context;
-import icyllis.modernui.text.Typeface;
+import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import org.jetbrains.annotations.ApiStatus;
@@ -84,14 +86,14 @@ public class TextAppearance {
     public TextAppearance() {
     }
 
-    public TextAppearance(@NonNull Context context,
+    public TextAppearance(@NonNull Resources.Theme theme,
                           ResourceId resId) {
         final TypedArray a;
         if (resId != null && resId.type().equals("attr")) {
-            a = context.getTheme().obtainStyledAttributes(
+            a = theme.obtainStyledAttributes(
                     null, resId, null, STYLEABLE);
         } else {
-            a = context.getTheme().obtainStyledAttributes(
+            a = theme.obtainStyledAttributes(
                     resId, STYLEABLE);
         }
 

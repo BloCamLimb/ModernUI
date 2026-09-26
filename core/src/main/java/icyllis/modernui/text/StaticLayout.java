@@ -25,7 +25,6 @@ import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
-import icyllis.modernui.widget.TextView;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -216,7 +215,7 @@ public class StaticLayout extends Layout {
          * @param spacingAdd the amount of line spacing addition
          * @param spacingMult the line spacing multiplier
          * @return this builder, useful for chaining
-         * @see TextView#setLineSpacing
+         * @see icyllis.modernui.widget.TextView#setLineSpacing
          */
         @NonNull
         public Builder setLineSpacing(float spacingAdd, @FloatRange(from = 0.0) float spacingMult) {
@@ -336,8 +335,8 @@ public class StaticLayout extends Layout {
          *
          * @param lineBreakConfig the line break configuration for text wrapping.
          * @return this builder, useful for chaining.
-         * @see TextView#setLineBreakStyle
-         * @see TextView#setLineBreakWordStyle
+         * @see icyllis.modernui.widget.TextView#setLineBreakStyle
+         * @see icyllis.modernui.widget.TextView#setLineBreakWordStyle
          */
         @NonNull
         public Builder setLineBreakConfig(@NonNull LineBreakConfig lineBreakConfig) {

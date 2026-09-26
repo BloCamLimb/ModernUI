@@ -21,6 +21,7 @@ package icyllis.modernui.resources;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.material.SystemTheme;
 import icyllis.modernui.resources.ResourceTypes.*;
 import icyllis.modernui.util.Log;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -63,6 +64,7 @@ public final class AssetManager {
         }
 
         try {
+            //TODO don't consider material theme as system resources
             ResourcesBuilder resourcesBuilder = new ResourcesBuilder(R.ns);
             SystemTheme.addToResources(resourcesBuilder);
             PackAssets pack = resourcesBuilder.buildPack(new EmptyAssetsProvider());

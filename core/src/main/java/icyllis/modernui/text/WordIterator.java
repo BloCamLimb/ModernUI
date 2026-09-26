@@ -16,10 +16,12 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text.method;
+package icyllis.modernui.text;
 
 import com.ibm.icu.impl.UCharacterProperty;
-import com.ibm.icu.lang.*;
+import com.ibm.icu.lang.UCharacter;
+import com.ibm.icu.lang.UCharacterCategory;
+import com.ibm.icu.lang.UProperty;
 import com.ibm.icu.text.BreakIterator;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;

@@ -18,14 +18,27 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.IntRange;
+import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.BlendModeColorFilter;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.ColorFilter;
+import icyllis.modernui.graphics.Outline;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.util.*;
-import icyllis.modernui.view.View;
-import icyllis.modernui.widget.ImageView;
+import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.util.LayoutDirection;
+import icyllis.modernui.util.StateSet;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -37,7 +50,7 @@ import java.util.Arrays;
  * often you will deal with Drawable as the type of resource retrieved for
  * drawing things to the screen; the Drawable class provides a generic API for
  * dealing with an underlying visual resource that may take a variety of forms.
- * Unlike a {@link View}, a Drawable does not have any facility to
+ * Unlike a {@link icyllis.modernui.view.View}, a Drawable does not have any facility to
  * receive events or otherwise interact with the user.
  *
  * <p>In addition to simple drawing, Drawable provides a number of generic
@@ -69,7 +82,7 @@ import java.util.Arrays;
  *     through the {@link Callback} interface.  All clients should support this
  *     interface (via {@link #setCallback}) so that animations will work.  A
  *     simple way to do this is through the system facilities such as
- *     {@link View#setBackground(Drawable)} and {@link ImageView}.
+ *     {@link icyllis.modernui.view.View#setBackground(Drawable)} and {@link icyllis.modernui.widget.ImageView}.
  * </ul>
  * <p>
  * Though usually not visible to the application, Drawables may take a variety
@@ -112,7 +125,7 @@ public abstract class Drawable {
     private WeakReference<Callback> mCallback = null;
     private boolean mVisible = true;
 
-    @View.ResolvedLayoutDir
+    @MagicConstant(intValues = {LayoutDirection.LTR, LayoutDirection.RTL})
     private int mLayoutDirection;
 
     public static final int MAX_LEVEL = 10000;
@@ -363,11 +376,11 @@ public abstract class Drawable {
     /**
      * Returns the resolved layout direction for this Drawable.
      *
-     * @return One of {@link View#LAYOUT_DIRECTION_LTR},
-     * {@link View#LAYOUT_DIRECTION_RTL}
+     * @return One of {@link LayoutDirection#LTR},
+     * {@link LayoutDirection#RTL}
      * @see #setLayoutDirection(int)
      */
-    @View.ResolvedLayoutDir
+    @MagicConstant(intValues = {LayoutDirection.LTR, LayoutDirection.RTL})
     public int getLayoutDirection() {
         return mLayoutDirection;
     }
@@ -378,14 +391,14 @@ public abstract class Drawable {
      * its own.
      *
      * @param layoutDirection the resolved layout direction for the drawable,
-     *                        either {@link View#LAYOUT_DIRECTION_LTR}
-     *                        or {@link View#LAYOUT_DIRECTION_RTL}
+     *                        either {@link LayoutDirection#LTR}
+     *                        or {@link LayoutDirection#RTL}
      * @return {@code true} if the layout direction change has caused the
      * appearance of the drawable to change such that it needs to be
      * re-drawn, {@code false} otherwise
      * @see #getLayoutDirection()
      */
-    public final boolean setLayoutDirection(@View.ResolvedLayoutDir int layoutDirection) {
+    public final boolean setLayoutDirection(@MagicConstant(intValues = {LayoutDirection.LTR, LayoutDirection.RTL}) int layoutDirection) {
         if (mLayoutDirection != layoutDirection) {
             mLayoutDirection = layoutDirection;
             return onLayoutDirectionChanged(layoutDirection);
@@ -402,7 +415,7 @@ public abstract class Drawable {
      * re-drawn, {@code false} otherwise
      * @see #setLayoutDirection(int)
      */
-    protected boolean onLayoutDirectionChanged(@View.ResolvedLayoutDir int layoutDirection) {
+    protected boolean onLayoutDirectionChanged(@MagicConstant(intValues = {LayoutDirection.LTR, LayoutDirection.RTL}) int layoutDirection) {
         return false;
     }
 

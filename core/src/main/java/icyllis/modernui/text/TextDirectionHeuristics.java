@@ -19,7 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.view.View;
+import icyllis.modernui.util.LayoutDirection;
 
 import java.nio.CharBuffer;
 import java.util.Locale;
@@ -294,7 +294,7 @@ public final class TextDirectionHeuristics {
         @Override
         protected boolean isDefaultRtl() {
             Locale locale = ModernUI.getSelectedLocale();
-            return TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL;
+            return TextUtils.getLayoutDirectionFromLocale(locale) == LayoutDirection.RTL;
         }
     }
 }

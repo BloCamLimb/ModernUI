@@ -16,7 +16,7 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.material;
 
 import icyllis.modernui.R;
 import icyllis.modernui.graphics.BlendMode;
@@ -37,6 +37,9 @@ import icyllis.modernui.material.drawable.LinearIndeterminateDrawable;
 import icyllis.modernui.material.drawable.SeekbarThumbDrawable;
 import icyllis.modernui.material.drawable.SliderThumbDrawable;
 import icyllis.modernui.material.drawable.SwitchThumbDrawable;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.ResourcesBuilder;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
