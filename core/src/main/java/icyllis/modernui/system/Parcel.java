@@ -24,6 +24,7 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -35,6 +36,7 @@ import java.io.Serializable;
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.nio.BufferOverflowException;
@@ -42,12 +44,12 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import java.util.concurrent.locks.StampedLock;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A Parcel is a message container for a sequence of bytes, that performs
@@ -491,96 +493,67 @@ public final class Parcel {
         return readParcelableCreator0(loader, Objects.requireNonNull(clazz));
     }
 
-    // ModernUI changed: fast lookup cache
-    private static final class NameCache extends HashMap<String, WeakReference<Class<?>>> {
-        private final StampedLock lock = new StampedLock();
+    private static final ReentrantLock sCacheLock = new ReentrantLock();
+    private static final WeakHashMap<ClassLoader,
+            ConcurrentHashMap<String, WeakReference<Class<?>>>> sClassCache
+            = new WeakHashMap<>();
 
-        Class<?> compute(@NonNull ClassLoader loader, @NonNull String name) {
-            long stamp = lock.tryOptimisticRead();
-            WeakReference<Class<?>> value = get(name);
-            if (lock.validate(stamp)) {
-                if (value != null) return value.get();
-            } else {
-                stamp = lock.readLock();
-                try {
-                    value = get(name);
-                    if (value != null) return value.get();
-                } finally {
-                    lock.unlockRead(stamp);
-                }
+    // ModernUI changed: fast lookup cache
+    @SuppressWarnings("Java8MapApi")
+    @NonNull
+    private static ConcurrentHashMap<String, WeakReference<Class<?>>> getClassCache(@NonNull ClassLoader loader) {
+        sCacheLock.lock();
+        try {
+            var result = sClassCache.get(loader);
+            if (result == null) {
+                result = new ConcurrentHashMap<>();
+                sClassCache.put(loader, result);
             }
+            return result;
+        } finally {
+            sCacheLock.unlock();
+        }
+    }
+
+    // ModernUI changed: fast lookup cache
+    private static Class<?> getParcelableClass(
+            @NonNull ConcurrentHashMap<String, WeakReference<Class<?>>> cache,
+            @NonNull String name, @NonNull ClassLoader loader) {
+        try {
+            WeakReference<Class<?>> value = cache.get(name);
+            if (value != null) return value.get();
 
             Class<?> target;
             try {
                 target = loader.loadClass(name);
-                if (!Parcelable.class.isAssignableFrom(target)) {
-                    throw new BadParcelableException("Parcelable protocol requires subclassing "
-                            + "from Parcelable on " + target);
-                }
             } catch (ClassNotFoundException e) {
                 throw new BadParcelableException(
                         "ClassNotFoundException when unmarshalling: " + name, e);
             }
-            WeakReference<Class<?>> computed = new WeakReference<>(target);
-
-            long ws = lock.writeLock();
-            try {
-                WeakReference<Class<?>> existing = putIfAbsent(name, computed);
-                if (existing == null) {
-                    return computed.get();
-                } else {
-                    // there's race, just discard the newly created value
-                    return existing.get();
-                }
-            } finally {
-                lock.unlockWrite(ws);
+            if (!Parcelable.class.isAssignableFrom(target)) {
+                throw new BadParcelableException("Parcelable protocol requires subclassing "
+                        + "from Parcelable on " + target);
             }
-        }
-    }
 
-    // it's safe to use WeakHashMap with StampedLock, expungeStaleEntries is safe
-    private static final WeakHashMap<ClassLoader, NameCache> sClassCache = new WeakHashMap<>();
-    private static final StampedLock sCacheLock = new StampedLock();
-
-    // ModernUI changed: fast lookup cache
-    private static NameCache getClassNameCache(@NonNull ClassLoader loader) {
-        long stamp = sCacheLock.tryOptimisticRead();
-        NameCache value = sClassCache.get(loader);
-        if (sCacheLock.validate(stamp)) {
-            if (value != null) return value;
-        } else {
-            stamp = sCacheLock.readLock();
-            try {
-                value = sClassCache.get(loader);
-                if (value != null) return value;
-            } finally {
-                sCacheLock.unlockRead(stamp);
-            }
-        }
-
-        final NameCache computed = new NameCache();
-
-        long ws = sCacheLock.writeLock();
-        try {
-            NameCache existing = sClassCache.putIfAbsent(loader, computed);
-            if (existing == null) {
-                return computed;
-            } else {
-                // there's race, just discard the newly created value
-                return existing;
-            }
+            cache.putIfAbsent(name,
+                    new WeakReference<>(target));
+            return target;
         } finally {
-            sCacheLock.unlockWrite(ws);
+            Reference.reachabilityFence(loader);
         }
     }
 
+    /**
+     * @hidden
+     */
+    @VisibleForTesting
     @SuppressWarnings("unchecked")
     @NonNull
     public static Class<? extends Parcelable> getParcelableClass(@NonNull ClassLoader loader, @NonNull String name) {
         Objects.requireNonNull(loader);
         Objects.requireNonNull(name);
-        NameCache classCache = getClassNameCache(loader);
-        Class<?> target = classCache.compute(loader, name);
+        var classCache = getClassCache(loader);
+        Class<?> target = getParcelableClass(classCache, name, loader);
         Objects.requireNonNull(target);
         return (Class<? extends Parcelable>) target;
     }
@@ -713,16 +686,18 @@ public final class Parcel {
             return null;
         }
 
-        ClassLoader actualLoader = (loader == null ? Parcel.class.getClassLoader() : loader);
-        NameCache classCache = getClassNameCache(actualLoader);
+        ClassLoader actualLoader = loader == null ? Parcel.class.getClassLoader() : loader;
+        var classCache = getClassCache(actualLoader);
 
-        Class<?> target = classCache.compute(actualLoader, name);
+        Class<?> target = getParcelableClass(classCache, name, actualLoader);
         if (clazz != null) {
             if (!clazz.isAssignableFrom(target)) {
                 throw new BadParcelableException("Parcelable " + target + " is not "
                         + "a subclass of required " + clazz
                         + " provided in the parameter");
             }
+        } else {
+            Objects.requireNonNull(target);
         }
         Parcelable.Creator<?> creator = gCreators.get(target);
         Objects.requireNonNull(creator);
