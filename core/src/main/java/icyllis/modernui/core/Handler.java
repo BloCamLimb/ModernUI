@@ -486,7 +486,7 @@ public class Handler {
      * looper processing the message queue is exiting.
      */
     public final boolean sendMessageAtFrontOfQueue(@NonNull Message msg) {
-        return enqueueMessage(msg, 0);
+        return enqueueMessage(msg, -1);
     }
 
     private boolean enqueueMessage(@NonNull Message msg, long timeMillis) {

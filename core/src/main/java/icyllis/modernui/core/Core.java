@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.system.SystemClock;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
@@ -512,7 +513,7 @@ public final class Core {
      * @return current time in nanoseconds
      */
     public static long timeNanos() {
-        return (long) (GLFW.glfwGetTime() * 1.0E9);
+        return SystemClock.uptimeNanos();
     }
 
     /**
@@ -526,7 +527,7 @@ public final class Core {
      * @return current time in milliseconds
      */
     public static long timeMillis() {
-        return (long) (GLFW.glfwGetTime() * 1.0E3);
+        return SystemClock.uptimeMillis();
     }
 
     /**

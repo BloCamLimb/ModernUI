@@ -398,7 +398,7 @@ public final class MessageQueue {
             msg.when = when;
             Message p = mMessages;
             boolean needWake;
-            if (p == null || when == 0 || when < p.when) {
+            if (p == null || when < 0 || when < p.when) {
                 // New head, wake up the event queue if blocked.
                 msg.next = p;
                 mMessages = msg;
