@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.animation.MotionEasingUtils;
@@ -30,6 +29,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.system.AnimationClock;
 import icyllis.modernui.util.FloatProperty;
 
 import java.util.ArrayList;
@@ -137,7 +137,7 @@ class RippleForeground extends RippleComponent {
     }
 
     private long computeFadeOutDelay() {
-        long timeSinceEnter = AnimationUtils.currentAnimationTimeMillis() - mEnterStartedAtMillis;
+        long timeSinceEnter = AnimationClock.currentAnimationTimeMillis() - mEnterStartedAtMillis;
         if (timeSinceEnter > 0 && timeSinceEnter < OPACITY_HOLD_DURATION) {
             return OPACITY_HOLD_DURATION - timeSinceEnter;
         }
@@ -149,7 +149,7 @@ class RippleForeground extends RippleComponent {
      */
     public final void enter(boolean hasMask) {
         // use longer animation when there's mask
-        mEnterStartedAtMillis = AnimationUtils.currentAnimationTimeMillis();
+        mEnterStartedAtMillis = AnimationClock.currentAnimationTimeMillis();
 
         for (int i = 0; i < mRunningAnimators.size(); i++) {
             mRunningAnimators.get(i).cancel();

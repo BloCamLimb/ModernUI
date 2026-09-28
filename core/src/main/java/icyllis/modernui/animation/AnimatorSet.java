@@ -20,8 +20,8 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Looper;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.ArrayMap;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -933,7 +933,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
     }
 
     /**
-     * @param frameTime The frame start time, in the {@link Core#timeMillis()} time base
+     * @param frameTime The frame start time, in the {@link SystemClock#uptimeMillis()} time base
      */
     @ApiStatus.Internal
     @Override

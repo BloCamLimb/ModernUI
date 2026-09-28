@@ -35,9 +35,9 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.system.AnimationClock;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.ViewConfiguration;
 import org.jetbrains.annotations.ApiStatus;
@@ -290,7 +290,7 @@ public class OverScroller {
                 }
             }
         } else {
-            long time = AnimationUtils.currentAnimationTimeMillis();
+            long time = AnimationClock.currentAnimationTimeMillis();
             // Any scroller can be used for time, since they were started
             // together in scroll mode. We use X here.
             final long elapsedTime = time - mScrollerX.mStartTime;
@@ -487,7 +487,7 @@ public class OverScroller {
      * @return The elapsed time in milliseconds.
      */
     public int timePassed() {
-        final long time = AnimationUtils.currentAnimationTimeMillis();
+        final long time = AnimationClock.currentAnimationTimeMillis();
         final long startTime = Math.min(mScrollerX.mStartTime, mScrollerY.mStartTime);
         return (int) (time - startTime);
     }
@@ -657,7 +657,7 @@ public class OverScroller {
             mCurrentPosition = mStart = start;
             mFinal = start + distance;
 
-            mStartTime = AnimationUtils.currentAnimationTimeMillis();
+            mStartTime = AnimationClock.currentAnimationTimeMillis();
             mDuration = duration;
 
             // Unused
@@ -678,7 +678,7 @@ public class OverScroller {
         }
 
         void extendDuration(int extend) {
-            final long time = AnimationUtils.currentAnimationTimeMillis();
+            final long time = AnimationClock.currentAnimationTimeMillis();
             final int elapsedTime = (int) (time - mStartTime);
             mDuration = mSplineDuration = elapsedTime + extend;
             mFinished = false;
@@ -690,7 +690,7 @@ public class OverScroller {
             mCurrentPosition = mStart = mFinal = start;
             mVelocity = 0;
 
-            mStartTime = AnimationUtils.currentAnimationTimeMillis();
+            mStartTime = AnimationClock.currentAnimationTimeMillis();
             mDuration = 0;
 
             if (start < min) {
@@ -721,7 +721,7 @@ public class OverScroller {
             mFinished = false;
             mCurrVelocity = mVelocity = velocity;
             mDuration = mSplineDuration = 0;
-            mStartTime = AnimationUtils.currentAnimationTimeMillis();
+            mStartTime = AnimationClock.currentAnimationTimeMillis();
             mCurrentPosition = mStart = start;
 
             if (start > max || start < min) {
@@ -815,7 +815,7 @@ public class OverScroller {
             // mState is used to detect successive notifications 
             if (mState == SPLINE) {
                 mOver = over;
-                mStartTime = AnimationUtils.currentAnimationTimeMillis();
+                mStartTime = AnimationClock.currentAnimationTimeMillis();
                 // We were in fling/scroll mode before: current velocity is such that distance to
                 // edge is increasing. This ensures that startAfterEdge will not start a new fling.
                 startAfterEdge(start, end, end, (int) mCurrVelocity);
@@ -877,7 +877,7 @@ public class OverScroller {
          * reached.
          */
         boolean update() {
-            final long time = AnimationUtils.currentAnimationTimeMillis();
+            final long time = AnimationClock.currentAnimationTimeMillis();
             final long currentTime = time - mStartTime;
 
             if (currentTime == 0) {

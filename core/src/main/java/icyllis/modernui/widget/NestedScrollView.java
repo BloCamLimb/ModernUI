@@ -36,7 +36,6 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
@@ -45,6 +44,7 @@ import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.system.AnimationClock;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.FocusFinder;
 import icyllis.modernui.view.KeyEvent;
@@ -1180,7 +1180,7 @@ public class NestedScrollView extends FrameLayout {
             // Nothing to do.
             return;
         }
-        long duration = AnimationUtils.currentAnimationTimeMillis() - mLastScroll;
+        long duration = AnimationClock.currentAnimationTimeMillis() - mLastScroll;
         if (duration > ANIMATED_SCROLL_GAP) {
             View child = getChildAt(0);
             NestedScrollView.LayoutParams lp = (LayoutParams) child.getLayoutParams();
@@ -1197,7 +1197,7 @@ public class NestedScrollView extends FrameLayout {
             }
             scrollBy(dx, dy);
         }
-        mLastScroll = AnimationUtils.currentAnimationTimeMillis();
+        mLastScroll = AnimationClock.currentAnimationTimeMillis();
     }
 
     /**

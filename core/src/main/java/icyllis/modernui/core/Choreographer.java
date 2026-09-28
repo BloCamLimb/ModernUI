@@ -18,9 +18,10 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.system.AnimationClock;
+import icyllis.modernui.system.SystemClock;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -276,7 +277,7 @@ public final class Choreographer {
         }
 
         synchronized (mLock) {
-            final long now = Core.timeMillis();
+            final long now = SystemClock.uptimeMillis();
             final long dueTime = now + delayMillis;
             mCallbackQueues[callbackType].addCallbackLocked(dueTime, action, token);
 
@@ -371,8 +372,8 @@ public final class Choreographer {
      * <p>
      * This method provides the time in milliseconds when the frame started being rendered.
      * The frame time provides a stable time base for synchronizing animations
-     * and drawing.  It should be used instead of {@link Core#timeMillis()}
-     * or {@link Core#timeNanos()} for animations and drawing in the UI.  Using the frame
+     * and drawing.  It should be used instead of {@link SystemClock#uptimeMillis()}
+     * or {@link SystemClock#uptimeNanos()} for animations and drawing in the UI.  Using the frame
      * time helps to reduce inter-frame jitter because the frame time is fixed at the time
      * the frame was scheduled to start, regardless of when the animations or drawing
      * callback actually runs.  All callbacks that run as part of rendering a frame will
@@ -386,7 +387,7 @@ public final class Choreographer {
      * This method should only be called from within a callback.
      * </p>
      *
-     * @return The frame start time, in the {@link Core#timeMillis()} time base.
+     * @return The frame start time, in the {@link SystemClock#uptimeMillis()} time base.
      * @throws IllegalStateException if no frame is in progress.
      */
     @ApiStatus.Internal
@@ -397,7 +398,7 @@ public final class Choreographer {
     /**
      * Same as {@link #getFrameTime()} but with nanosecond precision.
      *
-     * @return The frame start time, in the {@link Core#timeNanos()} time base.
+     * @return The frame start time, in the {@link SystemClock#uptimeNanos()} time base.
      * @throws IllegalStateException if no frame is in progress.
      */
     @ApiStatus.Internal
@@ -415,7 +416,7 @@ public final class Choreographer {
      * Like {@link #getFrameTimeNanos}, but always returns the last frame time, not matter
      * whether callbacks are currently running.
      *
-     * @return The frame start time of the last frame, in the {@link Core#timeNanos()} time base.
+     * @return The frame start time of the last frame, in the {@link SystemClock#uptimeNanos()} time base.
      */
     @ApiStatus.Internal
     public long getLastFrameTimeNanos() {
@@ -439,7 +440,7 @@ public final class Choreographer {
     }
 
     void doFrame() {
-        final long frameTimeNanos = Core.timeNanos();
+        final long frameTimeNanos = SystemClock.uptimeNanos();
         try {
             synchronized (mLock) {
                 if (!mFrameScheduled) {
@@ -456,7 +457,7 @@ public final class Choreographer {
                 mLastFrameTimeNanos = frameTimeNanos;
             }
 
-            AnimationUtils.lockAnimationClock(frameTimeNanos / 1000000);
+            AnimationClock.lockAnimationClock(frameTimeNanos / 1000000);
 
             doCallbacks(Choreographer.CALLBACK_INPUT, frameTimeNanos);
 
@@ -466,11 +467,11 @@ public final class Choreographer {
 
             doCallbacks(Choreographer.CALLBACK_COMMIT, frameTimeNanos);
         } finally {
-            AnimationUtils.unlockAnimationClock();
+            AnimationClock.unlockAnimationClock();
         }
 
         if (DEBUG_FRAMES) {
-            final long endNanos = Core.timeNanos();
+            final long endNanos = SystemClock.uptimeNanos();
             LOGGER.info(MARKER, "Frame : Finished, took "
                     + (endNanos - frameTimeNanos) * 0.000001f + " ms.");
         }
@@ -482,7 +483,7 @@ public final class Choreographer {
             // We use "now" to determine when callbacks become due because it's possible
             // for earlier processing phases in a frame to post callbacks that should run
             // in a following phase, such as an input event that causes an animation to start.
-            final long now = Core.timeMillis();
+            final long now = SystemClock.uptimeMillis();
             callbacks = mCallbackQueues[callbackType].extractDueCallbacksLocked(now);
             if (callbacks == null) {
                 return;
@@ -494,7 +495,7 @@ public final class Choreographer {
                 if (DEBUG_FRAMES) {
                     LOGGER.info(MARKER, "RunCallback: type=" + callbackType
                             + ", action=" + c.action + ", token=" + c.token
-                            + ", latencyMillis=" + (Core.timeMillis() - c.dueTime));
+                            + ", latencyMillis=" + (SystemClock.uptimeMillis() - c.dueTime));
                 }
                 c.run(frameTimeNanos);
             }
@@ -513,7 +514,7 @@ public final class Choreographer {
     void doScheduleCallback(int callbackType) {
         synchronized (mLock) {
             if (!mFrameScheduled) {
-                final long now = Core.timeMillis();
+                final long now = SystemClock.uptimeMillis();
                 if (mCallbackQueues[callbackType].hasDueCallbacksLocked(now)) {
                     scheduleFrameLocked(now);
                 }
@@ -564,8 +565,8 @@ public final class Choreographer {
          * <p>
          * This method provides the time in nanoseconds when the frame started being rendered.
          * The frame time provides a stable time base for synchronizing animations
-         * and drawing.  It should be used instead of {@link Core#timeMillis()}
-         * or {@link Core#timeNanos()} for animations and drawing in the UI.  Using the frame
+         * and drawing.  It should be used instead of {@link SystemClock#uptimeMillis()}
+         * or {@link SystemClock#uptimeNanos()} for animations and drawing in the UI.  Using the frame
          * time helps to reduce inter-frame jitter because the frame time is fixed at the time
          * the frame was scheduled to start, regardless of when the animations or drawing
          * callback actually runs.  All callbacks that run as part of rendering a frame will
@@ -579,8 +580,8 @@ public final class Choreographer {
          *
          * @param choreographer  the choreographer called this method
          * @param frameTimeNanos The time in nanoseconds when the frame started being rendered,
-         *                       in the {@link Core#timeNanos()} timebase.  Divide this value by {@code 1000000}
-         *                       to convert it to the {@link Core#timeMillis()} time base.
+         *                       in the {@link SystemClock#uptimeNanos()} timebase.  Divide this value by {@code 1000000}
+         *                       to convert it to the {@link SystemClock#uptimeMillis()} time base.
          */
         void doFrame(@NonNull Choreographer choreographer, long frameTimeNanos);
     }

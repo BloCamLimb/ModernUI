@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Looper;
+import icyllis.modernui.system.AnimationClock;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -506,7 +507,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
         mStartTimeCommitted = true; // do not allow start time to be compensated for jank
         if (isPulsingInternal()) {
             long seekTime = (long) (getScaledDuration() * fraction);
-            long currentTime = AnimationUtils.currentAnimationTimeMillis();
+            long currentTime = AnimationClock.currentAnimationTimeMillis();
             // Only modify the start time when the animation is running. Seek fraction will ensure
             // non-running animations skip to the correct start time.
             mStartTime = currentTime - seekTime;
@@ -605,7 +606,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
         if (durationScale == 0f) {
             durationScale = 1f;
         }
-        return (long) ((AnimationUtils.currentAnimationTimeMillis() - mStartTime) / durationScale);
+        return (long) ((AnimationClock.currentAnimationTimeMillis() - mStartTime) / durationScale);
     }
 
     @Override
@@ -971,7 +972,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
     @Override
     public void reverse() {
         if (isPulsingInternal()) {
-            long currentTime = AnimationUtils.currentAnimationTimeMillis();
+            long currentTime = AnimationClock.currentAnimationTimeMillis();
             long currentPlayTime = currentTime - mStartTime;
             long timeLeft = getScaledDuration() - currentPlayTime;
             mStartTime = currentTime - timeLeft;

@@ -39,12 +39,12 @@ import icyllis.modernui.R;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
 import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -795,7 +795,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     private void exitHoverTargets() {
         if (mHoveredSelf || mFirstHoverTarget != null) {
-            final long now = Core.timeNanos();
+            final long now = SystemClock.uptimeNanos();
             MotionEvent event = MotionEvent.obtain(now,
                     MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
             dispatchHoverEvent(event);
@@ -816,7 +816,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 }
                 target.recycle();
 
-                final long now = Core.timeNanos();
+                final long now = SystemClock.uptimeNanos();
                 MotionEvent event = MotionEvent.obtain(now,
                         MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
                 view.dispatchHoverEvent(event);
@@ -918,7 +918,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     private void exitTooltipHoverTargets() {
         if (mTooltipHoveredSelf || mTooltipHoverTarget != null) {
-            final long now = Core.timeNanos();
+            final long now = SystemClock.uptimeNanos();
             MotionEvent event = MotionEvent.obtain(now,
                     MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
             dispatchTooltipHoverEvent(event);
@@ -1178,7 +1178,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         if (target != null) {
             boolean syntheticEvent = false;
             if (event == null) {
-                final long time = Core.timeNanos();
+                final long time = SystemClock.uptimeNanos();
                 event = MotionEvent.obtain(time,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 syntheticEvent = true;
@@ -1201,7 +1201,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 mTouchTarget = null;
                 target.recycle();
 
-                final long now = Core.timeNanos();
+                final long now = SystemClock.uptimeNanos();
                 MotionEvent event = MotionEvent.obtain(now,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 view.dispatchTouchEvent(event);

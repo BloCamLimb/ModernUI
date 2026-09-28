@@ -36,8 +36,8 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.system.SystemClock;
 
 /**
  * An object used to create frame-by-frame animations, defined by a series of
@@ -240,7 +240,7 @@ public class AnimationDrawable extends DrawableContainer implements Runnable, An
             // Unscheduling may have clobbered these values; restore them
             mCurFrame = frame;
             mRunning = true;
-            scheduleSelf(this, Core.timeMillis() + mAnimationState.mDurations[frame]);
+            scheduleSelf(this, SystemClock.uptimeMillis() + mAnimationState.mDurations[frame]);
         }
     }
 

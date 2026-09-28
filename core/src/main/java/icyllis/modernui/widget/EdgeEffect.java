@@ -19,7 +19,6 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
@@ -27,6 +26,7 @@ import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.system.AnimationClock;
 import icyllis.modernui.view.View;
 
 /**
@@ -202,7 +202,7 @@ public class EdgeEffect {
      *                      Values may be from 0-1.
      */
     public void onPull(float deltaDistance, float displacement) {
-        final long now = AnimationUtils.currentAnimationTimeMillis();
+        final long now = AnimationClock.currentAnimationTimeMillis();
         mTargetDisplacement = displacement;
         if (mState == STATE_PULL_DECAY && now - mStartTime < mDuration) {
             return;
@@ -312,7 +312,7 @@ public class EdgeEffect {
         mGlowAlphaFinish = 0.f;
         mGlowScaleYFinish = 0.f;
 
-        mStartTime = AnimationUtils.currentAnimationTimeMillis();
+        mStartTime = AnimationClock.currentAnimationTimeMillis();
         mDuration = RECEDE_TIME;
     }
 
@@ -330,7 +330,7 @@ public class EdgeEffect {
         mState = STATE_ABSORB;
         velocity = Math.min(Math.max(MIN_VELOCITY, Math.abs(velocity)), MAX_VELOCITY);
 
-        mStartTime = AnimationUtils.currentAnimationTimeMillis();
+        mStartTime = AnimationClock.currentAnimationTimeMillis();
         mDuration = 0.15f + (velocity * 0.02f);
 
         // The glow depends more on the velocity, and therefore starts out
@@ -446,7 +446,7 @@ public class EdgeEffect {
     }
 
     private void update() {
-        final long time = AnimationUtils.currentAnimationTimeMillis();
+        final long time = AnimationClock.currentAnimationTimeMillis();
         final float t = Math.min((time - mStartTime) / mDuration, 1.f);
 
         final float p = TimeInterpolator.DECELERATE.getInterpolation(t);
@@ -462,7 +462,7 @@ public class EdgeEffect {
             switch (mState) {
                 case STATE_ABSORB -> {
                     mState = STATE_RECEDE;
-                    mStartTime = AnimationUtils.currentAnimationTimeMillis();
+                    mStartTime = AnimationClock.currentAnimationTimeMillis();
                     mDuration = RECEDE_TIME;
                     mGlowAlphaStart = mGlowAlpha;
                     mGlowScaleYStart = mGlowScaleY;
@@ -473,7 +473,7 @@ public class EdgeEffect {
                 }
                 case STATE_PULL -> {
                     mState = STATE_PULL_DECAY;
-                    mStartTime = AnimationUtils.currentAnimationTimeMillis();
+                    mStartTime = AnimationClock.currentAnimationTimeMillis();
                     mDuration = PULL_DECAY_TIME;
                     mGlowAlphaStart = mGlowAlpha;
                     mGlowScaleYStart = mGlowScaleY;

@@ -20,11 +20,11 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.core.UndoManager;
 import icyllis.modernui.core.UndoOperation;
 import icyllis.modernui.core.UndoOwner;
 import icyllis.modernui.system.Parcel;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.InputFilter;
 import icyllis.modernui.text.Selection;
@@ -160,7 +160,7 @@ public class Editor {
 
     boolean shouldRenderCursor() {
         if (isCursorVisible()) {
-            final long showCursorDelta = Core.timeMillis() - mShowCursor;
+            final long showCursorDelta = SystemClock.uptimeMillis() - mShowCursor;
             return showCursorDelta % (2 * BLINK) < BLINK;
         }
         return false;
@@ -187,7 +187,7 @@ public class Editor {
     }
 
     void onFocusChanged(boolean focused, int direction) {
-        mShowCursor = Core.timeMillis();
+        mShowCursor = SystemClock.uptimeMillis();
 
         if (focused) {
             int selStart = mTextView.getSelectionStart();
@@ -301,7 +301,7 @@ public class Editor {
 
     void makeBlink() {
         if (shouldBlink()) {
-            mShowCursor = Core.timeMillis();
+            mShowCursor = SystemClock.uptimeMillis();
             if (mBlink == null) {
                 mBlink = new Blink();
             }

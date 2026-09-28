@@ -37,7 +37,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
-import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.CallSuper;
@@ -48,7 +47,6 @@ import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Choreographer;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -59,6 +57,8 @@ import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.system.AnimationClock;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.Transition;
@@ -3173,7 +3173,7 @@ public class View implements Drawable.Callback {
         }
         boolean invalidate = false;
         if (cache.mState == ScrollCache.FADING) {
-            long currentTime = AnimationUtils.currentAnimationTimeMillis();
+            long currentTime = AnimationClock.currentAnimationTimeMillis();
             float fraction = (float) (currentTime - cache.mFadeStartTime) / cache.mFadeDuration;
             if (fraction >= 1.0f) {
                 cache.mState = ScrollCache.OFF;
@@ -4618,14 +4618,14 @@ public class View implements Drawable.Callback {
      * @param who  the recipient of the action
      * @param what the action to run on the drawable
      * @param when the time at which the action must occur. Uses the
-     *             {@link Core#timeMillis()} timebase.
+     *             {@link SystemClock#uptimeMillis()} timebase.
      */
     @Override
     public final void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when) {
         if (verifyDrawable(who)) {
             // Postpone the runnable until we know
             // on which thread it needs to run.
-            final long delay = when - Core.timeMillis();
+            final long delay = when - SystemClock.uptimeMillis();
             if (mAttachInfo != null) {
                 mAttachInfo.mViewRoot.mChoreographer.postCallbackDelayed(
                         Choreographer.CALLBACK_ANIMATION, what, who, delay);
@@ -6214,7 +6214,7 @@ public class View implements Drawable.Callback {
 
             // Tell mScrollCache when we should start fading. This may
             // extend the fade start time if one was already scheduled
-            long fadeStartTime = AnimationUtils.currentAnimationTimeMillis() + startDelay;
+            long fadeStartTime = AnimationClock.currentAnimationTimeMillis() + startDelay;
             scrollCache.mFadeStartTime = fadeStartTime;
             scrollCache.mState = ScrollCache.ON;
 

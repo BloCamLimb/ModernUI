@@ -23,13 +23,13 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.core.Looper;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.TransitionSet;
@@ -195,7 +195,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
                     menu.performItemAction(item, 0);
                 }
             };
-            final long timeMillis = Core.timeMillis() + SUBMENU_TIMEOUT_MS;
+            final long timeMillis = SystemClock.uptimeMillis() + SUBMENU_TIMEOUT_MS;
             mSubMenuHoverHandler.postAtTime(runnable, menu, timeMillis);
         }
     };

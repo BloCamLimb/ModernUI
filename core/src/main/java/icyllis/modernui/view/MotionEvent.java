@@ -19,9 +19,9 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Core;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.graphics.Matrix;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -439,7 +439,7 @@ public final class MotionEvent extends InputEvent {
      * values.
      *
      * @param eventTime    The time (in ns) when this specific event was generated.  This
-     *                     must be obtained from {@link Core#timeNanos()}.
+     *                     must be obtained from {@link SystemClock#uptimeNanos()}.
      * @param action       The kind of action being performed, such as {@link #ACTION_DOWN}.
      * @param actionButton The button of press or release action, such as {@link #BUTTON_PRIMARY}
      * @param x            The X coordinate of this event.

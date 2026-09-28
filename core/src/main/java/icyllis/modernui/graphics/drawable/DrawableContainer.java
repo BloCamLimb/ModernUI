@@ -37,12 +37,12 @@ package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Outline;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.SparseArray;
@@ -406,7 +406,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
             return false;
         }
 
-        final long now = Core.timeMillis();
+        final long now = SystemClock.uptimeMillis();
 
         if (mDrawableContainerState.mExitFadeDuration > 0) {
             if (mLastDrawable != null) {
@@ -503,7 +503,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     void animate(boolean schedule) {
         mHasAlpha = true;
 
-        final long now = Core.timeMillis();
+        final long now = SystemClock.uptimeMillis();
         boolean animating = false;
         if (mCurrDrawable != null) {
             if (mEnterAnimationEnd != 0) {

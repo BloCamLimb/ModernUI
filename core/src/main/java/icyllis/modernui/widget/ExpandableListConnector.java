@@ -31,9 +31,9 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.system.Parcel;
 import icyllis.modernui.system.Parcelable;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -803,7 +803,7 @@ class ExpandableListConnector extends BaseAdapter implements Filterable {
         seedGroupPosition = Math.max(0, seedGroupPosition);
         seedGroupPosition = Math.min(count - 1, seedGroupPosition);
 
-        long endTime = Core.timeMillis() + AdapterView.SYNC_MAX_DURATION_MILLIS;
+        long endTime = SystemClock.uptimeMillis() + AdapterView.SYNC_MAX_DURATION_MILLIS;
 
         long rowId;
 
@@ -829,7 +829,7 @@ class ExpandableListConnector extends BaseAdapter implements Filterable {
             return AdapterView.INVALID_POSITION;
         }
 
-        while (Core.timeMillis() <= endTime) {
+        while (SystemClock.uptimeMillis() <= endTime) {
             rowId = adapter.getGroupId(seedGroupPosition);
             if (rowId == groupIdToMatch) {
                 // Found it!

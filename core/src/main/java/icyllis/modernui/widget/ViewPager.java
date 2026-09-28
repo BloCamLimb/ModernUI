@@ -43,13 +43,13 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
@@ -2362,7 +2362,7 @@ public class ViewPager extends ViewGroup {
         } else {
             mVelocityTracker.clear();
         }
-        final long time = Core.timeNanos();
+        final long time = SystemClock.uptimeNanos();
         final MotionEvent ev = MotionEvent.obtain(time, MotionEvent.ACTION_DOWN, 0, 0, 0);
         mVelocityTracker.addMovement(ev);
         ev.recycle();
@@ -2446,7 +2446,7 @@ public class ViewPager extends ViewGroup {
         pageScrolled((int) scrollX);
 
         // Synthesize an event for the VelocityTracker.
-        final long time = Core.timeNanos();
+        final long time = SystemClock.uptimeNanos();
         final MotionEvent ev = MotionEvent.obtain(time, MotionEvent.ACTION_MOVE,
                 mLastMotionX, 0, 0);
         mVelocityTracker.addMovement(ev);

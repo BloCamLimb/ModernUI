@@ -19,6 +19,7 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.NonNull;
+import icyllis.modernui.system.SystemClock;
 
 import java.util.Objects;
 
@@ -63,7 +64,7 @@ public final class Message {
 
     /**
      * The targeted delivery time of this message. The time-base is
-     * {@link Core#timeMillis()}.
+     * {@link SystemClock#uptimeMillis()}.
      */
     long when;
 
@@ -378,7 +379,7 @@ public final class Message {
     @NonNull
     @Override
     public String toString() {
-        return toString(Core.timeMillis());
+        return toString(SystemClock.uptimeMillis());
     }
 
     @NonNull

@@ -24,7 +24,6 @@ import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.BlendModeColorFilter;
@@ -34,6 +33,7 @@ import icyllis.modernui.graphics.ColorFilter;
 import icyllis.modernui.graphics.Outline;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.LayoutDirection;
@@ -286,7 +286,7 @@ public abstract class Drawable {
          * @param who  The drawable being scheduled.
          * @param what The action to execute.
          * @param when The time (in milliseconds) to run.  The timebase is
-         *             {@link Core#timeMillis()}
+         *             {@link SystemClock#uptimeMillis()}
          */
         void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when);
 

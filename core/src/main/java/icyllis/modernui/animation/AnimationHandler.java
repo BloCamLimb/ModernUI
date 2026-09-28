@@ -19,8 +19,8 @@
 package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Choreographer;
+import icyllis.modernui.system.SystemClock;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -93,7 +93,7 @@ public class AnimationHandler {
             newlyAdded = false;
         }
         if (delay > 0) {
-            mDelayedStartTime.put(callback, Core.timeMillis() + delay);
+            mDelayedStartTime.put(callback, SystemClock.uptimeMillis() + delay);
         } else if (!newlyAdded) {
             // remove it if any
             mDelayedStartTime.removeLong(callback);
@@ -118,7 +118,7 @@ public class AnimationHandler {
 
     @SuppressWarnings("ForLoopReplaceableByForEach")
     private void doAnimationFrame(long frameTime) {
-        long currentTime = Core.timeMillis();
+        long currentTime = SystemClock.uptimeMillis();
         // take a snapshot on currently
         // we don't accept newly added callbacks during handle these callbacks
         final int size = mAnimationCallbacks.size();
@@ -194,7 +194,7 @@ public class AnimationHandler {
         /**
          * Run animation based on the frame time.
          *
-         * @param frameTime the frame start time, in the {@link Core#timeMillis()} time base
+         * @param frameTime the frame start time, in the {@link SystemClock#uptimeMillis()} time base
          * @return if the animation has finished.
          */
         boolean doAnimationFrame(long frameTime);

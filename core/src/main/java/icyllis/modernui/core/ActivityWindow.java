@@ -20,6 +20,7 @@ package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.view.*;
@@ -220,7 +221,7 @@ public final class ActivityWindow extends Window {
             if ((mods & GLFW_MOD_NUM_LOCK) != 0) {
                 metaState |= KeyEvent.META_NUM_LOCK_ON;
             }
-            KeyEvent keyEvent = KeyEvent.obtain(Core.timeNanos(),
+            KeyEvent keyEvent = KeyEvent.obtain(SystemClock.uptimeNanos(),
                     action == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN,
                     key, metaState, 0, scancode, action == GLFW_REPEAT ? KeyEvent.FLAG_REPEAT : 0, 0);
             mRoot.enqueueInputEvent(keyEvent);
@@ -273,7 +274,7 @@ public final class ActivityWindow extends Window {
             cursorX = x.get(0);
             cursorY = y.get(0);
         }
-        final long now = Core.timeNanos();
+        final long now = SystemClock.uptimeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);
         float y = (float) (cursorY * mHeight / mScreenHeight);
         int buttonState = 0;
@@ -298,7 +299,7 @@ public final class ActivityWindow extends Window {
         if (mRoot == null) {
             return;
         }
-        final long now = Core.timeNanos();
+        final long now = SystemClock.uptimeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);
         float y = (float) (cursorY * mHeight / mScreenHeight);
         MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_HOVER_MOVE,
@@ -342,7 +343,7 @@ public final class ActivityWindow extends Window {
         if (glfwGetKey(w, GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS) {
             mods |= KeyEvent.META_META_ON | KeyEvent.META_RIGHT_META_ON;
         }
-        final long now = Core.timeNanos();
+        final long now = SystemClock.uptimeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);
         float y = (float) (cursorY * mHeight / mScreenHeight);
         MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_SCROLL,

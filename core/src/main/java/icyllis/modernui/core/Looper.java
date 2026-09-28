@@ -36,6 +36,7 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.*;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
@@ -138,7 +139,7 @@ public final class Looper {
         final boolean logSlowDelivery = (slowDeliveryThresholdMs > 0) && (msg.when > 0);
         final boolean logSlowDispatch = (slowDispatchThresholdMs > 0);
 
-        final long dispatchStart = logSlowDelivery || logSlowDispatch ? Core.timeMillis() : 0;
+        final long dispatchStart = logSlowDelivery || logSlowDispatch ? SystemClock.uptimeMillis() : 0;
         final long dispatchEnd;
         final Object token = observer == null ? null : observer.messageDispatchStarting();
         try {
@@ -146,7 +147,7 @@ public final class Looper {
             if (observer != null) {
                 observer.messageDispatched(token, msg);
             }
-            dispatchEnd = logSlowDispatch ? Core.timeMillis() : 0;
+            dispatchEnd = logSlowDispatch ? SystemClock.uptimeMillis() : 0;
         } catch (Exception exception) {
             if (observer != null) {
                 observer.dispatchingThrewException(token, msg, exception);

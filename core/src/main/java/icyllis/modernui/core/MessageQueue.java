@@ -20,6 +20,7 @@ package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.Log;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -86,7 +87,7 @@ public final class MessageQueue {
      */
     public boolean isIdle() {
         synchronized (this) {
-            final long now = Core.timeMillis();
+            final long now = SystemClock.uptimeMillis();
             return mMessages == null || now < mMessages.when;
         }
     }
@@ -168,7 +169,7 @@ public final class MessageQueue {
 
             synchronized (this) {
                 // Try to retrieve the next message.  Return if found.
-                final long now = Core.timeMillis();
+                final long now = SystemClock.uptimeMillis();
                 Message prevMsg = null;
                 Message msg = mMessages;
                 if (msg != null && msg.target == null) {
@@ -305,7 +306,7 @@ public final class MessageQueue {
      * passed to {@link #removeSyncBarrier} to release the barrier.
      */
     public int postSyncBarrier() {
-        final long when = Core.timeMillis();
+        final long when = SystemClock.uptimeMillis();
         // Enqueue a new sync barrier token.
         // We don't need to wake the queue because the purpose of a barrier is to stall it.
         synchronized (this) {
@@ -582,7 +583,7 @@ public final class MessageQueue {
     }
 
     private void removeAllFutureMessagesLocked() {
-        final long now = Core.timeMillis();
+        final long now = SystemClock.uptimeMillis();
         Message p = mMessages;
         if (p != null) {
             if (p.when > now) {

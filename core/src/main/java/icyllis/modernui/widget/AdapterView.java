@@ -40,8 +40,8 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.ContextMenu;
@@ -1016,7 +1016,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
         seed = Math.max(0, seed);
         seed = Math.min(count - 1, seed);
 
-        long endTime = Core.timeMillis() + SYNC_MAX_DURATION_MILLIS;
+        long endTime = SystemClock.uptimeMillis() + SYNC_MAX_DURATION_MILLIS;
 
         long rowId;
 
@@ -1042,7 +1042,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
             return INVALID_POSITION;
         }
 
-        while (Core.timeMillis() <= endTime) {
+        while (SystemClock.uptimeMillis() <= endTime) {
             rowId = adapter.getItemId(seed);
             if (rowId == idToMatch) {
                 // Found it!

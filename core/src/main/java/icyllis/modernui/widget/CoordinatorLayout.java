@@ -38,12 +38,12 @@ package icyllis.modernui.widget;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Matrix;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MotionEvent;
@@ -181,7 +181,7 @@ public class CoordinatorLayout extends ViewGroup {
             final Behavior<View> b = lp.getBehavior();
             if (b != null) {
                 if (cancelEvent == null) {
-                    final long now = Core.timeNanos();
+                    final long now = SystemClock.uptimeNanos();
                     cancelEvent = MotionEvent.obtain(now,
                             MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 }
@@ -204,7 +204,7 @@ public class CoordinatorLayout extends ViewGroup {
             final LayoutParams lp = (LayoutParams) mBehaviorTouchView.getLayoutParams();
             final Behavior<View> b = lp.getBehavior();
             if (b != null) {
-                final long now = Core.timeNanos();
+                final long now = SystemClock.uptimeNanos();
                 final MotionEvent cancelEvent = MotionEvent.obtain(now,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 b.onTouchEvent(this, mBehaviorTouchView, cancelEvent);
