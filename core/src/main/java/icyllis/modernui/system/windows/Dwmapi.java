@@ -16,12 +16,12 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core.windows;
+package icyllis.modernui.system.windows;
 
 import org.lwjgl.system.*;
 
 import static org.lwjgl.system.APIUtil.apiGetFunctionAddress;
-import static org.lwjgl.system.JNI.callPPI;
+import static org.lwjgl.system.JNI.*;
 
 /**
  * Native bindings to dwmapi.dll.
@@ -39,7 +39,8 @@ public class Dwmapi {
 
         public static final long
                 DwmExtendFrameIntoClientArea = apiGetFunctionAddress(DWMAPI, "DwmExtendFrameIntoClientArea"),
-                DwmGetWindowAttribute = apiGetFunctionAddress(DWMAPI, "DwmGetWindowAttribute");
+                DwmGetWindowAttribute = apiGetFunctionAddress(DWMAPI, "DwmGetWindowAttribute"),
+                DwmDefWindowProc = apiGetFunctionAddress(DWMAPI, "DwmDefWindowProc");
 
     }
 
@@ -61,5 +62,15 @@ public class Dwmapi {
                                             @NativeType("DWORD") int cbAttribute) {
         long __functionAddress = Functions.DwmGetWindowAttribute;
         return callPPI(hWnd, dwAttribute, pvAttribute, cbAttribute, __functionAddress);
+    }
+
+    @NativeType("BOOL")
+    public static boolean DwmDefWindowProc(@NativeType("HWND") long hWnd,
+                                           @NativeType("UINT") int uMsg,
+                                           @NativeType("WPARAM") long wParam,
+                                           @NativeType("LPARAM") long lParam,
+                                           @NativeType("LRESULT *") long plResult) {
+        long __functionAddress = Functions.DwmDefWindowProc;
+        return callPPPPI(hWnd, uMsg, wParam, lParam, plResult, __functionAddress) != 0;
     }
 }

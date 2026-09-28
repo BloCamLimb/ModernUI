@@ -16,8 +16,9 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core.windows;
+package icyllis.modernui.app.windows;
 
+import icyllis.modernui.system.windows.Dwmapi;
 import org.lwjgl.system.*;
 import org.lwjgl.system.windows.RECT;
 import org.lwjgl.system.windows.WindowProc;
