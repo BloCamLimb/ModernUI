@@ -18,26 +18,30 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.annotation.NonNull;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 public final class RpcTransportCtxRaw extends RpcTransportCtx {
+    @NonNull
     @Override
-    public RpcTransport newTransport(SocketChannel socket) {
+    public RpcTransport newTransport(@NonNull SocketChannel socket, boolean isClient) {
         return new RpcTransportRaw(socket);
     }
 }
 
+@SuppressWarnings("UnnecessaryLocalVariable")
 final class RpcTransportRaw extends RpcTransport {
 
-    RpcTransportRaw(SocketChannel socket) {
+    RpcTransportRaw(@NonNull SocketChannel socket) {
         super(socket);
     }
 
     @Override
-    public void interruptibleWriteFully(ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    public void interruptibleWriteFully(@NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException {
         final SocketChannel socket = mSocket;
         for (;;) {
             long written = socket.write(iovs, offset, limit - offset);
@@ -50,7 +54,7 @@ final class RpcTransportRaw extends RpcTransport {
     }
 
     @Override
-    public void interruptibleReadFully(ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    public void interruptibleReadFully(@NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException {
         final SocketChannel socket = mSocket;
         for (;;) {
             long read = socket.read(iovs, offset, limit - offset);

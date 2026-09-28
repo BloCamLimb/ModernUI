@@ -18,31 +18,62 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.annotation.NonNull;
+import org.lwjgl.system.MemoryUtil;
+
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 //TODO
 public final class RpcTransportCtxTls extends RpcTransportCtx {
+
+    private final SSLContext mSslContext;
+
+    public RpcTransportCtxTls(@NonNull SSLContext sslContext) {
+        mSslContext = sslContext;
+    }
+
+    @NonNull
     @Override
-    public RpcTransport newTransport(SocketChannel socket) {
-        return null;
+    public RpcTransport newTransport(@NonNull SocketChannel socket, boolean isClient) throws IOException {
+
+        SSLEngine ssl = mSslContext.createSSLEngine();
+
+        //TODO setup ssl parameters and do handshake
+
+        return new RpcTransportTls(socket, ssl);
     }
 }
 
 //TODO
 final class RpcTransportTls extends RpcTransport {
 
-    RpcTransportTls(SocketChannel socket, SSLEngine ssl) {
+    private final SSLEngine mSsl;
+    private final ByteBuffer mWorkingBuffer;
+
+    RpcTransportTls(@NonNull SocketChannel socket, @NonNull SSLEngine ssl) {
         super(socket);
+        SSLSession session = ssl.getSession();
+        mWorkingBuffer = MemoryUtil.memAlloc(
+                session.getPacketBufferSize());
+        mSsl = ssl;
     }
 
     @Override
-    public void interruptibleWriteFully(ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    public void interruptibleWriteFully(@NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException {
     }
 
     @Override
-    public void interruptibleReadFully(ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    public void interruptibleReadFully(@NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    }
+
+    @Override
+    public void close() throws IOException {
+        MemoryUtil.memFree(mWorkingBuffer);
+        super.close();
     }
 }

@@ -18,6 +18,8 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.annotation.NonNull;
+
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 
@@ -27,5 +29,7 @@ import java.nio.channels.SocketChannel;
  */
 public abstract sealed class RpcTransportCtx permits RpcTransportCtxRaw, RpcTransportCtxTls {
 
-    public abstract RpcTransport newTransport(SocketChannel socket) throws IOException;
+    @NonNull
+    public abstract RpcTransport newTransport(
+            @NonNull SocketChannel socket, boolean isClient) throws IOException;
 }

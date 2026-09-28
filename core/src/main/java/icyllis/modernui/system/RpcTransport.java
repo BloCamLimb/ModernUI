@@ -18,6 +18,8 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.annotation.NonNull;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -28,15 +30,15 @@ public abstract sealed class RpcTransport permits RpcTransportRaw, RpcTransportT
 
     final SocketChannel mSocket;
 
-    RpcTransport(SocketChannel socket) {
+    RpcTransport(@NonNull SocketChannel socket) {
         mSocket = socket;
     }
 
     public abstract void interruptibleWriteFully(
-            ByteBuffer[] iovs, int offset, int limit) throws IOException;
+            @NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException;
 
     public abstract void interruptibleReadFully(
-            ByteBuffer[] iovs, int offset, int limit) throws IOException;
+            @NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException;
 
     public void close() throws IOException {
         mSocket.close();
