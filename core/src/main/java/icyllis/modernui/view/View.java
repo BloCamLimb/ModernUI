@@ -2023,6 +2023,14 @@ public class View implements Drawable.Callback {
     public static final int TYPE_NON_TOUCH = 1;
 
     /**
+     * Whether to enable RTL support, it should always be true.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static boolean HAS_RTL_SUPPORT = true;
+
+    /**
      * Controls the over-scroll mode for this view.
      * See {@link #overScrollBy(int, int, int, int, int, int, int, int, boolean)},
      * {@link #OVER_SCROLL_ALWAYS}, {@link #OVER_SCROLL_IF_CONTENT_SCROLLS},
@@ -2846,7 +2854,7 @@ public class View implements Drawable.Callback {
             mUserPaddingRightInitial = padding;
         }
 
-        if (!ModernUI.getInstance().hasRtlSupport()) {
+        if (!HAS_RTL_SUPPORT) {
             if (!mLeftPaddingDefined && startPaddingDefined) {
                 leftPadding = startPadding;
             }
@@ -3171,7 +3179,7 @@ public class View implements Drawable.Callback {
                 cache.mState = ScrollCache.OFF;
                 return;
             } else {
-                float alpha = 1.0f - fraction;
+                float alpha = Math.min(1.0f - fraction, 1.0f);
                 cache.mScrollBar.mutate().setAlpha(alpha);
             }
             invalidate = true;
@@ -9136,7 +9144,7 @@ public class View implements Drawable.Callback {
         // Clear any previous layout direction resolution
         mPrivateFlags2 &= ~PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK;
 
-        if (ModernUI.getInstance().hasRtlSupport()) {
+        if (HAS_RTL_SUPPORT) {
             // Set resolved depending on layout direction
             switch (getRawLayoutDirection()) {
                 case LAYOUT_DIRECTION_INHERIT:
@@ -9305,7 +9313,7 @@ public class View implements Drawable.Callback {
         // Reset any previous text direction resolution
         mPrivateFlags2 &= ~(PFLAG2_TEXT_DIRECTION_RESOLVED | PFLAG2_TEXT_DIRECTION_RESOLVED_MASK);
 
-        if (ModernUI.getInstance().hasRtlSupport()) {
+        if (HAS_RTL_SUPPORT) {
             // Set resolved text direction flag depending on text direction flag
             final int textDirection = getRawTextDirection();
             switch (textDirection) {
@@ -9499,7 +9507,7 @@ public class View implements Drawable.Callback {
         // Reset any previous text alignment resolution
         mPrivateFlags2 &= ~(PFLAG2_TEXT_ALIGNMENT_RESOLVED | PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK);
 
-        if (ModernUI.getInstance().hasRtlSupport()) {
+        if (HAS_RTL_SUPPORT) {
             // Set resolved text alignment flag depending on text alignment flag
             final int textAlignment = getRawTextAlignment();
             switch (textAlignment) {
@@ -9627,7 +9635,7 @@ public class View implements Drawable.Callback {
     public void resolvePadding() {
         final int resolvedLayoutDirection = getLayoutDirection();
 
-        if (ModernUI.getInstance().hasRtlSupport()) {
+        if (HAS_RTL_SUPPORT) {
             // Post Jelly Bean MR1 case: we need to take the resolved layout direction into account.
             // If start / end padding are defined, they will be resolved (hence overriding) to
             // left / right or right / left depending on the resolved layout direction.

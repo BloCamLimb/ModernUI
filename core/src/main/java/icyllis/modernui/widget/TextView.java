@@ -5357,7 +5357,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             mShowing[Drawables.LEFT] = mDrawableLeftInitial;
             mShowing[Drawables.RIGHT] = mDrawableRightInitial;
 
-            if (!ModernUI.getInstance().hasRtlSupport()) {
+            if (!HAS_RTL_SUPPORT) {
                 // Use "start" drawable as "left" drawable if the "left" drawable was not defined
                 if (mDrawableStart != null && mShowing[Drawables.LEFT] == null) {
                     mShowing[Drawables.LEFT] = mDrawableStart;
