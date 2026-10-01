@@ -23,7 +23,7 @@ import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.Log;
-import icyllis.modernui.view.Gravity;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.view.LayoutInflater;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;

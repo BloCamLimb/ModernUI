@@ -24,6 +24,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
@@ -32,7 +33,6 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.util.AttributeSet;
-import icyllis.modernui.view.Gravity;
 
 /*
  * This is supposed to be a *very* thin veneer over TextView.

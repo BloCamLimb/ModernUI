@@ -21,6 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.view.*;
@@ -34,7 +35,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Array;
 import java.util.*;
 
-import static icyllis.modernui.view.Gravity.*;
+import static icyllis.modernui.graphics.Gravity.*;
 import static java.lang.Math.*;
 
 /**

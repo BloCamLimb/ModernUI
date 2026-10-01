@@ -62,7 +62,7 @@ import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.util.StateSet;
-import icyllis.modernui.view.Gravity;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.LayoutInflater;
 import icyllis.modernui.view.Menu;

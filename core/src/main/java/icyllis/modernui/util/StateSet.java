@@ -20,17 +20,16 @@ package icyllis.modernui.util;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.view.View;
 
 /**
  * State sets are arrays of positive ints where each element
- * represents the state of a {@link View} (e.g. focused,
- * selected, visible, etc.).  A {@link View} may be in
+ * represents the state of a {@code View} (e.g. focused,
+ * selected, visible, etc.).  A {@code View} may be in
  * one or more of those states.
  * <p>
  * A state spec is an array of signed ints where each element
  * represents a required (if positive) or an undesired (if negative)
- * {@link View} state.
+ * {@code View} state.
  * <p>
  * Utils dealing with state sets.
  * <p>
@@ -44,7 +43,7 @@ public final class StateSet {
 
     /**
      * The order here is very important to
-     * {@link View#getDrawableState()}.
+     * {@code View.getDrawableState()}.
      */
     private static final int[][] VIEW_STATE_SETS;
 
@@ -119,8 +118,8 @@ public final class StateSet {
      * Return whether the stateSet matches the desired stateSpec.
      *
      * @param stateSpec an array of required (if positive) or
-     *                  prohibited (if negative) {@link View} states.
-     * @param stateSet  an array of {@link View} states
+     *                  prohibited (if negative) {@code View} states.
+     * @param stateSet  an array of {@code View} states
      */
     public static boolean stateSetMatches(@NonNull int[] stateSpec, @NonNull int[] stateSet) {
         CYCLE:
@@ -171,8 +170,8 @@ public final class StateSet {
      * Return whether the state matches the desired stateSpec.
      *
      * @param stateSpec an array of required (if positive) or
-     *                  prohibited (if negative) {@link View} states.
-     * @param state     a {@link View} state
+     *                  prohibited (if negative) {@code View} states.
+     * @param state     a {@code View} state
      */
     public static boolean stateSetMatches(@NonNull int[] stateSpec, int state) {
         for (int stateSpecState : stateSpec) {

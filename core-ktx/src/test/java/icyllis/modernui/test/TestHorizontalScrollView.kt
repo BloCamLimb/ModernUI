@@ -23,7 +23,7 @@ import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.Color
 import icyllis.modernui.graphics.drawable.GradientDrawable
 import icyllis.modernui.util.DataSet
-import icyllis.modernui.view.Gravity
+import icyllis.modernui.graphics.Gravity
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup

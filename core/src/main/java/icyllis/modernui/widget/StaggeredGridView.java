@@ -38,9 +38,9 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.util.SparseArray;
-import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;

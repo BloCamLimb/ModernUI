@@ -20,6 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.ApiStatus;
 

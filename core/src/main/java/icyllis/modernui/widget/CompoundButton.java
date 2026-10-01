@@ -27,12 +27,12 @@ import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.SoundEffectConstants;
 import org.jetbrains.annotations.ApiStatus;
 

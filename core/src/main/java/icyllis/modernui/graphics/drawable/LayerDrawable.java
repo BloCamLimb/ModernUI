@@ -37,10 +37,17 @@ package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.ColorFilter;
+import icyllis.modernui.graphics.Gravity;
+import icyllis.modernui.graphics.Outline;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.util.*;
-import icyllis.modernui.view.Gravity;
+import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.util.LayoutDirection;
+import icyllis.modernui.util.Log;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 

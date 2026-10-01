@@ -27,7 +27,6 @@ import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.OutlineFont;
 import icyllis.modernui.graphics.text.ShapedText;
-import icyllis.modernui.view.Gravity;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;

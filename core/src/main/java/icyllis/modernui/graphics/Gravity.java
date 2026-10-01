@@ -16,18 +16,22 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.util.LayoutDirection;
+import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.StringJoiner;
 
 /**
  * Standard constants and tools for placing an object within a potentially
  * larger container.
- *
- * @deprecated use {@link icyllis.modernui.graphics.Gravity} since 3.14
  */
-@Deprecated
+@SuppressWarnings("unused")
 public class Gravity {
 
     /**
@@ -174,6 +178,30 @@ public class Gravity {
      */
     public static final int RELATIVE_HORIZONTAL_GRAVITY_MASK = START | END;
 
+    @ApiStatus.Internal
+    @Retention(RetentionPolicy.SOURCE)
+    @MagicConstant(flags = {
+            Gravity.FILL,
+            Gravity.FILL_HORIZONTAL,
+            Gravity.FILL_VERTICAL,
+            Gravity.START,
+            Gravity.END,
+            Gravity.LEFT,
+            Gravity.RIGHT,
+            Gravity.TOP,
+            Gravity.BOTTOM,
+            Gravity.CENTER,
+            Gravity.CENTER_HORIZONTAL,
+            Gravity.CENTER_VERTICAL,
+            Gravity.DISPLAY_CLIP_HORIZONTAL,
+            Gravity.DISPLAY_CLIP_VERTICAL,
+            Gravity.CLIP_HORIZONTAL,
+            Gravity.CLIP_VERTICAL,
+            Gravity.NO_GRAVITY
+    })
+    public @interface GravityFlags {
+    }
+
     /**
      * Apply a gravity constant to an object. This supposes that the layout direction is LTR.
      *
@@ -205,8 +233,8 @@ public class Gravity {
      * @param outRect         Receives the computed frame of the object in its
      *                        container.
      * @param layoutDirection The layout direction.
-     * @see View#LAYOUT_DIRECTION_LTR
-     * @see View#LAYOUT_DIRECTION_RTL
+     * @see LayoutDirection#LTR
+     * @see LayoutDirection#RTL
      */
     public static void apply(int gravity, int w, int h, @NonNull Rect container,
                              @NonNull Rect outRect, int layoutDirection) {
@@ -237,7 +265,87 @@ public class Gravity {
      */
     public static void apply(int gravity, int w, int h, @NonNull Rect container,
                              int xAdj, int yAdj, @NonNull Rect outRect) {
-        icyllis.modernui.graphics.Gravity.apply(gravity, w, h, container, xAdj, yAdj, outRect);
+        switch (gravity & ((AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_X_SHIFT)) {
+            case 0:
+                outRect.left = container.left
+                        + ((container.right - container.left - w) / 2) + xAdj;
+                outRect.right = outRect.left + w;
+                if ((gravity & (AXIS_CLIP << AXIS_X_SHIFT))
+                        == (AXIS_CLIP << AXIS_X_SHIFT)) {
+                    if (outRect.left < container.left) {
+                        outRect.left = container.left;
+                    }
+                    if (outRect.right > container.right) {
+                        outRect.right = container.right;
+                    }
+                }
+                break;
+            case AXIS_PULL_BEFORE << AXIS_X_SHIFT:
+                outRect.left = container.left + xAdj;
+                outRect.right = outRect.left + w;
+                if ((gravity & (AXIS_CLIP << AXIS_X_SHIFT))
+                        == (AXIS_CLIP << AXIS_X_SHIFT)) {
+                    if (outRect.right > container.right) {
+                        outRect.right = container.right;
+                    }
+                }
+                break;
+            case AXIS_PULL_AFTER << AXIS_X_SHIFT:
+                outRect.right = container.right - xAdj;
+                outRect.left = outRect.right - w;
+                if ((gravity & (AXIS_CLIP << AXIS_X_SHIFT))
+                        == (AXIS_CLIP << AXIS_X_SHIFT)) {
+                    if (outRect.left < container.left) {
+                        outRect.left = container.left;
+                    }
+                }
+                break;
+            default:
+                outRect.left = container.left + xAdj;
+                outRect.right = container.right + xAdj;
+                break;
+        }
+
+        switch (gravity & ((AXIS_PULL_BEFORE | AXIS_PULL_AFTER) << AXIS_Y_SHIFT)) {
+            case 0:
+                outRect.top = container.top
+                        + ((container.bottom - container.top - h) / 2) + yAdj;
+                outRect.bottom = outRect.top + h;
+                if ((gravity & (AXIS_CLIP << AXIS_Y_SHIFT))
+                        == (AXIS_CLIP << AXIS_Y_SHIFT)) {
+                    if (outRect.top < container.top) {
+                        outRect.top = container.top;
+                    }
+                    if (outRect.bottom > container.bottom) {
+                        outRect.bottom = container.bottom;
+                    }
+                }
+                break;
+            case AXIS_PULL_BEFORE << AXIS_Y_SHIFT:
+                outRect.top = container.top + yAdj;
+                outRect.bottom = outRect.top + h;
+                if ((gravity & (AXIS_CLIP << AXIS_Y_SHIFT))
+                        == (AXIS_CLIP << AXIS_Y_SHIFT)) {
+                    if (outRect.bottom > container.bottom) {
+                        outRect.bottom = container.bottom;
+                    }
+                }
+                break;
+            case AXIS_PULL_AFTER << AXIS_Y_SHIFT:
+                outRect.bottom = container.bottom - yAdj;
+                outRect.top = outRect.bottom - h;
+                if ((gravity & (AXIS_CLIP << AXIS_Y_SHIFT))
+                        == (AXIS_CLIP << AXIS_Y_SHIFT)) {
+                    if (outRect.top < container.top) {
+                        outRect.top = container.top;
+                    }
+                }
+                break;
+            default:
+                outRect.top = container.top + yAdj;
+                outRect.bottom = container.bottom + yAdj;
+                break;
+        }
     }
 
     /**
@@ -261,8 +369,8 @@ public class Gravity {
      * @param outRect         Receives the computed frame of the object in its
      *                        container.
      * @param layoutDirection The layout direction.
-     * @see View#LAYOUT_DIRECTION_LTR
-     * @see View#LAYOUT_DIRECTION_RTL
+     * @see LayoutDirection#LTR
+     * @see LayoutDirection#RTL
      */
     public static void apply(int gravity, int w, int h, @NonNull Rect container,
                              int xAdj, int yAdj, @NonNull Rect outRect, int layoutDirection) {
@@ -287,7 +395,41 @@ public class Gravity {
      *                 modified if needed to fit in the display.
      */
     public static void applyDisplay(int gravity, @NonNull Rect display, @NonNull Rect inoutObj) {
-        icyllis.modernui.graphics.Gravity.applyDisplay(gravity, display, inoutObj);
+        if ((gravity & DISPLAY_CLIP_VERTICAL) != 0) {
+            if (inoutObj.top < display.top) inoutObj.top = display.top;
+            if (inoutObj.bottom > display.bottom) inoutObj.bottom = display.bottom;
+        } else {
+            int off = 0;
+            if (inoutObj.top < display.top) off = display.top - inoutObj.top;
+            else if (inoutObj.bottom > display.bottom) off = display.bottom - inoutObj.bottom;
+            if (off != 0) {
+                if (inoutObj.height() > (display.bottom - display.top)) {
+                    inoutObj.top = display.top;
+                    inoutObj.bottom = display.bottom;
+                } else {
+                    inoutObj.top += off;
+                    inoutObj.bottom += off;
+                }
+            }
+        }
+
+        if ((gravity & DISPLAY_CLIP_HORIZONTAL) != 0) {
+            if (inoutObj.left < display.left) inoutObj.left = display.left;
+            if (inoutObj.right > display.right) inoutObj.right = display.right;
+        } else {
+            int off = 0;
+            if (inoutObj.left < display.left) off = display.left - inoutObj.left;
+            else if (inoutObj.right > display.right) off = display.right - inoutObj.right;
+            if (off != 0) {
+                if (inoutObj.width() > (display.right - display.left)) {
+                    inoutObj.left = display.left;
+                    inoutObj.right = display.right;
+                } else {
+                    inoutObj.left += off;
+                    inoutObj.right += off;
+                }
+            }
+        }
     }
 
     /**
@@ -306,8 +448,8 @@ public class Gravity {
      * @param inoutObj        Supplies the current object position; returns with it
      *                        modified if needed to fit in the display.
      * @param layoutDirection The layout direction.
-     * @see View#LAYOUT_DIRECTION_LTR
-     * @see View#LAYOUT_DIRECTION_RTL
+     * @see LayoutDirection#LTR
+     * @see LayoutDirection#RTL
      */
     public static void applyDisplay(int gravity, @NonNull Rect display, @NonNull Rect inoutObj,
                                     int layoutDirection) {
@@ -346,6 +488,90 @@ public class Gravity {
      * @return gravity converted to absolute (horizontal) values.
      */
     public static int getAbsoluteGravity(int gravity, int layoutDirection) {
-        return icyllis.modernui.graphics.Gravity.getAbsoluteGravity(gravity, layoutDirection);
+        int result = gravity;
+        // If layout is script specific and gravity is horizontal relative (START or END)
+        if ((result & RELATIVE_LAYOUT_DIRECTION) > 0) {
+            if ((result & Gravity.START) == Gravity.START) {
+                // Remove the START bit
+                result &= ~START;
+                if (layoutDirection == LayoutDirection.RTL) {
+                    // Set the RIGHT bit
+                    result |= RIGHT;
+                } else {
+                    // Set the LEFT bit
+                    result |= LEFT;
+                }
+            } else if ((result & Gravity.END) == Gravity.END) {
+                // Remove the END bit
+                result &= ~END;
+                if (layoutDirection == LayoutDirection.RTL) {
+                    // Set the LEFT bit
+                    result |= LEFT;
+                } else {
+                    // Set the RIGHT bit
+                    result |= RIGHT;
+                }
+            }
+            // Don't need the script specific bit any more, so remove it as we are converting to
+            // absolute values (LEFT or RIGHT)
+            result &= ~RELATIVE_LAYOUT_DIRECTION;
+        }
+        return result;
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static String toString(int gravity) {
+        final StringJoiner result = new StringJoiner(" ");
+        if ((gravity & FILL) == FILL) {
+            result.add("FILL");
+        } else {
+            if ((gravity & FILL_VERTICAL) == FILL_VERTICAL) {
+                result.add("FILL_VERTICAL");
+            } else {
+                if ((gravity & TOP) == TOP) {
+                    result.add("TOP");
+                }
+                if ((gravity & BOTTOM) == BOTTOM) {
+                    result.add("BOTTOM");
+                }
+            }
+            if ((gravity & FILL_HORIZONTAL) == FILL_HORIZONTAL) {
+                result.add("FILL_HORIZONTAL");
+            } else {
+                if ((gravity & START) == START) {
+                    result.add("START");
+                } else if ((gravity & LEFT) == LEFT) {
+                    result.add("LEFT");
+                }
+                if ((gravity & END) == END) {
+                    result.add("END");
+                } else if ((gravity & RIGHT) == RIGHT) {
+                    result.add("RIGHT");
+                }
+            }
+        }
+        if ((gravity & CENTER) == CENTER) {
+            result.add("CENTER");
+        } else {
+            if ((gravity & CENTER_VERTICAL) == CENTER_VERTICAL) {
+                result.add("CENTER_VERTICAL");
+            }
+            if ((gravity & CENTER_HORIZONTAL) == CENTER_HORIZONTAL) {
+                result.add("CENTER_HORIZONTAL");
+            }
+        }
+        if (result.length() == 0) {
+            result.add("NO GRAVITY");
+        }
+        if ((gravity & DISPLAY_CLIP_VERTICAL) == DISPLAY_CLIP_VERTICAL) {
+            result.add("DISPLAY_CLIP_VERTICAL");
+        }
+        if ((gravity & DISPLAY_CLIP_HORIZONTAL) == DISPLAY_CLIP_HORIZONTAL) {
+            result.add("DISPLAY_CLIP_HORIZONTAL");
+        }
+        return result.toString();
     }
 }

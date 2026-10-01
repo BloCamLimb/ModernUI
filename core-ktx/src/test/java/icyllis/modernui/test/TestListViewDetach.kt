@@ -24,7 +24,7 @@ import icyllis.modernui.fragment.Fragment
 import icyllis.modernui.graphics.drawable.toDrawable
 import icyllis.modernui.util.DataSet
 import icyllis.modernui.util.Log
-import icyllis.modernui.view.Gravity
+import icyllis.modernui.graphics.Gravity
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup
@@ -33,14 +33,9 @@ import icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import icyllis.modernui.widget.AbsListView
 import icyllis.modernui.widget.BaseAdapter
 import icyllis.modernui.widget.Button
-import icyllis.modernui.widget.GridView
 import icyllis.modernui.widget.LinearLayout
-import icyllis.modernui.widget.ListView
 import icyllis.modernui.widget.StaggeredGridView
 import icyllis.modernui.widget.TextView
-import java.lang.ref.Cleaner
-import java.lang.ref.Reference
-import kotlin.system.exitProcess
 
 fun main() {
     System.setProperty("java.awt.headless", "true")

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
 import org.jetbrains.annotations.ApiStatus;

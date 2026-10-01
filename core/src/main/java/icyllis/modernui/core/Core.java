@@ -40,7 +40,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  * The core class for thread management and sub-system initializing, also provides utility methods of
  * memory operations and thread scheduling.
  *
- * @deprecated use {@link Arch}
+ * @deprecated use {@link Arch} since 3.14
  */
 @Deprecated
 public final class Core {

@@ -27,7 +27,6 @@ import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.Log;
-import icyllis.modernui.view.Gravity;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.MarkerFactory;
 

@@ -30,6 +30,7 @@ import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Point;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;

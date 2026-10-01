@@ -1,6 +1,6 @@
 /*
  * ModernUI.
- * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
+ * Copyright (C) 2023-2026 BloCamLimb. All rights reserved.
  *
  * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,10 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.view.*;
+import icyllis.modernui.graphics.Gravity;
+import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 /**

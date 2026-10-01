@@ -25,7 +25,7 @@ import icyllis.modernui.graphics.drawable.BuiltinIconDrawable
 import icyllis.modernui.graphics.drawable.ShapeDrawable
 import icyllis.modernui.resources.TypedValue
 import icyllis.modernui.util.DataSet
-import icyllis.modernui.view.Gravity
+import icyllis.modernui.graphics.Gravity
 import icyllis.modernui.view.LayoutInflater
 import icyllis.modernui.view.View
 import icyllis.modernui.view.ViewGroup

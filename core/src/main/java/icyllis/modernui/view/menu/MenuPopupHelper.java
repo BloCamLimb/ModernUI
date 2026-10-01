@@ -41,6 +41,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.view.*;

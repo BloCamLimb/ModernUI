@@ -23,7 +23,6 @@ import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -458,7 +457,7 @@ public class RenderProperties {
      *
      * @param translationX The X axis translation value of the RenderNode, in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setTranslationX(float)
+     * @see icyllis.modernui.view.View#setTranslationX(float)
      * @see #getTranslationX()
      */
     public boolean setTranslationX(float translationX) {
@@ -484,7 +483,7 @@ public class RenderProperties {
      *
      * @param translationY The Y axis translation value of the RenderNode, in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setTranslationY(float)
+     * @see icyllis.modernui.view.View#setTranslationY(float)
      * @see #getTranslationY()
      */
     public boolean setTranslationY(float translationY) {
@@ -509,7 +508,7 @@ public class RenderProperties {
      * Sets the translation value for the RenderNode on the Z axis.
      *
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setTranslationZ(float)
+     * @see icyllis.modernui.view.View#setTranslationZ(float)
      * @see #getTranslationZ()
      */
     public boolean setTranslationZ(float translationZ) {
@@ -601,7 +600,7 @@ public class RenderProperties {
      *
      * @param rotationX The rotation value of the RenderNode, in degrees
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setRotationX(float)
+     * @see icyllis.modernui.view.View#setRotationX(float)
      * @see #getRotationX()
      */
     public boolean setRotationX(float rotationX) {
@@ -627,7 +626,7 @@ public class RenderProperties {
      *
      * @param rotationY The rotation value of the RenderNode, in degrees
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setRotationY(float)
+     * @see icyllis.modernui.view.View#setRotationY(float)
      * @see #getRotationY()
      */
     public boolean setRotationY(float rotationY) {
@@ -678,7 +677,7 @@ public class RenderProperties {
      *
      * @param scaleX The scale value of the RenderNode
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setScaleX(float)
+     * @see icyllis.modernui.view.View#setScaleX(float)
      * @see #getScaleX()
      */
     public boolean setScaleX(float scaleX) {
@@ -704,7 +703,7 @@ public class RenderProperties {
      *
      * @param scaleY The scale value of the RenderNode
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setScaleY(float)
+     * @see icyllis.modernui.view.View#setScaleY(float)
      * @see #getScaleY()
      */
     public boolean setScaleY(float scaleY) {
@@ -730,7 +729,7 @@ public class RenderProperties {
      *
      * @param pivotX The pivot value of the RenderNode on the X axis, in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setPivotX(float)
+     * @see icyllis.modernui.view.View#setPivotX(float)
      * @see #getPivotX()
      */
     public boolean setPivotX(float pivotX) {
@@ -763,7 +762,7 @@ public class RenderProperties {
      *
      * @param pivotY The pivot value of the RenderNode on the Y axis, in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
-     * @see View#setPivotY(float)
+     * @see icyllis.modernui.view.View#setPivotY(float)
      * @see #getPivotY()
      */
     public boolean setPivotY(float pivotY) {

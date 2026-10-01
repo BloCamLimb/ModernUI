@@ -41,7 +41,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Window;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
@@ -51,7 +51,6 @@ import icyllis.modernui.transition.Transition;
 import icyllis.modernui.transition.TransitionListener;
 import icyllis.modernui.transition.TransitionManager;
 import icyllis.modernui.util.AttributeSet;
-import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
@@ -650,10 +649,10 @@ public class PopupWindow {
     /**
      * Set the layout type for this window.
      * <p>
-     * See {@link Window} for possible values.
+     * See {@link WindowManager.LayoutParams} for possible values.
      *
      * @param layoutType Layout type for this window.
-     * @see Window
+     * @see WindowManager.LayoutParams
      */
     public void setWindowLayoutType(int layoutType) {
         mWindowLayoutType = layoutType;

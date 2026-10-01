@@ -47,6 +47,7 @@ import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.ResourceId;
@@ -55,7 +56,6 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.FloatProperty;
-import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.SoundEffectConstants;
 import icyllis.modernui.view.ViewConfiguration;
 

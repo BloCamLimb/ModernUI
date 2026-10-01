@@ -47,6 +47,7 @@ import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Matrix;
 import icyllis.modernui.graphics.Outline;
 import icyllis.modernui.graphics.Point;
