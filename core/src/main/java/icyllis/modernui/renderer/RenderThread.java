@@ -23,13 +23,13 @@ import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ContextOptions;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.GraniteUtil;
-import icyllis.modernui.core.Core;
-import icyllis.modernui.core.LooperThread;
+import icyllis.modernui.system.LooperThread;
+import icyllis.modernui.system.Arch;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CountDownLatch;
 
-import static icyllis.modernui.core.Core.MARKER;
+import static icyllis.modernui.system.Arch.MARKER;
 import static icyllis.modernui.util.Log.LOGGER;
 
 public final class RenderThread extends LooperThread {
@@ -72,7 +72,7 @@ public final class RenderThread extends LooperThread {
                 LOGGER.error(MARKER, "Failed to initialize Granite Renderer, destroying ImmediateContext");
                 return;
             }
-            Core.setRenderThread(mImmediateContext);
+            Arch.setRenderThread(mImmediateContext);
             StringBuilder sb = new StringBuilder("\n");
             mImmediateContext.getCaps().dump(sb, false);
             if (mVulkanManager != null) {

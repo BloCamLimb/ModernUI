@@ -21,7 +21,7 @@ package icyllis.modernui.animation;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Looper;
+import icyllis.modernui.system.Looper;
 import icyllis.modernui.system.AnimationClock;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;

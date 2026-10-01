@@ -21,21 +21,13 @@ package icyllis.modernui.view;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.SamplingOptions;
-import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.Choreographer;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
-import icyllis.modernui.core.Message;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Point;
@@ -43,6 +35,11 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.system.Arch;
+import icyllis.modernui.system.Choreographer;
+import icyllis.modernui.system.Handler;
+import icyllis.modernui.system.Looper;
+import icyllis.modernui.system.Message;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.View.FocusDirection;
 import org.jetbrains.annotations.ApiStatus;
@@ -68,6 +65,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     private final AttachInfo mAttachInfo;
 
     private static final int MSG_INVALIDATE = 1;
+    private static final int MSG_DIE = 3;
     protected static final int MSG_PROCESS_INPUT_EVENTS = 19;
     private static final int MSG_INVALIDATE_WORLD = 22;
 
@@ -102,8 +100,6 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     protected final Object mRenderLock = new Object();
 
     private int mPointerIconType = PointerIcon.TYPE_DEFAULT;
-
-    boolean mAdded;
 
     // window frame in screen
     public final Rect mWinFrame = new Rect();
@@ -158,6 +154,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     protected boolean handleMessage(@NonNull Message msg) {
         switch (msg.what) {
             case MSG_INVALIDATE -> ((View) msg.obj).invalidate();
+            case MSG_DIE -> doDie();
             case MSG_PROCESS_INPUT_EVENTS -> {
                 mProcessInputEventsScheduled = false;
                 doProcessInputEvents();
@@ -171,15 +168,23 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         return true;
     }
 
-    public void setView(@NonNull View view) {
+    public void setView(@NonNull View view, WindowManager.LayoutParams attrs) {
         synchronized (this) {
             if (mView == null) {
                 mView = view;
+
+                mWindowAttributes.copyFrom(attrs);
+                attrs = mWindowAttributes;
+
                 mAttachInfo.mRootView = view;
                 mAttachInfo.mWindowVisibility = View.VISIBLE;
+
+                mWinFrame.set(0, 0, mStage.getWidth(), mStage.getHeight());
+
                 view.assignParent(this);
                 view.dispatchAttachedToWindow(mAttachInfo, View.VISIBLE);
                 view.dispatchWindowVisibilityChanged(View.VISIBLE);
+                requestLayout();
             }
         }
     }
@@ -194,6 +199,12 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     public View getView() {
         return mView;
+    }
+
+    public void setLayoutParams(WindowManager.LayoutParams attrs) {
+        mWindowAttributes.copyFrom(attrs);
+        requestLayout();
+        mWindowAttributesChanged = true;
     }
 
     boolean startDragAndDrop(@NonNull View view, @Nullable Object data, @Nullable View.DragShadow shadow, int flags) {
@@ -415,7 +426,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     private void performTraversal() {
         final View host = mView;
 
-        if (host == null || !mAdded) {
+        if (host == null) {
             return;
         }
 
@@ -648,6 +659,8 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             Canvas canvas = new ArcCanvas(mSurface.getCanvas());
 
             canvas.save();
+            var surfaceInsets = mWindowAttributes.surfaceInsets;
+            canvas.translate(surfaceInsets.left, surfaceInsets.top);
             if (!dirty.contains(0, 0, mWidth, mHeight)) {
                 // clip only when there's subset, to include surface insets if full draw needed
                 canvas.clipRect(dirty);
@@ -794,6 +807,44 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 mMeasuredWidth, mMeasuredHeight, mWinFrame);
 
         mLastLayoutFrame.set(mWinFrame);
+    }
+
+    public boolean die(boolean immediate) {
+        Arch.checkUiThread();
+        mStage.postComposition();
+        mStage.markForComposition();
+
+        if (immediate && !mIsInTraversal) {
+            doDie();
+            return false;
+        }
+
+        if (mSurface != null) {
+            mSurface.unref();
+            mSurface = null;
+        }
+        mHandler.sendEmptyMessage(MSG_DIE);
+        return true;
+    }
+
+    public void doDie() {
+        if (mView != null) {
+            if (mView.mAttachInfo != null) {
+                mView.dispatchDetachedFromWindow();
+            }
+
+            mView.assignParent(null);
+            mView = null;
+            mAttachInfo.mRootView = null;
+        }
+
+        if (mSurface != null) {
+            mSurface.unref();
+            mSurface = null;
+        }
+
+        unscheduleTraversals();
+        mStage.doRemoveView(this);
     }
 
     @MainThread
@@ -1033,7 +1084,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     void invalidate() {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         mDirty.set(0, 0, mWidth, mHeight);
         if (!mWillDrawSoon) {
             scheduleTraversals();
@@ -1056,7 +1107,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     @Override
     public ViewParent invalidateChildInParent(int[] location, Rect dirty) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
 
         if (dirty == null) {
             invalidate();
@@ -1233,7 +1284,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     @Override
     public void requestLayout() {
         if (!mHandlingLayoutInLayoutRequest) {
-            Core.checkUiThread();
+            Arch.checkUiThread();
             mLayoutRequested = true;
             scheduleTraversals();
         }
@@ -1246,13 +1297,13 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     @Override
     public void requestChildFocus(View child, View focused) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         scheduleTraversals();
     }
 
     @Override
     public void clearChildFocus(View child) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         scheduleTraversals();
     }
 
@@ -1261,7 +1312,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
      */
     @Override
     public View focusSearch(View focused, int direction) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         if (!(mView instanceof ViewGroup)) {
             return null;
         }
@@ -1271,7 +1322,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     @Override
     public View keyboardNavigationClusterSearch(View currentCluster,
                                                 @FocusDirection int direction) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
                 mView, currentCluster, direction);
     }
@@ -1292,7 +1343,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     @Override
     public void focusableViewAvailable(View v) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         if (mView != null) {
             if (!mView.hasFocus()) {
                 // the one case where will transfer focus away from the current one

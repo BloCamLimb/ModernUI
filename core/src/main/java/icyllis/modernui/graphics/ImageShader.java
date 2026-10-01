@@ -22,7 +22,7 @@ import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SamplingOptions;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
 import org.intellij.lang.annotations.MagicConstant;
 
 import java.lang.annotation.Retention;
@@ -205,7 +205,7 @@ public class ImageShader extends Shader {
         } else {
             mLocalMatrix = null;
         }
-        mCleanup = shader.registerWithCleaner(Core.cleaner(), this);
+        mCleanup = shader.registerWithCleaner(Arch.cleaner(), this);
         assert mCleanup != null;
         mShader = shader;
     }
@@ -217,7 +217,7 @@ public class ImageShader extends Shader {
         } else {
             mLocalMatrix = null;
         }
-        mCleanup = newShader.registerWithCleaner(Core.cleaner(), this);
+        mCleanup = newShader.registerWithCleaner(Arch.cleaner(), this);
         assert mCleanup != null;
         mShader = newShader;
     }

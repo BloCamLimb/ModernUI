@@ -61,4 +61,6 @@ public interface Stage extends WindowManager {
     @Nullable
     @SharedPtr
     Surface createSurface(ImageInfo info);
+
+    void doRemoveView(ViewRoot root);
 }

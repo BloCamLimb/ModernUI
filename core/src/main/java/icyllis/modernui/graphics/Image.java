@@ -25,13 +25,12 @@ import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.granite.RecordingContext;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.system.Arch;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Unchecked;
 import org.jetbrains.annotations.ApiStatus;
@@ -74,7 +73,7 @@ public class Image implements AutoCloseable {
     int mDensity = DisplayMetrics.DENSITY_DEFAULT;
 
     private Image(@SharedPtr icyllis.arc3d.sketch.Image image) {
-        mCleanup = Core.registerNativeResource(this, image);
+        mCleanup = Arch.registerNativeResource(this, image);
         mImage = Objects.requireNonNull(image);
     }
 
@@ -120,17 +119,17 @@ public class Image implements AutoCloseable {
         if (bitmap == null || bitmap.isClosed()) {
             return null;
         }
-        var uiRecordingContext = Core.peekUiRecordingContext();
+        var uiRecordingContext = Arch.peekUiRecordingContext();
         if (uiRecordingContext == null) {
             return null;
         }
-        if (Core.isOnUiThread()) {
+        if (Arch.isOnUiThread()) {
             return createTextureFromBitmap(
                     uiRecordingContext,
                     bitmap
             );
         }
-        if (Core.isOnRenderThread()) {
+        if (Arch.isOnRenderThread()) {
             throw new IllegalStateException("Cannot be called from rendering thread");
         }
         FutureTask<Image> future = new FutureTask<>(() ->
@@ -139,7 +138,7 @@ public class Image implements AutoCloseable {
                         bitmap
                 )
         );
-        if (!Core.getUiHandlerAsync().post(future)) {
+        if (!Arch.getUiHandlerAsync().post(future)) {
             return null;
         }
         return Unchecked.getUninterruptibly(future);
@@ -207,21 +206,7 @@ public class Image implements AutoCloseable {
     public static Image create(@NonNull String namespace, @NonNull String entry) {
         var factory = sLegacyFactory;
         if (factory != null) {
-            var result = factory.apply(namespace, "textures/" + entry);
-            if (result != null) {
-                return result;
-            }
-        }
-        var asset = ModernUI.getInstance().getResources()
-                .getAsset(namespace + "/textures/" + entry);
-        if (asset != null) {
-            try (var bitmap = asset.isCompressed()
-                    ? BitmapFactory.decodeStream(asset.openStream())
-                    : BitmapFactory.decodeChannel(asset.openChannel())) {
-                return Image.createTextureFromBitmap(bitmap);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            return factory.apply(namespace, "textures/" + entry);
         }
         return null;
     }

@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
 
 /**
  * A shader subclass that composites (blends) two shaders into one, with the given
@@ -50,7 +50,7 @@ public class ComposeShader extends Shader {
         if (shader == null) {
             throw new IllegalStateException("unreachable");
         }
-        mCleanup = shader.registerWithCleaner(Core.cleaner(), this);
+        mCleanup = shader.registerWithCleaner(Arch.cleaner(), this);
         mShader = shader;
     }
 }

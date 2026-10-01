@@ -20,8 +20,8 @@ package icyllis.modernui.fragment;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.CancellationSignal;
 import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.system.CancellationSignal;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.transition.TransitionListener;
 import icyllis.modernui.transition.TransitionSet;

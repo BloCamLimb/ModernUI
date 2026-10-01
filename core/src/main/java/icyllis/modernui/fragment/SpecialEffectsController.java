@@ -22,7 +22,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.CancellationSignal;
+import icyllis.modernui.system.CancellationSignal;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 

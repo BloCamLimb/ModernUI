@@ -26,6 +26,7 @@ import icyllis.arc3d.sketch.NullSurface;
 import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.renderer.WindowSurface;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.LayerSettings;
@@ -40,13 +41,17 @@ import org.lwjgl.sdl.SDLEvents;
 import org.lwjgl.sdl.SDLKeyboard;
 import org.lwjgl.sdl.SDLKeycode;
 import org.lwjgl.sdl.SDLMouse;
+import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.sdl.SDL_KeyboardEvent;
 import org.lwjgl.sdl.SDL_MouseButtonEvent;
 import org.lwjgl.sdl.SDL_MouseMotionEvent;
 import org.lwjgl.sdl.SDL_WindowEvent;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.NativeType;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.function.BiFunction;
 
 /**
  * A platform window acts as the parent of all virtual windows.
@@ -74,6 +79,7 @@ public final class WindowStage implements Stage {
 
     // Z-ordered
     ArrayList<ViewRoot> mRoots = new ArrayList<>();
+    private final HashSet<View> mDyingViews = new HashSet<>();
 
     ViewRoot mFocused;
 
@@ -85,9 +91,26 @@ public final class WindowStage implements Stage {
 
     private WindowSurface mSurface;
     private boolean mMarkForComposition = false;
+    private boolean mMarkForSurfaceReconfigure = true;
 
     public WindowStage(long window) {
         mWindow = window;
+        try (var stack = MemoryStack.stackPush()) {
+            var x = stack.mallocInt(1);
+            var y = stack.mallocInt(1);
+
+            SDLVideo.SDL_GetWindowSizeInPixels(window, x, y);
+            mWidth = x.get(0);
+            mHeight = y.get(0);
+
+            SDLVideo.SDL_GetWindowSize(window, x, y);
+            mScreenWidth = x.get(0);
+            mScreenHeight = y.get(0);
+
+            SDLVideo.SDL_GetWindowPosition(window, x, y);
+            mScreenX = x.get(0);
+            mScreenY = y.get(0);
+        }
     }
 
     @NativeType("SDL_Window *")
@@ -178,7 +201,7 @@ public final class WindowStage implements Stage {
         }
     }
 
-    public void onMouseMotion(@NonNull SDL_MouseMotionEvent event) {
+    public void onMouseMotionEvent(@NonNull SDL_MouseMotionEvent event) {
 
         float x = event.x() * mWidth / mScreenWidth;
         float y = event.y() * mHeight / mScreenHeight;
@@ -247,7 +270,7 @@ public final class WindowStage implements Stage {
         }
     }
 
-    public void onMouseButton(@NonNull SDL_MouseButtonEvent event) {
+    public void onMouseButtonEvent(@NonNull SDL_MouseButtonEvent event) {
 
         float x = event.x() * mWidth / mScreenWidth;
         float y = event.y() * mHeight / mScreenHeight;
@@ -358,8 +381,12 @@ public final class WindowStage implements Stage {
     public void handleResize() {
 
         for (int i = 0; i < mRoots.size(); i++) {
-            mRoots.get(i).requestLayout();
+            var root = mRoots.get(i);
+            root.mWinFrame.set(0, 0, mWidth, mHeight);
+            root.requestLayout();
         }
+
+        mMarkForSurfaceReconfigure = true;
     }
 
     public void setFocused(@Nullable ViewRoot newFocus) {
@@ -392,16 +419,70 @@ public final class WindowStage implements Stage {
         mFocused = newFocus;
     }
 
-    public void addWindow(@NonNull View view, @NonNull WindowManager.LayoutParams params) {
-
+    public void show() {
+        SDLVideo.SDL_ShowWindow(mWindow);
     }
 
-    public void updateWindowLayout(@NonNull View view, @NonNull WindowManager.LayoutParams params) {
+    public void addWindow(@NonNull BiFunction<Context, Stage, ViewRoot> factory,
+                          @NonNull View view, @NonNull WindowManager.LayoutParams params) {
+        int index = findView(view);
+        if (index >= 0) {
+            if (mDyingViews.contains(view)) {
+                // Don't wait for MSG_DIE to make it's way through root's queue.
+                mRoots.get(index).doDie();
+            } else {
+                throw new IllegalStateException("View " + view
+                        + " has already been added to the window manager.");
+            }
+            // The previous removeView() had not completed executing. Now it has.
+        }
+        var root = factory.apply(view.getContext(), this);
+        view.setLayoutParams(params);
+        mRoots.add(root);
+        root.setView(view, params);
+    }
 
+    public int findView(View view) {
+        for (int i = 0; i < mRoots.size(); i++) {
+            var root = mRoots.get(i);
+            if (view.equals(root.getView())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void removeWindow(@NonNull View view, boolean immediate) {
+        for (int i = 0; i < mRoots.size(); i++) {
+            var root = mRoots.get(i);
+            if (view.equals(root.getView())) {
+                boolean deferred = root.die(immediate);
+                if (deferred) {
+                    mDyingViews.add(view);
+                }
+                return;
+            }
+        }
+    }
 
+    @Override
+    public void doRemoveView(ViewRoot root) {
+        final int index = mRoots.indexOf(root);
+        if (index >= 0) {
+            mRoots.remove(index);
+            final View view = root.getView();
+            mDyingViews.remove(view);
+        }
+
+        for (int i = mRoots.size() - 1; i >= 0; i--) {
+            ViewRoot r = mRoots.get(i);
+            int flags = r.mWindowAttributes.flags;
+
+            if ((flags & WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) == 0) {
+                setFocused(r);
+                break;
+            }
+        }
     }
 
     @Override
@@ -409,7 +490,7 @@ public final class WindowStage implements Stage {
         if (!(params instanceof LayoutParams)) {
             throw new IllegalArgumentException("Params must be WindowManager.LayoutParams");
         }
-        addWindow(view, (LayoutParams) params);
+        addWindow(ViewRoot::new, view, (LayoutParams) params);
     }
 
     @Override
@@ -417,7 +498,16 @@ public final class WindowStage implements Stage {
         if (!(params instanceof LayoutParams)) {
             throw new IllegalArgumentException("Params must be WindowManager.LayoutParams");
         }
-        updateWindowLayout(view, (LayoutParams) params);
+        var wparams = (LayoutParams) params;
+        view.setLayoutParams(wparams);
+        for (int i = 0; i < mRoots.size(); i++) {
+            var root = mRoots.get(i);
+            if (view.equals(root.getView())) {
+                root.setLayoutParams(wparams);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("View=" + view + " not attached to window manager");
     }
 
     @Override
@@ -445,6 +535,14 @@ public final class WindowStage implements Stage {
         return false;
     }
 
+    public boolean checkForSurfaceReconfigure() {
+        if (mMarkForSurfaceReconfigure) {
+            mMarkForSurfaceReconfigure = false;
+            return true;
+        }
+        return false;
+    }
+
     void doComposition(
             icyllis.arc3d.sketch.Canvas canvas) {
         ArrayList<@SharedPtr LayerSettings> layers = new ArrayList<>();
@@ -460,6 +558,8 @@ public final class WindowStage implements Stage {
             if (layer.sourceImage != null) {
                 image = layer.sourceImage; // move
             } else if (layer.sourceSurf instanceof GraniteSurface graniteSurface) {
+                //TODO delete this when Arc3D is updated
+                graniteSurface.flush();
                 image = graniteSurface.asImage();
             } else {
                 image = layer.sourceSurf.makeImageSnapshot();

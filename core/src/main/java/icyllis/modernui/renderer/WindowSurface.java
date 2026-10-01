@@ -34,24 +34,36 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public abstract class WindowSurface {
 
-    public boolean serverNeedsSwapchainRecreation() {
-        return false;
+    protected boolean mPresentationCompleted = true;
+    protected boolean mNeedsReconfigure;
+    protected final Object mLock = new Object();
+
+    public boolean needsReconfigure() {
+        return mNeedsReconfigure;
     }
 
     /**
      * Requires external synchronization.
      */
-    public long createSwapchain(int clientWidth, int clientHeight,
-                                @ColorInfo.ColorType int desiredColorType,
-                                ColorSpace desiredColorSpace) {
+    public long configure(int clientWidth, int clientHeight,
+                          @ColorInfo.ColorType int desiredColorType,
+                          ColorSpace desiredColorSpace) {
         return 0;
     }
 
-    public void waitAcquireNextImage() {
+    public void waitForPresentation() {
+        synchronized (mLock) {
+            while (!mPresentationCompleted) {
+                try {
+                    mLock.wait();
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
     }
 
-    public int acquireNextImage(long swapchain) {
-        return 0;
+    public void prepareForPresentation() {
+        mPresentationCompleted = false;
     }
 
     /**

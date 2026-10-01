@@ -23,7 +23,7 @@ import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -331,7 +331,7 @@ public class Paint {
     public Paint() {
         mPaint = new icyllis.arc3d.sketch.Paint();
         internalReset();
-        Core.registerNativeResource(this, mPaint);
+        Arch.registerNativeResource(this, mPaint);
     }
 
     /**
@@ -350,7 +350,7 @@ public class Paint {
             mPaint = new icyllis.arc3d.sketch.Paint(paint.mPaint);
             internalSetFrom(paint);
         }
-        Core.registerNativeResource(this, mPaint);
+        Arch.registerNativeResource(this, mPaint);
     }
 
     /**

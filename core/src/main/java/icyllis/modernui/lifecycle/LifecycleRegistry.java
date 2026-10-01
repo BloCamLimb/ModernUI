@@ -21,7 +21,7 @@ package icyllis.modernui.lifecycle;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -97,7 +97,7 @@ public class LifecycleRegistry extends Lifecycle {
      */
     @UiThread
     public void setCurrentState(@NonNull State state) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         moveToState(state);
     }
 
@@ -110,7 +110,7 @@ public class LifecycleRegistry extends Lifecycle {
      * @param event The event that was received
      */
     public void handleLifecycleEvent(@NonNull Event event) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         moveToState(event.getTargetState());
     }
 
@@ -149,7 +149,7 @@ public class LifecycleRegistry extends Lifecycle {
 
     @Override
     public void addObserver(@NonNull LifecycleObserver observer) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         State initialState = mState == DESTROYED ? DESTROYED : INITIALIZED;
         ObserverWithState statefulObserver = new ObserverWithState(observer, initialState);
         ObserverWithState previous = mObserverMap.putIfAbsent(statefulObserver);
@@ -196,7 +196,7 @@ public class LifecycleRegistry extends Lifecycle {
 
     @Override
     public void removeObserver(@NonNull LifecycleObserver observer) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         // we consciously decided not to send destruction events here in opposition to addObserver.
         // Our reasons for that:
         // 1. These events haven't yet happened at all. In contrast to events in addObservers, that
@@ -218,7 +218,7 @@ public class LifecycleRegistry extends Lifecycle {
      * @return The number of observers.
      */
     public int getObserverCount() {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         return mObserverMap.size();
     }
 

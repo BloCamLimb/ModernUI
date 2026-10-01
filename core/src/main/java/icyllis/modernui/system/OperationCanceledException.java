@@ -1,6 +1,6 @@
 /*
  * ModernUI.
- * Copyright (C) 2026 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2026 BloCamLimb. All rights reserved.
  *
  * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,22 +16,22 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.system;
 
-import org.jetbrains.annotations.ApiStatus;
+import icyllis.modernui.annotation.Nullable;
+
+import java.util.Objects;
 
 /**
- * Interface for polling platform event loop or waiting for events.
- *
- * @hide
- * @hidden
+ * An exception type that is thrown when an operation in progress is canceled.
  */
-@ApiStatus.Internal
-public interface Poller {
+public class OperationCanceledException extends RuntimeException {
 
-    void poll(Thread thread, long timeoutMillis);
+    public OperationCanceledException() {
+        this(null);
+    }
 
-    void wake(Thread thread);
-
-    void destroy(Thread thread);
+    public OperationCanceledException(@Nullable String message) {
+        super(Objects.toString(message, "The operation has been canceled."));
+    }
 }

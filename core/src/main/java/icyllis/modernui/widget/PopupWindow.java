@@ -60,7 +60,6 @@ import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.view.ViewParent;
 import icyllis.modernui.view.ViewTreeObserver;
-import icyllis.modernui.view.WindowGroup;
 import icyllis.modernui.view.WindowManager;
 
 import java.lang.ref.WeakReference;
@@ -79,13 +78,6 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
  * Popup window enter and exit transitions may be specified by calling either
  * {@link #setEnterTransition(Transition)} or {@link #setExitTransition(Transition)}
  * and passing a {@link Transition}.
- * </p>
- * <p>
- * This is a modified version from Android. ModernUI implementations require the
- * root view must be a {@link WindowGroup} for its behavior to intercept input events.
- * We don't need its anchoring feature, because it will calculate all transformation matrices.
- * Firstly, the performance is slightly lower, and we don't want the position of pop-up window
- * to change too frequently.
  * </p>
  *
  * @see Spinner
@@ -185,15 +177,12 @@ public class PopupWindow {
     private WeakReference<View> mAnchorRoot;
     private boolean mIsAnchorRootAttached;
 
-    private final ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener = () -> {
-        //TODO WindowGroup is buggy, view tree will be laid out frequently. Disable aligning now.
-        //alignToAnchor();
-    };
+    private final ViewTreeObserver.OnScrollChangedListener mOnScrollChangedListener =
+            this::alignToAnchor;
 
     private final View.OnLayoutChangeListener mOnLayoutChangeListener =
             (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
-                //TODO WindowGroup is buggy, view tree will be laid out frequently. Disable aligning now.
-                //alignToAnchor();
+                alignToAnchor();
             };
 
     private int mAnchorXOff;

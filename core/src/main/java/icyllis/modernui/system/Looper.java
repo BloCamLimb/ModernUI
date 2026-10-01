@@ -1,6 +1,6 @@
 /*
  * ModernUI.
- * Copyright (C) 2026 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2026 BloCamLimb. All rights reserved.
  *
  * ModernUI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,6 +14,9 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/*
  *
  * This file incorporates work covered by the following copyright and
  * permission notice:
@@ -33,10 +36,9 @@
  *   limitations under the License.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.system;
 
 import icyllis.modernui.annotation.*;
-import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;

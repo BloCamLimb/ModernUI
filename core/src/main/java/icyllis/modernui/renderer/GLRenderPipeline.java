@@ -21,7 +21,8 @@ package icyllis.modernui.renderer;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.Recording;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Looper;
+import icyllis.modernui.system.Looper;
+import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.system.MemoryUtil;
 
 import static icyllis.modernui.util.Log.LOGGER;
@@ -49,12 +50,20 @@ public final class GLRenderPipeline extends RenderPipeline {
     }
 
     @Override
+    public long getAdditionalWindowFlags() {
+        return SDLVideo.SDL_WINDOW_OPENGL;
+    }
+
+    @Override
     public void doRender(FrameTask[] tasks) {
         ImmediateContext context = mImmediateContext;
         for (var task : tasks) {
             GLWindowSurface surface = (GLWindowSurface) task.surface;
             Recording recording = task.surfaceBoundRecording;
-            mGLManager.makeCurrent(surface != null ? surface.getWindow() : MemoryUtil.NULL);
+            boolean res = mGLManager.makeCurrent(surface != null ? surface.getWindow() : MemoryUtil.NULL);
+            if (!res) {
+                LOGGER.error("Failed to make current");
+            }
             if (recording != null) {
                 boolean added = context.addTask(recording);
                 recording.close();
@@ -66,7 +75,12 @@ public final class GLRenderPipeline extends RenderPipeline {
                 }
             }
             if (surface != null) {
-                mGLManager.swapBuffers(surface.getWindow());
+                res = mGLManager.swapBuffers(surface.getWindow());
+                if (!res) {
+                    LOGGER.error("Failed to swap buffers");
+                }
+                surface.notifyAcquired();
+
             }
         }
     }

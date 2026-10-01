@@ -18,7 +18,7 @@
 
 package icyllis.modernui.test.jmh;
 
-import icyllis.modernui.core.Message;
+import icyllis.modernui.system.Message;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;

@@ -19,90 +19,109 @@
 package icyllis.modernui.app;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.resources.Resources;
+import icyllis.modernui.core.ContextWrapper;
+import icyllis.modernui.view.View;
 import icyllis.modernui.view.WindowManager;
+import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ToastManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 
 /**
  * Reserved for future use.
  */
 @ApiStatus.Experimental
-public class Activity extends Context {
+public class Activity extends ContextWrapper {
 
-    private volatile ToastManager mToastManager;
+    //private icyllis.modernui.app.MainThread mMainThread;
 
-    private final Object mThemeLock = new Object();
+    private WindowStage mWindowStage;
+    private ToastManager mToastManager;
 
-    private final Resources mResources;
-    private Resources.Theme mTheme;
-    private ResourceId mThemeResource;
+    private View mDecor;
+    private boolean mWindowAdded = false;
+
+    boolean mCalled;
 
     public Activity() {
-        mResources = Resources.getSystem();
+        super(null);
     }
 
-    @Override
-    public Resources getResources() {
-        return mResources;
+    final void attach(Context context, WindowStage windowStage) {
+        attachBaseContext(context);
+        mWindowStage = windowStage;
+        mToastManager = new ToastManager(context, mWindowStage);
     }
 
-    @Override
-    public void setTheme(@Nullable ResourceId resId) {
-        synchronized (mThemeLock) {
-            mThemeResource = resId;
-
-            if (mTheme == null) {
-                return;
-            }
-
-            mTheme.clear();
-            mThemeResource = Resources.selectDefaultTheme(mThemeResource);
-            mTheme.applyStyle(mThemeResource, true);
+    public void setDecorView(@NonNull View view) {
+        if (mDecor == view) {
+            return;
+        }
+        mDecor = view;
+        if (mWindowAdded) {
+            //TODO ensure all popup windows are removed, then re-add app window
+            throw new IllegalStateException("Window is already added");
         }
     }
 
-    @Override
-    public Resources.Theme getTheme() {
-        synchronized (mThemeLock) {
-            if (mTheme != null) {
-                return mTheme;
-            }
-
-            mTheme = mResources.newTheme();
-            mThemeResource = Resources.selectDefaultTheme(mThemeResource);
-            mTheme.applyStyle(mThemeResource, true);
-
-            return mTheme;
+    @NonNull
+    public final View getDecorView() {
+        if (mDecor == null) {
+            mDecor = new FrameLayout(this);
         }
+        return mDecor;
     }
 
-    @ApiStatus.Internal
-    public ToastManager getToastManager() {
-        if (mToastManager != null) {
-            return mToastManager;
-        }
-        synchronized (this) {
-            if (mToastManager == null) {
-                mToastManager = new ToastManager(this);
-            }
-        }
-        return mToastManager;
+    @UiThread
+    @MustBeInvokedByOverriders
+    protected void onCreate() {
+        mCalled = true;
     }
 
-    @ApiStatus.Internal
-    public WindowManager getWindowManager() {
-        return null;
+    @UiThread
+    @MustBeInvokedByOverriders
+    protected void onStart() {
+        mCalled = true;
+    }
+
+    final void makeVisible() {
+        if (!mWindowAdded) {
+            var decor = getDecorView();
+            mWindowStage.addWindow(AppViewRoot::new,
+                    decor, new WindowManager.LayoutParams());
+            mWindowStage.show();
+            mWindowAdded = true;
+        }
     }
 
     @Override
     public Object getSystemService(@NonNull String name) {
         if (WINDOW_SERVICE.equals(name)) {
-            return getWindowManager();
+            return mWindowStage;
         }
-        return null;
+        if (TOAST_SERVICE.equals(name)) {
+            return mToastManager;
+        }
+        return super.getSystemService(name);
+    }
+
+    final void performCreate() {
+        mCalled = false;
+        onCreate();
+        if (!mCalled) {
+            throw new IllegalStateException("Activity " + this +
+                    " did not call through to super.onCreate()");
+        }
+    }
+
+    final void performStart() {
+        mCalled = false;
+        onStart();
+        if (!mCalled) {
+            throw new IllegalStateException("Activity " + this +
+                    " did not call through to super.onStart()");
+        }
     }
 }

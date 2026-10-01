@@ -18,6 +18,10 @@
 
 package icyllis.modernui.renderer;
 
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ImageInfo;
+import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.sketch.Surface;
@@ -29,19 +33,43 @@ public final class GLWindowSurface extends WindowSurface {
     private final GLManager mGLManager;
 
     public GraniteSurface mBackbufferSurface;
+    private RecordingContext mContext;
 
     public GLWindowSurface(RecordingContext recordingContext, long window,
                            GLManager manager) {
+        mContext = recordingContext;
         mWindow = window;
         mGLManager = manager;
     }
 
     @Override
+    public long configure(int clientWidth, int clientHeight, int desiredColorType, ColorSpace desiredColorSpace) {
+        if (mBackbufferSurface != null) {
+            mBackbufferSurface.unref();
+        }
+        mBackbufferSurface = GraniteSurface.wrapGLDefaultFramebuffer(
+                mContext,
+                ImageInfo.make(clientWidth, clientHeight,
+                        desiredColorType, ColorInfo.AT_PREMUL,
+                        desiredColorSpace),
+                Engine.SurfaceOrigin.kLowerLeft
+        );
+        return 0;
+    }
+
+    @Override
     public Surface getCurrentSurface() {
-        return null;
+        return mBackbufferSurface;
     }
 
     public long getWindow() {
         return mWindow;
+    }
+
+    public void notifyAcquired() {
+        synchronized (mLock) {
+            mPresentationCompleted = true;
+            mLock.notifyAll();
+        }
     }
 }

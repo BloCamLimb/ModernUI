@@ -22,7 +22,7 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Information about the current animation clock, the value is reported by
- * {@link icyllis.modernui.core.Choreographer}.
+ * {@link Choreographer}.
  *
  * @since 3.14
  */

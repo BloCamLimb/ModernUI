@@ -26,7 +26,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.annotation.WorkerThread;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
@@ -58,7 +58,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Objects;
 import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -138,7 +137,7 @@ public final class Bitmap implements AutoCloseable {
         mPixmap = new Pixmap(info, null, addr, rowBytes);
         mRequestAlphaType = info.alphaType();
         var pixels = new PixelRef(info.width(), info.height(), null, addr, rowBytes, freeFn);
-        mCleanup = Core.registerNativeResource(this, pixels);
+        mCleanup = Arch.registerNativeResource(this, pixels);
         mPixels = pixels;
     }
 
@@ -146,7 +145,7 @@ public final class Bitmap implements AutoCloseable {
         mFormat = format;
         mPixmap = pixmap;
         mRequestAlphaType = requestAlphaType;
-        mCleanup = Core.registerNativeResource(this, pixels);
+        mCleanup = Arch.registerNativeResource(this, pixels);
         mPixels = pixels;
     }
 
@@ -1618,7 +1617,7 @@ public final class Bitmap implements AutoCloseable {
         if (quality < 0 || quality > 100) {
             throw new IllegalArgumentException("Bad quality " + quality + ", must be 0..100");
         }
-        if (Core.isOnMainThread() || Core.isOnRenderThread()) {
+        if (Arch.isOnMainThread() || Arch.isOnRenderThread()) {
             LOGGER.warn(MARKER, "Called save() on core thread! This will hang the application!",
                     new Exception().fillInStackTrace());
         }

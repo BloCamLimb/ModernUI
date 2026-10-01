@@ -19,7 +19,7 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.windows.WindowsNativeWindowBorder;
+import icyllis.modernui.app.windows.WindowsNativeWindowBorder;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.resources.AssetManager;
 import icyllis.modernui.resources.DirectoryAssetsProvider;

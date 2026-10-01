@@ -45,9 +45,8 @@ public final class VulkanWindowSurface extends WindowSurface {
         }
     }
 
-    @Override
-    public int acquireNextImage(long swapchain) {
-        return super.acquireNextImage(swapchain);
+    public int acquireNextImage() {
+        return 0;
     }
 
     @Override

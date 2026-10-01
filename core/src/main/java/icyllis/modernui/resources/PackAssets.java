@@ -19,7 +19,7 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.WillCloseWhenClosed;
@@ -49,7 +49,7 @@ public final class PackAssets implements AutoCloseable {
         if (assetsProvider.closeIsNoop()) {
             cleanup = null;
         } else {
-            cleanup = Core.registerNativeResource(this, assetsProvider);
+            cleanup = Arch.registerNativeResource(this, assetsProvider);
         }
     }
 

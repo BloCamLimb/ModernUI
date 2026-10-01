@@ -20,6 +20,7 @@ package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
+import icyllis.modernui.system.Message;
 import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;

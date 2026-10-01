@@ -19,9 +19,9 @@
 package icyllis.modernui.renderer;
 
 import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.granite.RecordingContext;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Looper;
+import icyllis.modernui.system.Looper;
+import org.lwjgl.sdl.SDLVideo;
 
 public final class VulkanRenderPipeline extends RenderPipeline {
 
@@ -37,5 +37,10 @@ public final class VulkanRenderPipeline extends RenderPipeline {
     @Override
     public WindowSurface createWindowSurface(long window) {
         return new VulkanWindowSurface(mUiRecordingContext, window, mVulkanManager);
+    }
+
+    @Override
+    public long getAdditionalWindowFlags() {
+        return SDLVideo.SDL_WINDOW_VULKAN;
     }
 }

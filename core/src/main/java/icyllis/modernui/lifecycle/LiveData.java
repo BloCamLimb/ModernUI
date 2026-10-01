@@ -21,7 +21,7 @@ package icyllis.modernui.lifecycle;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
 
 import java.util.Iterator;
 import java.util.function.Supplier;
@@ -179,7 +179,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     public void observe(@NonNull LifecycleOwner owner, @NonNull Observer<? super T> observer) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         if (owner.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) {
             // ignore
             return;
@@ -212,7 +212,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     public void observeForever(@NonNull Observer<? super T> observer) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         AlwaysActiveObserver wrapper = new AlwaysActiveObserver(observer);
         ObserverWrapper existing = mObservers.putIfAbsent(wrapper);
         if (existing instanceof LiveData.LifecycleBoundObserver) {
@@ -232,7 +232,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     public void removeObserver(@NonNull final Observer<? super T> observer) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         ObserverWrapper removed = mObservers.remove(observer);
         if (removed == null) {
             return;
@@ -248,7 +248,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     public void removeObservers(@NonNull final LifecycleOwner owner) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         for (var entry : mObservers) {
             if (entry.isAttachedTo(owner)) {
                 removeObserver(entry.mObserver);
@@ -280,7 +280,7 @@ public abstract class LiveData<T> {
         if (!postTask) {
             return;
         }
-        Core.getUiHandlerAsync().post(mPostValueRunnable);
+        Arch.getUiHandlerAsync().post(mPostValueRunnable);
     }
 
     /**
@@ -293,7 +293,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     protected void setValue(T value) {
-        Core.checkUiThread();
+        Arch.checkUiThread();
         mVersion++;
         mData = value;
         dispatchingValue(null);

@@ -27,6 +27,7 @@ import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Interface for obtaining global information about the application environment.
@@ -134,4 +135,10 @@ public abstract class Context {
      * @see icyllis.modernui.view.WindowManager
      */
     public static final String WINDOW_SERVICE = "window";
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static final String TOAST_SERVICE = "toast";
 }

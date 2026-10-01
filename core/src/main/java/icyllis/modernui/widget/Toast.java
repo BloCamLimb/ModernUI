@@ -18,11 +18,11 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.Context;
 import org.intellij.lang.annotations.MagicConstant;
+
+import java.util.Objects;
 
 /**
  * A toast is a view containing a quick little message for the user.  The toast class
@@ -78,7 +78,7 @@ public final class Toast {
 
     @Deprecated(forRemoval = true)
     public static Toast makeText(@NonNull CharSequence text, int duration) {
-        return makeText(ModernUI.getInstance(), text, duration);
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -101,7 +101,9 @@ public final class Toast {
      * Show the view for the specified duration.
      */
     public void show() {
-        ((Activity) mContext).getToastManager().enqueueToast(this, mText, mDuration);
+        ToastManager toastManager = (ToastManager) mContext.getSystemService(Context.TOAST_SERVICE);
+        Objects.requireNonNull(toastManager, "UI context is needed to show the toast");
+        toastManager.enqueueToast(this, mText, mDuration);
     }
 
     /**
@@ -110,7 +112,10 @@ public final class Toast {
      * after the appropriate duration.
      */
     public void cancel() {
-        ((Activity) mContext).getToastManager().cancelToast(this);
+        ToastManager toastManager = (ToastManager) mContext.getSystemService(Context.TOAST_SERVICE);
+        if (toastManager != null) {
+            toastManager.cancelToast(this);
+        }
     }
 
     /**

@@ -45,10 +45,15 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.Choreographer;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Matrix;
+import icyllis.modernui.graphics.Outline;
+import icyllis.modernui.graphics.Point;
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.RectF;
+import icyllis.modernui.graphics.RenderNode;
+import icyllis.modernui.graphics.RenderProperties;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.pipeline.AlphaFilterCanvas;
@@ -58,6 +63,8 @@ import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.system.AnimationClock;
+import icyllis.modernui.system.Choreographer;
+import icyllis.modernui.system.Handler;
 import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Fade;
@@ -8806,7 +8813,7 @@ public class View implements Drawable.Callback {
      * <p>This method is responsible for removing any pending high-level input events that were
      * posted to the event queue to run later. Custom view classes that post their own deferred
      * high-level events via {@link #post(Runnable)}, {@link #postDelayed(Runnable, long)} or
-     * {@link icyllis.modernui.core.Handler} should override this method, call
+     * {@link Handler} should override this method, call
      * <code>super.onCancelPendingInputEvents()</code> and remove those callbacks as appropriate.
      * </p>
      */

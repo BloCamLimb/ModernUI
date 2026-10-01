@@ -16,7 +16,7 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.core;
+package icyllis.modernui.system;
 
 /**
  * A {@link Thread} that has a {@link Looper}.

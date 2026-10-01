@@ -24,7 +24,7 @@ import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
 import java.util.Objects;
@@ -147,7 +147,7 @@ public class LinearGradient extends GradientShader {
         } else {
             mLocalMatrix = null;
         }
-        mCleanup = shader.registerWithCleaner(Core.cleaner(), this);
+        mCleanup = shader.registerWithCleaner(Arch.cleaner(), this);
         assert mCleanup == null;
         mShader = shader;
     }
@@ -159,7 +159,7 @@ public class LinearGradient extends GradientShader {
         } else {
             mLocalMatrix = null;
         }
-        mCleanup = newShader.registerWithCleaner(Core.cleaner(), this);
+        mCleanup = newShader.registerWithCleaner(Arch.cleaner(), this);
         assert mCleanup == null;
         mShader = newShader;
     }

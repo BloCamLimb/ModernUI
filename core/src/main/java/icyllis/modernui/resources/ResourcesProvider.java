@@ -19,11 +19,9 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.lang.ref.Cleaner;
 
 public class ResourcesProvider implements AutoCloseable {
 

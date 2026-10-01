@@ -36,15 +36,15 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.system.Arch;
+import icyllis.modernui.system.Parcel;
 import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.system.Parcel;
 
 /**
  * Implementation of the {@link ClickableSpan} that allows setting a url string. When
  * selecting and clicking on the text to which the span is attached, the <code>URLSpan</code>
- * will try to open the url, by calling {@link Core#openURI(String)}.
+ * will try to open the url, by calling {@link Arch#openURI(String)}.
  * <p>
  * For example, a <code>URLSpan</code> can be used like this:
  * <pre>
@@ -95,7 +95,7 @@ public class URLSpan extends ClickableSpan implements ParcelableSpan {
 
     @Override
     public void onClick(@NonNull Object widget) {
-        Core.openURI(mURL);
+        Arch.openURI(mURL);
     }
 
     @Override

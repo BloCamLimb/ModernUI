@@ -22,14 +22,16 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.app.Activity;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.system.Arch;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.Log;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.WindowManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -63,9 +65,10 @@ public final class ToastManager {
     private final TextView mTextView;
     private final WindowManager.LayoutParams mParams;
 
-    public ToastManager(Activity activity) {
-        mWindowManager = activity.getWindowManager();
-        mTextView = new TextView(activity);
+    //TODO delete context parameter
+    public ToastManager(Context context, WindowManager windowManager) {
+        mWindowManager = windowManager;
+        mTextView = new TextView(context);
         mParams = new WindowManager.LayoutParams();
         mParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
         mParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -113,7 +116,7 @@ public final class ToastManager {
 
         int delay = r.getDuration() == Toast.LENGTH_LONG ? LONG_DELAY : SHORT_DELAY;
         delay += 300; // animation
-        Core.getUiHandlerAsync().postDelayed(mDurationReached, delay);
+        Arch.getUiHandlerAsync().postDelayed(mDurationReached, delay);
         mCurrentToastShown = r.mToken;
     }
 
@@ -134,7 +137,7 @@ public final class ToastManager {
 
         if (record.mToken == mCurrentToastShown) {
             assert !fromCallback;
-            Core.getUiHandlerAsync().removeCallbacks(mDurationReached);
+            Arch.getUiHandlerAsync().removeCallbacks(mDurationReached);
             mCurrentToastShown = null;
             hide = true;
         }

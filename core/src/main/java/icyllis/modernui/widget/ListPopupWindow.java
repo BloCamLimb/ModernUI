@@ -41,13 +41,18 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.system.Arch;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
-import icyllis.modernui.view.*;
+import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewParent;
 import icyllis.modernui.view.menu.ShowableListMenu;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -461,7 +466,7 @@ public class ListPopupWindow implements ShowableListMenu {
      * Post a {@link #show()} call to the UI thread.
      */
     public void postShow() {
-        Core.getUiHandler().post(mShowDropDownRunnable);
+        Arch.getUiHandler().post(mShowDropDownRunnable);
     }
 
     /**
@@ -555,7 +560,7 @@ public class ListPopupWindow implements ShowableListMenu {
                 clearListSelection();
             }
             if (!mModal) {
-                Core.getUiHandler().post(mHideSelector);
+                Arch.getUiHandler().post(mHideSelector);
             }
         }
     }
@@ -569,7 +574,7 @@ public class ListPopupWindow implements ShowableListMenu {
         removePromptView();
         mPopup.setContentView(null);
         mDropDownList = null;
-        Core.getUiHandler().removeCallbacks(mResizePopupRunnable);
+        Arch.getUiHandler().removeCallbacks(mResizePopupRunnable);
     }
 
     /**
@@ -929,9 +934,9 @@ public class ListPopupWindow implements ShowableListMenu {
             if (action == MotionEvent.ACTION_DOWN &&
                     mPopup != null && mPopup.isShowing() &&
                     (x >= 0 && x < mPopup.getWidth() && y >= 0 && y < mPopup.getHeight())) {
-                Core.getUiHandler().postDelayed(mResizePopupRunnable, EXPAND_LIST_TIMEOUT);
+                Arch.getUiHandler().postDelayed(mResizePopupRunnable, EXPAND_LIST_TIMEOUT);
             } else if (action == MotionEvent.ACTION_UP) {
-                Core.getUiHandler().removeCallbacks(mResizePopupRunnable);
+                Arch.getUiHandler().removeCallbacks(mResizePopupRunnable);
             }
             return false;
         }

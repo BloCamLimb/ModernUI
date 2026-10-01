@@ -18,9 +18,6 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
-
 import static org.lwjgl.sdl.SDLTimer.*;
 
 /**

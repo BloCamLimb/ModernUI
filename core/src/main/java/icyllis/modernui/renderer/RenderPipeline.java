@@ -18,20 +18,15 @@
 
 package icyllis.modernui.renderer;
 
-import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
-import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.granite.RecordingContext;
-import icyllis.arc3d.sketch.NullSurface;
-import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
-import icyllis.modernui.core.Message;
+import icyllis.modernui.system.Handler;
+import icyllis.modernui.system.Looper;
+import icyllis.modernui.system.Message;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -91,6 +86,10 @@ public abstract class RenderPipeline {
     // UI thread
     public boolean requiresPerSurfaceRecording() {
         return false;
+    }
+
+    public long getAdditionalWindowFlags() {
+        return 0;
     }
 
     // UI thread

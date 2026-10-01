@@ -18,6 +18,8 @@
 
 package icyllis.modernui.app;
 
+import icyllis.arc3d.core.ColorInfo;
+import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.Engine;
@@ -27,7 +29,7 @@ import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.Choreographer;
+import icyllis.modernui.system.Choreographer;
 import icyllis.modernui.renderer.FrameTask;
 import icyllis.modernui.renderer.RenderPipeline;
 import icyllis.modernui.renderer.WindowSurface;
@@ -75,6 +77,10 @@ public final class Compositor {
         stage.setSurface(surface);
     }
 
+    public long getAdditionalWindowFlags() {
+        return mRenderPipeline.getAdditionalWindowFlags();
+    }
+
     void doComposition() {
         if (!mCompositionPosted) {
             return;
@@ -95,9 +101,17 @@ public final class Compositor {
 
             WindowSurface surface = stage.getSurface();
 
+            surface.waitForPresentation();
+
+            if (stage.checkForSurfaceReconfigure() || surface.needsReconfigure()) {
+                surface.configure(stage.getWidth(), stage.getHeight(),
+                        ColorInfo.CT_RGBA_8888, ColorSpaces.SRGB);
+            }
             Surface drawingSurface = surface.getCurrentSurface();
 
             stage.doComposition(drawingSurface.getCanvas());
+
+            surface.prepareForPresentation();
 
             FrameTask task = new FrameTask();
             task.surface = surface;
@@ -109,6 +123,7 @@ public final class Compositor {
 
         if (!frameTasks.isEmpty()) {
             if (!mRenderPipeline.requiresPerSurfaceRecording()) {
+                assert frameTasks.get(0).surfaceBoundRecording == null;
                 // all tasks go to the first window surface
                 frameTasks.get(0).surfaceBoundRecording = recordingContext.snap();
             }

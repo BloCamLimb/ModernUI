@@ -35,12 +35,10 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Color;
@@ -54,6 +52,7 @@ import icyllis.modernui.resources.ResourceUtils;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.system.Arch;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.method.LinkMovementMethod;
@@ -5011,17 +5010,17 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         switch (id) {
             case ID_CUT -> {
                 CharSequence cut = mTransformed.subSequence(min, max);
-                Core.executeOnMainThread(() -> Clipboard.setText(cut));
+                Arch.executeOnMainThread(() -> Clipboard.setText(cut));
                 getEditableText().delete(min, max);
                 return true;
             }
             case ID_COPY -> {
                 CharSequence copy = mTransformed.subSequence(min, max);
-                Core.executeOnMainThread(() -> Clipboard.setText(copy));
+                Arch.executeOnMainThread(() -> Clipboard.setText(copy));
                 return true;
             }
             case ID_PASTE -> {
-                Core.executeOnMainThread(() -> {
+                Arch.executeOnMainThread(() -> {
                     String replacement = Clipboard.getText();
                     if (replacement != null) {
                         post(() -> {

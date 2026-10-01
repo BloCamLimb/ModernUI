@@ -18,15 +18,8 @@
 
 package icyllis.modernui;
 
-import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.ColorSpaces;
-import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.RefCnt;
-import icyllis.arc3d.engine.Engine;
-import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.granite.Recording;
-import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -36,8 +29,8 @@ import icyllis.modernui.app.Activity;
 import icyllis.modernui.core.ActivityWindow;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
+import icyllis.modernui.system.Handler;
+import icyllis.modernui.system.Looper;
 import icyllis.modernui.core.Monitor;
 import icyllis.modernui.core.VideoMode;
 import icyllis.modernui.core.Window;
@@ -59,8 +52,6 @@ import icyllis.modernui.lifecycle.LifecycleOwner;
 import icyllis.modernui.lifecycle.LifecycleRegistry;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
-import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.DisplayMetrics;
@@ -81,7 +72,6 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWMonitorCallback;
 import org.lwjgl.glfw.GLFWWindowCloseCallback;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL33C;
 import org.lwjgl.system.Configuration;
 import org.lwjgl.system.Platform;
 
@@ -96,12 +86,13 @@ import java.util.function.LongConsumer;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-import static icyllis.modernui.core.Core.MARKER;
+import static icyllis.modernui.system.Arch.MARKER;
 import static icyllis.modernui.util.Log.LOGGER;
 
 /**
  * The core class of ModernUI.
  */
+@Deprecated(forRemoval = true)
 public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner {
 
     public static final String ID = "modernui"; // as well as the namespace
@@ -211,10 +202,10 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
     public void run(@NonNull Fragment fragment, LongConsumer windowCallback) {
         Thread.currentThread().setName("Main-Thread");
 
-        Core.initialize();
+        //Core.initialize();
 
         LOGGER.debug(MARKER, "Preparing main thread");
-        Core.prepareMainLooper();
+        //Core.prepareMainLooper();
 
         var loadTypeface = CompletableFuture.runAsync(this::loadDefaultTypeface);
 
@@ -326,7 +317,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         LOGGER.debug(MARKER, "Initializing UI system");
 
-        Core.initUiThread();
+        //Core.initUiThread();
 
         mRoot = new ViewRootImpl(this, null);
         mRoot.loadSystemProperties(() -> Boolean.getBoolean("icyllis.modernui.display.debug.layout"));
@@ -367,7 +358,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
         mDecor.setIsRootNamespace(true);
 
-        mRoot.setView(mDecor);
+        //mRoot.setView(mDecor);
 
         LOGGER.debug(MARKER, "Installing view protocol");
 
@@ -417,7 +408,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
 
         mRoot.mSurface = RefCnt.move(mRoot.mSurface);
 
-        Core.requireUiRecordingContext().unref();
+        //Core.requireUiRecordingContext().unref();
         LOGGER.info(MARKER, "Quited main thread");
     }
 
@@ -450,13 +441,13 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             }
         }
 
-        Core.requireImmediateContext().unref();
+        //Core.requireImmediateContext().unref();
         LOGGER.info(MARKER, "Quited render thread");
     }
 
-    public ActivityWindow getWindow() {
-        return mWindow;
-    }
+    //public ActivityWindow getWindow() {
+        //return mWindow;
+    //}
 
     private void loadDefaultTypeface() {
         Set<FontFamily> set = new LinkedHashSet<>();
@@ -482,7 +473,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
         mFragmentController.dispatchDestroy();
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
 
-        Core.getMainLooper().quitSafely();
+        //Core.getMainLooper().quitSafely();
     }
 
     @NonNull
@@ -546,7 +537,6 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
      * @return window view manager
      */
     @ApiStatus.Internal
-    @Override
     public WindowManager getWindowManager() {
         return mDecor;
     }
@@ -573,7 +563,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             }
             //mVulkanManager.close();
         } finally {
-            Core.terminate();
+            //Core.terminate();
         }
     }
 
@@ -641,7 +631,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             return null;
         }
 
-        protected void endDrawLocked(@NonNull Canvas canvas) {
+        /*protected void endDrawLocked(@NonNull Canvas canvas) {
             Recording recording = Core.requireUiRecordingContext().snap();
             synchronized (mRenderLock) {
                 if (mLastFrameTask != null) {
@@ -659,9 +649,9 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
                 }
                 mLastFrameTask = null;
             }
-        }
+        }*/
 
-        @RenderThread
+        /*@RenderThread
         private void render() {
             ImmediateContext context = Core.requireImmediateContext();
             int width, height;
@@ -688,45 +678,12 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             } else {
                 LOGGER.error("Failed to add draw commands");
             }
-        }
+        }*/
 
         @Override
         protected void applyPointerIcon(int pointerType) {
             Core.executeOnMainThread(() -> glfwSetCursor(mWindow.getHandle(),
                     PointerIcon.getSystemIcon(pointerType).getHandle()));
-        }
-
-        ContextMenuBuilder mContextMenu;
-        MenuHelper mContextMenuHelper;
-
-        @Override
-        public boolean showContextMenuForChild(View originalView, float x, float y) {
-            if (mContextMenuHelper != null) {
-                mContextMenuHelper.dismiss();
-                mContextMenuHelper = null;
-            }
-
-            if (mContextMenu == null) {
-                mContextMenu = new ContextMenuBuilder(ModernUI.this);
-                //mContextMenu.setCallback(callback);
-            } else {
-                mContextMenu.clearAll();
-            }
-
-            final MenuHelper helper;
-            final boolean isPopup = !Float.isNaN(x) && !Float.isNaN(y);
-            if (isPopup) {
-                helper = mContextMenu.showPopup(ModernUI.this, originalView, x, y);
-            } else {
-                helper = mContextMenu.showPopup(ModernUI.this, originalView, 0, 0);
-            }
-
-            if (helper != null) {
-                //helper.setPresenterCallback(callback);
-            }
-
-            mContextMenuHelper = helper;
-            return helper != null;
         }
     }
 

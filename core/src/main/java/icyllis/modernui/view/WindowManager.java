@@ -27,7 +27,7 @@ import org.jetbrains.annotations.ApiStatus;
  * <p>
  * Internally used by ToastManager and PopupWindow.
  */
-@ApiStatus.Internal
+@ApiStatus.Experimental
 public interface WindowManager extends ViewManager {
 
     class LayoutParams extends ViewGroup.LayoutParams {
@@ -149,6 +149,72 @@ public interface WindowManager extends ViewManager {
         public LayoutParams() {
             super(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
             type = TYPE_BASE_APPLICATION;
+        }
+
+        public static final int LAYOUT_CHANGED = 1<<0;
+        public static final int TYPE_CHANGED = 1<<1;
+        public static final int FLAGS_CHANGED = 1<<2;
+        public static final int SURFACE_INSETS_CHANGED = 1<<20;
+
+        public final int copyFrom(LayoutParams o) {
+            int changes = 0;
+
+            if (width != o.width) {
+                width = o.width;
+                changes |= LAYOUT_CHANGED;
+            }
+            if (height != o.height) {
+                height = o.height;
+                changes |= LAYOUT_CHANGED;
+            }
+            if (x != o.x) {
+                x = o.x;
+                changes |= LAYOUT_CHANGED;
+            }
+            if (y != o.y) {
+                y = o.y;
+                changes |= LAYOUT_CHANGED;
+            }
+            if (horizontalWeight != o.horizontalWeight) {
+                horizontalWeight = o.horizontalWeight;
+                changes |= LAYOUT_CHANGED;
+            }
+            if (verticalWeight != o.verticalWeight) {
+                verticalWeight = o.verticalWeight;
+                changes |= LAYOUT_CHANGED;
+            }
+            if (horizontalMargin != o.horizontalMargin) {
+                horizontalMargin = o.horizontalMargin;
+                changes |= LAYOUT_CHANGED;
+            }
+            if (verticalMargin != o.verticalMargin) {
+                verticalMargin = o.verticalMargin;
+                changes |= LAYOUT_CHANGED;
+            }
+            if (type != o.type) {
+                type = o.type;
+                changes |= TYPE_CHANGED;
+            }
+            if (flags != o.flags) {
+                flags = o.flags;
+                changes |= FLAGS_CHANGED;
+            }
+            if (gravity != o.gravity) {
+                gravity = o.gravity;
+                changes |= LAYOUT_CHANGED;
+            }
+
+            if (!surfaceInsets.equals(o.surfaceInsets)) {
+                surfaceInsets.set(o.surfaceInsets);
+                changes |= SURFACE_INSETS_CHANGED;
+            }
+
+            if (hasManualSurfaceInsets != o.hasManualSurfaceInsets) {
+                hasManualSurfaceInsets = o.hasManualSurfaceInsets;
+                changes |= SURFACE_INSETS_CHANGED;
+            }
+
+            return changes;
         }
 
         /**

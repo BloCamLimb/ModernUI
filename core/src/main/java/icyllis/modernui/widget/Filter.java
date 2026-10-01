@@ -19,10 +19,10 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
-import icyllis.modernui.core.LooperThread;
-import icyllis.modernui.core.Message;
+import icyllis.modernui.system.Handler;
+import icyllis.modernui.system.Looper;
+import icyllis.modernui.system.LooperThread;
+import icyllis.modernui.system.Message;
 import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.core.Handler;
+import icyllis.modernui.system.Handler;
 import icyllis.modernui.util.GrowingArrayUtils;
 
 /**
