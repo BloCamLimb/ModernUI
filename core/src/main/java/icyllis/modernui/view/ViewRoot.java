@@ -22,7 +22,6 @@ import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.sketch.Surface;
-import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;

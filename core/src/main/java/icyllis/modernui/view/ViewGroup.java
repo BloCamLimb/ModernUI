@@ -36,7 +36,6 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.R;
-import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
@@ -2435,6 +2434,55 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     /**
+     * @deprecated use {@link #setLayoutTransition(LayoutTransition)} starting from 3.14
+     */
+    @Deprecated
+    public void setLayoutTransition(icyllis.modernui.animation.LayoutTransition transition) {
+        if (transition == null) {
+            setLayoutTransition((LayoutTransition) null);
+        } else {
+            LayoutTransition newTransition = new LayoutTransition();
+            int[] types = {
+                    LayoutTransition.CHANGE_APPEARING,
+                    LayoutTransition.CHANGE_DISAPPEARING,
+                    LayoutTransition.APPEARING,
+                    LayoutTransition.DISAPPEARING,
+                    LayoutTransition.CHANGING,
+            };
+            for (int type : types) {
+                if (transition.isTransitionTypeEnabled(type)) {
+                    newTransition.enableTransitionType(type);
+                } else {
+                    newTransition.disableTransitionType(type);
+                }
+                newTransition.setStartDelay(
+                        type,
+                        transition.getStartDelay(type)
+                );
+                newTransition.setDuration(
+                        type,
+                        transition.getDuration(type)
+                );
+                newTransition.setStagger(
+                        type,
+                        transition.getStagger(type)
+                );
+                newTransition.setInterpolator(
+                        type,
+                        transition.getInterpolator(type)
+                );
+                newTransition.setAnimator(
+                        type,
+                        transition.getAnimator(type)
+                );
+                newTransition.setAnimateParentHierarchy(
+                        transition.getAnimateParentHierarchy()
+                );
+            }
+        }
+    }
+
+    /**
      * Sets the LayoutTransition object for this ViewGroup. If the LayoutTransition object is
      * not null, changes in layout which occur because of children being added to or removed from
      * the ViewGroup will be animated according to the animations defined in that LayoutTransition
@@ -2444,10 +2492,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * canceled, if it is currently running, to restore this container to
      * its correct post-transition state.</p>
      *
-     * @param transition The LayoutTransition object that will animated changes in layout. A value
+     * @param transition The LayoutTransition object that will animate changes in layout. A value
      *                   of <code>null</code> means no transition will run on layout changes.
      */
-    public void setLayoutTransition(LayoutTransition transition) {
+    public void setLayoutTransition(@Nullable LayoutTransition transition) {
         if (mTransition != null) {
             LayoutTransition previousTransition = mTransition;
             previousTransition.cancel();
@@ -2465,9 +2513,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * the ViewGroup will be animated according to the animations defined in that LayoutTransition
      * object. By default, the transition object is null (so layout changes are not animated).
      *
-     * @return LayoutTranstion The LayoutTransition object that will animated changes in layout.
+     * @return The LayoutTransition object that will animate changes in layout.
      * A value of <code>null</code> means no transition will run on layout changes.
      */
+    @Nullable
     public LayoutTransition getLayoutTransition() {
         return mTransition;
     }

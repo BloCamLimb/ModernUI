@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.util.Property;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * This class holds information about a property and the values that that property
@@ -597,6 +598,14 @@ public sealed class PropertyValuesHolder implements Cloneable {
      */
     Object getAnimatedValue() {
         return mAnimatedValue;
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public Keyframes getKeyframes() {
+        return mKeyframes;
     }
 
     @Override

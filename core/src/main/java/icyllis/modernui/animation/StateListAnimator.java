@@ -21,7 +21,6 @@ package icyllis.modernui.animation;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.StateSet;
-import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.ref.WeakReference;
@@ -39,7 +38,7 @@ public class StateListAnimator implements Cloneable {
     private ArrayList<Animator> mAnimators = new ArrayList<>();
     private int mLastMatch = -1;
     private Animator mRunningAnimator;
-    private WeakReference<View> mViewRef;
+    private WeakReference<Object> mTargetRef;
     private AnimatorListener mAnimatorListener;
 
     public StateListAnimator() {
@@ -72,24 +71,24 @@ public class StateListAnimator implements Cloneable {
     }
 
     @Nullable
-    private View getTarget() {
-        return mViewRef == null ? null : mViewRef.get();
+    private Object getTarget() {
+        return mTargetRef == null ? null : mTargetRef.get();
     }
 
     /**
      * Called by View
      */
     @ApiStatus.Internal
-    public void setTarget(@Nullable View view) {
-        final View current = getTarget();
-        if (current == view) {
+    public void setTarget(@Nullable Object target) {
+        final Object current = getTarget();
+        if (current == target) {
             return;
         }
         if (current != null) {
             clearTarget();
         }
-        if (view != null) {
-            mViewRef = new WeakReference<>(view);
+        if (target != null) {
+            mTargetRef = new WeakReference<>(target);
         }
     }
 
@@ -97,7 +96,7 @@ public class StateListAnimator implements Cloneable {
         for (Animator animator : mAnimators) {
             animator.setTarget(null);
         }
-        mViewRef = null;
+        mTargetRef = null;
         mLastMatch = -1;
         mRunningAnimator = null;
     }
@@ -161,7 +160,7 @@ public class StateListAnimator implements Cloneable {
             clone.mAnimators = new ArrayList<>(size);
             clone.mLastMatch = -1;
             clone.mRunningAnimator = null;
-            clone.mViewRef = null;
+            clone.mTargetRef = null;
             clone.initAnimatorListener();
             for (int i = 0; i < size; i++) {
                 final Animator animatorClone = mAnimators.get(i).clone();
