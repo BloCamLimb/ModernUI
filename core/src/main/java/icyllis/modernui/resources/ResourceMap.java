@@ -18,22 +18,20 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
 import org.jetbrains.annotations.ApiStatus;
 
-import java.util.HashMap;
 import java.util.function.BiFunction;
 
 /**
- * Represents a read-only view to a ResourceTable.
+ * Represents a loaded resources file.
  *
  * @hide
  * @hidden
  */
 @ApiStatus.Internal
-public class LoadedResources {
+public class ResourceMap {
 
     ResStringPool globalStringPool;
 

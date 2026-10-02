@@ -18,7 +18,6 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -56,11 +55,6 @@ public class Resources {
 
     public static final Marker MARKER = MarkerFactory.getMarker("Resources");
 
-    private static final Object sLock = new Object();
-
-    @GuardedBy("sLock")
-    private static Resources sSystem;
-
 
     // nonfair RW lock
     private final ReentrantReadWriteLock mLock = new ReentrantReadWriteLock();
@@ -97,21 +91,7 @@ public class Resources {
     private final ArrayList<WeakReference<Theme>> mThemeRefs = new ArrayList<>();
 
 
-    /**
-     * Returns a default theme for the framework.
-     *
-     * @hide
-     * @hidden
-     * @param curTheme The current theme, or null if not specified.
-     * @return A theme resource identifier
-     */
-    @ApiStatus.Internal
-    public static ResourceId selectDefaultTheme(ResourceId curTheme) {
-        if (curTheme != null) {
-            return curTheme;
-        }
-        return R.style.Theme_Material3_Light;
-    }
+
 
     /**
      * @hide
@@ -148,25 +128,6 @@ public class Resources {
     @ApiStatus.Internal
     public Resources(@Nullable ClassLoader classLoader) {
 
-    }
-
-    private Resources() {
-        mResourcesImpl = new ResourcesImpl(
-                AssetManager.getSystem(),
-                null, null
-        );
-    }
-
-    @NonNull
-    public static Resources getSystem() {
-        synchronized (sLock) {
-            Resources ret = sSystem;
-            if (ret == null) {
-                ret = new Resources();
-                sSystem = ret;
-            }
-            return ret;
-        }
     }
 
     /**
@@ -783,10 +744,10 @@ public class Resources {
                 }
                 typeSpecFlags |= e.typeSpecFlags;
                 if (e.type == Res_value.TYPE_ATTRIBUTE) {
-                    LoadedResources loadedResources = mResourcesImpl.mAssetManager.getLoadedResources(e.cookie);
-                    if (loadedResources != null) {
-                        namespace = loadedResources.lookupPackageName(e.data >>> Res_value.PACKAGE_ID_SHIFT);
-                        attribute = loadedResources.getKeyStringPool().getStringAt(e.data & Res_value.KEY_INDEX_MASK);
+                    ResourceMap resources = mResourcesImpl.mAssetManager.getResources(e.cookie);
+                    if (resources != null) {
+                        namespace = resources.lookupPackageName(e.data >>> Res_value.PACKAGE_ID_SHIFT);
+                        attribute = resources.getKeyStringPool().getStringAt(e.data & Res_value.KEY_INDEX_MASK);
                         if (namespace != null && attribute != null) {
                             continue;
                         }
@@ -809,12 +770,12 @@ public class Resources {
                 return true;
             }
 
-            LoadedResources loadedResources = mResourcesImpl.mAssetManager.getLoadedResources(value.cookie);
-            if (loadedResources == null) {
+            ResourceMap resources = mResourcesImpl.mAssetManager.getResources(value.cookie);
+            if (resources == null) {
                 return false;
             }
-            String namespace = loadedResources.lookupPackageName(value.data >>> Res_value.PACKAGE_ID_SHIFT);
-            String attribute = loadedResources.getKeyStringPool().getStringAt(value.data & Res_value.KEY_INDEX_MASK);
+            String namespace = resources.lookupPackageName(value.data >>> Res_value.PACKAGE_ID_SHIFT);
+            String attribute = resources.getKeyStringPool().getStringAt(value.data & Res_value.KEY_INDEX_MASK);
             if (namespace == null || attribute == null) {
                 return false;
             }
@@ -841,9 +802,9 @@ public class Resources {
             ResolvedBag defStyleBag = null;
             if (defStyleAttr != null) {
                 if (getAttribute(defStyleAttr.namespace(), defStyleAttr.entry(), value)) {
-                    LoadedResources loadedResources = mResourcesImpl.mAssetManager.getLoadedResources(value.cookie);
-                    if (loadedResources != null) {
-                        ResourceId styleId = loadedResources.lookupResourceId(null,
+                    ResourceMap resources = mResourcesImpl.mAssetManager.getResources(value.cookie);
+                    if (resources != null) {
+                        ResourceId styleId = resources.lookupResourceId(null,
                                 value.data, (value.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT);
                         if (styleId != null) {
                             defStyleBag = mResourcesImpl.mAssetManager.getBag(styleId);

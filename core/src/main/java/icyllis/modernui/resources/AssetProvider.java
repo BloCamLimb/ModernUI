@@ -21,6 +21,7 @@ package icyllis.modernui.resources;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
@@ -40,7 +41,7 @@ import java.nio.file.NoSuchFileException;
  *
  * @since 3.13
  */
-public interface AssetsProvider extends AutoCloseable {
+public interface AssetProvider extends Closeable {
 
     /**
      * Try to locate an asset file, or null if not found.
@@ -70,9 +71,5 @@ public interface AssetsProvider extends AutoCloseable {
             throw new NoSuchFileException(path);
         }
         return asset.openChannel();
-    }
-
-    default boolean closeIsNoop() {
-        return false;
     }
 }

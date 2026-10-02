@@ -20,9 +20,9 @@ package icyllis.modernui.test;
 
 import com.ibm.icu.text.NumberFormat;
 import icyllis.arc3d.core.Matrix4;
-import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.text.Emoji;
 import icyllis.modernui.graphics.text.FontCollection;
+import icyllis.modernui.resources.ResourceUtils;
 import org.lwjgl.stb.*;
 import org.lwjgl.system.MemoryUtil;
 
@@ -176,7 +176,7 @@ public class TestJ2D {
 
         ByteBuffer fontBuffer = null;
         try (FileChannel channel = FileChannel.open(Path.of("C:\\Windows\\Fonts\\msyh.ttc"), StandardOpenOption.READ)) {
-            fontBuffer = Core.readIntoNativeBuffer(channel);
+            fontBuffer = ResourceUtils.readIntoNativeBuffer(channel);
             fontBuffer.flip();
             STBTTFontinfo fontinfo = STBTTFontinfo.malloc();
             boolean suc1 = STBTruetype.stbtt_InitFont(fontinfo, fontBuffer,

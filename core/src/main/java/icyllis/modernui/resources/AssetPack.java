@@ -19,11 +19,11 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.system.Arch;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.WillCloseWhenClosed;
-import java.lang.ref.Cleaner;
+import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * Represents a loaded asset pack.
@@ -34,37 +34,28 @@ import java.lang.ref.Cleaner;
  * @hidden
  */
 @ApiStatus.Internal
-public final class PackAssets implements AutoCloseable {
+public final class AssetPack implements Closeable {
 
-    private final AssetsProvider assetsProvider;
+    private final AssetProvider assets;
 
-    private final LoadedResources loadedResources;
+    private final ResourceMap resources;
 
-    private final Cleaner.Cleanable cleanup;
-
-    public PackAssets(@NonNull @WillCloseWhenClosed AssetsProvider assetsProvider,
-                      @NonNull LoadedResources loadedResources) {
-        this.assetsProvider = assetsProvider;
-        this.loadedResources = loadedResources;
-        if (assetsProvider.closeIsNoop()) {
-            cleanup = null;
-        } else {
-            cleanup = Arch.registerNativeResource(this, assetsProvider);
-        }
+    public AssetPack(@NonNull @WillCloseWhenClosed AssetProvider assets,
+                     @NonNull ResourceMap resources) {
+        this.assets = assets;
+        this.resources = resources;
     }
 
-    public AssetsProvider getAssetsProvider() {
-        return assetsProvider;
+    public AssetProvider getAssets() {
+        return assets;
     }
 
-    public LoadedResources getLoadedResources() {
-        return loadedResources;
+    public ResourceMap getResources() {
+        return resources;
     }
 
     @Override
-    public void close() {
-        if (cleanup != null) {
-            cleanup.clean();
-        }
+    public void close() throws IOException {
+        assets.close();
     }
 }

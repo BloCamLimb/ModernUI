@@ -21,26 +21,16 @@ package icyllis.modernui.core;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.system.Arch;
 import icyllis.modernui.system.SystemClock;
-import org.lwjgl.system.MemoryUtil;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.net.URI;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
 import java.util.concurrent.Executor;
-
-import static org.lwjgl.system.MemoryUtil.*;
 
 /**
  * The core class for thread management and sub-system initializing, also provides utility methods of
  * memory operations and thread scheduling.
  *
- * @deprecated use {@link Arch} since 3.14
+ * @deprecated use {@link Arch} and {@link SystemClock} since 3.14
  */
 @Deprecated
 public final class Core {
@@ -149,61 +139,6 @@ public final class Core {
 
     public static long timeMillis() {
         return SystemClock.uptimeMillis();
-    }
-
-    /**
-     * Allocates native memory and read buffered resource. The memory <b>MUST</b> be
-     * manually freed by {@link MemoryUtil#memFree(Buffer)}. This method can read up
-     * to 2GB. This method does NOT close the channel.
-     *
-     * @param channel where to read input from
-     * @return the native pointer to {@code unsigned char *data}
-     * @throws IOException some errors occurred while reading
-     */
-    @NonNull
-    public static ByteBuffer readIntoNativeBuffer(@NonNull ReadableByteChannel channel) throws IOException {
-        ByteBuffer p = null;
-        try {
-            if (channel instanceof final SeekableByteChannel ch) {
-                long rem = ch.size() - ch.position() + 1;
-                p = memAlloc((int) Math.min(rem,
-                        Integer.MAX_VALUE));
-                //noinspection StatementWithEmptyBody
-                while (ch.read(p) > 0)
-                    ;
-            } else {
-                p = memAlloc(4096);
-                while (channel.read(p) != -1) {
-                    if (p.hasRemaining()) {
-                        continue;
-                    }
-                    long cap = p.capacity();
-                    if (cap == Integer.MAX_VALUE) {
-                        break;
-                    }
-                    p = memRealloc(p, (int) Math.min(cap + (cap >> 1), // grow 50%
-                            Integer.MAX_VALUE));
-                }
-            }
-        } catch (Throwable t) {
-            memFree((Buffer) p);
-            throw t;
-        }
-        return p;
-    }
-
-    /**
-     * Allocates native memory and read buffered resource. The memory <b>MUST</b> be
-     * manually freed by {@link MemoryUtil#memFree(Buffer)}. This method can read up
-     * to 2GB. This method does NOT close the stream.
-     *
-     * @param stream where to read input from
-     * @return the native pointer to {@code unsigned char *data}
-     * @throws IOException some errors occurred while reading
-     */
-    @NonNull
-    public static ByteBuffer readIntoNativeBuffer(@NonNull InputStream stream) throws IOException {
-        return readIntoNativeBuffer(Channels.newChannel(stream));
     }
 
     /**

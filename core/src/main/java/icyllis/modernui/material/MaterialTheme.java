@@ -57,7 +57,7 @@ import static icyllis.modernui.util.ColorStateList.modulateColor;
  * @hidden
  */
 @ApiStatus.Internal
-public class SystemTheme {
+public class MaterialTheme {
 
     private static final float material_emphasis_disabled = 0.38f;
     private static final float material_emphasis_disabled_background = 0.12f;
@@ -1122,7 +1122,7 @@ public class SystemTheme {
     public static void addToResources(ResourcesBuilder b) {
         addStylesToResources(b);
         {
-            SystemTheme t = createMaterial(true);
+            MaterialTheme t = createMaterial(true);
             var style = b.newStyle(R.style.Theme_Material3_Dark, null);
             style.addBoolean(R.attr.isLightTheme, false);
 
@@ -1179,7 +1179,7 @@ public class SystemTheme {
             style.addReference(R.attr.editTextFilledStyle, R.style.Widget_Material3_EditText_FilledBox);
         }
         {
-            SystemTheme t = createMaterial(false);
+            MaterialTheme t = createMaterial(false);
             var style = b.newStyle(R.style.Theme_Material3_Light, null);
             style.addBoolean(R.attr.isLightTheme, true);
 
@@ -1236,18 +1236,18 @@ public class SystemTheme {
             style.addReference(R.attr.editTextFilledStyle, R.style.Widget_Material3_EditText_FilledBox);
         }
         {
-            SystemTheme t = createDefault(true, 2);
+            MaterialTheme t = createDefault(true, 2);
             var style = b.newStyle(R.style.ThemeOverlay_Material3_Dark_Rust, null);
             addColorsToTheme(t, style);
         }
         {
-            SystemTheme t = createDefault(false, 0);
+            MaterialTheme t = createDefault(false, 0);
             var style = b.newStyle(R.style.ThemeOverlay_Material3_Light_Rust, null);
             addColorsToTheme(t, style);
         }
     }
 
-    private static void addColorsToTheme(SystemTheme t, ResourcesBuilder.Style style) {
+    private static void addColorsToTheme(MaterialTheme t, ResourcesBuilder.Style style) {
 
         style.addColor(R.attr.colorPrimary, t.colorPrimary);
         style.addColor(R.attr.colorOnPrimary, t.colorOnPrimary);
@@ -1915,12 +1915,12 @@ public class SystemTheme {
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_EditText_OutlinedBox, R.style.Widget_Material3_EditText);
-            style.addDrawable(R.attr.background, SystemTheme::outlined_box);
+            style.addDrawable(R.attr.background, MaterialTheme::outlined_box);
             style.addReference(R.attr.textAppearance, R.style.TextAppearance_Material3_BodyMedium);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_EditText_FilledBox, R.style.Widget_Material3_EditText);
-            style.addDrawable(R.attr.background, SystemTheme::filled_box);
+            style.addDrawable(R.attr.background, MaterialTheme::filled_box);
             style.addReference(R.attr.textAppearance, R.style.TextAppearance_Material3_BodyMedium);
         }
         {
@@ -2100,8 +2100,8 @@ public class SystemTheme {
         return track;
     }
 
-    public static SystemTheme createDefault(boolean isDark, int subclass) {
-        SystemTheme t = new SystemTheme();
+    public static MaterialTheme createDefault(boolean isDark, int subclass) {
+        MaterialTheme t = new MaterialTheme();
         int colorTextPrimaryInverse;
         int colorTextSecondaryAndTertiaryInverse;
         int colorTextSecondaryAndTertiaryInverseDisabled;
@@ -2554,8 +2554,8 @@ public class SystemTheme {
 
     // Base.V14.Theme.Material3.Dark
     // Base.V14.Theme.Material3.Light
-    public static SystemTheme createMaterial(boolean isDark) {
-        SystemTheme t = new SystemTheme();
+    public static MaterialTheme createMaterial(boolean isDark) {
+        MaterialTheme t = new MaterialTheme();
         //@formatter:off
         final int palette_black = 0xff000000;
         final int palette_error0 = 0xff000000;

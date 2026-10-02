@@ -32,19 +32,19 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 
 /**
- * An {@link AssetsProvider} that accesses entries under a root {@link Path}.
+ * An {@link AssetProvider} that accesses entries under a root {@link Path}.
  * <p>
  * Although any {@link FileSystem} may be used, this provider is primarily intended
  * for directories in the default file system ({@link FileSystems#getDefault})
  * or other {@link java.io.File}-based file systems (i.e. where {@link Path#toFile()}
- * is supported). For zip file systems, {@link ZipAssetsProvider} typically offers
+ * is supported). For zip file systems, {@link ZipAssetProvider} typically offers
  * better performance.
  *
  * @hide
  * @hidden
  */
 @ApiStatus.Internal
-public class DirectoryAssetsProvider implements AssetsProvider {
+public class DirectoryAssetProvider implements AssetProvider {
 
     // follow links
     private static final LinkOption[] LINK_OPTIONS = {};
@@ -54,20 +54,20 @@ public class DirectoryAssetsProvider implements AssetsProvider {
     /**
      * Caller should check isDirectory.
      */
-    public DirectoryAssetsProvider(@NonNull Path root) {
+    public DirectoryAssetProvider(@NonNull Path root) {
         this.root = root;
     }
 
     @Nullable
     @Override
     public Asset getAsset(@NonNull String path) {
-        List<String> segments = IOUtil.decomposePath(path);
+        List<String> segments = ResourceUtils.decomposePath(path);
         if (segments == null) {
             // invalid path string
             return null;
         }
 
-        Path assetPath = IOUtil.resolvePath(root, segments);
+        Path assetPath = ResourceUtils.resolvePath(root, segments);
         try {
             BasicFileAttributes attributes = Files.readAttributes(
                     assetPath, BasicFileAttributes.class, LINK_OPTIONS);
@@ -85,11 +85,6 @@ public class DirectoryAssetsProvider implements AssetsProvider {
 
     @Override
     public void close() {
-    }
-
-    @Override
-    public boolean closeIsNoop() {
-        return true;
     }
 
     /**

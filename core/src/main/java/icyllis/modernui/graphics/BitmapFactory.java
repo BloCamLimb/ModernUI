@@ -24,7 +24,7 @@ import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.core.Core;
+import icyllis.modernui.resources.ResourceUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.stb.STBIEOFCallback;
 import org.lwjgl.stb.STBIIOCallbacks;
@@ -459,7 +459,7 @@ public final class BitmapFactory {
         } else {
             ByteBuffer p = null;
             try {
-                p = Core.readIntoNativeBuffer(channel);
+                p = ResourceUtils.readIntoNativeBuffer(channel);
                 bm = decodeBuffer(p.flip(), opts);
             } finally {
                 memFree((Buffer) p);
@@ -486,7 +486,7 @@ public final class BitmapFactory {
         } else {
             ByteBuffer p = null;
             try {
-                p = Core.readIntoNativeBuffer(channel);
+                p = ResourceUtils.readIntoNativeBuffer(channel);
                 decodeBufferInfo(p.flip(), opts);
             } finally {
                 memFree((Buffer) p);

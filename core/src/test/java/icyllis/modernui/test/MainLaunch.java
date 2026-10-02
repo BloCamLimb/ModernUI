@@ -22,7 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.app.windows.WindowsNativeWindowBorder;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.resources.AssetManager;
-import icyllis.modernui.resources.DirectoryAssetsProvider;
+import icyllis.modernui.resources.DirectoryAssetProvider;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.ResourcesBuilder;
 import icyllis.modernui.resources.ResourcesImpl;
@@ -99,7 +99,7 @@ public class MainLaunch {
         rb.addString(image.test_path_src, "res/test_path_src.png");
 
         Path currentDir = Path.of("").toAbsolutePath();
-        ResourcesProvider provider = rb.build(new DirectoryAssetsProvider(currentDir));
+        ResourcesProvider provider = rb.build(new DirectoryAssetProvider(currentDir));
 
         ResourcesLoader loader = new ResourcesLoader();
         loader.addProvider(provider);

@@ -18,10 +18,8 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.material.SystemTheme;
 import icyllis.modernui.resources.ResourceTypes.*;
 import icyllis.modernui.util.Log;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -31,7 +29,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,33 +45,6 @@ import java.util.List;
 public final class AssetManager {
 
     public static final Marker MARKER = MarkerFactory.getMarker("AssetManager");
-
-    private static final Object sLock = new Object();
-
-    @GuardedBy("sLock")
-    private static AssetManager sSystem;
-
-    @GuardedBy("sLock")
-    private static PackAssets[] sSystemPackAssets;
-
-    @GuardedBy("sLock")
-    private static void createSystemAssets() {
-        if (sSystem != null) {
-            return;
-        }
-
-        try {
-            //TODO don't consider material theme as system resources
-            ResourcesBuilder resourcesBuilder = new ResourcesBuilder(R.ns);
-            SystemTheme.addToResources(resourcesBuilder);
-            PackAssets pack = resourcesBuilder.buildPack(new EmptyAssetsProvider());
-
-            sSystemPackAssets = new PackAssets[]{pack};
-            sSystem = new AssetManager(sSystemPackAssets, false, null);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to create system AssetManager", e);
-        }
-    }
 
     public static final int kInvalidCookie = -1;
     public static final int kMaxIterations = 20;
@@ -142,16 +112,18 @@ public final class AssetManager {
     }
 
     public static final class Builder {
-        private final ArrayList<PackAssets> mUserPackAssets = new ArrayList<>();
+        private final ArrayList<AssetPack> mAssetPacks = new ArrayList<>();
         private final ArrayList<ResourcesLoader> mLoaders = new ArrayList<>();
 
         private boolean mNoInit = false;
 
-        public Builder addPackAssets(PackAssets packAssets) {
-            mUserPackAssets.add(packAssets);
+        // Smaller indices are given priority.
+        public Builder addAssetPack(AssetPack assetPack) {
+            mAssetPacks.add(assetPack);
             return this;
         }
 
+        // Larger indices are given priority.
         public Builder addLoader(ResourcesLoader loader) {
             mLoaders.add(loader);
             return this;
@@ -164,59 +136,51 @@ public final class AssetManager {
 
         @NonNull
         public AssetManager build() {
-            // Retrieving the system PackAssets forces their creation as well.
-            getSystem();
-            final PackAssets[] systemPackAssets = sSystemPackAssets;
-
-            // Filter PackAssets so that assets provided by multiple loaders are only included once
-            // in the AssetManager assets. The last appearance of the PackAssets dictates its load
+            // Filter AssetPack so that assets provided by multiple loaders are only included once
+            // in the AssetManager assets. The last appearance of the AssetPack dictates its load
             // order.
-            final ArrayList<PackAssets> loaderPackAssets = new ArrayList<>();
-            final HashSet<PackAssets> uniqueLoaderPackAssets = new HashSet<>();
+            final ArrayList<AssetPack> loaderAssetPacks = new ArrayList<>();
+            final HashSet<AssetPack> uniqueLoaderAssetPacks = new HashSet<>();
             for (int i = mLoaders.size() - 1; i >= 0; i--) {
-                final List<PackAssets> currentLoaderPackAssets = mLoaders.get(i).getPackAssets();
-                for (int j = currentLoaderPackAssets.size() - 1; j >= 0; j--) {
-                    final PackAssets packAssets = currentLoaderPackAssets.get(j);
-                    if (uniqueLoaderPackAssets.add(packAssets)) {
-                        loaderPackAssets.add(packAssets);
+                final List<AssetPack> currentLoaderAssetPacks = mLoaders.get(i).getAssetPacks();
+                for (int j = currentLoaderAssetPacks.size() - 1; j >= 0; j--) {
+                    final AssetPack assetPack = currentLoaderAssetPacks.get(j);
+                    if (uniqueLoaderAssetPacks.add(assetPack)) {
+                        loaderAssetPacks.add(assetPack);
                     }
                 }
             }
 
-            final int totalPackAssetCount = systemPackAssets.length + mUserPackAssets.size()
-                    + loaderPackAssets.size();
-            final PackAssets[] packAssets = new PackAssets[totalPackAssetCount];
+            final int totalAssetPackCount = mAssetPacks.size()
+                    + loaderAssetPacks.size();
+            final AssetPack[] assetPacks = new AssetPack[totalAssetPackCount];
 
-            System.arraycopy(systemPackAssets, 0, packAssets, 0, systemPackAssets.length);
-
-            // Append user PackAssets after system PackAssets.
-            for (int i = 0, n = mUserPackAssets.size(); i < n; i++) {
-                packAssets[i + systemPackAssets.length] = mUserPackAssets.get(i);
+            for (int i = 0, n = mAssetPacks.size(); i < n; i++) {
+                assetPacks[i] = mAssetPacks.get(i);
             }
 
-            // Append PackAssets provided by loaders to the end.
-            for (int i = 0, n = loaderPackAssets.size(); i < n; i++) {
-                packAssets[i + systemPackAssets.length  + mUserPackAssets.size()] =
-                        loaderPackAssets.get(i);
+            for (int i = 0, n = loaderAssetPacks.size(); i < n; i++) {
+                assetPacks[i + mAssetPacks.size()] =
+                        loaderAssetPacks.get(i);
             }
 
-            return new AssetManager(packAssets, mNoInit,
+            return new AssetManager(assetPacks, mNoInit,
                     mLoaders.isEmpty() ? null
-                    : mLoaders.toArray(new ResourcesLoader[0]));
+                            : mLoaders.toArray(new ResourcesLoader[0]));
         }
     }
 
-    private AssetManager(@NonNull PackAssets[] packAssets, boolean preset,
+    private AssetManager(@NonNull AssetPack[] assetPacks, boolean preset,
                          @Nullable ResourcesLoader[] loaders) {
 
         HashMap<String, PackageGroup> packageGroups = new HashMap<>();
-        for (int i = 0; i < packAssets.length; i++) {
-            var pack = packAssets[i];
+        for (int i = 0; i < assetPacks.length; i++) {
+            var pack = assetPacks[i];
             int cookie = i;
 
-            var loadedResources = pack.getLoadedResources();
+            var resources = pack.getResources();
 
-            for (var loadedPackage : loadedResources.getPackages()) {
+            for (var loadedPackage : resources.getPackages()) {
                 var pkgGroup = packageGroups.computeIfAbsent(
                         loadedPackage.getPackageName(), __ -> new PackageGroup());
 
@@ -226,25 +190,14 @@ public final class AssetManager {
         }
 
         mLoaders = loaders;
-        mPackAssets = packAssets;
+        mAssetPacks = assetPacks;
         mPackageGroups = packageGroups;
-    }
-
-    /**
-     * Return a global shared asset manager that provides access to only
-     * system assets (no application assets).
-     */
-    public static AssetManager getSystem() {
-        synchronized (sLock) {
-            createSystemAssets();
-            return sSystem;
-        }
     }
 
     @NonNull
     @Unmodifiable
-    public List<PackAssets> getPackAssets() {
-        return Arrays.asList(mPackAssets);
+    public List<AssetPack> getAssetPacks() {
+        return Arrays.asList(mAssetPacks);
     }
 
     @NonNull
@@ -265,8 +218,8 @@ public final class AssetManager {
 
     @Nullable
     public Asset getNonAsset(String path) {
-        for (var pack : mPackAssets) {
-            Asset asset = pack.getAssetsProvider().getAsset(path);
+        for (var pack : mAssetPacks) {
+            Asset asset = pack.getAssets().getAsset(path);
             if (asset != null) {
                 return asset;
             }
@@ -276,9 +229,9 @@ public final class AssetManager {
 
     @Nullable
     public Asset getNonAsset(String path, int cookie) {
-        var pack = getPackAssets(cookie);
+        var pack = getPack(cookie);
         if (pack != null) {
-            return pack.getAssetsProvider().getAsset(path);
+            return pack.getAssets().getAsset(path);
         }
         return null;
     }
@@ -334,7 +287,7 @@ public final class AssetManager {
         int entryCount = map.getInt(ResTable_entry.count);
         int cookie = value.cookie;
         int typeFlags = value.flags;
-        LoadedResources resources = getLoadedResources(cookie);
+        ResourceMap resources = getResources(cookie);
         if (resources == null) {
             return null; // impossible
         }
@@ -594,32 +547,32 @@ public final class AssetManager {
 
     @Nullable
     CharSequence getPooledStringForCookie(int cookie, int id) {
-        LoadedResources loadedResources = getLoadedResources(cookie);
-        if (loadedResources == null) {
+        ResourceMap resources = getResources(cookie);
+        if (resources == null) {
             return null;
         }
-        return loadedResources.getGlobalStringPool().getSequenceAt(id);
+        return resources.getGlobalStringPool().getSequenceAt(id);
     }
 
     @Nullable
     ResourceId getReferenceIdForCookie(int cookie, int typeId, int data) {
         assert typeId > 0;
-        LoadedResources loadedResources = getLoadedResources(cookie);
-        if (loadedResources == null) {
+        ResourceMap resources = getResources(cookie);
+        if (resources == null) {
             return null;
         }
-        return loadedResources.lookupResourceId(null, data, typeId);
+        return resources.lookupResourceId(null, data, typeId);
     }
 
     @Nullable
     ResourceId getAttributeIdForCookie(int cookie, int data) {
-        LoadedResources loadedResources = getLoadedResources(cookie);
-        if (loadedResources == null) {
+        ResourceMap resources = getResources(cookie);
+        if (resources == null) {
             return null;
         }
-        String namespace = loadedResources.lookupPackageName(data >>> ResourceTypes.Res_value.PACKAGE_ID_SHIFT);
+        String namespace = resources.lookupPackageName(data >>> ResourceTypes.Res_value.PACKAGE_ID_SHIFT);
         String attribute =
-                loadedResources.getKeyStringPool().getStringAt(data & ResourceTypes.Res_value.KEY_INDEX_MASK);
+                resources.getKeyStringPool().getStringAt(data & ResourceTypes.Res_value.KEY_INDEX_MASK);
         if (namespace != null && attribute != null) {
             return ResourceId.attr(namespace, attribute);
         }
@@ -659,23 +612,23 @@ public final class AssetManager {
     }
 
     @Nullable
-    public PackAssets getPackAssets(int cookie) {
-        if (cookie < 0 || cookie >= mPackAssets.length) {
+    public AssetPack getPack(int cookie) {
+        if (cookie < 0 || cookie >= mAssetPacks.length) {
             return null;
         }
-        return mPackAssets[cookie];
+        return mAssetPacks[cookie];
     }
 
     @Nullable
-    public LoadedResources getLoadedResources(int cookie) {
-        PackAssets assets = getPackAssets(cookie);
+    public ResourceMap getResources(int cookie) {
+        AssetPack assets = getPack(cookie);
         if (assets == null) {
             return null;
         }
-        return assets.getLoadedResources();
+        return assets.getResources();
     }
 
-    private final PackAssets[] mPackAssets;
+    private final AssetPack[] mAssetPacks;
     private final HashMap<String, PackageGroup> mPackageGroups;
 
     private final ResourcesLoader[] mLoaders;

@@ -49,7 +49,7 @@ import static icyllis.modernui.resources.Resources.MARKER;
  * over its lifetime, while multiple {@link Resources} instances can share the same
  * {@link ResourcesImpl} object. A {@link ResourcesImpl} maintains a 1-to-1 mapping with a unique
  * {@link AssetManager}. Both {@link AssetManager} and {@link ResourcesImpl} caches can be invalidated
- * due to {@link Configuration} changes. The {@link PackAssets} list within an {@link AssetManager}
+ * due to {@link Configuration} changes. The {@link AssetPack} list within an {@link AssetManager}
  * is immutable once the instance is created.
  * <p>
  * Upon a {@link Configuration} change, the system may switch the {@link ResourcesImpl} reference
@@ -138,9 +138,9 @@ public final class ResourcesImpl {
         }
 
         if (value.type == TypedValue.TYPE_FACTORY) {
-            LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
-            if (loadedResources != null) {
-                Object object = loadedResources.lookupFactory(value.data);
+            ResourceMap resources = mAssetManager.getResources(value.cookie);
+            if (resources != null) {
+                Object object = resources.lookupFactory(value.data);
                 if (object != null) {
                     object = ((BiFunction<Resources, Resources.Theme, ?>) object).apply(wrapper, theme);
                     if (object instanceof ColorStateList) {
@@ -164,9 +164,9 @@ public final class ResourcesImpl {
                           @Nullable Resources.Theme theme) {
         try {
             if (value.type == TypedValue.TYPE_FACTORY) {
-                LoadedResources loadedResources = mAssetManager.getLoadedResources(value.cookie);
-                if (loadedResources != null) {
-                    Object object = loadedResources.lookupFactory(value.data);
+                ResourceMap resources = mAssetManager.getResources(value.cookie);
+                if (resources != null) {
+                    Object object = resources.lookupFactory(value.data);
                     if (object != null) {
                         object = ((BiFunction<Resources, Resources.Theme, ?>) object).apply(wrapper, theme);
                         if (object instanceof Drawable) {

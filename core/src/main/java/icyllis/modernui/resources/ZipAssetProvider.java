@@ -27,7 +27,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * An {@link AssetsProvider} that uses {@link ZipFile} to access entries within
+ * An {@link AssetProvider} that uses {@link ZipFile} to access entries within
  * a zip archive. Zip entries can be STORED or DEFLATED, but certain assets that
  * require seeking must be STORED.
  *
@@ -35,14 +35,14 @@ import java.util.zip.ZipFile;
  * @hidden
  */
 @ApiStatus.Internal
-public class ZipAssetsProvider implements AssetsProvider {
+public class ZipAssetProvider implements AssetProvider {
 
     private final ZipFile zipFile;
 
     /**
      * Will close the zip file when this provider is closed.
      */
-    public ZipAssetsProvider(@NonNull ZipFile zipFile) {
+    public ZipAssetProvider(@NonNull ZipFile zipFile) {
         this.zipFile = zipFile;
     }
 

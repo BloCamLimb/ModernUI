@@ -21,7 +21,7 @@ package icyllis.modernui.resources;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 
-public final class EmptyAssetsProvider implements AssetsProvider {
+public final class EmptyAssetProvider implements AssetProvider {
 
     @Nullable
     @Override
@@ -31,10 +31,5 @@ public final class EmptyAssetsProvider implements AssetsProvider {
 
     @Override
     public void close() {
-    }
-
-    @Override
-    public boolean closeIsNoop() {
-        return true;
     }
 }

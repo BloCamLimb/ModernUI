@@ -222,20 +222,20 @@ public class ResourcesBuilder {
      * @throws IllegalStateException the runtime limit is exceeded
      */
     public ResourcesProvider build() {
-        return build(new EmptyAssetsProvider());
+        return build(new EmptyAssetProvider());
     }
 
     /**
      * Creates the asset pack. The builder cannot be reused.
      *
-     * @param assetsProvider the provider for additional assets
+     * @param assetProvider the provider for additional assets
      * @return a newly-created asset pack
      * @throws IllegalStateException the runtime limit is exceeded
      */
-    public ResourcesProvider build(@NonNull @WillCloseWhenClosed AssetsProvider assetsProvider) {
-        PackAssets packAssets = buildPack(assetsProvider);
+    public ResourcesProvider build(@NonNull @WillCloseWhenClosed AssetProvider assetProvider) {
+        AssetPack assetPack = buildPack(assetProvider);
 
-        return new ResourcesProvider(packAssets);
+        return new ResourcesProvider(assetPack);
     }
 
     /**
@@ -243,8 +243,8 @@ public class ResourcesBuilder {
      * @hidden
      */
     @ApiStatus.Internal
-    public PackAssets buildPack(@NonNull @WillCloseWhenClosed AssetsProvider assetsProvider) {
-        LoadedResources resources = new LoadedResources();
+    public AssetPack buildPack(@NonNull @WillCloseWhenClosed AssetProvider assetProvider) {
+        ResourceMap resources = new ResourceMap();
 
         mGlobalStringTable = null;
         resources.globalStringPool = new ResStringPool(mGlobalStringArray.toArray(new String[0]));
@@ -388,7 +388,7 @@ public class ResourcesBuilder {
 
         resources.packages = new LoadedPackage[]{loadedPackage};
 
-        return new PackAssets(assetsProvider, resources);
+        return new AssetPack(assetProvider, resources);
     }
 
     /**

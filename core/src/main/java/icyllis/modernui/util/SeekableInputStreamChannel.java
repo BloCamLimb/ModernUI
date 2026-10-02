@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -86,6 +87,59 @@ public class SeekableInputStreamChannel implements SeekableByteChannel {
         this.pos = pos;
         this.size = size;
         this.in = in;
+    }
+
+    /**
+     * Used to determine whether the given {@link InputStream} is seekable.
+     * Seekable means that {@link InputStream#skip} accepts negative numbers.
+     * Non-seekable means it can only skip forwards, not skip backwards.
+     * <p>
+     * If seekable, the stream's position remains unchanged, and returns {@code -128}.
+     * If EOF is reached, returns {@code -1}. If not seekable, returns the byte read.
+     * <p>
+     * Since Java 17, the following InputStream are seekable:
+     * <ul>
+     *     <li>{@link FileInputStream} (excluding its subclasses)</li>
+     *     <li>{@code ZipFileInputStream} (from ZipFile, if entry is STORED)</li>
+     *     <li>{@code EntryInputStream} (from ZipFileSystem, if entry is STORED)</li>
+     *     <li>{@code ChannelInputStream} (if wraps SeekableByteChannel, may be returned by
+     *     Channels.newInputStream and Files.newInputStream)</li>
+     * </ul>
+     *
+     * For operations that require seek, this method can be used to determine whether
+     * the entire stream needs to be read into memory to perform a seek.
+     * <p>
+     * You might ask why not just use Files.newByteChannel to get a SeekableByteChannel?
+     * The reason is that for non-default FileSystem, its implementation may not be good enough.
+     * For example, ZipFileSystem will read all the data into memory and return a ByteArrayChannel,
+     * while the purpose of this method is to avoid reading all the data into memory.
+     *
+     * @param stream the input stream to test
+     * @return -128 (seekable), -1 (EOF), or the byte read (non-seekable)
+     * @throws IOException some errors occurred while reading
+     */
+    @SuppressWarnings("ConstantValue")
+    public static int testSeekable(@NonNull InputStream stream) throws IOException {
+        if (stream.getClass() == FileInputStream.class) {
+            // seekable for regular files, but subclasses do not support seek
+            return -128;
+        }
+        int next = stream.read();
+        if (next < 0) {
+            // EOF
+            return -1;
+        }
+        // Since we got one byte, try to unget the byte.
+        // Non-seekable streams may return 0 or throw an exception.
+        // For example, InflaterInputStream throws IAE for negative inputs.
+        try {
+            if (stream.skip(-1) == -1) {
+                return -128; // seekable
+            }
+        } catch (Exception ignored) {
+            // non-seekable for IOException and any RuntimeException
+        }
+        return next;
     }
 
     @Override

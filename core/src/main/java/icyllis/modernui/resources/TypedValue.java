@@ -271,7 +271,7 @@ public class TypedValue {
     public int data;
 
     /**
-     * The cookie representing the {@link PackAssets} in which the value resides.
+     * The cookie representing the {@link AssetPack} in which the value resides.
      */
     public int cookie = AssetManager.kInvalidCookie;
 

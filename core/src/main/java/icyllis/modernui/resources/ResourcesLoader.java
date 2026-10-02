@@ -36,7 +36,7 @@ public class ResourcesLoader {
     private final Object mLock = new Object();
 
     @GuardedBy("mLock")
-    private PackAssets[] mPackAssets;
+    private AssetPack[] mAssetPacks;
 
     @GuardedBy("mLock")
     private ResourcesProvider[] mPreviousProviders;
@@ -162,19 +162,19 @@ public class ResourcesLoader {
     }
 
     /**
-     * Retrieves the list of {@link PackAssets} used by the providers.
+     * Retrieves the list of {@link AssetPack} used by the providers.
      *
      * @hide
      * @hidden
      */
     @ApiStatus.Internal
     @NonNull
-    public List<PackAssets> getPackAssets() {
+    public List<AssetPack> getAssetPacks() {
         synchronized (mLock) {
-            if (mPackAssets == null) {
+            if (mAssetPacks == null) {
                 return Collections.emptyList();
             }
-            return Arrays.asList(mPackAssets);
+            return Arrays.asList(mAssetPacks);
         }
     }
 
@@ -225,12 +225,12 @@ public class ResourcesLoader {
         }
 
         if (mProviders == null || mProviders.length == 0) {
-            mPackAssets = null;
+            mAssetPacks = null;
         } else {
-            mPackAssets = new PackAssets[mProviders.length];
+            mAssetPacks = new AssetPack[mProviders.length];
             for (int i = 0, n = mProviders.length; i < n; i++) {
                 mProviders[i].incUsageCount();
-                mPackAssets[i] = mProviders[i].getPackAssets();
+                mAssetPacks[i] = mProviders[i].getAssetPack();
             }
         }
 

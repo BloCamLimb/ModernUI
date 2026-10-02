@@ -22,8 +22,10 @@ import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.io.Closeable;
+import java.io.IOException;
 
-public class ResourcesProvider implements AutoCloseable {
+public class ResourcesProvider implements Closeable {
 
     private final Object mLock = new Object();
 
@@ -33,12 +35,12 @@ public class ResourcesProvider implements AutoCloseable {
     @GuardedBy("mLock")
     private int mUsageCount;
 
-    private PackAssets mPackAssets;
+    private AssetPack mAssetPack;
 
-    ResourcesProvider(@NonNull PackAssets packAssets) {
+    ResourcesProvider(@NonNull AssetPack assetPack) {
         mOpen = true;
         mUsageCount = 0;
-        mPackAssets = packAssets;
+        mAssetPack = assetPack;
     }
 
     void incUsageCount() {
@@ -61,8 +63,8 @@ public class ResourcesProvider implements AutoCloseable {
      * @hidden
      */
     @ApiStatus.Internal
-    public PackAssets getPackAssets() {
-        return mPackAssets;
+    public AssetPack getAssetPack() {
+        return mAssetPack;
     }
 
     /**
@@ -77,7 +79,7 @@ public class ResourcesProvider implements AutoCloseable {
      * @throws IllegalStateException if provider is currently used by a ResourcesLoader
      */
     @Override
-    public void close() {
+    public void close() throws IOException {
         synchronized (mLock) {
             if (!mOpen) {
                 return;
@@ -88,7 +90,7 @@ public class ResourcesProvider implements AutoCloseable {
             }
             mOpen = false;
         }
-        mPackAssets.close();
-        mPackAssets = null;
+        mAssetPack.close();
+        mAssetPack = null;
     }
 }
