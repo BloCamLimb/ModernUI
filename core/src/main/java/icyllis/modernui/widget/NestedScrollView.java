@@ -184,7 +184,7 @@ public class NestedScrollView extends FrameLayout {
 
         ColorStateList tint = null;
         final TypedValue value = new TypedValue();
-        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorControlNormal, value, true)) {
+        if (context.getTheme().resolveAttribute(R.attr.colorControlNormal, value, true)) {
             tint = context.getResources().loadColorStateList(value, null, context.getTheme());
         }
         setVerticalScrollBarEnabled(true);

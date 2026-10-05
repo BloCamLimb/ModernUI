@@ -25,7 +25,7 @@ public final class R {
     /**
      * The namespace of {@literal modernui} resources.
      */
-    public static final String ns = ModernUI.ID;
+    public static final String ns = "modernui";
 
     public static final class attr {
         private static final String type = "attr";
@@ -349,9 +349,9 @@ public final class R {
         /// INTERNAL BELOW \\\
 
         // Constant IDs for Material package.
-        public static final int state_error = 0x05010001;
-        public static final int state_indeterminate = 0x05010002;
-        public static final int state_with_icon = 0x05010003;
+        public static int state_error = 0x05010001;
+        public static int state_indeterminate = 0x05010002;
+        public static int state_with_icon = 0x05010003;
     }
 
     public static final class id {

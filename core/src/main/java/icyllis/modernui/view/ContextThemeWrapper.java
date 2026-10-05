@@ -29,7 +29,11 @@ import icyllis.modernui.resources.Resources;
 /**
  * A context wrapper that allows you to modify or replace the theme of the
  * wrapped context.
+ *
+ * @deprecated theme will no longer be part of Context object, you should create a Theme object yourself,
+ * there's no need to create a ContextWrapper
  */
+@Deprecated
 public class ContextThemeWrapper extends ContextWrapper {
     private final Object mThemeLock = new Object();
     private ResourceId mThemeResource;

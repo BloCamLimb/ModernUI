@@ -63,8 +63,6 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewRoot;
 import icyllis.modernui.view.WindowGroup;
 import icyllis.modernui.view.WindowManager;
-import icyllis.modernui.view.menu.ContextMenuBuilder;
-import icyllis.modernui.view.menu.MenuHelper;
 import icyllis.modernui.widget.TextView;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.TestOnly;
@@ -347,7 +345,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             }
         }, Core.getUiThreadExecutor());*/
         TypedValue value = new TypedValue();
-        getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainerLowest, value, true);
+        getTheme().resolveAttribute(R.attr.colorSurfaceContainerLowest, value, true);
         mDecor.setBackground(getResources().loadDrawable(value, null, getTheme()));
 
         mFragmentContainerView = new FragmentContainerView(this);

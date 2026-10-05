@@ -18,7 +18,6 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import org.intellij.lang.annotations.MagicConstant;
@@ -44,7 +43,7 @@ public final class Log {
      * @hidden
      */
     @ApiStatus.Internal
-    public static final Logger LOGGER = LoggerFactory.getLogger(ModernUI.NAME_CPT);
+    public static final Logger LOGGER = LoggerFactory.getLogger("ModernUI");
 
     /**
      * @hidden

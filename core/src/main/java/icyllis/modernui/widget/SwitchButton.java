@@ -48,7 +48,7 @@ public class SwitchButton extends CompoundButton {
     public SwitchButton(Context context) {
         super(context);
         TypedValue value = new TypedValue();
-        context.getTheme().resolveAttribute(R.ns, R.attr.colorPrimary, value, true);
+        context.getTheme().resolveAttribute(R.attr.colorPrimary, value, true);
         mCheckedColor = value.data;
         mUncheckedColor = 0xFFDDDDDD;
         mBorderWidth = dp(1.5f);

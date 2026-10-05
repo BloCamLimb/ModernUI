@@ -22,7 +22,6 @@ import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
@@ -43,31 +42,50 @@ public abstract class Context {
 
     /**
      * Returns a Resources instance for the application's environment.
-     * <p>
-     * Note: For a Context object, the implementation of this method should always
-     * return the same Resources object, even if a resource reload occurs.
      *
      * @return a Resources instance for the application's environment
+     *
+     * @deprecated Resources object can be changed during calls, use {@link #getCurrentResources()} instead.
      */
+    @Deprecated
     public abstract Resources getResources();
+
+    /**
+     * Returns current Resources instance for the application's environment.
+     * <p>
+     * This method is atomic. The implementation of this method can return a different
+     * Resources object on each call, which can happen during resource reloads or
+     * configuration changes. If you need to obtain a consistent batch/nested set of
+     * resources, you should remain on the same Resources object; therefore, avoid
+     * calling this method again during this period.
+     *
+     * @return current Resources instance for the application's environment
+     */
+    public Resources getCurrentResources() {
+        return getResources();
+    }
+
+    public ClassLoader getClassLoader() {
+        return Context.class.getClassLoader();
+    }
 
     /**
      * Reset the base theme for this context.  Note that this should be called
      * before any views are instantiated in the Context.
      *
      * @param resId The style resource describing the theme.
+     *
+     * @deprecated theme will no longer be part of Context object, you should create it yourself
      */
+    @Deprecated
     public abstract void setTheme(@Nullable @StyleRes ResourceId resId);
 
     /**
      * Return the Theme object associated with this Context.
-     * <p>
-     * Note: For a Context object, the implementation of this method should always
-     * return the same Theme object, even if a resource reload or theme reset occurs.
-     * And the object returned by {@link Resources.Theme#getResources()}
-     * should be consistent with {@link #getResources()}. Calling this method is
-     * not particularly fast, so it is recommended to cache it in a local variable.
+     *
+     * @deprecated theme will no longer be part of Context object, you should create it yourself
      */
+    @Deprecated
     public abstract Resources.Theme getTheme();
 
     /**
@@ -76,9 +94,12 @@ public abstract class Context {
      * for more information.
      *
      * @see Resources.Theme#obtainStyledAttributes(String[])
+     *
+     * @deprecated theme will no longer be part of Context object, you should create it yourself
      */
+    @Deprecated(forRemoval = true)
     @NonNull
-    public final TypedArray obtainStyledAttributes(@NonNull @StyleableRes String[] attrs) {
+    public final TypedArray obtainStyledAttributes(@NonNull String[] attrs) {
         return getTheme().obtainStyledAttributes(attrs);
     }
 
@@ -88,10 +109,13 @@ public abstract class Context {
      * for more information.
      *
      * @see Resources.Theme#obtainStyledAttributes(ResourceId, String[])
+     *
+     * @deprecated theme will no longer be part of Context object, you should create it yourself
      */
+    @Deprecated(forRemoval = true)
     @NonNull
     public final TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
-                                                   @NonNull @StyleableRes String[] attrs) {
+                                                   @NonNull String[] attrs) {
         return getTheme().obtainStyledAttributes(resId, attrs);
     }
 
@@ -101,11 +125,14 @@ public abstract class Context {
      * for more information.
      *
      * @see Resources.Theme#obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])
+     *
+     * @deprecated theme will no longer be part of Context object, you should create it yourself
      */
+    @Deprecated(forRemoval = true)
     @NonNull
     public final TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
-                                                   @NonNull @StyleableRes String[] attrs) {
-        return getTheme().obtainStyledAttributes(set, null, null, attrs);
+                                                   @NonNull String[] attrs) {
+        return getTheme().obtainStyledAttributes(set, (String) null, null, attrs);
     }
 
     /**
@@ -114,12 +141,16 @@ public abstract class Context {
      * for more information.
      *
      * @see Resources.Theme#obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])
+     *
+     * @deprecated theme will no longer be part of Context object, you should create it yourself;
+     *          namespace and type are not used in attribute name anymore, this will be removed in 4.0
      */
+    @Deprecated(forRemoval = true)
     @NonNull
     public final TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
                                                    @Nullable @AttrRes ResourceId defStyleAttr,
                                                    @Nullable @StyleRes ResourceId defStyleRes,
-                                                   @NonNull @StyleableRes String[] attrs) {
+                                                   @NonNull String[] attrs) {
         return getTheme().obtainStyledAttributes(set, defStyleAttr, defStyleRes, attrs);
     }
 

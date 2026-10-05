@@ -236,6 +236,9 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      */
     boolean mBlockLayoutRequests = false;
 
+    public static final String[] ATTRS =
+            ViewGroup.ATTRS;
+
     public AdapterView(Context context) {
         this(context, null);
     }

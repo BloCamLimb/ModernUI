@@ -20,7 +20,6 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.annotation.StyleableRes;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.xml.stream.XMLStreamReader;
@@ -37,10 +36,12 @@ import static org.lwjgl.system.MemoryUtil.*;
 
 public class ResourceUtils {
 
+    public static final String RES_URI = "tag:icyllis.modernui,2019:res";
+
     @Nullable
     public static String findAttribute(@NonNull XMLStreamReader reader,
                                        @NonNull String name) {
-        var res = reader.getAttributeValue(null, name);
+        var res = reader.getAttributeValue("", name);
         if (res != null) {
             return res.trim();
         }
@@ -50,7 +51,7 @@ public class ResourceUtils {
     @Nullable
     public static String findNonEmptyAttribute(@NonNull XMLStreamReader reader,
                                                @NonNull String name) {
-        var res = reader.getAttributeValue(null, name);
+        var res = reader.getAttributeValue("", name);
         if (res != null) {
             var trim = res.trim();
             if (!trim.isEmpty()) {
@@ -84,30 +85,6 @@ public class ResourceUtils {
         }
         ref.name = new ResourceId(namespace, Resource.getTypeName(Resource.TYPE_ATTR), entry);
         return ref;
-    }
-
-    /**
-     * Find the index of the attribute in the sorted keys (namespace=>attribute pairs).
-     * Returns -1 if not found.
-     */
-    public static int indexOfAttribute(@NonNull String[] keys,
-                                       @NonNull String namespace, @NonNull String attribute) {
-        assert (keys.length & 1) == 0;
-        int low = 0;
-        int high = (keys.length >> 1) - 1;
-
-        while (low <= high) {
-            int mid = (low + high) >>> 1;
-            int cmp = ResourceId.comparePair(keys[mid << 1], keys[(mid << 1) + 1],
-                    namespace, attribute);
-            if (cmp < 0)
-                low = mid + 1;
-            else if (cmp > 0)
-                high = mid - 1;
-            else
-                return mid;
-        }
-        return -1;
     }
 
     @Nullable

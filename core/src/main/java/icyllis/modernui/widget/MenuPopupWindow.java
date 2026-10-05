@@ -82,7 +82,7 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
         MenuDropDownListView view = new MenuDropDownListView(context, hijackFocus);
         view.setHoverListener(this);
         TypedValue value = new TypedValue();
-        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true)) {
+        if (context.getTheme().resolveAttribute(R.attr.colorControlHighlight, value, true)) {
             ColorStateList color = context.getResources().loadColorStateList(value, null, context.getTheme());
             if (color != null) {
                 view.setSelector(new RippleDrawable(color, null, new ColorDrawable(Color.WHITE_LONG)));

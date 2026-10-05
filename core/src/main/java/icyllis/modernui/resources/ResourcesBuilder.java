@@ -299,7 +299,7 @@ public class ResourcesBuilder {
                 var entries = style.mEntries;
                 for (int j = 0; j < entries.size(); j++) {
                     var entry = entries.get(j);
-                    int mapName = genId(entry.ns, entry.attr);
+                    int mapName = storeKeyString(entry.attr);
                     data.putInt(offset + ResTable_map.name, mapName);
                     data.putShort(offset + ResTable_map.value + Res_value.type, (short) entry.dataType);
                     data.putInt(offset + ResTable_map.value + Res_value.data, entry.data);
@@ -399,138 +399,92 @@ public class ResourcesBuilder {
         String mName;
         ResourceId mParent;
 
-        record Entry(String ns, String attr, int dataType, int data) {
+        record Entry(String attr, int dataType, int data) {
         }
 
         final ArrayList<Entry> mEntries = new ArrayList<>();
 
-        static final Comparator<Entry> STYLE_ENTRY_COMPARATOR = (o1, o2) ->
-                ResourceId.comparePair(o1.ns, o1.attr, o2.ns, o2.attr);
+        static final Comparator<Entry> STYLE_ENTRY_COMPARATOR = Comparator.comparing(
+                Entry::attr
+        );
 
         Style(String name, ResourceId parent) {
             mName = name;
             mParent = parent;
         }
 
-        public void addNull(@NonNull @AttrRes String attr, boolean empty) {
-            addNull(mNamespace, attr, empty);
-        }
-
-        public void addNull(@NonNull String namespace, @NonNull String attrName, boolean empty) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_NULL,
+        public void addNull(@NonNull String attr, boolean empty) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_NULL,
                     empty ? TypedValue.DATA_NULL_EMPTY : TypedValue.DATA_NULL_UNDEFINED)
             );
         }
 
-        public void addDimension(@NonNull @AttrRes String attr,
+        public void addDimension(@NonNull String attr,
                                  float value, @TypedValue.ComplexDimensionUnit int units) {
-            addDimension(mNamespace, attr, value, units);
-        }
-
-        public void addDimension(@NonNull String namespace, @NonNull String attrName,
-                                 float value, @TypedValue.ComplexDimensionUnit int units) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_DIMENSION,
+            mEntries.add(new Entry(attr, TypedValue.TYPE_DIMENSION,
                     TypedValue.createComplexDimension(value, units))
             );
         }
 
-        public void addAttribute(@NonNull @AttrRes String attr, @NonNull @AttrRes String target) {
-            mEntries.add(new Entry(mNamespace, attr, TypedValue.TYPE_ATTRIBUTE,
+        public void addAttribute(@NonNull String attr, @NonNull String target) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_ATTRIBUTE,
                     storeKeyString(target)));
         }
 
-        public void addAttribute(@NonNull @AttrRes String attr, @NonNull @AttrRes ResourceId target) {
-            addAttribute(mNamespace, attr, target);
-        }
-
-        public void addAttribute(@NonNull @AttrRes ResourceId attr, @NonNull @AttrRes ResourceId target) {
-            assert attr.type().equals("attr");
-            addAttribute(attr.namespace(), attr.entry(), target);
-        }
-
-        public void addAttribute(@NonNull String namespace, @NonNull String attrName,
-                                 @NonNull @AttrRes ResourceId target) {
+        /**
+         * @deprecated namespace and type are not used in attribute name anymore, this will be removed in 4.0
+         */
+        @Deprecated
+        public void addAttribute(@NonNull String attr, @NonNull @AttrRes ResourceId target) {
             assert target.type().equals("attr");
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_ATTRIBUTE,
-                    genId(target.namespace(), target.entry())));
+            addAttribute(attr, target.entry());
         }
 
-        public void addReference(@NonNull @AttrRes String attr, @Nullable @AnyRes ResourceId target) {
-            addReference(mNamespace, attr, target);
-        }
-
-        public void addReference(@NonNull @AttrRes ResourceId attr, @Nullable @AnyRes ResourceId target) {
-            assert attr.type().equals("attr");
-            addReference(attr.namespace(), attr.entry(), target);
-        }
-
-        public void addReference(@NonNull String namespace, @NonNull String attrName,
-                                 @Nullable @AnyRes ResourceId target) {
+        public void addReference(@NonNull String attr, @Nullable @AnyRes ResourceId target) {
             int typeId = target == null ? 0 : storeTypeString(target.type()) + 1;
-            mEntries.add(new Entry(namespace, attrName,
+            mEntries.add(new Entry(attr,
                     TypedValue.TYPE_REFERENCE | (typeId << ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT),
                     target == null ? -1 : genId(target.namespace(), target.entry())));
         }
 
-        public void addBoolean(@NonNull @AttrRes String attr, boolean v) {
-            addBoolean(mNamespace, attr, v);
+        /**
+         * @deprecated namespace and type are not used in attribute name anymore, this will be removed in 4.0
+         */
+        @Deprecated
+        public void addReference(@NonNull @AttrRes ResourceId attr, @Nullable @AnyRes ResourceId target) {
+            assert attr.type().equals("attr");
+            addReference(attr.entry(), target);
         }
 
-        public void addBoolean(@NonNull String namespace, @NonNull String attrName, boolean v) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_INT_BOOLEAN, v ? 1 : 0));
+        public void addBoolean(@NonNull String attr, boolean v) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_BOOLEAN, v ? 1 : 0));
         }
 
-        public void addColor(@NonNull @AttrRes String attr, int argb) {
-            addColor(mNamespace, attr, argb);
+        public void addColor(@NonNull String attr, int argb) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_COLOR_ARGB8, argb));
         }
 
-        public void addColor(@NonNull String namespace, @NonNull String attrName, int argb) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_INT_COLOR_ARGB8, argb));
+        public void addInteger(@NonNull String attr, int v) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_DEC, v));
         }
 
-        public void addInteger(@NonNull @AttrRes String attr, int v) {
-            addInteger(mNamespace, attr, v);
+        public void addEnum(@NonNull String attr, int ord) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_DEC, ord));
         }
 
-        public void addInteger(@NonNull String namespace, @NonNull String attrName, int v) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_INT_DEC, v));
+        public void addFlags(@NonNull String attr, int flags) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_INT_HEX, flags));
         }
 
-        public void addEnum(@NonNull @AttrRes String attr, int ord) {
-            addEnum(mNamespace, attr, ord);
-        }
-
-        public void addEnum(@NonNull String namespace, @NonNull String attrName, int ord) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_INT_DEC, ord));
-        }
-
-        public void addFlags(@NonNull @AttrRes String attr, int flags) {
-            addFlags(mNamespace, attr, flags);
-        }
-
-        public void addFlags(@NonNull String namespace, @NonNull String attrName, int flags) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_INT_HEX, flags));
-        }
-
-        public void addColor(@NonNull @AttrRes String attr,
+        public void addColor(@NonNull String attr,
                              @NonNull BiFunction<Resources, Resources.Theme, ColorStateList> factory) {
-            addColor(mNamespace, attr, factory);
-        }
-
-        public void addColor(@NonNull String namespace, @NonNull String attrName,
-                             @NonNull BiFunction<Resources, Resources.Theme, ColorStateList> factory) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_FACTORY,
+            mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
                     storeFactory(factory)));
         }
 
-        public void addDrawable(@NonNull @AttrRes String attr,
+        public void addDrawable(@NonNull String attr,
                                 @NonNull BiFunction<Resources, Resources.Theme, Drawable> factory) {
-            addDrawable(mNamespace, attr, factory);
-        }
-
-        public void addDrawable(@NonNull String namespace, @NonNull String attrName,
-                                @NonNull BiFunction<Resources, Resources.Theme, Drawable> factory) {
-            mEntries.add(new Entry(namespace, attrName, TypedValue.TYPE_FACTORY,
+            mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
                     storeFactory(factory)));
         }
 

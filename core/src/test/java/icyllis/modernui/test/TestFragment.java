@@ -173,7 +173,7 @@ public class TestFragment extends Fragment {
         }
         //base.setRotation(30);
         TypedValue value = new TypedValue();
-        context.getTheme().resolveAttribute(R.ns, R.attr.colorSurface, value, true);
+        context.getTheme().resolveAttribute(R.attr.colorSurface, value, true);
         base.setBackground(context.getResources().loadDrawable(value, null, context.getTheme()));
         return base;
     }
@@ -334,15 +334,15 @@ public class TestFragment extends Fragment {
                 var divider = new ShapeDrawable();
                 divider.setShape(ShapeDrawable.HLINE);
                 divider.setSize(-1, dp(1));
-                context.getTheme().resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true);
+                context.getTheme().resolveAttribute(R.attr.colorOutlineVariant, value, true);
                 divider.setColor(context.getResources().loadColorStateList(value, null, context.getTheme()));
                 setDividerDrawable(divider);
                 setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
             }
 
-            getContext().getTheme().resolveAttribute(R.ns, R.attr.colorPrimary, value, true);
+            getContext().getTheme().resolveAttribute(R.attr.colorPrimary, value, true);
             colorPrimary = value.data;
-            getContext().getTheme().resolveAttribute(R.ns, R.attr.colorSecondaryContainer, value, true);
+            getContext().getTheme().resolveAttribute(R.attr.colorSecondaryContainer, value, true);
             colorSecondaryContainer = value.data;
 
             setPadding(dp(12), dp(12), dp(12), dp(12));
@@ -985,14 +985,14 @@ public class TestFragment extends Fragment {
             public DView(Context context) {
                 super(context);
                 TypedValue value = new TypedValue();
-                context.getTheme().resolveAttribute(R.ns, R.attr.colorOnPrimaryContainer, value, true);
+                context.getTheme().resolveAttribute(R.attr.colorOnPrimaryContainer, value, true);
                 mTextPaint.setColor(value.data);
                 mTextPaint.setTextSize(13);
                 mText = TextShaper.shapeText(
                         "18:52 modernui", 0, 14,
                         TextDirectionHeuristics.FIRSTSTRONG_LTR, mTextPaint
                 );
-                context.getTheme().resolveAttribute(R.ns, R.attr.colorPrimaryContainer, value, true);
+                context.getTheme().resolveAttribute(R.attr.colorPrimaryContainer, value, true);
                 mColorBackground = value.data;
                 PropertyValuesHolder pvh1 = PropertyValuesHolder.ofFloat(ROTATION, 0, 360);
                 PropertyValuesHolder pvh2 = PropertyValuesHolder.ofFloat(SCALE_X, 1, 0.2f);

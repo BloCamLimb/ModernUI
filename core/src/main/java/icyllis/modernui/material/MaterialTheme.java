@@ -184,97 +184,97 @@ public class MaterialTheme {
 
         ThemedCache(Resources.Theme theme) {
             final TypedValue value = new TypedValue();
-            theme.resolveAttribute(R.ns, R.attr.colorPrimary, value, true);
+            theme.resolveAttribute(R.attr.colorPrimary, value, true);
             colorPrimary = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnPrimary, value, true);
+            theme.resolveAttribute(R.attr.colorOnPrimary, value, true);
             colorOnPrimary = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorPrimaryInverse, value, true);
+            theme.resolveAttribute(R.attr.colorPrimaryInverse, value, true);
             colorPrimaryInverse = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorPrimaryContainer, value, true);
+            theme.resolveAttribute(R.attr.colorPrimaryContainer, value, true);
             colorPrimaryContainer = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnPrimaryContainer, value, true);
+            theme.resolveAttribute(R.attr.colorOnPrimaryContainer, value, true);
             colorOnPrimaryContainer = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorPrimaryFixed, value, true);
+            theme.resolveAttribute(R.attr.colorPrimaryFixed, value, true);
             colorPrimaryFixed = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorPrimaryFixedDim, value, true);
+            theme.resolveAttribute(R.attr.colorPrimaryFixedDim, value, true);
             colorPrimaryFixedDim = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnPrimaryFixed, value, true);
+            theme.resolveAttribute(R.attr.colorOnPrimaryFixed, value, true);
             colorOnPrimaryFixed = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnPrimaryFixedVariant, value, true);
+            theme.resolveAttribute(R.attr.colorOnPrimaryFixedVariant, value, true);
             colorOnPrimaryFixedVariant = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSecondary, value, true);
+            theme.resolveAttribute(R.attr.colorSecondary, value, true);
             colorSecondary = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnSecondary, value, true);
+            theme.resolveAttribute(R.attr.colorOnSecondary, value, true);
             colorOnSecondary = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSecondaryContainer, value, true);
+            theme.resolveAttribute(R.attr.colorSecondaryContainer, value, true);
             colorSecondaryContainer = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnSecondaryContainer, value, true);
+            theme.resolveAttribute(R.attr.colorOnSecondaryContainer, value, true);
             colorOnSecondaryContainer = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSecondaryFixed, value, true);
+            theme.resolveAttribute(R.attr.colorSecondaryFixed, value, true);
             colorSecondaryFixed = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSecondaryFixedDim, value, true);
+            theme.resolveAttribute(R.attr.colorSecondaryFixedDim, value, true);
             colorSecondaryFixedDim = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnSecondaryFixed, value, true);
+            theme.resolveAttribute(R.attr.colorOnSecondaryFixed, value, true);
             colorOnSecondaryFixed = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnSecondaryFixedVariant, value, true);
+            theme.resolveAttribute(R.attr.colorOnSecondaryFixedVariant, value, true);
             colorOnSecondaryFixedVariant = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorTertiary, value, true);
+            theme.resolveAttribute(R.attr.colorTertiary, value, true);
             colorTertiary = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnTertiary, value, true);
+            theme.resolveAttribute(R.attr.colorOnTertiary, value, true);
             colorOnTertiary = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorTertiaryContainer, value, true);
+            theme.resolveAttribute(R.attr.colorTertiaryContainer, value, true);
             colorTertiaryContainer = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnTertiaryContainer, value, true);
+            theme.resolveAttribute(R.attr.colorOnTertiaryContainer, value, true);
             colorOnTertiaryContainer = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorTertiaryFixed, value, true);
+            theme.resolveAttribute(R.attr.colorTertiaryFixed, value, true);
             colorTertiaryFixed = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorTertiaryFixedDim, value, true);
+            theme.resolveAttribute(R.attr.colorTertiaryFixedDim, value, true);
             colorTertiaryFixedDim = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnTertiaryFixed, value, true);
+            theme.resolveAttribute(R.attr.colorOnTertiaryFixed, value, true);
             colorOnTertiaryFixed = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnTertiaryFixedVariant, value, true);
+            theme.resolveAttribute(R.attr.colorOnTertiaryFixedVariant, value, true);
             colorOnTertiaryFixedVariant = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorBackground, value, true);
+            theme.resolveAttribute(R.attr.colorBackground, value, true);
             colorBackground = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnBackground, value, true);
+            theme.resolveAttribute(R.attr.colorOnBackground, value, true);
             colorOnBackground = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurface, value, true);
+            theme.resolveAttribute(R.attr.colorSurface, value, true);
             colorSurface = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnSurface, value, true);
+            theme.resolveAttribute(R.attr.colorOnSurface, value, true);
             colorOnSurface = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceVariant, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceVariant, value, true);
             colorSurfaceVariant = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnSurfaceVariant, value, true);
+            theme.resolveAttribute(R.attr.colorOnSurfaceVariant, value, true);
             colorOnSurfaceVariant = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceInverse, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceInverse, value, true);
             colorSurfaceInverse = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnSurfaceInverse, value, true);
+            theme.resolveAttribute(R.attr.colorOnSurfaceInverse, value, true);
             colorOnSurfaceInverse = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceBright, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceBright, value, true);
             colorSurfaceBright = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceDim, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceDim, value, true);
             colorSurfaceDim = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceContainer, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceContainer, value, true);
             colorSurfaceContainer = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceContainerLow, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceContainerLow, value, true);
             colorSurfaceContainerLow = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceContainerHigh, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceContainerHigh, value, true);
             colorSurfaceContainerHigh = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceContainerLowest, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceContainerLowest, value, true);
             colorSurfaceContainerLowest = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorSurfaceContainerHighest, value, true);
+            theme.resolveAttribute(R.attr.colorSurfaceContainerHighest, value, true);
             colorSurfaceContainerHighest = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOutline, value, true);
+            theme.resolveAttribute(R.attr.colorOutline, value, true);
             colorOutline = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true);
+            theme.resolveAttribute(R.attr.colorOutlineVariant, value, true);
             colorOutlineVariant = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorError, value, true);
+            theme.resolveAttribute(R.attr.colorError, value, true);
             colorError = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnError, value, true);
+            theme.resolveAttribute(R.attr.colorOnError, value, true);
             colorOnError = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorErrorContainer, value, true);
+            theme.resolveAttribute(R.attr.colorErrorContainer, value, true);
             colorErrorContainer = value.data;
-            theme.resolveAttribute(R.ns, R.attr.colorOnErrorContainer, value, true);
+            theme.resolveAttribute(R.attr.colorOnErrorContainer, value, true);
             colorOnErrorContainer = value.data;
         }
 
@@ -1632,7 +1632,7 @@ public class MaterialTheme {
                 final TypedValue value = new TypedValue();
                 var button = new BuiltinIconDrawable(resources,
                         BuiltinIconDrawable.RADIO_SMALL, 18);
-                if (theme.resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
+                if (theme.resolveAttribute(R.attr.textColorSecondary, value, true))
                     button.setTintList(resources.loadColorStateList(value, null, theme));
                 var selector = new StateListDrawable();
                 selector.addState(new int[]{R.attr.state_checked}, button);
@@ -1691,7 +1691,7 @@ public class MaterialTheme {
                 final TypedValue value = new TypedValue();
                 var button = new BuiltinIconDrawable(resources,
                         BuiltinIconDrawable.CHECK_SMALL, 18);
-                if (theme.resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
+                if (theme.resolveAttribute(R.attr.textColorSecondary, value, true))
                     button.setTintList(resources.loadColorStateList(value, null, theme));
                 var selector = new StateListDrawable();
                 selector.addState(new int[]{R.attr.state_checked}, button);
@@ -1877,7 +1877,7 @@ public class MaterialTheme {
             style.addDrawable(R.attr.background, (resources, theme) -> {
                 var background = outlined_box(resources, theme);
                 TypedValue value = new TypedValue();
-                theme.resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true);
+                theme.resolveAttribute(R.attr.colorControlHighlight, value, true);
                 var ripple = new RippleDrawable(ColorStateList.valueOf(value.data), null, null);
                 ripple.setRadius(dp(14, resources));
                 var icon = new BuiltinIconDrawable(resources, BuiltinIconDrawable.KEYBOARD_ARROW_DOWN,
@@ -1895,7 +1895,7 @@ public class MaterialTheme {
             style.addBoolean(R.attr.clickable, true);
             style.addDrawable(R.attr.dropDownSelector, (resources, theme) -> {
                 TypedValue value = new TypedValue();
-                theme.resolveAttribute(R.ns, R.attr.colorControlHighlight, value, true);
+                theme.resolveAttribute(R.attr.colorControlHighlight, value, true);
                 return new RippleDrawable(ColorStateList.valueOf(value.data), null, new ColorDrawable(~0));
             });
             style.addBoolean(R.attr.overlapAnchor, true);

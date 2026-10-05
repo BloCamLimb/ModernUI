@@ -22,7 +22,6 @@ import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
@@ -60,7 +59,7 @@ public class TypedArray {
     int mLength;
     final TypedValue mValue = new TypedValue();
 
-    final BagAttributeFinder mDefStyleAttrFinder = new BagAttributeFinder();
+    final AttributeFinder mDefStyleAttrFinder = new AttributeFinder();
 
     private void resize(int len) {
         mLength = len;
@@ -149,7 +148,7 @@ public class TypedArray {
      *         not defined or could not be coerced to an integer.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
-    public boolean getBoolean(@StyleableRes int index, boolean defValue) {
+    public boolean getBoolean(int index, boolean defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -181,7 +180,7 @@ public class TypedArray {
      *         not defined or could not be coerced to an integer.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
-    public int getInt(@StyleableRes int index, int defValue) {
+    public int getInt(int index, int defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -211,7 +210,7 @@ public class TypedArray {
      *         not defined or could not be coerced to a float.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
-    public float getFloat(@StyleableRes int index, float defValue) {
+    public float getFloat(int index, float defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -250,7 +249,7 @@ public class TypedArray {
      *         not an integer color or color state list.
      */
     @ColorInt
-    public int getColor(@StyleableRes int index, @ColorInt int defValue) {
+    public int getColor(int index, @ColorInt int defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -307,7 +306,7 @@ public class TypedArray {
      *         not an integer color or color state list.
      */
     @Nullable
-    public ColorStateList getColorStateList(@StyleableRes int index) {
+    public ColorStateList getColorStateList(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -339,7 +338,7 @@ public class TypedArray {
      * @throws UnsupportedOperationException if the attribute is defined but is
      *         not an integer.
      */
-    public int getInteger(@StyleableRes int index, int defValue) {
+    public int getInteger(int index, int defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -388,7 +387,7 @@ public class TypedArray {
      * @see #getDimensionPixelOffset
      * @see #getDimensionPixelSize
      */
-    public float getDimension(@StyleableRes int index, float defValue) {
+    public float getDimension(int index, float defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -437,7 +436,7 @@ public class TypedArray {
      * @see #getDimension
      * @see #getDimensionPixelSize
      */
-    public int getDimensionPixelOffset(@StyleableRes int index, int defValue) {
+    public int getDimensionPixelOffset(int index, int defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -487,7 +486,7 @@ public class TypedArray {
      * @see #getDimension
      * @see #getDimensionPixelOffset
      */
-    public int getDimensionPixelSize(@StyleableRes int index, int defValue) {
+    public int getDimensionPixelSize(int index, int defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -527,7 +526,7 @@ public class TypedArray {
      *         metric and truncated to integer pixels.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
-    public int getLayoutDimension(@StyleableRes int index, int defValue) {
+    public int getLayoutDimension(int index, int defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -563,7 +562,7 @@ public class TypedArray {
      * @throws UnsupportedOperationException if the attribute is defined but is
      *         not a fraction.
      */
-    public float getFraction(@StyleableRes int index, int base, int pbase, float defValue) {
+    public float getFraction(int index, int base, int pbase, float defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -604,7 +603,7 @@ public class TypedArray {
      */
     @Nullable
     @AnyRes
-    public ResourceId getResourceId(@StyleableRes int index) {
+    public ResourceId getResourceId(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -612,17 +611,12 @@ public class TypedArray {
         index *= STYLE_NUM_ENTRIES;
         final int[] data = mData;
         final int type = data[index + STYLE_TYPE];
-        switch (type & ResourceTypes.Res_value.DATA_TYPE_MASK) {
-            case TypedValue.TYPE_REFERENCE -> {
-                int typeId = type >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
-                if (typeId != 0) {
-                    return mAssetManager.getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
-                } else {
-                    return null;
-                }
-            }
-            case TypedValue.TYPE_ATTRIBUTE -> {
-                return mAssetManager.getAttributeIdForCookie(data[index + STYLE_COOKIE], data[index + STYLE_DATA]);
+        if ((type & ResourceTypes.Res_value.DATA_TYPE_MASK) == TypedValue.TYPE_REFERENCE) {
+            int typeId = type >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
+            if (typeId != 0) {
+                return mAssetManager.getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
+            } else {
+                return null;
             }
         }
         return null;
@@ -642,7 +636,7 @@ public class TypedArray {
      *         not a color or drawable resource.
      */
     @Nullable
-    public Drawable getDrawable(@StyleableRes int index) {
+    public Drawable getDrawable(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -670,7 +664,7 @@ public class TypedArray {
      * @return {@code true} if the value was retrieved and not @empty, {@code false} otherwise.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
-    public boolean getValue(@StyleableRes int index, TypedValue outValue) {
+    public boolean getValue(int index, TypedValue outValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -686,7 +680,7 @@ public class TypedArray {
      * @return Attribute type.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
-    public int getType(@StyleableRes int index) {
+    public int getType(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -706,7 +700,7 @@ public class TypedArray {
      * @return True if the attribute has a value, false otherwise.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
-    public boolean hasValue(@StyleableRes int index) {
+    public boolean hasValue(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -727,7 +721,7 @@ public class TypedArray {
      * @return True if the attribute has a value or is empty, false otherwise.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
-    public boolean hasValueOrEmpty(@StyleableRes int index) {
+    public boolean hasValueOrEmpty(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -752,7 +746,7 @@ public class TypedArray {
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
     @Nullable
-    public TypedValue peekValue(@StyleableRes int index) {
+    public TypedValue peekValue(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }

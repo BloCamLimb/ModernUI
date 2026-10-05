@@ -58,7 +58,7 @@ class TestTabLayout : Fragment() {
                 shape = ShapeDrawable.HLINE
                 setSize(-1, dp(1F))
                 val value = TypedValue()
-                if (context.theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true))
+                if (context.theme.resolveAttribute(R.attr.colorOutlineVariant, value, true))
                     color = context.resources.loadColorStateList(value, null, context.theme)
             }
             addView(TabLayout(requireContext()).apply {

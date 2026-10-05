@@ -19,7 +19,11 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.R;
+import icyllis.modernui.material.MaterialTheme;
+import icyllis.modernui.resources.AssetManager;
+import icyllis.modernui.resources.EmptyAssetProvider;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.ResourcesBuilder;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.Log;
@@ -30,17 +34,26 @@ public class TestThemeBuilder {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
         System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
 
-        Resources resources = Resources.getSystem();
+        Resources resources;{
+            var rb = new ResourcesBuilder(R.ns);
+            MaterialTheme.addToResources(rb);
+            resources = new Resources(
+                    new AssetManager.Builder()
+                            .addAssetPack(rb.buildPack(new EmptyAssetProvider()))
+                            .build(),
+                    null, null
+            );
+        }
         Resources.Theme theme = resources.newTheme();
         theme.applyStyle(R.style.Theme_Material3_Dark, true);
-        String[] styleable = {
-                R.ns, R.attr.colorError,
-                R.ns, R.attr.textColor,
-                R.ns, R.attr.textSize,
+        String[] attrs = {
+                R.attr.colorError,
+                R.attr.textColor,
+                R.attr.textSize,
         };
         TypedArray a = theme.obtainStyledAttributes(
                 R.style.TextAppearance_Material3_DisplayMedium,
-                styleable);
+                attrs);
 
         Log.i(null, a.getDimensionPixelSize(2, -1));
 

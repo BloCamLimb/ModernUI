@@ -78,6 +78,9 @@ public class FrameLayout extends ViewGroup {
 
     private final ArrayList<View> mMatchParentChildren = new ArrayList<>(1);
 
+    public static final String[] ATTRS =
+            ViewGroup.ATTRS;
+
     public FrameLayout(@NonNull Context context) {
         super(context);
     }

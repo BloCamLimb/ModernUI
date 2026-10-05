@@ -60,7 +60,7 @@ class TestViewPager : Fragment() {
                 divider.shape = ShapeDrawable.HLINE
                 divider.setSize(-1, dp(1F))
                 val value = TypedValue()
-                if (context.theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true))
+                if (context.theme.resolveAttribute(R.attr.colorOutlineVariant, value, true))
                     divider.color = context.resources.loadColorStateList(value, null, context.theme)
                 background = divider
             }, LinearLayout.LayoutParams(dp(960F), dp(1F)))
@@ -150,7 +150,7 @@ class TestViewPager : Fragment() {
                 tag = position
                 gravity = Gravity.CENTER
                 val value = TypedValue()
-                if (context.theme.resolveAttribute(R.ns, R.attr.colorSurface, value, true))
+                if (context.theme.resolveAttribute(R.attr.colorSurface, value, true))
                     background = context.resources.loadDrawable(value, null, context.theme)
             }.also {
                 container.addView(it, 0)

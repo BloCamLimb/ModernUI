@@ -23,7 +23,6 @@ import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
@@ -72,10 +71,9 @@ public abstract class CompoundButton extends Button implements Checkable2 {
     OnCheckedChangeListener mOnCheckedChangeListener;
     private OnCheckedChangeListener mOnCheckedChangeListenerInternal;
 
-    @StyleableRes
-    private static final String[] STYLEABLE = {
-            R.ns, R.attr.button,
-            R.ns, R.attr.checked,
+    public static final String[] ATTRS = {
+            R.attr.button,
+            R.attr.checked,
     };
 
     public CompoundButton(Context context) {
@@ -98,7 +96,7 @@ public abstract class CompoundButton extends Button implements Checkable2 {
         super(context, attrs, defStyleAttr, defStyleRes);
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
 
         final Drawable d = a.getDrawable(0); // button
         if (d != null) {

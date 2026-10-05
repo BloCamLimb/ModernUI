@@ -166,6 +166,9 @@ public class HorizontalScrollView extends FrameLayout {
      */
     private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;
 
+    public static final String[] ATTRS =
+            FrameLayout.ATTRS;
+
     public HorizontalScrollView(Context context) {
         super(context);
         mScroller = new OverScroller(context);
@@ -184,7 +187,7 @@ public class HorizontalScrollView extends FrameLayout {
 
         ColorStateList tint = null;
         final TypedValue value = new TypedValue();
-        if (context.getTheme().resolveAttribute(R.ns, R.attr.colorControlNormal, value, true)) {
+        if (context.getTheme().resolveAttribute(R.attr.colorControlNormal, value, true)) {
             tint = context.getResources().loadColorStateList(value, null, context.getTheme());
         }
         setHorizontalScrollBarEnabled(true);

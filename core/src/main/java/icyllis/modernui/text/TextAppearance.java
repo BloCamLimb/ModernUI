@@ -73,14 +73,14 @@ public class TextAppearance {
     public int mLineBreakStyle = 0;
     public int mLineBreakWordStyle = 0;
 
-    public static final String[] STYLEABLE = {
-            /*0*/ R.ns, R.attr.textColor,
-            /*1*/ R.ns, R.attr.textColorHighlight,
-            /*2*/ R.ns, R.attr.textColorHint,
-            /*3*/ R.ns, R.attr.textColorLink,
-            /*4*/ R.ns, R.attr.textFontWeight,
-            /*5*/ R.ns, R.attr.textSize,
-            /*6*/ R.ns, R.attr.textStyle,
+    public static final String[] ATTRS = {
+            /*0*/R.attr.textColor,
+            /*1*/R.attr.textColorHighlight,
+            /*2*/R.attr.textColorHint,
+            /*3*/R.attr.textColorLink,
+            /*4*/R.attr.textFontWeight,
+            /*5*/R.attr.textSize,
+            /*6*/R.attr.textStyle,
     };
 
     public TextAppearance() {
@@ -91,10 +91,10 @@ public class TextAppearance {
         final TypedArray a;
         if (resId != null && resId.type().equals("attr")) {
             a = theme.obtainStyledAttributes(
-                    null, resId, null, STYLEABLE);
+                    null, resId, null, ATTRS);
         } else {
             a = theme.obtainStyledAttributes(
-                    resId, STYLEABLE);
+                    resId, ATTRS);
         }
 
         read(a, null);

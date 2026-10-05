@@ -91,7 +91,7 @@ public class ListMenuItemView extends LinearLayout
         divider.setShape(ShapeDrawable.HLINE);
         divider.setSize(-1, dp(3));
         final TypedValue value = new TypedValue();
-        if (theme.resolveAttribute(R.ns, R.attr.colorOutlineVariant, value, true))
+        if (theme.resolveAttribute(R.attr.colorOutlineVariant, value, true))
             divider.setStroke(dp(1), context.getResources().loadColorStateList(value, null, theme));
         setDividerDrawable(divider);
         setDividerPadding(dp(2));
@@ -141,7 +141,7 @@ public class ListMenuItemView extends LinearLayout
                         BuiltinIconDrawable.KEYBOARD_ARROW_RIGHT, 18);
                 icon.setAutoMirrored(true);
                 mSubMenuArrowView.setImageDrawable(icon);
-                if (theme.resolveAttribute(R.ns, R.attr.textColorSecondary, value, true))
+                if (theme.resolveAttribute(R.attr.textColorSecondary, value, true))
                     mSubMenuArrowView.setImageTintList(context.getResources().loadColorStateList(value, null, theme));
 
                 var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);

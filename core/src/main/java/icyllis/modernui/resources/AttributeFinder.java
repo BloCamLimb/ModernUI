@@ -25,10 +25,10 @@ import icyllis.modernui.annotation.Nullable;
  * Provides linear search for sorted needle array (attributes we're looking for)
  * in the sorted haystack array (the attributes we're searching through).
  */
-public abstract class AttributeFinder {
+public class AttributeFinder {
 
-    protected String haystackNamespace;
-    protected String haystackAttribute;
+    private String[] keys;
+    private String haystack;
 
     private int start;
     private int end;
@@ -37,20 +37,21 @@ public abstract class AttributeFinder {
     public AttributeFinder() {
     }
 
-    /**
-     * Override to update {@link #haystackNamespace} and {@link #haystackAttribute}.
-     */
-    protected abstract void onGetAttribute(int index);
+    public void reset(String[] keys) {
+        reset(keys, 0, keys != null ? keys.length : 0);
+    }
 
     /**
      * Called before the search starts.
      */
-    public void reset(int start, int end) {
+    public void reset(String[] keys, int start, int end) {
+        assert start >= 0 && end >= 0 && start <= end;
+        this.keys = keys;
         this.start = start;
         this.end = end;
         current = start;
         if (start < end) {
-            onGetAttribute(start);
+            haystack = keys[current];
         }
     }
 
@@ -58,30 +59,29 @@ public abstract class AttributeFinder {
      * Called after the search ends.
      */
     public void clear() {
-        haystackNamespace = null;
-        haystackAttribute = null;
+        haystack = null;
+        keys = null;
+        end = 0;
     }
 
     // Returns the index or '-1' if not found
-    public int find(@NonNull String namespace, @NonNull String attribute) {
+    public int find(@NonNull String needle) {
         if (start >= end) {
             return -1;
         }
 
-        assert haystackNamespace != null;
-        assert haystackAttribute != null;
+        assert haystack != null;
 
-        while (current != end) {
-            int compare = ResourceId.comparePair(haystackNamespace, haystackAttribute,
-                    namespace, attribute);
+        while (current < end) {
+            int compare = haystack.compareTo(needle);
             if (compare > 0) {
                 // The attribute we are looking was not found.
                 break;
             }
 
             ++current;
-            if (current != end) {
-                onGetAttribute(current);
+            if (current < end) {
+                haystack = keys[current];
             }
 
             if (compare == 0) {
@@ -91,30 +91,5 @@ public abstract class AttributeFinder {
         }
 
         return -1;
-    }
-}
-
-class BagAttributeFinder extends AttributeFinder {
-
-    private String[] keys;
-
-    public BagAttributeFinder() {
-    }
-
-    public void reset(@Nullable AssetManager.ResolvedBag bag) {
-        this.keys = bag != null ? bag.keys : null;
-        super.reset(0, bag != null ? bag.getEntryCount() : 0);
-    }
-
-    public void clear() {
-        super.clear();
-        keys = null;
-    }
-
-    @Override
-    protected void onGetAttribute(int index) {
-        int ii = index<<1;
-        haystackNamespace = keys[ii];
-        haystackAttribute = keys[ii+1];
     }
 }

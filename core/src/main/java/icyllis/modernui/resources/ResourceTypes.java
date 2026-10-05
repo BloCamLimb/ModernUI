@@ -142,8 +142,8 @@ public class ResourceTypes {
         public static final int DATA_TYPE_ID_MASK = 0xff00;
         public static final int DATA_TYPE_ID_SHIFT = 8;
 
-        public static final int KEY_INDEX_MASK = 0xffffff;
-        public static final int PACKAGE_ID_SHIFT = 24;
+        public static final int KEY_INDEX_MASK = 0x3fffff;
+        public static final int PACKAGE_ID_SHIFT = 22;
 
         public static final int DATA_NULL_UNDEFINED = 0;
         public static final int DATA_NULL_EMPTY = 1;

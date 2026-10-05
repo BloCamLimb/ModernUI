@@ -60,6 +60,9 @@ import icyllis.modernui.view.LayoutInflater;
  */
 public class Button extends TextView {
 
+    public static final String[] ATTRS =
+            TextView.ATTRS;
+
     /**
      * Simple constructor to use when creating a button from code.
      * <p>

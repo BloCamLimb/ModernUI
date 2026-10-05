@@ -49,7 +49,6 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.resources.ResourceUtils;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
@@ -82,6 +81,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -269,41 +269,40 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     private Editor mEditor;
 
-    @StyleableRes
-    private static final String[] STYLEABLE = {
-            /*0*/ R.ns, R.attr.gravity,
-            /*1*/ R.ns, R.attr.maxWidth,
-            /*2*/ R.ns, R.attr.minHeight,
-            /*3*/ R.ns, R.attr.minWidth,
-            /*4*/ R.ns, R.attr.textAppearance,
-            /*5*/ R.ns, R.attr.textColor,
-            /*6*/ R.ns, R.attr.textColorHighlight,
-            /*7*/ R.ns, R.attr.textColorHint,
-            /*8*/ R.ns, R.attr.textColorLink,
-            /*9*/ R.ns, R.attr.textFontWeight,
-            /*10*/R.ns, R.attr.textSize,
-            /*11*/R.ns, R.attr.textStyle,
+    public static final String[] ATTRS = {
+            /*0*/ R.attr.gravity,
+            /*1*/ R.attr.maxWidth,
+            /*2*/ R.attr.minHeight,
+            /*3*/ R.attr.minWidth,
+            /*4*/ R.attr.textAppearance,
+            /*5*/ R.attr.textColor,
+            /*6*/ R.attr.textColorHighlight,
+            /*7*/ R.attr.textColorHint,
+            /*8*/ R.attr.textColorLink,
+            /*9*/ R.attr.textFontWeight,
+            /*10*/R.attr.textSize,
+            /*11*/R.attr.textStyle,
     };
 
     // Maps styleable attributes that exist both in TextView style and TextAppearance.
     private static final Int2IntOpenHashMap sAppearanceValues;
     private static void mapAttribute(@NonNull Int2IntOpenHashMap values,
-                                     @NonNull String namespace, @NonNull String attribute) {
-        values.put(ResourceUtils.indexOfAttribute(
-                TextView.STYLEABLE, namespace, attribute
-        ), ResourceUtils.indexOfAttribute(
-                TextAppearance.STYLEABLE, namespace, attribute
+                                     @NonNull String name) {
+        values.put(Arrays.binarySearch(
+                TextView.ATTRS, name
+        ), Arrays.binarySearch(
+                TextAppearance.ATTRS, name
         ));
     }
     static {
         var values = new Int2IntOpenHashMap();
-        mapAttribute(values, R.ns, R.attr.textColor);
-        mapAttribute(values, R.ns, R.attr.textColorHighlight);
-        mapAttribute(values, R.ns, R.attr.textColorHint);
-        mapAttribute(values, R.ns, R.attr.textColorLink);
-        mapAttribute(values, R.ns, R.attr.textFontWeight);
-        mapAttribute(values, R.ns, R.attr.textSize);
-        mapAttribute(values, R.ns, R.attr.textStyle);
+        mapAttribute(values, R.attr.textColor);
+        mapAttribute(values, R.attr.textColorHighlight);
+        mapAttribute(values, R.attr.textColorHint);
+        mapAttribute(values, R.attr.textColorLink);
+        mapAttribute(values, R.attr.textFontWeight);
+        mapAttribute(values, R.attr.textSize);
+        mapAttribute(values, R.attr.textStyle);
         values.defaultReturnValue(-1);
         sAppearanceValues = values;
     }
@@ -325,13 +324,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         final Resources.Theme theme = context.getTheme();
         final TypedValue value = new TypedValue();
-        if (theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true))
+        if (theme.resolveAttribute(R.attr.textColorPrimary, value, true))
             setTextColor(theme.getResources().loadColorStateList(value, null, theme));
-        if (theme.resolveAttribute(R.ns, R.attr.textColorHint, value, true))
+        if (theme.resolveAttribute(R.attr.textColorHint, value, true))
             setHintTextColor(theme.getResources().loadColorStateList(value, null, theme));
-        if (theme.resolveAttribute(R.ns, R.attr.textColorHighlight, value, true))
+        if (theme.resolveAttribute(R.attr.textColorHighlight, value, true))
             setHighlightColor(value.data);
-        if (theme.resolveAttribute(R.ns, R.attr.textColorLink, value, true))
+        if (theme.resolveAttribute(R.attr.textColorLink, value, true))
             setLinkTextColor(theme.getResources().loadColorStateList(value, null, theme));
 
         if (getDefaultEditable()) {
@@ -359,7 +358,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         final TextAppearance appearance;
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
         ResourceId ap = a.getResourceId(4); // textAppearance
         if (ap != null) {
             appearance = new TextAppearance(context.getTheme(), ap);

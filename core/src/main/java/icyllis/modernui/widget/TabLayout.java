@@ -386,29 +386,29 @@ public class TabLayout extends HorizontalScrollView {
     // Pool we use as a simple RecyclerBin
     private final Pools.Pool<TabView> tabViewPool = new Pools.SimplePool<>(12);
 
-    private static final String[] STYLEABLE = {
-            /* 0*/R.ns, R.attr.tabContentStart,
-            /* 1*/R.ns, R.attr.tabGravity,
-            /* 2*/R.ns, R.attr.tabIconTint,
-            /* 3*/R.ns, R.attr.tabIndicator,
-            /* 4*/R.ns, R.attr.tabIndicatorAnimationDuration,
-            /* 5*/R.ns, R.attr.tabIndicatorAnimationMode,
-            /* 6*/R.ns, R.attr.tabIndicatorColor,
-            /* 7*/R.ns, R.attr.tabIndicatorFullWidth,
-            /* 8*/R.ns, R.attr.tabIndicatorGravity,
-            /* 9*/R.ns, R.attr.tabInlineLabel,
-            /*10*/R.ns, R.attr.tabMaxWidth,
-            /*11*/R.ns, R.attr.tabMinWidth,
-            /*12*/R.ns, R.attr.tabMode,
-            /*13*/R.ns, R.attr.tabPadding,
-            /*14*/R.ns, R.attr.tabPaddingBottom,
-            /*15*/R.ns, R.attr.tabPaddingEnd,
-            /*16*/R.ns, R.attr.tabPaddingStart,
-            /*17*/R.ns, R.attr.tabPaddingTop,
-            /*18*/R.ns, R.attr.tabRippleColor,
-            /*19*/R.ns, R.attr.tabTextAppearance,
-            /*20*/R.ns, R.attr.tabTextColor,
-            /*21*/R.ns, R.attr.tabUnboundedRipple,
+    public static final String[] ATTRS = {
+            /* 0*/R.attr.tabContentStart,
+            /* 1*/R.attr.tabGravity,
+            /* 2*/R.attr.tabIconTint,
+            /* 3*/R.attr.tabIndicator,
+            /* 4*/R.attr.tabIndicatorAnimationDuration,
+            /* 5*/R.attr.tabIndicatorAnimationMode,
+            /* 6*/R.attr.tabIndicatorColor,
+            /* 7*/R.attr.tabIndicatorFullWidth,
+            /* 8*/R.attr.tabIndicatorGravity,
+            /* 9*/R.attr.tabInlineLabel,
+            /*10*/R.attr.tabMaxWidth,
+            /*11*/R.attr.tabMinWidth,
+            /*12*/R.attr.tabMode,
+            /*13*/R.attr.tabPadding,
+            /*14*/R.attr.tabPaddingBottom,
+            /*15*/R.attr.tabPaddingEnd,
+            /*16*/R.attr.tabPaddingStart,
+            /*17*/R.attr.tabPaddingTop,
+            /*18*/R.attr.tabRippleColor,
+            /*19*/R.attr.tabTextAppearance,
+            /*20*/R.attr.tabTextColor,
+            /*21*/R.attr.tabUnboundedRipple,
     };
 
     public TabLayout(@NonNull Context context) {
@@ -441,7 +441,7 @@ public class TabLayout extends HorizontalScrollView {
                         WRAP_CONTENT, LayoutParams.MATCH_PARENT));
 
         TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE
+                attrs, defStyleAttr, defStyleRes, ATTRS
         );
 
         setSelectedTabIndicator(

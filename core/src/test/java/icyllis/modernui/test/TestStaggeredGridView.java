@@ -455,7 +455,7 @@ public class TestStaggeredGridView extends Fragment {
             final int dp12 = layout.dp(12);
             ShapeDrawable bg = new ShapeDrawable();
             bg.setCornerRadius(dp12);
-            if (context.getTheme().resolveAttribute(R.ns, R.attr.colorSurfaceContainerLow, value, true))
+            if (context.getTheme().resolveAttribute(R.attr.colorSurfaceContainerLow, value, true))
                 bg.setColor(context.getResources().loadColorStateList(value, null, context.getTheme()));
             layout.setBackground(bg);
             layout.setElevation(layout.dp(1));

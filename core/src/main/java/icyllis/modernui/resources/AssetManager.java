@@ -58,8 +58,7 @@ public final class AssetManager {
         public int typeSpecFlags;
 
         /*
-         * This holds (namespace, attribute name) pairs, sorted by namespace and then
-         * by attribute name in lexicographic order.
+         * This holds attribute names, sorted in lexicographic order.
          */
         public String[] keys;
         /*
@@ -70,14 +69,6 @@ public final class AssetManager {
             }
          */
         public int[] values;
-
-        public String namespace(int index) {
-            return keys[index << 1];
-        }
-
-        public String attribute(int index) {
-            return keys[(index << 1) + 1];
-        }
 
         public int type(int index) {
             return values[index * VALUE_COLUMNS + COLUMN_TYPE];
@@ -93,8 +84,8 @@ public final class AssetManager {
 
         public int getEntryCount() {
             assert values == null ||
-                    (values.length / VALUE_COLUMNS) == (keys.length >> 1);
-            return keys != null ? keys.length >> 1 : 0;
+                    (values.length / VALUE_COLUMNS) == keys.length;
+            return keys != null ? keys.length : 0;
         }
     }
 
@@ -250,7 +241,6 @@ public final class AssetManager {
         }
     }
 
-    @SuppressWarnings("PointlessArithmeticExpression")
     @Nullable
     private ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds,
                              TypedValue value) {
@@ -315,22 +305,20 @@ public final class AssetManager {
             ResolvedBag bag = null;
             fill_entries://ttt
             if (entryCount > 0) {
-                // Note that keys are already sorted using ResourceId.comparePair()
-                String[] keys = new String[entryCount * 2];
+                // Note that keys are already sorted
+                String[] keys = new String[entryCount];
                 int[] values = new int[entryCount * ResolvedBag.VALUE_COLUMNS];
                 for (int i = 0; i < entryCount; i++) {
                     int mapName = map.getInt(offset + ResTable_map.name);
-                    String packageName = resources.lookupPackageName(mapName);
-                    String attrName = resources.getKeyStringPool().getStringAt(
-                            mapName & Res_value.KEY_INDEX_MASK);
-                    if (packageName == null || attrName == null) {
+                    String attrName = resources.getKeyStringPool()
+                            .getStringAt(mapName);
+                    if (attrName == null) {
                         // malformed, returns null bag
                         Log.LOGGER.error(MARKER, "Failed to find map name 0x{} from bag '{}'",
                                 Integer.toHexString(mapName), resId);
                         break fill_entries;
                     }
-                    keys[i * 2 + 0] = packageName;
-                    keys[i * 2 + 1] = attrName;
+                    keys[i] = attrName;
                     values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
                             map.getShort(offset + ResTable_map.value + Res_value.type) & 0xFFFF;
                     values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
@@ -361,7 +349,7 @@ public final class AssetManager {
         fill_entries://ttt
         if (maxCount > 0) {
             // allocate max possible array
-            String[] newKeys = new String[maxCount * 2];
+            String[] newKeys = new String[maxCount];
             int[] newValues = new int[maxCount * ResolvedBag.VALUE_COLUMNS];
             int newIndex = 0;
             String[] parentKeys = parentBag.keys;
@@ -374,27 +362,23 @@ public final class AssetManager {
 
             while (childIndex < entryCount && parentIndex < parentCount) {
                 int mapName = map.getInt(childOffset + ResTable_map.name);
-                String childPackageName = resources.lookupPackageName(mapName);
-                String attrName = resources.getKeyStringPool().getStringAt(
-                        mapName & Res_value.KEY_INDEX_MASK);
-                if (childPackageName == null || attrName == null) {
+                String attrName = resources.getKeyStringPool()
+                        .getStringAt(mapName);
+                if (attrName == null) {
                     // malformed, returns null bag
                     Log.LOGGER.error(MARKER, "Failed to find map name 0x{} from bag '{}'",
                             Integer.toHexString(mapName), resId);
                     break fill_entries;
                 }
                 String childAttrName = attrName;
-                String parentPackageName = parentKeys[parentIndex * 2 + 0];
-                String parentAttrName = parentKeys[parentIndex * 2 + 1];
+                String parentAttrName = parentKeys[parentIndex];
 
-                int keyCompare = ResourceId.comparePair(childPackageName, childAttrName,
-                        parentPackageName, parentAttrName);
+                int keyCompare = childAttrName.compareTo(parentAttrName);
 
                 if (keyCompare <= 0) {
                     // Use the child key if it comes before the parent
                     // or is equal to the parent (overrides).
-                    newKeys[newIndex * 2 + 0] = childPackageName;
-                    newKeys[newIndex * 2 + 1] = childAttrName;
+                    newKeys[newIndex] = childAttrName;
                     newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
                             map.getShort(childOffset + ResTable_map.value + Res_value.type) & 0xFFFF;
                     newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
@@ -403,8 +387,7 @@ public final class AssetManager {
                     childIndex++;
                     childOffset += ResTable_map.SIZEOF;
                 } else {
-                    newKeys[newIndex * 2 + 0] = parentPackageName;
-                    newKeys[newIndex * 2 + 1] = parentAttrName;
+                    newKeys[newIndex] = parentAttrName;
                     System.arraycopy(parentValues, parentIndex * ResolvedBag.VALUE_COLUMNS,
                             newValues, newIndex * ResolvedBag.VALUE_COLUMNS, ResolvedBag.VALUE_COLUMNS);
                 }
@@ -418,18 +401,16 @@ public final class AssetManager {
 
             while (childIndex < entryCount) {
                 int mapName = map.getInt(childOffset + ResTable_map.name);
-                String childPackageName = resources.lookupPackageName(mapName);
-                String attrName = resources.getKeyStringPool().getStringAt(
-                        mapName & Res_value.KEY_INDEX_MASK);
-                if (childPackageName == null || attrName == null) {
+                String attrName = resources.getKeyStringPool()
+                        .getStringAt(mapName);
+                if (attrName == null) {
                     // malformed, returns null bag
                     Log.LOGGER.error(MARKER, "Failed to find map name 0x{} from bag '{}'",
                             Integer.toHexString(mapName), resId);
                     break fill_entries;
                 }
                 String childAttrName = attrName;
-                newKeys[newIndex * 2 + 0] = childPackageName;
-                newKeys[newIndex * 2 + 1] = childAttrName;
+                newKeys[newIndex] = childAttrName;
                 newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
                         map.getShort(childOffset + ResTable_map.value + Res_value.type) & 0xFFFF;
                 newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
@@ -444,15 +425,15 @@ public final class AssetManager {
                 int numToCopy = parentCount - parentIndex;
                 System.arraycopy(parentValues, parentIndex * ResolvedBag.VALUE_COLUMNS,
                         newValues, newIndex * ResolvedBag.VALUE_COLUMNS, numToCopy * ResolvedBag.VALUE_COLUMNS);
-                System.arraycopy(parentKeys, parentIndex * 2,
-                        newKeys, newIndex * 2, numToCopy * 2);
+                System.arraycopy(parentKeys, parentIndex,
+                        newKeys, newIndex, numToCopy);
                 newIndex += numToCopy;
             }
 
             assert newIndex <= maxCount;
             if (newIndex < maxCount) {
                 // trim to size
-                newKeys = Arrays.copyOf(newKeys, newIndex * 2);
+                newKeys = Arrays.copyOf(newKeys, newIndex);
                 newValues = Arrays.copyOf(newValues, newIndex * ResolvedBag.VALUE_COLUMNS);
             }
 
@@ -565,18 +546,12 @@ public final class AssetManager {
     }
 
     @Nullable
-    ResourceId getAttributeIdForCookie(int cookie, int data) {
+    String getAttributeIdForCookie(int cookie, int data) {
         ResourceMap resources = getResources(cookie);
         if (resources == null) {
             return null;
         }
-        String namespace = resources.lookupPackageName(data >>> ResourceTypes.Res_value.PACKAGE_ID_SHIFT);
-        String attribute =
-                resources.getKeyStringPool().getStringAt(data & ResourceTypes.Res_value.KEY_INDEX_MASK);
-        if (namespace != null && attribute != null) {
-            return ResourceId.attr(namespace, attribute);
-        }
-        return null;
+        return resources.getKeyStringPool().getStringAt(data);
     }
 
     // do post-processing before exposing it to public API users,

@@ -191,12 +191,12 @@ public class PopupWindow {
 
     private boolean mPopupViewInitialLayoutDirectionInherited;
 
-    private static final String[] STYLEABLE = {
-            /*0*/R.ns, R.attr.overlapAnchor,
-            /*1*/R.ns, R.attr.popupBackground,
-            /*2*/R.ns, R.attr.popupElevation,
-            /*3*/R.ns, R.attr.popupEnterTransition,
-            /*4*/R.ns, R.attr.popupExitTransition,
+    public static final String[] ATTRS = {
+            /*0*/R.attr.overlapAnchor,
+            /*1*/R.attr.popupBackground,
+            /*2*/R.attr.popupElevation,
+            /*3*/R.attr.popupEnterTransition,
+            /*4*/R.attr.popupExitTransition,
     };
 
     public PopupWindow(Context context) {
@@ -219,7 +219,7 @@ public class PopupWindow {
         mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
         final Drawable bg = a.getDrawable(1);
         mElevation = a.getDimension(2, 0);
         mOverlapAnchor = a.getBoolean(0, false);

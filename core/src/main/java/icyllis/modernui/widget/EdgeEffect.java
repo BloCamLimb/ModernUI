@@ -112,8 +112,8 @@ public class EdgeEffect {
     private float mDisplacement = 0.5f;
     private float mTargetDisplacement = 0.5f;
 
-    private static final String[] STYLEABLE = {
-            R.ns, R.attr.colorEdgeEffect
+    public static final String[] ATTRS = {
+            R.attr.colorEdgeEffect
     };
 
     /**
@@ -121,7 +121,7 @@ public class EdgeEffect {
      */
     public EdgeEffect(Context context) {
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                STYLEABLE);
+                ATTRS);
         final int themeColor = a.getColor(0, 0xff666666);
         a.recycle();
 

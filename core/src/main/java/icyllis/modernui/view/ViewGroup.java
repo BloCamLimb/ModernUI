@@ -246,8 +246,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     private float mAmbientShadowAlpha;
     private float mSpotShadowAlpha;
 
-    private static final String[] STYLEABLE = {
-            R.ns, R.attr.isLightTheme
+    public static final String[] ATTRS = {
+            R.attr.isLightTheme
     };
 
     public ViewGroup(Context context) {
@@ -277,7 +277,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         //TODO read other attributes
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
 
         boolean isLightTheme = a.getBoolean(0, false);
 
@@ -2471,14 +2471,15 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                         type,
                         transition.getInterpolator(type)
                 );
-                newTransition.setAnimator(
+                /*newTransition.setAnimator(
                         type,
                         transition.getAnimator(type)
-                );
+                );*/
                 newTransition.setAnimateParentHierarchy(
                         transition.getAnimateParentHierarchy()
                 );
             }
+            setLayoutTransition(newTransition);
         }
     }
 

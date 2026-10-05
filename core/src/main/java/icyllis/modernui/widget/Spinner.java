@@ -81,13 +81,13 @@ public class Spinner extends AbsSpinner {
 
     private int mGravity;
 
-    private static final String[] STYLEABLE = {
-            /*0*/R.ns, R.attr.dropDownSelector,
-            /*1*/R.ns, R.attr.dropDownWidth,
-            /*2*/R.ns, R.attr.gravity,
-            /*3*/R.ns, R.attr.overlapAnchor,
-            /*4*/R.ns, R.attr.popupBackground,
-            /*5*/R.ns, R.attr.popupElevation,
+    public static final String[] ATTRS = {
+            /*0*/R.attr.dropDownSelector,
+            /*1*/R.attr.dropDownWidth,
+            /*2*/R.attr.gravity,
+            /*3*/R.attr.overlapAnchor,
+            /*4*/R.attr.popupBackground,
+            /*5*/R.attr.popupElevation,
     };
 
     public Spinner(Context context) {
@@ -109,7 +109,7 @@ public class Spinner extends AbsSpinner {
         super(context, attrs, defStyleAttr, defStyleRes);
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
 
         // dropdown only
         mPopup = new DropDownPopupWindow(context, attrs, defStyleAttr, defStyleRes);

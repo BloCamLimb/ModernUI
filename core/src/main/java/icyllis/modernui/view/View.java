@@ -2548,28 +2548,28 @@ public class View implements Drawable.Callback {
      */
     private HandlerActionQueue mRunQueue;
 
-    private static final String[] STYLEABLE = {
-            /*0*/ R.ns, R.attr.background,
-            /*1*/ R.ns, R.attr.clickable,
-            /*2*/ R.ns, R.attr.contextClickable,
-            /*3*/ R.ns, R.attr.elevation,
-            /*4*/ R.ns, R.attr.focusable,
-            /*5*/ R.ns, R.attr.focusableInTouchMode,
-            /*6*/ R.ns, R.attr.id,
-            /*7*/ R.ns, R.attr.layoutDirection,
-            /*8*/ R.ns, R.attr.longClickable,
-            /*9*/ R.ns, R.attr.minHeight,
-            /*10*/R.ns, R.attr.minWidth,
-            /*11*/R.ns, R.attr.padding,
-            /*12*/R.ns, R.attr.paddingBottom,
-            /*13*/R.ns, R.attr.paddingEnd,
-            /*14*/R.ns, R.attr.paddingLeft,
-            /*15*/R.ns, R.attr.paddingRight,
-            /*16*/R.ns, R.attr.paddingStart,
-            /*17*/R.ns, R.attr.paddingTop,
-            /*18*/R.ns, R.attr.tag,
-            /*19*/R.ns, R.attr.textAlignment,
-            /*20*/R.ns, R.attr.textDirection,
+    public static final String[] ATTRS = {
+            /*0*/ R.attr.background,
+            /*1*/ R.attr.clickable,
+            /*2*/ R.attr.contextClickable,
+            /*3*/ R.attr.elevation,
+            /*4*/ R.attr.focusable,
+            /*5*/ R.attr.focusableInTouchMode,
+            /*6*/ R.attr.id,
+            /*7*/ R.attr.layoutDirection,
+            /*8*/ R.attr.longClickable,
+            /*9*/ R.attr.minHeight,
+            /*10*/R.attr.minWidth,
+            /*11*/R.attr.padding,
+            /*12*/R.attr.paddingBottom,
+            /*13*/R.attr.paddingEnd,
+            /*14*/R.attr.paddingLeft,
+            /*15*/R.attr.paddingRight,
+            /*16*/R.attr.paddingStart,
+            /*17*/R.attr.paddingTop,
+            /*18*/R.attr.tag,
+            /*19*/R.attr.textAlignment,
+            /*20*/R.attr.textDirection,
     };
 
     /**
@@ -2681,7 +2681,7 @@ public class View implements Drawable.Callback {
         }
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
 
         Drawable background = null;
 

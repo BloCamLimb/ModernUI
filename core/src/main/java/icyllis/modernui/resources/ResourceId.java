@@ -60,11 +60,11 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
         String type = null;
         int start = 0;
         int end = name.length();
-        if (start != end && name.charAt(start) == '@') {
+        if (start < end && name.charAt(start) == '@') {
             start++;
         }
         int current = start;
-        while (current != end) {
+        while (current < end) {
             char c = name.charAt(current);
             if (type == null && c == '/') {
                 type = name.substring(start, current);
@@ -93,7 +93,10 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
     /**
      * Helper method to create an attribute resource id, where the resource type
      * name will be "attr".
+     *
+     * @deprecated namespace and type are not used in attribute name anymore, this will be removed in 4.0
      */
+    @Deprecated
     @NonNull
     @Contract("_, _ -> new")
     public static ResourceId attr(@NonNull String namespace, @NonNull String name) {
@@ -149,13 +152,5 @@ public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNu
         if (result == 0)
             result = this.entry.compareTo(o.entry);
         return result;
-    }
-
-    @SuppressWarnings("StringEquality")
-    public static int comparePair(@NonNull String lhsNamespace, @NonNull String lhsName,
-                                  @NonNull String rhsNamespace, @NonNull String rhsName) {
-        // Namespace strings are interned, so compare identity first can be more efficient
-        int res = lhsNamespace == rhsNamespace ? 0 : lhsNamespace.compareTo(rhsNamespace);
-        return res != 0 ? res : lhsName.compareTo(rhsName);
     }
 }

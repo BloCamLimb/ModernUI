@@ -23,7 +23,6 @@ import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
@@ -89,16 +88,15 @@ public class ImageView extends View {
     private int mBaseline = -1;
     private boolean mBaselineAlignBottom = false;
 
-    @StyleableRes
-    private static final String[] STYLEABLE = {
-            /*0*/R.ns, R.attr.adjustViewBounds,
-            /*1*/R.ns, R.attr.baselineAlignBottom,
-            /*2*/R.ns, R.attr.cropToPadding,
-            /*3*/R.ns, R.attr.maxHeight,
-            /*4*/R.ns, R.attr.maxWidth,
-            /*5*/R.ns, R.attr.scaleType,
-            /*6*/R.ns, R.attr.src,
-            /*7*/R.ns, R.attr.tint,
+    public static final String[] ATTRS = {
+            /*0*/R.attr.adjustViewBounds,
+            /*1*/R.attr.baselineAlignBottom,
+            /*2*/R.attr.cropToPadding,
+            /*3*/R.attr.maxHeight,
+            /*4*/R.attr.maxWidth,
+            /*5*/R.attr.scaleType,
+            /*6*/R.attr.src,
+            /*7*/R.attr.tint,
     };
 
     public ImageView(Context context) {
@@ -120,7 +118,7 @@ public class ImageView extends View {
         super(context, attrs, defStyleAttr, defStyleRes);
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
 
         final Drawable d = a.getDrawable(6);
         if (d != null) {

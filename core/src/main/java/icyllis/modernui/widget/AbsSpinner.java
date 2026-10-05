@@ -75,6 +75,9 @@ public abstract class AbsSpinner extends AdapterView<SpinnerAdapter> {
      */
     private Rect mTouchFrame;
 
+    public static final String[] ATTRS =
+            AdapterView.ATTRS;
+
     public AbsSpinner(Context context) {
         super(context);
         setFocusable(true);

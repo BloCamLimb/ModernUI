@@ -100,14 +100,14 @@ public final class ToastManager {
         final Resources.Theme theme = mTextView.getContext().getTheme();
         mTextView.setText(r.mText);
         mTextView.setTextSize(14);
-        if (theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true))
+        if (theme.resolveAttribute(R.attr.textColorPrimary, value, true))
             mTextView.setTextColor(theme.getResources().loadColorStateList(value, null, theme));
         mTextView.setTypeface(ModernUI.getSelectedTypeface());
         mTextView.setMaxWidth(mTextView.dp(300));
         mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));
         mParams.y = mTextView.dp(64);
         ShapeDrawable bg = new ShapeDrawable();
-        if (theme.resolveAttribute(R.ns, R.attr.colorBackground, value, true))
+        if (theme.resolveAttribute(R.attr.colorBackground, value, true))
             bg.setColor(mTextView.getContext().getResources().loadColorStateList(value, null, theme));
         bg.setCornerRadius(mTextView.dp(28));
         mTextView.setBackground(bg);

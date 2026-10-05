@@ -43,7 +43,6 @@ import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
@@ -146,13 +145,12 @@ public class Switch extends Button implements Checkable2 {
     private CharSequence mTextOn;
     private CharSequence mTextOff;
 
-    @StyleableRes
-    private static final String[] STYLEABLE = {
-            R.ns, R.attr.checked,
-            R.ns, R.attr.switchMinWidth,
-            R.ns, R.attr.switchPadding,
-            R.ns, R.attr.thumb,
-            R.ns, R.attr.track,
+    public static final String[] ATTRS = {
+            R.attr.checked,
+            R.attr.switchMinWidth,
+            R.attr.switchPadding,
+            R.attr.thumb,
+            R.attr.track,
     };
 
     /**
@@ -212,7 +210,7 @@ public class Switch extends Button implements Checkable2 {
         super(context, attrs, defStyleAttr, defStyleRes);
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
         mThumbDrawable = a.getDrawable(3);
         if (mThumbDrawable != null) {
             mThumbDrawable.setCallback(this);

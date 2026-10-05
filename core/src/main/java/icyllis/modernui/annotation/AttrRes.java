@@ -23,7 +23,10 @@ import java.lang.annotation.*;
 /**
  * Denotes that a parameter, field or method return value is expected
  * to be an attribute reference (e.g. "modernui:attr/textSize").
+ *
+ * @deprecated attributes will no longer be resources
  */
+@Deprecated
 @Documented
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.FIELD})
 @Retention(RetentionPolicy.SOURCE)

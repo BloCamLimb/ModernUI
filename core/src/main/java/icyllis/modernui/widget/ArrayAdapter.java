@@ -360,9 +360,9 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
         tv.setTextSize(14);
         final TypedValue value = new TypedValue();
         if (dropdown) {
-            theme.resolveAttribute(R.ns, R.attr.textColorPrimaryDisableOnly, value, true);
+            theme.resolveAttribute(R.attr.textColorPrimaryDisableOnly, value, true);
         } else {
-            theme.resolveAttribute(R.ns, R.attr.textColorPrimary, value, true);
+            theme.resolveAttribute(R.attr.textColorPrimary, value, true);
         }
         tv.setTextColor(theme.getResources().loadColorStateList(value, null, theme));
         if (!dropdown) {

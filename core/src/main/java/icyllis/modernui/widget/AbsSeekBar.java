@@ -40,7 +40,6 @@ import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
@@ -104,12 +103,11 @@ public abstract class AbsSeekBar extends ProgressBar {
     private final Rect mTempRect = new Rect();
     private final Rect mThumbRect = new Rect();
 
-    @StyleableRes
-    private static final String[] STYLEABLE = {
-            /*0*/R.ns, R.attr.splitTrack,
-            /*1*/R.ns, R.attr.thumb,
-            /*2*/R.ns, R.attr.thumbOffset,
-            /*3*/R.ns, R.attr.tickMark,
+    public static final String[] ATTRS = {
+            /*0*/R.attr.splitTrack,
+            /*1*/R.attr.thumb,
+            /*2*/R.attr.thumbOffset,
+            /*3*/R.attr.tickMark,
     };
 
     public AbsSeekBar(Context context) {
@@ -131,7 +129,7 @@ public abstract class AbsSeekBar extends ProgressBar {
         super(context, attrs, defStyleAttr, defStyleRes);
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
 
         final Drawable thumb = a.getDrawable(1);
         setThumb(thumb);

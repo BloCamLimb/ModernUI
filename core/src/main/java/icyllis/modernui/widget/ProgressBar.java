@@ -44,7 +44,6 @@ import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.annotation.StyleableRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
@@ -60,7 +59,6 @@ import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.View;
 
 import java.text.NumberFormat;
-import java.time.Duration;
 import java.util.Locale;
 
 /**
@@ -178,18 +176,17 @@ public class ProgressBar extends View {
         }
     };
 
-    @StyleableRes
-    private static final String[] STYLEABLE = {
-            /*0*/R.ns, R.attr.indeterminate,
-            /*1*/R.ns, R.attr.indeterminateDrawable,
-            /*2*/R.ns, R.attr.max,
-            /*3*/R.ns, R.attr.maxHeight,
-            /*4*/R.ns, R.attr.maxWidth,
-            /*5*/R.ns, R.attr.min,
-            /*6*/R.ns, R.attr.mirrorForRtl,
-            /*7*/R.ns, R.attr.progress,
-            /*8*/R.ns, R.attr.progressDrawable,
-            /*9*/R.ns, R.attr.secondaryProgress,
+    public static final String[] ATTRS = {
+            /*0*/R.attr.indeterminate,
+            /*1*/R.attr.indeterminateDrawable,
+            /*2*/R.attr.max,
+            /*3*/R.attr.maxHeight,
+            /*4*/R.attr.maxWidth,
+            /*5*/R.attr.min,
+            /*6*/R.attr.mirrorForRtl,
+            /*7*/R.attr.progress,
+            /*8*/R.attr.progressDrawable,
+            /*9*/R.attr.secondaryProgress,
     };
 
     /**
@@ -216,7 +213,7 @@ public class ProgressBar extends View {
         super(context, attrs, defStyleAttr, defStyleRes);
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, STYLEABLE);
+                attrs, defStyleAttr, defStyleRes, ATTRS);
 
         final Drawable progressDrawable = a.getDrawable(8); // progressDrawable
         if (progressDrawable != null) {
