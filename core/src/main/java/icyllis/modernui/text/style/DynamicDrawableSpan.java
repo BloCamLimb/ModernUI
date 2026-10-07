@@ -100,6 +100,7 @@ public abstract class DynamicDrawableSpan extends ReplacementSpan {
     public @interface AlignmentType {
     }
 
+    @AlignmentType
     protected final int mVerticalAlignment;
 
     private WeakReference<Drawable> mDrawableRef;

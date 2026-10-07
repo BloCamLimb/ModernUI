@@ -280,9 +280,9 @@ public class MaterialTheme {
 
         // foreground/background
         private static final int[][] button_color_selector_spec = new int[][]{
-                new int[]{-R.attr.state_enabled},
-                new int[]{-R.attr.state_checkable},
-                new int[]{R.attr.state_checked},
+                new int[]{-StateSet.state_enabled},
+                new int[]{-StateSet.state_checkable},
+                new int[]{StateSet.state_checked},
                 StateSet.WILD_CARD
         };
 
@@ -438,9 +438,9 @@ public class MaterialTheme {
             if (outlined_button_background_color_selector == null) {
                 outlined_button_background_color_selector = new ColorStateList(
                         new int[][]{
-                                new int[]{-R.attr.state_enabled, R.attr.state_checked},
-                                new int[]{-R.attr.state_checkable},
-                                new int[]{R.attr.state_checked},
+                                new int[]{-StateSet.state_enabled, StateSet.state_checked},
+                                new int[]{-StateSet.state_checkable},
+                                new int[]{StateSet.state_checked},
                                 StateSet.WILD_CARD
                         },
                         new int[]{
@@ -459,7 +459,7 @@ public class MaterialTheme {
             if (text_button_background_color_selector == null) {
                 text_button_background_color_selector = new ColorStateList(
                         new int[][]{
-                                new int[]{-R.attr.state_enabled},
+                                new int[]{-StateSet.state_enabled},
                                 StateSet.WILD_CARD
                         },
                         new int[]{
@@ -473,19 +473,19 @@ public class MaterialTheme {
 
         private static final int[][] button_ripple_color_selector_spec = new int[][]{
                 // Uncheckable
-                new int[]{-R.attr.state_checkable, R.attr.state_pressed},
-                new int[]{-R.attr.state_checkable, R.attr.state_focused},
-                new int[]{-R.attr.state_checkable, R.attr.state_hovered},
-                new int[]{-R.attr.state_checkable},
+                new int[]{-StateSet.state_checkable, StateSet.state_pressed},
+                new int[]{-StateSet.state_checkable, StateSet.state_focused},
+                new int[]{-StateSet.state_checkable, StateSet.state_hovered},
+                new int[]{-StateSet.state_checkable},
                 // Checkable, checked
-                new int[]{R.attr.state_checked, R.attr.state_pressed},
-                new int[]{R.attr.state_checked, R.attr.state_focused},
-                new int[]{R.attr.state_checked, R.attr.state_hovered},
-                new int[]{R.attr.state_checked},
+                new int[]{StateSet.state_checked, StateSet.state_pressed},
+                new int[]{StateSet.state_checked, StateSet.state_focused},
+                new int[]{StateSet.state_checked, StateSet.state_hovered},
+                new int[]{StateSet.state_checked},
                 // Checkable, unchecked
-                new int[]{R.attr.state_pressed},
-                new int[]{R.attr.state_focused},
-                new int[]{R.attr.state_hovered},
+                new int[]{StateSet.state_pressed},
+                new int[]{StateSet.state_focused},
+                new int[]{StateSet.state_hovered},
                 StateSet.WILD_CARD
         };
 
@@ -652,7 +652,7 @@ public class MaterialTheme {
             }
             button_outline_color_selector = new ColorStateList(
                     new int[][]{
-                            new int[]{R.attr.state_checked},
+                            new int[]{StateSet.state_checked},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -671,14 +671,14 @@ public class MaterialTheme {
             }
             radio_button_tint = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{-StateSet.state_enabled},
 
-                            new int[]{R.attr.state_indeterminate},
-                            new int[]{R.attr.state_checked},
+                            new int[]{StateSet.state_indeterminate},
+                            new int[]{StateSet.state_checked},
 
-                            new int[]{R.attr.state_pressed},
-                            new int[]{R.attr.state_focused},
-                            new int[]{R.attr.state_hovered},
+                            new int[]{StateSet.state_pressed},
+                            new int[]{StateSet.state_focused},
+                            new int[]{StateSet.state_hovered},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -704,14 +704,14 @@ public class MaterialTheme {
             }
             radio_button_ripple_tint = new ColorStateList(
                     new int[][]{
-                            new int[]{R.attr.state_checked, R.attr.state_pressed},
-                            new int[]{R.attr.state_checked, R.attr.state_focused},
-                            new int[]{R.attr.state_checked, R.attr.state_hovered},
-                            new int[]{R.attr.state_checked},
+                            new int[]{StateSet.state_checked, StateSet.state_pressed},
+                            new int[]{StateSet.state_checked, StateSet.state_focused},
+                            new int[]{StateSet.state_checked, StateSet.state_hovered},
+                            new int[]{StateSet.state_checked},
 
-                            new int[]{R.attr.state_pressed},
-                            new int[]{R.attr.state_focused},
-                            new int[]{R.attr.state_hovered},
+                            new int[]{StateSet.state_pressed},
+                            new int[]{StateSet.state_focused},
+                            new int[]{StateSet.state_hovered},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -736,9 +736,9 @@ public class MaterialTheme {
             }
             switch_track_tint = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled, -R.attr.state_checked},
-                            new int[]{-R.attr.state_enabled, R.attr.state_checked},
-                            new int[]{R.attr.state_checked},
+                            new int[]{-StateSet.state_enabled, -StateSet.state_checked},
+                            new int[]{-StateSet.state_enabled, StateSet.state_checked},
+                            new int[]{StateSet.state_checked},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -758,8 +758,8 @@ public class MaterialTheme {
             }
             switch_track_decoration_tint = new ColorStateList(
                     new int[][]{
-                            new int[]{R.attr.state_checked},
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{StateSet.state_checked},
+                            new int[]{-StateSet.state_enabled},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -778,15 +778,15 @@ public class MaterialTheme {
             }
             switch_thumb_tint = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled, -R.attr.state_checked},
-                            new int[]{-R.attr.state_enabled, R.attr.state_checked},
-                            new int[]{R.attr.state_checked, R.attr.state_pressed},
-                            new int[]{R.attr.state_checked, R.attr.state_hovered},
-                            new int[]{R.attr.state_checked, R.attr.state_focused},
-                            new int[]{R.attr.state_checked},
-                            new int[]{R.attr.state_pressed},
-                            new int[]{R.attr.state_hovered},
-                            new int[]{R.attr.state_focused},
+                            new int[]{-StateSet.state_enabled, -StateSet.state_checked},
+                            new int[]{-StateSet.state_enabled, StateSet.state_checked},
+                            new int[]{StateSet.state_checked, StateSet.state_pressed},
+                            new int[]{StateSet.state_checked, StateSet.state_hovered},
+                            new int[]{StateSet.state_checked, StateSet.state_focused},
+                            new int[]{StateSet.state_checked},
+                            new int[]{StateSet.state_pressed},
+                            new int[]{StateSet.state_hovered},
+                            new int[]{StateSet.state_focused},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -812,7 +812,7 @@ public class MaterialTheme {
             }
             checkbox_button_icon_tint = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{-StateSet.state_enabled},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -905,7 +905,7 @@ public class MaterialTheme {
             }
             textfield_stroke_color = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{-StateSet.state_enabled},
                             StateSet.get(StateSet.VIEW_STATE_FOCUSED),
                             StateSet.get(StateSet.VIEW_STATE_HOVERED),
                             StateSet.WILD_CARD
@@ -928,7 +928,7 @@ public class MaterialTheme {
             textfield_indicator_text_color = new ColorStateList(
                     new int[][]{
                             StateSet.get(StateSet.VIEW_STATE_ACTIVATED),
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{-StateSet.state_enabled},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -947,7 +947,7 @@ public class MaterialTheme {
             }
             textfield_filled_background_color = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{-StateSet.state_enabled},
                             StateSet.get(StateSet.VIEW_STATE_HOVERED),
                             StateSet.WILD_CARD
                     },
@@ -969,7 +969,7 @@ public class MaterialTheme {
             }
             textfield_filled_indicator_color = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{-StateSet.state_enabled},
                             StateSet.get(StateSet.VIEW_STATE_FOCUSED),
                             StateSet.get(StateSet.VIEW_STATE_HOVERED),
                             StateSet.WILD_CARD
@@ -1009,7 +1009,7 @@ public class MaterialTheme {
             }
             tabs_text_color = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{-StateSet.state_enabled},
                             StateSet.get(StateSet.VIEW_STATE_SELECTED),
                             StateSet.WILD_CARD
                     },
@@ -1030,14 +1030,14 @@ public class MaterialTheme {
             tabs_ripple_color = new ColorStateList(
                     new int[][]{
                             // Selected
-                            new int[]{R.attr.state_selected, R.attr.state_pressed},
-                            new int[]{R.attr.state_selected, R.attr.state_focused},
-                            new int[]{R.attr.state_selected, R.attr.state_hovered},
-                            new int[]{R.attr.state_selected},
+                            new int[]{StateSet.state_selected, StateSet.state_pressed},
+                            new int[]{StateSet.state_selected, StateSet.state_focused},
+                            new int[]{StateSet.state_selected, StateSet.state_hovered},
+                            new int[]{StateSet.state_selected},
                             // Not selected
-                            new int[]{R.attr.state_pressed},
-                            new int[]{R.attr.state_focused},
-                            new int[]{R.attr.state_hovered},
+                            new int[]{StateSet.state_pressed},
+                            new int[]{StateSet.state_focused},
+                            new int[]{StateSet.state_hovered},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -1062,7 +1062,7 @@ public class MaterialTheme {
             }
             tabs_text_color_secondary = new ColorStateList(
                     new int[][]{
-                            new int[]{-R.attr.state_enabled},
+                            new int[]{-StateSet.state_enabled},
                             StateSet.get(StateSet.VIEW_STATE_SELECTED),
                             StateSet.WILD_CARD
                     },
@@ -1082,9 +1082,9 @@ public class MaterialTheme {
             }
             tabs_ripple_color_secondary = new ColorStateList(
                     new int[][]{
-                            new int[]{R.attr.state_pressed},
-                            new int[]{R.attr.state_focused},
-                            new int[]{R.attr.state_hovered},
+                            new int[]{StateSet.state_pressed},
+                            new int[]{StateSet.state_focused},
+                            new int[]{StateSet.state_hovered},
                             StateSet.WILD_CARD
                     },
                     new int[]{
@@ -1635,7 +1635,7 @@ public class MaterialTheme {
                 if (theme.resolveAttribute(R.attr.textColorSecondary, value, true))
                     button.setTintList(resources.loadColorStateList(value, null, theme));
                 var selector = new StateListDrawable();
-                selector.addState(new int[]{R.attr.state_checked}, button);
+                selector.addState(new int[]{StateSet.state_checked}, button);
                 return selector;
             });
         }
@@ -1694,7 +1694,7 @@ public class MaterialTheme {
                 if (theme.resolveAttribute(R.attr.textColorSecondary, value, true))
                     button.setTintList(resources.loadColorStateList(value, null, theme));
                 var selector = new StateListDrawable();
-                selector.addState(new int[]{R.attr.state_checked}, button);
+                selector.addState(new int[]{StateSet.state_checked}, button);
                 return selector;
             });
         }
@@ -2473,7 +2473,7 @@ public class MaterialTheme {
         t.colorOnBackground = t.colorOnSurface;
 
         var textStateSpec = new int[][]{
-                new int[]{-R.attr.state_enabled},
+                new int[]{-StateSet.state_enabled},
                 StateSet.WILD_CARD
         };
         t.textColorPrimary = new ColorStateList(
@@ -2519,7 +2519,7 @@ public class MaterialTheme {
                 }
         );
         var hintStateSpec = new int[][]{
-                new int[]{R.attr.state_enabled, R.attr.state_pressed},
+                new int[]{StateSet.state_enabled, StateSet.state_pressed},
                 StateSet.WILD_CARD
         };
         t.textColorHint = new ColorStateList(
@@ -2745,7 +2745,7 @@ public class MaterialTheme {
         t.colorOnBackground = t.colorOnSurface;
 
         var textStateSpec = new int[][]{
-                new int[]{-R.attr.state_enabled},
+                new int[]{-StateSet.state_enabled},
                 StateSet.WILD_CARD
         };
         var colorPrimaryText = new ColorStateList(
@@ -2791,7 +2791,7 @@ public class MaterialTheme {
                 }
         );
         var hintStateSpec = new int[][]{
-                new int[]{R.attr.state_enabled, R.attr.state_pressed},
+                new int[]{StateSet.state_enabled, StateSet.state_pressed},
                 StateSet.WILD_CARD
         };
         var hintForeground = new ColorStateList(

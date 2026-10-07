@@ -19,6 +19,7 @@
 package icyllis.modernui;
 
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.util.StateSet;
 
 public final class R {
 
@@ -33,64 +34,64 @@ public final class R {
         /**
          * State identifier indicating that the object is currently checked.
          */
-        public static final int state_checked = 0x010100a0;
+        public static final int state_checked = StateSet.state_checked;
         /**
          * State identifier indicating the popup will be above the anchor.
          */
-        public static final int state_above_anchor = 0x010100aa;
+        public static final int state_above_anchor = StateSet.state_above_anchor;
         /**
          * Set when a view's window has input focus.
          */
-        public static final int state_window_focused = 0x0101009d;
+        public static final int state_window_focused = StateSet.state_window_focused;
         /**
          * Set when a view (or one of its parents) is currently selected.
          */
-        public static final int state_selected = 0x010100a1;
+        public static final int state_selected = StateSet.state_selected;
         /**
          * Set when a view has input focus.
          */
-        public static final int state_focused = 0x01010562;
+        public static final int state_focused = StateSet.state_focused;
         /**
          * Set when a view is enabled.
          */
-        public static final int state_enabled = 0x0101009e;
+        public static final int state_enabled = StateSet.state_enabled;
         /**
          * Set when a view or its parent has been "activated" meaning the user has currently
          * marked it as being of interest.
          */
-        public static final int state_activated = 0x010102fe;
+        public static final int state_activated = StateSet.state_activated;
         /**
          * Set when a pointer is hovering over a view.
          */
-        public static final int state_hovered = 0x01010367;
+        public static final int state_hovered = StateSet.state_hovered;
         /**
          * Set when a view that is capable of accepting a drop of the content currently
          * being manipulated in a drag-and-drop operation.
          */
-        public static final int state_drag_can_accept = 0x01010368;
+        public static final int state_drag_can_accept = StateSet.state_drag_can_accept;
         /**
          * Set when a view is currently positioned over by a drag operation.
          */
-        public static final int state_drag_hovered = 0x01010369;
+        public static final int state_drag_hovered = StateSet.state_drag_hovered;
         /**
          * State value for StateListDrawable, set when a view or drawable is in the last position
          * in an ordered set. Actual usage may vary between views. Consult the host view
          * documentation for details.
          */
-        public static final int state_last = 0x010100a6;
+        public static final int state_last = StateSet.state_last;
         /**
          * State value for StateListDrawable, set when the user is pressing down in a view.
          */
-        public static final int state_pressed = 0x010100a7;
+        public static final int state_pressed = StateSet.state_pressed;
         /**
          * State identifier indicating the group is expanded.
          */
-        public static final int state_expanded = 0x010100a8;
+        public static final int state_expanded = StateSet.state_expanded;
         /**
          * State identifier indicating the group is empty (has no children).
          */
-        public static final int state_empty =0x010100a9;
-        public static final int state_checkable = 0x0101009f;
+        public static final int state_empty = StateSet.state_empty;
+        public static final int state_checkable = StateSet.state_checkable;
 
         public static final String isLightTheme = "isLightTheme";
 
@@ -345,13 +346,6 @@ public final class R {
          */
         public static final ResourceId editTextOutlinedStyle = new ResourceId(ns, type, "editTextOutlinedStyle");
         public static final ResourceId editTextFilledStyle = new ResourceId(ns, type, "editTextFilledStyle");
-
-        /// INTERNAL BELOW \\\
-
-        // Constant IDs for Material package.
-        public static int state_error = 0x05010001;
-        public static int state_indeterminate = 0x05010002;
-        public static int state_with_icon = 0x05010003;
     }
 
     public static final class id {

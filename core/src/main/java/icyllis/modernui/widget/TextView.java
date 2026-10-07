@@ -67,6 +67,7 @@ import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.text.style.UpdateAppearance;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MeasureSpec;
@@ -2977,7 +2978,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             // and long press actions, which are both needed by text selection.
             final int length = drawableState.length;
             for (int i = 0; i < length; i++) {
-                if (drawableState[i] == R.attr.state_pressed) {
+                if (drawableState[i] == StateSet.state_pressed) {
                     final int[] nonPressedState = new int[length - 1];
                     System.arraycopy(drawableState, 0, nonPressedState, 0, i);
                     System.arraycopy(drawableState, i + 1, nonPressedState, i, length - i - 1);

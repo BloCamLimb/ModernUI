@@ -51,6 +51,7 @@ import icyllis.modernui.transition.Transition;
 import icyllis.modernui.transition.TransitionListener;
 import icyllis.modernui.transition.TransitionManager;
 import icyllis.modernui.util.AttributeSet;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
@@ -142,7 +143,7 @@ public class PopupWindow {
     private int mGravity = Gravity.NO_GRAVITY;
 
     private static final int[] ABOVE_ANCHOR_STATE_SET = {
-            R.attr.state_above_anchor
+            StateSet.state_above_anchor
     };
 
     private final View.OnAttachStateChangeListener mOnAnchorDetachedListener =

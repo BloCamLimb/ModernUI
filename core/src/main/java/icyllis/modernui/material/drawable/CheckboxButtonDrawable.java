@@ -18,7 +18,6 @@
 
 package icyllis.modernui.material.drawable;
 
-import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
@@ -30,6 +29,7 @@ import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.StateSet;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -138,11 +138,11 @@ public class CheckboxButtonDrawable extends MaterialDrawable {
 
         int toState = 0;
         for (int state : stateSet) {
-            if (state == R.attr.state_indeterminate) {
+            if (state == StateSet.state_indeterminate) {
                 toState = 2;
                 break;
             }
-            if (state == R.attr.state_checked) {
+            if (state == StateSet.state_checked) {
                 toState = 1;
             }
         }

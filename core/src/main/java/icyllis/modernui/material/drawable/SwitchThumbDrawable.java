@@ -18,7 +18,6 @@
 
 package icyllis.modernui.material.drawable;
 
-import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorSet;
 import icyllis.modernui.animation.MotionEasingUtils;
@@ -34,6 +33,7 @@ import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.StateSet;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -92,11 +92,11 @@ public class SwitchThumbDrawable extends MaterialDrawable {
 
         int toState = 0;
         for (int state : stateSet) {
-            if (mUsePressState && state == R.attr.state_pressed) {
+            if (mUsePressState && state == StateSet.state_pressed) {
                 toState = 2;
                 break;
             }
-            if (state == R.attr.state_checked) {
+            if (state == StateSet.state_checked) {
                 toState = 1;
             }
         }

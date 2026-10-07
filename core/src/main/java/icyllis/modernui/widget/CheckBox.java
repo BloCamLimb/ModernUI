@@ -26,6 +26,7 @@ import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
+import icyllis.modernui.util.StateSet;
 import org.intellij.lang.annotations.MagicConstant;
 
 /**
@@ -64,11 +65,12 @@ public class CheckBox extends CompoundButton {
      */
     public static final int STATE_INDETERMINATE = 2;
 
-    private static final int[] INDETERMINATE_STATE_SET = {R.attr.state_indeterminate};
+    private static final int[] INDETERMINATE_STATE_SET = {StateSet.state_indeterminate};
 
     @Nullable
     private OnCheckedStateChangeListener mOnCheckedStateChangeListener;
 
+    @MagicConstant(intValues = {STATE_UNCHECKED, STATE_CHECKED, STATE_INDETERMINATE})
     private int mCheckedState;
 
     /**

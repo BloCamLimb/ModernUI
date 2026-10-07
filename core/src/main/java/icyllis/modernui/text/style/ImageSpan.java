@@ -19,10 +19,10 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.resources.Resources;
 
 /**
  * Span that replaces the text it's attached to with a {@link Drawable} that can be aligned with
@@ -74,37 +74,37 @@ public class ImageSpan extends DynamicDrawableSpan {
      */
     @Deprecated
     @SuppressWarnings("DataFlowIssue")
-    public ImageSpan(@NonNull Image image, int verticalAlignment) {
+    public ImageSpan(@NonNull Image image, @AlignmentType int verticalAlignment) {
         this(null, image, verticalAlignment);
     }
 
     /**
-     * Constructs an {@link ImageSpan} from a {@link Context} and an {@link Image} with the default
+     * Constructs an {@link ImageSpan} from a {@link Resources} and an {@link Image} with the default
      * alignment {@link DynamicDrawableSpan#ALIGN_BOTTOM}
      *
-     * @param context context used to create a drawable from {@param image} based on the display
+     * @param resources used to create a drawable from {@param image} based on the display
      *                metrics of the resources
      * @param image   image to be rendered
      */
-    public ImageSpan(@NonNull Context context, @NonNull Image image) {
-        this(context, image, ALIGN_BOTTOM);
+    public ImageSpan(@NonNull Resources resources, @NonNull Image image) {
+        this(resources, image, ALIGN_BOTTOM);
     }
 
     /**
-     * Constructs an {@link ImageSpan} from a {@link Context}, an {@link Image} and a vertical
+     * Constructs an {@link ImageSpan} from a {@link Resources}, an {@link Image} and a vertical
      * alignment.
      *
-     * @param context           context used to create a drawable from image based on
+     * @param resources         used to create a drawable from image based on
      *                          the display metrics of the resources
      * @param image             image to be rendered
      * @param verticalAlignment one of {@link DynamicDrawableSpan#ALIGN_BOTTOM} or
      *                          {@link DynamicDrawableSpan#ALIGN_BASELINE}
      */
     @SuppressWarnings({"ConstantValue", "deprecation"})
-    public ImageSpan(@NonNull Context context, @NonNull Image image, int verticalAlignment) {
+    public ImageSpan(@NonNull Resources resources, @NonNull Image image, @AlignmentType int verticalAlignment) {
         super(verticalAlignment);
-        mDrawable = context != null
-                ? new ImageDrawable(context.getResources(), image)
+        mDrawable = resources != null
+                ? new ImageDrawable(resources, image)
                 : new ImageDrawable(image);
         int width = mDrawable.getIntrinsicWidth();
         int height = mDrawable.getIntrinsicHeight();
@@ -128,7 +128,7 @@ public class ImageSpan extends DynamicDrawableSpan {
      * @param verticalAlignment one of {@link DynamicDrawableSpan#ALIGN_BOTTOM} or
      *                          {@link DynamicDrawableSpan#ALIGN_BASELINE}
      */
-    public ImageSpan(@NonNull Drawable drawable, int verticalAlignment) {
+    public ImageSpan(@NonNull Drawable drawable, @AlignmentType int verticalAlignment) {
         super(verticalAlignment);
         mDrawable = drawable;
     }

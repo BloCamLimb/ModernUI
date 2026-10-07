@@ -18,7 +18,6 @@
 
 package icyllis.modernui.material.drawable;
 
-import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorSet;
 import icyllis.modernui.animation.MotionEasingUtils;
@@ -31,6 +30,7 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.StateSet;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -121,7 +121,7 @@ public class RadioButtonDrawable extends MaterialDrawable {
 
         int toState = 0;
         for (int state : stateSet) {
-            if (state == R.attr.state_checked) {
+            if (state == StateSet.state_checked) {
                 toState = 1;
                 break;
             }

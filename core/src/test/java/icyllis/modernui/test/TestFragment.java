@@ -676,7 +676,7 @@ public class TestFragment extends Fragment {
                     CheckableImageButton button = new CheckableImageButton(getContext(),
                             null, R.attr.iconButtonFilledStyle);
                     var icon = new StateListDrawable();
-                    icon.addState(new int[]{R.attr.state_checked}, new BuiltinIconDrawable(getContext().getResources(),
+                    icon.addState(new int[]{StateSet.state_checked}, new BuiltinIconDrawable(getContext().getResources(),
                             BuiltinIconDrawable.KEYBOARD_ARROW_UP));
                     icon.addState(StateSet.WILD_CARD, new BuiltinIconDrawable(getContext().getResources(),
                             BuiltinIconDrawable.KEYBOARD_ARROW_DOWN));

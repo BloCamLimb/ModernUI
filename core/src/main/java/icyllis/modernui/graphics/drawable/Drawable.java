@@ -656,8 +656,8 @@ public abstract class Drawable {
 
     /**
      * Describes the current state, as a union of primitive states, such as
-     * {@link icyllis.modernui.R.attr#state_focused},
-     * {@link icyllis.modernui.R.attr#state_selected}, etc.
+     * {@link StateSet#state_focused},
+     * {@link StateSet#state_selected}, etc.
      * Some drawables may modify their imagery based on the selected state.
      *
      * @return An array of resource Ids describing the current state.

@@ -32,6 +32,7 @@ import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.SoundEffectConstants;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -49,14 +50,14 @@ public abstract class CompoundButton extends Button implements Checkable2 {
      */
     @ApiStatus.Internal
     public static final int[] CHECKABLE_STATE_SET = {
-            R.attr.state_checkable
+            StateSet.state_checkable
     };
     /**
      * @hidden
      */
     @ApiStatus.Internal
     public static final int[] CHECKED_STATE_SET = {
-            R.attr.state_checked
+            StateSet.state_checked
     };
 
     boolean mChecked;

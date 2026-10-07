@@ -18,7 +18,6 @@
 
 package icyllis.modernui.material.drawable;
 
-import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ValueAnimator;
@@ -30,6 +29,7 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.StateSet;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -81,7 +81,7 @@ public class SliderThumbDrawable extends MaterialDrawable {
 
         int toState = 0;
         for (int state : stateSet) {
-            if (state == R.attr.state_pressed || state == R.attr.state_focused) {
+            if (state == StateSet.state_pressed || state == StateSet.state_focused) {
                 toState = 1;
                 break;
             }

@@ -168,15 +168,15 @@ public class ExpandableListView extends ListView {
 
     /** State indicating the group is expanded. */
     private static final int[] GROUP_EXPANDED_STATE_SET =
-            {R.attr.state_expanded};
+            {StateSet.state_expanded};
 
     /** State indicating the group is empty (has no children). */
     private static final int[] GROUP_EMPTY_STATE_SET =
-            {R.attr.state_empty};
+            {StateSet.state_empty};
 
     /** State indicating the group is expanded and empty (has no children). */
     private static final int[] GROUP_EXPANDED_EMPTY_STATE_SET =
-            {R.attr.state_expanded, R.attr.state_empty};
+            {StateSet.state_expanded, StateSet.state_empty};
 
     /** States for the group where the 0th bit is expanded and 1st bit is empty. */
     private static final int[][] GROUP_STATE_SETS = {
@@ -188,7 +188,7 @@ public class ExpandableListView extends ListView {
 
     /** State indicating the child is the last within its group. */
     private static final int[] CHILD_LAST_STATE_SET =
-            {R.attr.state_last};
+            {StateSet.state_last};
 
     /** Drawable to be used as a divider when it is adjacent to any children */
     private Drawable mChildDivider;

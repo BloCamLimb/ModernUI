@@ -35,12 +35,18 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
-import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.BlendMode;
+import icyllis.modernui.graphics.BlendModeColorFilter;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.Outline;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.StateSet;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -55,8 +61,8 @@ import java.util.Objects;
  * special mask layer that is not drawn to the screen. A single layer may be
  * set as the mask from XML by specifying its {@code android:id} value as
  * {@link icyllis.modernui.R.id#mask}. At runtime, a single layer may be set as the
- * mask using {@code setId(..., R.id.mask)} or an existing mask layer
- * may be replaced using {@code setDrawableByLayerId(R.id.mask, ...)}.
+ * mask using {@code setId(..., MASK_ID)} or an existing mask layer
+ * may be replaced using {@code setDrawableByLayerId(MASK_ID, ...)}.
  * <p>
  * If a mask layer is set, the ripple effect will be masked against that layer
  * before it is drawn over the composite of the remaining child layers.
@@ -78,6 +84,13 @@ public class RippleDrawable extends LayerDrawable {
      */
     public static final int RADIUS_AUTO = -1;
 
+    //TODO redesign this. maybe use the following
+    public static final int MASK_ID = 0x0102002e;
+
+    static {
+        int v = 'm' << 24 | 'a' << 16 | 's' << 8 | 'k';
+    }
+
     /** The maximum number of ripples supported. */
     private static final int MAX_RIPPLES = 10;
     private static final int DEFAULT_EFFECT_COLOR = 0x8dffffff;
@@ -96,7 +109,7 @@ public class RippleDrawable extends LayerDrawable {
     /** Mirrors mLayerState with some extra information. */
     private RippleState mState;
 
-    /** The masking layer, e.g. the layer with id R.id.mask. */
+    /** The masking layer, e.g. the layer with id MASK_ID. */
     private Drawable mMask;
 
     /** The current background. May be actively animating or pending entry. */
@@ -151,7 +164,7 @@ public class RippleDrawable extends LayerDrawable {
         }
 
         if (mask != null) {
-            addLayer(mask, null, R.id.mask, 0, 0, 0, 0);
+            addLayer(mask, null, MASK_ID, 0, 0, 0, 0);
         }
 
         setColor(color);
@@ -201,15 +214,15 @@ public class RippleDrawable extends LayerDrawable {
         boolean windowFocused = false;
 
         for (int state : stateSet) {
-            if (state == R.attr.state_enabled) {
+            if (state == StateSet.state_enabled) {
                 enabled = true;
-            } else if (state == R.attr.state_focused) {
+            } else if (state == StateSet.state_focused) {
                 focused = true;
-            } else if (state == R.attr.state_pressed) {
+            } else if (state == StateSet.state_pressed) {
                 pressed = true;
-            } else if (state == R.attr.state_hovered) {
+            } else if (state == StateSet.state_hovered) {
                 hovered = true;
-            } else if (state == R.attr.state_window_focused) {
+            } else if (state == StateSet.state_window_focused) {
                 windowFocused = true;
             }
         }
@@ -350,7 +363,7 @@ public class RippleDrawable extends LayerDrawable {
     @Override
     public boolean setDrawableByLayerId(int id, Drawable drawable) {
         if (super.setDrawableByLayerId(id, drawable)) {
-            if (id == R.id.mask) {
+            if (id == MASK_ID) {
                 mMask = drawable;
                 mHasValidMask = false;
             }
@@ -485,7 +498,7 @@ public class RippleDrawable extends LayerDrawable {
         final ChildDrawable[] children = state.mChildren;
         final int N = state.mNumChildren;
         for (int i = 0; i < N; i++) {
-            if (children[i].mId != R.id.mask) {
+            if (children[i].mId != MASK_ID) {
                 children[i].mDrawable.getOutline(outline);
                 if (!outline.isEmpty()) return;
             }
@@ -596,7 +609,7 @@ public class RippleDrawable extends LayerDrawable {
         final ChildDrawable[] array = mLayerState.mChildren;
         final int count = mLayerState.mNumChildren;
         for (int i = 0; i < count; i++) {
-            if (array[i].mId != R.id.mask) {
+            if (array[i].mId != MASK_ID) {
                 array[i].mDrawable.draw(canvas);
             }
         }
@@ -732,7 +745,7 @@ public class RippleDrawable extends LayerDrawable {
         mState = (RippleState) mLayerState;
 
         // The locally cached drawable may have changed.
-        mMask = findDrawableByLayerId(R.id.mask);
+        mMask = findDrawableByLayerId(MASK_ID);
 
         return this;
     }
@@ -818,6 +831,6 @@ public class RippleDrawable extends LayerDrawable {
 
     private void updateLocalState() {
         // Initialize from constant state.
-        mMask = findDrawableByLayerId(R.id.mask);
+        mMask = findDrawableByLayerId(MASK_ID);
     }
 }
