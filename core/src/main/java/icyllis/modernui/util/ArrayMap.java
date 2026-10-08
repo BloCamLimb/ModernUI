@@ -56,6 +56,7 @@ import java.util.function.BiConsumer;
  *
  * @see it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap
  */
+@Deprecated
 @SuppressWarnings("unchecked")
 public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 

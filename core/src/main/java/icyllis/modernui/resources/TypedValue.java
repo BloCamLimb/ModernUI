@@ -585,16 +585,28 @@ public class TypedValue {
 
     /**
      * Return the data for this value as a resource id.  Only use for values
-     * whose type is {@link #TYPE_ATTRIBUTE} or {@link #TYPE_REFERENCE},
-     * to obtain unresolved references or attributes. In addition, for complex
-     * resources (such as styles), this represents the resource itself.
-     * If the reference is invalid or null, null is returned.
+     * whose type is {@link #TYPE_REFERENCE}, to obtain unresolved references.
+     * In addition, for complex resources (such as styles), this represents
+     * the resource itself. If the reference is invalid or null, null is returned.
      */
     @Nullable
     @AnyRes
-    public final ResourceId getResourceId() {
-        if (type == TYPE_REFERENCE || type == TYPE_ATTRIBUTE) {
+    public final ResourceId getReference() {
+        if (type == TYPE_REFERENCE) {
             return (ResourceId) object;
+        }
+        return null;
+    }
+
+    /**
+     * Return the data for this value as an attribute name.  Only use for values
+     * whose type is {@link #TYPE_ATTRIBUTE}, to obtain unresolved attributes.
+     * If the attribute is invalid or null, null is returned.
+     */
+    @Nullable
+    public final String getAttribute() {
+        if (type == TYPE_ATTRIBUTE) {
+            return (String) object;
         }
         return null;
     }

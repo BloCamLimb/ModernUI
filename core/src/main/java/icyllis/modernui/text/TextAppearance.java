@@ -18,7 +18,6 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.R;
 import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.ResourceId;
@@ -74,13 +73,13 @@ public class TextAppearance {
     public int mLineBreakWordStyle = 0;
 
     public static final String[] ATTRS = {
-            /*0*/R.attr.textColor,
-            /*1*/R.attr.textColorHighlight,
-            /*2*/R.attr.textColorHint,
-            /*3*/R.attr.textColorLink,
-            /*4*/R.attr.textFontWeight,
-            /*5*/R.attr.textSize,
-            /*6*/R.attr.textStyle,
+            /*0*/"textColor",
+            /*1*/"textColorHighlight",
+            /*2*/"textColorHint",
+            /*3*/"textColorLink",
+            /*4*/"textFontWeight",
+            /*5*/"textSize",
+            /*6*/"textStyle",
     };
 
     public TextAppearance() {

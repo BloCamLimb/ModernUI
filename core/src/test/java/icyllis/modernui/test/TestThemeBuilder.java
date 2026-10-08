@@ -62,7 +62,7 @@ public class TestThemeBuilder {
                 value, true);
         Log.i(null, result);
         Log.i(null, value);
-        Log.i(null, value.getResourceId());
-        Log.i(null, R.style.TextAppearance_Material3_DisplayMedium.equals(value.getResourceId()));
+        Log.i(null, value.getReference());
+        Log.i(null, R.style.TextAppearance_Material3_DisplayMedium.equals(value.getReference()));
     }
 }
