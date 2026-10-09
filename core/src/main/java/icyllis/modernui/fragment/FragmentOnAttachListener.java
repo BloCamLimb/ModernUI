@@ -18,9 +18,9 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.util.DataSet;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Listener for receiving a callback immediately following {@link Fragment#onAttach(icyllis.modernui.core.Context)}.

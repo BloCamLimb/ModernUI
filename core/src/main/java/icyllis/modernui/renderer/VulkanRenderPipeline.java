@@ -19,8 +19,8 @@
 package icyllis.modernui.renderer;
 
 import icyllis.arc3d.engine.ImmediateContext;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.system.Looper;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.sdl.SDLVideo;
 
 public final class VulkanRenderPipeline extends RenderPipeline {

@@ -36,8 +36,6 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
@@ -47,6 +45,8 @@ import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An abstract base class for spinner widgets.

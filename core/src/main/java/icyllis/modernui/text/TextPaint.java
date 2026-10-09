@@ -22,8 +22,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.CharArrayIterator;
@@ -35,6 +33,8 @@ import icyllis.modernui.graphics.text.GraphemeBreak;
 import icyllis.modernui.util.Pools;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -435,7 +435,7 @@ public class TextPaint extends Paint {
      * @param op            how to move the cursor
      * @return the offset of the next position or -1
      */
-    public int getTextRunCursor(@NonNull char[] text, int contextStart,
+    public int getTextRunCursor(char @NonNull[] text, int contextStart,
                                 int contextLength, int offset, int op) {
         int contextEnd = contextStart + contextLength;
         if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
@@ -497,7 +497,7 @@ public class TextPaint extends Paint {
      * @return the total advance (logical width) in pixels
      * @see #getTextRunAdvances(char[], int, int, int, int, boolean, float[], int, FontMetricsInt)
      */
-    public float measureTextRun(@NonNull char[] text, int index, int count,
+    public float measureTextRun(char @NonNull[] text, int index, int count,
                                 boolean isRtl, @Nullable FontMetricsInt fmi) {
         Objects.requireNonNull(text, "text cannot be null");
         if ((index | count) < 0 || index + count > text.length) {
@@ -577,9 +577,9 @@ public class TextPaint extends Paint {
      * @param fmi           font metrics to receive the effective ascent/descent used in layout
      * @return the total advance (logical width) in pixels
      */
-    public float getTextRunAdvances(@NonNull char[] text, @IntRange(from = 0) int index,
+    public float getTextRunAdvances(char @NonNull[] text, @IntRange(from = 0) int index,
                                     @IntRange(from = 0) int count, @IntRange(from = 0) int contextIndex,
-                                    @IntRange(from = 0) int contextCount, boolean isRtl, @Nullable float[] advances,
+                                    @IntRange(from = 0) int contextCount, boolean isRtl, float @Nullable[] advances,
                                     @IntRange(from = 0) int advancesIndex, @Nullable FontMetricsInt fmi) {
         Objects.requireNonNull(text, "text cannot be null");
         if ((index | count | contextIndex | contextCount | advancesIndex

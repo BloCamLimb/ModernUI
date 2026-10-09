@@ -24,7 +24,6 @@ import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.PropertyValuesHolder;
 import icyllis.modernui.animation.ValueAnimator;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
@@ -35,6 +34,7 @@ import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.StateSet;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A thumb drawable for Switch, similar to Material Design.
@@ -87,7 +87,7 @@ public class SwitchThumbDrawable extends MaterialDrawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         boolean changed = super.onStateChange(stateSet);
 
         int toState = 0;

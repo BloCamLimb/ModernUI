@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -52,7 +52,7 @@ public class CharSequenceBuilder extends CharArrayList implements CharSequence, 
     public CharSequenceBuilder() {
     }
 
-    public void addChars(@NonNull char[] buf, int start, int end) {
+    public void addChars(char @NonNull[] buf, int start, int end) {
         Objects.checkFromToIndex(start, end, buf.length);
         int offset = size;
         int length = end - start;
@@ -93,7 +93,7 @@ public class CharSequenceBuilder extends CharArrayList implements CharSequence, 
     }
 
     @NonNull
-    public CharSequenceBuilder updateChars(@NonNull char[] buf, int start, int end) {
+    public CharSequenceBuilder updateChars(char @NonNull[] buf, int start, int end) {
         Objects.checkFromToIndex(start, end, buf.length);
         int length = end - start;
         size(length);

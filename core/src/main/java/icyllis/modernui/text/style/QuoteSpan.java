@@ -18,11 +18,11 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.Layout;
 import icyllis.modernui.text.TextPaint;
+import org.jspecify.annotations.NonNull;
 
 public class QuoteSpan implements LeadingMarginSpan {
 

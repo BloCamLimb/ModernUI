@@ -26,14 +26,14 @@ import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.granite.RecordingContext;
 import icyllis.arc3d.sketch.Surface;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.system.Choreographer;
 import icyllis.modernui.renderer.FrameTask;
 import icyllis.modernui.renderer.RenderPipeline;
 import icyllis.modernui.renderer.WindowSurface;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 

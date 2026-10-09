@@ -18,13 +18,13 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.view.ViewParent;
 import icyllis.modernui.view.menu.ShowableListMenu;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Abstract class that forwards touch events to a {@link ShowableListMenu}.

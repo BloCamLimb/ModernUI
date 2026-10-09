@@ -19,10 +19,10 @@
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewParent;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Accessors for finding a view tree-local {@link ViewModelStoreOwner} that allows access to a

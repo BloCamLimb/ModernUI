@@ -18,9 +18,9 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 

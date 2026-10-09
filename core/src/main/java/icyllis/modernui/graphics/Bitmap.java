@@ -22,12 +22,12 @@ import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.arc3d.core.*;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.annotation.WorkerThread;
 import icyllis.modernui.system.Arch;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBIWriteCallbackI;
@@ -318,8 +318,7 @@ public final class Bitmap implements AutoCloseable {
      * @param defaultPathAndFile the default path and/or file or {@code null} to use OS default
      * @return the selected paths or {@code null} if selects nothing (dismissed or closed)
      */
-    @Nullable
-    public static String[] openDialogGets(@Nullable SaveFormat format,
+    public static String @Nullable[] openDialogGets(@Nullable SaveFormat format,
                                           @Nullable CharSequence title,
                                           @Nullable CharSequence defaultPathAndFile) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -875,9 +874,8 @@ public final class Bitmap implements AutoCloseable {
      * @throws IllegalArgumentException if x, y exceed the bitmap's bounds
      * @see #setColor4f(int, int, float[])
      */
-    @NonNull
     @Size(4)
-    public float[] getColor4f(int x, int y, @NonNull @Size(4) float[] dst) {
+    public float @NonNull[] getColor4f(int x, int y, @Size(4) float @NonNull[] dst) {
         checkReleased();
         checkOutOfBounds(x, y);
         if (getColorType() == ColorInfo.CT_UNKNOWN) {
@@ -911,7 +909,7 @@ public final class Bitmap implements AutoCloseable {
      * @throws IllegalArgumentException if x, y exceed the bitmap's bounds
      * @see #getColor4f(int, int, float[])
      */
-    public void setColor4f(int x, int y, @NonNull @Size(4) float[] src) {
+    public void setColor4f(int x, int y, @Size(4) float @NonNull[] src) {
         checkReleased();
         if (isImmutable()) {
             throw new IllegalStateException("Cannot write to immutable bitmap");
@@ -956,7 +954,7 @@ public final class Bitmap implements AutoCloseable {
      *                                        to receive the specified number of pixels
      * @see #setPixels(int[], int, int, int, int, int, int)
      */
-    public void getPixels(@NonNull @ColorInt int[] dst, int offset, int stride,
+    public void getPixels( @ColorInt int @NonNull[] dst, int offset, int stride,
                           int srcX, int srcY, int width, int height) {
         checkReleased();
         if (width == 0 || height == 0) {
@@ -1010,7 +1008,7 @@ public final class Bitmap implements AutoCloseable {
      * @param height The number of rows to write to the bitmap
      * @see #getPixels(int[], int, int, int, int, int, int)
      */
-    public void setPixels(@NonNull @ColorInt int[] src, int offset, int stride,
+    public void setPixels( @ColorInt int @NonNull[] src, int offset, int stride,
                           int dstX, int dstY, int width, int height) {
         checkReleased();
         if (isImmutable()) {
@@ -1068,7 +1066,7 @@ public final class Bitmap implements AutoCloseable {
      *                                        to receive the specified number of pixels
      * @see #setPixels(float[], int, int, int, int, int, int)
      */
-    public void getPixels(@NonNull @Size(multiple = 4) float[] dst, int offset, int stride,
+    public void getPixels( @Size(multiple = 4) float @NonNull[] dst, int offset, int stride,
                           int srcX, int srcY, int width, int height) {
         checkReleased();
         if (width == 0 || height == 0) {
@@ -1124,7 +1122,7 @@ public final class Bitmap implements AutoCloseable {
      * @param height The number of rows to write to the bitmap
      * @see #getPixels(float[], int, int, int, int, int, int)
      */
-    public void setPixels(@NonNull @Size(multiple = 4) float[] src, int offset, int stride,
+    public void setPixels( @Size(multiple = 4) float @NonNull[] src, int offset, int stride,
                           int dstX, int dstY, int width, int height) {
         checkReleased();
         if (isImmutable()) {
@@ -1261,7 +1259,7 @@ public final class Bitmap implements AutoCloseable {
         }
     }
 
-    private static long bufferAddress(@NonNull java.nio.Buffer buffer) {
+    private static long bufferAddress(java.nio.@NonNull Buffer buffer) {
         if (buffer.isDirect()) {
             return MemoryUtil.memAddress(buffer);
         }
@@ -1308,7 +1306,7 @@ public final class Bitmap implements AutoCloseable {
      *                                  bounds of the bitmap
      * @see #copyPixelsFromBuffer(java.nio.Buffer, int, int, int, int, int)
      */
-    public boolean copyPixelsToBuffer(@NonNull java.nio.Buffer dst, int rowBytes,
+    public boolean copyPixelsToBuffer(java.nio.@NonNull Buffer dst, int rowBytes,
                                       int srcX, int srcY, int width, int height) {
         checkReleased();
         if (dst.isReadOnly()) {
@@ -1369,7 +1367,7 @@ public final class Bitmap implements AutoCloseable {
      *                                  bounds of the bitmap
      * @see #copyPixelsToBuffer(java.nio.Buffer, int, int, int, int, int)
      */
-    public boolean copyPixelsFromBuffer(@NonNull java.nio.Buffer src, int rowBytes,
+    public boolean copyPixelsFromBuffer(java.nio.@NonNull Buffer src, int rowBytes,
                                         int dstX, int dstY, int width, int height) {
         checkReleased();
         if (isImmutable()) {
@@ -1438,7 +1436,7 @@ public final class Bitmap implements AutoCloseable {
      * @return true if pixels are changed
      * @throws IllegalStateException the bitmap is released or immutable
      */
-    public boolean clear(@NonNull @Size(4) float[] color, @Nullable Rect area) {
+    public boolean clear( @Size(4) float @NonNull[] color, @Nullable Rect area) {
         checkReleased();
         if (isImmutable()) {
             throw new IllegalStateException("Cannot clear immutable bitmaps");
@@ -2217,8 +2215,7 @@ public final class Bitmap implements AutoCloseable {
         // read only formats
         private static final String[] EXTRA_FILTERS = {"*.psd", "*.gif", "*.pnm", "*.pgm", "*.ppm"};
 
-        @NonNull
-        private final String[] filters;
+        private final String @NonNull[] filters;
 
         SaveFormat(@NonNull String... filters) {
             this.filters = filters;

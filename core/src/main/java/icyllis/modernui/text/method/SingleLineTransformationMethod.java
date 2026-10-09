@@ -35,7 +35,7 @@
 
 package icyllis.modernui.text.method;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This transformation method causes any newline characters (\n) to be
@@ -59,9 +59,8 @@ public class SingleLineTransformationMethod extends ReplacementTransformationMet
     /**
      * The characters to be replaced are \n and \r.
      */
-    @NonNull
     @Override
-    protected char[] getOriginal() {
+    protected char @NonNull[] getOriginal() {
         return ORIGINAL;
     }
 
@@ -69,9 +68,8 @@ public class SingleLineTransformationMethod extends ReplacementTransformationMet
      * The character \n is replaced with is space;
      * the character \r is replaced with is FEFF (zero width space).
      */
-    @NonNull
     @Override
-    protected char[] getReplacement() {
+    protected char @NonNull[] getReplacement() {
         return REPLACEMENT;
     }
 }

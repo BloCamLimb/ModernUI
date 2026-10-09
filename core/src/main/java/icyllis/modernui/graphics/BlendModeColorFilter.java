@@ -23,10 +23,10 @@ import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ColorTransform;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -42,8 +42,7 @@ public final class BlendModeColorFilter extends ColorFilter {
     private final long mColor;
     private final BlendMode mMode;
 
-    @Nullable
-    private final icyllis.arc3d.sketch.effects.BlendModeColorFilter mColorFilter;
+    private final icyllis.arc3d.sketch.effects.@Nullable BlendModeColorFilter mColorFilter;
 
     public BlendModeColorFilter(@ColorInt int color, @NonNull BlendMode mode) {
         this(
@@ -79,7 +78,7 @@ public final class BlendModeColorFilter extends ColorFilter {
         );
     }
 
-    public BlendModeColorFilter(@NonNull @Size(4) float[] color,
+    public BlendModeColorFilter( @Size(4) float @NonNull[] color,
                                 @Nullable ColorSpace colorSpace, @NonNull BlendMode mode) {
         Objects.requireNonNull(mode);
 

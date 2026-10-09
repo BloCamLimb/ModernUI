@@ -18,9 +18,9 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.menu.MenuBuilder;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface notified when a menu item is hovered. Useful for cases when hover should trigger

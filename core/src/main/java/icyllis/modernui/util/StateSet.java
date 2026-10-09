@@ -18,7 +18,7 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -221,7 +221,7 @@ public final class StateSet {
      *
      * @param state a state set or state spec.
      */
-    public static boolean isWildCard(@NonNull int[] state) {
+    public static boolean isWildCard(int @NonNull[] state) {
         return state.length == 0 || state[0] == 0;
     }
 
@@ -232,7 +232,7 @@ public final class StateSet {
      *                  prohibited (if negative) {@code View} states.
      * @param stateSet  an array of {@code View} states
      */
-    public static boolean stateSetMatches(@NonNull int[] stateSpec, @NonNull int[] stateSet) {
+    public static boolean stateSetMatches(int @NonNull[] stateSpec, int @NonNull[] stateSet) {
         CYCLE:
         for (int stateSpecState : stateSpec) {
             if (stateSpecState == 0) {
@@ -284,7 +284,7 @@ public final class StateSet {
      *                  prohibited (if negative) {@code View} states.
      * @param state     a {@code View} state
      */
-    public static boolean stateSetMatches(@NonNull int[] stateSpec, int state) {
+    public static boolean stateSetMatches(int @NonNull[] stateSpec, int state) {
         for (int stateSpecState : stateSpec) {
             if (stateSpecState == 0) {
                 // We've reached the end of the cases to match against.
@@ -312,7 +312,7 @@ public final class StateSet {
      * @param attr       an attribute we're looking for.
      * @return {@code true} if the attribute is contained in the state specs.
      */
-    public static boolean containsAttribute(@NonNull int[][] stateSpecs, int attr) {
+    public static boolean containsAttribute(int @NonNull[][] stateSpecs, int attr) {
         for (int[] spec : stateSpecs) {
             for (int specAttr : spec) {
                 if (specAttr == attr || -specAttr == attr) {
@@ -323,8 +323,7 @@ public final class StateSet {
         return false;
     }
 
-    @NonNull
-    public static int[] trimStateSet(@NonNull int[] states, int newSize) {
+    public static int @NonNull[] trimStateSet(int @NonNull[] states, int newSize) {
         if (states.length == newSize) {
             return states;
         }

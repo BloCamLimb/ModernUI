@@ -18,7 +18,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Gravity;
@@ -27,6 +26,7 @@ import icyllis.modernui.util.Log;
 import icyllis.modernui.view.*;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -742,7 +742,7 @@ public class GridLayout extends ViewGroup {
 
     @NonNull
     @Override
-    protected LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams lp) {
+    protected LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams lp) {
         if (lp instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) lp);
         } else if (lp instanceof MarginLayoutParams) {

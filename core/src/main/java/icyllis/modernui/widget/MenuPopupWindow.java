@@ -37,8 +37,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Color;
@@ -56,6 +54,8 @@ import icyllis.modernui.view.menu.ListMenuItemView;
 import icyllis.modernui.view.menu.MenuAdapter;
 import icyllis.modernui.view.menu.MenuBuilder;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A MenuPopupWindow represents the popup window for menu.

@@ -18,8 +18,8 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Factory for constructing instances of {@link SpecialEffectsController} on demand.

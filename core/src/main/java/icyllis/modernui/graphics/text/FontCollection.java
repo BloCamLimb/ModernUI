@@ -20,10 +20,10 @@ package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.*;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -105,7 +105,7 @@ public class FontCollection {
      * @hidden
      */
     @ApiStatus.Internal
-    public FontCollection(@NonNull FontFamily[] families, @Nullable BitSet exclusiveEastAsianBits) {
+    public FontCollection(FontFamily @NonNull[] families, @Nullable BitSet exclusiveEastAsianBits) {
         if (families.length == 0) {
             throw new IllegalArgumentException("families cannot be empty");
         }
@@ -117,7 +117,7 @@ public class FontCollection {
      * Perform the itemization.
      */
     @NonNull
-    public List<Run> itemize(@NonNull char[] text, int offset, int limit) {
+    public List<Run> itemize(char @NonNull[] text, int offset, int limit) {
         return itemize(text, offset, limit, limit - offset);
     }
 
@@ -125,7 +125,7 @@ public class FontCollection {
      * Perform the itemization.
      */
     @NonNull
-    public List<Run> itemize(@NonNull char[] text, int offset, int limit, int runLimit) {
+    public List<Run> itemize(char @NonNull[] text, int offset, int limit, int runLimit) {
         if (offset < 0 || offset > limit || limit > text.length || runLimit < 0) {
             throw new IllegalArgumentException();
         }

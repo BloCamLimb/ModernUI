@@ -18,9 +18,9 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Outline;
 import icyllis.modernui.graphics.drawable.Drawable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface by which a View builds its {@link Outline}, used for shadow casting and clipping.

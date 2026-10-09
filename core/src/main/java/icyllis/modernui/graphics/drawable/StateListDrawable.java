@@ -18,10 +18,10 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.StateSet;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Lets you assign a number of graphic images to a single Drawable and swap out the visible item by a string
@@ -74,7 +74,7 @@ public class StateListDrawable extends DrawableContainer {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         final boolean changed = super.onStateChange(stateSet);
 
         int idx = mStateListState.indexOfStateSet(stateSet);
@@ -108,8 +108,7 @@ public class StateListDrawable extends DrawableContainer {
      * @see #getStateCount()
      * @see #getStateDrawable(int)
      */
-    @NonNull
-    public int[] getStateSet(int index) {
+    public int @NonNull[] getStateSet(int index) {
         return mStateListState.mStateSets[index];
     }
 
@@ -134,7 +133,7 @@ public class StateListDrawable extends DrawableContainer {
      * @see #getStateDrawable(int)
      * @see #getStateSet(int)
      */
-    public int findStateDrawableIndex(@NonNull int[] stateSet) {
+    public int findStateDrawableIndex(int @NonNull[] stateSet) {
         return mStateListState.indexOfStateSet(stateSet);
     }
 

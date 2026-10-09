@@ -18,7 +18,7 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.glfw.GLFWVidMode;
 
 import java.util.Objects;
@@ -44,7 +44,7 @@ public final class VideoMode {
         mRefreshRate = gLFWVidMode.refreshRate();
     }
 
-    public VideoMode(@NonNull GLFWVidMode.Buffer buffer) {
+    public VideoMode(GLFWVidMode.@NonNull Buffer buffer) {
         mWidth = buffer.width();
         mHeight = buffer.height();
         mRedBits = buffer.redBits();

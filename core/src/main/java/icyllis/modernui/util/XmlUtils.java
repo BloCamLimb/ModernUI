@@ -18,8 +18,8 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
 
 import javax.xml.stream.XMLStreamReader;
 

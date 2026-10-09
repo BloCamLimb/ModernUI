@@ -18,8 +18,8 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class holds a time/value pair for an animation. The Keyframe class is used

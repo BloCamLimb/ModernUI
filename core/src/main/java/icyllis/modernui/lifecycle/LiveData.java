@@ -18,10 +18,10 @@
 
 package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.system.Arch;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.function.Supplier;
@@ -376,7 +376,7 @@ public abstract class LiveData<T> {
 
         @Override
         public void onStateChanged(@NonNull LifecycleOwner source,
-                                   @NonNull Lifecycle.Event event) {
+                Lifecycle.@NonNull Event event) {
             if (mOwner.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) {
                 removeObserver(mObserver);
                 return;

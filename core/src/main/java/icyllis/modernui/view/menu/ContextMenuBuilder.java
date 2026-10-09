@@ -36,11 +36,11 @@
 package icyllis.modernui.view.menu;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of the {@link ContextMenu} interface.

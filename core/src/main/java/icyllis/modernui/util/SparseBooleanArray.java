@@ -18,9 +18,9 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.Nullable;
 import it.unimi.dsi.fastutil.booleans.BooleanArrays;
 import it.unimi.dsi.fastutil.ints.IntArrays;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 

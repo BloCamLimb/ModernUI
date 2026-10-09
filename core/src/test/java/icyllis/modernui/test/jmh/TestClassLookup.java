@@ -18,7 +18,7 @@
 
 package icyllis.modernui.test.jmh;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 

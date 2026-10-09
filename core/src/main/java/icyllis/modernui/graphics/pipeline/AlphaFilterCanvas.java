@@ -21,8 +21,8 @@ package icyllis.modernui.graphics.pipeline;
 import icyllis.arc3d.sketch.Canvas;
 import icyllis.arc3d.sketch.Paint;
 import icyllis.arc3d.sketch.PaintFilterCanvas;
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @hidden

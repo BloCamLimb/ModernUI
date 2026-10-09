@@ -19,10 +19,10 @@
 package icyllis.modernui.audio;
 
 import icyllis.modernui.annotation.MainThread;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.openal.*;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;

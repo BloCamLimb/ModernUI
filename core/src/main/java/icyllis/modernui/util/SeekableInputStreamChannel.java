@@ -18,8 +18,8 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.FileInputStream;

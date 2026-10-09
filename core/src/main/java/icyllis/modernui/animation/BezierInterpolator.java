@@ -18,8 +18,8 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interpolator that can traverse a Bezier curve that extends from

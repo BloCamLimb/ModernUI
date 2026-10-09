@@ -37,8 +37,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -61,6 +59,8 @@ import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.view.ViewParent;
 import icyllis.modernui.view.ViewTreeObserver;
 import icyllis.modernui.view.WindowManager;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -1035,7 +1035,7 @@ public class PopupWindow {
      *
      * @param p the layout parameters of the popup's content view
      */
-    private void invokePopup(@NonNull WindowManager.LayoutParams p) {
+    private void invokePopup(WindowManager.@NonNull LayoutParams p) {
         final DecorView decorView = mDecorView;
 
         setLayoutDirectionFromAnchor();
@@ -1069,8 +1069,7 @@ public class PopupWindow {
      *
      * @return the layout parameters to pass to the window manager
      */
-    @NonNull
-    final WindowManager.LayoutParams createPopupLayoutParams() {
+    final WindowManager.@NonNull LayoutParams createPopupLayoutParams() {
         final var p = new WindowManager.LayoutParams();
 
         // These gravity settings put the view in the top left corner of the
@@ -1195,7 +1194,7 @@ public class PopupWindow {
         return outParams.y < drawingLocation[1];
     }
 
-    private boolean tryFitVertical(@NonNull WindowManager.LayoutParams outParams, int yOffset, int height,
+    private boolean tryFitVertical(WindowManager.@NonNull LayoutParams outParams, int yOffset, int height,
                                    int anchorHeight, int drawingLocationY, int screenLocationY, int displayFrameTop,
                                    int displayFrameBottom, boolean allowResize) {
         final int winOffsetY = screenLocationY - drawingLocationY;
@@ -1220,7 +1219,7 @@ public class PopupWindow {
                 displayFrameTop, displayFrameBottom, allowResize);
     }
 
-    private boolean positionInDisplayVertical(@NonNull WindowManager.LayoutParams outParams, int height,
+    private boolean positionInDisplayVertical(WindowManager.@NonNull LayoutParams outParams, int height,
                                               int drawingLocationY, int screenLocationY, int displayFrameTop,
                                               int displayFrameBottom,
                                               boolean canResize) {
@@ -1254,7 +1253,7 @@ public class PopupWindow {
         return fitsInDisplay;
     }
 
-    private boolean tryFitHorizontal(@NonNull WindowManager.LayoutParams outParams, int width,
+    private boolean tryFitHorizontal(WindowManager.@NonNull LayoutParams outParams, int width,
                                      int drawingLocationX, int screenLocationX, int displayFrameLeft,
                                      int displayFrameRight, boolean allowResize) {
         final int winOffsetX = screenLocationX - drawingLocationX;
@@ -1268,7 +1267,7 @@ public class PopupWindow {
                 displayFrameLeft, displayFrameRight, allowResize);
     }
 
-    private boolean positionInDisplayHorizontal(@NonNull WindowManager.LayoutParams outParams, int width,
+    private boolean positionInDisplayHorizontal(WindowManager.@NonNull LayoutParams outParams, int width,
                                                 int drawingLocationX, int screenLocationX, int displayFrameLeft,
                                                 int displayFrameRight,
                                                 boolean canResize) {
@@ -2016,9 +2015,8 @@ public class PopupWindow {
             super(context);
         }
 
-        @NonNull
         @Override
-        protected int[] onCreateDrawableState(int extraSpace) {
+        protected int @NonNull[] onCreateDrawableState(int extraSpace) {
             if (mAboveAnchor) {
                 final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
                 View.mergeDrawableStates(drawableState, ABOVE_ANCHOR_STATE_SET);

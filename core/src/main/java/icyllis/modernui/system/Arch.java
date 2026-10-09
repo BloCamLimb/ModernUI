@@ -22,11 +22,11 @@ import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCounted;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.RecordingContext;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.sdl.SDLError;
 import org.lwjgl.sdl.SDLMisc;
 import org.slf4j.Marker;
@@ -89,8 +89,7 @@ public final class Arch {
      * @param action a {@code Runnable} to invoke when the target becomes phantom reachable
      * @return a {@code Cleanable} instance representing the registry entry
      */
-    @NonNull
-    public static Cleaner.Cleanable registerCleanup(@NonNull Object target, @NonNull Runnable action) {
+    public static Cleaner.@NonNull Cleanable registerCleanup(@NonNull Object target, @NonNull Runnable action) {
         return sCleaner.register(target, action);
     }
 
@@ -104,8 +103,7 @@ public final class Arch {
      * @hidden
      */
     @ApiStatus.Internal
-    @NonNull
-    public static Cleaner.Cleanable registerNativeResource(@NonNull Object target, @NonNull RefCounted resource) {
+    public static Cleaner.@NonNull Cleanable registerNativeResource(@NonNull Object target, @NonNull RefCounted resource) {
         return sCleaner.register(target, resource::unref);
     }
 
@@ -119,8 +117,7 @@ public final class Arch {
      * @hidden
      */
     @ApiStatus.Internal
-    @NonNull
-    public static Cleaner.Cleanable registerNativeResource(@NonNull Object target, @NonNull AutoCloseable resource) {
+    public static Cleaner.@NonNull Cleanable registerNativeResource(@NonNull Object target, @NonNull AutoCloseable resource) {
         return sCleaner.register(target, () -> {
             try {
                 resource.close();

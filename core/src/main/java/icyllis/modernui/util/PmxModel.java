@@ -18,7 +18,7 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

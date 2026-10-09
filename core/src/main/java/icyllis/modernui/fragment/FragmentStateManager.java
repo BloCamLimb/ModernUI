@@ -19,9 +19,9 @@
 package icyllis.modernui.fragment;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.view.*;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Marker;
 
 import static icyllis.modernui.util.Log.LOGGER;

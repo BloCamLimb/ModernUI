@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
@@ -28,6 +26,8 @@ import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.MarkerFactory;
 
 import java.io.InputStream;
@@ -347,8 +347,7 @@ public class ImageDrawable extends Drawable {
      * {@link Shader.TileMode#REPEAT} or
      * {@link Shader.TileMode#MIRROR} otherwise.
      */
-    @Nullable
-    public Shader.TileMode getTileModeX() {
+    public Shader.@Nullable TileMode getTileModeX() {
         return mImageState.mTileModeX;
     }
 
@@ -359,8 +358,7 @@ public class ImageDrawable extends Drawable {
      * {@link Shader.TileMode#REPEAT} or
      * {@link Shader.TileMode#MIRROR} otherwise.
      */
-    @Nullable
-    public Shader.TileMode getTileModeY() {
+    public Shader.@Nullable TileMode getTileModeY() {
         return mImageState.mTileModeY;
     }
 
@@ -374,7 +372,7 @@ public class ImageDrawable extends Drawable {
      * @see #setTileModeY(Shader.TileMode)
      * @see #setTileModeXY(Shader.TileMode, Shader.TileMode)
      */
-    public void setTileModeX(@Nullable Shader.TileMode mode) {
+    public void setTileModeX(Shader.@Nullable TileMode mode) {
         setTileModeXY(mode, mImageState.mTileModeY);
     }
 
@@ -388,7 +386,7 @@ public class ImageDrawable extends Drawable {
      * @see #setTileModeX(Shader.TileMode)
      * @see #setTileModeXY(Shader.TileMode, Shader.TileMode)
      */
-    public final void setTileModeY(@Nullable Shader.TileMode mode) {
+    public final void setTileModeY(Shader.@Nullable TileMode mode) {
         setTileModeXY(mImageState.mTileModeX, mode);
     }
 
@@ -403,8 +401,8 @@ public class ImageDrawable extends Drawable {
      * @see #setTileModeX(Shader.TileMode)
      * @see #setTileModeY(Shader.TileMode)
      */
-    public void setTileModeXY(@Nullable Shader.TileMode tileModeX,
-                              @Nullable Shader.TileMode tileModeY) {
+    public void setTileModeXY(Shader.@Nullable TileMode tileModeX,
+            Shader.@Nullable TileMode tileModeY) {
         final ImageState state = mImageState;
         if (state.mTileModeX != tileModeX || state.mTileModeY != tileModeY) {
             state.mTileModeX = tileModeX;
@@ -646,7 +644,7 @@ public class ImageDrawable extends Drawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         final ImageState state = mImageState;
         if (state.mTint != null && state.mBlendMode != null) {
             mBlendModeFilter = updateBlendModeFilter(mBlendModeFilter, state.mTint,

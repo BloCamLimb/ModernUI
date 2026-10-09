@@ -18,8 +18,8 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.Log;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;

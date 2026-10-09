@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -57,7 +57,7 @@ public class TextRunShaper {
      */
     @NonNull
     public static ShapedText shapeTextRun(
-            @NonNull char[] text, int start, int count,
+            char @NonNull[] text, int start, int count,
             int contextStart, int contextCount,
             boolean isRtl, @NonNull FontPaint paint) {
         int bidiFlags = isRtl ? ShapedText.BIDI_OVERRIDE_RTL : ShapedText.BIDI_OVERRIDE_LTR;

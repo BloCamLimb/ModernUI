@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>Defines a filterable behavior. A filterable class can have its data

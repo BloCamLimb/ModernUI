@@ -18,9 +18,9 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.drawable.Drawable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Minimal interface for a menu view.  {@link #initialize(MenuBuilder)} must be called for the

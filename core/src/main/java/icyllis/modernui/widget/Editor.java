@@ -18,8 +18,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.UndoManager;
 import icyllis.modernui.core.UndoOperation;
 import icyllis.modernui.core.UndoOwner;
@@ -38,6 +36,8 @@ import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.Menu;
 import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.MotionEvent;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 

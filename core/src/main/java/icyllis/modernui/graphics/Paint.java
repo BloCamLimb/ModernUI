@@ -20,12 +20,12 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.system.Arch;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -524,9 +524,8 @@ public class Paint {
      *
      * @return a new float array that contains r,g,b,a values
      */
-    @NonNull
     @Size(4)
-    public float[] getColor4f() {
+    public float @NonNull[] getColor4f() {
         return new float[]{mPaint.getRed(), mPaint.getGreen(), mPaint.getBlue(), mPaint.getAlpha()};
     }
 
@@ -538,9 +537,8 @@ public class Paint {
      * @param dst a non-null array of 4 floats that will hold the result of the method
      * @return the passed float array that contains r,g,b,a values
      */
-    @NonNull
     @Size(4)
-    public float[] getColor4f(@NonNull @Size(4) float[] dst) {
+    public float @NonNull[] getColor4f( @Size(4) float @NonNull[] dst) {
         mPaint.getColor4f(dst);
         return dst;
     }

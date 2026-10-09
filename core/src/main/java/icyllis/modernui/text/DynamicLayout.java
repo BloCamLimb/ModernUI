@@ -19,8 +19,6 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.FloatRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.text.style.UpdateLayout;
@@ -28,6 +26,8 @@ import icyllis.modernui.text.style.WrapTogetherSpan;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -219,7 +219,7 @@ public class DynamicLayout extends Layout {
          * @param ellipsize type of ellipsis behavior
          * @return this builder, useful for chaining
          */
-        public Builder setEllipsize(@Nullable TextUtils.TruncateAt ellipsize) {
+        public Builder setEllipsize(TextUtils.@Nullable TruncateAt ellipsize) {
             mEllipsize = ellipsize;
             return this;
         }
@@ -329,7 +329,7 @@ public class DynamicLayout extends Layout {
     }
 
     @NonNull
-    private static CharSequence createEllipsizer(@Nullable TextUtils.TruncateAt ellipsize,
+    private static CharSequence createEllipsizer(TextUtils.@Nullable TruncateAt ellipsize,
                                                  @NonNull CharSequence display) {
         if (ellipsize == null) {
             return display;

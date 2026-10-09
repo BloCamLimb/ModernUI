@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import java.text.CharacterIterator;
 import java.util.Objects;
@@ -36,11 +36,11 @@ public class CharArrayIterator implements CharacterIterator {
     // invariant: start <= pos <= end
     private int pos;
 
-    public CharArrayIterator(@NonNull char[] text) {
+    public CharArrayIterator(char @NonNull[] text) {
         this(text, 0, text.length);
     }
 
-    public CharArrayIterator(@NonNull char[] text, int start, int end) {
+    public CharArrayIterator(char @NonNull[] text, int start, int end) {
         pos = Objects.checkFromToIndex(start, end, text.length);
         this.text = text;
         this.start = start;

@@ -40,8 +40,6 @@ import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.FloatRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
@@ -57,6 +55,8 @@ import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.SoundEffectConstants;
 import icyllis.modernui.view.ViewConfiguration;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Switch is a two-state toggle widget. Users can drag the switch "thumb" back
@@ -942,9 +942,8 @@ public class Switch extends Button implements Checkable2 {
         }
     }
 
-    @NonNull
     @Override
-    protected int[] onCreateDrawableState(int extraSpace) {
+    protected int @NonNull[] onCreateDrawableState(int extraSpace) {
         final int[] drawableState = super.onCreateDrawableState(extraSpace + 1);
         if (isChecked()) {
             mergeDrawableStates(drawableState, CompoundButton.CHECKED_STATE_SET);

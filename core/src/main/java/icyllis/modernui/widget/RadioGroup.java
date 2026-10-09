@@ -35,12 +35,12 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -269,9 +269,8 @@ public class RadioGroup extends LinearLayout {
         mOnCheckedChangeListener = listener;
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
     }
 

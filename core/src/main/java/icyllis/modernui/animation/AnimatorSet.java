@@ -18,12 +18,12 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.system.Looper;
 import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.ArrayMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;

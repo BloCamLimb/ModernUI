@@ -22,8 +22,6 @@ import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.BlendModeColorFilter;
 import icyllis.modernui.graphics.Canvas;
@@ -41,6 +39,8 @@ import icyllis.modernui.util.StateSet;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -646,7 +646,7 @@ public abstract class Drawable {
      * of the Drawable to change (hence requiring an invalidate), otherwise
      * returns false.
      */
-    public boolean setState(@NonNull final int[] stateSet) {
+    public boolean setState( final int @NonNull[] stateSet) {
         if (!Arrays.equals(mStateSet, stateSet)) {
             mStateSet = stateSet;
             return onStateChange(stateSet);
@@ -662,8 +662,7 @@ public abstract class Drawable {
      *
      * @return An array of resource Ids describing the current state.
      */
-    @NonNull
-    public int[] getState() {
+    public int @NonNull[] getState() {
         return mStateSet;
     }
 
@@ -769,7 +768,7 @@ public abstract class Drawable {
      *
      * @param t the theme to apply
      */
-    public void applyTheme(@NonNull @SuppressWarnings("unused") Resources.Theme t) {
+    public void applyTheme( @SuppressWarnings("unused") Resources.@NonNull Theme t) {
     }
 
     public boolean canApplyTheme() {
@@ -785,7 +784,7 @@ public abstract class Drawable {
      * if it looks the same and there is no need to redraw it since its
      * last state.
      */
-    protected boolean onStateChange(@NonNull int[] state) {
+    protected boolean onStateChange(int @NonNull[] state) {
         return false;
     }
 

@@ -36,8 +36,6 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.ResourceId;
@@ -48,6 +46,8 @@ import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.SoundEffectConstants;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An AdapterView is a view whose children are determined by an {@link Adapter}.

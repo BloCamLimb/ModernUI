@@ -21,8 +21,8 @@ package icyllis.modernui.view;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.sketch.Surface;
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Stage represents a logical screen/display that hosts an application window

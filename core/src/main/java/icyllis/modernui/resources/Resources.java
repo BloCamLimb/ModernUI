@@ -19,8 +19,6 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -35,6 +33,8 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -527,7 +527,7 @@ public class Resources {
          * @see #obtainStyledAttributes(AttributeSet, String, ResourceId, String[])
          */
         @NonNull
-        public TypedArray obtainStyledAttributes(@NonNull String[] attrs) {
+        public TypedArray obtainStyledAttributes(String @NonNull[] attrs) {
             return obtainStyledAttributes(null, (String) null, null, attrs);
         }
 
@@ -549,7 +549,7 @@ public class Resources {
          */
         @NonNull
         public TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
-                                                 @NonNull String[] attrs) {
+                String @NonNull[] attrs) {
             return obtainStyledAttributes(null, (String) null, resId, attrs);
         }
 
@@ -561,7 +561,7 @@ public class Resources {
         public TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
                                                  @Nullable @AttrRes ResourceId defStyleAttr,
                                                  @Nullable @StyleRes ResourceId defStyleRes,
-                                                 @NonNull String[] attrs) {
+                String @NonNull[] attrs) {
             assert defStyleAttr == null || defStyleAttr.type().equals("attr");
             return obtainStyledAttributes(set,
                     defStyleAttr != null ? defStyleAttr.entry() : null, defStyleRes,
@@ -618,7 +618,7 @@ public class Resources {
         public TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
                                                  @Nullable String defStyleAttr,
                                                  @Nullable @StyleRes ResourceId defStyleRes,
-                                                 @NonNull String[] attrs) {
+                String @NonNull[] attrs) {
             final TypedArray array = TypedArray.obtain(getResources(),
                     attrs.length);
 
@@ -792,8 +792,8 @@ public class Resources {
                         @Nullable AttributeSet set,
                         @Nullable String defStyleAttr,
                         @Nullable @StyleRes ResourceId defStyleRes,
-                        @NonNull String[] attrs,
-                        @NonNull int[] outValues, @NonNull int[] outIndices,
+                String @NonNull[] attrs,
+                int @NonNull[] outValues, int @NonNull[] outIndices,
                         @NonNull TypedValue value,
                         @NonNull AttributeFinder defStyleAttrFinder) {
 
@@ -944,10 +944,9 @@ public class Resources {
          * @hide
          * @hidden
          */
-        @NonNull
         @Contract(pure = true)
         @ApiStatus.Internal
-        public String[] getTheme() {
+        public String @NonNull[] getTheme() {
             final ThemeKey key = getKey();
             final int n = key.mForce != null ? key.mForce.length : 0;
             final String[] themes = new String[n * 2];

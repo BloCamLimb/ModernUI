@@ -20,8 +20,8 @@ package icyllis.modernui.util;
 
 import icyllis.arc3d.core.FP16;
 import icyllis.modernui.annotation.HalfFloat;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>The {@code Half} class is a wrapper and a utility class to manipulate half-precision 16-bit

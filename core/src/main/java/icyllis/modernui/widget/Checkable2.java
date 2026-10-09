@@ -18,8 +18,8 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A custom checkable interface extending {@link Checkable} to support

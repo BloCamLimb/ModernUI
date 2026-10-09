@@ -18,11 +18,11 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 

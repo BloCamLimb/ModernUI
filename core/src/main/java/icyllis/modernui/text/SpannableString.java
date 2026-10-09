@@ -18,9 +18,9 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.text.GetChars;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This is the class for text whose content is immutable but to which

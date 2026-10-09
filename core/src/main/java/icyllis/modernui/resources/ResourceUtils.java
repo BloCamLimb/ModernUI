@@ -18,8 +18,8 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.xml.stream.XMLStreamReader;
@@ -61,8 +61,7 @@ public class ResourceUtils {
         return null;
     }
 
-    @NonNull
-    public static ResourceValues.Reference parseXmlAttributeName(@NonNull String s) {
+    public static ResourceValues.@NonNull Reference parseXmlAttributeName(@NonNull String s) {
         var name = s.trim();
         int start = 0;
 

@@ -18,9 +18,12 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.ColorStateList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A specialized Drawable that fills the Canvas with a specified color.
@@ -197,7 +200,7 @@ public class ColorDrawable extends Drawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         final ColorState state = mColorState;
         if (state.mTint != null && state.mBlendMode != null) {
             mBlendModeColorFilter = updateBlendModeFilter(mBlendModeColorFilter, state.mTint,

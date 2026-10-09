@@ -18,12 +18,12 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public final class MenuItemImpl implements MenuItem {
 

@@ -18,10 +18,10 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.StateSet;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -64,7 +64,7 @@ public class StateListAnimator implements Cloneable {
      * @param spec     The drawable state spec to match against
      * @param animator The animator to run when the spec match
      */
-    public void addState(@NonNull int[] spec, @NonNull Animator animator) {
+    public void addState(int @NonNull[] spec, @NonNull Animator animator) {
         animator.addListener(mAnimatorListener);
         mSpecs.add(spec);
         mAnimators.add(animator);
@@ -105,7 +105,7 @@ public class StateListAnimator implements Cloneable {
      * Called by View
      */
     @ApiStatus.Internal
-    public void setState(@NonNull int[] state) {
+    public void setState(int @NonNull[] state) {
         int match = -1;
         final int size = mSpecs.size();
         for (int i = 0; i < size; i++) {

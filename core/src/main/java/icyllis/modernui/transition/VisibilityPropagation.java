@@ -18,8 +18,8 @@
 
 package icyllis.modernui.transition;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Base class for <code>TransitionPropagation</code>s that care about

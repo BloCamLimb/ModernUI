@@ -18,9 +18,9 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.drawable.Drawable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 class DrawableCache extends ThemedResourceCache<Drawable.ConstantState> {
 
@@ -35,7 +35,7 @@ class DrawableCache extends ThemedResourceCache<Drawable.ConstantState> {
     }
 
     @Override
-    protected boolean shouldInvalidateEntry(@NonNull Drawable.ConstantState entry, int configChanges) {
+    protected boolean shouldInvalidateEntry(Drawable.@NonNull ConstantState entry, int configChanges) {
         return Configuration.needNewResources(configChanges, entry.getChangingConfigurations());
     }
 }

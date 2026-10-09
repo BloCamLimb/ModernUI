@@ -29,14 +29,14 @@ package icyllis.modernui.widget;
  * in a group
  */
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.system.Parcel;
 import icyllis.modernui.system.Parcelable;
 import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 

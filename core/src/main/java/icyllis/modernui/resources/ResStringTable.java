@@ -18,9 +18,9 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
 import it.unimi.dsi.fastutil.HashCommon;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Use an open-addressing and linear probing hash table to represent a set of strings,
@@ -49,7 +49,7 @@ public class ResStringTable {
         key = new String[n];
     }
 
-    private ResStringTable(@NonNull String[] key, int size) {
+    private ResStringTable(String @NonNull[] key, int size) {
         int n = key.length;
         mask = n - 1;
         maxFill = HashCommon.maxFill(n, LOAD_FACTOR);
@@ -58,7 +58,7 @@ public class ResStringTable {
     }
 
     @NonNull
-    public static ResStringTable wrap(@NonNull String[] key, int size) {
+    public static ResStringTable wrap(String @NonNull[] key, int size) {
         if (!MathUtil.isPow2(key.length)) {
             throw new IllegalArgumentException();
         }

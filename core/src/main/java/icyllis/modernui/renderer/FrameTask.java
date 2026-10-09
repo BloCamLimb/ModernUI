@@ -19,7 +19,7 @@
 package icyllis.modernui.renderer;
 
 import icyllis.arc3d.granite.Recording;
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Submission and presentation info about one window.

@@ -18,9 +18,9 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.widget.AdapterView;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Extension of {@link Menu} for context menus providing functionality to modify

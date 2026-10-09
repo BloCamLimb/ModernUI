@@ -19,11 +19,11 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.AnyRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.DisplayMetrics;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
 
 import java.lang.annotation.Retention;
@@ -701,7 +701,7 @@ public class TypedValue {
      * @hidden
      */
     @ApiStatus.Internal
-    public void setTo(@NonNull AssetManager.ResolvedBag bag, int index) {
+    public void setTo(AssetManager.@NonNull ResolvedBag bag, int index) {
         int offset = index * AssetManager.ResolvedBag.VALUE_COLUMNS;
         type = bag.values[offset + AssetManager.ResolvedBag.COLUMN_TYPE];
         data = bag.values[offset + AssetManager.ResolvedBag.COLUMN_DATA];

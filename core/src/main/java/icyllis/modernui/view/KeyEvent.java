@@ -18,9 +18,9 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.util.SparseBooleanArray;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.sdl.SDLKeycode;
 import org.lwjgl.system.Platform;

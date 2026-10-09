@@ -18,12 +18,12 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.SparseArray;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Contains methods to standard constants used in the UI for timeouts, sizes, and distances.

@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The {@link Path} object contains mutable path elements.

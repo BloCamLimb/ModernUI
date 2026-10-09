@@ -18,11 +18,11 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.text.TextPaint;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public abstract class ReplacementSpan extends MetricAffectingSpan {
 

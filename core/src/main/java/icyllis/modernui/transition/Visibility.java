@@ -21,11 +21,11 @@ package icyllis.modernui.transition;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -113,9 +113,8 @@ public abstract class Visibility extends Transition {
         return mMode;
     }
 
-    @Nullable
     @Override
-    public String[] getTransitionProperties() {
+    public String @Nullable[] getTransitionProperties() {
         return sTransitionProperties;
     }
 

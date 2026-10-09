@@ -18,11 +18,11 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -140,7 +140,7 @@ public final class FontFamily {
 
     // JDK FontManager is not fully thread-safe, so the best is to lock the whole method
     @NonNull
-    private static synchronized FontFamily createFamily(@NonNull java.awt.Font font, boolean register) {
+    private static synchronized FontFamily createFamily(java.awt.@NonNull Font font, boolean register) {
         if (register) {
             java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
                     .registerFont(font);
@@ -157,23 +157,20 @@ public final class FontFamily {
         return family;
     }
 
-    @NonNull
-    public static FontFamily[] createFamilies(@NonNull File file, boolean register)
+    public static FontFamily @NonNull[] createFamilies(@NonNull File file, boolean register)
             throws java.awt.FontFormatException, IOException {
         var fonts = java.awt.Font.createFonts(file);
         return createFamilies(fonts, register);
     }
 
-    @NonNull
-    public static FontFamily[] createFamilies(@NonNull InputStream stream, boolean register)
+    public static FontFamily @NonNull[] createFamilies(@NonNull InputStream stream, boolean register)
             throws java.awt.FontFormatException, IOException {
         var fonts = java.awt.Font.createFonts(stream);
         return createFamilies(fonts, register);
     }
 
     // JDK FontManager is not fully thread-safe, so the best is to lock the whole method
-    @NonNull
-    private static synchronized FontFamily[] createFamilies(@NonNull java.awt.Font[] fonts, boolean register) {
+    private static synchronized FontFamily @NonNull[] createFamilies(java.awt.Font @NonNull[] fonts, boolean register) {
         if (register) {
             var ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
             for (var font : fonts) {
@@ -216,7 +213,7 @@ public final class FontFamily {
         mIsColorEmoji = font instanceof EmojiFont;
     }
 
-    private FontFamily(@NonNull java.awt.Font font, boolean register) {
+    private FontFamily(java.awt.@NonNull Font font, boolean register) {
         if (register) {
             // try lookup in registered fonts, family name is in default locale
             java.awt.Font original = font;

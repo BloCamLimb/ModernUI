@@ -37,8 +37,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
@@ -55,6 +53,8 @@ import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 // Modified from Android
 public abstract class AbsSeekBar extends ProgressBar {

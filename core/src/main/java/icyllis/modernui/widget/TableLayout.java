@@ -19,10 +19,10 @@
 package icyllis.modernui.widget;
 
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.util.SparseBooleanArray;
 import icyllis.modernui.view.*;
+import org.jspecify.annotations.NonNull;
 
 import java.util.regex.Pattern;
 
@@ -348,7 +348,7 @@ public class TableLayout extends LinearLayout {
      * {@inheritDoc}
      */
     @Override
-    public void addView(@NonNull View child, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, ViewGroup.@NonNull LayoutParams params) {
         super.addView(child, params);
         requestRowsLayout();
     }
@@ -357,7 +357,7 @@ public class TableLayout extends LinearLayout {
      * {@inheritDoc}
      */
     @Override
-    public void addView(@NonNull View child, int index, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, int index, ViewGroup.@NonNull LayoutParams params) {
         super.addView(child, index, params);
         requestRowsLayout();
     }
@@ -585,9 +585,8 @@ public class TableLayout extends LinearLayout {
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @Override
-    protected LinearLayout.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams p) {
+    protected LinearLayout.@NonNull LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams p) {
         return new LayoutParams(p);
     }
 

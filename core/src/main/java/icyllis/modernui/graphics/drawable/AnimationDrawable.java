@@ -35,9 +35,9 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.system.SystemClock;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An object used to create frame-by-frame animations, defined by a series of

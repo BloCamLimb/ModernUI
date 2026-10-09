@@ -38,9 +38,10 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.annotation.*;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 

@@ -35,8 +35,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.ColorFilter;
@@ -48,6 +46,8 @@ import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.Log;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -118,7 +118,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
      * @param layers The list of layers to add to this drawable.
      * @param state  The constant drawable state.
      */
-    LayerDrawable(@NonNull Drawable[] layers, @Nullable LayerState state) {
+    LayerDrawable(Drawable @NonNull[] layers, @Nullable LayerState state) {
         this(state, null);
 
         Objects.requireNonNull(layers, "layers must be non-null");
@@ -1141,7 +1141,7 @@ public class LayerDrawable extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] state) {
+    protected boolean onStateChange(int @NonNull[] state) {
         boolean changed = false;
 
         final ChildDrawable[] array = mLayerState.mChildren;

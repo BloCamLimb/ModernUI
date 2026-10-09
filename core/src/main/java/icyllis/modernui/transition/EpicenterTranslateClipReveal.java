@@ -42,11 +42,11 @@ import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.TypeEvaluator;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.Property;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
 
 /**
  * EpicenterTranslateClipReveal captures the clip bounds and translation values

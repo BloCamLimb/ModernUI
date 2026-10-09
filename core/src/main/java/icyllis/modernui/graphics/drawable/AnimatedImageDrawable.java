@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.*;
 

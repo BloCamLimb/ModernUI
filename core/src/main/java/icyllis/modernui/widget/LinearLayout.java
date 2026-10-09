@@ -35,8 +35,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Gravity;
@@ -46,6 +44,8 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -1761,9 +1761,8 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams params) {
+    protected ViewGroup.@NonNull LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams params) {
         if (params instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) params);
         } else if (params instanceof MarginLayoutParams) {
@@ -1780,9 +1779,8 @@ public class LinearLayout extends ViewGroup {
      * {@link #HORIZONTAL}, the width is set to {@link LayoutParams#WRAP_CONTENT}
      * and the height to {@link LayoutParams#WRAP_CONTENT}.
      */
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         if (mOrientation == HORIZONTAL) {
             return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         } else if (mOrientation == VERTICAL) {
@@ -1792,7 +1790,7 @@ public class LinearLayout extends ViewGroup {
     }
 
     @Override
-    protected boolean checkLayoutParams(@Nullable ViewGroup.LayoutParams params) {
+    protected boolean checkLayoutParams(ViewGroup.@Nullable LayoutParams params) {
         return params instanceof LayoutParams;
     }
 
@@ -1845,11 +1843,11 @@ public class LinearLayout extends ViewGroup {
             this.weight = weight;
         }
 
-        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull LayoutParams source) {
             super(source);
         }
 
-        public LayoutParams(@NonNull ViewGroup.MarginLayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull MarginLayoutParams source) {
             super(source);
         }
 

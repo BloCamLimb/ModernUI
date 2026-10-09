@@ -18,7 +18,7 @@
 
 package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A scope that owns {@link ViewModelStore}.

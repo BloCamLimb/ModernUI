@@ -21,11 +21,11 @@ package icyllis.modernui.graphics;
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ColorSpaces;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.system.Arch;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -59,8 +59,8 @@ public class RadialGradient extends GradientShader {
      */
     public RadialGradient(float centerX, float centerY,
                           float radius,
-                          @NonNull @ColorInt int[] colors,
-                          @Nullable float[] positions,
+            @ColorInt int @NonNull[] colors,
+            float @Nullable[] positions,
                           @NonNull TileMode tileMode,
                           @Nullable Matrix localMatrix) {
         this(centerX, centerY, radius, convertColors(colors), null, positions,
@@ -101,9 +101,9 @@ public class RadialGradient extends GradientShader {
      */
     public RadialGradient(float centerX, float centerY,
                           float radius,
-                          @Size(multiple = 4) @NonNull float[] colors,
+            @Size(multiple = 4) float @NonNull[] colors,
                           @Nullable ColorSpace colorSpace,
-                          @Nullable float[] positions,
+            float @Nullable[] positions,
                           @NonNull TileMode tileMode,
                           @Nullable Matrix localMatrix) {
         this(centerX, centerY, radius,
@@ -118,9 +118,9 @@ public class RadialGradient extends GradientShader {
 
     private RadialGradient(float centerX, float centerY,
                            float radius,
-                           @Size(multiple = 4) @NonNull float[] colors,
+            @Size(multiple = 4) float @NonNull[] colors,
                            @Nullable ColorSpace colorSpace,
-                           @Nullable float[] positions,
+            float @Nullable[] positions,
                            int colorCount,
                            @NonNull TileMode tileMode,
                            int interpolation,
@@ -152,7 +152,7 @@ public class RadialGradient extends GradientShader {
         mShader = shader;
     }
 
-    private RadialGradient(@NonNull icyllis.arc3d.sketch.shaders.Shader newShader,
+    private RadialGradient(icyllis.arc3d.sketch.shaders.@NonNull Shader newShader,
                            @Nullable Matrix newLocalMatrix) {
         if (newLocalMatrix != null && !newLocalMatrix.isIdentity()) {
             mLocalMatrix = new Matrix(newLocalMatrix);

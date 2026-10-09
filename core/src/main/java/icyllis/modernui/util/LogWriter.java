@@ -18,9 +18,9 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 
 import java.io.Writer;
@@ -63,7 +63,7 @@ public class LogWriter extends Writer {
     }
 
     @Override
-    public void write(@NonNull char[] buf, int offset, int count) {
+    public void write(char @NonNull[] buf, int offset, int count) {
         mBuilder.ensureCapacity(
                 Math.min(mBuilder.length() + count,
                         FORCE_WRAP_LENGTH + 2)

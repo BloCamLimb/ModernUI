@@ -18,10 +18,10 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.ArrayMap;
 import icyllis.modernui.util.LongSparseArray;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import icyllis.modernui.resources.Resources.ThemeKey;
 import icyllis.modernui.resources.Resources.Theme;
 

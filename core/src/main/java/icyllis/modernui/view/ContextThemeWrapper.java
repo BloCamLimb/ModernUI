@@ -18,13 +18,13 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.ContextWrapper;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A context wrapper that allows you to modify or replace the theme of the
@@ -153,7 +153,7 @@ public class ContextThemeWrapper extends ContextWrapper {
      * @param first {@code true} if this is the first time a style is being
      *              applied to <var>theme</var>
      */
-    protected void onApplyThemeResource(@NonNull Resources.Theme theme,
+    protected void onApplyThemeResource(Resources.@NonNull Theme theme,
                                         @Nullable @StyleRes ResourceId resId, boolean first) {
         if (resId != null) {
             theme.applyStyle(resId, true);

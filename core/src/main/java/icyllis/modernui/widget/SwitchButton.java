@@ -20,10 +20,10 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.animation.*;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.TypedValue;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @deprecated use {@link Switch} instead

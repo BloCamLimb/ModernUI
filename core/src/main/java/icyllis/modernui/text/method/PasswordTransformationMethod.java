@@ -35,8 +35,6 @@
 
 package icyllis.modernui.text.method;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.text.Editable;
@@ -48,6 +46,8 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.text.TextWatcher;
 import icyllis.modernui.text.style.UpdateLayout;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.List;

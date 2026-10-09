@@ -19,12 +19,12 @@
 package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.CallSuper;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.system.Looper;
 import icyllis.modernui.system.AnimationClock;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -394,8 +394,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * @return The array of PropertyValuesHolder objects which hold the values, per property,
      * that define the animation.
      */
-    @NonNull
-    public PropertyValuesHolder[] getValues() {
+    public PropertyValuesHolder @NonNull[] getValues() {
         return mValues;
     }
 

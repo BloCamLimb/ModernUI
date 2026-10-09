@@ -18,9 +18,9 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.style.TabStopSpan;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.List;

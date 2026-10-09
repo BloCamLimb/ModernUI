@@ -18,9 +18,9 @@
 
 package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.util.Log;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;

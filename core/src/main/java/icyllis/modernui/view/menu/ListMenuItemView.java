@@ -36,8 +36,6 @@
 package icyllis.modernui.view.menu;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
@@ -57,6 +55,8 @@ import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.RadioButton;
 import icyllis.modernui.widget.TextView;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 

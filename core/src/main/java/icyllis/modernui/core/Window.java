@@ -18,10 +18,10 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.util.LongSparseArray;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.system.MemoryStack;

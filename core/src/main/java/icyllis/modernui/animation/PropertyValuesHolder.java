@@ -18,11 +18,11 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.util.Property;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class holds information about a property and the values that that property
@@ -617,7 +617,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
 
         private int mIntAnimatedValue;
 
-        private IntPropertyValuesHolder(@NonNull Keyframes.IntKeyframes keyframes) {
+        private IntPropertyValuesHolder(Keyframes.@NonNull IntKeyframes keyframes) {
             mKeyframes = keyframes;
         }
 
@@ -626,7 +626,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
          *
          * @param property The property for this holder.
          */
-        private IntPropertyValuesHolder(IntProperty<?> property, @NonNull Keyframes.IntKeyframes keyframes) {
+        private IntPropertyValuesHolder(IntProperty<?> property, Keyframes.@NonNull IntKeyframes keyframes) {
             super(property);
             mKeyframes = keyframes;
         }
@@ -698,7 +698,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
 
         private float mFloatAnimatedValue;
 
-        private FloatPropertyValuesHolder(@NonNull Keyframes.FloatKeyframes keyframes) {
+        private FloatPropertyValuesHolder(Keyframes.@NonNull FloatKeyframes keyframes) {
             mKeyframes = keyframes;
         }
 
@@ -708,7 +708,7 @@ public sealed class PropertyValuesHolder implements Cloneable {
          * @param property The property for this holder.
          */
         private FloatPropertyValuesHolder(FloatProperty<?> property,
-                                          @NonNull Keyframes.FloatKeyframes keyframes) {
+                Keyframes.@NonNull FloatKeyframes keyframes) {
             super(property);
             mKeyframes = keyframes;
         }

@@ -20,8 +20,6 @@ package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.graphics.text.FontPaint;
@@ -29,6 +27,8 @@ import icyllis.modernui.graphics.text.OutlineFont;
 import icyllis.modernui.graphics.text.ShapedText;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -618,7 +618,7 @@ public abstract class Canvas {
      *               uses two values, the number of "points" that are drawn is really (count >> 1).
      * @param paint  the paint used to draw the points
      */
-    public abstract void drawPoints(@Size(multiple = 2) @NonNull float[] pts, int offset, int count,
+    public abstract void drawPoints(@Size(multiple = 2) float @NonNull[] pts, int offset, int count,
                                     @NonNull Paint paint);
 
     /**
@@ -634,7 +634,7 @@ public abstract class Canvas {
      * @param pts   the array of points to draw [x0 y0 x1 y1 x2 y2 ...]
      * @param paint the paint used to draw the points
      */
-    public final void drawPoints(@Size(multiple = 2) @NonNull float[] pts, @NonNull Paint paint) {
+    public final void drawPoints(@Size(multiple = 2) float @NonNull[] pts, @NonNull Paint paint) {
         drawPoints(pts, 0, pts.length, paint);
     }
 
@@ -686,7 +686,7 @@ public abstract class Canvas {
      * @param paint     the paint used to draw the line segment
      */
     public abstract void drawLine(float x0, float y0, float x1, float y1,
-                                  @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint);
+            Paint.@NonNull Cap cap, float thickness, @NonNull Paint paint);
 
     /**
      * Equivalent to {@link #drawLine(float, float, float, float, Paint.Cap, float, Paint)}.
@@ -740,7 +740,7 @@ public abstract class Canvas {
      * @param connected Whether line points are connected or separate
      * @param paint     The paint used to draw the lines
      */
-    public abstract void drawLines(@Size(multiple = 2) @NonNull float[] pts, int offset, int count,
+    public abstract void drawLines(@Size(multiple = 2) float @NonNull[] pts, int offset, int count,
                                    boolean connected, @NonNull Paint paint);
 
     /**
@@ -1065,7 +1065,7 @@ public abstract class Canvas {
      */
     public abstract void drawArc(float cx, float cy, float radius,
                                  float startAngle, float sweepAngle,
-                                 @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint);
+            Paint.@NonNull Cap cap, float thickness, @NonNull Paint paint);
 
     /**
      * Draw a circular sector (i.e., a pie) at (cx, cy) with radius using the
@@ -1301,9 +1301,9 @@ public abstract class Canvas {
      * @see icyllis.modernui.text.TextShaper
      * @see #drawShapedText
      */
-    public abstract void drawGlyphs(@NonNull int[] glyphs,
+    public abstract void drawGlyphs(int @NonNull[] glyphs,
                                     int glyphOffset,
-                                    @NonNull float[] positions,
+            float @NonNull[] positions,
                                     int positionOffset,
                                     int glyphCount,
                                     @NonNull Font font,
@@ -1340,7 +1340,7 @@ public abstract class Canvas {
         drawTextBlob(text.getTextBlob(), x, y, paint);
     }
 
-    public void drawSimpleText(@NonNull char[] text, @NonNull Font font,
+    public void drawSimpleText(char @NonNull[] text, @NonNull Font font,
                                float x, float y, @NonNull Paint paint,
                                @NonNull FontPaint fontPaint) {
         if (text.length == 0) {
@@ -1391,7 +1391,7 @@ public abstract class Canvas {
      * @param paint        the paint
      * @param fontPaint    the paint used for font rasterization
      */
-    public abstract void drawTextRun(@NonNull char[] text, int start, int end,
+    public abstract void drawTextRun(char @NonNull[] text, int start, int end,
                                      int contextStart, int contextEnd, float x, float y, boolean isRtl,
                                      @NonNull Paint paint, @NonNull FontPaint fontPaint);
 
@@ -1500,10 +1500,10 @@ public abstract class Canvas {
      *                       supported.
      */
     public abstract void drawVertices(@NonNull VertexMode mode, int vertexCount,
-                                      @Size(multiple = 2) @NonNull float[] positions, int positionOffset,
-                                      @Size(multiple = 2) @Nullable float[] texCoords, int texCoordOffset,
-                                      @Nullable int[] colors, int colorOffset,
-                                      @Nullable short[] indices, int indexOffset, int indexCount,
+            @Size(multiple = 2) float @NonNull[] positions, int positionOffset,
+            @Size(multiple = 2) float @Nullable[] texCoords, int texCoordOffset,
+            int @Nullable[] colors, int colorOffset,
+            short @Nullable[] indices, int indexOffset, int indexCount,
                                       @Nullable BlendMode blendMode, @NonNull Paint paint);
 
     /**
@@ -1605,7 +1605,7 @@ public abstract class Canvas {
 
     // From Chromium project
     @ApiStatus.Experimental
-    public void drawEdgeAAQuad(@Nullable RectF rect, @Nullable @Size(8) float[] clip, int clipOffset,
+    public void drawEdgeAAQuad(@Nullable RectF rect, @Size(8) float @Nullable[] clip, int clipOffset,
                                @MagicConstant(flags = {EDGE_AA_FLAG_LEFT, EDGE_AA_FLAG_TOP, EDGE_AA_FLAG_RIGHT,
                                        EDGE_AA_FLAG_BOTTOM}) int edgeFlags, @Nullable Paint paint) {
     }

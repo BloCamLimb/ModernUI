@@ -18,10 +18,10 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.lifecycle.LifecycleOwner;
 import icyllis.modernui.util.DataSet;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A class that manages passing data between fragments.

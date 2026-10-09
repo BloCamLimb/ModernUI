@@ -20,12 +20,12 @@ package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.FloatProperty;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Draws a ripple background.
@@ -51,7 +51,7 @@ class RippleBackground extends RippleComponent {
     }
 
     public void draw(@NonNull Canvas c, float cx, float cy, @NonNull Paint p,
-                     @Nullable Rect maskRect, @Nullable float[] maskRadii) {
+                     @Nullable Rect maskRect, float @Nullable[] maskRadii) {
         final float origAlpha = p.getAlphaF();
         final float alpha = origAlpha * mOpacity;
         if (alpha > 0) {

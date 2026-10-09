@@ -45,8 +45,6 @@ import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.Dimension;
 import icyllis.modernui.annotation.FloatRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
@@ -77,6 +75,8 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -1444,12 +1444,12 @@ public class TabLayout extends HorizontalScrollView {
     }
 
     @Override
-    public void addView(@NonNull View child, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, ViewGroup.@NonNull LayoutParams params) {
         addViewInternal(child);
     }
 
     @Override
-    public void addView(@NonNull View child, int index, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, int index, ViewGroup.@NonNull LayoutParams params) {
         addViewInternal(child);
     }
 
@@ -1461,15 +1461,14 @@ public class TabLayout extends HorizontalScrollView {
         }
     }
 
-    @NonNull
-    private LinearLayout.LayoutParams createLayoutParamsForTabs() {
+    private LinearLayout.@NonNull LayoutParams createLayoutParamsForTabs() {
         final LinearLayout.LayoutParams lp =
                 new LinearLayout.LayoutParams(WRAP_CONTENT, LayoutParams.MATCH_PARENT);
         updateTabViewLayoutParams(lp);
         return lp;
     }
 
-    private void updateTabViewLayoutParams(@NonNull LinearLayout.LayoutParams lp) {
+    private void updateTabViewLayoutParams(LinearLayout.@NonNull LayoutParams lp) {
         if (mode == MODE_FIXED && tabGravity == GRAVITY_FILL) {
             lp.width = 0;
             lp.weight = 1;
@@ -3088,7 +3087,7 @@ public class TabLayout extends HorizontalScrollView {
         }
 
         @Override
-        public void onTabSelected(@NonNull TabLayout.Tab tab) {
+        public void onTabSelected(TabLayout.@NonNull Tab tab) {
             viewPager.setCurrentItem(tab.getPosition());
         }
     }

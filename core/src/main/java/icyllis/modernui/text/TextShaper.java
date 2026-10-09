@@ -19,10 +19,10 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.ShapedText;
 import icyllis.modernui.graphics.text.TextRunShaper;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -128,7 +128,7 @@ public class TextShaper {
      */
     @NonNull
     public static ShapedText shapeText(
-            @NonNull char[] text, @IntRange(from = 0) int start,
+            char @NonNull[] text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count,
             @NonNull TextDirectionHeuristic dir, @NonNull TextPaint paint) {
         Objects.requireNonNull(dir);
@@ -223,7 +223,7 @@ public class TextShaper {
      */
     @NonNull
     public static ShapedText shapeTextRun(
-            @NonNull char[] text, @IntRange(from = 0) int start,
+            char @NonNull[] text, @IntRange(from = 0) int start,
             @IntRange(from = 0) int count, int contextStart, int contextCount,
             boolean isRtl, @NonNull TextPaint paint) {
         return TextRunShaper.shapeTextRun(text, start, count, contextStart, contextCount, isRtl,

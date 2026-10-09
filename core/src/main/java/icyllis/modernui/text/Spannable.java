@@ -18,10 +18,10 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.ParagraphStyle;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This is the interface for text to which markup objects can be

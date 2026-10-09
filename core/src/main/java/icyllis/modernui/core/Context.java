@@ -19,14 +19,14 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface for obtaining global information about the application environment.
@@ -99,7 +99,7 @@ public abstract class Context {
      */
     @Deprecated(forRemoval = true)
     @NonNull
-    public final TypedArray obtainStyledAttributes(@NonNull String[] attrs) {
+    public final TypedArray obtainStyledAttributes(String @NonNull[] attrs) {
         return getTheme().obtainStyledAttributes(attrs);
     }
 
@@ -115,7 +115,7 @@ public abstract class Context {
     @Deprecated(forRemoval = true)
     @NonNull
     public final TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
-                                                   @NonNull String[] attrs) {
+            String @NonNull[] attrs) {
         return getTheme().obtainStyledAttributes(resId, attrs);
     }
 
@@ -131,7 +131,7 @@ public abstract class Context {
     @Deprecated(forRemoval = true)
     @NonNull
     public final TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
-                                                   @NonNull String[] attrs) {
+            String @NonNull[] attrs) {
         return getTheme().obtainStyledAttributes(set, (String) null, null, attrs);
     }
 
@@ -150,7 +150,7 @@ public abstract class Context {
     public final TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
                                                    @Nullable @AttrRes ResourceId defStyleAttr,
                                                    @Nullable @StyleRes ResourceId defStyleRes,
-                                                   @NonNull String[] attrs) {
+            String @NonNull[] attrs) {
         return getTheme().obtainStyledAttributes(set, defStyleAttr, defStyleRes, attrs);
     }
 

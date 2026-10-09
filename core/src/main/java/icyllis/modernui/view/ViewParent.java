@@ -18,12 +18,12 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Point;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.View.NestedScrollType;
 import icyllis.modernui.view.View.ScrollAxis;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Defines an object that can work as a parent of a View.
@@ -457,7 +457,7 @@ public interface ViewParent {
      * @see View#dispatchNestedScroll(int, int, int, int, int[], int, int[])
      */
     void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                        int dyUnconsumed, @NestedScrollType int type, @NonNull int[] consumed);
+                        int dyUnconsumed, @NestedScrollType int type, int @NonNull[] consumed);
 
     /**
      * React to a nested scroll in progress before the target view consumes a portion of the scroll.
@@ -480,7 +480,7 @@ public interface ViewParent {
      * @param consumed Output. The horizontal and vertical scroll distance consumed by this parent
      * @param type     the type of input which cause this scroll event
      */
-    void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
+    void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull[] consumed,
                            @NestedScrollType int type);
 
     /**

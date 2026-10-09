@@ -20,12 +20,12 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class TypedArray {
 

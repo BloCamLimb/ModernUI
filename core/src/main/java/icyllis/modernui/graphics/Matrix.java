@@ -19,9 +19,9 @@
 package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.Matrix4c;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class represents a 3x3 matrix and a 2D transformation, its components

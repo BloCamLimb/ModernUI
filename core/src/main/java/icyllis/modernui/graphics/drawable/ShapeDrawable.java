@@ -21,8 +21,6 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.FloatRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Px;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.BlendModeColorFilter;
@@ -36,6 +34,8 @@ import icyllis.modernui.graphics.RectF;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -712,7 +712,7 @@ public class ShapeDrawable extends Drawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         boolean invalidateSelf = false;
 
         final ShapeState s = mShapeState;

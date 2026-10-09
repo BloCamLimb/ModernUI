@@ -18,14 +18,14 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.ResourceTypes.*;
 import icyllis.modernui.util.Log;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -161,8 +161,8 @@ public final class AssetManager {
         }
     }
 
-    private AssetManager(@NonNull AssetPack[] assetPacks, boolean preset,
-                         @Nullable ResourcesLoader[] loaders) {
+    private AssetManager(AssetPack @NonNull[] assetPacks, boolean preset,
+            ResourcesLoader @Nullable[] loaders) {
 
         HashMap<String, PackageGroup> packageGroups = new HashMap<>();
         for (int i = 0; i < assetPacks.length; i++) {

@@ -18,11 +18,11 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Proxying implementation of Context that simply delegates all of its calls to

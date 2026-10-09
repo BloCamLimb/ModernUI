@@ -20,8 +20,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
@@ -33,6 +31,8 @@ import icyllis.modernui.util.Log;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.WindowManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 

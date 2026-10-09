@@ -18,12 +18,12 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.graphics.Matrix;
 import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Object that indicates movement events (mouse, touchpad etc.).
@@ -1241,8 +1241,7 @@ public final class MotionEvent extends InputEvent {
             copyFrom(other);
         }
 
-        @NonNull
-        public static PointerCoords[] createArray(int size) {
+        public static PointerCoords @NonNull[] createArray(int size) {
             PointerCoords[] array = new PointerCoords[size];
             for (int i = 0; i < size; i++) {
                 array[i] = new PointerCoords();
@@ -1383,8 +1382,7 @@ public final class MotionEvent extends InputEvent {
             copyFrom(other);
         }
 
-        @NonNull
-        public static PointerProperties[] createArray(int size) {
+        public static PointerProperties @NonNull[] createArray(int size) {
             PointerProperties[] array = new PointerProperties[size];
             for (int i = 0; i < size; i++) {
                 array[i] = new PointerProperties();

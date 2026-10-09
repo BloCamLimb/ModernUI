@@ -19,8 +19,8 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
+import org.jspecify.annotations.NonNull;
 import icyllis.modernui.system.Parcel;
 
 /**

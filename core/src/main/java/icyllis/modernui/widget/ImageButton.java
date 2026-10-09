@@ -19,7 +19,6 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Image;
@@ -27,6 +26,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>

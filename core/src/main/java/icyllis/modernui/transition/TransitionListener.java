@@ -18,8 +18,8 @@
 
 package icyllis.modernui.transition;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A transition listener receives notifications from a transition.

@@ -35,8 +35,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.BlendModeColorFilter;
 import icyllis.modernui.graphics.Canvas;
@@ -47,6 +45,8 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -204,7 +204,7 @@ public class RippleDrawable extends LayerDrawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         final boolean changed = super.onStateChange(stateSet);
 
         boolean enabled = false;

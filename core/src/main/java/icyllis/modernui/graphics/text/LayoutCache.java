@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.util.Pools;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -92,7 +92,7 @@ public final class LayoutCache {
      * @return the layout piece
      */
     @NonNull
-    public static LayoutPiece getOrCreate(@NonNull char[] buf, int contextStart, int contextLimit,
+    public static LayoutPiece getOrCreate(char @NonNull[] buf, int contextStart, int contextLimit,
                                           int start, int limit, boolean isRtl, @NonNull FontPaint paint,
                                           int computeFlags) {
         if (contextStart < 0 || contextStart >= contextLimit || buf.length == 0 ||
@@ -279,7 +279,7 @@ public final class LayoutCache {
         public LookupKey() {
         }
 
-        public void update(@NonNull char[] text, int contextStart, int contextLimit,
+        public void update(char @NonNull[] text, int contextStart, int contextLimit,
                            int start, int limit, @NonNull FontPaint paint, boolean dir) {
             mChars = text;
             mContextStart = contextStart;

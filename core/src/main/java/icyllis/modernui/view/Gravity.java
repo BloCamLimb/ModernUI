@@ -18,8 +18,8 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Rect;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Standard constants and tools for placing an object within a potentially

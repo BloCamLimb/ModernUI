@@ -18,8 +18,6 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.system.CancellationSignal;
 import icyllis.modernui.transition.Transition;
@@ -29,6 +27,8 @@ import icyllis.modernui.util.ArrayMap;
 import icyllis.modernui.view.OneShotPreDrawListener;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;

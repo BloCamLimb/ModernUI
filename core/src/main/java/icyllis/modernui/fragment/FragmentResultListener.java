@@ -18,9 +18,9 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.lifecycle.LifecycleOwner;
 import icyllis.modernui.util.DataSet;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Listener for handling fragment results.

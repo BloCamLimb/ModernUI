@@ -18,7 +18,7 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Array;
 
@@ -52,8 +52,7 @@ public final class GrowingArrayUtils {
      * @return the array to which the element was appended. This may be different than the given
      * array.
      */
-    @NonNull
-    public static <T> T[] append(@NonNull T[] array, int currentSize, T element) {
+    public static <T> T @NonNull[] append(T @NonNull[] array, int currentSize, T element) {
         assert currentSize <= array.length;
 
         if (currentSize >= array.length) {
@@ -73,8 +72,7 @@ public final class GrowingArrayUtils {
     /**
      * Primitive int version of {@link #append(Object[], int, Object)}.
      */
-    @NonNull
-    public static int[] append(@NonNull int[] array, int currentSize, int element) {
+    public static int @NonNull[] append(int @NonNull[] array, int currentSize, int element) {
         assert currentSize <= array.length;
 
         if (currentSize >= array.length) {
@@ -89,8 +87,7 @@ public final class GrowingArrayUtils {
     /**
      * Primitive long version of {@link #append(Object[], int, Object)}.
      */
-    @NonNull
-    public static long[] append(@NonNull long[] array, int currentSize, long element) {
+    public static long @NonNull[] append(long @NonNull[] array, int currentSize, long element) {
         assert currentSize <= array.length;
 
         if (currentSize >= array.length) {
@@ -105,8 +102,7 @@ public final class GrowingArrayUtils {
     /**
      * Primitive boolean version of {@link #append(Object[], int, Object)}.
      */
-    @NonNull
-    public static boolean[] append(@NonNull boolean[] array, int currentSize, boolean element) {
+    public static boolean @NonNull[] append(boolean @NonNull[] array, int currentSize, boolean element) {
         assert currentSize <= array.length;
 
         if (currentSize >= array.length) {
@@ -129,8 +125,7 @@ public final class GrowingArrayUtils {
      * @return the array to which the element was appended. This may be different than the given
      * array.
      */
-    @NonNull
-    public static <T> T[] insert(@NonNull T[] array, int currentSize, int index, T element) {
+    public static <T> T @NonNull[] insert(T @NonNull[] array, int currentSize, int index, T element) {
         assert currentSize <= array.length;
 
         if (currentSize < array.length) {
@@ -154,8 +149,7 @@ public final class GrowingArrayUtils {
     /**
      * Primitive int version of {@link #insert(Object[], int, int, Object)}.
      */
-    @NonNull
-    public static int[] insert(@NonNull int[] array, int currentSize, int index, int element) {
+    public static int @NonNull[] insert(int @NonNull[] array, int currentSize, int index, int element) {
         assert currentSize <= array.length;
 
         if (currentSize < array.length) {
@@ -174,8 +168,7 @@ public final class GrowingArrayUtils {
     /**
      * Primitive long version of {@link #insert(Object[], int, int, Object)}.
      */
-    @NonNull
-    public static long[] insert(@NonNull long[] array, int currentSize, int index, long element) {
+    public static long @NonNull[] insert(long @NonNull[] array, int currentSize, int index, long element) {
         assert currentSize <= array.length;
 
         if (currentSize < array.length) {
@@ -194,8 +187,7 @@ public final class GrowingArrayUtils {
     /**
      * Primitive boolean version of {@link #insert(Object[], int, int, Object)}.
      */
-    @NonNull
-    public static boolean[] insert(@NonNull boolean[] array, int currentSize, int index, boolean element) {
+    public static boolean @NonNull[] insert(boolean @NonNull[] array, int currentSize, int index, boolean element) {
         assert currentSize <= array.length;
 
         if (currentSize < array.length) {

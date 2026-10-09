@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.CheckReturnValue;
 import java.util.Objects;
@@ -143,8 +143,8 @@ public class PathMeasure extends icyllis.arc3d.sketch.PathMeasure {
      */
     @CheckReturnValue
     public boolean getPosTan(float distance,
-                             @Nullable float[] position,
-                             @Nullable float[] tangent) {
+            float @Nullable[] position,
+            float @Nullable[] tangent) {
         return super.getPosTan(distance, position, 0, tangent, 0);
     }
 

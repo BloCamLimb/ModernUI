@@ -18,7 +18,6 @@
 
 package icyllis.modernui.material.drawable;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.RadialGradient;
@@ -28,6 +27,7 @@ import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A thumb drawable for SeekBar, similar to Material Design.

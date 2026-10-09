@@ -20,8 +20,6 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.ResourceTypes.ResTable_entry;
@@ -32,6 +30,8 @@ import icyllis.modernui.util.ColorStateList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.WillCloseWhenClosed;
 import java.nio.ByteBuffer;

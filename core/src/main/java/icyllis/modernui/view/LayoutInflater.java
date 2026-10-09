@@ -18,11 +18,11 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.AttributeSet;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.xml.namespace.QName;
 
@@ -34,7 +34,7 @@ public class LayoutInflater {
 
         @Nullable
         View onCreateView(@Nullable View parent, @NonNull QName name,
-                          @NonNull Context context, @NonNull Resources.Theme theme,
+                          @NonNull Context context, Resources.@NonNull Theme theme,
                           @NonNull AttributeSet attrs);
     }
 }

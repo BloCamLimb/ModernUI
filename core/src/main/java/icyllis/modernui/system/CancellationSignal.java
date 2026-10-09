@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides the ability to cancel an operation in progress.

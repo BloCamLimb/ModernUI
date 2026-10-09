@@ -18,11 +18,11 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>This class is used to create a multiple-exclusion scope for a set of radio
@@ -151,9 +151,8 @@ public class RelativeRadioGroup extends RelativeLayout {
         mOnCheckedChangeListener = listener;
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
     }
 

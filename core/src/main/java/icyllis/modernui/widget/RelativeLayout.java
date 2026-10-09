@@ -35,8 +35,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
@@ -46,6 +44,8 @@ import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -1010,9 +1010,8 @@ public class RelativeLayout extends ViewGroup {
         }
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams lp) {
+    protected ViewGroup.@NonNull LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams lp) {
         if (lp instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) lp);
         } else if (lp instanceof MarginLayoutParams) {
@@ -1021,14 +1020,13 @@ public class RelativeLayout extends ViewGroup {
         return new LayoutParams(lp);
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
     }
 
     @Override
-    protected boolean checkLayoutParams(@Nullable ViewGroup.LayoutParams p) {
+    protected boolean checkLayoutParams(ViewGroup.@Nullable LayoutParams p) {
         return p instanceof LayoutParams;
     }
 
@@ -1072,7 +1070,7 @@ public class RelativeLayout extends ViewGroup {
             super(width, height);
         }
 
-        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull LayoutParams source) {
             super(source);
         }
 

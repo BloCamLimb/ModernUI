@@ -18,12 +18,12 @@
 
 package icyllis.modernui.material;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base drawable that used for blending with white vectors.
@@ -49,7 +49,7 @@ public abstract class MaterialDrawable extends Drawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         if (mTint != null) {
             mColor = mTint.getColorForState(stateSet, Color.WHITE_LONG);
             return true;

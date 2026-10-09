@@ -18,8 +18,8 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.*;
+import org.jspecify.annotations.NonNull;
 import icyllis.modernui.system.Parcel;
 
 /**
@@ -40,7 +40,7 @@ public interface AlignmentSpan extends ParagraphStyle {
         /**
          * Constructs a {@link Standard} from an alignment.
          */
-        public Standard(@NonNull Layout.Alignment align) {
+        public Standard(Layout.@NonNull Alignment align) {
             mAlignment = align;
         }
 

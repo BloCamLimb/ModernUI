@@ -36,8 +36,6 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.text.CharUtils;
@@ -48,6 +46,8 @@ import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.util.GrowingArrayUtils;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;

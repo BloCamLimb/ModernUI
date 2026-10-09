@@ -35,8 +35,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Outline;
@@ -47,6 +45,8 @@ import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.SparseArray;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A helper class that contains several {@link Drawable}s and selects which one to use.
@@ -289,7 +289,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] state) {
+    protected boolean onStateChange(int @NonNull[] state) {
         if (mLastDrawable != null) {
             return mLastDrawable.setState(state);
         }

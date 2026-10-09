@@ -18,7 +18,7 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;

@@ -79,6 +79,8 @@ import icyllis.modernui.view.ViewTreeObserver;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -167,8 +169,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     // changing.
     private boolean mPreventDefaultMovement;
 
-    @Nullable
-    private TextUtils.TruncateAt mEllipsize;
+    private TextUtils.@Nullable TruncateAt mEllipsize;
 
     Drawables mDrawables;
 
@@ -257,8 +258,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     private TextDirectionHeuristic mTextDir;
 
-    @NonNull
-    private InputFilter[] mFilters = NO_FILTERS;
+    private InputFilter @NonNull[] mFilters = NO_FILTERS;
 
     int mHighlightColor = 0x6633B5E5;
     private FloatArrayList mHighlightPath;
@@ -1025,8 +1025,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * Returns drawables for the left, top, right, and bottom borders.
      */
-    @NonNull
-    public Drawable[] getCompoundDrawables() {
+    public Drawable @NonNull[] getCompoundDrawables() {
         final Drawables dr = mDrawables;
         if (dr != null) {
             return dr.mShowing.clone();
@@ -1038,8 +1037,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * Returns drawables for the start, top, end, and bottom borders.
      */
-    @NonNull
-    public Drawable[] getCompoundDrawablesRelative() {
+    public Drawable @NonNull[] getCompoundDrawablesRelative() {
         final Drawables dr = mDrawables;
         if (dr != null) {
             return new Drawable[]{
@@ -1615,7 +1613,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return a current {@link PrecomputedText.Params}
      * @see PrecomputedText
      */
-    public @NonNull PrecomputedText.Params getTextMetricsParams() {
+    public PrecomputedText.@NonNull Params getTextMetricsParams() {
         return new PrecomputedText.Params(new TextPaint(mTextPaint),
                 LineBreakConfig.getLineBreakConfig(mLineBreakStyle, mLineBreakWordStyle),
                 getTextDirectionHeuristic());
@@ -1628,7 +1626,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @see PrecomputedText
      */
-    public void setTextMetricsParams(@NonNull PrecomputedText.Params params) {
+    public void setTextMetricsParams(PrecomputedText.@NonNull Params params) {
         mTextPaint.set(params.getTextPaint());
         mTextDir = params.getTextDirection();
         LineBreakConfig lineBreakConfig = params.getLineBreakConfig();
@@ -2305,7 +2303,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see Editable.Factory
      * @see BufferType#EDITABLE
      */
-    public final void setEditableFactory(@NonNull Editable.Factory factory) {
+    public final void setEditableFactory(Editable.@NonNull Factory factory) {
         mEditableFactory = factory;
         setText(mText);
     }
@@ -2317,7 +2315,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @see Spannable.Factory
      * @see BufferType#SPANNABLE
      */
-    public final void setSpannableFactory(@NonNull Spannable.Factory factory) {
+    public final void setSpannableFactory(Spannable.@NonNull Factory factory) {
         mSpannableFactory = factory;
         setText(mText);
     }
@@ -2617,8 +2615,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * Returns the current list of input filters.
      */
-    @NonNull
-    public InputFilter[] getFilters() {
+    public InputFilter @NonNull[] getFilters() {
         return mFilters;
     }
 
@@ -2966,9 +2963,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
     }
 
-    @NonNull
     @Override
-    protected int[] onCreateDrawableState(int extraSpace) {
+    protected int @NonNull[] onCreateDrawableState(int extraSpace) {
         final int[] drawableState = super.onCreateDrawableState(extraSpace);
 
         if (isTextSelectable()) {
@@ -4395,7 +4391,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * only {@link TextUtils.TruncateAt#END} is supported
      * (other ellipsizing types will not do anything).
      */
-    public void setEllipsize(@Nullable TextUtils.TruncateAt where) {
+    public void setEllipsize(TextUtils.@Nullable TruncateAt where) {
         // TruncateAt is an enum. != comparison is ok between these singleton objects.
         if (mEllipsize != where) {
             mEllipsize = where;
@@ -4412,8 +4408,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * Returns where, if anywhere, words that are longer than the view
      * is wide should be ellipsized.
      */
-    @Nullable
-    public TextUtils.TruncateAt getEllipsize() {
+    public TextUtils.@Nullable TruncateAt getEllipsize() {
         return mEllipsize;
     }
 

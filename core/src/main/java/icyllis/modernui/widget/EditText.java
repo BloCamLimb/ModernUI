@@ -20,8 +20,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -33,6 +31,8 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.util.AttributeSet;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /*
  * This is supposed to be a *very* thin veneer over TextView.

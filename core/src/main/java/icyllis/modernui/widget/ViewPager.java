@@ -39,8 +39,6 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
@@ -55,6 +53,8 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -1299,7 +1299,7 @@ public class ViewPager extends ViewGroup {
     }
 
     @Override
-    public void addView(@NonNull View child, int index, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, int index, ViewGroup.@NonNull LayoutParams params) {
         if (!checkLayoutParams(params)) {
             params = generateLayoutParams(params);
         }
@@ -2806,15 +2806,13 @@ public class ViewPager extends ViewGroup {
         return false;
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams();
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams p) {
+    protected ViewGroup.@NonNull LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams p) {
         return generateDefaultLayoutParams();
     }
 

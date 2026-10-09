@@ -35,9 +35,9 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.TextPaint;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

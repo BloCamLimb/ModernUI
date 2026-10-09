@@ -18,9 +18,9 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.*;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import icyllis.modernui.system.Parcel;
 
 import java.util.Locale;

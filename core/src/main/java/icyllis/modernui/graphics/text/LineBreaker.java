@@ -20,9 +20,9 @@ package icyllis.modernui.graphics.text;
 
 import com.ibm.icu.text.BreakIterator;
 import com.ibm.icu.util.ULocale;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import it.unimi.dsi.fastutil.ints.IntArrays;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.text.CharacterIterator;
 import java.util.*;
@@ -50,8 +50,7 @@ public class LineBreaker {
                 || c == 0x3000;
     }
 
-    @NonNull
-    private final char[] mTextBuf;
+    private final char @NonNull[] mTextBuf;
     @NonNull
     private final MeasuredText mMeasuredText;
     @NonNull
@@ -70,7 +69,7 @@ public class LineBreaker {
 
     private final List<BreakPoint> mBreakPoints = new ArrayList<>();
 
-    public LineBreaker(@NonNull char[] textBuf, @NonNull MeasuredText measuredText, @NonNull LineWidth lineWidthLimits,
+    public LineBreaker(char @NonNull[] textBuf, @NonNull MeasuredText measuredText, @NonNull LineWidth lineWidthLimits,
                        @NonNull TabStops tabStops) {
         mTextBuf = textBuf;
         mMeasuredText = measuredText;
@@ -96,7 +95,7 @@ public class LineBreaker {
     @NonNull
     public static Result computeLineBreaks(@Nullable MeasuredText measuredText,
                                            @NonNull ParagraphConstraints constraints,
-                                           @Nullable int[] indents, int lineNumber) {
+            int @Nullable[] indents, int lineNumber) {
         if (measuredText == null || measuredText.getTextBuf().length == 0) {
             return new Result();
         }
@@ -314,8 +313,7 @@ public class LineBreaker {
 
         private float mWidth = 0;
         private float mFirstWidth = 0;
-        @Nullable
-        private float[] mVariableTabStops = null;
+        private float @Nullable[] mVariableTabStops = null;
         private float mDefaultTabStop = 0;
 
         public ParagraphConstraints() {
@@ -348,7 +346,7 @@ public class LineBreaker {
          * @see #getTabStops()
          * @see #getDefaultTabStop()
          */
-        public void setTabStops(@Nullable float[] tabStops, float defaultTabStop) {
+        public void setTabStops(float @Nullable[] tabStops, float defaultTabStop) {
             mVariableTabStops = tabStops;
             mDefaultTabStop = defaultTabStop;
         }
@@ -376,8 +374,7 @@ public class LineBreaker {
          *
          * @see #setTabStops
          */
-        @Nullable
-        public float[] getTabStops() {
+        public float @Nullable[] getTabStops() {
             return mVariableTabStops;
         }
 
@@ -423,12 +420,11 @@ public class LineBreaker {
         private final float mFirstWidth;
         // for rest lines
         private final float mRestWidth;
-        @Nullable
-        private final int[] mIndents;
+        private final int @Nullable[] mIndents;
         // the offset in mIndents
         private final int mOffset;
 
-        public DefaultLineWidth(float firstWidth, float restWidth, @Nullable int[] indents, int offset) {
+        public DefaultLineWidth(float firstWidth, float restWidth, int @Nullable[] indents, int offset) {
             mFirstWidth = firstWidth;
             mRestWidth = restWidth;
             mIndents = indents;
@@ -452,7 +448,7 @@ public class LineBreaker {
             return minWidth;
         }
 
-        private float getIndent(@Nullable int[] indents, int line) {
+        private float getIndent(int @Nullable[] indents, int line) {
             if (indents == null || indents.length == 0)
                 return 0;
             final int index = line + mOffset;
@@ -472,8 +468,7 @@ public class LineBreaker {
 
         private static final BreakPoint[] EMPTY_ARRAY = {};
 
-        @NonNull
-        private final BreakPoint[] mBreakPoints;
+        private final BreakPoint @NonNull[] mBreakPoints;
         private final int[] mAscents;
         private final int[] mDescents;
 
@@ -483,7 +478,7 @@ public class LineBreaker {
             mDescents = IntArrays.EMPTY_ARRAY;
         }
 
-        private Result(@NonNull BreakPoint[] breakPoints, int[] ascents, int[] descents) {
+        private Result(BreakPoint @NonNull[] breakPoints, int[] ascents, int[] descents) {
             mBreakPoints = breakPoints;
             mAscents = ascents;
             mDescents = descents;

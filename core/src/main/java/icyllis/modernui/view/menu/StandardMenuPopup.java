@@ -36,7 +36,6 @@
 package icyllis.modernui.view.menu;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -58,6 +57,7 @@ import icyllis.modernui.widget.MenuPopupWindow;
 import icyllis.modernui.widget.PopupWindow;
 import icyllis.modernui.widget.TextView;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 

@@ -20,8 +20,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
@@ -39,6 +37,8 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Displays image resources, for example {@link icyllis.modernui.graphics.Image}
@@ -538,9 +538,8 @@ public class ImageView extends View {
         }
     }
 
-    @NonNull
     @Override
-    protected int[] onCreateDrawableState(int extraSpace) {
+    protected int @NonNull[] onCreateDrawableState(int extraSpace) {
         if (mState == null) {
             return super.onCreateDrawableState(extraSpace);
         } else if (!mMergeState) {

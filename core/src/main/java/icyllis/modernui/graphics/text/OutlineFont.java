@@ -18,14 +18,14 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.util.SparseArray;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
@@ -100,8 +100,7 @@ public final class OutlineFont implements Font {
         return mFont.getFamily(locale);
     }
 
-    @NonNull
-    private java.awt.Font chooseFont(float size) {
+    private java.awt.@NonNull Font chooseFont(float size) {
         if (size <= 1) {
             return mFont;
         }
@@ -118,13 +117,11 @@ public final class OutlineFont implements Font {
         return mFont.deriveFont(size);
     }
 
-    @NonNull
-    public java.awt.Font chooseFont(int size) {
+    public java.awt.@NonNull Font chooseFont(int size) {
         return chooseFont((float) size);
     }
 
-    @NonNull
-    public java.awt.Font chooseFont(@NonNull FontPaint paint) {
+    public java.awt.@NonNull Font chooseFont(@NonNull FontPaint paint) {
         return chooseFont(paint.getFontSize());
     }
 

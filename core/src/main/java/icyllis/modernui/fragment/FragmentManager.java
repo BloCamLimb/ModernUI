@@ -36,8 +36,6 @@
 package icyllis.modernui.fragment;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.util.LogWriter;
 import icyllis.modernui.lifecycle.Lifecycle;
@@ -50,6 +48,8 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -566,7 +566,7 @@ public final class FragmentManager implements FragmentResultOwner {
         LifecycleObserver observer = new LifecycleObserver() {
             @Override
             public void onStateChanged(@NonNull LifecycleOwner source,
-                                       @NonNull Lifecycle.Event event) {
+                    Lifecycle.@NonNull Event event) {
                 if (event == Lifecycle.Event.ON_START) {
                     // once we are started, check for any stored results
                     DataSet storedResult = mResults.get(requestKey);
@@ -1929,7 +1929,7 @@ public final class FragmentManager implements FragmentResultOwner {
         return mPrimaryNav;
     }
 
-    void setMaxLifecycle(@NonNull Fragment f, @NonNull Lifecycle.State state) {
+    void setMaxLifecycle(@NonNull Fragment f, Lifecycle.@NonNull State state) {
         if (!f.equals(findActiveFragment(f.mWho))
                 || (f.mHost != null && f.mFragmentManager != this)) {
             throw new IllegalArgumentException("Fragment " + f

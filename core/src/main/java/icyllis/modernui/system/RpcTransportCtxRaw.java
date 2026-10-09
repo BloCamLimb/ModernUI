@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -41,7 +41,7 @@ final class RpcTransportRaw extends RpcTransport {
     }
 
     @Override
-    public void interruptibleWriteFully(@NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    public void interruptibleWriteFully(ByteBuffer @NonNull[] iovs, int offset, int limit) throws IOException {
         final SocketChannel socket = mSocket;
         for (;;) {
             long written = socket.write(iovs, offset, limit - offset);
@@ -54,7 +54,7 @@ final class RpcTransportRaw extends RpcTransport {
     }
 
     @Override
-    public void interruptibleReadFully(@NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    public void interruptibleReadFully(ByteBuffer @NonNull[] iovs, int offset, int limit) throws IOException {
         final SocketChannel socket = mSocket;
         for (;;) {
             long read = socket.read(iovs, offset, limit - offset);

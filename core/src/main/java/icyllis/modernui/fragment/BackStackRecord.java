@@ -35,11 +35,11 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.LogWriter;
 import icyllis.modernui.lifecycle.Lifecycle;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -238,7 +238,7 @@ final class BackStackRecord extends FragmentTransaction implements
     @NonNull
     @Override
     public FragmentTransaction setMaxLifecycle(@NonNull Fragment fragment,
-                                               @NonNull Lifecycle.State state) {
+            Lifecycle.@NonNull State state) {
         if (fragment.mFragmentManager != mManager) {
             throw new IllegalArgumentException("Cannot setMaxLifecycle for Fragment not attached to"
                     + " FragmentManager " + mManager);

@@ -22,7 +22,6 @@ import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.BezierInterpolator;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.ValueAnimator;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
@@ -30,6 +29,7 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An indeterminate progress drawable for ProgressBar, similar to Material Design,

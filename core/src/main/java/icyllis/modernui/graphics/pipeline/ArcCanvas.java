@@ -26,8 +26,6 @@ import icyllis.arc3d.core.SamplingOptions;
 import icyllis.arc3d.sketch.RRect;
 import icyllis.arc3d.sketch.TextBlob;
 import icyllis.arc3d.sketch.Vertices;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
@@ -41,6 +39,8 @@ import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.LayoutPiece;
 import icyllis.modernui.graphics.text.ShapedText;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -216,7 +216,7 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawPoints(@NonNull float[] pts, int offset, int count, @NonNull Paint paint) {
+    public void drawPoints(float @NonNull[] pts, int offset, int count, @NonNull Paint paint) {
         Objects.checkFromIndexSize(offset, count, pts.length);
         mCanvas.drawPoints(icyllis.arc3d.sketch.Canvas.POINT_MODE_POINTS,
                 pts, offset, count >> 1, paint.getNativePaint());
@@ -229,12 +229,12 @@ public class ArcCanvas extends Canvas {
 
     @Override
     public void drawLine(float x0, float y0, float x1, float y1,
-                         @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint) {
+            Paint.@NonNull Cap cap, float thickness, @NonNull Paint paint) {
         mCanvas.drawLine(x0, y0, x1, y1, cap.nativeInt, thickness, paint.getNativePaint());
     }
 
     @Override
-    public void drawLines(@NonNull float[] pts, int offset, int count, boolean connected,
+    public void drawLines(float @NonNull[] pts, int offset, int count, boolean connected,
                           @NonNull Paint paint) {
         Objects.checkFromIndexSize(offset, count, pts.length);
         mCanvas.drawPoints(connected
@@ -282,7 +282,7 @@ public class ArcCanvas extends Canvas {
 
     @Override
     public void drawArc(float cx, float cy, float radius, float startAngle, float sweepAngle,
-                        @NonNull Paint.Cap cap, float thickness, @NonNull Paint paint) {
+            Paint.@NonNull Cap cap, float thickness, @NonNull Paint paint) {
         mCanvas.drawArc(cx, cy, radius, startAngle, sweepAngle, cap.nativeInt, thickness, paint.getNativePaint());
     }
 
@@ -327,8 +327,8 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawGlyphs(@NonNull int[] glyphs, int glyphOffset,
-                           @NonNull float[] positions, int positionOffset,
+    public void drawGlyphs(int @NonNull[] glyphs, int glyphOffset,
+            float @NonNull[] positions, int positionOffset,
                            int glyphCount, @NonNull Font font,
                            float x, float y, @NonNull Paint paint,
                            FontPaint fontPaint) {
@@ -352,7 +352,7 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawTextRun(@NonNull char[] text, int start, int end,
+    public void drawTextRun(char @NonNull[] text, int start, int end,
                             int contextStart, int contextEnd, float x, float y, boolean isRtl,
                             @NonNull Paint paint, @NonNull FontPaint fontPaint) {
         if ((start | end | contextStart | contextEnd | start - contextStart | end - start
@@ -397,10 +397,10 @@ public class ArcCanvas extends Canvas {
 
     @Override
     public void drawVertices(@NonNull VertexMode mode, int vertexCount,
-                             @NonNull float[] positions, int positionOffset,
-                             @Nullable float[] texCoords, int texCoordOffset,
-                             @Nullable int[] colors, int colorOffset,
-                             @Nullable short[] indices, int indexOffset, int indexCount,
+            float @NonNull[] positions, int positionOffset,
+            float @Nullable[] texCoords, int texCoordOffset,
+            int @Nullable[] colors, int colorOffset,
+            short @Nullable[] indices, int indexOffset, int indexCount,
                              @Nullable BlendMode blendMode, @NonNull Paint paint) {
         Objects.checkFromIndexSize(positionOffset, vertexCount, positions.length);
         if (texCoords != null) {
@@ -448,7 +448,7 @@ public class ArcCanvas extends Canvas {
     }
 
     @Override
-    public void drawEdgeAAQuad(@Nullable RectF rect, @Nullable float[] clip, int clipOffset, int edgeFlags,
+    public void drawEdgeAAQuad(@Nullable RectF rect, float @Nullable[] clip, int clipOffset, int edgeFlags,
                                @Nullable Paint paint) {
         mCanvas.drawEdgeAAQuad(
                 rect != null ? new Rect2f(rect.left, rect.top, rect.right, rect.bottom) : null,
@@ -474,7 +474,7 @@ public class ArcCanvas extends Canvas {
      * @see drawTextRun
      */
     @SuppressWarnings("JavadocReference")
-    public static void buildTextBlob(@NonNull TextBlob.Builder builder, @NonNull LayoutPiece piece,
+    public static void buildTextBlob(TextBlob.@NonNull Builder builder, @NonNull LayoutPiece piece,
                                      float offsetX, @NonNull FontPaint paint) {
         final int nGlyphs = piece.getGlyphCount();
         if (nGlyphs == 0) {

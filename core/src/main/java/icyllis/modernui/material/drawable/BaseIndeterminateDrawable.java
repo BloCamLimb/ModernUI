@@ -19,10 +19,10 @@
 package icyllis.modernui.material.drawable;
 
 import icyllis.modernui.animation.Animator;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.drawable.Animatable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @hidden

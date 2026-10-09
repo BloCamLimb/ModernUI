@@ -19,8 +19,6 @@
 package icyllis.modernui.text;
 
 import icyllis.arc3d.sketch.TextBlob;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.CharUtils;
@@ -33,6 +31,8 @@ import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a line of styled text, for measuring in visual order and
@@ -402,7 +402,7 @@ public class TextLine {
     /**
      * Shape the TextLine.
      */
-    void shape(@NonNull TextShaper.GlyphsConsumer consumer) {
+    void shape(TextShaper.@NonNull GlyphsConsumer consumer) {
         float horizontal = 0;
         float x = 0;
         final int runCount = mDirections.getRunCount();
@@ -810,7 +810,7 @@ public class TextLine {
      * @return the signed width of the run, based on the paragraph direction.
      * Only valid if needWidth is true.
      */
-    private float shapeRun(@NonNull TextShaper.GlyphsConsumer consumer, int start,
+    private float shapeRun(TextShaper.@NonNull GlyphsConsumer consumer, int start,
                            int limit, boolean runIsRtl, float x, boolean needWidth) {
 
         if ((mDir == Layout.DIR_LEFT_TO_RIGHT) == runIsRtl) {
@@ -845,7 +845,7 @@ public class TextLine {
     private float handleRun(int start, int measureLimit,
                             int limit, boolean runIsRtl,
                             @Nullable Canvas c,
-                            @Nullable TextShaper.GlyphsConsumer consumer,
+            TextShaper.@Nullable GlyphsConsumer consumer,
                             float x, int top, int y, int bottom,
                             @Nullable FontMetricsInt fmi, boolean needWidth) {
         if (measureLimit < start || measureLimit > limit) {
@@ -977,7 +977,7 @@ public class TextLine {
      */
     private float handleText(@NonNull TextPaint wp, int start, int end,
                              int contextStart, int contextEnd, boolean runIsRtl,
-                             @Nullable Canvas c, @Nullable TextShaper.GlyphsConsumer consumer,
+                             @Nullable Canvas c, TextShaper.@Nullable GlyphsConsumer consumer,
                              float x, int top, int y, int bottom,
                              boolean needWidth, int offset, int flags) {
         // No need to do anything if the run width is "0"

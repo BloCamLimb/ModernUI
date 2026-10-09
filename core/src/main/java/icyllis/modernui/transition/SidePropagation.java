@@ -18,12 +18,12 @@
 
 package icyllis.modernui.transition;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A <code>TransitionPropagation</code> that propagates based on the distance to the side

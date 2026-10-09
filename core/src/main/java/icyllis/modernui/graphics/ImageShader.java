@@ -20,10 +20,10 @@ package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SamplingOptions;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.system.Arch;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -210,7 +210,7 @@ public class ImageShader extends Shader {
         mShader = shader;
     }
 
-    private ImageShader(@NonNull icyllis.arc3d.sketch.shaders.Shader newShader,
+    private ImageShader(icyllis.arc3d.sketch.shaders.@NonNull Shader newShader,
                         @Nullable Matrix newLocalMatrix) {
         if (newLocalMatrix != null && !newLocalMatrix.isIdentity()) {
             mLocalMatrix = new Matrix(newLocalMatrix);

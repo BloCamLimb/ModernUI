@@ -19,13 +19,13 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @deprecated test only, use {@link TabLayout}.

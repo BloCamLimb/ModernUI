@@ -22,12 +22,12 @@ import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.RecordingContext;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.system.Handler;
 import icyllis.modernui.system.Looper;
 import icyllis.modernui.system.Message;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The Arc3D Granite renderer, abstracted to support different graphics backends.

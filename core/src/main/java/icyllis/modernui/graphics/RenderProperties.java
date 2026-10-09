@@ -21,9 +21,9 @@ package icyllis.modernui.graphics;
 import icyllis.arc3d.core.Matrix4;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.FloatRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Data structure that holds the properties for a RenderNode.

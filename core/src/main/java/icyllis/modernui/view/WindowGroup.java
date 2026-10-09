@@ -18,11 +18,11 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The root view of window view hierarchy, allowing for sub windows (panels),
@@ -97,7 +97,7 @@ public final class WindowGroup extends ViewGroup implements WindowManager {
     }
 
     @Override
-    public void addView(@NonNull View child, int index, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, int index, ViewGroup.@NonNull LayoutParams params) {
         if (!(params instanceof WindowManager.LayoutParams lhs)) {
             throw new IllegalArgumentException("Params must be WindowManager.LayoutParams");
         }

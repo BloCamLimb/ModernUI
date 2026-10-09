@@ -35,14 +35,14 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.system.Parcelable;
 import icyllis.modernui.util.DataSetObservable;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class providing the adapter to populate pages inside a {@link ViewPager}.

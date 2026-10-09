@@ -37,8 +37,6 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -55,6 +53,8 @@ import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
 import icyllis.modernui.view.menu.ShowableListMenu;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A ListPopupWindow anchors itself to a host view and displays a
@@ -431,7 +431,7 @@ public class ListPopupWindow implements ShowableListMenu {
      * @param clickListener Listener to register
      * @see ListView#setOnItemClickListener(AdapterView.OnItemClickListener)
      */
-    public void setOnItemClickListener(@Nullable AdapterView.OnItemClickListener clickListener) {
+    public void setOnItemClickListener(AdapterView.@Nullable OnItemClickListener clickListener) {
         mItemClickListener = clickListener;
     }
 
@@ -441,7 +441,7 @@ public class ListPopupWindow implements ShowableListMenu {
      * @param selectedListener Listener to register.
      * @see ListView#setOnItemSelectedListener(AdapterView.OnItemSelectedListener)
      */
-    public void setOnItemSelectedListener(@Nullable AdapterView.OnItemSelectedListener selectedListener) {
+    public void setOnItemSelectedListener(AdapterView.@Nullable OnItemSelectedListener selectedListener) {
         mItemSelectedListener = selectedListener;
     }
 
@@ -592,7 +592,7 @@ public class ListPopupWindow implements ShowableListMenu {
      *
      * @param listener Listener that will be notified when the popup is dismissed.
      */
-    public void setOnDismissListener(@Nullable PopupWindow.OnDismissListener listener) {
+    public void setOnDismissListener(PopupWindow.@Nullable OnDismissListener listener) {
         mPopup.setOnDismissListener(listener);
     }
 

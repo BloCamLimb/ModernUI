@@ -21,13 +21,13 @@ package icyllis.modernui.widget;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.system.AnimationClock;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class performs the graphical effect used at the edges of scrollable widgets

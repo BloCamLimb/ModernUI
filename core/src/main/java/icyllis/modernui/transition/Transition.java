@@ -21,8 +21,6 @@ package icyllis.modernui.transition;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ArrayMap;
 import icyllis.modernui.util.LongSparseArray;
@@ -36,6 +34,8 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -271,8 +271,7 @@ public abstract class Transition implements Cloneable {
      * @return An array of property names as described in the class documentation for
      * {@link TransitionValues}. The default implementation returns <code>null</code>.
      */
-    @Nullable
-    public String[] getTransitionProperties() {
+    public String @Nullable[] getTransitionProperties() {
         return null;
     }
 
@@ -365,7 +364,7 @@ public abstract class Transition implements Cloneable {
         return (match >= MATCH_FIRST && match <= MATCH_LAST);
     }
 
-    private static boolean alreadyContains(@NonNull int[] array, int searchIndex) {
+    private static boolean alreadyContains(int @NonNull[] array, int searchIndex) {
         int value = array[searchIndex];
         for (int i = 0; i < searchIndex; i++) {
             if (array[i] == value) {

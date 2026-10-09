@@ -18,10 +18,10 @@
 
 package icyllis.modernui.text.method;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.InputFilter;
 import icyllis.modernui.text.SpannableStringBuilder;
 import icyllis.modernui.text.Spanned;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Input filter for numeric text.
@@ -31,8 +31,7 @@ public abstract class NumberInputFilter implements InputFilter {
     /**
      * You can say which characters you can accept.
      */
-    @NonNull
-    protected abstract char[] getAcceptedChars();
+    protected abstract char @NonNull[] getAcceptedChars();
 
     @Override
     public CharSequence filter(@NonNull CharSequence source, int start, int end,
@@ -71,7 +70,7 @@ public abstract class NumberInputFilter implements InputFilter {
         return filtered;
     }
 
-    protected static boolean not(@NonNull char[] accept, char c) {
+    protected static boolean not(char @NonNull[] accept, char c) {
         for (int i = accept.length - 1; i >= 0; i--) {
             if (accept[i] == c) {
                 return false;

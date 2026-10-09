@@ -18,7 +18,7 @@
 
 package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Callback interface for listening to {@link LifecycleOwner} state changes.
@@ -99,6 +99,6 @@ public interface LifecycleObserver {
      * @param source The source of the event
      * @param event  The event
      */
-    default void onStateChanged(@NonNull LifecycleOwner source, @NonNull Lifecycle.Event event) {
+    default void onStateChanged(@NonNull LifecycleOwner source, Lifecycle.@NonNull Event event) {
     }
 }

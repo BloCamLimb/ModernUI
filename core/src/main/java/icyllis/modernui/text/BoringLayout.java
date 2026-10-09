@@ -20,14 +20,14 @@ package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
 import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.ShapedText;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -61,7 +61,7 @@ public class BoringLayout extends Layout {
     @NonNull
     public static BoringLayout make(@NonNull CharSequence source, @NonNull TextPaint paint, int outerWidth,
                                     @NonNull Alignment align, float spacingMult, float spacingAdd,
-                                    @NonNull BoringLayout.Metrics metrics, boolean includePad) {
+            BoringLayout.@NonNull Metrics metrics, boolean includePad) {
         return make(source, paint, outerWidth, align, TextDirectionHeuristics.FIRSTSTRONG_LTR,
                 spacingMult, spacingAdd, metrics, includePad);
     }
@@ -84,7 +84,7 @@ public class BoringLayout extends Layout {
     @NonNull
     public static BoringLayout make(@NonNull CharSequence source, @NonNull TextPaint paint, int outerWidth,
                                     @NonNull Alignment align, @NonNull TextDirectionHeuristic textDir,
-                                    float spacingMult, float spacingAdd, @NonNull BoringLayout.Metrics metrics,
+                                    float spacingMult, float spacingAdd, BoringLayout.@NonNull Metrics metrics,
                                     boolean includePad) {
         return new BoringLayout(source, paint, outerWidth, align, textDir, spacingMult, spacingAdd, metrics,
                 includePad);
@@ -93,8 +93,8 @@ public class BoringLayout extends Layout {
     @NonNull
     public static BoringLayout make(@NonNull CharSequence source, @NonNull TextPaint paint, int outerWidth,
                                     @NonNull Alignment align, float spacingMult, float spacingAdd,
-                                    @NonNull BoringLayout.Metrics metrics, boolean includePad,
-                                    @Nullable TextUtils.TruncateAt ellipsize, int ellipsizedWidth) {
+            BoringLayout.@NonNull Metrics metrics, boolean includePad,
+            TextUtils.@Nullable TruncateAt ellipsize, int ellipsizedWidth) {
         return make(source, paint, outerWidth, align, TextDirectionHeuristics.FIRSTSTRONG_LTR,
                 spacingMult, spacingAdd, metrics, includePad, ellipsize, ellipsizedWidth);
     }
@@ -119,8 +119,8 @@ public class BoringLayout extends Layout {
     @NonNull
     public static BoringLayout make(@NonNull CharSequence source, @NonNull TextPaint paint, int outerWidth,
                                     @NonNull Alignment align, @NonNull TextDirectionHeuristic textDir,
-                                    float spacingMult, float spacingAdd, @NonNull BoringLayout.Metrics metrics,
-                                    boolean includePad, @Nullable TextUtils.TruncateAt ellipsize, int ellipsizedWidth) {
+                                    float spacingMult, float spacingAdd, BoringLayout.@NonNull Metrics metrics,
+                                    boolean includePad, TextUtils.@Nullable TruncateAt ellipsize, int ellipsizedWidth) {
         return new BoringLayout(source, paint, outerWidth, align, textDir, spacingMult, spacingAdd, metrics,
                 includePad, ellipsize, ellipsizedWidth);
     }
@@ -141,7 +141,7 @@ public class BoringLayout extends Layout {
      */
     public BoringLayout replaceOrMake(@NonNull CharSequence source, @NonNull TextPaint paint, int outerWidth,
                                       @NonNull Alignment align, @NonNull TextDirectionHeuristic textDir,
-                                      float spacingMult, float spacingAdd, @NonNull BoringLayout.Metrics metrics,
+                                      float spacingMult, float spacingAdd, BoringLayout.@NonNull Metrics metrics,
                                       boolean includePad) {
         replaceWith(source, paint, outerWidth, align, textDir, spacingMult, spacingAdd);
 
@@ -180,8 +180,8 @@ public class BoringLayout extends Layout {
     public BoringLayout replaceOrMake(@NonNull CharSequence source,
                                       @NonNull TextPaint paint, @IntRange(from = 0) int outerWidth,
                                       @NonNull Alignment align, @NonNull TextDirectionHeuristic textDir,
-                                      @NonNull BoringLayout.Metrics metrics, boolean includePad,
-                                      @Nullable TextUtils.TruncateAt ellipsize,
+            BoringLayout.@NonNull Metrics metrics, boolean includePad,
+            TextUtils.@Nullable TruncateAt ellipsize,
                                       @IntRange(from = 0) int ellipsizedWidth) {
         return replaceOrMake(source, paint, outerWidth, align, textDir, 1.0f, 0.0f, metrics, includePad,
                 ellipsize, ellipsizedWidth);
@@ -196,8 +196,8 @@ public class BoringLayout extends Layout {
                                       @NonNull TextPaint paint, @IntRange(from = 0) int outerWidth,
                                       @NonNull Alignment align, @NonNull TextDirectionHeuristic textDir,
                                       float spacingMultiplier, float spacingAmount,
-                                      @NonNull BoringLayout.Metrics metrics, boolean includePad,
-                                      @Nullable TextUtils.TruncateAt ellipsize,
+            BoringLayout.@NonNull Metrics metrics, boolean includePad,
+            TextUtils.@Nullable TruncateAt ellipsize,
                                       @IntRange(from = 0) int ellipsizedWidth) {
         boolean trust;
 
@@ -295,8 +295,8 @@ public class BoringLayout extends Layout {
 
     // Optimized version provided by ModernUI
     /* package */ String ellipsize(@NonNull CharSequence text, @NonNull TextPaint paint,
-                                   @NonNull BoringLayout.Metrics metrics,
-                                   float avail, @NonNull TextUtils.TruncateAt where) {
+        BoringLayout.@NonNull Metrics metrics,
+                                   float avail, TextUtils.@NonNull TruncateAt where) {
         if (metrics.width <= avail) {
 
             mEllipsizedStart = 0;

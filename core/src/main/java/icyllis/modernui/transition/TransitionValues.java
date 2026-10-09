@@ -18,10 +18,10 @@
 
 package icyllis.modernui.transition;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Map;

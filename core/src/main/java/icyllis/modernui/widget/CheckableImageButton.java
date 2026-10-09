@@ -19,13 +19,13 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An extension to {@link ImageButton} that implements {@link Checkable} interface
@@ -219,9 +219,8 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
         mOnCheckedChangeListenerInternal = listener;
     }
 
-    @NonNull
     @Override
-    protected int[] onCreateDrawableState(int extraSpace) {
+    protected int @NonNull[] onCreateDrawableState(int extraSpace) {
         final int[] drawableState = super.onCreateDrawableState(extraSpace + 2);
         if (isCheckable()) {
             mergeDrawableStates(drawableState, CompoundButton.CHECKABLE_STATE_SET);

@@ -20,13 +20,13 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.LayoutInflater;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A user interface element the user can tap or click to perform an action.

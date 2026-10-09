@@ -18,8 +18,8 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.drawable.Drawable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Subclass of {@link Menu} for sub menus.

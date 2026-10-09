@@ -36,8 +36,6 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -48,6 +46,8 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -323,9 +323,8 @@ public class FrameLayout extends ViewGroup {
         return mMeasureAllChildren;
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams params) {
+    protected ViewGroup.@NonNull LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams params) {
         if (params instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) params);
         } else if (params instanceof MarginLayoutParams) {
@@ -339,14 +338,13 @@ public class FrameLayout extends ViewGroup {
      * {@link ViewGroup.LayoutParams#MATCH_PARENT},
      * and a height of {@link ViewGroup.LayoutParams#MATCH_PARENT}.
      */
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
     }
 
     @Override
-    protected boolean checkLayoutParams(@Nullable ViewGroup.LayoutParams params) {
+    protected boolean checkLayoutParams(ViewGroup.@Nullable LayoutParams params) {
         return params instanceof LayoutParams;
     }
 
@@ -401,11 +399,11 @@ public class FrameLayout extends ViewGroup {
             this.gravity = gravity;
         }
 
-        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull LayoutParams source) {
             super(source);
         }
 
-        public LayoutParams(@NonNull ViewGroup.MarginLayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull MarginLayoutParams source) {
             super(source);
         }
 

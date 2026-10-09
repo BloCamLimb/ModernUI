@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface for adding/removing child views to/from a view hierarchy.
@@ -31,9 +31,9 @@ public interface ViewManager {
      * @param view   The view to be added to this window.
      * @param params The LayoutParams to assign to view.
      */
-    void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params);
+    void addView(@NonNull View view, ViewGroup.@NonNull LayoutParams params);
 
-    void updateViewLayout(@NonNull View view, @NonNull ViewGroup.LayoutParams params);
+    void updateViewLayout(@NonNull View view, ViewGroup.@NonNull LayoutParams params);
 
     void removeView(@NonNull View view);
 }

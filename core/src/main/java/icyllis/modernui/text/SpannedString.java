@@ -18,8 +18,8 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.text.GetChars;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This is the class for text whose content and markup are immutable.

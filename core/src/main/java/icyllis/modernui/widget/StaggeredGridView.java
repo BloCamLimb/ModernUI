@@ -36,7 +36,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.util.Log;
@@ -45,6 +44,7 @@ import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -1824,16 +1824,14 @@ public class StaggeredGridView extends AbsListView {
         return 0;
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new StaggeredGridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 0);
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams p) {
+    protected ViewGroup.@NonNull LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams p) {
         return new StaggeredGridView.LayoutParams(p);
     }
 

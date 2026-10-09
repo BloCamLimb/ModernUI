@@ -20,8 +20,8 @@ package icyllis.modernui.renderer;
 
 import icyllis.arc3d.engine.ImmediateContext;
 import icyllis.arc3d.granite.Recording;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.system.Looper;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.sdl.SDLVideo;
 import org.lwjgl.system.MemoryUtil;
 

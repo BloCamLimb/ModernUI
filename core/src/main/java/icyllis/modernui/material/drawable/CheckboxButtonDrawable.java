@@ -19,8 +19,6 @@
 package icyllis.modernui.material.drawable;
 
 import icyllis.modernui.animation.Animator;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Paint;
@@ -31,6 +29,8 @@ import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A button drawable for CheckBox, similar to Material Design.
@@ -128,7 +128,7 @@ public class CheckboxButtonDrawable extends MaterialDrawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         boolean changed = super.onStateChange(stateSet);
 
         if (mIconTint != null) {

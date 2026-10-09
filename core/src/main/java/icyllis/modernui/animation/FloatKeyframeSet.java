@@ -19,7 +19,7 @@
 package icyllis.modernui.animation;
 
 import icyllis.modernui.animation.Keyframe.FloatKeyframe;
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class holds a collection of FloatKeyframe objects and is called by ValueAnimator to calculate

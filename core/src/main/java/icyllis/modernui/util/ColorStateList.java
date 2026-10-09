@@ -20,10 +20,10 @@ package icyllis.modernui.util;
 
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.MathUtil;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.lang.ref.WeakReference;
@@ -59,7 +59,7 @@ public class ColorStateList {
      * Creates a ColorStateList that returns the specified mapping from
      * stateSpecs to colors. The given arrays must NOT be modified after construction.
      */
-    public ColorStateList(@NonNull int[][] stateSpecs, @NonNull @ColorInt int[] colors) {
+    public ColorStateList(int @NonNull[][] stateSpecs, @ColorInt int @NonNull[] colors) {
         assert colors.length >= stateSpecs.length;
         mStateSpecs = stateSpecs;
 
@@ -76,7 +76,7 @@ public class ColorStateList {
      * Creates a ColorStateList that returns the specified mapping from
      * stateSpecs to colors. The given arrays must NOT be modified after construction.
      */
-    public ColorStateList(@NonNull int[][] stateSpecs, @NonNull @ColorLong long[] colors) {
+    public ColorStateList(int @NonNull[][] stateSpecs, @ColorLong long @NonNull[] colors) {
         assert colors.length >= stateSpecs.length;
         mStateSpecs = stateSpecs;
         mColors = colors;

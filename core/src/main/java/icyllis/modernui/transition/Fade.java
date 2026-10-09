@@ -19,11 +19,11 @@
 package icyllis.modernui.transition;
 
 import icyllis.modernui.animation.*;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This transition tracks changes to the visibility of target views in the

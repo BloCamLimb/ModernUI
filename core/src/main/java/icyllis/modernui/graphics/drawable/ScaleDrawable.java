@@ -18,11 +18,11 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
+import org.jspecify.annotations.NonNull;
 
 public class ScaleDrawable extends DrawableWrapper {
 

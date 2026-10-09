@@ -18,11 +18,11 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.ArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.lang.ref.WeakReference;

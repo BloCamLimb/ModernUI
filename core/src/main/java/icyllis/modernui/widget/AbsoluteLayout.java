@@ -36,8 +36,6 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.ResourceId;
@@ -45,6 +43,8 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A layout that lets you specify exact locations (x/y coordinates) of its
@@ -130,9 +130,8 @@ public class AbsoluteLayout extends ViewGroup {
         }
     }
 
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams params) {
+    protected ViewGroup.@NonNull LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams params) {
         if (params instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) params);
         }
@@ -145,14 +144,13 @@ public class AbsoluteLayout extends ViewGroup {
      * a height of {@link ViewGroup.LayoutParams#WRAP_CONTENT}
      * and with the coordinates (0, 0).
      */
-    @NonNull
     @Override
-    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+    protected ViewGroup.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, 0, 0);
     }
 
     @Override
-    protected boolean checkLayoutParams(@Nullable ViewGroup.LayoutParams params) {
+    protected boolean checkLayoutParams(ViewGroup.@Nullable LayoutParams params) {
         return params instanceof LayoutParams;
     }
 
@@ -188,7 +186,7 @@ public class AbsoluteLayout extends ViewGroup {
             this.y = y;
         }
 
-        public LayoutParams(@NonNull ViewGroup.LayoutParams source) {
+        public LayoutParams(ViewGroup.@NonNull LayoutParams source) {
             super(source);
         }
 

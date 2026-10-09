@@ -38,8 +38,6 @@ package icyllis.modernui.widget;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
@@ -60,6 +58,8 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -354,7 +354,7 @@ public class ScrollView extends FrameLayout {
     }
 
     @Override
-    public void addView(@NonNull View child, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, ViewGroup.@NonNull LayoutParams params) {
         if (getChildCount() > 0) {
             throw new IllegalStateException("ScrollView can host only one direct child");
         }
@@ -362,7 +362,7 @@ public class ScrollView extends FrameLayout {
     }
 
     @Override
-    public void addView(@NonNull View child, int index, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View child, int index, ViewGroup.@NonNull LayoutParams params) {
         if (getChildCount() > 0) {
             throw new IllegalStateException("ScrollView can host only one direct child");
         }
@@ -1658,7 +1658,7 @@ public class ScrollView extends FrameLayout {
 
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                               int dyUnconsumed, int type, @NonNull int[] consumed) {
+                               int dyUnconsumed, int type, int @NonNull[] consumed) {
         final int oldScrollY = mScrollY;
         scrollBy(0, dyUnconsumed);
         final int myConsumed = mScrollY - oldScrollY;

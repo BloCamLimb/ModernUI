@@ -18,8 +18,8 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.text.GetChars;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This is the interface for text whose content and markup can be changed (as opposed
@@ -137,14 +137,13 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * whenever the text of this Editable is changed, each of which has
      * the opportunity to limit or transform the text that is being inserted.
      */
-    void setFilters(@NonNull InputFilter[] filters);
+    void setFilters(InputFilter @NonNull[] filters);
 
     /**
      * Returns the array of input filters that are currently applied
      * to changes to this Editable.
      */
-    @NonNull
-    InputFilter[] getFilters();
+    InputFilter @NonNull[] getFilters();
 
     /**
      * Factory used by TextView to create new {@link Editable Editables}. You can subclass

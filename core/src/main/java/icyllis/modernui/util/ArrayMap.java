@@ -18,11 +18,11 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -861,7 +861,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public <T> T[] toArray(@NonNull T[] array) {
+        public <T> T[] toArray(T @NonNull[] array) {
             throw new UnsupportedOperationException();
         }
 
@@ -973,9 +973,8 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return mSize;
         }
 
-        @NonNull
         @Override
-        public Object[] toArray() {
+        public Object @NonNull[] toArray() {
             final int N = mSize;
             Object[] result = new Object[N];
             for (int i = 0; i < N; i++) {
@@ -984,9 +983,8 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return result;
         }
 
-        @NonNull
         @Override
-        public <T> T[] toArray(@NonNull T[] array) {
+        public <T> T @NonNull[] toArray(T @NonNull[] array) {
             final int N = mSize;
             if (array.length < N) {
                 array = (T[]) Array.newInstance(array.getClass().getComponentType(), N);
@@ -1133,9 +1131,8 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return mSize;
         }
 
-        @NonNull
         @Override
-        public Object[] toArray() {
+        public Object @NonNull[] toArray() {
             final int size = mSize;
             Object[] result = new Object[size];
             for (int i = 0; i < size; i++) {
@@ -1144,9 +1141,8 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             return result;
         }
 
-        @NonNull
         @Override
-        public <T> T[] toArray(@NonNull T[] array) {
+        public <T> T @NonNull[] toArray(T @NonNull[] array) {
             final int size = mSize;
             if (array.length < size) {
                 array = (T[]) Array.newInstance(array.getClass().getComponentType(), size);
@@ -1434,7 +1430,7 @@ public class ArrayMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      * Make sure <b>NOT</b> to call this method with arrays that can still be modified. In other
      * words, don't pass mHashes or mArray in directly.
      */
-    private static void freeArrays(@NonNull final int[] hashes, @NonNull final Object[] array, final int size) {
+    private static void freeArrays( final int @NonNull[] hashes, final Object @NonNull[] array, final int size) {
         if (hashes.length == (BASE_SIZE * 2)) {
             synchronized (sTwiceBaseCacheLock) {
                 if (mTwiceBaseCacheSize < CACHE_SIZE) {

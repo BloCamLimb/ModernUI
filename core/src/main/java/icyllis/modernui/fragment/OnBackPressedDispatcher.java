@@ -18,12 +18,12 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.lifecycle.LifecycleObserver;
 import icyllis.modernui.lifecycle.LifecycleOwner;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Iterator;
@@ -89,8 +89,7 @@ public final class OnBackPressedDispatcher {
      * the callback and remove it from the set of OnBackPressedCallbacks.
      */
     @UiThread
-    @NonNull
-    OnBackPressedCallback.Cancellable addCancellableCallback(@NonNull OnBackPressedCallback onBackPressedCallback) {
+    OnBackPressedCallback.@NonNull Cancellable addCancellableCallback(@NonNull OnBackPressedCallback onBackPressedCallback) {
         mOnBackPressedCallbacks.add(onBackPressedCallback);
         OnBackPressedCancellable cancellable = new OnBackPressedCancellable(onBackPressedCallback);
         onBackPressedCallback.addCancellable(cancellable);
@@ -193,8 +192,7 @@ public final class OnBackPressedDispatcher {
         private final Lifecycle mLifecycle;
         private final OnBackPressedCallback mOnBackPressedCallback;
 
-        @Nullable
-        private OnBackPressedCallback.Cancellable mCurrentCancellable;
+        private OnBackPressedCallback.@Nullable Cancellable mCurrentCancellable;
 
         LifecycleOnBackPressedCancellable(@NonNull Lifecycle lifecycle,
                                           @NonNull OnBackPressedCallback onBackPressedCallback) {
@@ -204,7 +202,7 @@ public final class OnBackPressedDispatcher {
         }
 
         @Override
-        public void onStateChanged(@NonNull LifecycleOwner source, @NonNull Lifecycle.Event event) {
+        public void onStateChanged(@NonNull LifecycleOwner source, Lifecycle.@NonNull Event event) {
             if (event == Lifecycle.Event.ON_START) {
                 mCurrentCancellable = addCancellableCallback(mOnBackPressedCallback);
             } else if (event == Lifecycle.Event.ON_STOP) {

@@ -35,9 +35,9 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The classes that affect character-level text formatting extend this

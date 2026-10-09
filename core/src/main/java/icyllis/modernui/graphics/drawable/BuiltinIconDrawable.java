@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Matrix;
@@ -30,6 +28,8 @@ import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /*
   This file incorporates <https://github.com/google/material-design-icons>
@@ -225,7 +225,7 @@ public class BuiltinIconDrawable extends Drawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         if (mTint != null) {
             mColor = mTint.getColorForState(stateSet, Color.WHITE_LONG);
             return true;

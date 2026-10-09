@@ -18,10 +18,10 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.util.ColorStateList;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Drawable that manages a {@link ColorDrawable} to make it stateful and backed by a
@@ -118,7 +118,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] state) {
+    protected boolean onStateChange(int @NonNull[] state) {
         if (mState.mColor != null) {
             long color = mState.mColor.getColorForState(state, mState.mColor.getDefaultColor());
 

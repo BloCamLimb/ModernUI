@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.system.Arch;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A shader subclass that composites (blends) two shaders into one, with the given

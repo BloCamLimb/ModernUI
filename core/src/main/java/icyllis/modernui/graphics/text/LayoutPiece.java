@@ -18,14 +18,14 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
@@ -82,7 +82,7 @@ public final class LayoutPiece {
      * @param hint     existing layout piece
      * @param newFlags additional flags to compute
      */
-    LayoutPiece(@NonNull char[] buf, int contextStart, int contextLimit, int start, int limit,
+    LayoutPiece(char @NonNull[] buf, int contextStart, int contextLimit, int start, int limit,
                 boolean isRtl, @NonNull FontPaint paint, @Nullable LayoutPiece hint, int newFlags) {
         final boolean computeAdvances =
                 (newFlags & LayoutCache.COMPUTE_CLUSTER_ADVANCES) != 0;

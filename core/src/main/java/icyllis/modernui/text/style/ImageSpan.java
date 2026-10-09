@@ -18,11 +18,11 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.resources.Resources;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Span that replaces the text it's attached to with a {@link Drawable} that can be aligned with

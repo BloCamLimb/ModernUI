@@ -24,8 +24,6 @@ import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.granite.GraniteSurface;
 import icyllis.arc3d.sketch.NullSurface;
 import icyllis.arc3d.sketch.Surface;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.renderer.WindowSurface;
 import icyllis.modernui.view.KeyEvent;
@@ -37,6 +35,8 @@ import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewRoot;
 import icyllis.modernui.view.WindowManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.sdl.SDLEvents;
 import org.lwjgl.sdl.SDLKeyboard;
 import org.lwjgl.sdl.SDLKeycode;
@@ -424,7 +424,7 @@ public final class WindowStage implements Stage {
     }
 
     public void addWindow(@NonNull BiFunction<Context, Stage, ViewRoot> factory,
-                          @NonNull View view, @NonNull WindowManager.LayoutParams params) {
+                          @NonNull View view, WindowManager.@NonNull LayoutParams params) {
         int index = findView(view);
         if (index >= 0) {
             if (mDyingViews.contains(view)) {
@@ -486,7 +486,7 @@ public final class WindowStage implements Stage {
     }
 
     @Override
-    public void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
+    public void addView(@NonNull View view, ViewGroup.@NonNull LayoutParams params) {
         if (!(params instanceof LayoutParams)) {
             throw new IllegalArgumentException("Params must be WindowManager.LayoutParams");
         }
@@ -494,7 +494,7 @@ public final class WindowStage implements Stage {
     }
 
     @Override
-    public void updateViewLayout(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
+    public void updateViewLayout(@NonNull View view, ViewGroup.@NonNull LayoutParams params) {
         if (!(params instanceof LayoutParams)) {
             throw new IllegalArgumentException("Params must be WindowManager.LayoutParams");
         }

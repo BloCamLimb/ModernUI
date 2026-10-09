@@ -19,8 +19,8 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Base class for shaders that generate multiple gradient colors.
@@ -102,9 +102,8 @@ public abstract class GradientShader extends Shader {
     /**
      * @hidden
      */
-    @NonNull
     @ApiStatus.Internal
-    protected static float[] convertColors(@NonNull @ColorInt int[] colors) {
+    protected static float @NonNull[] convertColors( @ColorInt int @NonNull[] colors) {
         if (colors.length < 1) {
             throw new IllegalArgumentException("needs >= 1 number of colors");
         }

@@ -18,13 +18,16 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.text.style.LeadingMarginSpan.LeadingMarginSpan2;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -106,13 +109,10 @@ public class StaticLayout extends Layout {
         private boolean mIncludePad;
         private boolean mFallbackLineSpacing;
         private int mEllipsizedWidth;
-        @Nullable
-        private TextUtils.TruncateAt mEllipsize;
+        private TextUtils.@Nullable TruncateAt mEllipsize;
         private int mMaxLines;
-        @Nullable
-        private int[] mLeftIndents;
-        @Nullable
-        private int[] mRightIndents;
+        private int @Nullable[] mLeftIndents;
+        private int @Nullable[] mRightIndents;
         private boolean mAddLastLineLineSpacing;
         private LineBreakConfig mLineBreakConfig = LineBreakConfig.NONE;
 
@@ -282,7 +282,7 @@ public class StaticLayout extends Layout {
          * @return this builder, useful for chaining
          */
         @NonNull
-        public Builder setEllipsize(@Nullable TextUtils.TruncateAt ellipsize) {
+        public Builder setEllipsize(TextUtils.@Nullable TruncateAt ellipsize) {
             mEllipsize = ellipsize;
             return this;
         }
@@ -310,7 +310,7 @@ public class StaticLayout extends Layout {
          * @return this builder, useful for chaining
          */
         @NonNull
-        public Builder setIndents(@Nullable int[] leftIndents, @Nullable int[] rightIndents) {
+        public Builder setIndents(int @Nullable[] leftIndents, int @Nullable[] rightIndents) {
             mLeftIndents = leftIndents;
             mRightIndents = rightIndents;
             return this;
@@ -406,10 +406,8 @@ public class StaticLayout extends Layout {
     private Directions[] mLineDirections;
     private int mMaximumVisibleLineCount = Integer.MAX_VALUE;
 
-    @Nullable
-    private int[] mLeftIndents;
-    @Nullable
-    private int[] mRightIndents;
+    private int @Nullable[] mLeftIndents;
+    private int @Nullable[] mRightIndents;
 
     /**
      * Used by DynamicLayout.

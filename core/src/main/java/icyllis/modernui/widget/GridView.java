@@ -18,12 +18,12 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.*;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A view that shows items in two-dimensional scrolling grid. The items in the

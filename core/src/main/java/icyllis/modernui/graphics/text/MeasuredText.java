@@ -20,11 +20,11 @@ package icyllis.modernui.graphics.text;
 
 import icyllis.modernui.annotation.FloatRange;
 import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.util.ContainerHelpers;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,8 +45,8 @@ public class MeasuredText {
     private final Run[] mRuns;
     private final float[] mAdvances;
 
-    private MeasuredText(@NonNull char[] textBuf,
-                         @NonNull Run[] runs,
+    private MeasuredText(char @NonNull[] textBuf,
+            Run @NonNull[] runs,
                          boolean computeLayout) {
         //assert (textBuf.length == 0) == (runs.length == 0);
         final float[] advances;
@@ -74,8 +74,7 @@ public class MeasuredText {
      * @hidden
      */
     @ApiStatus.Internal
-    @NonNull
-    public char[] getTextBuf() {
+    public char @NonNull[] getTextBuf() {
         return mTextBuf;
     }
 
@@ -86,8 +85,7 @@ public class MeasuredText {
      * @hidden
      */
     @ApiStatus.Internal
-    @NonNull
-    public Run[] getRuns() {
+    public Run @NonNull[] getRuns() {
         return mRuns;
     }
 
@@ -205,8 +203,7 @@ public class MeasuredText {
 
         private final ArrayList<Run> mRuns = new ArrayList<>();
 
-        @NonNull
-        private final char[] mText;
+        private final char @NonNull[] mText;
         private boolean mComputeLayout = true;
         private int mCurrentOffset = 0;
 
@@ -218,7 +215,7 @@ public class MeasuredText {
          *
          * @param text a text, with full range, can be empty
          */
-        public Builder(@NonNull char[] text) {
+        public Builder(char @NonNull[] text) {
             Objects.requireNonNull(text);
             mText = text;
         }
@@ -379,10 +376,10 @@ public class MeasuredText {
         }
 
         // Compute metrics
-        public abstract void measure(@NonNull char[] text, @NonNull float[] advances, boolean computeLayout);
+        public abstract void measure(char @NonNull[] text, float @NonNull[] advances, boolean computeLayout);
 
         // Extend extent
-        public abstract void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent);
+        public abstract void getExtent(char @NonNull[] text, int start, int end, @NonNull FontMetricsInt extent);
 
         // Returns true if this run is RTL. Otherwise returns false.
         public abstract boolean isRtl();
@@ -415,8 +412,7 @@ public class MeasuredText {
 
         // end (exclusive) offsets of each piece
         private int[] mOffsets;
-        @Nullable
-        private LayoutPiece[] mPieces;
+        private LayoutPiece @Nullable[] mPieces;
 
         private float mAdvance;
 
@@ -431,7 +427,7 @@ public class MeasuredText {
         }
 
         @Override
-        public void measure(@NonNull char[] text, @NonNull float[] advances,
+        public void measure(char @NonNull[] text, float @NonNull[] advances,
                             boolean computeLayout) {
             ArrayList<LayoutPiece> pieces;
             IntArrayList offsets;
@@ -477,7 +473,7 @@ public class MeasuredText {
         }
 
         @Override
-        public void getExtent(@NonNull char[] text, int start, int end,
+        public void getExtent(char @NonNull[] text, int start, int end,
                               @NonNull FontMetricsInt extent) {
             if (mPieces == null) {
                 ShapedText.doLayoutRun(text, mStart, mEnd,
@@ -598,13 +594,13 @@ public class MeasuredText {
         }
 
         @Override
-        public void measure(@NonNull char[] text, @NonNull float[] advances,
+        public void measure(char @NonNull[] text, float @NonNull[] advances,
                             boolean computeLayout) {
             advances[mStart] = mWidth;
         }
 
         @Override
-        public void getExtent(@NonNull char[] text, int start, int end, @NonNull FontMetricsInt extent) {
+        public void getExtent(char @NonNull[] text, int start, int end, @NonNull FontMetricsInt extent) {
             //TODO: Get the extents information from the caller.
         }
 

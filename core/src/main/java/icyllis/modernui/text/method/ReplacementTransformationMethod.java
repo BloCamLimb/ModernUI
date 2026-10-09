@@ -35,8 +35,6 @@
 
 package icyllis.modernui.text.method;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.text.Editable;
@@ -46,6 +44,8 @@ import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.SpannedString;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -63,15 +63,13 @@ public abstract class ReplacementTransformationMethod implements TransformationM
      * Returns the list of characters that are to be replaced by other
      * characters when displayed. The subclass must NOT modify the returned array.
      */
-    @NonNull
-    protected abstract char[] getOriginal();
+    protected abstract char @NonNull[] getOriginal();
 
     /**
      * Returns a parallel array of replacement characters for the ones
      * that are to be replaced. The subclass must NOT modify the returned array.
      */
-    @NonNull
-    protected abstract char[] getReplacement();
+    protected abstract char @NonNull[] getReplacement();
 
     /**
      * Returns a CharSequence that will mirror the contents of the

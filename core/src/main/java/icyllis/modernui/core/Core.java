@@ -18,9 +18,9 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.system.Arch;
 import icyllis.modernui.system.SystemClock;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.Cleaner;
 import java.net.URI;
@@ -38,8 +38,7 @@ public final class Core {
     private Core() {
     }
 
-    @NonNull
-    public static Cleaner.Cleanable registerCleanup(@NonNull Object target, @NonNull Runnable action) {
+    public static Cleaner.@NonNull Cleanable registerCleanup(@NonNull Object target, @NonNull Runnable action) {
         return Arch.registerCleanup(target, action);
     }
 

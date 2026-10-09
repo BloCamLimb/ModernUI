@@ -19,10 +19,10 @@
 package icyllis.modernui.transition;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A scene represents the collection of values that various properties in the

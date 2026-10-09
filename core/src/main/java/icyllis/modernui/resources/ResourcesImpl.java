@@ -18,8 +18,6 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
@@ -31,6 +29,8 @@ import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.CheckReturnValue;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.NoSuchFileException;
 import java.util.function.BiFunction;
@@ -130,7 +130,7 @@ public final class ResourcesImpl {
     ColorStateList loadColorStateList(@NonNull Resources wrapper,
                                       @NonNull TypedValue value,
                                       @Nullable ResourceId id,
-                                      @Nullable Resources.Theme theme) {
+            Resources.@Nullable Theme theme) {
         // Handle inline color definitions.
         if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
                 && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
@@ -161,7 +161,7 @@ public final class ResourcesImpl {
     Drawable loadDrawable(@NonNull Resources wrapper,
                           @NonNull TypedValue value,
                           @Nullable ResourceId id,
-                          @Nullable Resources.Theme theme) {
+            Resources.@Nullable Theme theme) {
         try {
             if (value.type == TypedValue.TYPE_FACTORY) {
                 ResourceMap resources = mAssetManager.getResources(value.cookie);

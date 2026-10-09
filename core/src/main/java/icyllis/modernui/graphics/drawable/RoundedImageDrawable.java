@@ -18,14 +18,14 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.MarkerFactory;
 
 import java.io.InputStream;
@@ -474,7 +474,7 @@ public class RoundedImageDrawable extends Drawable {
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] stateSet) {
+    protected boolean onStateChange(int @NonNull[] stateSet) {
         if (mTint != null && mBlendMode != null) {
             mBlendModeFilter = updateBlendModeFilter(mBlendModeFilter, mTint,
                     mBlendMode);

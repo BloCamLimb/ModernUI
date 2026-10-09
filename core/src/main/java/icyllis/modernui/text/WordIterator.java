@@ -24,8 +24,8 @@ import com.ibm.icu.lang.UCharacterCategory;
 import com.ibm.icu.lang.UProperty;
 import com.ibm.icu.text.BreakIterator;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.text.CharSequenceIterator;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Locale;
 

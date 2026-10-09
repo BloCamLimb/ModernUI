@@ -18,9 +18,9 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.lifecycle.LifecycleOwner;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 

@@ -19,11 +19,11 @@
 package icyllis.modernui.text.style;
 
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
+import org.jspecify.annotations.NonNull;
 import icyllis.modernui.system.Parcel;
 
 /**

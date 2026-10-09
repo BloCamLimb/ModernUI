@@ -20,9 +20,9 @@ package icyllis.modernui.graphics;
 
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.sketch.Surface;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * @hidden

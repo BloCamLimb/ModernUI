@@ -35,12 +35,12 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.DisplayMetrics;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Drawable that insets another Drawable by a specified distance or fraction of the content bounds.

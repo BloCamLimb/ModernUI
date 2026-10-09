@@ -18,8 +18,6 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
@@ -27,6 +25,8 @@ import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
 import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -85,7 +85,7 @@ public class TextAppearance {
     public TextAppearance() {
     }
 
-    public TextAppearance(@NonNull Resources.Theme theme,
+    public TextAppearance(Resources.@NonNull Theme theme,
                           ResourceId resId) {
         final TypedArray a;
         if (resId != null && resId.type().equals("attr")) {

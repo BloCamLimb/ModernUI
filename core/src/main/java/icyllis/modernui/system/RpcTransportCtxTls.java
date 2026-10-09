@@ -18,7 +18,7 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.net.ssl.SSLContext;
@@ -64,11 +64,11 @@ final class RpcTransportTls extends RpcTransport {
     }
 
     @Override
-    public void interruptibleWriteFully(@NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    public void interruptibleWriteFully(ByteBuffer @NonNull[] iovs, int offset, int limit) throws IOException {
     }
 
     @Override
-    public void interruptibleReadFully(@NonNull ByteBuffer[] iovs, int offset, int limit) throws IOException {
+    public void interruptibleReadFully(ByteBuffer @NonNull[] iovs, int offset, int limit) throws IOException {
     }
 
     @Override

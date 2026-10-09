@@ -18,13 +18,13 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>A layout that arranges its children horizontally. A TableRow should
@@ -331,9 +331,8 @@ public class TableRow extends LinearLayout {
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @Override
-    protected LinearLayout.LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
+    protected LinearLayout.@NonNull LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
         return new LayoutParams(p);
     }
 

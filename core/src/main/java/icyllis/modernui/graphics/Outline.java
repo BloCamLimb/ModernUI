@@ -19,8 +19,8 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.FloatRange;
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Defines a simple shape, used for bounding graphical regions.

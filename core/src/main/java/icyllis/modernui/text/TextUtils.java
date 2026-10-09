@@ -20,8 +20,6 @@ package icyllis.modernui.text;
 
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.util.ULocale;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LayoutCache;
@@ -30,6 +28,8 @@ import icyllis.modernui.system.Parcel;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.LayoutDirection;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -59,8 +59,7 @@ public final class TextUtils {
      * @hidden
      */
     @ApiStatus.Internal
-    @NonNull
-    public static char[] getEllipsisChars(@NonNull TextUtils.TruncateAt method) {
+    public static char @NonNull[] getEllipsisChars(TextUtils.@NonNull TruncateAt method) {
         return ELLIPSIS_NORMAL_ARRAY;
     }
 
@@ -107,7 +106,7 @@ public final class TextUtils {
      * @throws IndexOutOfBoundsException if out of range
      */
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
-                                @NonNull char[] dst, int dstBegin) {
+            char @NonNull[] dst, int dstBegin) {
         CharUtils.getChars(s, srcBegin, srcEnd, dst, dstBegin);
     }
 
@@ -471,7 +470,7 @@ public final class TextUtils {
     private static CharSequence ellipsize(@NonNull CharSequence text, @NonNull TextPaint paint,
                                           float avail, @NonNull TruncateAt where, boolean preserveLength,
                                           @Nullable EllipsizeCallback callback,
-                                          @NonNull TextDirectionHeuristic textDir, @NonNull char[] ellipsis) {
+                                          @NonNull TextDirectionHeuristic textDir, char @NonNull[] ellipsis) {
 
         final int len = text.length();
 
@@ -1037,7 +1036,7 @@ public final class TextUtils {
     }
 
     public static int distance(@NonNull CharSequence a, @NonNull CharSequence b,
-                               @Nullable int[] supp) {
+            int @Nullable[] supp) {
         // fast path for reference equality
         if (a == b)
             return 0;
@@ -1051,7 +1050,7 @@ public final class TextUtils {
     }
 
     private static int distance0(@NonNull CharSequence a, @NonNull CharSequence b,
-                                 int m, int n, @Nullable int[] supp) {
+                                 int m, int n, int @Nullable[] supp) {
         // assert m >= n;
         int i, j, w, c;
         int[] d = supp != null && supp.length >= n + 1 ? supp : new int[n + 1];

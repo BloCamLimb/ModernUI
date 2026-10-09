@@ -18,9 +18,9 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiFunction;
 

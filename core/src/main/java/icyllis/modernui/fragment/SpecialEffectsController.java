@@ -20,11 +20,11 @@ package icyllis.modernui.fragment;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.CallSuper;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.system.CancellationSignal;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -109,8 +109,7 @@ abstract class SpecialEffectsController {
      * @return The {@link Operation.LifecycleImpact} of the awaiting Operation, or null if there is
      * no special effects still in progress.
      */
-    @Nullable
-    Operation.LifecycleImpact getAwaitingCompletionLifecycleImpact(
+    Operation.@Nullable LifecycleImpact getAwaitingCompletionLifecycleImpact(
             @NonNull FragmentStateManager fragmentStateManager) {
         Operation.LifecycleImpact lifecycleImpact = null;
         // First search through pending operations
@@ -148,7 +147,7 @@ abstract class SpecialEffectsController {
         return null;
     }
 
-    void enqueueAdd(@NonNull Operation.State finalState,
+    void enqueueAdd(Operation.@NonNull State finalState,
                     @NonNull FragmentStateManager fragmentStateManager) {
         if (FragmentManager.TRACE) {
             LOGGER.info(FragmentManager.MARKER,
@@ -185,8 +184,8 @@ abstract class SpecialEffectsController {
         enqueue(Operation.State.REMOVED, Operation.LifecycleImpact.REMOVING, fragmentStateManager);
     }
 
-    private void enqueue(@NonNull Operation.State finalState,
-                         @NonNull Operation.LifecycleImpact lifecycleImpact,
+    private void enqueue(Operation.@NonNull State finalState,
+            Operation.@NonNull LifecycleImpact lifecycleImpact,
                          @NonNull final FragmentStateManager fragmentStateManager) {
         synchronized (mPendingOperations) {
             final CancellationSignal signal = new CancellationSignal();

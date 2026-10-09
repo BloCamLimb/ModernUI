@@ -18,9 +18,9 @@
 
 package icyllis.modernui.transition;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Extend <code>TransitionPropagation</code> to customize start delays for Animators created
@@ -92,6 +92,5 @@ public abstract class TransitionPropagation {
      * @return An array of property names as described in the class documentation for
      * {@link TransitionValues}.
      */
-    @Nullable
-    public abstract String[] getPropagationProperties();
+    public abstract String @Nullable[] getPropagationProperties();
 }

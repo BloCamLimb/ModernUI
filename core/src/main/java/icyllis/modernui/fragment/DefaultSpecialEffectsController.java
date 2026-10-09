@@ -43,8 +43,6 @@ import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.PropertyValuesHolder;
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.fragment.SpecialEffectsController.Operation.State;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.resources.ResourceId;
@@ -58,6 +56,8 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;

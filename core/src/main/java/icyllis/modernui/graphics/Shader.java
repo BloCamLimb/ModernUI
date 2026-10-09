@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.Cleaner;
 
@@ -76,8 +76,7 @@ public abstract class Shader {
     }
 
     // closed by cleaner
-    @Nullable
-    volatile icyllis.arc3d.sketch.shaders.Shader mShader;
+    volatile icyllis.arc3d.sketch.shaders.@Nullable Shader mShader;
     Cleaner.Cleanable mCleanup;
 
     /**

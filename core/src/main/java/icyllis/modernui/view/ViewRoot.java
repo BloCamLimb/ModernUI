@@ -23,8 +23,6 @@ import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.sketch.Surface;
 import icyllis.modernui.annotation.MainThread;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.BlendMode;
@@ -43,6 +41,8 @@ import icyllis.modernui.system.Message;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.View.FocusDirection;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -207,7 +207,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         mWindowAttributesChanged = true;
     }
 
-    boolean startDragAndDrop(@NonNull View view, @Nullable Object data, @Nullable View.DragShadow shadow, int flags) {
+    boolean startDragAndDrop(@NonNull View view, @Nullable Object data, View.@Nullable DragShadow shadow, int flags) {
         /*if (master.dragEvent != null) {
             ModernUI.LOGGER.error(View.MARKER, "startDragAndDrop failed by another ongoing operation");
             return false;
@@ -1443,11 +1443,11 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                               int dyUnconsumed, int type, @NonNull int[] consumed) {
+                               int dyUnconsumed, int type, int @NonNull[] consumed) {
     }
 
     @Override
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull[] consumed, int type) {
     }
 
     @Override
@@ -1489,7 +1489,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     public static final int UNSPECIFIED_LENGTH = -1;
 
     public static void computeFrames(
-            @NonNull WindowManager.LayoutParams attrs,
+            WindowManager.@NonNull LayoutParams attrs,
             int parentWidth, int parentHeight,
             int requestedWidth, int requestedHeight,
             @NonNull Rect outFrame) {
@@ -1537,7 +1537,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     public static void computeSurfaceSize(
-            @NonNull WindowManager.LayoutParams attrs,
+            WindowManager.@NonNull LayoutParams attrs,
             @NonNull Rect winFrame,
             @NonNull Point outSurfaceSize) {
         int width;

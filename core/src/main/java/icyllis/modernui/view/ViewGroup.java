@@ -36,7 +36,10 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
@@ -48,6 +51,8 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.FloatBuffer;
 import java.util.*;
@@ -1708,7 +1713,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @ApiStatus.Internal
-    protected void transformPointToViewLocal(@NonNull float[] point, @NonNull View child) {
+    protected void transformPointToViewLocal(float @NonNull[] point, @NonNull View child) {
         point[0] += mScrollX - child.mLeft;
         point[1] += mScrollY - child.mTop;
 
@@ -2025,7 +2030,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public void updateViewLayout(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
+    public void updateViewLayout(@NonNull View view, ViewGroup.@NonNull LayoutParams params) {
         if (!checkLayoutParams(params)) {
             throw new IllegalArgumentException("Invalid LayoutParams supplied to " + this);
         }
@@ -4035,9 +4040,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    @NonNull
     @Override
-    protected int[] onCreateDrawableState(int extraSpace) {
+    protected int @NonNull[] onCreateDrawableState(int extraSpace) {
         if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) == 0) {
             return super.onCreateDrawableState(extraSpace);
         }
@@ -4767,13 +4771,13 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                               int dyUnconsumed, int type, @NonNull int[] consumed) {
+                               int dyUnconsumed, int type, int @NonNull[] consumed) {
         // Re-dispatch up the tree by default
         dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, null, type, consumed);
     }
 
     @Override
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull[] consumed, int type) {
         // Re-dispatch up the tree by default
         dispatchNestedPreScroll(dx, dy, consumed, null, type);
     }

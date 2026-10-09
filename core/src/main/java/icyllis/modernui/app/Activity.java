@@ -18,7 +18,6 @@
 
 package icyllis.modernui.app;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.ContextWrapper;
@@ -28,6 +27,7 @@ import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ToastManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Reserved for future use.

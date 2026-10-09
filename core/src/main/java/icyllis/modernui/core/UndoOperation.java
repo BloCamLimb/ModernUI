@@ -18,10 +18,10 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.system.Parcel;
 import icyllis.modernui.system.Parcelable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A single undoable operation.<br>You must subclass this to implement the state

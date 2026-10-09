@@ -18,8 +18,6 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.util.GrowingArrayUtils;
@@ -30,6 +28,8 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -67,8 +67,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
 
     private static final InputFilter[] NO_FILTERS = {};
 
-    @NonNull
-    private InputFilter[] mFilters = NO_FILTERS;
+    private InputFilter @NonNull[] mFilters = NO_FILTERS;
 
     private char[] mText;
     private int mGapStart;
@@ -1207,8 +1206,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param insertionOrder Insertion orders of the spans
      * @param <T>            Span object type.
      */
-    private static <T> void siftDown(int index, @NonNull List<T> list, int size, @NonNull int[] priority,
-                                     @NonNull int[] insertionOrder) {
+    private static <T> void siftDown(int index, @NonNull List<T> list, int size, int @NonNull[] priority,
+            int @NonNull[] insertionOrder) {
         int left = 2 * index + 1;
         while (left < size) {
             if (left < size - 1 && compareSpans(left, left + 1, priority, insertionOrder) < 0) {
@@ -1243,8 +1242,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param insertionOrder Insertion orders of the spans
      * @return comparing result
      */
-    private static int compareSpans(int left, int right, @NonNull int[] priority,
-                                    @NonNull int[] insertionOrder) {
+    private static int compareSpans(int left, int right, int @NonNull[] priority,
+            int @NonNull[] insertionOrder) {
         int priority1 = priority[left];
         int priority2 = priority[right];
         if (priority1 == priority2) {
@@ -1526,7 +1525,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * the opportunity to limit or transform the text that is being inserted.
      */
     @Override
-    public void setFilters(@NonNull InputFilter[] filters) {
+    public void setFilters(InputFilter @NonNull[] filters) {
         mFilters = filters;
     }
 
@@ -1534,9 +1533,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * Returns the array of input filters that are currently applied
      * to changes to this Editable.
      */
-    @NonNull
     @Override
-    public InputFilter[] getFilters() {
+    public InputFilter @NonNull[] getFilters() {
         return mFilters;
     }
 

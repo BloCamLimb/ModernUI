@@ -19,9 +19,9 @@
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.annotation.CallSuper;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 

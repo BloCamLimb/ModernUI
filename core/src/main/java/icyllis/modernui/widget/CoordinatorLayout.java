@@ -35,8 +35,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Gravity;
@@ -54,6 +52,8 @@ import icyllis.modernui.view.ViewTreeObserver;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -1278,7 +1278,7 @@ public class CoordinatorLayout extends ViewGroup {
 
     @NonNull
     @Override
-    protected LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams p) {
+    protected LayoutParams generateLayoutParams(ViewGroup.@NonNull LayoutParams p) {
         if (p instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) p);
         } else if (p instanceof FrameLayout.LayoutParams vp) {
@@ -1375,7 +1375,7 @@ public class CoordinatorLayout extends ViewGroup {
 
     @Override
     public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                               int dyUnconsumed, int type, @NonNull int[] consumed) {
+                               int dyUnconsumed, int type, int @NonNull[] consumed) {
         final int childCount = getChildCount();
         boolean accepted = false;
         int xConsumed = 0;
@@ -1420,7 +1420,7 @@ public class CoordinatorLayout extends ViewGroup {
     }
 
     @Override
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed, int type) {
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull[] consumed, int type) {
         int xConsumed = 0;
         int yConsumed = 0;
         boolean accepted = false;
@@ -1567,7 +1567,7 @@ public class CoordinatorLayout extends ViewGroup {
          *
          * @param params the LayoutParams instance that this Behavior has been attached to
          */
-        public void onAttachedToLayoutParams(@NonNull CoordinatorLayout.LayoutParams params) {
+        public void onAttachedToLayoutParams(CoordinatorLayout.@NonNull LayoutParams params) {
         }
 
         /**
@@ -1947,7 +1947,7 @@ public class CoordinatorLayout extends ViewGroup {
          */
         public void onNestedScroll(@NonNull CoordinatorLayout coordinatorLayout, @NonNull V child,
                                    @NonNull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
-                                   int dyUnconsumed, @NestedScrollType int type, @NonNull int[] consumed) {
+                                   int dyUnconsumed, @NestedScrollType int type, int @NonNull[] consumed) {
         }
 
         /**
@@ -1979,7 +1979,7 @@ public class CoordinatorLayout extends ViewGroup {
          * @see ViewParent#onNestedPreScroll(View, int, int, int[], int)
          */
         public void onNestedPreScroll(@NonNull CoordinatorLayout coordinatorLayout,
-                                      @NonNull V child, @NonNull View target, int dx, int dy, @NonNull int[] consumed,
+                                      @NonNull V child, @NonNull View target, int dx, int dy, int @NonNull[] consumed,
                                       @NestedScrollType int type) {
         }
 

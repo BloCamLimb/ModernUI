@@ -18,13 +18,13 @@
 
 package icyllis.modernui.system;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.Log;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -486,8 +486,7 @@ public final class Parcel {
         return creator.createFromParcel(this);
     }
 
-    @Nullable
-    public <T extends Parcelable> Parcelable.Creator<T> readParcelableCreator(
+    public <T extends Parcelable> Parcelable.@Nullable Creator<T> readParcelableCreator(
             @Nullable ClassLoader loader,
             @NonNull Class<T> clazz) {
         return readParcelableCreator0(loader, Objects.requireNonNull(clazz));
@@ -668,8 +667,7 @@ public final class Parcel {
     };
 
     @SuppressWarnings("unchecked")
-    @NonNull
-    public static <T extends Parcelable> Parcelable.Creator<T> getParcelableCreator(@NonNull Class<T> type) {
+    public static <T extends Parcelable> Parcelable.@NonNull Creator<T> getParcelableCreator(@NonNull Class<T> type) {
         Objects.requireNonNull(type);
         Parcelable.Creator<?> creator = gCreators.get(type);
         Objects.requireNonNull(creator);
@@ -677,8 +675,7 @@ public final class Parcel {
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
-    private <T extends Parcelable> Parcelable.Creator<T> readParcelableCreator0(
+    private <T extends Parcelable> Parcelable.@Nullable Creator<T> readParcelableCreator0(
             @Nullable ClassLoader loader,
             @Nullable Class<T> clazz) {
         final var name = readString();
@@ -710,7 +707,7 @@ public final class Parcel {
      *
      * @param b the bytes to write
      */
-    public void writeByteArray(@Nullable byte[] b) {
+    public void writeByteArray(byte @Nullable[] b) {
         if (b == null) {
             writeInt(-1);
             return;
@@ -724,7 +721,7 @@ public final class Parcel {
      *
      * @param b the bytes to write
      */
-    public void writeByteArray(@Nullable byte[] b, int off, int len) {
+    public void writeByteArray(byte @Nullable[] b, int off, int len) {
         if (b == null) {
             writeInt(-1);
             return;
@@ -733,8 +730,7 @@ public final class Parcel {
         writeBytes(b, off, len);
     }
 
-    @Nullable
-    public byte[] readByteArray() {
+    public byte @Nullable[] readByteArray() {
         int n = readInt();
         if (n < 0)
             return null;
@@ -748,7 +744,7 @@ public final class Parcel {
      *
      * @param value the short array to write
      */
-    public void writeShortArray(@Nullable short[] value) {
+    public void writeShortArray(short @Nullable[] value) {
         if (value == null) {
             writeInt(-1);
             return;
@@ -758,8 +754,7 @@ public final class Parcel {
             writeShort(e);
     }
 
-    @Nullable
-    public short[] readShortArray() {
+    public short @Nullable[] readShortArray() {
         int n = readInt();
         if (n < 0)
             return null;
@@ -774,7 +769,7 @@ public final class Parcel {
      *
      * @param value the int array to write
      */
-    public void writeIntArray(@Nullable int[] value) {
+    public void writeIntArray(int @Nullable[] value) {
         if (value == null) {
             writeInt(-1);
             return;
@@ -784,8 +779,7 @@ public final class Parcel {
             writeInt(e);
     }
 
-    @Nullable
-    public int[] readIntArray() {
+    public int @Nullable[] readIntArray() {
         int n = readInt();
         if (n < 0)
             return null;
@@ -800,7 +794,7 @@ public final class Parcel {
      *
      * @param value the long array to write
      */
-    public void writeLongArray(@Nullable long[] value) {
+    public void writeLongArray(long @Nullable[] value) {
         if (value == null) {
             writeInt(-1);
             return;
@@ -810,8 +804,7 @@ public final class Parcel {
             writeLong(e);
     }
 
-    @Nullable
-    public long[] readLongArray() {
+    public long @Nullable[] readLongArray() {
         int n = readInt();
         if (n < 0)
             return null;
@@ -826,7 +819,7 @@ public final class Parcel {
      *
      * @param value the float array to write
      */
-    public void writeFloatArray(@Nullable float[] value) {
+    public void writeFloatArray(float @Nullable[] value) {
         if (value == null) {
             writeInt(-1);
             return;
@@ -836,8 +829,7 @@ public final class Parcel {
             writeFloat(e);
     }
 
-    @Nullable
-    public float[] readFloatArray() {
+    public float @Nullable[] readFloatArray() {
         int n = readInt();
         if (n < 0)
             return null;
@@ -852,7 +844,7 @@ public final class Parcel {
      *
      * @param value the double array to write
      */
-    public void writeDoubleArray(@Nullable double[] value) {
+    public void writeDoubleArray(double @Nullable[] value) {
         if (value == null) {
             writeInt(-1);
             return;
@@ -862,8 +854,7 @@ public final class Parcel {
             writeDouble(e);
     }
 
-    @Nullable
-    public double[] readDoubleArray() {
+    public double @Nullable[] readDoubleArray() {
         int n = readInt();
         if (n < 0)
             return null;
@@ -878,7 +869,7 @@ public final class Parcel {
      *
      * @param value the boolean array to write
      */
-    public void writeBooleanArray(@Nullable boolean[] value) {
+    public void writeBooleanArray(boolean @Nullable[] value) {
         if (value == null) {
             writeInt(-1);
             return;
@@ -888,8 +879,7 @@ public final class Parcel {
             writeBoolean(e);
     }
 
-    @Nullable
-    public boolean[] readBooleanArray() {
+    public boolean @Nullable[] readBooleanArray() {
         int n = readInt();
         if (n < 0)
             return null;
@@ -904,7 +894,7 @@ public final class Parcel {
      *
      * @param value the char array to write
      */
-    public void writeCharArray(@Nullable char[] value) {
+    public void writeCharArray(char @Nullable[] value) {
         if (value == null) {
             writeInt(-1);
             return;
@@ -914,8 +904,7 @@ public final class Parcel {
             writeChar(e);
     }
 
-    @Nullable
-    public char[] readCharArray() {
+    public char @Nullable[] readCharArray() {
         int n = readInt();
         if (n < 0)
             return null;
@@ -930,7 +919,7 @@ public final class Parcel {
      *
      * @param a the object array to write
      */
-    public void writeArray(@Nullable Object[] a) {
+    public void writeArray(Object @Nullable[] a) {
         if (a == null) {
             writeInt(-1);
             return;
@@ -945,8 +934,7 @@ public final class Parcel {
      * Read an object array.
      */
     @SuppressWarnings("unchecked")
-    @Nullable
-    public <T> T[] readArray(@Nullable ClassLoader loader,
+    public <T> T @Nullable[] readArray(@Nullable ClassLoader loader,
                              @NonNull Class<T> clazz) {
         int n = readInt();
         if (n < 0)

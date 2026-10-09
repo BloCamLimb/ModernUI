@@ -18,10 +18,10 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.text.*;
+import org.jspecify.annotations.NonNull;
 
 public class BulletSpan implements LeadingMarginSpan {
 

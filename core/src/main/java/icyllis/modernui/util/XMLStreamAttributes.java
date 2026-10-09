@@ -18,7 +18,7 @@
 
 package icyllis.modernui.util;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;

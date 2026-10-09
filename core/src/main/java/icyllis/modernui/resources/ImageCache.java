@@ -18,10 +18,10 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.util.LongSparseArray;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -88,7 +88,7 @@ final class ImageCache {
         }
     }
 
-    private boolean pruneEntryLocked(@Nullable Image.ConstantState entry, int configChanges) {
+    private boolean pruneEntryLocked(Image.@Nullable ConstantState entry, int configChanges) {
         if (entry == null) {
             return true;
         }

@@ -23,14 +23,14 @@ import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.animation.MotionEasingUtils;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.system.AnimationClock;
 import icyllis.modernui.util.FloatProperty;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -209,7 +209,7 @@ class RippleForeground extends RippleComponent {
      * @param p the paint used to draw the ripple
      */
     public void draw(@NonNull Canvas c, float cx, float cy, @NonNull Paint p,
-                     @Nullable Rect maskRect, @Nullable float[] maskRadii) {
+                     @Nullable Rect maskRect, float @Nullable[] maskRadii) {
         pruneFinished();
 
         final float origAlpha = p.getAlphaF();

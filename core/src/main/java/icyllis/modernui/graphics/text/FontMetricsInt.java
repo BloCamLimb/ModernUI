@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Also used as Font Extent (just ascent &amp; descent).

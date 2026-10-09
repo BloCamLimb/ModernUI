@@ -18,8 +18,8 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Callbacks to a {@link Fragment}'s container.

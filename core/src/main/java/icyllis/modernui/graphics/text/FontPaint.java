@@ -18,10 +18,10 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -252,9 +252,9 @@ public class FontPaint {
      * @param fmi           font metrics to receive the effective ascent/descent used in layout
      * @return the total advance (logical width) in pixels
      */
-    public float measureTextRun(@NonNull char[] text, int start, int count,
+    public float measureTextRun(char @NonNull[] text, int start, int count,
                                 int contextStart, int contextCount, boolean isRtl,
-                                @Nullable float[] advances, int advancesIndex,
+            float @Nullable[] advances, int advancesIndex,
                                 @Nullable FontMetricsInt fmi) {
         return ShapedText.doLayoutRun(text, contextStart, contextStart + contextCount,
                 start, start + count, isRtl, this,
@@ -267,7 +267,7 @@ public class FontPaint {
      * @hidden
      */
     @ApiStatus.Internal
-    public void getNativeFont(@NonNull icyllis.arc3d.sketch.Font nativeFont) {
+    public void getNativeFont(icyllis.arc3d.sketch.@NonNull Font nativeFont) {
         nativeFont.setSize(getFontSize());
         nativeFont.setEdging(isAntiAlias()
                 ? icyllis.arc3d.sketch.Font.kAntiAlias_Edging

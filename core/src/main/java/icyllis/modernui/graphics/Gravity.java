@@ -18,10 +18,10 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.LayoutDirection;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

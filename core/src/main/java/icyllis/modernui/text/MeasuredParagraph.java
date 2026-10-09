@@ -22,8 +22,6 @@ import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterDirection;
 import com.ibm.icu.text.Bidi;
 import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
@@ -35,6 +33,8 @@ import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Arrays;
@@ -154,8 +154,7 @@ public class MeasuredParagraph {
      *
      * @return backed text buffer
      */
-    @NonNull
-    public char[] getChars() {
+    public char @NonNull[] getChars() {
         return mCopiedBuffer;
     }
 
@@ -496,7 +495,7 @@ public class MeasuredParagraph {
             @NonNull SpanSet<MetricAffectingSpan> spans,
             @IntRange(from = 0) int start,
             @IntRange(from = 0) int end,
-            @NonNull MeasuredText.Builder builder) {
+            MeasuredText.@NonNull Builder builder) {
         assert start != end;
         TextPaint tp = TextPaint.obtain();
         tp.set(paint);
@@ -540,7 +539,7 @@ public class MeasuredParagraph {
 
     private void applyStyleRun(@NonNull FontPaint paint, int start, int end,
                                @Nullable LineBreakConfig config,
-                               @NonNull MeasuredText.Builder builder) {
+            MeasuredText.@NonNull Builder builder) {
         if (mBidi == null) {
             // If the whole text is LTR direction, just apply whole region.
             builder.addStyleRun(paint, config, end - start, false);

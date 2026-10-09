@@ -35,14 +35,14 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -464,7 +464,7 @@ public abstract class FragmentTransaction {
      */
     @NonNull
     public FragmentTransaction setMaxLifecycle(@NonNull Fragment fragment,
-                                               @NonNull Lifecycle.State state) {
+            Lifecycle.@NonNull State state) {
         addOp(new Op(OP_SET_MAX_LIFECYCLE, fragment, state));
         return this;
     }

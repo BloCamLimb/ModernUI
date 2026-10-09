@@ -19,12 +19,12 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.graphics.BlendMode;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Drawable container with only one child element.
@@ -209,7 +209,7 @@ public abstract class DrawableWrapper extends Drawable implements Drawable.Callb
     }
 
     @Override
-    protected boolean onStateChange(@NonNull int[] state) {
+    protected boolean onStateChange(int @NonNull[] state) {
         if (mDrawable != null && mDrawable.isStateful()) {
             final boolean changed = mDrawable.setState(state);
             if (changed) {

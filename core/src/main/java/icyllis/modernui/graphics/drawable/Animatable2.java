@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Abstract class that drawables supporting animations and callbacks should extend.

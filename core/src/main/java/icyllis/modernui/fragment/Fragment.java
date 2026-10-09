@@ -37,8 +37,6 @@ package icyllis.modernui.fragment;
 
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.annotation.CallSuper;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.lifecycle.*;
@@ -57,6 +55,8 @@ import icyllis.modernui.view.View.OnCreateContextMenuListener;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.AdapterView;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -1653,7 +1653,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner,
         mLifecycleRegistry.addObserver(new LifecycleObserver() {
             @Override
             public void onStateChanged(@NonNull LifecycleOwner source,
-                                       @NonNull Lifecycle.Event event) {
+                    Lifecycle.@NonNull Event event) {
                 if (event == Lifecycle.Event.ON_STOP) {
                     if (mView != null) {
                         mView.cancelPendingInputEvents();

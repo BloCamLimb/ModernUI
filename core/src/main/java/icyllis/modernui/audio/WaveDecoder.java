@@ -18,8 +18,8 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.Log;
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

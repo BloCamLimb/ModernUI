@@ -18,11 +18,11 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.system.Choreographer;
 import icyllis.modernui.system.SystemClock;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 

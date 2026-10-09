@@ -18,12 +18,12 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class for a menu popup abstraction - i.e., some type of menu, housed in a popup window

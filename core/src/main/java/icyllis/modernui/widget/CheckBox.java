@@ -20,14 +20,14 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.StateSet;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>
@@ -165,9 +165,8 @@ public class CheckBox extends CompoundButton {
         mOnCheckedStateChangeListener = listener;
     }
 
-    @NonNull
     @Override
-    protected int[] onCreateDrawableState(int extraSpace) {
+    protected int @NonNull[] onCreateDrawableState(int extraSpace) {
         final int[] drawableStates = super.onCreateDrawableState(extraSpace + 1);
 
         if (getCheckedState() == STATE_INDETERMINATE) {

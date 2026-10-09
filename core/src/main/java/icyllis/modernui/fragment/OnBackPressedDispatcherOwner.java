@@ -18,8 +18,8 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.lifecycle.LifecycleOwner;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A class that has an {@link OnBackPressedDispatcher} that allows you to register a

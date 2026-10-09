@@ -18,8 +18,8 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.MathUtil;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This evaluator can be used to perform type interpolation between integer

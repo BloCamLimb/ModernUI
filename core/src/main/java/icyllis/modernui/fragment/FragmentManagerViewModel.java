@@ -18,11 +18,11 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.lifecycle.ViewModel;
 import icyllis.modernui.lifecycle.ViewModelProvider;
 import icyllis.modernui.lifecycle.ViewModelStore;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 
 import java.util.ArrayList;

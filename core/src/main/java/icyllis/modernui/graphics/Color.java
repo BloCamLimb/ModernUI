@@ -25,10 +25,10 @@ import icyllis.arc3d.core.RGBColorSpace;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.IntRange;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.Size;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.function.DoubleUnaryOperator;
@@ -557,9 +557,8 @@ public final class Color {
      * @return A new, non-null array whose size is equal to {@link #getComponentCount()}
      * @see #getComponent(int)
      */
-    @NonNull
     @Size(min = 4, max = 5)
-    public float[] getComponents() {
+    public float @NonNull[] getComponents() {
         if (cs.getComponentCount() == 4) {
             return new float[]{
                     comp1, comp2, comp3, comp4, alpha
@@ -583,9 +582,8 @@ public final class Color {
      *                                  {@link #getComponentCount()}
      * @see #getComponent(int)
      */
-    @NonNull
     @Size(min = 4)
-    public float[] getComponents(@Nullable @Size(min = 4) float[] components) {
+    public float @NonNull[] getComponents( @Size(min = 4) float @Nullable[] components) {
         if (components == null) {
             return getComponents();
         }
@@ -806,7 +804,7 @@ public final class Color {
      * required by the color space
      */
     @NonNull
-    public static Color valueOf(@NonNull @Size(min = 4, max = 5) float[] components,
+    public static Color valueOf( @Size(min = 4, max = 5) float @NonNull[] components,
                                 @NonNull ColorSpace colorSpace) {
         int length = colorSpace.getComponentCount() + 1;
         if (components.length < length) {
@@ -1207,7 +1205,7 @@ public final class Color {
     public static void RGBToHSV(@IntRange(from = 0, to = 255) int r,
                                 @IntRange(from = 0, to = 255) int g,
                                 @IntRange(from = 0, to = 255) int b,
-                                @NonNull @Size(3) float[] hsv) {
+            @Size(3) float @NonNull[] hsv) {
         int max = Math.max(r, Math.max(g, b));
         int min = Math.min(r, Math.min(g, b));
 
@@ -1249,7 +1247,7 @@ public final class Color {
      * @param color RGB or ARGB color to convert
      * @param hsv   three element array which holds the resulting HSV components
      */
-    public static void RGBToHSV(@ColorInt int color, @NonNull @Size(3) float[] hsv) {
+    public static void RGBToHSV(@ColorInt int color, @Size(3) float @NonNull[] hsv) {
         RGBToHSV((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, hsv);
     }
 
@@ -1332,7 +1330,7 @@ public final class Color {
      * @return RGB equivalent to HSV, without alpha
      */
     @ColorInt
-    public static int HSVToColor(@NonNull @Size(3) float[] hsv) {
+    public static int HSVToColor( @Size(3) float @NonNull[] hsv) {
         return HSVToColor(hsv[0], hsv[1], hsv[2]);
     }
 
@@ -1368,7 +1366,7 @@ public final class Color {
      *
      * @param col the color components
      */
-    public static void GammaToLinear(@NonNull @Size(min=3) float[] col) {
+    public static void GammaToLinear( @Size(min = 3) float @NonNull[] col) {
         col[0] = GammaToLinear(col[0]);
         col[1] = GammaToLinear(col[1]);
         col[2] = GammaToLinear(col[2]);
@@ -1380,7 +1378,7 @@ public final class Color {
      *
      * @param col the color components
      */
-    public static void LinearToGamma(@NonNull @Size(min=3) float[] col) {
+    public static void LinearToGamma( @Size(min = 3) float @NonNull[] col) {
         col[0] = LinearToGamma(col[0]);
         col[1] = LinearToGamma(col[1]);
         col[2] = LinearToGamma(col[2]);
@@ -1430,7 +1428,7 @@ public final class Color {
      *
      * @param col the color components
      */
-    public static float luminance(@NonNull @Size(min=3) float[] col) {
+    public static float luminance( @Size(min = 3) float @NonNull[] col) {
         return luminance(col[0], col[1], col[2]);
     }
 

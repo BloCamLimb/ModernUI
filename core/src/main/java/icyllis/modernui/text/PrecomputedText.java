@@ -18,13 +18,16 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.FloatRange;
+import icyllis.modernui.annotation.IntRange;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
 import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -347,8 +350,7 @@ public final class PrecomputedText extends SpannableString {
         return new PrecomputedText(text, params, paraInfo);
     }
 
-    @NonNull
-    private static ParagraphInfo[] createMeasuredParagraphsFromPrecomputedText(
+    private static ParagraphInfo @NonNull[] createMeasuredParagraphsFromPrecomputedText(
             @NonNull PrecomputedText pct, @NonNull Params params, boolean computeLayout) {
         ParagraphInfo[] result = new ParagraphInfo[pct.getParagraphCount()];
         for (int i = 0; i < pct.getParagraphCount(); ++i) {
@@ -366,8 +368,7 @@ public final class PrecomputedText extends SpannableString {
      * @hidden
      */
     @ApiStatus.Internal
-    @NonNull
-    public static ParagraphInfo[] createMeasuredParagraphs(
+    public static ParagraphInfo @NonNull[] createMeasuredParagraphs(
             @NonNull CharSequence text, @NonNull Params params,
             @IntRange(from = 0) int start, @IntRange(from = 0) int end, boolean computeLayout) {
         ArrayList<ParagraphInfo> result = new ArrayList<>();
@@ -395,7 +396,7 @@ public final class PrecomputedText extends SpannableString {
 
     // Use PrecomputedText.create instead.
     private PrecomputedText(@NonNull CharSequence text, @NonNull Params params,
-                            @Nullable ParagraphInfo[] paraInfo) {
+            ParagraphInfo @Nullable[] paraInfo) {
         super(text);    // <- no-copy spans will be removed
         if (paraInfo == null) {
             // ModernUI fixed: google bug, if the source text has NoCopy-MetricAffectingSpan,

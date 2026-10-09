@@ -18,11 +18,15 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
+import icyllis.modernui.annotation.Px;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.util.ColorStateList;
 import org.intellij.lang.annotations.MagicConstant;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -135,7 +139,7 @@ public class GradientDrawable extends ShapeDrawable {
      * Create a new gradient drawable given an orientation and an array
      * of colors for the gradient.
      */
-    public GradientDrawable(@NonNull Orientation orientation, @Nullable @ColorInt int[] colors) {
+    public GradientDrawable(@NonNull Orientation orientation, @ColorInt int @Nullable[] colors) {
         this(new GradientState(orientation, colors), null);
     }
 
@@ -143,7 +147,7 @@ public class GradientDrawable extends ShapeDrawable {
      * Create a new gradient drawable given an orientation and an array
      * of colors for the gradient.
      */
-    public GradientDrawable(@NonNull Orientation orientation, @Nullable @ColorLong long[] colors) {
+    public GradientDrawable(@NonNull Orientation orientation, @ColorLong long @Nullable[] colors) {
         this(new GradientState(orientation, colors), null);
     }
 
@@ -465,7 +469,7 @@ public class GradientDrawable extends ShapeDrawable {
      * @see #mutate()
      * @see #setColor(int)
      */
-    public void setColors(@Nullable @ColorInt int[] colors) {
+    public void setColors( @ColorInt int @Nullable[] colors) {
         setColors(colors, null);
     }
 
@@ -483,7 +487,7 @@ public class GradientDrawable extends ShapeDrawable {
      * @see #mutate()
      * @see #setColor(long)
      */
-    public void setColors(@Nullable @ColorLong long[] colors) {
+    public void setColors( @ColorLong long @Nullable[] colors) {
         setColors(colors, null);
     }
 
@@ -503,7 +507,7 @@ public class GradientDrawable extends ShapeDrawable {
      * @see #mutate()
      * @see #setColors(int[])
      */
-    public void setColors(@Nullable @ColorInt int[] colors, @Nullable float[] offsets) {
+    public void setColors( @ColorInt int @Nullable[] colors, float @Nullable[] offsets) {
         mGradientState.setGradientColors(colors);
         mGradientState.mPositions = offsets;
         mShapeIsDirty = true;
@@ -526,7 +530,7 @@ public class GradientDrawable extends ShapeDrawable {
      * @see #mutate()
      * @see #setColors(long[])
      */
-    public void setColors(@Nullable @ColorLong long[] colors, @Nullable float[] offsets) {
+    public void setColors( @ColorLong long @Nullable[] colors, float @Nullable[] offsets) {
         mGradientState.setGradientColors(colors);
         mGradientState.mPositions = offsets;
         mShapeIsDirty = true;
@@ -540,8 +544,7 @@ public class GradientDrawable extends ShapeDrawable {
      * @return the colors used to draw the gradient, or {@code null}
      * @see #setColors(int[] colors)
      */
-    @Nullable
-    public long[] getColors() {
+    public long @Nullable[] getColors() {
         if (mGradientState.mGradientColors == null) {
             return null;
         } else {
@@ -605,12 +608,12 @@ public class GradientDrawable extends ShapeDrawable {
         int mGradientRadiusType = RADIUS_TYPE_FRACTION;
         boolean mUseLevel = false;
 
-        public GradientState(@NonNull Orientation orientation, @Nullable int[] gradientColors) {
+        public GradientState(@NonNull Orientation orientation, int @Nullable[] gradientColors) {
             mOrientation = orientation;
             setGradientColors(gradientColors);
         }
 
-        public GradientState(@NonNull Orientation orientation, @Nullable long[] gradientColors) {
+        public GradientState(@NonNull Orientation orientation, long @Nullable[] gradientColors) {
             mOrientation = orientation;
             setGradientColors(gradientColors);
         }
@@ -642,7 +645,7 @@ public class GradientDrawable extends ShapeDrawable {
             mCenterY = y;
         }
 
-        public void setGradientColors(@Nullable int[] colors) {
+        public void setGradientColors(int @Nullable[] colors) {
             if (colors == null) {
                 mGradientColors = null;
             } else {
@@ -659,7 +662,7 @@ public class GradientDrawable extends ShapeDrawable {
             computeOpacity();
         }
 
-        public void setGradientColors(@Nullable long[] colors) {
+        public void setGradientColors(long @Nullable[] colors) {
             if (colors == null) {
                 mGradientColors = null;
             } else {

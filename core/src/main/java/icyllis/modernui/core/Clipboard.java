@@ -18,8 +18,10 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.*;
+import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.text.TextUtils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 

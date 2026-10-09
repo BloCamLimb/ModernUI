@@ -35,11 +35,11 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.system.Arch;
 import icyllis.modernui.system.Parcel;
 import icyllis.modernui.text.ParcelableSpan;
 import icyllis.modernui.text.TextUtils;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of the {@link ClickableSpan} that allows setting a url string. When

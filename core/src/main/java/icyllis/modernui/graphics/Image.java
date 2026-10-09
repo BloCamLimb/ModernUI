@@ -25,8 +25,6 @@ import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.granite.RecordingContext;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
@@ -34,6 +32,8 @@ import icyllis.modernui.system.Arch;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Unchecked;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;

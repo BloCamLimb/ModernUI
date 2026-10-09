@@ -37,8 +37,6 @@ package icyllis.modernui.view.menu;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -48,6 +46,8 @@ import icyllis.modernui.view.*;
 import icyllis.modernui.widget.PopupMenu;
 import icyllis.modernui.widget.PopupWindow;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @ApiStatus.Internal
 public class MenuPopupHelper implements MenuHelper {
@@ -102,7 +102,7 @@ public class MenuPopupHelper implements MenuHelper {
         mPopupStyleRes = popupStyleRes;
     }
 
-    public void setOnDismissListener(@Nullable PopupWindow.OnDismissListener listener) {
+    public void setOnDismissListener(PopupWindow.@Nullable OnDismissListener listener) {
         mOnDismissListener = listener;
     }
 
@@ -329,7 +329,7 @@ public class MenuPopupHelper implements MenuHelper {
     }
 
     @Override
-    public void setPresenterCallback(@Nullable MenuPresenter.Callback cb) {
+    public void setPresenterCallback(MenuPresenter.@Nullable Callback cb) {
         mPresenterCallback = cb;
         if (mPopup != null) {
             mPopup.setCallback(cb);

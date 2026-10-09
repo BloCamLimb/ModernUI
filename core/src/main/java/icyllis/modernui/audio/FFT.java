@@ -36,8 +36,8 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides Fast Fourier Transform. It is an efficient way to calculate the Complex Discrete Fourier
@@ -70,11 +70,9 @@ public class FFT {
     // bit reversing table
     private final int[] mReverse;
 
-    @Nullable
-    private float[] mWindow;
+    private float @Nullable[] mWindow;
 
-    @Nullable
-    private float[] mAverages;
+    private float @Nullable[] mAverages;
     private int mAverageMode;
     private int mOctaves;
     private int mAvgPerOctave;
@@ -120,7 +118,7 @@ public class FFT {
      * @param offset  the offset to start at in the buffer, the exceeded part of next timeSize()
      *                samples from the starting index in the buffer will be filled with zeros.
      */
-    public void forward(@NonNull float[] samples, int offset) {
+    public void forward(float @NonNull[] samples, int offset) {
         if (offset < 0 || offset >= samples.length) {
             throw new IllegalArgumentException();
         }
@@ -154,7 +152,7 @@ public class FFT {
      * @param offset the offset to start at in the buffer, the exceeded part of next timeSize() *
      *               samples from the starting index in the buffer will be filled with zeros.
      */
-    public void forward(@NonNull float[] real, @NonNull float[] imag, int offset) {
+    public void forward(float @NonNull[] real, float @NonNull[] imag, int offset) {
         if (offset < 0 || real.length != imag.length || offset >= real.length) {
             throw new IllegalArgumentException();
         }

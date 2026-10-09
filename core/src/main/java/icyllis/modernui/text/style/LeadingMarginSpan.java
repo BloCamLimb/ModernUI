@@ -18,11 +18,11 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.text.*;
 import icyllis.modernui.system.Parcel;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A paragraph style affecting the leading margin. There can be multiple leading

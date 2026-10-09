@@ -36,14 +36,14 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -118,7 +118,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      *
      * @param objects The objects to represent in the ListView.
      */
-    public ArrayAdapter(Context context, @NonNull T[] objects) {
+    public ArrayAdapter(Context context, T @NonNull[] objects) {
         this(context, Arrays.asList(objects));
     }
 
@@ -184,7 +184,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
      * @param items The items to add at the end of the array.
      * @throws UnsupportedOperationException if the underlying data collection is immutable
      */
-    public void addAll(@NonNull T[] items) {
+    public void addAll(T @NonNull[] items) {
         synchronized (mLock) {
             if (mOriginalValues != null) {
                 Collections.addAll(mOriginalValues, items);

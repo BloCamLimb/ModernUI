@@ -22,9 +22,9 @@ import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import com.ibm.icu.lang.UProperty;
 import com.ibm.icu.text.BreakIterator;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.text.CharacterIterator;
 import java.util.Locale;
@@ -113,7 +113,7 @@ public final class GraphemeBreak {
         return offset == BreakIterator.DONE ? original : offset;
     }
 
-    public static int getTextRunCursorImpl(@Nullable float[] advances, @NonNull CharSequence buf, int start, int count,
+    public static int getTextRunCursorImpl(float @Nullable[] advances, @NonNull CharSequence buf, int start, int count,
                                            int offset, int op) {
         switch (op) {
             case AFTER:
@@ -146,7 +146,7 @@ public final class GraphemeBreak {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public static boolean isGraphemeBreak(@Nullable float[] advances, @NonNull CharSequence buf, int start, int count,
+    public static boolean isGraphemeBreak(float @Nullable[] advances, @NonNull CharSequence buf, int start, int count,
                                           final int offset) {
         // This implementation closely follows Unicode Standard Annex #29 on
         // Unicode Text Segmentation (http://www.unicode.org/reports/tr29/),

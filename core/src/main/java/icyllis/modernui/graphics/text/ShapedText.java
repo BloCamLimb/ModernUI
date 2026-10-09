@@ -21,8 +21,6 @@ package icyllis.modernui.graphics.text;
 import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
 import icyllis.arc3d.sketch.TextBlob;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.graphics.MathUtil;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -32,6 +30,8 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.annotation.concurrent.Immutable;
 import java.util.*;
@@ -128,7 +128,7 @@ public class ShapedText {
      * Copy an array of glyphs for the given range.
      * The array is about all laid-out glyph codes for in order visually from left to right.
      */
-    public void getGlyphs(int glyphIndex, int glyphCount, @NonNull int[] dstGlyphs, int dstOffset) {
+    public void getGlyphs(int glyphIndex, int glyphCount, int @NonNull[] dstGlyphs, int dstOffset) {
         System.arraycopy(mGlyphs, glyphIndex, dstGlyphs, dstOffset, glyphCount);
     }
 
@@ -159,7 +159,7 @@ public class ShapedText {
      * Copy an array of glyph positions for the given range.
      * This array holds the repeat of x offset, y offset of glyph positions.
      */
-    public void getPositions(int glyphIndex, int glyphCount, @NonNull float[] dstPositions, int dstOffset) {
+    public void getPositions(int glyphIndex, int glyphCount, float @NonNull[] dstPositions, int dstOffset) {
         System.arraycopy(mPositions, glyphIndex << 1, dstPositions, dstOffset, glyphCount << 1);
     }
 
@@ -391,7 +391,7 @@ public class ShapedText {
      * @param bidiFlags    one of BiDi flags listed above
      * @param paint        layout params
      */
-    public ShapedText(@NonNull char[] text, int contextStart, int contextLimit,
+    public ShapedText(char @NonNull[] text, int contextStart, int contextLimit,
                       int start, int limit,
                       @MagicConstant(flags = {
                               BIDI_LTR, BIDI_RTL, BIDI_DEFAULT_LTR, BIDI_DEFAULT_RTL,
@@ -425,7 +425,7 @@ public class ShapedText {
      * @param paint        layout params
      * @param createFlags  one of create flags listed above
      */
-    public ShapedText(@NonNull char[] text, int contextStart, int contextLimit,
+    public ShapedText(char @NonNull[] text, int contextStart, int contextLimit,
                       int start, int limit,
                       @MagicConstant(flags = {
                               BIDI_LTR, BIDI_RTL, BIDI_DEFAULT_LTR, BIDI_DEFAULT_RTL,
@@ -681,7 +681,7 @@ public class ShapedText {
     }
 
     @Nullable
-    private TextBlob computeTextBlob(@NonNull icyllis.arc3d.sketch.Font nativeFont) {
+    private TextBlob computeTextBlob(icyllis.arc3d.sketch.@NonNull Font nativeFont) {
         if (mFontIndices == null) {
             // optimize for single font
             nativeFont.setTypeface(mFonts[0].getNativeTypeface());

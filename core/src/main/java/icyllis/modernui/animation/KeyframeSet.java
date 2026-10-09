@@ -21,8 +21,8 @@ package icyllis.modernui.animation;
 import icyllis.modernui.animation.Keyframe.FloatKeyframe;
 import icyllis.modernui.animation.Keyframe.IntKeyframe;
 import icyllis.modernui.animation.Keyframe.ObjectKeyframe;
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.util.Log;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This class holds a collection of Keyframe objects and is called by ValueAnimator to calculate

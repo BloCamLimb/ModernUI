@@ -18,8 +18,7 @@
 
 package icyllis.modernui.resources;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Provides linear search for sorted needle array (attributes we're looking for)

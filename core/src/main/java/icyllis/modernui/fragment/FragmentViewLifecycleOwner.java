@@ -18,8 +18,8 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.lifecycle.*;
+import org.jspecify.annotations.NonNull;
 
 class FragmentViewLifecycleOwner implements LifecycleOwner, ViewModelStoreOwner {
 
@@ -65,11 +65,11 @@ class FragmentViewLifecycleOwner implements LifecycleOwner, ViewModelStoreOwner 
         return mViewModelStore;
     }
 
-    void setCurrentState(@NonNull Lifecycle.State state) {
+    void setCurrentState(Lifecycle.@NonNull State state) {
         mLifecycleRegistry.setCurrentState(state);
     }
 
-    void handleLifecycleEvent(@NonNull Lifecycle.Event event) {
+    void handleLifecycleEvent(Lifecycle.@NonNull Event event) {
         mLifecycleRegistry.handleLifecycleEvent(event);
     }
 

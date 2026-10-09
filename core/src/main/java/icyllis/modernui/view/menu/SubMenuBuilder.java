@@ -18,13 +18,13 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.annotation.NonNull;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.Menu;
 import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.SubMenu;
 import icyllis.modernui.view.View;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The model for a sub menu, which is an extension of the menu.  Most methods are proxied to

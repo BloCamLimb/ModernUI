@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics.text;
 
-import icyllis.modernui.annotation.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -56,8 +56,7 @@ public final class CharUtils {
      * @see #recycle(char[]) recycle the buffer
      */
     @ApiStatus.Internal
-    @NonNull
-    public static char[] obtain(int len) {
+    public static char @NonNull[] obtain(int len) {
         if (len > 2000)
             return new char[len];
 
@@ -85,7 +84,7 @@ public final class CharUtils {
      * @hidden
      */
     @ApiStatus.Internal
-    public static void recycle(@NonNull char[] temp) {
+    public static void recycle(char @NonNull[] temp) {
         if (temp.length > 2000)
             return;
 
@@ -109,7 +108,7 @@ public final class CharUtils {
      * @throws IndexOutOfBoundsException if out of range
      */
     public static void getChars(@NonNull CharSequence s, int srcBegin, int srcEnd,
-                                @NonNull char[] dst, int dstBegin) {
+            char @NonNull[] dst, int dstBegin) {
         if (GET_CHARS != null) // Java 25
             try {
                 GET_CHARS.invokeExact(s, srcBegin, srcEnd, dst, dstBegin);

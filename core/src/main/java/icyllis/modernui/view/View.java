@@ -41,8 +41,6 @@ import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.ColorLong;
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Context;
@@ -82,6 +80,8 @@ import icyllis.modernui.view.menu.MenuBuilder;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -3606,7 +3606,7 @@ public class View implements Drawable.Callback {
      *
      * @param params layout parameters for this view
      */
-    public void setLayoutParams(@NonNull ViewGroup.LayoutParams params) {
+    public void setLayoutParams(ViewGroup.@NonNull LayoutParams params) {
         mLayoutParams = Objects.requireNonNull(params);
         resolveLayoutParams();
         if (mParent instanceof ViewGroup) {
@@ -7176,8 +7176,8 @@ public class View implements Drawable.Callback {
      * @see ViewParent#onNestedScroll(View, int, int, int, int, int, int[])
      */
     public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
-                                        @Nullable int[] offsetInWindow, @NestedScrollType int type,
-                                        @NonNull int[] consumed) {
+            int @Nullable[] offsetInWindow, @NestedScrollType int type,
+            int @NonNull[] consumed) {
         if (isNestedScrollingEnabled()) {
             final ViewParent parent = switch (type) {
                 case TYPE_TOUCH -> mNestedScrollingParentTouch;
@@ -7234,8 +7234,8 @@ public class View implements Drawable.Callback {
      * @return true if the parent consumed some or all of the scroll delta
      * @see #dispatchNestedScroll(int, int, int, int, int[], int, int[])
      */
-    public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-                                           @Nullable int[] offsetInWindow, @NestedScrollType int type) {
+    public boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable[] consumed,
+            int @Nullable[] offsetInWindow, @NestedScrollType int type) {
         if (isNestedScrollingEnabled()) {
             final ViewParent parent = switch (type) {
                 case TYPE_TOUCH -> mNestedScrollingParentTouch;
@@ -10215,8 +10215,7 @@ public class View implements Drawable.Callback {
      * @return an array holding the current {@link Drawable} state of the view.
      * @see #mergeDrawableStates(int[], int[])
      */
-    @NonNull
-    protected int[] onCreateDrawableState(int extraSpace) {
+    protected int @NonNull[] onCreateDrawableState(int extraSpace) {
         if ((mViewFlags & DUPLICATE_PARENT_STATE) == DUPLICATE_PARENT_STATE &&
                 mParent instanceof View) {
             return ((View) mParent).onCreateDrawableState(extraSpace);
@@ -10285,8 +10284,7 @@ public class View implements Drawable.Callback {
      * passed into the function is returned.
      * @see #onCreateDrawableState(int)
      */
-    @NonNull
-    protected static int[] mergeDrawableStates(@NonNull int[] baseState, @NonNull int[] additionalState) {
+    protected static int @NonNull[] mergeDrawableStates(int @NonNull[] baseState, int @NonNull[] additionalState) {
         int i = baseState.length - 1;
         while (i >= 0 && baseState[i] == 0) {
             i--;
@@ -10745,7 +10743,7 @@ public class View implements Drawable.Callback {
      *
      * @param outLocation an array of two integers in which to hold the coordinates
      */
-    public void getLocationInWindow(@NonNull int[] outLocation) {
+    public void getLocationInWindow(int @NonNull[] outLocation) {
         if (outLocation.length < 2) {
             throw new IllegalArgumentException("outLocation must be an array of two integers");
         }
@@ -10757,7 +10755,7 @@ public class View implements Drawable.Callback {
     }
 
     @ApiStatus.Internal
-    public void transformFromViewToWindowSpace(@NonNull int[] inOutLocation) {
+    public void transformFromViewToWindowSpace(int @NonNull[] inOutLocation) {
         if (inOutLocation.length < 2) {
             throw new IllegalArgumentException("inOutLocation must be an array of two integers");
         }
@@ -12755,8 +12753,7 @@ public class View implements Drawable.Callback {
      * just use the standard high-level event callbacks like
      * {@link #onKeyDown(int, KeyEvent)}.
      */
-    @Nullable
-    public final KeyEvent.DispatcherState getKeyDispatcherState() {
+    public final KeyEvent.@Nullable DispatcherState getKeyDispatcherState() {
         return mAttachInfo != null ? mAttachInfo.mKeyDispatchState : null;
     }
 

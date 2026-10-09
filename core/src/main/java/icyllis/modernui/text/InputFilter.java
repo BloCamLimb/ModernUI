@@ -18,8 +18,8 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.annotation.NonNull;
-import icyllis.modernui.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * InputFilters can be attached to {@link Editable Editables} to constrain the
