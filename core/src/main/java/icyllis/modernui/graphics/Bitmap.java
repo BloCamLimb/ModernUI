@@ -111,7 +111,7 @@ public final class Bitmap implements AutoCloseable {
     @NonNull
     private Pixmap mPixmap;
     // managed by cleaner
-    private volatile PixelRef mPixels;
+    private volatile Pixels mPixels;
     // this ensures unref being called when Bitmap become phantom-reachable
     // but never called to close
     private final Cleaner.Cleanable mCleanup;
@@ -136,12 +136,12 @@ public final class Bitmap implements AutoCloseable {
         mFormat = format;
         mPixmap = new Pixmap(info, null, addr, rowBytes);
         mRequestAlphaType = info.alphaType();
-        var pixels = new PixelRef(info.width(), info.height(), null, addr, rowBytes, freeFn);
+        var pixels = new Pixels(info.width(), info.height(), null, addr, rowBytes, freeFn);
         mCleanup = Arch.registerNativeResource(this, pixels);
         mPixels = pixels;
     }
 
-    Bitmap(@NonNull Format format, @NonNull Pixmap pixmap, int requestAlphaType, @NonNull PixelRef pixels) {
+    Bitmap(@NonNull Format format, @NonNull Pixmap pixmap, int requestAlphaType, @NonNull Pixels pixels) {
         mFormat = format;
         mPixmap = pixmap;
         mRequestAlphaType = requestAlphaType;
@@ -1453,7 +1453,7 @@ public final class Bitmap implements AutoCloseable {
     }
 
     /**
-     * The current pixel map, which is usually paired with {@link PixelRef}.
+     * The current pixel map, which is usually paired with {@link Pixels}.
      * This method is <b>UNSAFE</b>, use with caution!
      *
      * @return the current pixel map
@@ -1469,7 +1469,7 @@ public final class Bitmap implements AutoCloseable {
     /**
      * The ref of current pixel data, which may be shared across instances.
      * Calling this method won't affect the ref cnt. Every bitmap object
-     * ref the {@link PixelRef} on create, and unref on {@link #close()}.
+     * ref the {@link Pixels} on create, and unref on {@link #close()}.
      * <p>
      * This method is <b>UNSAFE</b>, use with caution!
      *
@@ -1480,7 +1480,7 @@ public final class Bitmap implements AutoCloseable {
     @ApiStatus.Internal
     @RawPtr
     @Nullable
-    public PixelRef getPixels() {
+    public Pixels getPixels() {
         return mPixels;
     }
 
@@ -1491,8 +1491,8 @@ public final class Bitmap implements AutoCloseable {
     @ApiStatus.Internal
     @SharedPtr
     @Nullable
-    public PixelRef refPixels() {
-        PixelRef pixels;
+    public Pixels refPixels() {
+        Pixels pixels;
         try {
             synchronized (this) {
                 // this operation is not atomic
@@ -1744,7 +1744,7 @@ public final class Bitmap implements AutoCloseable {
     @NonNull
     public Bitmap subImage(int x, int y, int width, int height) {
         checkOutOfBounds(x, y, width, height);
-        PixelRef pixels = refPixels();
+        Pixels pixels = refPixels();
         if (pixels == null) {
             throw new IllegalStateException("Cannot clone a recycled bitmap!");
         }
@@ -1774,7 +1774,7 @@ public final class Bitmap implements AutoCloseable {
     @SuppressWarnings("MethodDoesntCallSuperMethod")
     @NonNull
     public Bitmap clone() {
-        PixelRef pixels = refPixels();
+        Pixels pixels = refPixels();
         if (pixels == null) {
             throw new IllegalStateException("Cannot clone a recycled bitmap!");
         }
