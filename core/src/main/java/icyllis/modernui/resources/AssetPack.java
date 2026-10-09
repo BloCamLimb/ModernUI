@@ -21,7 +21,6 @@ package icyllis.modernui.resources;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
-import javax.annotation.WillCloseWhenClosed;
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -40,7 +39,8 @@ public final class AssetPack implements Closeable {
 
     private final ResourceMap resources;
 
-    public AssetPack(@NonNull @WillCloseWhenClosed AssetProvider assets,
+    // will close
+    public AssetPack(@NonNull AssetProvider assets,
                      @NonNull ResourceMap resources) {
         this.assets = assets;
         this.resources = resources;

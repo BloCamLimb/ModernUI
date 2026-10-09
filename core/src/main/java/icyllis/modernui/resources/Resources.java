@@ -19,7 +19,9 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.annotation.ThreadSafe;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.AssetManager.ResolvedBag;
@@ -38,8 +40,6 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.annotation.concurrent.GuardedBy;
-import javax.annotation.concurrent.ThreadSafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;

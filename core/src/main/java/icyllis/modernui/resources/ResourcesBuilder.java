@@ -33,7 +33,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import javax.annotation.WillCloseWhenClosed;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -228,11 +227,11 @@ public class ResourcesBuilder {
     /**
      * Creates the asset pack. The builder cannot be reused.
      *
-     * @param assetProvider the provider for additional assets
+     * @param assetProvider the provider for additional assets, will be closed by the return value
      * @return a newly-created asset pack
      * @throws IllegalStateException the runtime limit is exceeded
      */
-    public ResourcesProvider build(@NonNull @WillCloseWhenClosed AssetProvider assetProvider) {
+    public ResourcesProvider build(@NonNull AssetProvider assetProvider) {
         AssetPack assetPack = buildPack(assetProvider);
 
         return new ResourcesProvider(assetPack);
@@ -243,7 +242,7 @@ public class ResourcesBuilder {
      * @hidden
      */
     @ApiStatus.Internal
-    public AssetPack buildPack(@NonNull @WillCloseWhenClosed AssetProvider assetProvider) {
+    public AssetPack buildPack(@NonNull AssetProvider assetProvider) {
         ResourceMap resources = new ResourceMap();
 
         mGlobalStringTable = null;

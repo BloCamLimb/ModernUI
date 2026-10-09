@@ -18,7 +18,8 @@
 
 package icyllis.modernui.util;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
+
 import java.util.ArrayList;
 
 /**
@@ -29,7 +30,7 @@ import java.util.ArrayList;
  *
  * @param <T> The observer type.
  */
-@ParametersAreNonnullByDefault
+@NullMarked
 public abstract class Observable<T> {
 
     /**

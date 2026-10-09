@@ -18,10 +18,10 @@
 
 package icyllis.modernui.graphics;
 
+import org.jetbrains.annotations.CheckReturnValue;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import javax.annotation.CheckReturnValue;
 import java.util.Objects;
 
 /**

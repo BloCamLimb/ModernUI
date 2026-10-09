@@ -18,11 +18,11 @@
 
 package icyllis.modernui.util;
 
+import icyllis.modernui.annotation.ThreadSafe;
 import icyllis.modernui.graphics.MathUtil;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Objects;

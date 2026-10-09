@@ -18,12 +18,12 @@
 
 package icyllis.modernui.graphics.text;
 
+import icyllis.modernui.annotation.GuardedBy;
+import icyllis.modernui.annotation.ThreadSafe;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.util.Pools;
 import org.jspecify.annotations.NonNull;
 
-import javax.annotation.concurrent.GuardedBy;
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Locale;

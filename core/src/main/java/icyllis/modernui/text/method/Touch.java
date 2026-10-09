@@ -26,11 +26,11 @@ import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.widget.TextView;
+import org.jspecify.annotations.NullMarked;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
-@ParametersAreNonnullByDefault
+@NullMarked
 public class Touch {
 
     private Touch() {

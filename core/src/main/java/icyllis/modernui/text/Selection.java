@@ -19,15 +19,15 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.BreakIterator;
+import org.jspecify.annotations.NullMarked;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
 /**
  * Utility class for manipulating cursors and selections in CharSequences.
  * A cursor is a selection where the start and end are at the same offset.
  */
-@ParametersAreNonnullByDefault
+@NullMarked
 public final class Selection {
 
     public static final Object SELECTION_START = new NoCopySpan.Concrete();

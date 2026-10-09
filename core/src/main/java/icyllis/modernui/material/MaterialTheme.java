@@ -19,6 +19,7 @@
 package icyllis.modernui.material;
 
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Gravity;
@@ -47,7 +48,6 @@ import icyllis.modernui.widget.TabLayout;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 

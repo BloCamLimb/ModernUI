@@ -24,15 +24,15 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.widget.TextView;
+import org.jspecify.annotations.NullMarked;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.BreakIterator;
 import java.util.List;
 
 /**
  * Provides methods for handling text additions and deletions in a {@link TextView}.
  */
-@ParametersAreNonnullByDefault
+@NullMarked
 public final class TextKeyListener {
 
     private static final TextKeyListener sInstance = new TextKeyListener();

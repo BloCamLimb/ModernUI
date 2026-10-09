@@ -21,8 +21,6 @@ package icyllis.modernui.resources;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 
-import javax.annotation.concurrent.Immutable;
-
 /**
  * A resource identifier. This can uniquely identify a resource in the ResourceTable.
  * <p>
@@ -34,7 +32,6 @@ import javax.annotation.concurrent.Immutable;
  * @param type      the class of resource
  * @param entry     the name of resource entry
  */
-@Immutable
 public record ResourceId(@NonNull String namespace, @NonNull String type, @NonNull String entry)
         implements Comparable<ResourceId> {
 

@@ -27,7 +27,6 @@ import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.NativeType;
 
-import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.ref.Reference;
 import java.nio.IntBuffer;
 
@@ -45,7 +44,6 @@ import static org.lwjgl.system.MemoryUtil.*;
  * Most window methods must be only called on main thread.
  */
 @Deprecated
-@NotThreadSafe
 public class Window implements AutoCloseable {
 
     private static final LongSparseArray<Window> sWindows = new LongSparseArray<>();

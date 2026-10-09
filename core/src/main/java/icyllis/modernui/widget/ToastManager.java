@@ -20,6 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
+import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
@@ -36,7 +37,6 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayDeque;
 
 /**

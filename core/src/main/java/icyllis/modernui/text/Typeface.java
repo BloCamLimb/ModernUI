@@ -18,11 +18,11 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.graphics.text.FontCollection;
 import icyllis.modernui.graphics.text.FontFamily;
 import org.jspecify.annotations.NonNull;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 

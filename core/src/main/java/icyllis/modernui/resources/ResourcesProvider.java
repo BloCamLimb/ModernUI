@@ -18,10 +18,10 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.modernui.annotation.GuardedBy;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.io.Closeable;
 import java.io.IOException;
 

@@ -21,13 +21,13 @@ package icyllis.modernui.text.method;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UProperty;
 import com.ibm.icu.text.DecimalFormatSymbols;
+import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.text.SpannableStringBuilder;
 import icyllis.modernui.text.Spanned;
 import it.unimi.dsi.fastutil.chars.CharLinkedOpenHashSet;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.util.HashMap;
 import java.util.Locale;
 

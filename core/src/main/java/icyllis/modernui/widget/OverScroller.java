@@ -41,7 +41,7 @@ import icyllis.modernui.system.AnimationClock;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.ViewConfiguration;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.text;
 
+import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
@@ -27,7 +28,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.*;
 import java.util.function.Function;
 

@@ -22,6 +22,7 @@ import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterDirection;
 import com.ibm.icu.text.Bidi;
 import icyllis.modernui.annotation.IntRange;
+import icyllis.modernui.annotation.NotThreadSafe;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
@@ -36,7 +37,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Arrays;
 import java.util.List;
 

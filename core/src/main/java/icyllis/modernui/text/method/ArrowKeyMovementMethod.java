@@ -26,17 +26,18 @@ import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.TextView;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A movement method that provides cursor movement and selection.
  * <p>
  * Modified from Android.
  */
-@ParametersAreNonnullByDefault
+@NullMarked
 public class ArrowKeyMovementMethod extends BaseMovementMethod {
 
+    @Nullable
     private static ArrowKeyMovementMethod sInstance;
 
     private static final Object LAST_TAP_DOWN = new Object();

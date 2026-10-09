@@ -20,14 +20,13 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
+import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.annotation.Size;
 import icyllis.modernui.system.Arch;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * {@code Paint} controls options applied when drawing. {@code Paint} collects

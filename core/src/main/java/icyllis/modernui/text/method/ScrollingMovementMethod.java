@@ -23,13 +23,12 @@ import icyllis.modernui.text.Spannable;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.TextView;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * A movement method that interprets movement keys by scrolling the text buffer.
  */
-@ParametersAreNonnullByDefault
+@NullMarked
 public class ScrollingMovementMethod extends BaseMovementMethod {
 
     private static final ScrollingMovementMethod sInstance = new ScrollingMovementMethod();

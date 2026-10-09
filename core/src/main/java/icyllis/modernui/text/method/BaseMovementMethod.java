@@ -23,13 +23,12 @@ import icyllis.modernui.text.Spannable;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.widget.TextView;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Base classes for movement methods.
  */
-@ParametersAreNonnullByDefault
+@NullMarked
 public abstract class BaseMovementMethod implements MovementMethod {
 
     protected BaseMovementMethod() {

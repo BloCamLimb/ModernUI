@@ -18,13 +18,13 @@
 
 package icyllis.modernui.system;
 
+import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.util.Log;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;

@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.text;
 import com.ibm.icu.text.Bidi;
 import com.ibm.icu.text.BidiRun;
 import icyllis.arc3d.sketch.TextBlob;
+import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.graphics.MathUtil;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
@@ -33,7 +34,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.*;
 import java.util.function.Function;
 
