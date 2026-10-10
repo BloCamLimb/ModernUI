@@ -18,14 +18,15 @@
 
 package icyllis.modernui.text
 
+import icyllis.modernui.util.LayoutDirection
 import icyllis.modernui.view.View.ResolvedLayoutDir
 import java.util.*
 
 /**
  * Returns layout direction for a given locale.
  *
- * @see TextUtils.getLayoutDirectionFromLocale
+ * @see icyllis.modernui.util.LayoutDirection.forLocale
  */
 @ResolvedLayoutDir
 inline val Locale.layoutDirection: Int
-    get() = TextUtils.getLayoutDirectionFromLocale(this)
+    get() = LayoutDirection.forLocale(this)
