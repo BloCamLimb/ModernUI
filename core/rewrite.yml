@@ -1,0 +1,22 @@
+type: specs.openrewrite.org/v1beta/recipe
+name: dev.icyllis.modernui.MigrateToJSpecify
+displayName: Migrate custom nullness annotations to JSpecify
+recipeList:
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.jspecify
+      artifactId: jspecify
+      version: 1.0.0
+      onlyIfUsing: icyllis.modernui.annotation.Nullable
+      configuration: compileOnly
+  - org.openrewrite.java.migrate.jspecify.MoveAnnotationToArrayType:
+      annotationType: icyllis.modernui.annotation.Nullable
+  - org.openrewrite.java.migrate.jspecify.MoveAnnotationToArrayType:
+      annotationType: icyllis.modernui.annotation.NonNull
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: icyllis.modernui.annotation.Nullable
+      newFullyQualifiedTypeName: org.jspecify.annotations.Nullable
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: icyllis.modernui.annotation.NonNull
+      newFullyQualifiedTypeName: org.jspecify.annotations.NonNull
+  - org.openrewrite.staticanalysis.java.MoveFieldAnnotationToType:
+      annotationType: org.jspecify.annotations.*

@@ -1,9 +1,17 @@
+plugins {
+    id "org.openrewrite.rewrite" version "7.39.0"
+}
 
+rewrite {
+    //activeRecipe("dev.icyllis.modernui.MigrateToJSpecify")
+}
 
 dependencies {
     api "org.slf4j:slf4j-api:${slf4j_version}"
     api "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
+
+    rewrite "org.openrewrite.recipe:rewrite-migrate-java:3.40.0"
 
     api "dev.icyllis:arc3d-core:${arc3d_version}"
     api "dev.icyllis:arc3d-sketch:${arc3d_version}"
@@ -12,6 +20,8 @@ dependencies {
     api "dev.icyllis:arc3d-granite:${arc3d_version}"
     api "dev.icyllis:arc3d-vulkan:${arc3d_version}"
     api "dev.icyllis:arc3d-opengl:${arc3d_version}"
+
+    api project(':modernui-base')
 
     compileOnly "org.lwjgl:lwjgl:${lwjgl_version}"
     compileOnly "org.lwjgl:lwjgl-glfw:${lwjgl_version}"

@@ -1,6 +1,7 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
+        mavenCentral()
     }
 }
 plugins {
@@ -8,6 +9,9 @@ plugins {
 }
 
 rootProject.name = 'ModernUI'
+
+include 'modernui-base'
+project(':modernui-base').projectDir = file('base')
 
 include 'modernui-core'
 project(':modernui-core').projectDir = file('core')

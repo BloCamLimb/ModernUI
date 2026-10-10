@@ -27,7 +27,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
-@ApiStatus.Internal
 public class FontCollection {
 
     // 0b0000 0000 0000 0000 0000 0001 1100 0000
