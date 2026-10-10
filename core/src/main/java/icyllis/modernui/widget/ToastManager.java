@@ -18,7 +18,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.core.Context;
@@ -28,6 +27,7 @@ import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.system.Arch;
 import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.text.Typeface;
 import icyllis.modernui.util.Log;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.WindowManager;
@@ -102,7 +102,7 @@ public final class ToastManager {
         mTextView.setTextSize(14);
         if (theme.resolveAttribute(R.attr.textColorPrimary, value, true))
             mTextView.setTextColor(theme.getResources().loadColorStateList(value, null, theme));
-        mTextView.setTypeface(ModernUI.getSelectedTypeface());
+        mTextView.setTypeface(Typeface.getDefault());
         mTextView.setMaxWidth(mTextView.dp(300));
         mTextView.setPadding(mTextView.dp(16), mTextView.dp(12), mTextView.dp(16), mTextView.dp(12));
         mParams.y = mTextView.dp(64);

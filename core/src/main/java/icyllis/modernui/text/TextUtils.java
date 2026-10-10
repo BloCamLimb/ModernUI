@@ -19,14 +19,12 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.lang.UCharacter;
-import com.ibm.icu.util.ULocale;
 import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.GetChars;
 import icyllis.modernui.graphics.text.LayoutCache;
 import icyllis.modernui.graphics.text.MeasuredText;
 import icyllis.modernui.system.Parcel;
 import icyllis.modernui.text.style.*;
-import icyllis.modernui.util.LayoutDirection;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -37,7 +35,6 @@ import java.nio.CharBuffer;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 
 @SuppressWarnings("ForLoopReplaceableByForEach")
 public final class TextUtils {
@@ -964,23 +961,6 @@ public final class TextUtils {
             }
         }
         return false;
-    }
-
-    /**
-     * Return the layout direction for a given Locale
-     *
-     * @param locale the Locale for which we want the layout direction. Can be null.
-     * @return the layout direction. This may be one of:
-     * {@link LayoutDirection#LTR} or
-     * {@link LayoutDirection#RTL}.
-     * <p>
-     * Be careful: this code will need to be updated when vertical scripts will be supported
-     */
-    public static int getLayoutDirectionFromLocale(@Nullable Locale locale) {
-        return (locale != null && !locale.equals(Locale.ROOT)
-                && ULocale.forLocale(locale).isRightToLeft())
-                ? LayoutDirection.RTL
-                : LayoutDirection.LTR;
     }
 
     /**

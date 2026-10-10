@@ -18,7 +18,11 @@
 
 package icyllis.modernui.util;
 
+import com.ibm.icu.util.ULocale;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
+
+import java.util.Locale;
 
 /**
  * A class for defining layout directions. A layout direction can be left-to-right (LTR)
@@ -55,4 +59,19 @@ public final class LayoutDirection {
      * Horizontal layout direction is deduced from the default language script for the locale.
      */
     public static final int LOCALE = 3;
+
+    /**
+     * Return the layout direction for a given Locale.
+     * <p>
+     * Be careful: this code will need to be updated when vertical scripts will be supported
+     *
+     * @param locale the Locale for which we want the layout direction. Can be null.
+     * @return the layout direction. This may be one of: {@link #LTR} or {@link #RTL}.
+     */
+    public static int forLocale(@Nullable Locale locale) {
+        return (locale != null && !locale.equals(Locale.ROOT)
+                && ULocale.forLocale(locale).isRightToLeft())
+                ? RTL
+                : LTR;
+    }
 }

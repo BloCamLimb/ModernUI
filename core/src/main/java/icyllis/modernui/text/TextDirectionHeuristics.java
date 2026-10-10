@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.ModernUI;
+import icyllis.modernui.system.LocaleList;
 import icyllis.modernui.util.LayoutDirection;
 
 import java.nio.CharBuffer;
@@ -30,13 +30,13 @@ public final class TextDirectionHeuristics {
      * Always decides that the direction is left to right.
      */
     public static final TextDirectionHeuristic LTR =
-            new TextDirectionHeuristicInternal(null, false);
+            new DefaultTextDirectionHeuristic(null, false);
 
     /**
      * Always decides that the direction is right to left.
      */
     public static final TextDirectionHeuristic RTL =
-            new TextDirectionHeuristicInternal(null, true);
+            new DefaultTextDirectionHeuristic(null, true);
 
     /**
      * Determines the direction based on the first strong directional character, including bidi
@@ -44,7 +44,7 @@ public final class TextDirectionHeuristics {
      * of the Unicode Bidirectional Algorithm.
      */
     public static final TextDirectionHeuristic FIRSTSTRONG_LTR =
-            new TextDirectionHeuristicInternal(FirstStrong.INSTANCE, false);
+            new DefaultTextDirectionHeuristic(FirstStrong.INSTANCE, false);
 
     /**
      * Determines the direction based on the first strong directional character, including bidi
@@ -52,19 +52,19 @@ public final class TextDirectionHeuristics {
      * behavior of the Unicode Bidirectional Algorithm, just with different fallback behavior.
      */
     public static final TextDirectionHeuristic FIRSTSTRONG_RTL =
-            new TextDirectionHeuristicInternal(FirstStrong.INSTANCE, true);
+            new DefaultTextDirectionHeuristic(FirstStrong.INSTANCE, true);
 
     /**
      * If the text contains any strong right to left non-format character, determines that the
      * direction is right to left, falling back to left to right if it finds none.
      */
     public static final TextDirectionHeuristic ANYRTL_LTR =
-            new TextDirectionHeuristicInternal(AnyStrong.INSTANCE_RTL, false);
+            new DefaultTextDirectionHeuristic(AnyStrong.INSTANCE_RTL, false);
 
     /**
      * Force the paragraph direction to the Locale direction. Falls back to left to right.
      */
-    public static final TextDirectionHeuristic LOCALE = new TextDirectionHeuristicLocale();
+    public static final TextDirectionHeuristic LOCALE = new LocaleTextDirectionHeuristic();
 
     /**
      * State constants for taking care about true / false / unknown
@@ -127,11 +127,11 @@ public final class TextDirectionHeuristics {
      * {@link #isDefaultRtl} to handle cases where the algorithm cannot determine the
      * direction from the text alone.
      */
-    private static abstract class TextDirectionHeuristicImpl implements TextDirectionHeuristic {
+    private static abstract class BaseTextDirectionHeuristic implements TextDirectionHeuristic {
 
         private final TextDirectionAlgorithm mAlgorithm;
 
-        public TextDirectionHeuristicImpl(TextDirectionAlgorithm algorithm) {
+        public BaseTextDirectionHeuristic(TextDirectionAlgorithm algorithm) {
             mAlgorithm = algorithm;
         }
 
@@ -168,12 +168,12 @@ public final class TextDirectionHeuristics {
         }
     }
 
-    private static class TextDirectionHeuristicInternal extends TextDirectionHeuristicImpl {
+    private static class DefaultTextDirectionHeuristic extends BaseTextDirectionHeuristic {
 
         private final boolean mDefaultRtl;
 
-        private TextDirectionHeuristicInternal(TextDirectionAlgorithm algorithm,
-                                               boolean defaultRtl) {
+        private DefaultTextDirectionHeuristic(TextDirectionAlgorithm algorithm,
+                                              boolean defaultRtl) {
             super(algorithm);
             mDefaultRtl = defaultRtl;
         }
@@ -285,16 +285,16 @@ public final class TextDirectionHeuristics {
     /**
      * Algorithm that uses the Locale direction to force the direction of a paragraph.
      */
-    private static class TextDirectionHeuristicLocale extends TextDirectionHeuristicImpl {
+    private static class LocaleTextDirectionHeuristic extends BaseTextDirectionHeuristic {
 
-        public TextDirectionHeuristicLocale() {
+        public LocaleTextDirectionHeuristic() {
             super(null);
         }
 
         @Override
         protected boolean isDefaultRtl() {
-            Locale locale = ModernUI.getSelectedLocale();
-            return TextUtils.getLayoutDirectionFromLocale(locale) == LayoutDirection.RTL;
+            Locale locale = LocaleList.getDefault().get(0);
+            return LayoutDirection.forLocale(locale) == LayoutDirection.RTL;
         }
     }
 }

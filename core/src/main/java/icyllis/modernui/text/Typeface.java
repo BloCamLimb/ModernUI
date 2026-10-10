@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The Typeface specifies a set of font families that can be used
- * in Paint. This determines how text appears when drawn and measured.
+ * in TextPaint. This determines how text appears when drawn and measured.
  */
 @Immutable
 public class Typeface extends FontCollection {
@@ -38,6 +38,7 @@ public class Typeface extends FontCollection {
     public static final Typeface MONOSPACED;
 
     private static final ConcurrentHashMap<String, Typeface> sSystemFontMap;
+    private static volatile Typeface sDefaultTypeface;
 
     static {
         ConcurrentHashMap<String, Typeface> map = new ConcurrentHashMap<>();
@@ -48,6 +49,7 @@ public class Typeface extends FontCollection {
         SERIF = Objects.requireNonNull(map.get(java.awt.Font.SERIF));
         MONOSPACED = Objects.requireNonNull(map.get(java.awt.Font.MONOSPACED));
         sSystemFontMap = map;
+        sDefaultTypeface = SANS_SERIF;
     }
 
     /**
@@ -92,6 +94,16 @@ public class Typeface extends FontCollection {
                     newTypeface);
         }
         return SANS_SERIF;
+    }
+
+    @NonNull
+    public static Typeface getDefault() {
+        return sDefaultTypeface;
+    }
+
+    public static void setDefault(@NonNull Typeface typeface) {
+        Objects.requireNonNull(typeface);
+        sDefaultTypeface = typeface;
     }
 
     private Typeface(@NonNull FontFamily... families) {

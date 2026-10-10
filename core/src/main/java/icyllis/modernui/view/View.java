@@ -35,7 +35,6 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.AttrRes;
@@ -64,6 +63,7 @@ import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.system.AnimationClock;
 import icyllis.modernui.system.Choreographer;
 import icyllis.modernui.system.Handler;
+import icyllis.modernui.system.LocaleList;
 import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Fade;
@@ -9176,7 +9176,7 @@ public class View implements Drawable.Callback {
                     mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL;
                     break;
                 case LAYOUT_DIRECTION_LOCALE:
-                    if (TextUtils.getLayoutDirectionFromLocale(ModernUI.getSelectedLocale()) ==
+                    if (LayoutDirection.forLocale(LocaleList.getDefault().get(0)) ==
                             LAYOUT_DIRECTION_RTL) {
                         mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL;
                     }

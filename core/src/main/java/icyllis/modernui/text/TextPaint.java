@@ -18,7 +18,6 @@
 
 package icyllis.modernui.text;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.IntRange;
@@ -30,6 +29,7 @@ import icyllis.modernui.graphics.text.CharUtils;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.graphics.text.GraphemeBreak;
+import icyllis.modernui.system.LocaleList;
 import icyllis.modernui.util.Pools;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
@@ -150,8 +150,8 @@ public class TextPaint extends Paint {
     @Override
     protected void internalReset() {
         super.internalReset();
-        mTypeface = ModernUI.getSelectedTypeface();
-        mLocale = ModernUI.getSelectedLocale();
+        mTypeface = Typeface.getDefault();
+        mLocale = LocaleList.getDefault().get(0);
         mTextSize = 16;
     }
 

@@ -23,8 +23,8 @@ import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
 import com.ibm.icu.lang.UProperty;
 import com.ibm.icu.text.BreakIterator;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.text.CharSequenceIterator;
+import icyllis.modernui.system.LocaleList;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Locale;
@@ -51,7 +51,7 @@ public class WordIterator {
      * Constructs a WordIterator using the default locale.
      */
     public WordIterator() {
-        this(ModernUI.getSelectedLocale());
+        this(LocaleList.getDefault().get(0));
     }
 
     /**
