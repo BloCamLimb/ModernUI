@@ -360,7 +360,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         final TypedArray a = context.getTheme().obtainStyledAttributes(
                 attrs, defStyleAttr, defStyleRes, ATTRS);
-        ResourceId ap = a.getResourceId(4); // textAppearance
+        ResourceId ap = a.getReference(4); // textAppearance
         if (ap != null) {
             appearance = new TextAppearance(context.getTheme(), ap);
         } else {

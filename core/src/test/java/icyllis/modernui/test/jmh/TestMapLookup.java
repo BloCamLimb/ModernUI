@@ -57,7 +57,7 @@ public class TestMapLookup {
 
     static {
         long val = 7;
-        for (int i = 0; i < 1500; i++) {
+        for (int i = 0; i < 150; i++) {
             String key = Long.toString(val);
             hashmap.put(key, new Object());
             openhash.put(key, new Object());
@@ -65,7 +65,7 @@ public class TestMapLookup {
             arraymap.put(key, new Object());
             val *= 13;
         }
-        for (int i = 3500; i < 4500; i += 2) {
+        for (int i = 350; i < 450; i += 2) {
             String key = Integer.toString(i);
             hashmap.put(key, new Object());
             openhash.put(key, new Object());
@@ -113,8 +113,56 @@ public class TestMapLookup {
         bh.consume(arraymap.get(input.get()));
     }
 
-    @Benchmark
-    public void mapN(InputState input, Blackhole bh) {
-        bh.consume(mapN.get(input.get()));
+    /*@State(Scope.Thread)
+    public static class InputState {
+        String[] inputs;
+        int index = 0;
+
+        @Setup
+        public void setUp() {
+            inputs = new String[8];
+            for (int i = 0; i < 8; i++) {
+                inputs[i] = Integer.toString(i + 32);
+            }
+        }
+
+        public String get() {
+            return inputs[index++ & 7];
+        }
     }
+
+    @Benchmark
+    public void hashmap(InputState input, Blackhole bh) {
+        logic(new HashMap<>(), input, bh);
+    }
+
+    @Benchmark
+    public void openhash(InputState input, Blackhole bh) {
+        logic(new Object2ObjectOpenHashMap<>(16, 0.75f), input, bh);
+    }
+
+    @Benchmark
+    public void openhash2(InputState input, Blackhole bh) {
+        logic(new Object2ObjectOpenHashMap<>(16, 0.6f), input, bh);
+    }
+
+    @Benchmark
+    public void arraymap(InputState input, Blackhole bh) {
+        logic(new ArrayMap<>(), input, bh);
+    }
+
+    void logic(Map<String, Object> map, InputState input, Blackhole bh) {
+        long val = 7;
+        for (int i = 0; i < 15; i++) {
+            String key = Long.toString(val);
+            map.put(key, new Object());
+            val *= 13;
+        }
+        for (int i = 35; i < 45; i += 2) {
+            String key = Integer.toString(i);
+            map.put(key, new Object());
+        }
+        map.forEach((k,v) -> bh.consume(k));
+        bh.consume(map.get(input.get()));
+    }*/
 }

@@ -467,7 +467,7 @@ public class TabLayout extends HorizontalScrollView {
         tabPaddingBottom =
                 a.getDimensionPixelSize(14, tabPaddingBottom); // tabPaddingBottom
 
-        tabTextAppearance = Objects.requireNonNullElse(a.getResourceId(19), // tabTextAppearance
+        tabTextAppearance = Objects.requireNonNullElse(a.getReference(19), // tabTextAppearance
                 R.style.TextAppearance_Material3_TitleSmall);
 
         // Text colors/sizes come from the text appearance first

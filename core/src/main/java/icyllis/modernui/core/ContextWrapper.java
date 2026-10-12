@@ -50,6 +50,10 @@ public class ContextWrapper extends Context {
         mBase = base;
     }
 
+    protected void detachBaseContext() {
+        mBase = null;
+    }
+
     /**
      * @return the base context as set by the constructor or setBaseContext
      */
@@ -62,11 +66,13 @@ public class ContextWrapper extends Context {
         return mBase.getResources();
     }
 
+    @Deprecated
     @Override
     public void setTheme(@Nullable @StyleRes ResourceId resId) {
         mBase.setTheme(resId);
     }
 
+    @Deprecated
     @Override
     public Resources.Theme getTheme() {
         return mBase.getTheme();

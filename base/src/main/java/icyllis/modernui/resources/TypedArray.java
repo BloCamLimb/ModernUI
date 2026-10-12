@@ -590,20 +590,17 @@ public class TypedArray {
 
     /**
      * Retrieves the resource identifier for the attribute at
-     * <var>index</var>.  Note that attribute resource as resolved when
-     * the overall {@link TypedArray} object is retrieved.  As a
-     * result, this function will return the resource identifier of the
-     * final resource value that was found, <em>not</em> necessarily the
-     * original resource that was specified by the attribute.
+     * <var>index</var>.  This is only used to retrieve complex values
+     * after resolving. Currently, the only possible case is style reference.
      *
      * @param index Index of attribute to retrieve.
      *
-     * @return Attribute resource identifier, or defValue if not defined.
+     * @return Attribute resource identifier, or null if not defined.
      * @throws RuntimeException if the TypedArray has already been recycled.
      */
     @Nullable
     @AnyRes
-    public ResourceId getResourceId(int index) {
+    public ResourceId getReference(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }

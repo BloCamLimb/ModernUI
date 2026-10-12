@@ -273,7 +273,7 @@ public class ResourceTypes {
         /*
             uint16_t size;  // Number of bytes in this structure. SIZEOF_EXT = 12
             uint16_t flags;
-            uint32_t parent;    // Resource id 0xppeeeeee of the parent mapping, or -1 if there is none.
+            uint32_t parent;    // Resource id of the parent mapping, or -1 if there is none.
             uint32_t count;     // Number of name/value pairs that follow.
             ResTable_map pairs[count];
          */

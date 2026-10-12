@@ -18,12 +18,20 @@
 
 package icyllis.modernui.resources;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
 /**
  * Provides linear search for sorted needle array (attributes we're looking for)
  * in the sorted haystack array (the attributes we're searching through).
+ * <p>
+ * Both the haystack and the needles should be produced by {@link AttributeMerger},
+ * which guarantees that they are sorted ascending by {@link String#compareTo(String)}
+ * and free of duplicates.
+ *
+ * @hidden
  */
+@ApiStatus.Internal
 public class AttributeFinder {
 
     private String[] keys;

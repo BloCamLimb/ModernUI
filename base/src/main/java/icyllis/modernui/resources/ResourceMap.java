@@ -42,7 +42,7 @@ public class ResourceMap {
 
     LoadedPackage[] packages;
 
-    final String[] packageLibs = new String[256];
+    final String[] packageLibs = new String[256];//TODO use dynamic size
 
     public LoadedPackage[] getPackages() {
         return packages;
@@ -67,7 +67,7 @@ public class ResourceMap {
      * The integer id must come from this table.
      *
      * @param source the source res id that contains the res id to lookup
-     * @param id     the res id to lookup, 0xppeeeeee
+     * @param id     the res id to lookup
      * @param typeId type id if the res id is a reference, or 0 if they have the same type
      * @return the resource id the id represents
      */

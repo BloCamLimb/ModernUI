@@ -41,16 +41,6 @@ import org.jspecify.annotations.Nullable;
 public abstract class Context {
 
     /**
-     * Returns a Resources instance for the application's environment.
-     *
-     * @return a Resources instance for the application's environment
-     *
-     * @deprecated Resources object can be changed during calls, use {@link #getCurrentResources()} instead.
-     */
-    @Deprecated
-    public abstract Resources getResources();
-
-    /**
      * Returns current Resources instance for the application's environment.
      * <p>
      * This method is atomic. The implementation of this method can return a different
@@ -61,9 +51,7 @@ public abstract class Context {
      *
      * @return current Resources instance for the application's environment
      */
-    public Resources getCurrentResources() {
-        return getResources();
-    }
+    public abstract Resources getResources();
 
     public ClassLoader getClassLoader() {
         return Context.class.getClassLoader();

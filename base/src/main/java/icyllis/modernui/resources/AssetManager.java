@@ -297,19 +297,42 @@ public final class AssetManager {
                 return null;
             }
         }
+
+        ResolvedBag parentBag = null;
         if (parentResId == null || childResIds.contains(parentResId)) {
             // There is no parent or a circular parental dependency exist, meaning there is nothing to
             // inherit and we can do a simple copy of the entries in the map.
-            int offset = entrySize;
+        } else {
+            parentBag = getBag(parentResId, childResIds, value);
+            if (parentBag == null) {
+                Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
+                        parentResId, resId);
+                mCachedBags.put(resId, null);
+                return null;
+            }
+        }
 
-            ResolvedBag bag = null;
-            fill_entries://ttt
+        ResolvedBag newBag = null;
+        int parentCount = parentBag != null ? parentBag.getEntryCount() : 0;
+        int maxCount = parentCount + entryCount;
+        fill_entries://ttt
+        if (maxCount > 0) {
             if (entryCount > 0) {
-                // Note that keys are already sorted
-                String[] keys = new String[entryCount];
-                int[] values = new int[entryCount * ResolvedBag.VALUE_COLUMNS];
-                for (int i = 0; i < entryCount; i++) {
-                    int mapName = map.getInt(offset + ResTable_map.name);
+                AttributeMerger merger = new AttributeMerger();
+                merger.reset(parentBag != null ? parentBag.keys : null, 0, parentCount,
+                        parentBag != null ? parentBag.values : null,
+                        ResolvedBag.VALUE_COLUMNS, entryCount);
+                int[] childValues = new int[ResolvedBag.VALUE_COLUMNS];
+                childValues[ResolvedBag.COLUMN_COOKIE] = cookie;
+                int childOffset = entrySize;
+
+                for (int childIndex = 0; childIndex < entryCount; childIndex++) {
+                    int mapName = map.getInt(childOffset + ResTable_map.name);
+                    childValues[ResolvedBag.COLUMN_TYPE] =
+                            map.getShort(childOffset + ResTable_map.value + Res_value.type) & 0xFFFF;
+                    childValues[ResolvedBag.COLUMN_DATA] =
+                            map.getInt(childOffset + ResTable_map.value + Res_value.data);
+
                     String attrName = resources.getKeyStringPool()
                             .getStringAt(mapName);
                     if (attrName == null) {
@@ -318,130 +341,30 @@ public final class AssetManager {
                                 Integer.toHexString(mapName), resId);
                         break fill_entries;
                     }
-                    keys[i] = attrName;
-                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
-                            map.getShort(offset + ResTable_map.value + Res_value.type) & 0xFFFF;
-                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
-                            map.getInt(offset + ResTable_map.value + Res_value.data);
-                    values[i * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_COOKIE] = cookie;
-                    offset += ResTable_map.SIZEOF;
-                }
-                bag = new ResolvedBag();
-                bag.keys = keys;
-                bag.values = values;
-                bag.typeSpecFlags = typeFlags;
-            }
-            mCachedBags.put(resId, bag);
-            return bag;
-        }
-
-        ResolvedBag parentBag = getBag(parentResId, childResIds, value);
-        if (parentBag == null) {
-            Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
-                    parentResId, resId);
-            mCachedBags.put(resId, null);
-            return null;
-        }
-
-        ResolvedBag newBag = null;
-        int parentCount = parentBag.getEntryCount();
-        int maxCount = parentCount + entryCount;
-        fill_entries://ttt
-        if (maxCount > 0) {
-            // allocate max possible array
-            String[] newKeys = new String[maxCount];
-            int[] newValues = new int[maxCount * ResolvedBag.VALUE_COLUMNS];
-            int newIndex = 0;
-            String[] parentKeys = parentBag.keys;
-            int[] parentValues = parentBag.values;
-            int childIndex = 0;
-            int childOffset = entrySize;
-            int parentIndex = 0;
-
-            // merge two sorted arrays (parent and child)
-
-            while (childIndex < entryCount && parentIndex < parentCount) {
-                int mapName = map.getInt(childOffset + ResTable_map.name);
-                String attrName = resources.getKeyStringPool()
-                        .getStringAt(mapName);
-                if (attrName == null) {
-                    // malformed, returns null bag
-                    Log.LOGGER.error(MARKER, "Failed to find map name 0x{} from bag '{}'",
-                            Integer.toHexString(mapName), resId);
-                    break fill_entries;
-                }
-                String childAttrName = attrName;
-                String parentAttrName = parentKeys[parentIndex];
-
-                int keyCompare = childAttrName.compareTo(parentAttrName);
-
-                if (keyCompare <= 0) {
-                    // Use the child key if it comes before the parent
-                    // or is equal to the parent (overrides).
-                    newKeys[newIndex] = childAttrName;
-                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
-                            map.getShort(childOffset + ResTable_map.value + Res_value.type) & 0xFFFF;
-                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
-                            map.getInt(childOffset + ResTable_map.value + Res_value.data);
-                    newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_COOKIE] = cookie;
-                    childIndex++;
+                    try {
+                        merger.append(attrName, childValues);
+                    } catch (IllegalArgumentException e) {
+                        // malformed, returns null bag
+                        Log.LOGGER.error(MARKER, "Failed to append attribute '{}' to bag '{}'",
+                                attrName, resId, e);
+                        break fill_entries;
+                    }
                     childOffset += ResTable_map.SIZEOF;
-                } else {
-                    newKeys[newIndex] = parentAttrName;
-                    System.arraycopy(parentValues, parentIndex * ResolvedBag.VALUE_COLUMNS,
-                            newValues, newIndex * ResolvedBag.VALUE_COLUMNS, ResolvedBag.VALUE_COLUMNS);
                 }
 
-
-                if (keyCompare >= 0) {
-                    parentIndex++;
-                }
-                newIndex++;
+                newBag = new ResolvedBag();
+                newBag.keys = merger.getResultKeys();
+                newBag.values = merger.getResultValues();
+                // Combine flags from the parent and our own bag.
+                newBag.typeSpecFlags = typeFlags | (parentBag != null ? parentBag.typeSpecFlags : 0);
+            } else {
+                // Child is empty, just set to parent
+                newBag = new ResolvedBag();
+                newBag.keys = parentBag.keys;
+                newBag.values = parentBag.values;
+                // Combine flags from the parent and our own bag.
+                newBag.typeSpecFlags = typeFlags | parentBag.typeSpecFlags;
             }
-
-            while (childIndex < entryCount) {
-                int mapName = map.getInt(childOffset + ResTable_map.name);
-                String attrName = resources.getKeyStringPool()
-                        .getStringAt(mapName);
-                if (attrName == null) {
-                    // malformed, returns null bag
-                    Log.LOGGER.error(MARKER, "Failed to find map name 0x{} from bag '{}'",
-                            Integer.toHexString(mapName), resId);
-                    break fill_entries;
-                }
-                String childAttrName = attrName;
-                newKeys[newIndex] = childAttrName;
-                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_TYPE] =
-                        map.getShort(childOffset + ResTable_map.value + Res_value.type) & 0xFFFF;
-                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_DATA] =
-                        map.getInt(childOffset + ResTable_map.value + Res_value.data);
-                newValues[newIndex * ResolvedBag.VALUE_COLUMNS + ResolvedBag.COLUMN_COOKIE] = cookie;
-                childIndex++;
-                childOffset += ResTable_map.SIZEOF;
-                newIndex++;
-            }
-
-            if (parentIndex < parentCount) {
-                int numToCopy = parentCount - parentIndex;
-                System.arraycopy(parentValues, parentIndex * ResolvedBag.VALUE_COLUMNS,
-                        newValues, newIndex * ResolvedBag.VALUE_COLUMNS, numToCopy * ResolvedBag.VALUE_COLUMNS);
-                System.arraycopy(parentKeys, parentIndex,
-                        newKeys, newIndex, numToCopy);
-                newIndex += numToCopy;
-            }
-
-            assert newIndex <= maxCount;
-            if (newIndex < maxCount) {
-                // trim to size
-                newKeys = Arrays.copyOf(newKeys, newIndex);
-                newValues = Arrays.copyOf(newValues, newIndex * ResolvedBag.VALUE_COLUMNS);
-            }
-
-            newBag = new ResolvedBag();
-            newBag.keys = newKeys;
-            newBag.values = newValues;
-            // Combine flags from the parent and our own bag.
-            newBag.typeSpecFlags = typeFlags | parentBag.typeSpecFlags;
         }
         mCachedBags.put(resId, newBag);
         return newBag;

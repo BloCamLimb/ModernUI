@@ -33,7 +33,7 @@ import org.jspecify.annotations.Nullable;
  * @deprecated theme will no longer be part of Context object, you should create a Theme object yourself,
  * there's no need to create a ContextWrapper
  */
-@Deprecated
+@Deprecated(forRemoval = true)
 public class ContextThemeWrapper extends ContextWrapper {
     private final Object mThemeLock = new Object();
     private ResourceId mThemeResource;
