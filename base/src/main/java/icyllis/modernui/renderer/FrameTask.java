@@ -18,6 +18,8 @@
 
 package icyllis.modernui.renderer;
 
+import icyllis.arc3d.core.RawPtr;
+import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.granite.Recording;
 import org.jspecify.annotations.Nullable;
 
@@ -26,9 +28,10 @@ import org.jspecify.annotations.Nullable;
  */
 public final class FrameTask {
 
+    @RawPtr
     public WindowSurface surface;
 
-    // unique_ptr
+    @SharedPtr
     @Nullable
     public Recording surfaceBoundRecording;
 }

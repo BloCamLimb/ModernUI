@@ -79,7 +79,7 @@ public final class GLRenderPipeline extends RenderPipeline {
                 if (!res) {
                     LOGGER.error("Failed to swap buffers");
                 }
-                surface.notifyAcquired();
+                surface.notifyPresentationCompleted();
 
             }
         }

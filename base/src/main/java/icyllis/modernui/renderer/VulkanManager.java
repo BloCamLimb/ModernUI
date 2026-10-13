@@ -29,7 +29,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.glfw.GLFWVulkan;
+import org.lwjgl.sdl.SDLVulkan;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -93,13 +93,13 @@ public final class VulkanManager implements AutoCloseable {
             return;
         }
 
-        if (!GLFWVulkan.glfwVulkanSupported()) {
+        //if (!GLFWVulkan.glfwVulkanSupported()) {
             /*TinyFileDialogs.tinyfd_messageBox("Failed to launch ModernUI",
                     "Vulkan is not supported on your current platform. " +
                             "Make sure your operating system and graphics card drivers are up-to-date.",
                     "ok", "error", true);*/
-            throw new RuntimeException("Vulkan is not supported");
-        }
+            //throw new RuntimeException("Vulkan is not supported");
+        //}
 
         final int version = VK.getInstanceVersionSupported();
 
@@ -145,7 +145,7 @@ public final class VulkanManager implements AutoCloseable {
                     .sType$Default()
                     .pApplicationInfo(appInfo)
                     .ppEnabledLayerNames(null)
-                    .ppEnabledExtensionNames(GLFWVulkan.glfwGetRequiredInstanceExtensions());
+                    .ppEnabledExtensionNames(SDLVulkan.SDL_Vulkan_GetInstanceExtensions());
 
             final PointerBuffer pInstance = stack.mallocPointer(1);
             VKUtil._CHECK_ERROR_(vkCreateInstance(pCreateInfo, null, pInstance));

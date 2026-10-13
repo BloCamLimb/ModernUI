@@ -18,8 +18,6 @@
 
 package icyllis.modernui.renderer;
 
-import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.sketch.Surface;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -34,6 +32,11 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public abstract class WindowSurface {
 
+    public static final int
+            COLOR_MODE_NORMAL = 0,
+            COLOR_MODE_WIDE_COLOR_GAMUT = 1,
+            COLOR_MODE_HIGH_DYNAMIC_RANGE = 2;
+
     protected boolean mPresentationCompleted = true;
     protected boolean mNeedsReconfigure;
     protected final Object mLock = new Object();
@@ -45,11 +48,8 @@ public abstract class WindowSurface {
     /**
      * Requires external synchronization.
      */
-    public long configure(int clientWidth, int clientHeight,
-                          @ColorInfo.ColorType int desiredColorType,
-                          ColorSpace desiredColorSpace) {
-        return 0;
-    }
+    public abstract boolean configure(int clientWidth, int clientHeight,
+                                      int desiredColorMode);
 
     public void waitForPresentation() {
         synchronized (mLock) {
@@ -64,6 +64,13 @@ public abstract class WindowSurface {
 
     public void prepareForPresentation() {
         mPresentationCompleted = false;
+    }
+
+    public void notifyPresentationCompleted() {
+        synchronized (mLock) {
+            mPresentationCompleted = true;
+            mLock.notifyAll();
+        }
     }
 
     /**

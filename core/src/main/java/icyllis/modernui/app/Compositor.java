@@ -18,8 +18,6 @@
 
 package icyllis.modernui.app;
 
-import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.engine.Engine;
@@ -104,8 +102,11 @@ public final class Compositor {
             surface.waitForPresentation();
 
             if (stage.checkForSurfaceReconfigure() || surface.needsReconfigure()) {
-                surface.configure(stage.getWidth(), stage.getHeight(),
-                        ColorInfo.CT_RGBA_8888, ColorSpaces.SRGB);
+                boolean ok = surface.configure(stage.getWidth(), stage.getHeight(),
+                        WindowSurface.COLOR_MODE_NORMAL);
+                if (!ok) {
+                    continue;
+                }
             }
             Surface drawingSurface = surface.getCurrentSurface();
 

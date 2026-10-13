@@ -84,13 +84,9 @@ public abstract class RenderPipeline {
     public abstract WindowSurface createWindowSurface(long window);
 
     // UI thread
-    public boolean requiresPerSurfaceRecording() {
-        return false;
-    }
+    public abstract boolean requiresPerSurfaceRecording();
 
-    public long getAdditionalWindowFlags() {
-        return 0;
-    }
+    public abstract long getAdditionalWindowFlags();
 
     // UI thread
     public void postRender(FrameTask[] tasks) {
@@ -99,6 +95,5 @@ public abstract class RenderPipeline {
     }
 
     // Render thread
-    public void doRender(FrameTask[] tasks) {
-    }
+    public abstract void doRender(FrameTask[] tasks);
 }

@@ -19,7 +19,7 @@
 package icyllis.modernui.renderer;
 
 import icyllis.arc3d.core.ColorInfo;
-import icyllis.arc3d.core.ColorSpace;
+import icyllis.arc3d.core.ColorSpaces;
 import icyllis.arc3d.core.ImageInfo;
 import icyllis.arc3d.engine.Engine;
 import icyllis.arc3d.granite.GraniteSurface;
@@ -43,33 +43,28 @@ public final class GLWindowSurface extends WindowSurface {
     }
 
     @Override
-    public long configure(int clientWidth, int clientHeight, int desiredColorType, ColorSpace desiredColorSpace) {
+    public boolean configure(int clientWidth, int clientHeight,
+                          int desiredColorMode) {
         if (mBackbufferSurface != null) {
             mBackbufferSurface.unref();
         }
+        //TODO use linear space
         mBackbufferSurface = GraniteSurface.wrapGLDefaultFramebuffer(
                 mContext,
                 ImageInfo.make(clientWidth, clientHeight,
-                        desiredColorType, ColorInfo.AT_PREMUL,
-                        desiredColorSpace),
+                        ColorInfo.CT_RGBA_8888, ColorInfo.AT_PREMUL,
+                        ColorSpaces.SRGB),
                 Engine.SurfaceOrigin.kLowerLeft
         );
-        return 0;
+        return mBackbufferSurface != null;
     }
 
     @Override
-    public Surface getCurrentSurface() {
+    public GraniteSurface getCurrentSurface() {
         return mBackbufferSurface;
     }
 
     public long getWindow() {
         return mWindow;
-    }
-
-    public void notifyAcquired() {
-        synchronized (mLock) {
-            mPresentationCompleted = true;
-            mLock.notifyAll();
-        }
     }
 }
