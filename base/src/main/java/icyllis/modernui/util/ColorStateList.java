@@ -30,13 +30,13 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
 /**
- * Lets you map {@link icyllis.modernui.view.View} state sets to colors.
+ * Lets you map {@link StateSet state sets} to colors.
  * <p>
  * This defines a set of state spec / color pairs where each state spec specifies a set of
  * states that a view must either be in or not be in and the color specifies the color associated
  * with that spec.
  */
-// low-priority: this class should be moved to graphics package in 4.0
+//TODO: this class should be moved to graphics package and renamed to StateListColor in 4.0
 public class ColorStateList {
 
     private static final long DEFAULT_COLOR = Color.RED_SRGB;

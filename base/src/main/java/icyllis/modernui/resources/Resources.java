@@ -30,7 +30,6 @@ import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Pools;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Contract;
@@ -45,6 +44,7 @@ import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -416,9 +416,11 @@ public class Resources {
         @GuardedBy("mLock")
         private Resources.ThemeKey mKeyCopy = mKey.clone();
 
-        // open addressing, attribute name -> entry
+        // attribute name -> entry
+        // we use j.u.HashMap instead of open addressing for best lookup performance,
+        // since lookup miss rate is very high
         @GuardedBy("mLock")
-        private Object2ObjectOpenHashMap<String, Entry> mEntries;
+        private HashMap<String, Entry> mEntries;
 
         private Theme(@NonNull Resources resources, ResourcesImpl resourcesImpl) {
             mResourcesImpl = resourcesImpl;
@@ -454,6 +456,7 @@ public class Resources {
          *              if not already defined in the theme.
          * @return true if success, false if the resId is not a style or not found
          */
+        @Deprecated
         public boolean applyStyle(@NonNull @StyleRes ResourceId resId, boolean force) {
             mLock.writeLock().lock();
             try {
@@ -482,8 +485,8 @@ public class Resources {
 
             boolean initial = mEntries == null;
 
-            Object2ObjectOpenHashMap<String, Entry> newEntries =
-                    new Object2ObjectOpenHashMap<>();
+            HashMap<String, Entry> newEntries =
+                    new HashMap<>();
             for (int i = 0; i < entryCount; i++) {
                 boolean isUndefined = isUndefined(bag.type(i), bag.data(i));
                 if (!force && isUndefined) {
@@ -528,7 +531,16 @@ public class Resources {
          */
         @NonNull
         public TypedArray obtainStyledAttributes(String @NonNull[] attrs) {
+            //TODO no need run into generic path
             return obtainStyledAttributes(null, (String) null, null, attrs);
+        }
+
+        @Deprecated(forRemoval = true)
+        @NonNull
+        public TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
+                                                 String @NonNull[] attrs) {
+            return obtainStyledAttributes(null, (String) null, resId,
+                    new AttributeSlots(null, attrs));
         }
 
         /**
@@ -539,7 +551,7 @@ public class Resources {
          * with the array.
          *
          * @param resId The desired style resource.
-         * @param attrs The names of desired attributes to be retrieved.  It
+         * @param slots The names of desired attributes to be retrieved.  It
          *              must be sorted in lexicographic order.
          * @return Returns a TypedArray holding an array of the attribute values.
          * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
@@ -549,14 +561,14 @@ public class Resources {
          */
         @NonNull
         public TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
-                String @NonNull[] attrs) {
-            return obtainStyledAttributes(null, (String) null, resId, attrs);
+                @NonNull AttributeSlots slots) {
+            return obtainStyledAttributes(null, (String) null, resId, slots);
         }
 
         /**
          * @deprecated namespace and type are not used in attribute name anymore, this will be removed in 4.0
          */
-        @Deprecated
+        @Deprecated(forRemoval = true)
         @NonNull
         public TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
                                                  @Nullable @AttrRes ResourceId defStyleAttr,
@@ -566,6 +578,16 @@ public class Resources {
             return obtainStyledAttributes(set,
                     defStyleAttr != null ? defStyleAttr.entry() : null, defStyleRes,
                     attrs);
+        }
+
+        @Deprecated(forRemoval = true)
+        @NonNull
+        public TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
+                                                 @Nullable String defStyleAttr,
+                                                 @Nullable @StyleRes ResourceId defStyleRes,
+                                                 String @NonNull[] attrs) {
+            return obtainStyledAttributes(set, defStyleAttr, defStyleRes,
+                    new AttributeSlots(null, attrs));
         }
 
         /**
@@ -606,7 +628,7 @@ public class Resources {
          *                     supplies default values for the TypedArray,
          *                     used only if defStyleAttr is null or can not be found
          *                     in the theme.  Can be null to not look for defaults.
-         * @param attrs        The names of desired attributes to be retrieved.  It
+         * @param slots        The names of desired attributes to be retrieved.  It
          *                     must be sorted in lexicographic order.
          * @return Returns a TypedArray holding an array of the attribute values.
          * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
@@ -618,16 +640,15 @@ public class Resources {
         public TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
                                                  @Nullable String defStyleAttr,
                                                  @Nullable @StyleRes ResourceId defStyleRes,
-                String @NonNull[] attrs) {
+                                                 @NonNull AttributeSlots slots) {
             final TypedArray array = TypedArray.obtain(getResources(),
-                    attrs.length);
+                    slots.size());
 
             mLock.readLock().lock();
             try {
                 applyStyle(set, defStyleAttr, defStyleRes,
-                        attrs, array.mData, array.mIndices,
-                        array.mValue,
-                        array.mDefStyleAttrFinder);
+                        slots, array.mData, array.mIndices,
+                        array.mValue);
                 // We know that Resources.getImpl() may change during configuration changes.
                 // We capture the ResourceImpl inside the lock.
                 array.mMetrics = mResourcesImpl.getDisplayMetrics();
@@ -635,7 +656,6 @@ public class Resources {
             } finally {
                 mLock.readLock().unlock();
             }
-            array.mDefStyleAttrFinder.clear();
             array.mTheme = this;
             return array;
         }
@@ -792,12 +812,11 @@ public class Resources {
                         @Nullable AttributeSet set,
                         @Nullable String defStyleAttr,
                         @Nullable @StyleRes ResourceId defStyleRes,
-                String @NonNull[] attrs,
-                int @NonNull[] outValues, int @NonNull[] outIndices,
-                        @NonNull TypedValue value,
-                        @NonNull AttributeFinder defStyleAttrFinder) {
+                        @NonNull AttributeSlots slots,
+                        int @NonNull[] outValues, int @NonNull[] outIndices,
+                        @NonNull TypedValue value) {
 
-            ResolvedBag defStyleBag = null;
+            ResolvedBag styleBag = null;
             if (defStyleAttr != null) {
                 if (getAttribute(defStyleAttr, value)) {
                     ResourceMap resources = mResourcesImpl.mAssetManager.getResources(value.cookie);
@@ -805,44 +824,56 @@ public class Resources {
                         ResourceId styleId = resources.lookupResourceId(null,
                                 value.data, (value.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT);
                         if (styleId != null) {
-                            defStyleBag = mResourcesImpl.mAssetManager.getBag(styleId);
+                            styleBag = mResourcesImpl.mAssetManager.getBag(styleId);
                         }
                     }
                 }
             }
-            if (defStyleBag == null && defStyleRes != null) {
-                defStyleBag = mResourcesImpl.mAssetManager.getBag(defStyleRes);
+            if (styleBag == null && defStyleRes != null) {
+                styleBag = mResourcesImpl.mAssetManager.getBag(defStyleRes);
             }
-            defStyleAttrFinder.reset(defStyleBag != null ? defStyleBag.keys : null);
 
-            int valuesIdx = 0;
-            int indicesIdx = 0;
+            if (styleBag != null) {
+                String[] haystack = styleBag.keys;
+                for (int i = 0; i < haystack.length; i++) {
+                    String curAttr = haystack[i];
+                    int ii = slots.indexOf(curAttr);
+                    if (ii < 0) {
+                        continue;
+                    }
+                    value.setTo(styleBag, i);
 
-            for (int ii = 0; ii < attrs.length; ii++) {
-                String curAttr = attrs[ii];
+                    //TODO strip null entries in bag in advance in AssetManager
+                    if (value.type == Res_value.TYPE_NULL) {
+                        continue;
+                    }
 
-                value.reset();
-
-                int defAttrIdx = defStyleAttrFinder.find(curAttr);
-                if (defAttrIdx != -1) {
-                    assert defStyleBag != null;
-                    value.setTo(defStyleBag, defAttrIdx);
-                }
-
-                if (value.type != Res_value.TYPE_NULL) {
                     resolveAttributeReference(value);
-                } else if (value.data != Res_value.DATA_NULL_EMPTY) {
-                    if (getAttribute(curAttr, value)) {
+                    int valuesIdx = ii * TypedArray.STYLE_NUM_ENTRIES;
+                    outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
+                    outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
+                    outValues[valuesIdx + TypedArray.STYLE_COOKIE] = value.cookie;
+                    outValues[valuesIdx + TypedArray.STYLE_FLAGS] = value.flags;
+                }
+            }
 
+            int indicesIdx = 0;
+            int valuesIdx = 0;
+            String[] keys = slots.getNames();
+            for (int ii = 0; ii < keys.length; ii++) {
+
+                if (outValues[valuesIdx + TypedArray.STYLE_TYPE] == Res_value.TYPE_NULL &&
+                        outValues[valuesIdx + TypedArray.STYLE_DATA] != Res_value.DATA_NULL_EMPTY) {
+                    if (getAttribute(keys[ii], value)) {
+                        outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
+                        outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
+                        outValues[valuesIdx + TypedArray.STYLE_COOKIE] = value.cookie;
+                        outValues[valuesIdx + TypedArray.STYLE_FLAGS] = value.flags;
                     }
                 }
 
-                outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
-                outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
-                outValues[valuesIdx + TypedArray.STYLE_COOKIE] = value.cookie;
-                outValues[valuesIdx + TypedArray.STYLE_FLAGS] = value.flags;
-
-                if (value.type != Res_value.TYPE_NULL || value.data == Res_value.DATA_NULL_EMPTY) {
+                if (outValues[valuesIdx + TypedArray.STYLE_TYPE] != Res_value.TYPE_NULL ||
+                        outValues[valuesIdx + TypedArray.STYLE_DATA] == Res_value.DATA_NULL_EMPTY) {
                     outIndices[++indicesIdx] = ii;
                 }
                 valuesIdx += TypedArray.STYLE_NUM_ENTRIES;
@@ -917,10 +948,9 @@ public class Resources {
                 mEntries = null;
             } else {
                 if (mEntries == null) {
-                    mEntries = new Object2ObjectOpenHashMap<>();
+                    mEntries = new HashMap<>();
                 }
-                for (var it = other.mEntries.object2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
-                    var e = it.next();
+                for (var e : other.mEntries.entrySet()) {
                     mEntries.put(e.getKey(), e.getValue().clone());
                 }
             }

@@ -27,6 +27,8 @@ import icyllis.modernui.util.DisplayMetrics;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Arrays;
+
 public class TypedArray {
 
     static TypedArray obtain(Resources res, int len) {
@@ -36,7 +38,7 @@ public class TypedArray {
         }
 
         attrs.mRecycled = false;
-        attrs.resize(len);
+        attrs.reset(len);
         return attrs;
     }
 
@@ -59,15 +61,15 @@ public class TypedArray {
     int mLength;
     final TypedValue mValue = new TypedValue();
 
-    final AttributeFinder mDefStyleAttrFinder = new AttributeFinder();
-
-    private void resize(int len) {
+    private void reset(int len) {
         mLength = len;
         final int dataLen = len * STYLE_NUM_ENTRIES;
         final int indicesLen = len + 1;
         if (mData == null || mData.length < dataLen) {
             mData = new int[dataLen];
             mIndices = new int[indicesLen];
+        } else {
+            Arrays.fill(mData, 0);
         }
     }
 
