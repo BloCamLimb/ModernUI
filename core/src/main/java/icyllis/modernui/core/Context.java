@@ -18,12 +18,9 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.resources.TypedArray;
-import icyllis.modernui.util.AttributeSet;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -75,72 +72,6 @@ public abstract class Context {
      */
     @Deprecated
     public abstract Resources.Theme getTheme();
-
-    /**
-     * Retrieve styled attribute information in this Context's theme.  See
-     * {@link Resources.Theme#obtainStyledAttributes(String[])}
-     * for more information.
-     *
-     * @see Resources.Theme#obtainStyledAttributes(String[])
-     *
-     * @deprecated theme will no longer be part of Context object, you should create it yourself
-     */
-    @Deprecated(forRemoval = true)
-    @NonNull
-    public final TypedArray obtainStyledAttributes(String @NonNull[] attrs) {
-        return getTheme().obtainStyledAttributes(attrs);
-    }
-
-    /**
-     * Retrieve styled attribute information in this Context's theme.  See
-     * {@link Resources.Theme#obtainStyledAttributes(ResourceId, String[])}
-     * for more information.
-     *
-     * @see Resources.Theme#obtainStyledAttributes(ResourceId, String[])
-     *
-     * @deprecated theme will no longer be part of Context object, you should create it yourself
-     */
-    @Deprecated(forRemoval = true)
-    @NonNull
-    public final TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
-            String @NonNull[] attrs) {
-        return getTheme().obtainStyledAttributes(resId, attrs);
-    }
-
-    /**
-     * Retrieve styled attribute information in this Context's theme.  See
-     * {@link Resources.Theme#obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])}
-     * for more information.
-     *
-     * @see Resources.Theme#obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])
-     *
-     * @deprecated theme will no longer be part of Context object, you should create it yourself
-     */
-    @Deprecated(forRemoval = true)
-    @NonNull
-    public final TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
-            String @NonNull[] attrs) {
-        return getTheme().obtainStyledAttributes(set, (String) null, null, attrs);
-    }
-
-    /**
-     * Retrieve styled attribute information in this Context's theme.  See
-     * {@link Resources.Theme#obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])}
-     * for more information.
-     *
-     * @see Resources.Theme#obtainStyledAttributes(AttributeSet, ResourceId, ResourceId, String[])
-     *
-     * @deprecated theme will no longer be part of Context object, you should create it yourself;
-     *          namespace and type are not used in attribute name anymore, this will be removed in 4.0
-     */
-    @Deprecated(forRemoval = true)
-    @NonNull
-    public final TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
-                                                   @Nullable @AttrRes ResourceId defStyleAttr,
-                                                   @Nullable @StyleRes ResourceId defStyleRes,
-            String @NonNull[] attrs) {
-        return getTheme().obtainStyledAttributes(set, defStyleAttr, defStyleRes, attrs);
-    }
 
     @Nullable
     public abstract Object getSystemService(@NonNull String name);

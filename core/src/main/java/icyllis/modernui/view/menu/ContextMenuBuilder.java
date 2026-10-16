@@ -100,7 +100,7 @@ public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
                     this,
                     originalView,
                     false,
-                    R.attr.contextPopupMenuStyle);
+                    R.attr.contextPopupMenuStyle.entry());
             helper.show(Math.round(x), Math.round(y));
             return helper;
         }

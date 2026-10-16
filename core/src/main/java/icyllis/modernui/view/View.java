@@ -57,7 +57,9 @@ import icyllis.modernui.graphics.drawable.ShapeDrawable;
 import icyllis.modernui.graphics.pipeline.AlphaFilterCanvas;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
 import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.system.AnimationClock;
@@ -2437,7 +2439,8 @@ public class View implements Drawable.Callback {
     private float mLongClickX = Float.NaN;
     private float mLongClickY = Float.NaN;
 
-    private Context mContext;
+    private final Context mContext;
+    private Resources.Theme mTheme;
 
     private ScrollCache mScrollCache;
 
@@ -2548,38 +2551,38 @@ public class View implements Drawable.Callback {
      */
     private HandlerActionQueue mRunQueue;
 
-    public static final String[] ATTRS = {
-            /*0*/ R.attr.background,
-            /*1*/ R.attr.clickable,
-            /*2*/ R.attr.contextClickable,
-            /*3*/ R.attr.elevation,
-            /*4*/ R.attr.focusable,
-            /*5*/ R.attr.focusableInTouchMode,
-            /*6*/ R.attr.id,
-            /*7*/ R.attr.layoutDirection,
-            /*8*/ R.attr.longClickable,
-            /*9*/ R.attr.minHeight,
+    private static final String[] ATTRS = {
+            /*0*/R.attr.background,
+            /*1*/R.attr.clickable,
+            /*2*/R.attr.contextClickable,
+            /*3*/R.attr.elevation,
+            /*4*/R.attr.focusable,
+            /*5*/R.attr.focusableInTouchMode,
+            /*6*/R.attr.id,
+            /*7*/R.attr.layoutDirection,
+            /*8*/R.attr.longClickable,
+            /*9*/R.attr.minHeight,
             /*10*/R.attr.minWidth,
-            /*11*/R.attr.padding,
-            /*12*/R.attr.paddingBottom,
-            /*13*/R.attr.paddingEnd,
-            /*14*/R.attr.paddingLeft,
-            /*15*/R.attr.paddingRight,
-            /*16*/R.attr.paddingStart,
-            /*17*/R.attr.paddingTop,
-            /*18*/R.attr.tag,
-            /*19*/R.attr.textAlignment,
-            /*20*/R.attr.textDirection,
+            /*11*/R.attr.paddingBottom,
+            /*12*/R.attr.paddingEnd,
+            /*13*/R.attr.paddingLeft,
+            /*14*/R.attr.paddingRight,
+            /*15*/R.attr.paddingStart,
+            /*16*/R.attr.paddingTop,
+            /*17*/R.attr.textAlignment,
+            /*18*/R.attr.textDirection,
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(null, ATTRS);
 
     /**
      * Simple constructor to use when creating a view from code.
      *
      * @param context The Context the view is running in, through which it can
-     *                access the current theme, resources, etc.
+     *                access the class loader, window manager, etc.
      */
     public View(Context context) {
         mContext = context;
+        mTheme = context != null ? context.getTheme() : null;
         mViewFlags = SOUND_EFFECTS_ENABLED | HAPTIC_FEEDBACK_ENABLED | FOCUSABLE_AUTO;
         // Set some flags defaults
         mPrivateFlags2 =
@@ -2610,6 +2613,7 @@ public class View implements Drawable.Callback {
      * @param attrs   The attributes of the XML tag that is inflating the view.
      * @see #View(Context, AttributeSet, ResourceId)
      */
+    @Deprecated
     public View(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
@@ -2631,6 +2635,7 @@ public class View implements Drawable.Callback {
      *                     the view. Can be null to not look for defaults.
      * @see #View(Context, AttributeSet, ResourceId, ResourceId)
      */
+    @Deprecated
     public View(Context context, @Nullable AttributeSet attrs,
                 @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
@@ -2669,19 +2674,62 @@ public class View implements Drawable.Callback {
      *                     to not look for defaults.
      * @see #View(Context, AttributeSet, ResourceId)
      */
+    @Deprecated
     public View(Context context, @Nullable AttributeSet attrs,
                 @Nullable @AttrRes ResourceId defStyleAttr,
                 @Nullable @StyleRes ResourceId defStyleRes) {
         this(context);
 
-        if (attrs == null && defStyleAttr == null && defStyleRes == null) {
-            // there is a hard requirement that the attributes of the base View class
-            // should not depend on the Theme, so we can return here.
-            return;
-        }
+        applyStyle(context.getTheme(),
+                attrs, defStyleAttr != null ? defStyleAttr.entry() : null,
+                defStyleRes);
+    }
 
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
+    public @Nullable String getDefaultStyleAttr() {
+        return null;
+    }
+
+    @StyleRes
+    public @Nullable ResourceId getDefaultStyleRes() {
+        return null;
+    }
+
+    /**
+     * Returns the names of all style attributes in the inheritance chain.
+     * The corresponding slot will match {@link #onApplyStyle(TypedArray)}.
+     * Subclass override this method to append their style attributes.
+     *
+     * @return all the attribute names
+     */
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
+
+    @MustBeInvokedByOverriders
+    public void applyStyle(Resources.@NonNull Theme theme,
+                           @Nullable AttributeSet attrs,
+                           @Nullable String defStyleAttr,
+                           @Nullable ResourceId defStyleRes) {
+        mTheme = theme;
+
+        TypedArray a = theme.obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, getAttributeSlots()
+        );
+
+        onApplyStyle(a);
+
+        a.recycle();
+    }
+
+    /**
+     * Subclass override this method to apply their style attributes.
+     *
+     * @param a all the attribute values
+     * @return current iteration index of the available attribute
+     */
+    @MustBeInvokedByOverriders
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = 0;
 
         Drawable background = null;
 
@@ -2710,8 +2758,8 @@ public class View implements Drawable.Callback {
         viewFlagMasks |= FOCUSABLE_AUTO;
 
         final int N = a.getIndexCount();
-        for (int i = 0; i < N; i++) {
-            int attr = a.getIndex(i);
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
             switch (attr) {
                 case 0:
                     background = a.getDrawable(attr);
@@ -2784,48 +2832,37 @@ public class View implements Drawable.Callback {
                     mMinWidth = a.getDimensionPixelSize(attr, 0);
                     break;
                 case 11:
-                    padding = a.getDimensionPixelSize(attr, -1);
-                    mUserPaddingLeftInitial = padding;
-                    mUserPaddingRightInitial = padding;
-                    leftPaddingDefined = true;
-                    rightPaddingDefined = true;
-                    break;
-                case 12:
                     bottomPadding = a.getDimensionPixelSize(attr, -1);
                     break;
-                case 13:
+                case 12:
                     endPadding = a.getDimensionPixelSize(attr, UNDEFINED_PADDING);
                     endPaddingDefined = (endPadding != UNDEFINED_PADDING);
                     break;
-                case 14:
+                case 13:
                     leftPadding = a.getDimensionPixelSize(attr, -1);
                     mUserPaddingLeftInitial = leftPadding;
                     leftPaddingDefined = true;
                     break;
-                case 15:
+                case 14:
                     rightPadding = a.getDimensionPixelSize(attr, -1);
                     mUserPaddingRightInitial = rightPadding;
                     rightPaddingDefined = true;
                     break;
-                case 16:
+                case 15:
                     startPadding = a.getDimensionPixelSize(attr, UNDEFINED_PADDING);
                     startPaddingDefined = (startPadding != UNDEFINED_PADDING);
                     break;
-                case 17:
+                case 16:
                     topPadding = a.getDimensionPixelSize(attr, -1);
                     break;
-                    //TODO
-                /*case 18:
-                    mTag = a.getText(attr);
-                    break;*/
-                case 19:
+                case 17:
                     // Clear any text alignment flag already set
                     mPrivateFlags2 &= ~PFLAG2_TEXT_ALIGNMENT_MASK;
                     // Set the text alignment flag depending on the value of the attribute
                     final int textAlignment = a.getInt(attr, TEXT_ALIGNMENT_DEFAULT);
                     mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_FLAGS[textAlignment];
                     break;
-                case 20:
+                case 18:
                     // Clear any text direction flag already set
                     mPrivateFlags2 &= ~PFLAG2_TEXT_DIRECTION_MASK;
                     // Set the text direction flags depending on the value of the attribute
@@ -2834,6 +2871,8 @@ public class View implements Drawable.Callback {
                         mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_FLAGS[textDirection];
                     }
                     break;
+                default:
+                    break ITER;
             }
         }
 
@@ -2851,16 +2890,6 @@ public class View implements Drawable.Callback {
         // If we have padding specified via xml, record that here instead and use it.
         mLeftPaddingDefined = leftPaddingDefined;
         mRightPaddingDefined = rightPaddingDefined;
-
-        // Valid padding beats everything.
-        if (padding >= 0) {
-            leftPadding = padding;
-            topPadding = padding;
-            rightPadding = padding;
-            bottomPadding = padding;
-            mUserPaddingLeftInitial = padding;
-            mUserPaddingRightInitial = padding;
-        }
 
         if (!HAS_RTL_SUPPORT) {
             if (!mLeftPaddingDefined && startPaddingDefined) {
@@ -2894,11 +2923,11 @@ public class View implements Drawable.Callback {
             setFlags(viewFlagValues, viewFlagMasks);
         }
 
-        a.recycle();
-
         if (transformSet) {
             setElevation(elevation);
         }
+
+        return ii;
     }
 
     /**
@@ -3710,7 +3739,7 @@ public class View implements Drawable.Callback {
      * @return converted size in pixels
      */
     public final int dp(float value) {
-        float f = value * getContext().getResources().getDisplayMetrics().density;
+        float f = value * getResources().getDisplayMetrics().density;
         final int res = (int) (f >= 0 ? f + 0.5f : f - 0.5f);
         if (res != 0) return res;
         if (value == 0) return 0;
@@ -3725,7 +3754,7 @@ public class View implements Drawable.Callback {
      * @return converted size in pixels
      */
     public final int sp(float value) {
-        float f = value * getContext().getResources().getDisplayMetrics().scaledDensity;
+        float f = value * getResources().getDisplayMetrics().scaledDensity;
         final int res = (int) (f >= 0 ? f + 0.5f : f - 0.5f);
         if (res != 0) return res;
         if (value == 0) return 0;
@@ -13051,12 +13080,33 @@ public class View implements Drawable.Callback {
 
     /**
      * Returns the context the view is running in, through which it can
-     * access the current theme, resources, etc.
+     * access the class loader, window manager, etc.
      *
      * @return The view's Context.
      */
     public final Context getContext() {
         return mContext;
+    }
+
+    /**
+     * Returns the theme in the last {@link #applyStyle} call, through which is can
+     * access the theme attributes and resources.
+     *
+     * @return The view's Theme, or null if {@link #applyStyle} is never called
+     */
+    public final Resources.Theme getTheme() {
+        return mTheme;
+    }
+
+    /**
+     * Returns the resources the view should use. This is the same
+     * as calling
+     * <pre>{@code getTheme()?.getResources() : getContext().getResources()}</pre>
+     * @return The view's Resources
+     */
+    public final Resources getResources() {
+        var theme = mTheme;
+        return theme != null ? theme.getResources() : mContext.getResources();
     }
 
     /**

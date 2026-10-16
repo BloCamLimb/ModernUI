@@ -22,6 +22,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import org.jspecify.annotations.Nullable;
@@ -44,6 +45,8 @@ public class ToggleButton extends CompoundButton {
 
     private CharSequence mTextOn;
     private CharSequence mTextOff;
+
+    public static final AttributeSlots ATTR_SLOTS = CompoundButton.ATTR_SLOTS;
 
     public ToggleButton(Context context) {
         this(context, null);

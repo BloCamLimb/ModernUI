@@ -71,7 +71,7 @@ public abstract class ForwardingListener implements View.OnTouchListener, View.O
         view.setLongClickable(true);
         view.addOnAttachStateChangeListener(this);
 
-        mScaledTouchSlop = ViewConfiguration.get(view.getContext()).getScaledTouchSlop();
+        mScaledTouchSlop = ViewConfiguration.get(view.getResources()).getScaledTouchSlop();
         mTapTimeout = ViewConfiguration.getTapTimeout();
 
         // Use a medium-press timeout. Halfway between tap and long-press.

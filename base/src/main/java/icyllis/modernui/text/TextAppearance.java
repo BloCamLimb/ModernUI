@@ -18,12 +18,14 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.annotation.StyleRes;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
-import it.unimi.dsi.fastutil.ints.Int2IntFunction;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -72,7 +74,7 @@ public class TextAppearance {
     public int mLineBreakStyle = 0;
     public int mLineBreakWordStyle = 0;
 
-    public static final String[] ATTRS = {
+    private static final String[] ATTRS = {
             /*0*/"textColor",
             /*1*/"textColorHighlight",
             /*2*/"textColorHint",
@@ -81,40 +83,32 @@ public class TextAppearance {
             /*5*/"textSize",
             /*6*/"textStyle",
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(null, ATTRS);
 
     public TextAppearance() {
     }
 
-    public TextAppearance(Resources.@NonNull Theme theme,
-                          ResourceId resId) {
-        final TypedArray a;
-        if (resId != null && resId.type().equals("attr")) {
-            a = theme.obtainStyledAttributes(
-                    null, resId, null, ATTRS);
-        } else {
-            a = theme.obtainStyledAttributes(
-                    resId, ATTRS);
-        }
+    public void applyStyle(Resources.@NonNull Theme theme,
+                           @Nullable AttributeSet attrs,
+                           @Nullable String defStyleAttr,
+                           @Nullable @StyleRes ResourceId defStyleRes) {
+        final TypedArray a = theme.obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, ATTR_SLOTS);
 
-        read(a, null);
+        applyStyle(a, 0, 0);
 
         a.recycle();
     }
 
-    public void read(@NonNull TypedArray a, @Nullable Int2IntFunction indexMap) {
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public int applyStyle(@NonNull TypedArray a, int ii, int baseAttr) {
         final int n = a.getIndexCount();
-        for (int i = 0; i < n; i++) {
-            final int attr = a.getIndex(i);
-            int index = attr;
-            // Translate style array index ids to TextAppearance ids.
-            if (indexMap != null) {
-                index = indexMap.get(attr);
-                if (index == -1) {
-                    // This value is not part of a Text Appearance and should be ignored.
-                    continue;
-                }
-            }
-            switch (index) {
+        ITER:for (; ii < n; ii++) {
+            final int attr = a.getIndex(ii);
+            switch (attr - baseAttr) {
                 case 0: // textColor
                     mTextColor = a.getColorStateList(attr);
                     break;
@@ -138,7 +132,10 @@ public class TextAppearance {
                 case 6: // textStyle
                     mTextStyle = a.getInt(attr, mTextStyle);
                     break;
+                default:
+                    break ITER;
             }
         }
+        return ii;
     }
 }

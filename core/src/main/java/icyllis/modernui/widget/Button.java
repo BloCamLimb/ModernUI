@@ -23,6 +23,7 @@ import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.LayoutInflater;
@@ -60,8 +61,7 @@ import org.jspecify.annotations.Nullable;
  */
 public class Button extends TextView {
 
-    public static final String[] ATTRS =
-            TextView.ATTRS;
+    public static final AttributeSlots ATTR_SLOTS = TextView.ATTR_SLOTS;
 
     /**
      * Simple constructor to use when creating a button from code.
@@ -84,7 +84,7 @@ public class Button extends TextView {
     /**
      * {@link LayoutInflater} calls this constructor when inflating a Button from XML.
      * The attributes defined by the current theme's
-     * {@link R.attr#buttonStyle modernui:buttonStyle}
+     * {@link R.attr#buttonStyle buttonStyle}
      * override base view attributes.
      * <p>
      * You may call this constructor to create your own button instance in code.
@@ -96,18 +96,26 @@ public class Button extends TextView {
      * @see #Button(Context, AttributeSet, ResourceId)
      * @see icyllis.modernui.view.View#View(Context, AttributeSet)
      */
+    @Deprecated
     public Button(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, R.attr.buttonStyle);
     }
 
+    @Deprecated
     public Button(Context context, @Nullable AttributeSet attrs,
                   @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public Button(Context context, @Nullable AttributeSet attrs,
                   @Nullable @AttrRes ResourceId defStyleAttr,
                   @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+    }
+
+    @Override
+    public @Nullable String getDefaultStyleAttr() {
+        return R.attr.buttonStyle.entry();
     }
 }

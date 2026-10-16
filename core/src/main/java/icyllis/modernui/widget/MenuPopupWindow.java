@@ -36,16 +36,13 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
-import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.transition.Transition;
-import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MenuItem;
@@ -55,7 +52,6 @@ import icyllis.modernui.view.menu.MenuAdapter;
 import icyllis.modernui.view.menu.MenuBuilder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A MenuPopupWindow represents the popup window for menu.
@@ -70,20 +66,18 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
 
     private MenuItemHoverListener mHoverListener;
 
-    public MenuPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs,
-                           @Nullable @AttrRes ResourceId defStyleAttr,
-                           @Nullable @StyleRes ResourceId defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
+    public MenuPopupWindow(@NonNull Context context) {
+        super(context);
     }
 
     @NonNull
     @Override
-    DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
+    DropDownListView createDropDownListView(Context context, Resources.Theme theme, boolean hijackFocus) {
         MenuDropDownListView view = new MenuDropDownListView(context, hijackFocus);
         view.setHoverListener(this);
         TypedValue value = new TypedValue();
-        if (context.getTheme().resolveAttribute(R.attr.colorControlHighlight, value, true)) {
-            ColorStateList color = context.getResources().loadColorStateList(value, null, context.getTheme());
+        if (theme.resolveAttribute(R.attr.colorControlHighlight, value, true)) {
+            ColorStateList color = context.getResources().loadColorStateList(value, null, theme);
             if (color != null) {
                 view.setSelector(new RippleDrawable(color, null, new ColorDrawable(Color.WHITE_LONG)));
             }

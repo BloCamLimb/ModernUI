@@ -49,6 +49,7 @@ import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.drawable.Animatable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.LayerDrawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
@@ -134,7 +135,7 @@ public class ProgressBar extends View {
     private int mProgress;
     private int mSecondaryProgress;
     private int mMin;
-    private int mMax;
+    private int mMax = 10000;
 
     private boolean mIndeterminate;
 
@@ -176,7 +177,8 @@ public class ProgressBar extends View {
         }
     };
 
-    public static final String[] ATTRS = {
+    private static final int BASE_ATTR_INDEX = View.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
             /*0*/R.attr.indeterminate,
             /*1*/R.attr.indeterminateDrawable,
             /*2*/R.attr.max,
@@ -188,6 +190,7 @@ public class ProgressBar extends View {
             /*8*/R.attr.progressDrawable,
             /*9*/R.attr.secondaryProgress,
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(View.ATTR_SLOTS, ATTRS);
 
     /**
      * Create a new progress bar with range 0...10000 and initial progress of 0.
@@ -211,38 +214,62 @@ public class ProgressBar extends View {
                        @Nullable @AttrRes ResourceId defStyleAttr,
                        @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+    }
 
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
+    @Override
+    public @Nullable String getDefaultStyleAttr() {
+        return R.attr.progressBarStyle.entry();
+    }
 
-        final Drawable progressDrawable = a.getDrawable(8); // progressDrawable
-        if (progressDrawable != null) {
-            setProgressDrawable(progressDrawable);
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
+
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
+
+        final int N = a.getIndexCount();
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
+                case 0:
+                    setIndeterminate(a.getBoolean(attr, false));
+                    break;
+                case 1:
+                    setIndeterminateDrawable(a.getDrawable(attr));
+                    break;
+                case 2:
+                    setMax(a.getInt(attr, 10000));
+                    break;
+                case 3:
+                    setMaximumHeight(a.getDimensionPixelSize(attr, 1000));
+                    break;
+                case 4:
+                    setMaximumWidth(a.getDimensionPixelSize(attr, 1000));
+                    break;
+                case 5:
+                    setMin(a.getInt(attr, 0));
+                    break;
+                case 6:
+                    setMirrorForRtl(a.getBoolean(attr, false));
+                    break;
+                case 7:
+                    setProgress(a.getInt(attr, 0));
+                    break;
+                case 8:
+                    setProgressDrawable(a.getDrawable(attr));
+                    break;
+                case 9:
+                    setSecondaryProgress(a.getInt(attr, 0));
+                    break;
+                default:
+                    break ITER;
+            }
         }
 
-        mMaxWidth = a.getDimensionPixelSize(4, mMaxWidth);
-        mMaxHeight = a.getDimensionPixelSize(3, mMaxHeight);
-
-        // initialize min/max/progress/secondaryProgress
-        mMin = a.getInt(5, 0);
-        mMax = Math.max(a.getInt(2, 10000), mMin);
-        mProgress = MathUtil.clamp(0, mMin, mMax);
-        mSecondaryProgress = MathUtil.clamp(0, mMin, mMax);
-
-        setProgress(a.getInt(7, mProgress));
-
-        setSecondaryProgress(a.getInt(9, mSecondaryProgress));
-
-        final Drawable indeterminateDrawable = a.getDrawable(1);
-        if (indeterminateDrawable != null) {
-            setIndeterminateDrawable(indeterminateDrawable);
-        }
-
-        setIndeterminate(a.getBoolean(0, mIndeterminate));
-
-        mMirrorForRtl = a.getBoolean(6, mMirrorForRtl);
-
-        a.recycle();
+        return ii;
     }
 
     /**

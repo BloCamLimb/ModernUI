@@ -41,6 +41,7 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.view.MeasureSpec;
@@ -78,22 +79,24 @@ public class FrameLayout extends ViewGroup {
 
     private final ArrayList<View> mMatchParentChildren = new ArrayList<>(1);
 
-    public static final String[] ATTRS =
-            ViewGroup.ATTRS;
+    public static final AttributeSlots ATTR_SLOTS = ViewGroup.ATTR_SLOTS;
 
     public FrameLayout(@NonNull Context context) {
         super(context);
     }
 
+    @Deprecated
     public FrameLayout(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
 
+    @Deprecated
     public FrameLayout(@NonNull Context context, @Nullable AttributeSet attrs,
                        @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public FrameLayout(@NonNull Context context, @Nullable AttributeSet attrs,
                        @Nullable @AttrRes ResourceId defStyleAttr,
                        @Nullable @StyleRes ResourceId defStyleRes) {

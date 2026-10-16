@@ -22,6 +22,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.StateSet;
@@ -91,6 +92,8 @@ public class CheckBox extends CompoundButton {
                 STATE_CHECKED, STATE_INDETERMINATE}) int state);
     }
 
+    public static final AttributeSlots ATTR_SLOTS = CompoundButton.ATTR_SLOTS;
+
     public CheckBox(Context context) {
         this(context, null);
     }
@@ -108,6 +111,11 @@ public class CheckBox extends CompoundButton {
                        @Nullable @AttrRes ResourceId defStyleAttr,
                        @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+    }
+
+    @Override
+    public @Nullable String getDefaultStyleAttr() {
+        return R.attr.checkboxStyle.entry();
     }
 
     @Override

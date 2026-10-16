@@ -119,6 +119,9 @@ public final class R {
         public static final String popupExitTransition = "popupExitTransition";
         public static final String dropDownSelector = "dropDownSelector";
         public static final String dropDownWidth = "dropDownWidth";
+        public static final String dropDownHeight = "dropDownHeight";
+        public static final String dropDownHorizontalOffset = "dropDownHorizontalOffset";
+        public static final String dropDownVerticalOffset = "dropDownVerticalOffset";
 
         public static final String layout_width = "layout_width";
         public static final String layout_height = "layout_height";
@@ -302,7 +305,6 @@ public final class R {
         public static final String tabIndicatorGravity = "tabIndicatorGravity";
         public static final String tabIndicatorAnimationMode = "tabIndicatorAnimationMode";
         public static final String tabIndicatorFullWidth = "tabIndicatorFullWidth";
-        public static final String tabPadding = "tabPadding";
         public static final String tabPaddingStart = "tabPaddingStart";
         public static final String tabPaddingTop = "tabPaddingTop";
         public static final String tabPaddingEnd = "tabPaddingEnd";

@@ -44,6 +44,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
@@ -103,50 +104,77 @@ public abstract class AbsSeekBar extends ProgressBar {
     private final Rect mTempRect = new Rect();
     private final Rect mThumbRect = new Rect();
 
-    public static final String[] ATTRS = {
+    private static final int BASE_ATTR_INDEX = ProgressBar.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
             /*0*/R.attr.splitTrack,
             /*1*/R.attr.thumb,
             /*2*/R.attr.thumbOffset,
             /*3*/R.attr.tickMark,
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(ProgressBar.ATTR_SLOTS, ATTRS);
 
     public AbsSeekBar(Context context) {
         super(context);
+
+        mScaledTouchSlop = ViewConfiguration.get(context.getResources())
+                .getScaledTouchSlop();
     }
 
+    @Deprecated
     public AbsSeekBar(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
 
+    @Deprecated
     public AbsSeekBar(Context context, @Nullable AttributeSet attrs,
                       @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public AbsSeekBar(Context context, @Nullable AttributeSet attrs,
                       @Nullable @AttrRes ResourceId defStyleAttr,
                       @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
 
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
+        mScaledTouchSlop = ViewConfiguration.get(context.getResources())
+                .getScaledTouchSlop();
+    }
 
-        final Drawable thumb = a.getDrawable(1);
-        setThumb(thumb);
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
 
-        final Drawable tickMark = a.getDrawable(3);
-        setTickMark(tickMark);
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
 
-        mSplitTrack = a.getBoolean(0, false);
+        mScaledTouchSlop = ViewConfiguration.get(getResources())
+                .getScaledTouchSlop();
 
-        // Guess thumb offset if thumb != null, but allow layout to override.
-        final int thumbOffset = a.getDimensionPixelOffset(
-                2, getThumbOffset());
-        setThumbOffset(thumbOffset);
+        final int N = a.getIndexCount();
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
+                case 0:
+                    setSplitTrack(a.getBoolean(attr, false));
+                    break;
+                case 1:
+                    setThumb(a.getDrawable(attr));
+                    break;
+                case 2:
+                    setThumbOffset(a.getDimensionPixelSize(attr, 0));
+                    break;
+                case 3:
+                    setTickMark(a.getDrawable(attr));
+                    break;
+                default:
+                    break ITER;
+            }
+        }
 
-        a.recycle();
-
-        mScaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        return ii;
     }
 
     /**

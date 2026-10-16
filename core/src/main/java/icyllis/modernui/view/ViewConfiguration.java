@@ -227,9 +227,8 @@ public class ViewConfiguration {
     static final SparseArray<ViewConfiguration> sConfigurations =
             new SparseArray<>(2);
 
-    ViewConfiguration(@NonNull Context context) {
-        final Resources res = context.getResources();
-        final DisplayMetrics metrics = res.getDisplayMetrics();
+    ViewConfiguration(@NonNull Resources resources) {
+        final DisplayMetrics metrics = resources.getDisplayMetrics();
 
         final float density = metrics.density;
 
@@ -258,15 +257,30 @@ public class ViewConfiguration {
      * density of the display.
      *
      * @return the view configuration
+     *
+     * @deprecated just use {@link #get(Resources)}, because Resources reference can be changing
      */
+    @Deprecated
     @NonNull
     public static ViewConfiguration get(@NonNull Context context) {
-        final DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        return get(context.getResources());
+    }
+
+    /**
+     * Returns a configuration for the specified {@link Resources}. The configuration depends
+     * on various parameters of the {@link Resources}, like the dimension of the display or the
+     * density of the display.
+     *
+     * @return the view configuration
+     */
+    @NonNull
+    public static ViewConfiguration get(@NonNull Resources resources) {
+        final DisplayMetrics metrics = resources.getDisplayMetrics();
         final int density = (int) (metrics.density * DisplayMetrics.DENSITY_DEFAULT);
 
         ViewConfiguration configuration = sConfigurations.get(density);
         if (configuration == null) {
-            configuration = new ViewConfiguration(context);
+            configuration = new ViewConfiguration(resources);
             sConfigurations.put(density, configuration);
         }
 

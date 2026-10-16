@@ -36,13 +36,15 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.system.Arch;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
@@ -93,7 +95,8 @@ public class ListPopupWindow implements ShowableListMenu {
      */
     public static final int POSITION_PROMPT_BELOW = 1;
 
-    private Context mContext;
+    private final Context mContext;
+    private Resources.Theme mTheme;
     private ListAdapter mAdapter;
     private DropDownListView mDropDownList;
 
@@ -138,26 +141,63 @@ public class ListPopupWindow implements ShowableListMenu {
 
     private boolean mModal;
 
-    PopupWindow mPopup;
+    final PopupWindow mPopup;
+
+    private static final int BASE_ATTR_INDEX = PopupWindow.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
+            /*0*/R.attr.dropDownHorizontalOffset,
+            /*1*/R.attr.dropDownSelector,
+            /*2*/R.attr.dropDownVerticalOffset,
+    };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(PopupWindow.ATTR_SLOTS, ATTRS);
 
     public ListPopupWindow(@NonNull Context context) {
-        this(context, null);
-    }
-
-    public ListPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, R.attr.listPopupWindowStyle);
-    }
-
-    public ListPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs,
-                           @Nullable @AttrRes ResourceId defStyleAttr) {
-        this(context, attrs, defStyleAttr, null);
-    }
-
-    public ListPopupWindow(@NonNull Context context, @Nullable AttributeSet attrs,
-                           @Nullable @AttrRes ResourceId defStyleAttr,
-                           @Nullable @StyleRes ResourceId defStyleRes) {
         mContext = context;
-        mPopup = new PopupWindow(context, attrs, defStyleAttr, defStyleRes);
+        mPopup = new PopupWindow(context);
+    }
+
+    public void applyStyle(Resources.@NonNull Theme theme,
+                           @Nullable AttributeSet attrs,
+                           @Nullable String defStyleAttr,
+                           @Nullable @StyleRes ResourceId defStyleRes) {
+        mTheme = theme;
+
+        final TypedArray a = theme.obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, ATTR_SLOTS);
+
+        applyStyle(a, 0, 0);
+
+        a.recycle();
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public int applyStyle(@NonNull TypedArray a, int ii, int baseAttr) {
+        ii = mPopup.applyStyle(a, ii, baseAttr);
+        baseAttr += BASE_ATTR_INDEX;
+
+        final int n = a.getIndexCount();
+        ITER:for (; ii < n; ii++) {
+            final int attr = a.getIndex(ii);
+            switch (attr - baseAttr) {
+                case 0:
+                    mDropDownHorizontalOffset = a.getDimensionPixelOffset(attr, 0);
+                    break;
+                case 1:
+                    mDropDownListHighlight = a.getDrawable(attr);
+                    break;
+                case 2:
+                    mDropDownVerticalOffset = a.getDimensionPixelOffset(attr, 0);
+                    mDropDownVerticalOffsetSet = true;
+                    break;
+                default:
+                    break ITER;
+            }
+        }
+
+        return ii;
     }
 
     /**
@@ -723,7 +763,8 @@ public class ListPopupWindow implements ShowableListMenu {
     }
 
     @NonNull
-    DropDownListView createDropDownListView(Context context, boolean hijackFocus) {
+    DropDownListView createDropDownListView(Context context, Resources.Theme theme, boolean hijackFocus) {
+        //TODO we (and subclass) want to apply a style here, so list view has a default selector drawable
         return new DropDownListView(context, hijackFocus);
     }
 
@@ -752,7 +793,7 @@ public class ListPopupWindow implements ShowableListMenu {
                 }
             };
 
-            mDropDownList = createDropDownListView(mContext, !mModal);
+            mDropDownList = createDropDownListView(mContext, mTheme, !mModal);
             if (mDropDownListHighlight != null) {
                 mDropDownList.setSelector(mDropDownListHighlight);
             }

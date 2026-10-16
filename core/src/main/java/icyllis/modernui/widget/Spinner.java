@@ -42,6 +42,7 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.transition.EpicenterTranslateClipReveal;
@@ -72,23 +73,25 @@ public class Spinner extends AbsSpinner {
     private final Rect mTempRect = new Rect();
 
     private final DropDownPopupWindow mPopup;
-    int mDropDownWidth;
+    private int mDropDownWidth = LayoutParams.WRAP_CONTENT;
 
     /**
      * Forwarding listener used to implement drag-to-open.
      */
     private final ForwardingListener mForwardingListener;
 
-    private int mGravity;
+    private int mGravity = Gravity.START | Gravity.CENTER_VERTICAL;
 
-    public static final String[] ATTRS = {
-            /*0*/R.attr.dropDownSelector,
-            /*1*/R.attr.dropDownWidth,
-            /*2*/R.attr.gravity,
-            /*3*/R.attr.overlapAnchor,
-            /*4*/R.attr.popupBackground,
-            /*5*/R.attr.popupElevation,
+    private static final int BASE_ATTR_INDEX = AbsSpinner.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
+            R.attr.dropDownWidth,
+            R.attr.gravity
     };
+    private static final AttributeSlots SP_ATTR_SLOTS = new AttributeSlots(
+            AbsSpinner.ATTR_SLOTS, ATTRS);
+    private static final int DD_BASE_ATTR_INDEX = SP_ATTR_SLOTS.size();
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(SP_ATTR_SLOTS,
+            ListPopupWindow.ATTR_SLOTS);
 
     public Spinner(Context context) {
         this(context, null);
@@ -106,19 +109,10 @@ public class Spinner extends AbsSpinner {
     public Spinner(Context context, @Nullable AttributeSet attrs,
                    @Nullable @AttrRes ResourceId defStyleAttr,
                    @Nullable @StyleRes ResourceId defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
+        super(context);
 
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
+        mPopup = new DropDownPopupWindow(context);
 
-        // dropdown only
-        mPopup = new DropDownPopupWindow(context, attrs, defStyleAttr, defStyleRes);
-        mDropDownWidth = a.getLayoutDimension(1, LayoutParams.WRAP_CONTENT);
-        if (a.hasValueOrEmpty(0)) {
-            mPopup.setListSelector(a.getDrawable(0));
-        }
-        //TODO set vertical offset to 0 explicitly, temporarily, will be replace by Resources
-        mPopup.setVerticalOffset(dp(-2));
         mForwardingListener = new ForwardingListener(this) {
             @Override
             public ShowableListMenu getPopup() {
@@ -133,9 +127,42 @@ public class Spinner extends AbsSpinner {
                 return true;
             }
         };
-        mGravity = a.getInt(2, Gravity.START | Gravity.CENTER_VERTICAL);
 
-        a.recycle();
+        applyStyle(getTheme(), attrs, defStyleAttr != null ? defStyleAttr.entry() : null, defStyleRes);
+    }
+
+    @Override
+    public @Nullable String getDefaultStyleAttr() {
+        return R.attr.spinnerStyle.entry();
+    }
+
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
+
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
+
+        final int n = a.getIndexCount();
+        ITER:for (; ii < n; ii++) {
+            final int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
+                case 0:
+                    mDropDownWidth = a.getLayoutDimension(attr, LayoutParams.WRAP_CONTENT);
+                    break;
+                case 1:
+                    setGravity(a.getInt(attr, Gravity.START | Gravity.CENTER_VERTICAL));
+                    break;
+                default:
+                    break ITER;
+            }
+        }
+
+        ii = mPopup.applyStyle(a, ii, DD_BASE_ATTR_INDEX);
+
+        return ii;
     }
 
     /**
@@ -688,10 +715,8 @@ public class Spinner extends AbsSpinner {
 
         private ListAdapter mAdapter;
 
-        public DropDownPopupWindow(Context context, @Nullable AttributeSet attrs,
-                                   @Nullable @AttrRes ResourceId defStyleAttr,
-                                   @Nullable @StyleRes ResourceId defStyleRes) {
-            super(context, attrs, defStyleAttr, defStyleRes);
+        public DropDownPopupWindow(Context context) {
+            super(context);
 
             setAnchorView(Spinner.this);
             setModal(true);
@@ -737,8 +762,9 @@ public class Spinner extends AbsSpinner {
             final int spinnerPaddingLeft = Spinner.this.getPaddingLeft();
             final int spinnerPaddingRight = Spinner.this.getPaddingRight();
             final int spinnerWidth = Spinner.this.getWidth();
+            final int dropDownWidth = Spinner.this.getDropDownWidth();
 
-            if (mDropDownWidth == ViewGroup.LayoutParams.WRAP_CONTENT) {
+            if (dropDownWidth == ViewGroup.LayoutParams.WRAP_CONTENT) {
                 int contentWidth = measureContentWidth(
                         (SpinnerAdapter) mAdapter, getBackground());
                 final int contentWidthLimit =
@@ -748,10 +774,10 @@ public class Spinner extends AbsSpinner {
                 }
                 setContentWidth(Math.max(
                         contentWidth, spinnerWidth - spinnerPaddingLeft - spinnerPaddingRight));
-            } else if (mDropDownWidth == ViewGroup.LayoutParams.MATCH_PARENT) {
+            } else if (dropDownWidth == ViewGroup.LayoutParams.MATCH_PARENT) {
                 setContentWidth(spinnerWidth - spinnerPaddingLeft - spinnerPaddingRight);
             } else {
-                setContentWidth(mDropDownWidth);
+                setContentWidth(dropDownWidth);
             }
 
             if (isLayoutRtl()) {

@@ -35,12 +35,9 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Rect;
-import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.util.AttributeSet;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.view.MeasureSpec;
@@ -75,27 +72,10 @@ public abstract class AbsSpinner extends AdapterView<SpinnerAdapter> {
      */
     private Rect mTouchFrame;
 
-    public static final String[] ATTRS =
-            AdapterView.ATTRS;
+    public static final AttributeSlots ATTR_SLOTS = AdapterView.ATTR_SLOTS;
 
     public AbsSpinner(Context context) {
         super(context);
-        setFocusable(true);
-    }
-
-    public AbsSpinner(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, null);
-    }
-
-    public AbsSpinner(Context context, @Nullable AttributeSet attrs,
-                      @Nullable @AttrRes ResourceId defStyleAttr) {
-        this(context, attrs, defStyleAttr, null);
-    }
-
-    public AbsSpinner(Context context, @Nullable AttributeSet attrs,
-                      @Nullable @AttrRes ResourceId defStyleAttr,
-                      @Nullable @StyleRes ResourceId defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
         setFocusable(true);
     }
 

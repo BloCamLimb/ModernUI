@@ -1899,6 +1899,7 @@ public class MaterialTheme {
                 return new RippleDrawable(ColorStateList.valueOf(value.data), null, new ColorDrawable(~0));
             });
             style.addBoolean(R.attr.overlapAnchor, true);
+            style.addDimension(R.attr.dropDownVerticalOffset, -2, TypedValue.COMPLEX_UNIT_DP);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_EditText, null);

@@ -22,6 +22,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import org.jspecify.annotations.Nullable;
@@ -79,6 +80,8 @@ public class SeekBar extends AbsSeekBar {
 
     private OnSeekBarChangeListener mOnSeekBarChangeListener;
 
+    public static final AttributeSlots ATTR_SLOTS = AbsSeekBar.ATTR_SLOTS;
+
     public SeekBar(Context context) {
         this(context, null);
     }
@@ -96,6 +99,11 @@ public class SeekBar extends AbsSeekBar {
                    @Nullable @AttrRes ResourceId defStyleAttr,
                    @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+    }
+
+    @Override
+    public @Nullable String getDefaultStyleAttr() {
+        return R.attr.seekBarStyle.entry();
     }
 
     @Override

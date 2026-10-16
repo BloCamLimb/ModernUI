@@ -21,6 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import org.jetbrains.annotations.ApiStatus;
@@ -52,19 +53,24 @@ public class CheckableImageButton extends ImageButton implements Checkable2 {
     private CharSequence mTooltipTextOn;
     private CharSequence mTooltipTextOff;
 
+    public static final AttributeSlots ATTR_SLOTS = ImageButton.ATTR_SLOTS;
+
     public CheckableImageButton(Context context) {
         super(context);
     }
 
+    @Deprecated
     public CheckableImageButton(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
 
+    @Deprecated
     public CheckableImageButton(Context context, @Nullable AttributeSet attrs,
                                 @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public CheckableImageButton(Context context, @Nullable AttributeSet attrs,
                                 @Nullable @AttrRes ResourceId defStyleAttr,
                                 @Nullable @StyleRes ResourceId defStyleRes) {

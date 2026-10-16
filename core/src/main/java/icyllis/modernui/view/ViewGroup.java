@@ -44,8 +44,10 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.pipeline.ArcCanvas;
 import icyllis.modernui.graphics.pipeline.DrawShadowUtils;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
+import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.system.SystemClock;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.Pools;
@@ -251,23 +253,43 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     private float mAmbientShadowAlpha;
     private float mSpotShadowAlpha;
 
-    public static final String[] ATTRS = {
+    private static final int BASE_ATTR_INDEX = View.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
             R.attr.isLightTheme
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(View.ATTR_SLOTS, ATTRS);
 
     public ViewGroup(Context context) {
-        this(context, null);
+        super(context);
+
+        // ViewGroup doesn't draw by default
+        setWillNotDraw(true);
+        mGroupFlags |= FLAG_CLIP_CHILDREN | FLAG_CLIP_TO_PADDING;
+        setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
+        mChildren = new View[ARRAY_CAPACITY_INCREMENT];
+        mChildrenCount = 0;
+
+        TypedValue value = new TypedValue();
+        context.getTheme().resolveAttribute(R.attr.isLightTheme, value, true);
+
+        boolean isLightTheme = value.data != 0;
+        //TODO the default values should be provided by theme or attributes
+        mAmbientShadowAlpha = isLightTheme ? 0.118f : 0.235f;
+        mSpotShadowAlpha = isLightTheme ? 0.188f : 0.375f;
     }
 
+    @Deprecated
     public ViewGroup(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
 
+    @Deprecated
     public ViewGroup(Context context, @Nullable AttributeSet attrs,
                      @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public ViewGroup(Context context, @Nullable AttributeSet attrs,
                      @Nullable @AttrRes ResourceId defStyleAttr,
                      @Nullable @StyleRes ResourceId defStyleRes) {
@@ -279,18 +301,36 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
         mChildren = new View[ARRAY_CAPACITY_INCREMENT];
         mChildrenCount = 0;
+    }
+
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
+
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
 
         //TODO read other attributes
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
 
-        boolean isLightTheme = a.getBoolean(0, false);
+        final int N = a.getIndexCount();
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
+                case 0: {
+                    boolean isLightTheme = a.getBoolean(attr, false);
+                    //TODO the default values should be provided by theme or attributes
+                    mAmbientShadowAlpha = isLightTheme ? 0.118f : 0.235f;
+                    mSpotShadowAlpha = isLightTheme ? 0.188f : 0.375f;
+                    break;
+                }
+                default:
+                    break ITER;
+            }
+        }
 
-        a.recycle();
-
-        //TODO the default values should be provided by theme or attributes
-        mAmbientShadowAlpha = isLightTheme ? 0.118f : 0.235f;
-        mSpotShadowAlpha = isLightTheme ? 0.188f : 0.375f;
+        return ii;
     }
 
     /**

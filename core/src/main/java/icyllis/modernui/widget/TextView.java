@@ -48,6 +48,7 @@ import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.text.FontMetricsInt;
 import icyllis.modernui.graphics.text.LineBreakConfig;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
@@ -77,14 +78,12 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewTreeObserver;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -270,43 +269,19 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     private Editor mEditor;
 
-    public static final String[] ATTRS = {
-            /*0*/ R.attr.gravity,
-            /*1*/ R.attr.maxWidth,
-            /*2*/ R.attr.minHeight,
-            /*3*/ R.attr.minWidth,
-            /*4*/ R.attr.textAppearance,
-            /*5*/ R.attr.textColor,
-            /*6*/ R.attr.textColorHighlight,
-            /*7*/ R.attr.textColorHint,
-            /*8*/ R.attr.textColorLink,
-            /*9*/ R.attr.textFontWeight,
-            /*10*/R.attr.textSize,
-            /*11*/R.attr.textStyle,
+    private static final int BASE_ATTR_INDEX = View.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
+            /*0*/R.attr.gravity,
+            /*1*/R.attr.maxWidth,
+            /*2*/R.attr.textAppearance
     };
-
-    // Maps styleable attributes that exist both in TextView style and TextAppearance.
-    private static final Int2IntOpenHashMap sAppearanceValues;
-    private static void mapAttribute(@NonNull Int2IntOpenHashMap values,
-                                     @NonNull String name) {
-        values.put(Arrays.binarySearch(
-                TextView.ATTRS, name
-        ), Arrays.binarySearch(
-                TextAppearance.ATTRS, name
-        ));
-    }
-    static {
-        var values = new Int2IntOpenHashMap();
-        mapAttribute(values, R.attr.textColor);
-        mapAttribute(values, R.attr.textColorHighlight);
-        mapAttribute(values, R.attr.textColorHint);
-        mapAttribute(values, R.attr.textColorLink);
-        mapAttribute(values, R.attr.textFontWeight);
-        mapAttribute(values, R.attr.textSize);
-        mapAttribute(values, R.attr.textStyle);
-        values.defaultReturnValue(-1);
-        sAppearanceValues = values;
-    }
+    private static final int ATTR_minHeight = View.ATTR_SLOTS.indexOf(R.attr.minHeight);
+    private static final int ATTR_minWidth = View.ATTR_SLOTS.indexOf(R.attr.minWidth);
+    private static final AttributeSlots TV_ATTR_SLOTS = new AttributeSlots(
+            View.ATTR_SLOTS, ATTRS);
+    private static final int AP_BASE_ATTR_INDEX = TV_ATTR_SLOTS.size();
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(TV_ATTR_SLOTS,
+            TextAppearance.ATTR_SLOTS);
 
     /**
      * Simple constructor to use when creating a text view from code.
@@ -339,44 +314,57 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
     }
 
+    @Deprecated
     public TextView(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, R.attr.textViewStyle);
     }
 
+    @Deprecated
     public TextView(Context context, @Nullable AttributeSet attrs,
                     @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public TextView(Context context, @Nullable AttributeSet attrs,
                     @Nullable @AttrRes ResourceId defStyleAttr,
                     @Nullable @StyleRes ResourceId defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
+        this(context);
 
-        mMovement = getDefaultMovementMethod();
-        mTextPaint.density = context.getResources().getDisplayMetrics().density;
+        applyStyle(context.getTheme(),
+                attrs, defStyleAttr != null ? defStyleAttr.entry() : null,
+                defStyleRes);
+    }
 
-        final TextAppearance appearance;
+    @Override
+    public @Nullable String getDefaultStyleAttr() {
+        return R.attr.textViewStyle.entry();
+    }
 
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
-        ResourceId ap = a.getReference(4); // textAppearance
-        if (ap != null) {
-            appearance = new TextAppearance(context.getTheme(), ap);
-        } else {
-            appearance = new TextAppearance();
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
+
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
+
+        mTextPaint.density = getResources().getDisplayMetrics().density;
+
+        if (a.hasValueOrEmpty(ATTR_minHeight)) {
+            setMinHeight(a.getDimensionPixelSize(ATTR_minHeight, -1));
+        }
+        if (a.hasValueOrEmpty(ATTR_minWidth)) {
+            setMinWidth(a.getDimensionPixelSize(ATTR_minWidth, -1));
         }
 
-        boolean editable = getDefaultEditable();
+        final TextAppearance appearance = new TextAppearance();
 
-        // override TextAppearance with TextView values
-        appearance.read(a, sAppearanceValues);
-
-        final int n = a.getIndexCount();
-        for (int i = 0; i < n; i++) {
-            int attr = a.getIndex(i);
-
-            switch (attr) {
+        final int N = a.getIndexCount();
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
                 case 0: // gravity
                     setGravity(a.getInt(attr, -1));
                     break;
@@ -385,23 +373,25 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     setMaxWidth(a.getDimensionPixelSize(attr, -1));
                     break;
 
-                case 2: // minHeight
-                    setMinHeight(a.getDimensionPixelSize(attr, -1));
+                case 2: {
+                    ResourceId ap = a.getReference(attr);
+                    if (ap != null) {
+                        appearance.applyStyle(getTheme(), null, null, ap);
+                    }
                     break;
+                }
 
-                case 3: // minWidth
-                    setMinWidth(a.getDimensionPixelSize(attr, -1));
-                    break;
+                default:
+                    break ITER;
             }
         }
 
-        a.recycle();
+        // override TextAppearance with TextView values
+        ii = appearance.applyStyle(a, ii, AP_BASE_ATTR_INDEX);
 
         applyTextAppearance(appearance);
 
-        if (editable) {
-            setText("", BufferType.EDITABLE);
-        }
+        return ii;
     }
 
     /**
@@ -1309,7 +1299,31 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public void setTextAppearance(ResourceId resId) {
         if (resId != null) {
-            TextAppearance textAppearance = new TextAppearance(getContext().getTheme(), resId);
+            TextAppearance textAppearance = new TextAppearance();
+            if (resId.type().equals("attr")) {
+                //TODO delete this approach in future
+                textAppearance.applyStyle(getTheme(), null, resId.entry(), null);
+            } else {
+                textAppearance.applyStyle(getTheme(), null, null, resId);
+            }
+            applyTextAppearance(textAppearance);
+        }
+    }
+
+    /**
+     * Sets the text appearance from the specified theme attribute.
+     * <p>
+     * Use a framework-defined {@code TextAppearance} attribute like
+     * {@link R.attr#textAppearanceBodySmall}
+     * or see {@link TextAppearance} for the
+     * set of attributes that can be used in a custom style.
+     *
+     * @param attrName the name of the theme attribute to apply
+     */
+    public void setTextAppearance(String attrName) {
+        if (attrName != null) {
+            TextAppearance textAppearance = new TextAppearance();
+            textAppearance.applyStyle(getTheme(), null, attrName, null);
             applyTextAppearance(textAppearance);
         }
     }

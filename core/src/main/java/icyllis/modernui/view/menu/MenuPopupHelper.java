@@ -36,7 +36,6 @@
 package icyllis.modernui.view.menu;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -59,7 +58,7 @@ public class MenuPopupHelper implements MenuHelper {
     // Immutable cached popup menu properties.
     private final MenuBuilder mMenu;
     private final boolean mOverflowOnly;
-    private final ResourceId mPopupStyleAttr;
+    private final String mPopupStyleAttr;
     private final ResourceId mPopupStyleRes;
 
     // Mutable cached popup menu properties.
@@ -77,22 +76,22 @@ public class MenuPopupHelper implements MenuHelper {
     private final PopupWindow.OnDismissListener mInternalOnDismissListener = this::onDismiss;
 
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu) {
-        this(context, menu, null, false, R.attr.popupMenuStyle, null);
+        this(context, menu, null, false, R.attr.popupMenuStyle.entry(), null);
     }
 
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu, View anchorView) {
-        this(context, menu, anchorView, false, R.attr.popupMenuStyle, null);
+        this(context, menu, anchorView, false, R.attr.popupMenuStyle.entry(), null);
     }
 
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu,
                            View anchorView, boolean overflowOnly,
-                           @AttrRes ResourceId popupStyleAttr) {
+                           String popupStyleAttr) {
         this(context, menu, anchorView, overflowOnly, popupStyleAttr, null);
     }
 
     public MenuPopupHelper(@NonNull Context context, @NonNull MenuBuilder menu,
                            View anchorView, boolean overflowOnly,
-                           @AttrRes ResourceId popupStyleAttr,
+                           String popupStyleAttr,
                            @StyleRes ResourceId popupStyleRes) {
         mContext = context;
         mMenu = menu;
@@ -236,6 +235,7 @@ public class MenuPopupHelper implements MenuHelper {
      */
     @NonNull
     private MenuPopup createPopup() {
+        //TODO re-enable standard menu popup
         /*final WindowManager windowManager = ((Activity)mContext).getWindowManager();
         final Rect maxWindowBounds = windowManager.getMaximumWindowMetrics().getBounds();
 

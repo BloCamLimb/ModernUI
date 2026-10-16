@@ -24,6 +24,7 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.util.AttributeSet;
 import org.jspecify.annotations.Nullable;
@@ -56,21 +57,26 @@ import org.jspecify.annotations.Nullable;
  */
 public class ImageButton extends ImageView {
 
+    public static final AttributeSlots ATTR_SLOTS = ImageView.ATTR_SLOTS;
+
     public ImageButton(Context context) {
         super(context);
         setFocusable(true);
         setClickable(true);
     }
 
+    @Deprecated
     public ImageButton(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
 
+    @Deprecated
     public ImageButton(Context context, @Nullable AttributeSet attrs,
                        @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public ImageButton(Context context, @Nullable AttributeSet attrs,
                        @Nullable @AttrRes ResourceId defStyleAttr,
                        @Nullable @StyleRes ResourceId defStyleRes) {

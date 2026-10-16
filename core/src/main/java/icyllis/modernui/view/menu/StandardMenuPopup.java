@@ -35,7 +35,6 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -75,7 +74,7 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
     private final MenuAdapter mAdapter;
     private final boolean mOverflowOnly;
     private final int mPopupMaxWidth;
-    private final ResourceId mPopupStyleAttr;
+    private final String mPopupStyleAttr;
     private final ResourceId mPopupStyleRes;
 
     // The popup window is final in order to couple its lifecycle to the lifecycle of the
@@ -144,7 +143,7 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
     private boolean mShowTitle;
 
     public StandardMenuPopup(Context context, @NonNull MenuBuilder menu,
-                             @NonNull View anchorView, @AttrRes ResourceId popupStyleAttr,
+                             @NonNull View anchorView, String popupStyleAttr,
                              @StyleRes ResourceId popupStyleRes, boolean overflowOnly) {
         mContext = context;
         mMenu = menu;
@@ -159,7 +158,8 @@ public final class StandardMenuPopup extends MenuPopup implements PopupWindow.On
 
         mAnchorView = anchorView;
 
-        mPopup = new MenuPopupWindow(context, null, mPopupStyleAttr, mPopupStyleRes);
+        mPopup = new MenuPopupWindow(context);
+        mPopup.applyStyle(mAnchorView.getTheme(), null, mPopupStyleAttr, mPopupStyleRes);
         //TODO configurable
         var enter1 = new EpicenterTranslateClipReveal();
         enter1.setDuration(250);

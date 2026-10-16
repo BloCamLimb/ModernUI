@@ -669,7 +669,7 @@ public class FocusFinder {
         int minDistance = Integer.MAX_VALUE;
         View closest = null;
 
-        int edgeSlop = ViewConfiguration.get(root.getContext()).getScaledEdgeSlop();
+        int edgeSlop = ViewConfiguration.get(root.getResources()).getScaledEdgeSlop();
 
         Rect closestBounds = new Rect();
         Rect touchableBounds = mOtherRect;

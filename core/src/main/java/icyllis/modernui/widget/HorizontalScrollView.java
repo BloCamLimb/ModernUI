@@ -45,6 +45,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.AttributeSet;
@@ -166,8 +167,7 @@ public class HorizontalScrollView extends FrameLayout {
      */
     private int mActivePointerId = MotionEvent.INVALID_POINTER_ID;
 
-    public static final String[] ATTRS =
-            FrameLayout.ATTRS;
+    public static final AttributeSlots ATTR_SLOTS = FrameLayout.ATTR_SLOTS;
 
     public HorizontalScrollView(Context context) {
         super(context);
@@ -206,15 +206,18 @@ public class HorizontalScrollView extends FrameLayout {
         setHorizontalScrollbarTrackDrawable(track);
     }
 
+    @Deprecated
     public HorizontalScrollView(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
 
+    @Deprecated
     public HorizontalScrollView(Context context, @Nullable AttributeSet attrs,
                                 @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public HorizontalScrollView(Context context, @Nullable AttributeSet attrs,
                                 @Nullable @AttrRes ResourceId defStyleAttr,
                                 @Nullable @StyleRes ResourceId defStyleRes) {

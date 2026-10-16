@@ -521,13 +521,12 @@ public class Resources {
          * <p>Be sure to call {@link TypedArray#recycle() TypedArray.recycle()} when you are done
          * with the array.
          *
-         * @param attrs The names of desired attributes to be retrieved.  It
-         *              must be sorted in lexicographic order.
+         * @param attrs The names of desired attributes to be retrieved.
          * @return Returns a TypedArray holding an array of the attribute values.
          * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
          * when done with it.
-         * @see #obtainStyledAttributes(ResourceId, String[])
-         * @see #obtainStyledAttributes(AttributeSet, String, ResourceId, String[])
+         * @see #obtainStyledAttributes(ResourceId, AttributeSlots)
+         * @see #obtainStyledAttributes(AttributeSet, String, ResourceId, AttributeSlots)
          */
         @NonNull
         public TypedArray obtainStyledAttributes(String @NonNull[] attrs) {
@@ -545,19 +544,19 @@ public class Resources {
 
         /**
          * Return a TypedArray holding the values defined by the <var>resId</var>
-         * resource which are listed in <var>attrs</var>.
+         * resource which are listed in <var>slots</var>.
          *
          * <p>Be sure to call {@link TypedArray#recycle() TypedArray.recycle()} when you are done
          * with the array.
          *
          * @param resId The desired style resource.
          * @param slots The names of desired attributes to be retrieved.  It
-         *              must be sorted in lexicographic order.
+         *              should be pre-constructed and reused.
          * @return Returns a TypedArray holding an array of the attribute values.
          * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
          * when done with it.
-         * @see #obtainStyledAttributes(ResourceId, String[])
-         * @see #obtainStyledAttributes(AttributeSet, String, ResourceId, String[])
+         * @see #obtainStyledAttributes(ResourceId, AttributeSlots)
+         * @see #obtainStyledAttributes(AttributeSet, String, ResourceId, AttributeSlots)
          */
         @NonNull
         public TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
@@ -593,7 +592,7 @@ public class Resources {
         /**
          * Return a TypedArray holding the attribute values in
          * <var>set</var>
-         * that are listed in <var>attrs</var>.  In addition, if the given
+         * that are listed in <var>slots</var>.  In addition, if the given
          * AttributeSet specifies a style class (through the "style" attribute),
          * that style will be applied on top of the base attributes it defines.
          *
@@ -601,14 +600,13 @@ public class Resources {
          * with the array.
          *
          * <p>When determining the final value of a particular attribute, there
-         * are four inputs that come into play:</p>
+         * are three inputs that come into play:</p>
          *
          * <ol>
          *     <li> Any attribute values in the given AttributeSet.
          *     <li> The style resource specified in the AttributeSet (named
-         *     "style").
-         *     <li> The default style specified by <var>defStyleAttr</var> and
-         *     <var>defStyleRes</var>
+         *     "style"), or the default style specified by <var>defStyleAttr</var> and
+         *     <var>defStyleRes</var>.
          *     <li> The base values in this theme.
          * </ol>
          *
@@ -629,7 +627,7 @@ public class Resources {
          *                     used only if defStyleAttr is null or can not be found
          *                     in the theme.  Can be null to not look for defaults.
          * @param slots        The names of desired attributes to be retrieved.  It
-         *                     must be sorted in lexicographic order.
+         *                     should be pre-constructed and reused.
          * @return Returns a TypedArray holding an array of the attribute values.
          * Be sure to call {@link TypedArray#recycle() TypedArray.recycle()}
          * when done with it.
@@ -859,7 +857,7 @@ public class Resources {
 
             int indicesIdx = 0;
             int valuesIdx = 0;
-            String[] keys = slots.getNames();
+            String[] keys = slots.getKeys();
             for (int ii = 0; ii < keys.length; ii++) {
 
                 if (outValues[valuesIdx + TypedArray.STYLE_TYPE] == Res_value.TYPE_NULL &&

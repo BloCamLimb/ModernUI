@@ -31,6 +31,7 @@ import icyllis.modernui.graphics.Matrix;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.drawable.LevelListDrawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
@@ -88,7 +89,8 @@ public class ImageView extends View {
     private int mBaseline = -1;
     private boolean mBaselineAlignBottom = false;
 
-    public static final String[] ATTRS = {
+    private static final int BASE_ATTR_INDEX = View.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
             /*0*/R.attr.adjustViewBounds,
             /*1*/R.attr.baselineAlignBottom,
             /*2*/R.attr.cropToPadding,
@@ -98,54 +100,76 @@ public class ImageView extends View {
             /*6*/R.attr.src,
             /*7*/R.attr.tint,
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(View.ATTR_SLOTS, ATTRS);
 
     public ImageView(Context context) {
         super(context);
     }
 
+    @Deprecated
     public ImageView(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
 
+    @Deprecated
     public ImageView(Context context, @Nullable AttributeSet attrs,
                      @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public ImageView(Context context, @Nullable AttributeSet attrs,
                      @Nullable @AttrRes ResourceId defStyleAttr,
                      @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+    }
 
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
 
-        final Drawable d = a.getDrawable(6);
-        if (d != null) {
-            setImageDrawable(d);
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
+
+        mHasDrawableTint = false;
+
+        final int N = a.getIndexCount();
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
+                case 0:
+                    setAdjustViewBounds(a.getBoolean(attr, false));
+                    break;
+                case 1:
+                    setBaselineAlignBottom(a.getBoolean(attr, false));
+                    break;
+                case 2:
+                    setCropToPadding(a.getBoolean(attr, false));
+                    break;
+                case 3:
+                    setMaxHeight(a.getDimensionPixelSize(attr, Integer.MAX_VALUE));
+                    break;
+                case 4:
+                    setMaxWidth(a.getDimensionPixelSize(attr, Integer.MAX_VALUE));
+                    break;
+                case 5:
+                    final int enumValue = a.getInt(attr, -1);
+                    setScaleType(enumValue >= 0 ? ScaleType.VALUES[enumValue] : ScaleType.FIT_CENTER);
+                    break;
+                case 6:
+                    setImageDrawable(a.getDrawable(attr));
+                    break;
+                case 7:
+                    setImageTintList(a.getColorStateList(attr));
+                    break;
+                default:
+                    break ITER;
+            }
         }
 
-        mBaselineAlignBottom = a.getBoolean(1, false);
-
-        setAdjustViewBounds(a.getBoolean(0, false));
-        setMaxWidth(a.getDimensionPixelSize(4, Integer.MAX_VALUE));
-        setMaxHeight(a.getDimensionPixelSize(3, Integer.MAX_VALUE));
-
-        final int index = a.getInt(5, -1);
-        if (index >= 0) {
-            setScaleType(ScaleType.VALUES[index]);
-        }
-
-        if (a.hasValue(7)) {
-            mDrawableTintList = a.getColorStateList(7);
-            mHasDrawableTint = true;
-        }
-
-        applyImageTint();
-
-        mCropToPadding = a.getBoolean(2, false);
-
-        a.recycle();
+        return ii;
     }
 
     @Override

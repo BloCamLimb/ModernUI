@@ -18,7 +18,6 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
@@ -88,7 +87,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
 
     private final Context mContext;
     private final int mMenuMaxWidth;
-    private final ResourceId mPopupStyleAttr;
+    private final String mPopupStyleAttr;
     private final ResourceId mPopupStyleRes;
     private final boolean mOverflowOnly;
     private final Handler mSubMenuHoverHandler;
@@ -224,7 +223,7 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
      * Initializes a new cascading-capable menu popup.
      */
     public CascadingMenuPopup(@NonNull Context context, @NonNull View anchorView,
-                              @AttrRes ResourceId popupStyleAttr,
+                              String popupStyleAttr,
                               @StyleRes ResourceId popupStyleRes, boolean overflowOnly) {
         mContext = Objects.requireNonNull(context);
         mAnchorView = Objects.requireNonNull(anchorView);
@@ -248,8 +247,8 @@ public final class CascadingMenuPopup extends MenuPopup implements MenuPresenter
     }
 
     private MenuPopupWindow createPopupWindow() {
-        MenuPopupWindow popupWindow = new MenuPopupWindow(
-                mContext, null, mPopupStyleAttr, mPopupStyleRes);
+        MenuPopupWindow popupWindow = new MenuPopupWindow(mContext);
+        popupWindow.applyStyle(mAnchorView.getTheme(), null, mPopupStyleAttr, mPopupStyleRes);
 
         //TODO configurable
         var enter1 = new EpicenterTranslateClipReveal();

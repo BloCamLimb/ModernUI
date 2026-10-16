@@ -47,6 +47,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.text.TextUtils;
@@ -145,13 +146,15 @@ public class Switch extends Button implements Checkable2 {
     private CharSequence mTextOn;
     private CharSequence mTextOff;
 
-    public static final String[] ATTRS = {
+    private static final int BASE_ATTR_INDEX = Button.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
             R.attr.checked,
             R.attr.switchMinWidth,
             R.attr.switchPadding,
             R.attr.thumb,
             R.attr.track,
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(Button.ATTR_SLOTS, ATTRS);
 
     /**
      * Construct a new Switch with default styling.
@@ -208,26 +211,52 @@ public class Switch extends Button implements Checkable2 {
                   @Nullable @AttrRes ResourceId defStyleAttr,
                   @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+    }
 
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
-        mThumbDrawable = a.getDrawable(3);
-        if (mThumbDrawable != null) {
-            mThumbDrawable.setCallback(this);
-        }
-        mTrackDrawable = a.getDrawable(4);
-        if (mTrackDrawable != null) {
-            mTrackDrawable.setCallback(this);
-        }
-        mSwitchMinWidth = a.getDimensionPixelSize(
-                1, 0);
-        mSwitchPadding = a.getDimensionPixelSize(
-                2, 0);
-        setChecked(a.getBoolean(0, false));
-        a.recycle();
+    @Override
+    public @Nullable String getDefaultStyleAttr() {
+        return R.attr.switchStyle.entry();
+    }
 
-        final ViewConfiguration config = ViewConfiguration.get(context);
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
+
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
+
+        final ViewConfiguration config = ViewConfiguration.get(getResources());
         mTouchSlop = config.getScaledTouchSlop();
+
+        final int N = a.getIndexCount();
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
+                case 0:
+                    setChecked(a.getBoolean(attr, false));
+                    break;
+                case 1:
+                    setSwitchMinWidth(a.getDimensionPixelSize(
+                            attr, 0));
+                    break;
+                case 2:
+                    setSwitchPadding(a.getDimensionPixelSize(
+                            attr, 0));
+                    break;
+                case 3:
+                    setThumbDrawable(a.getDrawable(attr));
+                    break;
+                case 4:
+                    setTrackDrawable(a.getDrawable(attr));
+                    break;
+                default:
+                    break ITER;
+            }
+        }
+
+        return ii;
     }
 
     /**

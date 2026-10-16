@@ -36,14 +36,15 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.transition.TransitionListener;
@@ -59,6 +60,7 @@ import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.view.ViewParent;
 import icyllis.modernui.view.ViewTreeObserver;
 import icyllis.modernui.view.WindowManager;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -192,42 +194,18 @@ public class PopupWindow {
 
     private boolean mPopupViewInitialLayoutDirectionInherited;
 
-    public static final String[] ATTRS = {
+    private static final String[] ATTRS = {
             /*0*/R.attr.overlapAnchor,
             /*1*/R.attr.popupBackground,
             /*2*/R.attr.popupElevation,
             /*3*/R.attr.popupEnterTransition,
             /*4*/R.attr.popupExitTransition,
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(null, ATTRS);
 
-    public PopupWindow(Context context) {
-        this(context, null);
-    }
-
-    public PopupWindow(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, null);
-    }
-
-    public PopupWindow(Context context, @Nullable AttributeSet attrs,
-                       @Nullable @AttrRes ResourceId defStyleAttr) {
-        this(context, attrs, defStyleAttr, null);
-    }
-
-    public PopupWindow(Context context, @Nullable AttributeSet attrs,
-                       @Nullable @AttrRes ResourceId defStyleAttr,
-                       @Nullable @StyleRes ResourceId defStyleRes) {
+    public PopupWindow(@NonNull Context context) {
         mContext = context;
         mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
-        final Drawable bg = a.getDrawable(1);
-        mElevation = a.getDimension(2, 0);
-        mOverlapAnchor = a.getBoolean(0, false);
-
-        a.recycle();
-
-        setBackgroundDrawable(bg);
     }
 
     /**
@@ -296,15 +274,52 @@ public class PopupWindow {
      * @param focusable   true if the popup can be focused, false otherwise
      */
     public PopupWindow(View contentView, int width, int height, boolean focusable) {
-        if (contentView != null) {
-            mContext = contentView.getContext();
-            mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
-        }
-
         setContentView(contentView);
         setWidth(width);
         setHeight(height);
         setFocusable(focusable);
+    }
+
+    public void applyStyle(Resources.@NonNull Theme theme,
+                           @Nullable AttributeSet attrs,
+                           @Nullable String defStyleAttr,
+                           @Nullable @StyleRes ResourceId defStyleRes) {
+        final TypedArray a = theme.obtainStyledAttributes(
+                attrs, defStyleAttr, defStyleRes, ATTR_SLOTS);
+
+        applyStyle(a, 0, 0);
+
+        a.recycle();
+    }
+
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public int applyStyle(@NonNull TypedArray a, int ii, int baseAttr) {
+        final int n = a.getIndexCount();
+        ITER:for (; ii < n; ii++) {
+            final int attr = a.getIndex(ii);
+            switch (attr - baseAttr) {
+                case 0:
+                    mOverlapAnchor = a.getBoolean(attr, false);
+                    break;
+                case 1:
+                    setBackgroundDrawable(a.getDrawable(attr));
+                    break;
+                case 2:
+                    mElevation = a.getDimension(attr, 0);
+                    break;
+                case 3:
+                case 4:
+                    //TODO apply Transition here, so we don't need hard-coding in MenuPopups
+                    break;
+                default:
+                    break ITER;
+            }
+        }
+
+        return ii;
     }
 
     /**

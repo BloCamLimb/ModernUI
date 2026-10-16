@@ -57,6 +57,7 @@ import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.RippleDrawable;
 import icyllis.modernui.graphics.drawable.ShapeDrawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
@@ -338,7 +339,7 @@ public class TabLayout extends HorizontalScrollView {
     int tabPaddingEnd;
     int tabPaddingBottom;
 
-    private final ResourceId tabTextAppearance;
+    private ResourceId tabTextAppearance;
     ColorStateList tabTextColors;
     ColorStateList tabIconTint;
     ColorStateList tabRippleColorStateList;
@@ -352,9 +353,9 @@ public class TabLayout extends HorizontalScrollView {
     //final int tabBackgroundResId;
 
     int tabMaxWidth = Integer.MAX_VALUE;
-    private final int requestedTabMinWidth;
-    private final int requestedTabMaxWidth;
-    private final int scrollableTabMinWidth;
+    private int requestedTabMinWidth;
+    private int requestedTabMaxWidth;
+    private int scrollableTabMinWidth;
 
     private int contentInsetStart;
 
@@ -386,30 +387,31 @@ public class TabLayout extends HorizontalScrollView {
     // Pool we use as a simple RecyclerBin
     private final Pools.Pool<TabView> tabViewPool = new Pools.SimplePool<>(12);
 
-    public static final String[] ATTRS = {
-            /* 0*/R.attr.tabContentStart,
-            /* 1*/R.attr.tabGravity,
-            /* 2*/R.attr.tabIconTint,
-            /* 3*/R.attr.tabIndicator,
-            /* 4*/R.attr.tabIndicatorAnimationDuration,
-            /* 5*/R.attr.tabIndicatorAnimationMode,
-            /* 6*/R.attr.tabIndicatorColor,
-            /* 7*/R.attr.tabIndicatorFullWidth,
-            /* 8*/R.attr.tabIndicatorGravity,
-            /* 9*/R.attr.tabInlineLabel,
+    private static final int BASE_ATTR_INDEX = HorizontalScrollView.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
+            /*0*/R.attr.tabContentStart,
+            /*1*/R.attr.tabGravity,
+            /*2*/R.attr.tabIconTint,
+            /*3*/R.attr.tabIndicator,
+            /*4*/R.attr.tabIndicatorAnimationDuration,
+            /*5*/R.attr.tabIndicatorAnimationMode,
+            /*6*/R.attr.tabIndicatorColor,
+            /*7*/R.attr.tabIndicatorFullWidth,
+            /*8*/R.attr.tabIndicatorGravity,
+            /*9*/R.attr.tabInlineLabel,
             /*10*/R.attr.tabMaxWidth,
             /*11*/R.attr.tabMinWidth,
             /*12*/R.attr.tabMode,
-            /*13*/R.attr.tabPadding,
-            /*14*/R.attr.tabPaddingBottom,
-            /*15*/R.attr.tabPaddingEnd,
-            /*16*/R.attr.tabPaddingStart,
-            /*17*/R.attr.tabPaddingTop,
-            /*18*/R.attr.tabRippleColor,
-            /*19*/R.attr.tabTextAppearance,
-            /*20*/R.attr.tabTextColor,
-            /*21*/R.attr.tabUnboundedRipple,
+            /*13*/R.attr.tabPaddingBottom,
+            /*14*/R.attr.tabPaddingEnd,
+            /*15*/R.attr.tabPaddingStart,
+            /*16*/R.attr.tabPaddingTop,
+            /*17*/R.attr.tabRippleColor,
+            /*18*/R.attr.tabTextAppearance,
+            /*19*/R.attr.tabTextColor,
+            /*20*/R.attr.tabUnboundedRipple,
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(HorizontalScrollView.ATTR_SLOTS, ATTRS);
 
     public TabLayout(@NonNull Context context) {
         this(context, null);
@@ -427,7 +429,7 @@ public class TabLayout extends HorizontalScrollView {
     public TabLayout(@NonNull Context context, @Nullable AttributeSet attrs,
                      @Nullable @AttrRes ResourceId defStyleAttr,
                      @Nullable @StyleRes ResourceId defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
+        super(context);
 
         // Disable the Scroll Bar
         setHorizontalScrollBarEnabled(false);
@@ -440,74 +442,119 @@ public class TabLayout extends HorizontalScrollView {
                 new HorizontalScrollView.LayoutParams(
                         WRAP_CONTENT, LayoutParams.MATCH_PARENT));
 
-        TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS
-        );
-
-        setSelectedTabIndicator(
-                a.getDrawable(3)); // tabIndicator
-        setSelectedTabIndicatorColor(
-                a.getColorStateList(6)); // tabIndicatorColor
-        // noinspection MagicConstant
-        setSelectedTabIndicatorGravity(
-                a.getInt(8, INDICATOR_GRAVITY_BOTTOM)); // tabIndicatorGravity
-        // noinspection MagicConstant
-        setTabIndicatorAnimationMode(
-                a.getInt(5, INDICATOR_ANIMATION_MODE_LINEAR)); // tabIndicatorAnimationMode
-        setTabIndicatorFullWidth(a.getBoolean(7, true)); // tabIndicatorFullWidth
-
-        tabPaddingStart =
-                tabPaddingTop =
-                        tabPaddingEnd =
-                                tabPaddingBottom = a.getDimensionPixelSize(13, 0); // tabPadding
-        tabPaddingStart =
-                a.getDimensionPixelSize(16, tabPaddingStart); // tabPaddingStart
-        tabPaddingTop = a.getDimensionPixelSize(17, tabPaddingTop); // tabPaddingTop
-        tabPaddingEnd = a.getDimensionPixelSize(15, tabPaddingEnd); // tabPaddingEnd
-        tabPaddingBottom =
-                a.getDimensionPixelSize(14, tabPaddingBottom); // tabPaddingBottom
-
-        tabTextAppearance = Objects.requireNonNullElse(a.getReference(19), // tabTextAppearance
-                R.style.TextAppearance_Material3_TitleSmall);
-
-        // Text colors/sizes come from the text appearance first
-        final TextAppearance ta = new TextAppearance(context.getTheme(), tabTextAppearance);
-        tabTextSize = ta.mTextSize;
-
-        if (a.hasValue(20)) { // tabTextColor
-            // If we have an explicit text color set, use it instead
-            tabTextColors =
-                    a.getColorStateList(20);
-        }
-
-        tabIconTint =
-                a.getColorStateList(2); // tabIconTint
-        /*tabIconTintMode =
-                ViewUtils.parseTintMode(a.getInt(R.styleable.TabLayout_tabIconTintMode, -1), null);*/
-
-        tabRippleColorStateList =
-                a.getColorStateList(18); // tabRippleColor
-
-        tabIndicatorAnimationDuration =
-                a.getInt(4, ANIMATION_DURATION); // tabIndicatorAnimationDuration
         tabIndicatorTimeInterpolator =
                 MotionEasingUtils.MOTION_EASING_EMPHASIZED;
 
-        requestedTabMinWidth =
-                a.getDimensionPixelSize(11, INVALID_WIDTH); // tabMinWidth
-        requestedTabMaxWidth =
-                a.getDimensionPixelSize(10, INVALID_WIDTH); // tabMaxWidth
-        //tabBackgroundResId = a.getResourceId(R.styleable.TabLayout_tabBackground, 0);
-        contentInsetStart = a.getDimensionPixelSize(0, 0); // tabContentStart
-        mode = a.getInt(12, MODE_FIXED); // tabMode
-        tabGravity = a.getInt(1, GRAVITY_FILL); // tabGravity
-        inlineLabel = a.getBoolean(9, false); // tabInlineLabel
-        unboundedRipple = a.getBoolean(21, false); // tabUnboundedRipple
-        a.recycle();
+        applyStyle(context.getTheme(),
+                attrs, defStyleAttr != null ? defStyleAttr.entry() : null,
+                defStyleRes);
+    }
 
-        if (tabTextSize == -1) {
-            throw new IllegalStateException("Text size is not defined in tabTextAppearance " + tabTextAppearance);
+    @Override
+    public @Nullable String getDefaultStyleAttr() {
+        return R.attr.tabStyle.entry();
+    }
+
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
+
+    //TODO should review bugs
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
+
+        final int N = a.getIndexCount();
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
+                case 0:
+                    contentInsetStart = a.getDimensionPixelSize(attr, 0);
+                    break;
+                case 1:
+                    tabGravity = a.getInt(attr, GRAVITY_FILL);
+                    break;
+                case 2:
+                    tabIconTint =
+                            a.getColorStateList(attr);
+                    break;
+                case 3:
+                    setSelectedTabIndicator(
+                            a.getDrawable(attr)); // tabIndicator
+                    break;
+                case 4:
+                    tabIndicatorAnimationDuration =
+                            a.getInt(attr, ANIMATION_DURATION); // tabIndicatorAnimationDuration
+                    break;
+                case 5:
+                    // noinspection MagicConstant
+                    setTabIndicatorAnimationMode(
+                            a.getInt(attr, INDICATOR_ANIMATION_MODE_LINEAR)); // tabIndicatorAnimationMode
+                    break;
+                case 6:
+                    setSelectedTabIndicatorColor(
+                            a.getColorStateList(attr)); // tabIndicatorColor
+                    break;
+                case 7:
+                    setTabIndicatorFullWidth(a.getBoolean(attr, true)); // tabIndicatorFullWidth
+                    break;
+                case 8:
+                    // noinspection MagicConstant
+                    setSelectedTabIndicatorGravity(
+                            a.getInt(attr, INDICATOR_GRAVITY_BOTTOM)); // tabIndicatorGravity
+                    break;
+                case 9:
+                    inlineLabel = a.getBoolean(attr, false); // tabInlineLabel
+                    break;
+                case 10:
+                    requestedTabMaxWidth =
+                            a.getDimensionPixelSize(attr, INVALID_WIDTH); // tabMaxWidth
+                    break;
+                case 11:
+                    requestedTabMinWidth =
+                            a.getDimensionPixelSize(attr, INVALID_WIDTH); // tabMinWidth
+                    break;
+                case 12:
+                    mode = a.getInt(attr, MODE_FIXED); // tabMode
+                    break;
+                case 13:
+                    tabPaddingBottom =
+                            a.getDimensionPixelSize(attr, 0); // tabPaddingBottom
+                    break;
+                case 14:
+                    tabPaddingEnd = a.getDimensionPixelSize(attr, 0); // tabPaddingEnd
+                    break;
+                case 15:
+                    tabPaddingStart =
+                            a.getDimensionPixelSize(attr, 0); // tabPaddingStart
+                    break;
+                case 16:
+                    tabPaddingTop = a.getDimensionPixelSize(attr, 0); // tabPaddingTop
+                    break;
+                case 17:
+                    tabRippleColorStateList =
+                            a.getColorStateList(attr); // tabRippleColor
+                    break;
+                case 18:
+                    tabTextAppearance = Objects.requireNonNullElse(a.getReference(attr), // tabTextAppearance
+                            R.style.TextAppearance_Material3_TitleSmall);
+                    break;
+                case 19:
+                    tabTextColors =
+                            a.getColorStateList(attr);
+                    break;
+                case 20:
+                    unboundedRipple = a.getBoolean(attr, false); // tabUnboundedRipple
+                    break;
+                default:
+                    break ITER;
+            }
         }
+
+        final TextAppearance ta = new TextAppearance();
+        ta.applyStyle(getTheme(), null, null, tabTextAppearance);
+        tabTextSize = ta.mTextSize;
 
         // TODO add attr for these
         tabTextMultiLineSize = sp(12);
@@ -515,6 +562,8 @@ public class TabLayout extends HorizontalScrollView {
 
         // Now apply the tab mode and gravity
         applyModeAndGravity();
+
+        return ii;
     }
 
     /**

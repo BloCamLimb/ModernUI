@@ -29,6 +29,7 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Assigns a slot to every attribute that a resolution needs across an inheritance chain.
@@ -65,7 +66,23 @@ public final class AttributeSlots {
      *                   and against the parent
      */
     public AttributeSlots(@Nullable AttributeSlots parent, @NonNull String @NonNull[] childNames) {
-        int parentCount = parent != null ? parent.size() : 0;
+        this(parent, childNames, true);
+    }
+
+    /**
+     * Builds the slots of a child on top of the slots of its parent, taking the child names from another
+     * instance.
+     *
+     * @param parent slots of the parent
+     * @param child  slots whose names are appended after the parent's
+     */
+    public AttributeSlots(@NonNull AttributeSlots parent, @NonNull AttributeSlots child) {
+        this(Objects.requireNonNull(parent), child.keys, false);
+    }
+
+    private AttributeSlots(@Nullable AttributeSlots parent, @NonNull String @NonNull[] childNames,
+                           boolean checkOrder) {
+        int parentCount = parent != null ? parent.keys.length : 0;
         int total = parentCount + childNames.length;
 
         int capacity = Math.max(
@@ -92,7 +109,7 @@ public final class AttributeSlots {
         for (int j = 0; j < childNames.length; j++) {
             String name = childNames[j];
             int slot = parentCount + j;
-            if (j > 0 && childNames[j - 1].compareTo(name) > 0) {
+            if (checkOrder && j > 0 && childNames[j - 1].compareTo(name) > 0) {
                 Log.LOGGER.warn(MARKER, "Attribute name '{}' is out of order after '{}'",
                         name, childNames[j - 1]);
             }
@@ -117,12 +134,22 @@ public final class AttributeSlots {
     }
 
     /**
+     * Returns the name at the given slot.
+     *
+     * @throws IndexOutOfBoundsException oob
+     */
+    public @NonNull String get(int index) {
+        return keys[index];
+    }
+
+    /**
      * Returns the name of every slot, parent names first.
      *
      * @return the internal array, not a copy
+     * @hidden
      */
     @ApiStatus.Internal
-    public @NonNull String @NonNull[] getNames() {
+    public @NonNull String @NonNull[] getKeys() {
         return keys;
     }
 
@@ -132,7 +159,6 @@ public final class AttributeSlots {
      * @param name the name to look for
      * @return the slot, or {@code -1} if the name has no slot
      */
-    @ApiStatus.Internal
     public int indexOf(@NonNull String name) {
         int hash = name.hashCode();
         int pos = HashCommon.mix(hash) & mask;

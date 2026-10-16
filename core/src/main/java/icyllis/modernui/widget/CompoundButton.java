@@ -26,6 +26,7 @@ import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Gravity;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.util.AttributeSet;
@@ -72,42 +73,61 @@ public abstract class CompoundButton extends Button implements Checkable2 {
     OnCheckedChangeListener mOnCheckedChangeListener;
     private OnCheckedChangeListener mOnCheckedChangeListenerInternal;
 
-    public static final String[] ATTRS = {
+    private static final int BASE_ATTR_INDEX = Button.ATTR_SLOTS.size();
+    private static final String[] ATTRS = {
             R.attr.button,
             R.attr.checked,
     };
+    public static final AttributeSlots ATTR_SLOTS = new AttributeSlots(Button.ATTR_SLOTS, ATTRS);
 
     public CompoundButton(Context context) {
         super(context);
         setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
     }
 
+    @Deprecated
     public CompoundButton(Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, null);
     }
 
+    @Deprecated
     public CompoundButton(Context context, @Nullable AttributeSet attrs,
                           @Nullable @AttrRes ResourceId defStyleAttr) {
         this(context, attrs, defStyleAttr, null);
     }
 
+    @Deprecated
     public CompoundButton(Context context, @Nullable AttributeSet attrs,
                           @Nullable @AttrRes ResourceId defStyleAttr,
                           @Nullable @StyleRes ResourceId defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+    }
 
-        final TypedArray a = context.getTheme().obtainStyledAttributes(
-                attrs, defStyleAttr, defStyleRes, ATTRS);
+    @Override
+    public @NonNull AttributeSlots getAttributeSlots() {
+        return ATTR_SLOTS;
+    }
 
-        final Drawable d = a.getDrawable(0); // button
-        if (d != null) {
-            setButtonDrawable(d);
+    @Override
+    protected int onApplyStyle(@NonNull TypedArray a) {
+        int ii = super.onApplyStyle(a);
+
+        final int N = a.getIndexCount();
+        ITER:for (; ii < N; ii++) {
+            int attr = a.getIndex(ii);
+            switch (attr - BASE_ATTR_INDEX) {
+                case 0:
+                    setButtonDrawable(a.getDrawable(attr));
+                    break;
+                case 1:
+                    setChecked(a.getBoolean(attr, false));
+                    break;
+                default:
+                    break ITER;
+            }
         }
 
-        final boolean checked = a.getBoolean(1, false); // checked
-        setChecked(checked);
-
-        a.recycle();
+        return ii;
     }
 
     @Override

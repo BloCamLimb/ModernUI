@@ -21,6 +21,7 @@ package icyllis.modernui.test;
 import icyllis.modernui.R;
 import icyllis.modernui.material.MaterialTheme;
 import icyllis.modernui.resources.AssetManager;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.EmptyAssetProvider;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.ResourcesBuilder;
@@ -51,9 +52,10 @@ public class TestThemeBuilder {
                 R.attr.textColor,
                 R.attr.textSize,
         };
+        AttributeSlots slots = new AttributeSlots(null, attrs);
         TypedArray a = theme.obtainStyledAttributes(
                 R.style.TextAppearance_Material3_DisplayMedium,
-                attrs);
+                slots);
 
         Log.i(null, a.getDimensionPixelSize(2, -1));
 

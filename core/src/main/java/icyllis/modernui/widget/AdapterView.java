@@ -35,12 +35,9 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.annotation.AttrRes;
-import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.core.Context;
-import icyllis.modernui.resources.ResourceId;
+import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.system.SystemClock;
-import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.SoundEffectConstants;
@@ -236,26 +233,10 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      */
     boolean mBlockLayoutRequests = false;
 
-    public static final String[] ATTRS =
-            ViewGroup.ATTRS;
+    public static final AttributeSlots ATTR_SLOTS = ViewGroup.ATTR_SLOTS;
 
     public AdapterView(Context context) {
-        this(context, null);
-    }
-
-    public AdapterView(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, null);
-    }
-
-    public AdapterView(Context context, @Nullable AttributeSet attrs,
-                       @Nullable @AttrRes ResourceId defStyleAttr) {
-        this(context, attrs, defStyleAttr, null);
-    }
-
-    public AdapterView(Context context, @Nullable AttributeSet attrs,
-                       @Nullable @AttrRes ResourceId defStyleAttr,
-                       @Nullable @StyleRes ResourceId defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
+        super(context);
 
         mDesiredFocusableState = getFocusable();
         if (mDesiredFocusableState == FOCUSABLE_AUTO) {
