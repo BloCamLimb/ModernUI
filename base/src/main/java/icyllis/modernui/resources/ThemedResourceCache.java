@@ -22,7 +22,6 @@ import icyllis.modernui.util.ArrayMap;
 import icyllis.modernui.util.LongSparseArray;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import icyllis.modernui.resources.Resources.ThemeKey;
 import icyllis.modernui.resources.Resources.Theme;
 
 import java.lang.ref.WeakReference;

@@ -56,7 +56,7 @@ public class MainLaunch {
             AssetManager newAssets = new AssetManager.Builder()
                     .addLoader(loader)
                     .build();
-            app.getResources().setImpl(new ResourcesImpl(newAssets, null, null));
+            //app.getResources().setImpl(new ResourcesImpl(newAssets, null, null));
 
             Fragment fragment = null;
             if (args.length > 0) {

@@ -41,6 +41,7 @@ import icyllis.modernui.material.drawable.SliderThumbDrawable;
 import icyllis.modernui.material.drawable.SwitchThumbDrawable;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.ResourcesBuilder;
+import icyllis.modernui.resources.ThemeKey;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
@@ -130,7 +131,7 @@ public class MaterialTheme {
     public boolean isDark;
 
     @GuardedBy("self")
-    static final Object2ObjectOpenHashMap<Resources.ThemeKey, ThemedCache> gCache = new Object2ObjectOpenHashMap<>();
+    static final Object2ObjectOpenHashMap<ThemeKey, ThemedCache> gCache = new Object2ObjectOpenHashMap<>();
 
     static class ThemedCache {
 

@@ -117,47 +117,7 @@ public class Resources {
     @ApiStatus.Internal
     public Resources(@NonNull AssetManager assetManager, @Nullable DisplayMetrics metrics,
                      @Nullable Configuration configuration) {
-        this(null);
         mResourcesImpl = new ResourcesImpl(assetManager, metrics, configuration);
-    }
-
-    /**
-     * @hide
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public Resources(@Nullable ClassLoader classLoader) {
-
-    }
-
-    /**
-     * @hide
-     * @hidden
-     */
-    // can be called from any thread, but it's recommended to call from UI thread
-    @ApiStatus.Internal
-    public void setImpl(ResourcesImpl impl) {
-        // ModernUI changed: guarded with RW lock, avoid tainting the cache inside ResourcesImpl
-        // during Resources.load* operations
-        mLock.writeLock().lock();
-        try {
-            if (impl == mResourcesImpl) {
-                return;
-            }
-
-            // ensure all themes are updated to the new ResourcesImpl
-            mResourcesImpl = impl;
-            var iter = mThemeRefs.iterator();
-            while (iter.hasNext()) {
-                var theme = iter.next().get();
-                if (theme == null)
-                    iter.remove();
-                else
-                    theme.rebase(impl);
-            }
-        } finally {
-            mLock.writeLock().unlock();
-        }
     }
 
     /**
@@ -180,19 +140,19 @@ public class Resources {
     }
 
     /**
-     * Generate a new Theme object for this set of Resources.  It initially
-     * starts out empty.
+     * Generate a new Theme object for this set of Resources.
      * <p>
      * This method can be called from any thread.
      *
+     * @param key the key used to create the theme
      * @return the newly created Theme
      */
     @NonNull
-    public final Theme newTheme() {
+    public final Theme newTheme(@NonNull ThemeKey key) {
         mLock.writeLock().lock();
         try {
             // put constructor inside lock to avoid race between newTheme and setImpl
-            var theme = new Theme(this, mResourcesImpl);
+            var theme = new Theme(this, mResourcesImpl, key);
             // AOSP's nextPowerOf2() is wrongly implemented, just don't use that and always
             // clean up the whole list
             mThemeRefs.removeIf(r -> r.refersTo(null));
@@ -408,110 +368,73 @@ public class Resources {
 
         private final Resources mResources;
         @GuardedBy("mLock")
-        private ResourcesImpl mResourcesImpl;
+        private final ResourcesImpl mResourcesImpl;
 
         @GuardedBy("mLock")
-        private final Resources.ThemeKey mKey = new Resources.ThemeKey();
-        // a snapshot of key
-        @GuardedBy("mLock")
-        private Resources.ThemeKey mKeyCopy = mKey.clone();
+        private final ThemeKey mKey;
 
         // attribute name -> entry
         // we use j.u.HashMap instead of open addressing for best lookup performance,
         // since lookup miss rate is very high
         @GuardedBy("mLock")
-        private HashMap<String, Entry> mEntries;
+        private final HashMap<String, Entry> mEntries;
 
-        private Theme(@NonNull Resources resources, ResourcesImpl resourcesImpl) {
+        static final class Entry {
+            final int type;
+            final int data;
+            final int cookie;
+            final int typeSpecFlags;
+
+            Entry(@NonNull ResolvedBag bag, int index) {
+                int offset = index * ResolvedBag.VALUE_COLUMNS;
+                type = bag.values[offset + ResolvedBag.COLUMN_TYPE];
+                data = bag.values[offset + ResolvedBag.COLUMN_DATA];
+                cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
+                typeSpecFlags = bag.typeSpecFlags;
+            }
+        }
+
+        static boolean isUndefined(int type, int data) {
+            return type == Res_value.TYPE_NULL && data == Res_value.DATA_NULL_UNDEFINED;
+        }
+
+        private Theme(@NonNull Resources resources, ResourcesImpl resourcesImpl,
+                      @NonNull ThemeKey key) {
             mResourcesImpl = resourcesImpl;
             mResources = resources;
-        }
 
-        void rebase(ResourcesImpl resourcesImpl) {
-            mLock.writeLock().lock();
-            try {
-                mResourcesImpl = resourcesImpl;
-                //TODO invalidate mEntries
-            } finally {
-                mLock.writeLock().unlock();
-            }
-        }
-
-        /**
-         * Place new attribute values into the theme.  The style resource
-         * specified by <var>resId</var> will be
-         * retrieved from this Theme's resources, its values placed into the
-         * Theme object.
-         *
-         * <p>The semantics of this function depends on the <var>force</var>
-         * argument:  If false, only values that are not already defined in
-         * the theme will be copied from the system resource; otherwise, if
-         * any of the style's attributes are already defined in the theme, the
-         * current values in the theme will be overwritten.
-         *
-         * @param resId The resource ID of a style resource from which to
-         *              obtain attribute values.
-         * @param force If true, values in the style resource will always be
-         *              used in the theme; otherwise, they will only be used
-         *              if not already defined in the theme.
-         * @return true if success, false if the resId is not a style or not found
-         */
-        @Deprecated
-        public boolean applyStyle(@NonNull @StyleRes ResourceId resId, boolean force) {
-            mLock.writeLock().lock();
-            try {
-                boolean result = applyStyleInternal(resId, force);
-                if (result) {
-                    mKey.append(resId, force);
-                    mKeyCopy = mKey.clone();
-                }
-                return result;
-            } finally {
-                mLock.writeLock().unlock();
-            }
-        }
-
-        @GuardedBy("mLock")
-        private boolean applyStyleInternal(@NonNull ResourceId resId, boolean force) {
-            ResolvedBag bag = mResourcesImpl.mAssetManager.getBag(resId);
-            if (bag == null) {
-                return false;
-            }
-
-            int entryCount = bag.getEntryCount();
-            if (entryCount == 0) {
-                return true;
-            }
-
-            boolean initial = mEntries == null;
-
-            HashMap<String, Entry> newEntries =
-                    new HashMap<>();
-            for (int i = 0; i < entryCount; i++) {
-                boolean isUndefined = isUndefined(bag.type(i), bag.data(i));
-                if (!force && isUndefined) {
+            HashMap<String, Entry> entries = new HashMap<>();
+            int count = key.count();
+            for (int i = 0; i < count; i++) {
+                ResourceId resId = key.resId(i);
+                ResolvedBag bag = mResourcesImpl.mAssetManager.getBag(resId);
+                if (bag == null) {
                     continue;
                 }
-                String attr = bag.keys[i];
-                Entry existing;
-                if (!initial && (existing = mEntries.get(attr)) != null) {
-                    if (force || isUndefined(existing.type, existing.data)) {
-                        existing.set(bag, i);
+                boolean force = key.isForce(i);
+
+                int entryCount = bag.getEntryCount();
+                for (int j = 0; j < entryCount; j++) {
+                    boolean isUndefined = isUndefined(bag.type(j), bag.data(j));
+                    if (!force && isUndefined) {
+                        continue;
                     }
-                } else if (!isUndefined) {
-                    Entry entry = new Entry();
-                    entry.set(bag, i);
-                    newEntries.put(attr, entry);
+                    String attr = bag.keys[j];
+                    if (isUndefined) {
+                        entries.remove(attr);
+                    } else {
+                        var entry = new Entry(bag, j);
+                        if (force) {
+                            entries.put(attr, entry);
+                        } else {
+                            entries.putIfAbsent(attr, entry);
+                        }
+                    }
                 }
             }
 
-            if (initial) {
-                mEntries = newEntries;
-            } else {
-                mEntries.putAll(newEntries);
-            }
-
-            return true;
+            mEntries = entries;
+            mKey = key;
         }
 
         /**
@@ -714,34 +637,6 @@ public class Resources {
             }
         }
 
-        static final class Entry implements Cloneable {
-            int type;
-            int data;
-            int cookie;
-            int typeSpecFlags;
-
-            void set(@NonNull ResolvedBag bag, int index) {
-                int offset = index * ResolvedBag.VALUE_COLUMNS;
-                type = bag.values[offset + ResolvedBag.COLUMN_TYPE];
-                data = bag.values[offset + ResolvedBag.COLUMN_DATA];
-                cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
-                typeSpecFlags = bag.typeSpecFlags;
-            }
-
-            @Override
-            public Entry clone() {
-                try {
-                    return (Entry) super.clone();
-                } catch (CloneNotSupportedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        static boolean isUndefined(int type, int data) {
-            return type == Res_value.TYPE_NULL && data != Res_value.DATA_NULL_EMPTY;
-        }
-
         @GuardedBy("mLock")
         private boolean getAttribute(
                              @NonNull String name,
@@ -889,100 +784,8 @@ public class Resources {
             return mResources;
         }
 
-        public void setTo(@NonNull Theme other) {
-            Objects.requireNonNull(other);
-            if (this == other) {
-                return;
-            }
-
-            int thisHash = System.identityHashCode(this);
-            int otherHash = System.identityHashCode(other);
-
-            if (thisHash < otherHash) {
-                mLock.writeLock().lock();
-                try {
-                    other.mLock.readLock().lock();
-                    try {
-                        setToInternal(other);
-                    } finally {
-                        other.mLock.readLock().unlock();
-                    }
-                } finally {
-                    mLock.writeLock().unlock();
-                }
-            } else if (thisHash > otherHash) {
-                other.mLock.readLock().lock();
-                try {
-                    mLock.writeLock().lock();
-                    try {
-                        setToInternal(other);
-                    } finally {
-                        mLock.writeLock().unlock();
-                    }
-                } finally {
-                    other.mLock.readLock().unlock();
-                }
-            } else {
-                synchronized (Theme.class) {
-                    mLock.writeLock().lock();
-                    try {
-                        other.mLock.readLock().lock();
-                        try {
-                            setToInternal(other);
-                        } finally {
-                            other.mLock.readLock().unlock();
-                        }
-                    } finally {
-                        mLock.writeLock().unlock();
-                    }
-                }
-            }
-        }
-
-        private void setToInternal(@NonNull Theme other) {
-            //TODO we also need to lock underlying AssetManager and retrieve attribute values
-            // if they are different. atm we assume both assetmanager are same, just do deep copy.
-            if (other.mEntries == null) {
-                mEntries = null;
-            } else {
-                if (mEntries == null) {
-                    mEntries = new HashMap<>();
-                }
-                for (var e : other.mEntries.entrySet()) {
-                    mEntries.put(e.getKey(), e.getValue().clone());
-                }
-            }
-
-            mKey.setTo(other.getKey());
-            mKeyCopy = mKey.clone();
-        }
-
-        public void clear() {
-            mLock.writeLock().lock();
-            try {
-                mEntries = null;
-                mKey.clear();
-                mKeyCopy = mKey.clone();
-            } finally {
-                mLock.writeLock().unlock();
-            }
-        }
-
-        /**
-         * @hide
-         * @hidden
-         */
-        @Contract(pure = true)
-        @ApiStatus.Internal
-        public String @NonNull[] getTheme() {
-            final ThemeKey key = getKey();
-            final int n = key.mForce != null ? key.mForce.length : 0;
-            final String[] themes = new String[n * 2];
-            for (int i = 0, j = n - 1; i < themes.length; i += 2, --j) {
-                themes[i] = key.mResId[j].toString();
-                themes[i + 1] = key.mForce[j] ? "forced" : "not forced";
-            }
-            return themes;
+        public ThemeKey getKey() {
+            return mKey;
         }
 
         @Override
@@ -1008,139 +811,9 @@ public class Resources {
         @Override
         public String toString() {
             return '{' +
-                    "Themes=" + Arrays.deepToString(getTheme()) +
+                    "resources=" + getResources() +
+                    ", key=" + getKey() +
                     '}';
-        }
-
-        /**
-         * @hidden
-         */
-        @ApiStatus.Internal
-        public ThemeKey getKey() {
-            // in our use case, read lock is not needed here
-            return mKeyCopy;
-        }
-    }
-
-    /**
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public static final class ThemeKey implements Cloneable {
-        Object[] mResId;
-        boolean[] mForce;
-
-        private transient int mHashCode = 0;
-
-        private int findValue(@NonNull ResourceId resId, boolean force) {
-            int count = mForce != null ? mForce.length : 0;
-            for (int i = 0; i < count; i++) {
-                if (mForce[i] == force && resId.equals(mResId[i])) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        private void moveToLast(int index) {
-            int count = mForce.length;
-            if (index < 0 || index >= count - 1) {
-                return;
-            }
-            final Object resId = mResId[index];
-            final boolean force = mForce[index];
-
-            // we need copy-on-write
-
-            final Object[] newResId = new Object[count];
-            System.arraycopy(mResId, 0, newResId, 0, index);
-            System.arraycopy(mResId, index + 1, newResId, index, count - index - 1);
-            newResId[count - 1] = resId;
-            mResId = newResId;
-
-            final boolean[] newForce = new boolean[count];
-            System.arraycopy(mForce, 0, newForce, 0, index);
-            System.arraycopy(mForce, index + 1, newForce, index, count - index - 1);
-            newForce[count - 1] = force;
-            mForce = newForce;
-
-            // recompute hashcode
-
-            mHashCode = 0;
-            for (int i = 0; i < count; i++) {
-                mHashCode = 31 * mHashCode + newResId[i].hashCode();
-                mHashCode = 31 * mHashCode + (newForce[i] ? 1 : 0);
-            }
-        }
-
-        public void append(@NonNull ResourceId resId, boolean force) {
-            final int index = findValue(resId, force);
-            if (index >= 0) {
-                moveToLast(index);
-            } else {
-                int newCount = mForce != null ? mForce.length + 1 : 1;
-
-                // we need copy-on-write
-
-                final Object[] newResId = mResId == null ? new Object[newCount]
-                        : Arrays.copyOf(mResId, newCount);
-                newResId[newCount - 1] = resId;
-                mResId = newResId;
-
-                final boolean[] newForce = mForce == null ? new boolean[newCount]
-                        : Arrays.copyOf(mForce, newCount);
-                newForce[newCount - 1] = force;
-                mForce = newForce;
-
-                mHashCode = 31 * mHashCode + resId.hashCode();
-                mHashCode = 31 * mHashCode + (force ? 1 : 0);
-            }
-        }
-
-        public void setTo(@NonNull ThemeKey other) {
-            // A shallow copy, because we use copy-on-write
-            mResId = other.mResId;
-            mForce = other.mForce;
-            mHashCode = other.mHashCode;
-        }
-
-        public void clear() {
-            mResId = null;
-            mForce = null;
-            mHashCode = 0;
-        }
-
-        @Override
-        public int hashCode() {
-            return mHashCode;
-        }
-
-        @Override
-        public boolean equals(@Nullable Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            final ThemeKey t = (ThemeKey) o;
-
-            if (!Arrays.equals(mForce, t.mForce)) {
-                return false;
-            }
-            return Arrays.equals(mResId, t.mResId);
-        }
-
-        // A shallow copy, because we use copy-on-write
-        @Override
-        public ThemeKey clone() {
-            try {
-                return (ThemeKey) super.clone();
-            } catch (CloneNotSupportedException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 }

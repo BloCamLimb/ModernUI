@@ -25,6 +25,7 @@ import icyllis.modernui.resources.AttributeSlots;
 import icyllis.modernui.resources.EmptyAssetProvider;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.ResourcesBuilder;
+import icyllis.modernui.resources.ThemeKey;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.Log;
@@ -45,8 +46,11 @@ public class TestThemeBuilder {
                     null, null
             );
         }
-        Resources.Theme theme = resources.newTheme();
-        theme.applyStyle(R.style.Theme_Material3_Dark, true);
+        Resources.Theme theme = resources.newTheme(
+                new ThemeKey.Builder()
+                        .append(R.style.Theme_Material3_Dark, true)
+                        .build()
+        );
         String[] attrs = {
                 R.attr.colorError,
                 R.attr.textColor,

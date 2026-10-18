@@ -23,6 +23,7 @@ import icyllis.modernui.core.Context;
 import icyllis.modernui.core.ContextWrapper;
 import icyllis.modernui.resources.ResourceId;
 import icyllis.modernui.resources.Resources;
+import icyllis.modernui.resources.ThemeKey;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -37,8 +38,8 @@ import org.jspecify.annotations.Nullable;
 public class ContextThemeWrapper extends ContextWrapper {
     private final Object mThemeLock = new Object();
     private ResourceId mThemeResource;
-    private volatile Resources.Theme mTheme;
-    private volatile Resources mResources;
+    private Resources.Theme mTheme;
+    private Resources mResources;
 
     /**
      * Creates a new context wrapper with no theme and no base context.
@@ -69,37 +70,15 @@ public class ContextThemeWrapper extends ContextWrapper {
         }
     }
 
-    /**
-     * Creates a new context wrapper with the specified theme.
-     * <p>
-     * Unlike {@link #ContextThemeWrapper(Context, ResourceId)}, the theme passed to
-     * this constructor will completely replace the base context's theme and the
-     * Resources object.
-     *
-     * @param base  the base context
-     * @param theme the theme against which resources should be inflated
-     */
-    public ContextThemeWrapper(Context base, Resources.Theme theme) {
-        super(base);
-        mTheme = theme;
-        if (theme != null) {
-            mResources = theme.getResources();
-        }
-    }
-
     @Override
     public Resources getResources() {
-        return getResourcesInternal();
-    }
-
-    private Resources getResourcesInternal() {
-        final Resources resources = mResources;
-        if (resources != null) {
-            return resources;
-        }
         synchronized (mThemeLock) {
-            if (mResources == null) {
-                mResources = super.getResources();
+            Resources newResources = super.getResources();
+            if (mResources != newResources) {
+                mResources = newResources;
+                if (mTheme != null) {
+                    updateThemeLocked();
+                }
             }
         }
         return mResources;
@@ -114,49 +93,29 @@ public class ContextThemeWrapper extends ContextWrapper {
                 return;
             }
 
-            final Resources.Theme baseTheme = getBaseContext().getTheme();
-            mTheme.setTo(baseTheme);
-            onApplyThemeResource(mTheme, mThemeResource, false);
+            mResources = super.getResources();
+            updateThemeLocked();
         }
     }
 
     @Override
     public Resources.Theme getTheme() {
-        final Resources.Theme theme = mTheme;
-        if (theme != null) {
-            return theme;
-        }
-
         synchronized (mThemeLock) {
-            if (mTheme == null) {
-                if (mResources == null) {
-                    mResources = super.getResources();
-                }
-                mTheme = mResources.newTheme();
-                final Resources.Theme baseTheme = getBaseContext().getTheme();
-                mTheme.setTo(baseTheme);
-                onApplyThemeResource(mTheme, mThemeResource, true);
+            Resources newResources = super.getResources();
+            if (mResources != newResources) {
+                mResources = newResources;
+                updateThemeLocked();
             }
         }
 
         return mTheme;
     }
 
-    /**
-     * Called by {@link #setTheme} and {@link #getTheme} to apply a theme
-     * resource to the current Theme object. May be overridden to change the
-     * default (simple) behavior. This method will not be called in multiple
-     * threads simultaneously.
-     *
-     * @param theme the theme being modified
-     * @param resId the style resource being applied to <var>theme</var>
-     * @param first {@code true} if this is the first time a style is being
-     *              applied to <var>theme</var>
-     */
-    protected void onApplyThemeResource(Resources.@NonNull Theme theme,
-                                        @Nullable @StyleRes ResourceId resId, boolean first) {
-        if (resId != null) {
-            theme.applyStyle(resId, true);
-        }
+    private void updateThemeLocked() {
+        ThemeKey themeKey = new ThemeKey.Builder()
+                .setTo(getBaseContext().getTheme().getKey())
+                .append(mThemeResource, true)
+                .build();
+        mTheme = mResources.newTheme(themeKey);
     }
 }
