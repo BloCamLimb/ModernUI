@@ -49,6 +49,9 @@ import java.util.function.ToIntFunction;
  *
  * @since 3.13
  */
+//TODO move this to 'packager' module, so AssetPack is generated in advance to reduce runtime overhead;
+// for simple use case, use InlineStyle instead
+@ApiStatus.Internal
 public class ResourcesBuilder {
 
     String mNamespace;
@@ -217,32 +220,11 @@ public class ResourcesBuilder {
     /**
      * Creates the asset pack. The builder cannot be reused.
      *
-     * @return a newly-created asset pack
-     * @throws IllegalStateException the runtime limit is exceeded
-     */
-    public ResourcesProvider build() {
-        return build(new EmptyAssetProvider());
-    }
-
-    /**
-     * Creates the asset pack. The builder cannot be reused.
-     *
      * @param assetProvider the provider for additional assets, will be closed by the return value
      * @return a newly-created asset pack
      * @throws IllegalStateException the runtime limit is exceeded
      */
-    public ResourcesProvider build(@NonNull AssetProvider assetProvider) {
-        AssetPack assetPack = buildPack(assetProvider);
-
-        return new ResourcesProvider(assetPack);
-    }
-
-    /**
-     * @hide
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public AssetPack buildPack(@NonNull AssetProvider assetProvider) {
+    public AssetPack build(@NonNull AssetProvider assetProvider) {
         ResourceMap resources = new ResourceMap();
 
         mGlobalStringTable = null;

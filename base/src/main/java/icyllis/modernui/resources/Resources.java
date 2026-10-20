@@ -93,22 +93,6 @@ public class Resources {
 
 
 
-    /**
-     * @hide
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public interface UpdateCallbacks extends ResourcesLoader.UpdateCallbacks {
-        /**
-         * Invoked when a {@link Resources} instance has a {@link ResourcesLoader} added, removed,
-         * or reordered.
-         *
-         * @param resources the instance being updated
-         * @param newLoaders the new set of loaders for the instance
-         */
-        void onLoadersChanged(@NonNull Resources resources,
-                              @NonNull List<ResourcesLoader> newLoaders);
-    }
 
     /**
      * @hide

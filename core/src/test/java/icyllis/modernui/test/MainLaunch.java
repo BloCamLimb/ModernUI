@@ -21,18 +21,10 @@ package icyllis.modernui.test;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.app.windows.WindowsNativeWindowBorder;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.resources.AssetManager;
-import icyllis.modernui.resources.DirectoryAssetProvider;
 import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.resources.ResourcesBuilder;
-import icyllis.modernui.resources.ResourcesImpl;
-import icyllis.modernui.resources.ResourcesLoader;
-import icyllis.modernui.resources.ResourcesProvider;
 import icyllis.modernui.util.Log;
 import org.lwjgl.glfw.GLFWNativeWin32;
 import org.lwjgl.system.Platform;
-
-import java.nio.file.Path;
 
 public class MainLaunch {
 
@@ -51,11 +43,11 @@ public class MainLaunch {
         System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
         try (ModernUI app = new ModernUI()) {
 
-            ResourcesLoader loader = loadExtraResources();
+            /*ResourcesLoader loader = loadExtraResources();
 
             AssetManager newAssets = new AssetManager.Builder()
                     .addLoader(loader)
-                    .build();
+                    .build();*/
             //app.getResources().setImpl(new ResourcesImpl(newAssets, null, null));
 
             Fragment fragment = null;
@@ -93,7 +85,7 @@ public class MainLaunch {
         System.gc();
     }
 
-    public static ResourcesLoader loadExtraResources() {
+    /*public static ResourcesLoader loadExtraResources() {
 
         ResourcesBuilder rb = new ResourcesBuilder(ns);
         rb.addString(image.test_path_src, "res/test_path_src.png");
@@ -104,5 +96,5 @@ public class MainLaunch {
         ResourcesLoader loader = new ResourcesLoader();
         loader.addProvider(provider);
         return loader;
-    }
+    }*/
 }

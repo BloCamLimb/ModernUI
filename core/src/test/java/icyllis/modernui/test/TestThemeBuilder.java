@@ -41,7 +41,7 @@ public class TestThemeBuilder {
             MaterialTheme.addToResources(rb);
             resources = new Resources(
                     new AssetManager.Builder()
-                            .addAssetPack(rb.buildPack(new EmptyAssetProvider()))
+                            .addAssetPack(rb.build(new EmptyAssetProvider()))
                             .build(),
                     null, null
             );

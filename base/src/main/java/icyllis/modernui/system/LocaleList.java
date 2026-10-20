@@ -28,16 +28,18 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.locks.StampedLock;
+import java.util.function.Consumer;
 
 /**
  * LocaleList is an immutable list of {@link Locale Locales}, typically used to
  * keep an ordered list of user preferences for locales.
  */
 @Immutable
-public final class LocaleList implements Parcelable {
+public final class LocaleList implements Parcelable, Iterable<Locale> {
 
     private static final Locale[] sEmptyList = {};
     private static final LocaleList sEmptyLocaleList = new LocaleList();
@@ -247,6 +249,30 @@ public final class LocaleList implements Parcelable {
             }
         }
         return -1;
+    }
+
+    @Override
+    public @NonNull Iterator<Locale> iterator() {
+        return new Iterator<>() {
+            int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < mList.length;
+            }
+
+            @Override
+            public Locale next() {
+                return mList[i++];
+            }
+        };
+    }
+
+    @Override
+    public void forEach(Consumer<? super Locale> action) {
+        for (Locale locale : mList) {
+            action.accept(locale);
+        }
     }
 
     @Override

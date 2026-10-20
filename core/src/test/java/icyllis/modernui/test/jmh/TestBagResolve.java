@@ -45,7 +45,7 @@ public class TestBagResolve {
         try {
             ResourcesBuilder resourcesBuilder = new ResourcesBuilder(R.ns);
             MaterialTheme.addToResources(resourcesBuilder);
-            sSystemAssetPack = resourcesBuilder.buildPack(new EmptyAssetProvider());
+            sSystemAssetPack = resourcesBuilder.build(new EmptyAssetProvider());
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create system AssetPack", e);
         }

@@ -18,7 +18,9 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.resources.ResourceTypes.*;
+import icyllis.modernui.system.LocaleList;
 import icyllis.modernui.util.Log;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -35,7 +37,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @hide
@@ -103,10 +107,9 @@ public final class AssetManager {
     }
 
     public static final class Builder {
-        private final ArrayList<AssetPack> mAssetPacks = new ArrayList<>();
-        private final ArrayList<ResourcesLoader> mLoaders = new ArrayList<>();
+        private final LinkedHashSet<AssetPack> mAssetPacks = new LinkedHashSet<>();
 
-        private boolean mNoInit = false;
+        private LocaleList mLocales;
 
         // Smaller indices are given priority.
         public Builder addAssetPack(AssetPack assetPack) {
@@ -114,55 +117,20 @@ public final class AssetManager {
             return this;
         }
 
-        // Larger indices are given priority.
-        public Builder addLoader(ResourcesLoader loader) {
-            mLoaders.add(loader);
-            return this;
-        }
-
-        public Builder setNoInit() {
-            mNoInit = true;
+        public Builder setLocales(LocaleList locales) {
+            mLocales = locales;
             return this;
         }
 
         @NonNull
         public AssetManager build() {
-            // Filter AssetPack so that assets provided by multiple loaders are only included once
-            // in the AssetManager assets. The last appearance of the AssetPack dictates its load
-            // order.
-            final ArrayList<AssetPack> loaderAssetPacks = new ArrayList<>();
-            final HashSet<AssetPack> uniqueLoaderAssetPacks = new HashSet<>();
-            for (int i = mLoaders.size() - 1; i >= 0; i--) {
-                final List<AssetPack> currentLoaderAssetPacks = mLoaders.get(i).getAssetPacks();
-                for (int j = currentLoaderAssetPacks.size() - 1; j >= 0; j--) {
-                    final AssetPack assetPack = currentLoaderAssetPacks.get(j);
-                    if (uniqueLoaderAssetPacks.add(assetPack)) {
-                        loaderAssetPacks.add(assetPack);
-                    }
-                }
-            }
-
-            final int totalAssetPackCount = mAssetPacks.size()
-                    + loaderAssetPacks.size();
-            final AssetPack[] assetPacks = new AssetPack[totalAssetPackCount];
-
-            for (int i = 0, n = mAssetPacks.size(); i < n; i++) {
-                assetPacks[i] = mAssetPacks.get(i);
-            }
-
-            for (int i = 0, n = loaderAssetPacks.size(); i < n; i++) {
-                assetPacks[i + mAssetPacks.size()] =
-                        loaderAssetPacks.get(i);
-            }
-
-            return new AssetManager(assetPacks, mNoInit,
-                    mLoaders.isEmpty() ? null
-                            : mLoaders.toArray(new ResourcesLoader[0]));
+            final AssetPack[] assetPacks = new AssetPack[mAssetPacks.size()];
+            return new AssetManager(mAssetPacks.toArray(assetPacks), mLocales);
         }
     }
 
-    private AssetManager(AssetPack @NonNull[] assetPacks, boolean preset,
-            ResourcesLoader @Nullable[] loaders) {
+    private AssetManager(AssetPack @NonNull[] assetPacks,
+                         LocaleList locales) {
 
         HashMap<String, PackageGroup> packageGroups = new HashMap<>();
         for (int i = 0; i < assetPacks.length; i++) {
@@ -180,7 +148,6 @@ public final class AssetManager {
             }
         }
 
-        mLoaders = loaders;
         mAssetPacks = assetPacks;
         mPackageGroups = packageGroups;
     }
@@ -189,22 +156,6 @@ public final class AssetManager {
     @Unmodifiable
     public List<AssetPack> getAssetPacks() {
         return Arrays.asList(mAssetPacks);
-    }
-
-    @NonNull
-    @Unmodifiable
-    public List<ResourcesLoader> getLoaders() {
-        return mLoaders == null ? Collections.emptyList() : Arrays.asList(mLoaders);
-    }
-
-    private void invalidateCachesLocked(int diff) {
-
-        if (diff == ~0) {
-            mCachedBags.clear();
-            return;
-        }
-
-        mCachedBags.values().removeIf(b -> (b.typeSpecFlags & diff) != 0);
     }
 
     @Nullable
@@ -236,14 +187,28 @@ public final class AssetManager {
 
     @Nullable
     public ResolvedBag getBag(@NonNull ResourceId resId) {
-        synchronized (this) {
-            return getBag(resId, null, null);
+        ResolvedBag cached;
+        mBagCacheLock.readLock().lock();
+        try {
+            cached = mCachedBags.get(resId);
+        } finally {
+            mBagCacheLock.readLock().unlock();
+        }
+        if (cached != SENTINEL_BAG) {
+            return cached;
+        }
+
+        mBagCacheLock.writeLock().lock();
+        try {
+            return resolveBagLocked(resId, null, null);
+        } finally {
+            mBagCacheLock.writeLock().unlock();
         }
     }
 
     @Nullable
-    private ResolvedBag getBag(@NonNull ResourceId resId, List<ResourceId> childResIds,
-                             TypedValue value) {
+    private ResolvedBag resolveBagLocked(@NonNull ResourceId resId, List<ResourceId> childResIds,
+                                         TypedValue value) {
         ResolvedBag cached = mCachedBags.get(resId);
         if (cached != SENTINEL_BAG) {
             return cached;
@@ -303,7 +268,7 @@ public final class AssetManager {
             // There is no parent or a circular parental dependency exist, meaning there is nothing to
             // inherit and we can do a simple copy of the entries in the map.
         } else {
-            parentBag = getBag(parentResId, childResIds, value);
+            parentBag = resolveBagLocked(parentResId, childResIds, value);
             if (parentBag == null) {
                 Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
                         parentResId, resId);
@@ -384,9 +349,7 @@ public final class AssetManager {
             return null;
         }
 
-        synchronized (this) {
-            return findEntryInternal(packageGroup, typeString, entryString, outValue);
-        }
+        return findEntryInternal(packageGroup, typeString, entryString, outValue);
     }
 
     @Nullable
@@ -529,10 +492,10 @@ public final class AssetManager {
     private final AssetPack[] mAssetPacks;
     private final HashMap<String, PackageGroup> mPackageGroups;
 
-    private final ResourcesLoader[] mLoaders;
-
-    // Cached set of bags. We don't need the best lookup performance, use
+    private final ReentrantReadWriteLock mBagCacheLock = new ReentrantReadWriteLock();
+    // Cached set of bags. Since lookup miss rate is very low, use
     // OpenHashMap instead of HashMap to save memory (this map can be big)
+    @GuardedBy("mBagCacheLock")
     private final Object2ObjectOpenHashMap<ResourceId, ResolvedBag> mCachedBags = new Object2ObjectOpenHashMap<>();
 
     {

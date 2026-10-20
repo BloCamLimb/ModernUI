@@ -26,30 +26,38 @@ import java.io.IOException;
 
 /**
  * Represents a loaded asset pack.
- * <p>
- * API users should use {@link ResourcesProvider} instead.
- *
- * @hide
- * @hidden
  */
-@ApiStatus.Internal
 public final class AssetPack implements Closeable {
 
     private final AssetProvider assets;
 
     private final ResourceMap resources;
 
-    // will close
-    public AssetPack(@NonNull AssetProvider assets,
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public AssetPack(@NonNull AssetProvider assets, // will close
                      @NonNull ResourceMap resources) {
         this.assets = assets;
         this.resources = resources;
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
     public AssetProvider getAssets() {
         return assets;
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
     public ResourceMap getResources() {
         return resources;
     }
