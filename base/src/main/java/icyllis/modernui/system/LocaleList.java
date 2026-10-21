@@ -78,7 +78,7 @@ public final class LocaleList implements Parcelable, Iterable<Locale> {
         Locale[] locales = new Locale[list.length];
         int size = 0;
         HashSet<Locale> seenLocales = new HashSet<>(
-                (int) Math.ceil(list.length / 0.75)
+                (int) Math.ceil(list.length / 0.75), 0.75f
         );
         int stringRepresentationLen = 0;
         for (final Locale l : list) {
@@ -124,7 +124,7 @@ public final class LocaleList implements Parcelable, Iterable<Locale> {
         Locale[] localeList = new Locale[tags.length];
         int size = 0;
         HashSet<Locale> seenLocales = new HashSet<>(
-                (int) Math.ceil(tags.length / 0.75)
+                (int) Math.ceil(tags.length / 0.75), 0.75f
         );
         int stringRepresentationLen = 0;
         for (int i = 0; i < tags.length; i++) {

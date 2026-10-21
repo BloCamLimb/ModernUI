@@ -21,8 +21,8 @@ package icyllis.modernui.resources;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
- * This class defines some structs to interpret MRSC file.
- * This is a modified version of ARSC file.
+ * This class defines some structs to interpret {@code resources.mrsc} file,
+ * namely {@link ResourceMap}.
  */
 @ApiStatus.Internal
 public class ResourceTypes {
@@ -53,10 +53,7 @@ public class ResourceTypes {
     }
 
     public static class ResTable_config {
-
-        public ResTable_config(long ptr) {
-
-        }
+        public static final int SIZEOF = 0;
     }
 
     /*
@@ -188,7 +185,7 @@ public class ResourceTypes {
     }
 
     public static class ResTable_type extends ResChunk_header {
-        public static final int SIZEOF = 1 + 1 + 2 + 4 + 4 + ResChunk_header.SIZEOF;
+        public static final int SIZEOF = 1 + 1 + 2 + 4 + 4 + ResTable_config.SIZEOF + ResChunk_header.SIZEOF;
 
         public static final int
                 NO_ENTRY = 0xFFFFFFFF;
@@ -221,6 +218,7 @@ public class ResourceTypes {
             uint16_t reserved;
             uint32_t entryCount;
             uint32_t entriesStart;
+            ResTable_config config;
             // end of header
 
             struct offset_entry {
@@ -244,6 +242,7 @@ public class ResourceTypes {
         public static final int entryCount = 4;
         // Offset from header where ResTable_entry data starts.
         public static final int entriesStart = 8;
+        public static final int config = 12;
     }
 
     /*

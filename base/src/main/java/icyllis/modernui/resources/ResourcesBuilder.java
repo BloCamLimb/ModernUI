@@ -46,10 +46,8 @@ import java.util.function.ToIntFunction;
 /**
  * This class allows to build an asset pack at runtime. The resources it creates
  * are all under a single namespace.
- *
- * @since 3.13
  */
-//TODO move this to 'packager' module, so AssetPack is generated in advance to reduce runtime overhead;
+// will move this to 'packager' module, so AssetPack is generated in advance to reduce runtime overhead;
 // for simple use case, use InlineStyle instead
 @ApiStatus.Internal
 public class ResourcesBuilder {
@@ -235,7 +233,7 @@ public class ResourcesBuilder {
         resources.factoryPool = mFactoryArray.toArray(new BiFunction[0]);
         mFactoryArray = null;
 
-        LoadedPackage.TypeSpec styleTypeSpec;
+        ResourceMap.TypeSpec styleTypeSpec;
         buildStyles: {
             ArrayList<Style> styles = new ArrayList<>(mStyleTable.values());
             mStyleTable = null;
@@ -290,18 +288,19 @@ public class ResourcesBuilder {
             data.asIntBuffer().put(0, styleOffsets);
             assert offset == offsetsSize + valuesSize;
 
-            LoadedPackage.TypeEntry typeEntry = new LoadedPackage.TypeEntry();
+            ResourceMap.TypeEntry typeEntry = new ResourceMap.TypeEntry();
             typeEntry.id = (byte) (storeTypeString("style") + 1);
             typeEntry.entryCount = styles.size();
             typeEntry.entriesStart = ResTable_type.SIZEOF + offsetsSize;
+            typeEntry.config = new ResConfig();
             typeEntry.data = data;
 
-            styleTypeSpec = new LoadedPackage.TypeSpec(0, Collections.singletonList(typeEntry));
+            styleTypeSpec = new ResourceMap.TypeSpec(0, Collections.singletonList(typeEntry));
             styleTypeSpec.id = typeEntry.id;
             styleTypeSpec.entryIndexTable = entryIndexTable;
         }
 
-        HashMap<String, LoadedPackage.TypeSpec> typeSpecs = new HashMap<>();
+        HashMap<String, ResourceMap.TypeSpec> typeSpecs = new HashMap<>();
 
         if (styleTypeSpec != null) {
             typeSpecs.put("style", styleTypeSpec);
@@ -342,13 +341,14 @@ public class ResourcesBuilder {
             data.asIntBuffer().put(0, valueOffsets);
             assert offset == offsetsSize + valuesSize;
 
-            LoadedPackage.TypeEntry typeEntry = new LoadedPackage.TypeEntry();
+            ResourceMap.TypeEntry typeEntry = new ResourceMap.TypeEntry();
             typeEntry.id = (byte) (storeTypeString(typeName) + 1);
             typeEntry.entryCount = typeValues.size();
             typeEntry.entriesStart = ResTable_type.SIZEOF + offsetsSize;
+            typeEntry.config = new ResConfig();
             typeEntry.data = data;
 
-            var typeSpec = new LoadedPackage.TypeSpec(0, Collections.singletonList(typeEntry));
+            var typeSpec = new ResourceMap.TypeSpec(0, Collections.singletonList(typeEntry));
             typeSpec.id = typeEntry.id;
             typeSpec.entryIndexTable = entryIndexTable;
             typeSpecs.put(typeName, typeSpec);
@@ -359,15 +359,15 @@ public class ResourcesBuilder {
         resources.keyStringPool = new ResStringPool(mKeyStringArray.toArray(new String[0]));
         mKeyStringArray = null;
 
-        resources.packageLibs[0] = mNamespace;
+        resources.namespaces[0] = mNamespace;
         for (int i = 0; i < mLibraryArray.size(); i++) {
-            resources.packageLibs[i + 1] = mLibraryArray.get(i);
+            resources.namespaces[i + 1] = mLibraryArray.get(i);
         }
 
-        LoadedPackage loadedPackage = new LoadedPackage(mNamespace);
-        loadedPackage.typeSpecs = typeSpecs;
+        ResourceMap.NamespaceSpec namespaceSpec = new ResourceMap.NamespaceSpec(mNamespace);
+        namespaceSpec.typeSpecs = typeSpecs;
 
-        resources.packages = new LoadedPackage[]{loadedPackage};
+        resources.namespaceSpecs = new ResourceMap.NamespaceSpec[]{namespaceSpec};
 
         return new AssetPack(assetProvider, resources);
     }

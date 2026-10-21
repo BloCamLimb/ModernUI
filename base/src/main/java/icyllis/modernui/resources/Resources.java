@@ -24,7 +24,6 @@ import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.ThreadSafe;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.resources.AssetManager.ResolvedBag;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
@@ -32,7 +31,6 @@ import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.CheckReturnValue;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -43,10 +41,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @ThreadSafe

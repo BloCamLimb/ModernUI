@@ -115,7 +115,7 @@ public final class ResourcesImpl {
     @CheckReturnValue
     public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
                             boolean resolveRefs) {
-        boolean found = mAssetManager.getResource(id, outValue);
+        boolean found = mAssetManager.getResource(id, mMetrics.densityDpi, outValue);
         if (resolveRefs) {
             //TODO
         }

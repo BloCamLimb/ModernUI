@@ -18,11 +18,13 @@
 
 package icyllis.modernui.resources;
 
+import com.ibm.icu.util.LocaleMatcher;
 import icyllis.modernui.annotation.GuardedBy;
+import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.resources.ResourceTypes.*;
+import icyllis.modernui.resources.ResourceMap.*;
 import icyllis.modernui.system.LocaleList;
 import icyllis.modernui.util.Log;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
@@ -39,12 +41,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @hide
  * @hidden
  */
+@Immutable
 @ApiStatus.Internal
 public final class AssetManager {
 
@@ -53,71 +58,50 @@ public final class AssetManager {
     public static final int kInvalidCookie = -1;
     public static final int kMaxIterations = 20;
 
-    public static class ResolvedBag {
-        public static final int COLUMN_TYPE = 0;
-        public static final int COLUMN_DATA = 1;
-        public static final int COLUMN_COOKIE = 2;
-        public static final int VALUE_COLUMNS = 3;
+    private static final ResolvedBag SENTINEL_BAG = new ResolvedBag(null, null, 0);
 
-        public int typeSpecFlags;
+    private static final class FilteredNamespace {
 
-        /*
-         * This holds attribute names, sorted in lexicographic order.
-         */
-        public String[] keys;
-        /*
-            struct Value {
-                uint32_t type;
-                uint32_t data;
-                int32_t cookie;
-            }
-         */
-        public int[] values;
+        // this map cannot be empty
+        final HashMap<String, FilteredType> filteredTypes;
+        final int cookie;
 
-        public int type(int index) {
-            return values[index * VALUE_COLUMNS + COLUMN_TYPE];
-        }
-
-        public int data(int index) {
-            return values[index * VALUE_COLUMNS + COLUMN_DATA];
-        }
-
-        public int cookie(int index) {
-            return values[index * VALUE_COLUMNS + COLUMN_COOKIE];
-        }
-
-        public int getEntryCount() {
-            assert values == null ||
-                    (values.length / VALUE_COLUMNS) == keys.length;
-            return keys != null ? keys.length : 0;
+        FilteredNamespace(HashMap<String, FilteredType> filteredTypes,
+                          int cookie) {
+            this.filteredTypes = filteredTypes;
+            this.cookie = cookie;
         }
     }
 
-    private static final ResolvedBag SENTINEL_BAG = new ResolvedBag();
+    private static final class FilteredType {
 
-    public static class PackageGroup {
-        // The following three arrays are parallel arrays
-        public final ArrayList<LoadedPackage> packages = new ArrayList<>();
+        final TypeSpec typeSpec;
+        // this is a pre-filtered list, a subset of typeSpec.typeEntries
+        // this list can be empty
+        final TypeEntry[] filteredTypeEntries;
 
-        // Array of maps from type index to prefiltered collection of configurations
-        // that match the current AssetManager configuration
-        public final ArrayList<ArrayList<LoadedPackage.TypeEntry>[]> filteredConfigs = new ArrayList<>();
-
-        public final IntArrayList cookies = new IntArrayList();
+        FilteredType(TypeSpec typeSpec,
+                     TypeEntry[] filteredTypeEntries) {
+            this.typeSpec = typeSpec;
+            this.filteredTypeEntries = filteredTypeEntries;
+        }
     }
 
     public static final class Builder {
         private final LinkedHashSet<AssetPack> mAssetPacks = new LinkedHashSet<>();
 
-        private LocaleList mLocales;
+        private LocaleList mLocales = LocaleList.getEmptyLocaleList();
 
         // Smaller indices are given priority.
-        public Builder addAssetPack(AssetPack assetPack) {
+        public Builder addAssetPack(@NonNull AssetPack assetPack) {
+            Objects.requireNonNull(assetPack);
             mAssetPacks.add(assetPack);
             return this;
         }
 
-        public Builder setLocales(LocaleList locales) {
+        // Smaller indices are given priority.
+        public Builder setLocales(@NonNull LocaleList locales) {
+            Objects.requireNonNull(locales);
             mLocales = locales;
             return this;
         }
@@ -125,41 +109,121 @@ public final class AssetManager {
         @NonNull
         public AssetManager build() {
             final AssetPack[] assetPacks = new AssetPack[mAssetPacks.size()];
-            return new AssetManager(mAssetPacks.toArray(assetPacks), mLocales);
+
+            LocaleList locales = mLocales;
+            // "und" should also fall into this category, but we don't use that in ModernUI
+            boolean matchRootOnly = locales.isEmpty() ||
+                    (locales.size() == 1 && locales.get(0).equals(Locale.ROOT));
+
+            HashMap<String, ArrayList<FilteredNamespace>> groups = new HashMap<>();
+            int cookie = 0;
+            // first-pass: remove entries that cannot be matched by any input
+            ArrayList<TypeEntry> tmpTypeEntries = new ArrayList<>();
+            LocaleMatcher localeMatcher = null;
+            for (var pack : mAssetPacks) {
+                var resources = pack.getResources();
+                for (var namespaceSpec : resources.getNamespaceSpecs()) {
+                    if (namespaceSpec.typeSpecs.isEmpty()) {
+                        continue;
+                    }
+                    HashMap<String, FilteredType> types = new HashMap<>();
+                    for (var e : namespaceSpec.typeSpecs.entrySet()) {
+                        tmpTypeEntries.clear();
+                        for (var typeEntry : e.getValue().typeEntries) {
+                            // any density, variant, numberingSystem could match;
+                            // so we only filter LSR using likely subtags
+                            boolean isRoot = typeEntry.config.locale.equals(Locale.ROOT);
+                            if (!matchRootOnly && !isRoot) {
+                                if (localeMatcher == null) {
+                                    localeMatcher = LocaleMatcher.builder()
+                                            .build();
+                                }
+                                for (int locIdx = 0; locIdx < locales.size(); locIdx++) {
+                                    var desiredLocale = locales.get(locIdx);
+                                    if (localeMatcher.isMatch(
+                                            desiredLocale, typeEntry.config.locale)) {
+                                        tmpTypeEntries.add(typeEntry);
+                                        break;
+                                    }
+                                }
+                            }
+                            if (isRoot) {
+                                tmpTypeEntries.add(typeEntry);
+                            }
+                        }
+                        types.put(e.getKey(),
+                                new FilteredType(e.getValue(),
+                                        tmpTypeEntries.toArray(new TypeEntry[0])));
+                    }
+
+                    groups.computeIfAbsent(
+                                    namespaceSpec.getNamespace(), __ -> new ArrayList<>())
+                            .add(new FilteredNamespace(types, cookie));
+                }
+                assetPacks[cookie++] = pack;
+            }
+            // second-pass: cross-pack type entry dedup
+            HashMap<String, HashSet<ResConfig>> globalDedup = new HashMap<>();
+            for (var group : groups.entrySet()) {
+                if (group.getValue().size() <= 1) {
+                    // there's only one namespace spec
+                    continue;
+                }
+                globalDedup.values().forEach(HashSet::clear);
+                for (var ns : group.getValue()) {
+                    for (var te : ns.filteredTypes.entrySet()) {
+                        var dedup = globalDedup.computeIfAbsent(te.getKey(), __ -> new HashSet<>());
+                        tmpTypeEntries.clear();
+                        boolean didDedup = false;
+                        for (var e : te.getValue().filteredTypeEntries) {
+                            if (dedup.add(e.config)) {
+                                tmpTypeEntries.add(e);
+                            } else {
+                                // there's already a type entry with the exact same config, this can't be
+                                // any better than the previous one, so it's removed
+                                didDedup = true;
+                            }
+                        }
+                        if (didDedup) {
+                            te.setValue(new FilteredType(te.getValue().typeSpec,
+                                    tmpTypeEntries.toArray(new TypeEntry[0])));
+                        }
+                    }
+                }
+            }
+            // finalize
+            HashMap<String, FilteredNamespace[]> finalGroups = new HashMap<>(
+                    (int) Math.ceil(groups.size() / 0.75), 0.75f);
+            for (var e : groups.entrySet()) {
+                finalGroups.put(e.getKey(), e.getValue().toArray(new FilteredNamespace[0]));
+            }
+
+            return new AssetManager(assetPacks, locales, finalGroups);
         }
     }
 
-    private AssetManager(AssetPack @NonNull[] assetPacks,
-                         LocaleList locales) {
-
-        HashMap<String, PackageGroup> packageGroups = new HashMap<>();
-        for (int i = 0; i < assetPacks.length; i++) {
-            var pack = assetPacks[i];
-            int cookie = i;
-
-            var resources = pack.getResources();
-
-            for (var loadedPackage : resources.getPackages()) {
-                var pkgGroup = packageGroups.computeIfAbsent(
-                        loadedPackage.getPackageName(), __ -> new PackageGroup());
-
-                pkgGroup.packages.add(loadedPackage);
-                pkgGroup.cookies.add(cookie);
-            }
-        }
-
+    private AssetManager(@NonNull AssetPack @NonNull[] assetPacks,
+                         @NonNull LocaleList locales,
+                         @NonNull HashMap<String, FilteredNamespace[]> groups) {
         mAssetPacks = assetPacks;
-        mPackageGroups = packageGroups;
+        mGroups = groups;
+        mLocales = locales;
     }
 
     @NonNull
     @Unmodifiable
-    public List<AssetPack> getAssetPacks() {
-        return Arrays.asList(mAssetPacks);
+    public List<@NonNull AssetPack> getAssetPacks() {
+        //noinspection Java9CollectionFactory
+        return Collections.unmodifiableList(Arrays.asList(mAssetPacks));
+    }
+
+    @NonNull
+    public LocaleList getLocales() {
+        return mLocales;
     }
 
     @Nullable
-    public Asset getNonAsset(String path) {
+    public Asset getNonAsset(@NonNull String path) {
         for (var pack : mAssetPacks) {
             Asset asset = pack.getAssets().getAsset(path);
             if (asset != null) {
@@ -170,7 +234,7 @@ public final class AssetManager {
     }
 
     @Nullable
-    public Asset getNonAsset(String path, int cookie) {
+    public Asset getNonAsset(@NonNull String path, int cookie) {
         var pack = getPack(cookie);
         if (pack != null) {
             return pack.getAssets().getAsset(path);
@@ -179,9 +243,10 @@ public final class AssetManager {
     }
 
     public boolean getResource(@NonNull ResourceId resId,
+                               int densityDpi,
                                @NonNull TypedValue outValue) {
         Object entry = findEntry(resId.namespace(), resId.type(), resId.entry(),
-                outValue);
+                densityDpi, outValue);
         return entry == outValue;
     }
 
@@ -219,7 +284,7 @@ public final class AssetManager {
         }
 
         Object entry = findEntry(resId.namespace(), resId.type(), resId.entry(),
-                value);
+                0, value);
 
         ByteBuffer map = null;
 
@@ -317,18 +382,20 @@ public final class AssetManager {
                     childOffset += ResTable_map.SIZEOF;
                 }
 
-                newBag = new ResolvedBag();
-                newBag.keys = merger.getResultKeys();
-                newBag.values = merger.getResultValues();
-                // Combine flags from the parent and our own bag.
-                newBag.typeSpecFlags = typeFlags | (parentBag != null ? parentBag.typeSpecFlags : 0);
+                newBag = new ResolvedBag(
+                        merger.getResultKeys(),
+                        merger.getResultValues(),
+                        // Combine flags from the parent and our own bag.
+                        typeFlags | (parentBag != null ? parentBag.typeSpecFlags : 0)
+                );
             } else {
                 // Child is empty, just set to parent
-                newBag = new ResolvedBag();
-                newBag.keys = parentBag.keys;
-                newBag.values = parentBag.values;
-                // Combine flags from the parent and our own bag.
-                newBag.typeSpecFlags = typeFlags | parentBag.typeSpecFlags;
+                newBag = new ResolvedBag(
+                        parentBag.keys,
+                        parentBag.values,
+                        // Combine flags from the parent and our own bag.
+                        typeFlags | parentBag.typeSpecFlags
+                );
             }
         }
         mCachedBags.put(resId, newBag);
@@ -337,59 +404,51 @@ public final class AssetManager {
 
     @Nullable
     private Object findEntry(String namespace, String typeString, String entryString,
-                             @NonNull TypedValue outValue) {
+                             int desiredDensity, @NonNull TypedValue outValue) {
         if (namespace == null || namespace.isEmpty() ||
                 typeString == null || typeString.isEmpty() ||
                 entryString == null || entryString.isEmpty()) {
             return null;
         }
 
-        PackageGroup packageGroup = mPackageGroups.get(namespace);
-        if (packageGroup == null) {
+        var group = mGroups.get(namespace);
+        if (group == null) {
             return null;
         }
 
-        return findEntryInternal(packageGroup, typeString, entryString, outValue);
+        return findEntryInternal(group, typeString, entryString, desiredDensity, outValue);
     }
 
     @Nullable
-    private Object findEntryInternal(@NonNull PackageGroup packageGroup,
+    private Object findEntryInternal(@NonNull FilteredNamespace @NonNull[] group,
                                      @NonNull String typeString, @NonNull String entryString,
-                                     @NonNull TypedValue outValue) {
+                                     int desiredDensity, @NonNull TypedValue outValue) {
         int bestCookie = kInvalidCookie;
-        LoadedPackage bestPackage = null;
-        LoadedPackage.TypeEntry bestType = null;
+        TypeEntry bestType = null;
         int bestOffset = 0;
         int typeFlags = 0;
 
-        int packageCount = packageGroup.packages.size();
-        for (int pi = 0; pi < packageCount; pi++) {
-            LoadedPackage loadedPackage = packageGroup.packages.get(pi);
-            int cookie = packageGroup.cookies.getInt(pi);
-
-            LoadedPackage.TypeSpec typeSpec = loadedPackage.getTypeSpecByName(typeString);
-            if (typeSpec == null) {
+        for (var ns : group) {
+            var type = ns.filteredTypes.get(typeString);
+            if (type == null) {
                 continue;
             }
-
+            TypeSpec typeSpec = type.typeSpec;
             int entryIndex = typeSpec.getEntryIndexByName(entryString);
             if (entryIndex == -1) {
                 continue;
             }
             typeFlags |= typeSpec.getFlagsForEntryIndex(entryIndex);
 
-            int typeEntryCount = typeSpec.typeEntries.length;
-            for (int i = 0; i < typeEntryCount; i++) {
-                LoadedPackage.TypeEntry typeEntry = typeSpec.typeEntries[i];
+            for (var typeEntry : type.filteredTypeEntries) {
 
-                int offset = loadedPackage.getEntryOffset(typeEntry, entryIndex);
+                int offset = ResourceMap.getEntryOffset(typeEntry, entryIndex);
 
                 if (offset == ResTable_type.NO_ENTRY) {
                     continue;
                 }
 
-                bestCookie = cookie;
-                bestPackage = loadedPackage;
+                bestCookie = ns.cookie;
                 bestType = typeEntry;
                 bestOffset = offset;
 
@@ -401,7 +460,7 @@ public final class AssetManager {
             return null;
         }
 
-        Object bestEntry = bestPackage.getEntryFromOffset(bestType, bestOffset, outValue);
+        Object bestEntry = ResourceMap.getEntryFromOffset(bestType, bestOffset, outValue);
         if (bestEntry == null) {
             return null;
         }
@@ -490,7 +549,9 @@ public final class AssetManager {
     }
 
     private final AssetPack[] mAssetPacks;
-    private final HashMap<String, PackageGroup> mPackageGroups;
+    private final LocaleList mLocales;
+    // Map namespace to a list of pre-filtered namespace specs, the value cannot be empty array
+    private final HashMap<String, FilteredNamespace[]> mGroups;
 
     private final ReentrantReadWriteLock mBagCacheLock = new ReentrantReadWriteLock();
     // Cached set of bags. Since lookup miss rate is very low, use

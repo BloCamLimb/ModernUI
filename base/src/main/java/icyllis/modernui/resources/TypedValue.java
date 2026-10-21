@@ -701,11 +701,11 @@ public class TypedValue {
      * @hidden
      */
     @ApiStatus.Internal
-    public void setTo(AssetManager.@NonNull ResolvedBag bag, int index) {
-        int offset = index * AssetManager.ResolvedBag.VALUE_COLUMNS;
-        type = bag.values[offset + AssetManager.ResolvedBag.COLUMN_TYPE];
-        data = bag.values[offset + AssetManager.ResolvedBag.COLUMN_DATA];
-        cookie = bag.values[offset + AssetManager.ResolvedBag.COLUMN_COOKIE];
+    public void setTo(@NonNull ResolvedBag bag, int index) {
+        int offset = index * ResolvedBag.VALUE_COLUMNS;
+        type = bag.values[offset + ResolvedBag.COLUMN_TYPE];
+        data = bag.values[offset + ResolvedBag.COLUMN_DATA];
+        cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
         flags = bag.typeSpecFlags;
     }
 
