@@ -46,6 +46,7 @@ public class RoundedImageDrawable extends Drawable {
     private BlendMode mBlendMode = DEFAULT_BLEND_MODE;
 
     private int mGravity = Gravity.FILL;
+    private int mSourceDensity = DisplayMetrics.DENSITY_NONE;
     private int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
     private float mCornerRadius;
 
@@ -119,6 +120,9 @@ public class RoundedImageDrawable extends Drawable {
     public void setImage(@Nullable Image image) {
         if (mImage != image) {
             mImage = image;
+            if (image != null) {
+                mSourceDensity = image.getDensity();
+            }
             if (mIsCircular) {
                 updateCircularSubset();
             } else {
@@ -132,16 +136,25 @@ public class RoundedImageDrawable extends Drawable {
     }
 
     /**
+     * Set the density of the source image.
+     *
+     * @param density The density for the source image.
+     */
+    public void setSourceDensity(int density) {
+        if (mSourceDensity != density) {
+            mSourceDensity = density;
+            // Added by ModernUI
+            mDstRectDirty = true;
+            invalidateSelf();
+        }
+    }
+
+    /**
      * Set the density at which this drawable will be rendered.
      *
      * @param density The density scale for this drawable.
-     * @see Image#setDensity(int)
-     * @see Image#getDensity()
      */
     public void setTargetDensity(int density) {
-        if (density == 0) {
-            density = DisplayMetrics.DENSITY_DEFAULT;
-        }
         if (mTargetDensity != density) {
             mTargetDensity = density;
             // Added by ModernUI
@@ -207,7 +220,7 @@ public class RoundedImageDrawable extends Drawable {
             return -1;
         }
         int width = Math.min(mSrcRect.width(), image.getWidth());
-        return Image.scaleFromDensity(width, image.getDensity(), mTargetDensity);
+        return scaleFromDensity(width, mSourceDensity, mTargetDensity);
     }
 
     private int computeSrcHeight() {
@@ -216,7 +229,7 @@ public class RoundedImageDrawable extends Drawable {
             return -1;
         }
         int height = Math.min(mSrcRect.height(), image.getHeight());
-        return Image.scaleFromDensity(height, image.getDensity(), mTargetDensity);
+        return scaleFromDensity(height, mSourceDensity, mTargetDensity);
     }
 
     /**

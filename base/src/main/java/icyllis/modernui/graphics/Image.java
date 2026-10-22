@@ -60,15 +60,18 @@ public class Image implements AutoCloseable {
      *
      * @see Image#getDensity()
      * @see Image#setDensity(int)
+     *
+     * @deprecated use {@link DisplayMetrics#DENSITY_NONE}
      */
-    public static final int DENSITY_NONE = 0;
+    @Deprecated
+    public static final int DENSITY_NONE = DisplayMetrics.DENSITY_NONE;
 
     // managed by cleaner
     private volatile icyllis.arc3d.sketch.Image mImage;
     private final Cleaner.Cleanable mCleanup;
 
     // keep a strong reference to prevent it from being garbage collected
-    private ConstantState mConstantState;
+    private Object mAttachment;
 
     int mDensity = DisplayMetrics.DENSITY_DEFAULT;
 
@@ -77,9 +80,10 @@ public class Image implements AutoCloseable {
         mImage = Objects.requireNonNull(image);
     }
 
-    private Image(@SharedPtr icyllis.arc3d.sketch.Image image, int density) {
+    private Image(@SharedPtr icyllis.arc3d.sketch.Image image, int density, Object attachment) {
         this(image);
         mDensity = density;
+        mAttachment = attachment;
     }
 
     /**
@@ -253,48 +257,6 @@ public class Image implements AutoCloseable {
     }
 
     /**
-     * Convenience method that returns the width of this image divided
-     * by the density scale factor.
-     * <p>
-     * Returns the image's width multiplied by the ratio of the target density to the image's
-     * source density
-     *
-     * @param targetDensity The density of the target canvas of the image.
-     * @return The scaled width of this image, according to the density scale factor.
-     */
-    public int getScaledWidth(int targetDensity) {
-        return scaleFromDensity(getWidth(), mDensity, targetDensity);
-    }
-
-    /**
-     * Convenience method that returns the height of this image divided
-     * by the density scale factor.
-     * <p>
-     * Returns the image's height multiplied by the ratio of the target density to the image's
-     * source density
-     *
-     * @param targetDensity The density of the target canvas of the image.
-     * @return The scaled height of this image, according to the density scale factor.
-     */
-    public int getScaledHeight(int targetDensity) {
-        return scaleFromDensity(getHeight(), mDensity, targetDensity);
-    }
-
-    /**
-     * @hide
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public static int scaleFromDensity(int size, int sourceDensity, int targetDensity) {
-        if (sourceDensity == DENSITY_NONE || targetDensity == DENSITY_NONE || sourceDensity == targetDensity) {
-            return size;
-        }
-
-        // Scale by targetDensity / sourceDensity, rounding up.
-        return ((size * targetDensity) + (sourceDensity >> 1)) / sourceDensity;
-    }
-
-    /**
      * <p>Returns the density for this image.</p>
      *
      * <p>The default density is {@link DisplayMetrics#DENSITY_DEFAULT}.</p>
@@ -305,7 +267,11 @@ public class Image implements AutoCloseable {
      * @see DisplayMetrics#DENSITY_DEFAULT
      * @see DisplayMetrics#densityDpi
      * @see #DENSITY_NONE
+     *
+     * @deprecated to keep Image immutable and pure, additional information such as density
+     * should be represented externally, such as {@link ImageDrawable#setSourceDensity(int)}
      */
+    @Deprecated
     public int getDensity() {
         return mDensity;
     }
@@ -322,7 +288,11 @@ public class Image implements AutoCloseable {
      * @see DisplayMetrics#densityDpi
      * @see #DENSITY_NONE
      * @see #clone()
+     *
+     * @deprecated to keep Image immutable and pure, additional information such as density
+     * should be represented externally, such as {@link ImageDrawable#setSourceDensity(int)}
      */
+    @Deprecated
     public void setDensity(int density) {
         mDensity = density;
     }
@@ -420,19 +390,13 @@ public class Image implements AutoCloseable {
      * When this object becomes phantom-reachable, the system will automatically
      * do this cleanup operation.
      * <p>
-     * This method is thread safe and can be called multiple times.
+     * This method can be called multiple times.
      */
     @Override
     public void close() {
-        if (mImage == null) {
-            return;
-        }
-        // lock to ensure clone() thread-safe
-        synchronized (this) {
-            mImage = null;
-            // cleaner is thread safe, so no double check
-            mCleanup.clean();
-        }
+        mImage = null;
+        // cleaner is thread safe, so no double check
+        mCleanup.clean();
     }
 
     /**
@@ -465,8 +429,6 @@ public class Image implements AutoCloseable {
      * this method is typically unnecessary unless you intend to pass it to another owner;
      * in cases where both you and the new owner will close their respective objects,
      * using this method ensures mutual independence and timely release.
-     * <p>
-     * This method is thread safe.
      *
      * @return a shallow copy of image
      * @throws IllegalStateException this image is already closed
@@ -476,20 +438,15 @@ public class Image implements AutoCloseable {
     public final Image clone() {
         icyllis.arc3d.sketch.Image image;
         try {
-            synchronized (this) {
-                // this operation is not atomic
-                image = RefCnt.create(mImage);
-            }
+            image = RefCnt.create(mImage);
         } finally {
-            // there may be lock elimination, this is still needed
             Reference.reachabilityFence(this);
         }
         if (image == null) {
             throw new IllegalStateException("Cannot clone a closed image!");
         }
-        // we disown this.mConstantState which is only used for the Resources API;
-        // it shouldn't be used in other scenarios.
-        return new Image(image, mDensity);
+        Object attachment = mAttachment;
+        return new Image(image, mDensity, attachment != null ? attachment : this);
     }
 
     /**
@@ -499,12 +456,8 @@ public class Image implements AutoCloseable {
      * @hidden
      */
     @ApiStatus.Internal
-    public ConstantState getConstantState() {
-        // set mutual references
-        if (mConstantState == null) {
-            mConstantState = new ConstantState(this);
-        }
-        return mConstantState;
+    public void clearAttachment() {
+        mAttachment = null;
     }
 
     /**
@@ -515,56 +468,5 @@ public class Image implements AutoCloseable {
     @RawPtr
     public icyllis.arc3d.sketch.Image getNativeImage() {
         return mImage;
-    }
-
-    /**
-     * Internally used by Resources API.
-     *
-     * @hide
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public static final class ConstantState {
-
-        // CS -> Img0
-        // Img0 -> CS
-        // Img1 -> CS
-        // Img2 -> CS
-        // Drawable -> Img
-        // Cache -> weak CS
-        // Cache -> weak Drawable
-
-        private Image mImage; // Img0
-        private int mChangingConfigurations;
-
-        public ConstantState(Image image) {
-            mImage = image;
-        }
-
-        public void setChangingConfigurations(int changeConfigs) {
-            mChangingConfigurations = changeConfigs;
-        }
-
-        public int getChangingConfigurations() {
-            return mChangingConfigurations;
-        }
-
-        // the shared instance
-        public Image getImage() {
-            return mImage;
-        }
-
-        // a new instance that will not be closed when this.close() is called,
-        // and prevent this (and original mImage) from being GC.
-        public Image newImage() {
-            Image image = mImage.clone();
-            image.mConstantState = this;
-            return image;
-        }
-
-        public void close() {
-            mImage.close();
-            mImage = null;
-        }
     }
 }

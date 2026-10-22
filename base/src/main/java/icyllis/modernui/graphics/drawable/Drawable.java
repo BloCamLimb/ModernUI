@@ -1056,6 +1056,22 @@ public abstract class Drawable {
         }
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public static int scaleFromDensity(int size, int sourceDensity, int targetDensity) {
+        if (sourceDensity == DisplayMetrics.DENSITY_NONE ||
+                targetDensity == DisplayMetrics.DENSITY_NONE ||
+                sourceDensity == targetDensity) {
+            return size;
+        }
+
+        // Scale by targetDensity / sourceDensity, rounding up.
+        return ((size * targetDensity) + (sourceDensity >> 1)) / sourceDensity;
+    }
+
     @ApiStatus.Internal
     static int resolveDensity(@Nullable Resources r, int parentDensity) {
         final int densityDpi = r == null ? parentDensity : r.getDisplayMetrics().densityDpi;

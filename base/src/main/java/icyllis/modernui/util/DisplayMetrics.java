@@ -29,6 +29,12 @@ public class DisplayMetrics {
     // most desktop monitors have a physical PPI of 80 to 282;
 
     /**
+     * Indicates that the resource was created for an unknown pixel density
+     * and will not be scaled. This is equivalent to nodpi and anydpi.
+     */
+    public static final int DENSITY_NONE = 0;
+
+    /**
      * Standard quantized DPI for low-density screens.
      */
     public static final int DENSITY_LOW = 72;
@@ -93,7 +99,7 @@ public class DisplayMetrics {
     public static final int DENSITY_180 = 180;
 
     /**
-     * Standard quantized DPI for extra-high-density screens.
+     * Standard quantized DPI for extra-high-density screens. Mostly used on macOS.
      */
     public static final int DENSITY_XHIGH = 192;
 

@@ -147,8 +147,23 @@ public class ImageDrawable extends Drawable {
             mImageState.mImage = image;
             // Added by ModernUI
             if (image != null) {
+                mImageState.mSourceDensity = image.getDensity();
                 image.getBounds(mImageState.mSrcRect);
             }
+            // Added by ModernUI
+            mDstRectAndInsetsDirty = true;
+            invalidateSelf();
+        }
+    }
+
+    /**
+     * Set the density of the source image.
+     *
+     * @param density The density for the source image.
+     */
+    public void setSourceDensity(int density) {
+        if (mImageState.mSourceDensity != density) {
+            mImageState.mSourceDensity = density;
             // Added by ModernUI
             mDstRectAndInsetsDirty = true;
             invalidateSelf();
@@ -159,13 +174,8 @@ public class ImageDrawable extends Drawable {
      * Set the density at which this drawable will be rendered.
      *
      * @param density The density scale for this drawable.
-     * @see Image#setDensity(int)
-     * @see Image#getDensity()
      */
     public void setTargetDensity(int density) {
-        if (density == 0) {
-            density = DisplayMetrics.DENSITY_DEFAULT;
-        }
         if (mTargetDensity != density) {
             mTargetDensity = density;
             // Added by ModernUI
@@ -243,7 +253,7 @@ public class ImageDrawable extends Drawable {
             return -1;
         }
         int width = Math.min(mImageState.mSrcRect.width(), image.getWidth());
-        return Image.scaleFromDensity(width, image.getDensity(), mTargetDensity);
+        return scaleFromDensity(width, mImageState.mSourceDensity, mTargetDensity);
     }
 
     private int computeSrcHeight() {
@@ -252,7 +262,7 @@ public class ImageDrawable extends Drawable {
             return -1;
         }
         int height = Math.min(mImageState.mSrcRect.height(), image.getHeight());
-        return Image.scaleFromDensity(height, image.getDensity(), mTargetDensity);
+        return scaleFromDensity(height, mImageState.mSourceDensity, mTargetDensity);
     }
 
     /**
@@ -693,6 +703,7 @@ public class ImageDrawable extends Drawable {
         Shader.TileMode mTileModeX = null;
         Shader.TileMode mTileModeY = null;
 
+        int mSourceDensity = DisplayMetrics.DENSITY_NONE;
         int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
 
         final Rect mSrcRect;

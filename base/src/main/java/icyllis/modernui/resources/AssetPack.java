@@ -33,6 +33,9 @@ public final class AssetPack implements Closeable {
 
     private final ResourceMap resources;
 
+    // cache of GPU textures or CPU bitmaps
+    private final ImageCache imageCache = new ImageCache();
+
     /**
      * @hide
      * @hidden
@@ -62,8 +65,18 @@ public final class AssetPack implements Closeable {
         return resources;
     }
 
+    /**
+     * @hide
+     * @hidden
+     */
+    @ApiStatus.Internal
+    public ImageCache getImageCache() {
+        return imageCache;
+    }
+
     @Override
     public void close() throws IOException {
         assets.close();
+        imageCache.close();
     }
 }

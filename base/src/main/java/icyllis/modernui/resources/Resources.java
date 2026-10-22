@@ -43,6 +43,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.UnaryOperator;
 
 @ThreadSafe
 public class Resources {
@@ -261,7 +262,7 @@ public class Resources {
         TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
         try {
             TypedValue val = tmp != null ? tmp : new TypedValue();
-            return getImage(id, val, needNewInstance);
+            return getImage(id, val, needNewInstance ? Image::clone : UnaryOperator.identity());
         } finally {
             if (tmp != null) {
                 TMP_VALUE.setRelease(this, tmp);
@@ -272,10 +273,10 @@ public class Resources {
     @Nullable
     public Image getImage(@NonNull ResourceId id,
                           @NonNull TypedValue value,
-                          boolean needNewInstance) {
+                          @NonNull UnaryOperator<Image> deriveOp) {
         ResourcesImpl impl = mResourcesImpl;
         if (impl.getValue(id, value, true)) {
-            return impl.loadImage(value, id, needNewInstance);
+            return impl.loadImage(value, id, deriveOp);
         }
         return null;
     }
@@ -283,8 +284,8 @@ public class Resources {
     @Nullable
     public Image loadImage(@NonNull TypedValue value,
                            @Nullable ResourceId id,
-                           boolean needNewInstance) {
-        return mResourcesImpl.loadImage(value, id, needNewInstance);
+                           @NonNull UnaryOperator<Image> deriveOp) {
+        return mResourcesImpl.loadImage(value, id, deriveOp);
     }
 
     @Nullable

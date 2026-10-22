@@ -18,102 +18,85 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.arc3d.fastutil.ints.Int2ObjectOpenHashMap;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.util.LongSparseArray;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.UnaryOperator;
 
-final class ImageCache {
+public final class ImageCache implements AutoCloseable {
 
-    private final LongSparseArray<WeakReference<Image.ConstantState>> mEntries
-            = new LongSparseArray<>();
+    private final ReentrantReadWriteLock mLock;
+    private Int2ObjectOpenHashMap<WeakReference<Image>> mEntries;
 
-    private long mGeneration;
+    public ImageCache() {
+        mEntries = new Int2ObjectOpenHashMap<>();
+        mLock = new ReentrantReadWriteLock();
+    }
 
-    public Image putAndGet(long key, @NonNull Image newImage, long generation,
-                           boolean needNewInstance) {
-        synchronized (this) {
-            if (generation != mGeneration) {
-                // not cached, just return the new instance
+    public @NonNull Image putAndGet(int key, @NonNull Image newImage,
+                                    @NonNull UnaryOperator<Image> deriveOp) {
+        mLock.writeLock().lock();
+        try {
+            if (mEntries == null) {
                 return newImage;
             }
-            LongSparseArray<WeakReference<Image.ConstantState>> entries = mEntries;
-
-            WeakReference<Image.ConstantState> existingRef = entries.get(key);
+            WeakReference<Image> existingRef = mEntries.get(key);
             if (existingRef != null) {
-                Image.ConstantState existingEntry = existingRef.get();
+                Image existingEntry = existingRef.get();
                 if (existingEntry != null) {
                     // there's a race, reuse the existing instance and destroy the new one
                     newImage.close();
-                    return needNewInstance ? existingEntry.newImage() : existingEntry.getImage();
+                    return deriveOp.apply(existingEntry);
                 }
             }
 
-            Image.ConstantState newEntry = newImage.getConstantState();
-            entries.put(key, new WeakReference<>(newEntry));
-            return needNewInstance ? newEntry.newImage() : newEntry.getImage();
+            mEntries.put(key, new WeakReference<>(newImage));
+            return deriveOp.apply(newImage);
+        } finally {
+            mLock.writeLock().unlock();
         }
     }
 
-    public Image getInstance(long key, boolean needNewInstance) {
-        synchronized (this) {
-            WeakReference<Image.ConstantState> ref = mEntries.get(key);
+    public @Nullable Image getInstance(int key,
+                                       @NonNull UnaryOperator<Image> deriveOp) {
+        mLock.readLock().lock();
+        try {
+            if (mEntries == null) {
+                return null;
+            }
+            WeakReference<Image> ref = mEntries.get(key);
             if (ref != null) {
-                Image.ConstantState entry = ref.get();
+                Image entry = ref.get();
                 if (entry != null) {
-                    return needNewInstance ? entry.newImage() : entry.getImage();
+                    return deriveOp.apply(entry);
                 }
             }
+        } finally {
+            mLock.readLock().unlock();
         }
         return null;
     }
 
-    public long getGeneration() {
-        // read lock is not needed
-        return mGeneration;
-    }
-
-    public void onConfigurationChange(int configChanges) {
-        synchronized (this) {
-            LongSparseArray<WeakReference<Image.ConstantState>> entries = mEntries;
-            for (int i = entries.size() - 1; i >= 0; i--) {
-                WeakReference<Image.ConstantState> ref = entries.valueAt(i);
-                if (ref == null || pruneEntryLocked(ref.get(), configChanges)) {
-                    entries.removeAt(i);
-                }
-            }
-            mGeneration++;
-        }
-    }
-
-    private boolean pruneEntryLocked(Image.@Nullable ConstantState entry, int configChanges) {
-        if (entry == null) {
-            return true;
-        }
-        boolean prune = Configuration.needNewResources(configChanges, entry.getChangingConfigurations());
-        if (prune) {
-            // destroy the shared instance
-            entry.close();
-        }
-        return prune;
-    }
-
-    public void clear() {
-        synchronized (this) {
-            LongSparseArray<WeakReference<Image.ConstantState>> entries = mEntries;
-            for (int i = entries.size() - 1; i >= 0; i--) {
-                WeakReference<Image.ConstantState> ref = entries.valueAt(i);
+    @Override
+    public void close() {
+        mLock.writeLock().lock();
+        try {
+            for (var ref : mEntries.values()) {
                 if (ref != null) {
-                    Image.ConstantState entry = ref.get();
+                    Image entry = ref.get();
                     if (entry != null) {
                         // destroy the shared instance
                         entry.close();
                     }
                 }
             }
-            entries.clear();
+            mEntries = null;
+        } finally {
+            mLock.writeLock().unlock();
         }
     }
 }

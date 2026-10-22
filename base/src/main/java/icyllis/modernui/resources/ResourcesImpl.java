@@ -34,6 +34,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.nio.file.NoSuchFileException;
 import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
 
 import static icyllis.modernui.resources.Resources.MARKER;
 
@@ -73,9 +74,6 @@ public final class ResourcesImpl {
 
     final AssetManager mAssetManager;
 
-    // cache of GPU textures or CPU bitmaps
-    private final ImageCache mImageCache = new ImageCache();
-
     private final DrawableCache mDrawableCache = new DrawableCache();
 
     public ResourcesImpl(@NonNull AssetManager assetManager, @Nullable DisplayMetrics metrics,
@@ -92,7 +90,6 @@ public final class ResourcesImpl {
                 mMetrics.setTo(metrics);
             }
 
-            mImageCache.onConfigurationChange(0);
             mDrawableCache.onConfigurationChange(0);
         }
     }
@@ -107,7 +104,6 @@ public final class ResourcesImpl {
 
     public void clearAllCaches() {
         synchronized (mAccessLock) {
-            mImageCache.clear();
             mDrawableCache.clear();
         }
     }
@@ -235,7 +231,7 @@ public final class ResourcesImpl {
             return null;
         }
 
-        Image image = loadImage(value, id, false);
+        Image image = loadImage(value, id, UnaryOperator.identity());
         if (image == null) {
             return null;
         }
@@ -245,11 +241,14 @@ public final class ResourcesImpl {
 
     @Nullable
     Image loadImage(@NonNull TypedValue value, @Nullable ResourceId id,
-                    boolean needNewInstance) {
-        long key = (((long) value.cookie) << 32) | value.data;
-        long cacheGeneration = mImageCache.getGeneration();
+                    @NonNull UnaryOperator<Image> deriveOp) {
+        AssetPack pack = mAssetManager.getPack(value.cookie);
+        if (pack == null) {
+            return null;
+        }
+        int key = value.data;
 
-        Image image = mImageCache.getInstance(key, needNewInstance);
+        Image image = pack.getImageCache().getInstance(key, deriveOp);
         if (image != null) {
             return image;
         }
@@ -259,8 +258,8 @@ public final class ResourcesImpl {
             return null;
         }
 
-        return mImageCache.putAndGet(key, image,
-                cacheGeneration, needNewInstance);
+        return pack.getImageCache().putAndGet(key, image,
+                deriveOp);
     }
 
     @Nullable

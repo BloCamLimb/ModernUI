@@ -1492,10 +1492,7 @@ public final class Bitmap implements AutoCloseable {
     public Pixels refPixels() {
         Pixels pixels;
         try {
-            synchronized (this) {
-                // this operation is not atomic
-                pixels = RefCnt.create(mPixels);
-            }
+            pixels = RefCnt.create(mPixels);
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -1667,18 +1664,13 @@ public final class Bitmap implements AutoCloseable {
      * released when the Bitmap object becomes phantom-reachable. However,
      * it requires a GC cycle to perform automatic cleanup.
      * <p>
-     * This method is thread safe and can be called multiple times.
+     * This method can be called multiple times.
      */
     @Override
     public void close() {
-        if (mPixels == null) {
-            return;
-        }
-        synchronized (this) {
-            mPixels = null;
-            // cleaner is thread safe
-            mCleanup.clean();
-        }
+        mPixels = null;
+        // cleaner is thread safe
+        mCleanup.clean();
     }
 
     /**
