@@ -240,11 +240,11 @@ public class TypedValue {
     /**
      * {@link #TYPE_NULL} data indicating the value was not specified.
      */
-    public static final int DATA_NULL_UNDEFINED = 0;
+    public static final int DATA_NULL_UNDEFINED = Res_value.DATA_NULL_UNDEFINED;
     /**
      * {@link #TYPE_NULL} data indicating the value was explicitly set to null.
      */
-    public static final int DATA_NULL_EMPTY = 1;
+    public static final int DATA_NULL_EMPTY = Res_value.DATA_NULL_EMPTY;
 
     /**
      * The type held by this value, as defined by the constants here.

@@ -28,6 +28,7 @@ import icyllis.modernui.resources.ResourcesBuilder;
 import icyllis.modernui.resources.ThemeKey;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
+import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.util.Log;
 
 public class TestThemeBuilder {
@@ -39,11 +40,13 @@ public class TestThemeBuilder {
         Resources resources;{
             var rb = new ResourcesBuilder(R.ns);
             MaterialTheme.addToResources(rb);
+            var m = new DisplayMetrics();
+            m.setToDefaults();
             resources = new Resources(
                     new AssetManager.Builder()
                             .addAssetPack(rb.build(new EmptyAssetProvider()))
                             .build(),
-                    null, null
+                    m
             );
         }
         Resources.Theme theme = resources.newTheme(

@@ -18,16 +18,23 @@
 
 package icyllis.modernui.resources;
 
+import icyllis.arc3d.fastutil.objects.Object2ObjectOpenHashMap;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.GuardedBy;
+import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.ThreadSafe;
+import icyllis.modernui.graphics.BitmapFactory;
 import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.drawable.ColorDrawable;
+import icyllis.modernui.graphics.drawable.ColorStateListDrawable;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.resources.ResourceTypes.Res_value;
+import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.system.LocaleList;
 import icyllis.modernui.util.AttributeSet;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
+import icyllis.modernui.util.Log;
 import icyllis.modernui.util.Pools;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.CheckReturnValue;
@@ -40,23 +47,23 @@ import org.slf4j.MarkerFactory;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
 @ThreadSafe
 public class Resources {
-    //TODO make Resources and Theme immutable
 
     public static final Marker MARKER = MarkerFactory.getMarker("Resources");
 
 
-    // nonfair RW lock
-    private final ReentrantReadWriteLock mLock = new ReentrantReadWriteLock();
 
-    @GuardedBy("mLock")
-    private ResourcesImpl mResourcesImpl;
+    private final DisplayMetrics mMetrics = new DisplayMetrics();
+
+    private final AssetManager mAssetManager;
+
+    private final DrawableCache mDrawableCache = new DrawableCache();
 
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
 
@@ -78,13 +85,9 @@ public class Resources {
     private volatile TypedValue mTmpValue = new TypedValue();
 
 
-    /**
-     * WeakReferences to Themes that were constructed from this Resources object.
-     * We keep track of these in case our underlying implementation is changed, in which case
-     * the Themes must also get updated ThemeImpls.
-     */
-    @GuardedBy("mLock")
-    private final ArrayList<WeakReference<Theme>> mThemeRefs = new ArrayList<>();
+
+    @GuardedBy("itself")
+    private final Object2ObjectOpenHashMap<ThemeKey, WeakReference<Theme>> mThemes = new Object2ObjectOpenHashMap<>();
 
 
 
@@ -95,18 +98,9 @@ public class Resources {
      * @hidden
      */
     @ApiStatus.Internal
-    public Resources(@NonNull AssetManager assetManager, @Nullable DisplayMetrics metrics,
-                     @Nullable Configuration configuration) {
-        mResourcesImpl = new ResourcesImpl(assetManager, metrics, configuration);
-    }
-
-    /**
-     * @hide
-     * @hidden
-     */
-    @ApiStatus.Internal
-    public ResourcesImpl getImpl() {
-        return mResourcesImpl;
+    public Resources(@NonNull AssetManager assetManager, @NonNull DisplayMetrics metrics) {
+        mAssetManager = assetManager;
+        mMetrics.setTo(metrics);
     }
 
     /**
@@ -115,59 +109,96 @@ public class Resources {
      */
     // should be called only from UI thread
     @ApiStatus.Internal
-    public void updateConfiguration(Configuration config, DisplayMetrics metrics) {
-        mResourcesImpl.updateConfiguration(config, metrics);
+    public void updateDisplaySize(int widthPixels, int heightPixels) {
+        mMetrics.widthPixels = widthPixels;
+        mMetrics.heightPixels = heightPixels;
     }
 
     /**
-     * Generate a new Theme object for this set of Resources.
+     * Generate a Theme object for this set of Resources.
+     * <p>
+     * Since Theme is immutable, calling this method multiple times with equal
+     * ThemeKey will result in the same Theme object.
      * <p>
      * This method can be called from any thread.
      *
      * @param key the key used to create the theme
-     * @return the newly created Theme
+     * @return the Theme for the given key
      */
     @NonNull
     public final Theme newTheme(@NonNull ThemeKey key) {
-        mLock.writeLock().lock();
-        try {
-            // put constructor inside lock to avoid race between newTheme and setImpl
-            var theme = new Theme(this, mResourcesImpl, key);
+        synchronized (mThemes) {
+            WeakReference<Theme> existingRef = mThemes.get(key);
+            if (existingRef != null) {
+                Theme existing = existingRef.get();
+                if (existing != null) {
+                    return existing;
+                }
+            }
+            var theme = new Theme(this, key);
             // AOSP's nextPowerOf2() is wrongly implemented, just don't use that and always
             // clean up the whole list
-            mThemeRefs.removeIf(r -> r.refersTo(null));
-            mThemeRefs.add(new WeakReference<>(theme));
+            mThemes.values().removeIf(r -> r.refersTo(null));
+            mThemes.put(key, new WeakReference<>(theme));
             return theme;
-        } finally {
-            mLock.writeLock().unlock();
         }
     }
 
     /**
-     * Returns the current display metrics that are in effect for this resources
-     * object. The returned object should be treated as read-only.
+     * Returns the display metrics that can affect resources returned by this object.
+     * <p>
+     * For a given {@link Resources} instance, this method always returns the same
+     * {@link DisplayMetrics} object whose fields are immutable except for
+     * {@link DisplayMetrics#widthPixels} and {@link DisplayMetrics#heightPixels}.
+     * The returned object must be treated as read-only.
      */
     @NonNull
     @UnmodifiableView
-    public DisplayMetrics getDisplayMetrics() {
-        return mResourcesImpl.getDisplayMetrics();
+    public final DisplayMetrics getDisplayMetrics() {
+        return mMetrics;
     }
 
     /**
-     * Return the current configuration that is in effect for this resource
-     * object. The returned object should be treated as read-only.
+     * Return the locale list that can affect resources returned by this object.
+     * <p>
+     * The underlying implementation will use {@link com.ibm.icu.util.LocaleMatcher} to
+     * find the best resource entry for a given resource id, if the resource is changing
+     * with Locale.
+     * <p>
+     * For a given {@link Resources} instance, this method always returns the same
+     * {@link LocaleList} object
      */
     @NonNull
-    @UnmodifiableView
-    public Configuration getConfiguration() {
-        return mResourcesImpl.getConfiguration();
+    public final LocaleList getLocales() {
+        return mAssetManager.getLocales();
+    }
+
+    /**
+     * Returns the underlying AssetManager of this Resources object.
+     * <p>
+     * Each Resources instance has a deterministic AssetManager, but different
+     * Resources instances can return the same AssetManager.
+     *
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @NonNull
+    public final AssetManager getAssetManager() {
+        return mAssetManager;
     }
 
     @CheckReturnValue
     @ApiStatus.Experimental
     public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
                             boolean resolveRefs) {
-        return mResourcesImpl.getValue(id, outValue, resolveRefs);
+        boolean found = mAssetManager.getResource(id, mMetrics.densityDpi, outValue);
+        if (resolveRefs) {
+            //TODO
+        }
+        if (found) {
+            found = mAssetManager.postProcess(outValue);
+        }
+        return found;
     }
 
     @Nullable
@@ -188,29 +219,40 @@ public class Resources {
     public ColorStateList getColorStateList(@NonNull ResourceId id,
                                             @NonNull TypedValue value,
                                             @Nullable Theme theme) {
-        mLock.readLock().lock();
-        try {
-            ResourcesImpl impl = mResourcesImpl;
-            if (impl.getValue(id, value, true)) {
-                return impl.loadColorStateList(this, value, id, theme);
-            }
-            return null;
-        } finally {
-            mLock.readLock().unlock();
+        if (getValue(id, value, true)) {
+            return loadColorStateList(value, id, theme);
         }
+        return null;
     }
 
+    @SuppressWarnings("unchecked")
     @Nullable
     public ColorStateList loadColorStateList(@NonNull TypedValue value,
                                              @Nullable ResourceId id,
                                              @Nullable Theme theme) {
-        // ensure this.mResourcesImpl is not altered during the call
-        mLock.readLock().lock();
-        try {
-            return mResourcesImpl.loadColorStateList(this, value, id, theme);
-        } finally {
-            mLock.readLock().unlock();
+        // Handle inline color definitions.
+        if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+            return ColorStateList.valueOf(value.data);
         }
+
+        if (value.type == TypedValue.TYPE_FACTORY) {
+            ResourceMap resources = mAssetManager.getResources(value.cookie);
+            if (resources != null) {
+                Object object = resources.lookupFactory(value.data);
+                if (object != null) {
+                    object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
+                    if (object instanceof ColorStateList) {
+                        return (ColorStateList) object;
+                    }
+                }
+            }
+        }
+        //TODO load plain XML
+
+        Log.LOGGER.error(MARKER, "{} from resource ID {} is not a color",
+                value, id, new UnsupportedOperationException());
+        return null;
     }
 
     @Nullable
@@ -231,28 +273,70 @@ public class Resources {
     public Drawable getDrawable(@NonNull ResourceId id,
                                 @NonNull TypedValue value,
                                 @Nullable Theme theme) {
-        mLock.readLock().lock();
-        try {
-            ResourcesImpl impl = mResourcesImpl;
-            if (impl.getValue(id, value, true)) {
-                return impl.loadDrawable(this, value, id, theme);
-            }
-            return null;
-        } finally {
-            mLock.readLock().unlock();
+        if (getValue(id, value, true)) {
+            return loadDrawable(value, id, theme);
         }
+        return null;
     }
 
+    @SuppressWarnings("unchecked")
     @Nullable
     public Drawable loadDrawable(@NonNull TypedValue value,
                                  @Nullable ResourceId id,
                                  @Nullable Theme theme) {
-        // ensure this.mResourcesImpl is not altered during the call
-        mLock.readLock().lock();
         try {
-            return mResourcesImpl.loadDrawable(this, value, id, theme);
-        } finally {
-            mLock.readLock().unlock();
+            if (value.type == TypedValue.TYPE_FACTORY) {
+                ResourceMap resources = mAssetManager.getResources(value.cookie);
+                if (resources != null) {
+                    Object object = resources.lookupFactory(value.data);
+                    if (object != null) {
+                        object = ((BiFunction<Resources, Resources.Theme, ?>) object).apply(this, theme);
+                        if (object instanceof Drawable) {
+                            return (Drawable) object;
+                        }
+                        if (object instanceof ColorStateList) {
+                            return new ColorStateListDrawable((ColorStateList) object);
+                        }
+                    }
+                }
+            }
+
+            if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                    && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+                return new ColorDrawable(value.data);
+            }
+
+            if (value.type == TypedValue.TYPE_STRING) {
+                long key = (((long) value.cookie) << 32) | value.data;
+                long cacheGeneration = mDrawableCache.getGeneration();
+
+                Drawable drawable = mDrawableCache.getInstance(key, this, theme);
+                if (drawable != null) {
+                    return drawable;
+                }
+
+                drawable = loadDrawableForCookie(this, value, id);
+                if (drawable == null) {
+                    return null;
+                }
+
+                Drawable.ConstantState cs = drawable.getConstantState();
+                if (cs != null) {
+                    mDrawableCache.put(key, theme, cs, cacheGeneration,
+                            false);
+                }
+
+                return drawable;
+            }
+
+
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a drawable",
+                    value, id, new UnsupportedOperationException());
+            return null;
+        } catch (Exception e) {
+            Log.LOGGER.error(MARKER, "Failed to load drawable. {} from resource ID {}",
+                    value, id, e);
+            return null;
         }
     }
 
@@ -274,9 +358,8 @@ public class Resources {
     public Image getImage(@NonNull ResourceId id,
                           @NonNull TypedValue value,
                           @NonNull UnaryOperator<Image> deriveOp) {
-        ResourcesImpl impl = mResourcesImpl;
-        if (impl.getValue(id, value, true)) {
-            return impl.loadImage(value, id, deriveOp);
+        if (getValue(id, value, true)) {
+            return loadImage(value, id, deriveOp);
         }
         return null;
     }
@@ -285,7 +368,47 @@ public class Resources {
     public Image loadImage(@NonNull TypedValue value,
                            @Nullable ResourceId id,
                            @NonNull UnaryOperator<Image> deriveOp) {
-        return mResourcesImpl.loadImage(value, id, deriveOp);
+        AssetPack pack = mAssetManager.getPack(value.cookie);
+        if (pack == null) {
+            return null;
+        }
+        int key = value.data;
+
+        Image image = pack.getImageCache().getInstance(key, deriveOp);
+        if (image != null) {
+            return image;
+        }
+
+        image = loadImageForCookie(value, id);
+        if (image == null) {
+            return null;
+        }
+
+        return pack.getImageCache().putAndGet(key, image,
+                deriveOp);
+    }
+
+    @Nullable
+    private Image loadImageForCookie(@NonNull TypedValue value, @Nullable ResourceId id) {
+        Asset asset = loadRawResource(value, id);
+        if (asset == null) {
+            return null;
+        }
+        try (var bitmap = asset.isCompressed()
+                ? BitmapFactory.decodeStream(asset.openStream())
+                : BitmapFactory.decodeChannel(asset.openChannel())) {
+            var newImage = Image.createTextureFromBitmap(bitmap);
+            if (newImage == null) {
+                //TODO create CPU image once supported by Arc3D, so this never fail
+                Log.LOGGER.error(MARKER, "Failed to create GPU image, resource ID {}, value {}",
+                        id, value);
+            }
+            return newImage;
+        } catch (Exception e) {
+            Log.LOGGER.error(MARKER, "Failed to decode image. File {} at cookie {} from resource ID {}",
+                    value.getString(), value.cookie, id, e);
+            return null;
+        }
     }
 
     @Nullable
@@ -303,16 +426,28 @@ public class Resources {
 
     @Nullable
     public Asset getRawResource(@NonNull ResourceId id, @NonNull TypedValue value) {
-        ResourcesImpl impl = mResourcesImpl;
-        if (impl.getValue(id, value, true)) {
-            return impl.loadRawResource(value, id);
+        if (getValue(id, value, true)) {
+            return loadRawResource(value, id);
         }
         return null;
     }
 
     @Nullable
     public Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id) {
-        return mResourcesImpl.loadRawResource(value, id);
+        var string = value.getString();
+        if (string == null) {
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
+                    value, id, new UnsupportedOperationException());
+            return null;
+        }
+        var path = string.toString();
+        Asset asset = mAssetManager.getNonAsset(path, value.cookie);
+        if (asset == null) {
+            Log.LOGGER.error(MARKER, "File {} at cookie {} from resource ID {} cannot be found",
+                    path, value.cookie, id, new NoSuchFileException(path));
+            return null;
+        }
+        return asset;
     }
 
     /**
@@ -334,29 +469,52 @@ public class Resources {
      */
     @Nullable
     public Asset getAsset(@NonNull String path) {
-        return mResourcesImpl.mAssetManager.getNonAsset("assets/" + path);
+        return mAssetManager.getAsset(path);
+    }
+
+    @Nullable
+    private Drawable loadDrawableForCookie(@NonNull Resources wrapper,
+                                           @NonNull TypedValue value,
+                                           @Nullable ResourceId id) {
+        var string = value.getString();
+        if (string == null) {
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
+                    value, id, new UnsupportedOperationException());
+            return null;
+        }
+        var path = string.toString();
+
+        if (path.endsWith(".xml")) {
+            //TODO load plain XML
+            return null;
+        }
+
+        Image image = loadImage(value, id, UnaryOperator.identity());
+        if (image == null) {
+            return null;
+        }
+
+        return new ImageDrawable(wrapper, image);
     }
 
 
 
 
 
-    @ThreadSafe
-    public static final class Theme {
 
-        private final ReentrantReadWriteLock mLock = new ReentrantReadWriteLock();
+
+    @Immutable
+    public static final class Theme {
+        //TODO move this class to upper level in 4.0
 
         private final Resources mResources;
-        @GuardedBy("mLock")
-        private final ResourcesImpl mResourcesImpl;
+        private final AssetManager mAssetManager;
 
-        @GuardedBy("mLock")
         private final ThemeKey mKey;
 
         // attribute name -> entry
         // we use j.u.HashMap instead of open addressing for best lookup performance,
         // since lookup miss rate is very high
-        @GuardedBy("mLock")
         private final HashMap<String, Entry> mEntries;
 
         static final class Entry {
@@ -375,19 +533,18 @@ public class Resources {
         }
 
         static boolean isUndefined(int type, int data) {
-            return type == Res_value.TYPE_NULL && data == Res_value.DATA_NULL_UNDEFINED;
+            return type == TypedValue.TYPE_NULL && data == TypedValue.DATA_NULL_UNDEFINED;
         }
 
-        private Theme(@NonNull Resources resources, ResourcesImpl resourcesImpl,
-                      @NonNull ThemeKey key) {
-            mResourcesImpl = resourcesImpl;
+        private Theme(@NonNull Resources resources, @NonNull ThemeKey key) {
             mResources = resources;
+            mAssetManager = resources.getAssetManager();
 
             HashMap<String, Entry> entries = new HashMap<>();
             int count = key.count();
             for (int i = 0; i < count; i++) {
                 ResourceId resId = key.resId(i);
-                ResolvedBag bag = mResourcesImpl.mAssetManager.getBag(resId);
+                ResolvedBag bag = mAssetManager.getBag(resId);
                 if (bag == null) {
                     continue;
                 }
@@ -545,18 +702,9 @@ public class Resources {
             final TypedArray array = TypedArray.obtain(getResources(),
                     slots.size());
 
-            mLock.readLock().lock();
-            try {
-                applyStyle(set, defStyleAttr, defStyleRes,
-                        slots, array.mData, array.mIndices,
-                        array.mValue);
-                // We know that Resources.getImpl() may change during configuration changes.
-                // We capture the ResourceImpl inside the lock.
-                array.mMetrics = mResourcesImpl.getDisplayMetrics();
-                array.mAssetManager = mResourcesImpl.mAssetManager;
-            } finally {
-                mLock.readLock().unlock();
-            }
+            resolveAttributes(set, defStyleAttr, defStyleRes,
+                    slots, array.mData, array.mIndices,
+                    array.mValue);
             array.mTheme = this;
             return array;
         }
@@ -598,32 +746,23 @@ public class Resources {
          */
         public boolean resolveAttribute(@NonNull String name,
                                         @NonNull TypedValue outValue, boolean resolveRefs) {
-            mLock.readLock().lock();
-            try {
-                if (!getAttribute(name, outValue)) {
-                    return false;
-                }
-
-                int cookie = outValue.cookie;
-                assert cookie >= 0;
-
-                if (resolveRefs) {
-                    //TODO
-                }
-
-                return mResourcesImpl.mAssetManager.postProcess(outValue);
-            } finally {
-                mLock.readLock().unlock();
+            if (!getAttribute(name, outValue)) {
+                return false;
             }
+
+            int cookie = outValue.cookie;
+            assert cookie >= 0;
+
+            if (resolveRefs) {
+                //TODO
+            }
+
+            return mAssetManager.postProcess(outValue);
         }
 
-        @GuardedBy("mLock")
         private boolean getAttribute(
                              @NonNull String name,
                              @NonNull TypedValue outValue) {
-            if (mEntries == null) {
-                return false;
-            }
             int typeSpecFlags = 0;
             for (int __ = 0; __ < AssetManager.kMaxIterations; __++) {
                 Entry e;
@@ -634,8 +773,8 @@ public class Resources {
                     return false;
                 }
                 typeSpecFlags |= e.typeSpecFlags;
-                if (e.type == Res_value.TYPE_ATTRIBUTE) {
-                    ResourceMap resources = mResourcesImpl.mAssetManager.getResources(e.cookie);
+                if (e.type == TypedValue.TYPE_ATTRIBUTE) {
+                    ResourceMap resources = mAssetManager.getResources(e.cookie);
                     if (resources != null) {
                         name = resources.getKeyStringPool()
                                 .getStringAt(e.data);
@@ -656,12 +795,12 @@ public class Resources {
         }
 
         private boolean resolveAttributeReference(@NonNull TypedValue value) {
-            if (value.type != Res_value.TYPE_ATTRIBUTE) {
+            if (value.type != TypedValue.TYPE_ATTRIBUTE) {
                 //TODO currently we have only style resources, where styles do not need resolve
                 return true;
             }
 
-            ResourceMap resources = mResourcesImpl.mAssetManager.getResources(value.cookie);
+            ResourceMap resources = mAssetManager.getResources(value.cookie);
             if (resources == null) {
                 return false;
             }
@@ -680,30 +819,25 @@ public class Resources {
             return true;
         }
 
-        @GuardedBy("mLock")
-        private void applyStyle(
-                        @Nullable AttributeSet set,
-                        @Nullable String defStyleAttr,
-                        @Nullable @StyleRes ResourceId defStyleRes,
-                        @NonNull AttributeSlots slots,
-                        int @NonNull[] outValues, int @NonNull[] outIndices,
-                        @NonNull TypedValue value) {
+        private void resolveAttributes(
+                @Nullable AttributeSet set,
+                @Nullable String defStyleAttr,
+                @Nullable @StyleRes ResourceId defStyleRes,
+                @NonNull AttributeSlots slots,
+                int @NonNull [] outValues, int @NonNull [] outIndices,
+                @NonNull TypedValue value) {
 
             ResolvedBag styleBag = null;
-            if (defStyleAttr != null) {
-                if (getAttribute(defStyleAttr, value)) {
-                    ResourceMap resources = mResourcesImpl.mAssetManager.getResources(value.cookie);
-                    if (resources != null) {
-                        ResourceId styleId = resources.lookupResourceId(null,
-                                value.data, (value.type & Res_value.DATA_TYPE_ID_MASK) >>> Res_value.DATA_TYPE_ID_SHIFT);
-                        if (styleId != null) {
-                            styleBag = mResourcesImpl.mAssetManager.getBag(styleId);
-                        }
-                    }
+            if (defStyleAttr != null &&
+                    resolveAttribute(defStyleAttr, value, true) &&
+                    value.type == TypedValue.TYPE_REFERENCE) {
+                var styleId = value.getReference();
+                if (styleId != null) {
+                    styleBag = mAssetManager.getBag(styleId);
                 }
             }
             if (styleBag == null && defStyleRes != null) {
-                styleBag = mResourcesImpl.mAssetManager.getBag(defStyleRes);
+                styleBag = mAssetManager.getBag(defStyleRes);
             }
 
             if (styleBag != null) {
@@ -717,7 +851,7 @@ public class Resources {
                     value.setTo(styleBag, i);
 
                     //TODO strip null entries in bag in advance in AssetManager
-                    if (value.type == Res_value.TYPE_NULL) {
+                    if (value.type == TypedValue.TYPE_NULL) {
                         continue;
                     }
 
@@ -735,8 +869,8 @@ public class Resources {
             String[] keys = slots.getKeys();
             for (int ii = 0; ii < keys.length; ii++) {
 
-                if (outValues[valuesIdx + TypedArray.STYLE_TYPE] == Res_value.TYPE_NULL &&
-                        outValues[valuesIdx + TypedArray.STYLE_DATA] != Res_value.DATA_NULL_EMPTY) {
+                if (outValues[valuesIdx + TypedArray.STYLE_TYPE] == TypedValue.TYPE_NULL &&
+                        outValues[valuesIdx + TypedArray.STYLE_DATA] != TypedValue.DATA_NULL_EMPTY) {
                     if (getAttribute(keys[ii], value)) {
                         outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
                         outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
@@ -745,8 +879,8 @@ public class Resources {
                     }
                 }
 
-                if (outValues[valuesIdx + TypedArray.STYLE_TYPE] != Res_value.TYPE_NULL ||
-                        outValues[valuesIdx + TypedArray.STYLE_DATA] == Res_value.DATA_NULL_EMPTY) {
+                if (outValues[valuesIdx + TypedArray.STYLE_TYPE] != TypedValue.TYPE_NULL ||
+                        outValues[valuesIdx + TypedArray.STYLE_DATA] == TypedValue.DATA_NULL_EMPTY) {
                     outIndices[++indicesIdx] = ii;
                 }
                 valuesIdx += TypedArray.STYLE_NUM_ENTRIES;

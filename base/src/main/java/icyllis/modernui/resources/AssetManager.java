@@ -223,6 +223,11 @@ public final class AssetManager {
     }
 
     @Nullable
+    public Asset getAsset(@NonNull String path) {
+        return getNonAsset("assets/" + path);
+    }
+
+    @Nullable
     public Asset getNonAsset(@NonNull String path) {
         for (var pack : mAssetPacks) {
             Asset asset = pack.getAssets().getAsset(path);

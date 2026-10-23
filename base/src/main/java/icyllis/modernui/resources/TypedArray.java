@@ -31,7 +31,7 @@ import java.util.Arrays;
 
 public class TypedArray {
 
-    static TypedArray obtain(Resources res, int len) {
+    static @NonNull TypedArray obtain(@NonNull Resources res, int len) {
         TypedArray attrs = res.mTypedArrayPool.acquire();
         if (attrs == null) {
             attrs = new TypedArray(res);
@@ -49,12 +49,12 @@ public class TypedArray {
     static final int STYLE_FLAGS = 3;
 
     private final Resources mResources;
+    private final DisplayMetrics mMetrics;
+    private final AssetManager mAssetManager;
 
     private boolean mRecycled;
 
     Resources.Theme mTheme;
-    DisplayMetrics mMetrics;
-    AssetManager mAssetManager;
 
     int[] mData;
     int[] mIndices;
@@ -131,6 +131,19 @@ public class TypedArray {
         }
 
         return mResources;
+    }
+
+    /**
+     * Returns the Theme object this array was loaded from.
+     *
+     * @throws RuntimeException if the TypedArray has already been recycled.
+     */
+    public Resources.Theme getTheme() {
+        if (mRecycled) {
+            throw new RuntimeException("Cannot make calls to a recycled instance!");
+        }
+
+        return mTheme;
     }
 
     /**
@@ -772,7 +785,6 @@ public class TypedArray {
 
         // These are heavy objects may have been set by the client.
         mTheme = null;
-        mAssetManager = null;
 
         mResources.mTypedArrayPool.release(this);
     }
@@ -801,9 +813,9 @@ public class TypedArray {
         return value;
     }*/
 
-    protected TypedArray(Resources resources) {
+    protected TypedArray(@NonNull Resources resources) {
         mResources = resources;
-        mMetrics = mResources.getDisplayMetrics();
-        mAssetManager = mResources.getImpl().mAssetManager;
+        mMetrics = resources.getDisplayMetrics();
+        mAssetManager = resources.getAssetManager();
     }
 }
