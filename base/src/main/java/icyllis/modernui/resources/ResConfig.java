@@ -32,10 +32,14 @@ import java.util.Objects;
 @ApiStatus.Internal
 public class ResConfig {
 
-    public Locale locale = Locale.ROOT; // only LSR, for LocaleMatcher
+    // only LSR, for LocaleMatcher
+    public Locale baseLocale = Locale.ROOT;
 
     public String variant = "";
     public String numberingSystem;
+
+    // LSR combined with variant and numbering system
+    public Locale combinedLocale = Locale.ROOT;
 
     public int density;
 
@@ -84,19 +88,15 @@ public class ResConfig {
 
     @Override
     public final boolean equals(Object o) {
-        if (!(o instanceof ResConfig resConfig)) return false;
+        if (!(o instanceof ResConfig that)) return false;
 
-        return density == resConfig.density &&
-                locale.equals(resConfig.locale) &&
-                variant.equals(resConfig.variant) &&
-                Objects.equals(numberingSystem, resConfig.numberingSystem);
+        return density == that.density &&
+                combinedLocale.equals(that.combinedLocale);
     }
 
     @Override
     public int hashCode() {
-        int result = locale.hashCode();
-        result = 31 * result + variant.hashCode();
-        result = 31 * result + Objects.hashCode(numberingSystem);
+        int result = combinedLocale.hashCode();
         result = 31 * result + density;
         return result;
     }

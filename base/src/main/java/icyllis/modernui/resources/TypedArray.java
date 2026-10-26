@@ -42,11 +42,12 @@ public class TypedArray {
         return attrs;
     }
 
-    static final int STYLE_NUM_ENTRIES = 4;
+    static final int STYLE_NUM_ENTRIES = 5;
     static final int STYLE_TYPE = 0;
     static final int STYLE_DATA = 1;
     static final int STYLE_COOKIE = 2;
     static final int STYLE_FLAGS = 3;
+    static final int STYLE_DENSITY = 4;
 
     private final Resources mResources;
     private final DisplayMetrics mMetrics;
@@ -799,6 +800,8 @@ public class TypedArray {
         outValue.data = data[offset + STYLE_DATA];
         outValue.cookie = data[offset + STYLE_COOKIE];
         outValue.flags = data[offset + STYLE_FLAGS];
+        outValue.density = data[offset + STYLE_DENSITY];
+        outValue.locale = null;
         return mAssetManager.postProcess(outValue);
     }
 

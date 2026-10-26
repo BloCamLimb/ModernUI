@@ -54,6 +54,9 @@ public class ResourceTypes {
 
     public static class ResTable_config {
         public static final int SIZEOF = 0;
+
+        public static final int CONFIG_LOCALE = 0x0004;
+        public static final int CONFIG_DENSITY = 0x0100;
     }
 
     /*

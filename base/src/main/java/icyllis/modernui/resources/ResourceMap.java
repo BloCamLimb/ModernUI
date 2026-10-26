@@ -69,30 +69,36 @@ public class ResourceMap {
         return namespaces[packageId];
     }
 
-    /**
-     * Converts packed integer id to string-based resource id.
-     * The integer id must come from this table.
-     *
-     * @param source the source res id that contains the res id to lookup
-     * @param id     the res id to lookup
-     * @param typeId type id if the res id is a reference, or 0 if they have the same type
-     * @return the resource id the id represents
-     */
     @Nullable
-    public ResourceId lookupResourceId(ResourceId source, int id, int typeId) {
+    public ResourceId lookupParentId(ResourceId source, int id) {
         String namespace = lookupNamespace(id);
         if (namespace == null) {
             return null;
         }
-        String type;
-        if (typeId == 0) {
-            // 0 means self
-            type = source.type();
-        } else {
-            type = typeStringPool.getStringAt(typeId - 1);
-            if (type == null) {
-                return null;
-            }
+        String entry = keyStringPool.getStringAt(id & Res_value.KEY_INDEX_MASK);
+        if (entry == null) {
+            return null;
+        }
+        return new ResourceId(namespace, source.type(), entry);
+    }
+
+    /**
+     * Converts packed integer id to string-based resource id.
+     * The integer id must come from this table.
+     *
+     * @param typeId type id if the res id is a reference, or 0 if they have the same type
+     * @param id     the res id to lookup
+     * @return the resource id the id represents
+     */
+    @Nullable
+    public ResourceId lookupReferenceId(int typeId, int id) {
+        String namespace = lookupNamespace(id);
+        if (namespace == null) {
+            return null;
+        }
+        String type = typeStringPool.getStringAt(typeId - 1);
+        if (type == null) {
+            return null;
         }
         String entry = keyStringPool.getStringAt(id & Res_value.KEY_INDEX_MASK);
         if (entry == null) {
@@ -109,7 +115,7 @@ public class ResourceMap {
         return globalStringPool;
     }
 
-    public BiFunction<?,?,?> lookupFactory(int idx) {
+    public BiFunction<?,?,?> getFactory(int idx) {
         if (idx < 0 || idx >= factoryPool.length) {
             return null;
         }

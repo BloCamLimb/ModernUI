@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiFunction;
 
 /**
  * @hide
@@ -132,7 +133,7 @@ public final class AssetManager {
                         for (var typeEntry : e.getValue().typeEntries) {
                             // any density, variant, numberingSystem could match;
                             // so we only filter LSR using likely subtags
-                            boolean isRoot = typeEntry.config.locale.equals(Locale.ROOT);
+                            boolean isRoot = typeEntry.config.baseLocale.equals(Locale.ROOT);
                             if (!matchRootOnly && !isRoot) {
                                 if (localeMatcher == null) {
                                     localeMatcher = LocaleMatcher.builder()
@@ -141,7 +142,7 @@ public final class AssetManager {
                                 for (int locIdx = 0; locIdx < locales.size(); locIdx++) {
                                     var desiredLocale = locales.get(locIdx);
                                     if (localeMatcher.isMatch(
-                                            desiredLocale, typeEntry.config.locale)) {
+                                            desiredLocale, typeEntry.config.baseLocale)) {
                                         tmpTypeEntries.add(typeEntry);
                                         break;
                                     }
@@ -326,7 +327,7 @@ public final class AssetManager {
 
         ResourceId parentResId = null;
         if (parentId != -1) {
-            parentResId = resources.lookupResourceId(resId, parentId, 0);
+            parentResId = resources.lookupParentId(resId, parentId);
             if (parentResId == null) {
                 // parent id is malformed, no need to cache
                 return null;
@@ -492,7 +493,7 @@ public final class AssetManager {
         if (resources == null) {
             return null;
         }
-        return resources.lookupResourceId(null, data, typeId);
+        return resources.lookupReferenceId(typeId, data);
     }
 
     @Nullable
@@ -504,15 +505,19 @@ public final class AssetManager {
         return resources.getKeyStringPool().getStringAt(data);
     }
 
+    @Nullable
+    BiFunction<?, ?, ?> getFactoryForCookie(int cookie, int data) {
+        ResourceMap resources = getResources(cookie);
+        if (resources == null) {
+            return null;
+        }
+        return resources.getFactory(data);
+    }
+
     // do post-processing before exposing it to public API users,
     // freeze the 'object' field
     boolean postProcess(@NonNull TypedValue outValue) {
         switch (outValue.type & ResourceTypes.Res_value.DATA_TYPE_MASK) {
-            case TypedValue.TYPE_STRING -> {
-                if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
-                    return false;
-                }
-            }
             case TypedValue.TYPE_REFERENCE -> {
                 int typeId =
                         (outValue.type & ResourceTypes.Res_value.DATA_TYPE_ID_MASK) >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
@@ -528,6 +533,16 @@ public final class AssetManager {
             }
             case TypedValue.TYPE_ATTRIBUTE -> {
                 if ((outValue.object = getAttributeIdForCookie(outValue.cookie, outValue.data)) == null) {
+                    return false;
+                }
+            }
+            case TypedValue.TYPE_STRING -> {
+                if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
+                    return false;
+                }
+            }
+            case TypedValue.TYPE_FACTORY -> {
+                if ((outValue.object = getFactoryForCookie(outValue.cookie, outValue.data)) == null) {
                     return false;
                 }
             }

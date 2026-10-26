@@ -237,14 +237,11 @@ public class Resources {
         }
 
         if (value.type == TypedValue.TYPE_FACTORY) {
-            ResourceMap resources = mAssetManager.getResources(value.cookie);
-            if (resources != null) {
-                Object object = resources.lookupFactory(value.data);
-                if (object != null) {
-                    object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
-                    if (object instanceof ColorStateList) {
-                        return (ColorStateList) object;
-                    }
+            Object object = value.object;
+            if (object != null) {
+                object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
+                if (object instanceof ColorStateList) {
+                    return (ColorStateList) object;
                 }
             }
         }
@@ -286,17 +283,14 @@ public class Resources {
                                  @Nullable Theme theme) {
         try {
             if (value.type == TypedValue.TYPE_FACTORY) {
-                ResourceMap resources = mAssetManager.getResources(value.cookie);
-                if (resources != null) {
-                    Object object = resources.lookupFactory(value.data);
-                    if (object != null) {
-                        object = ((BiFunction<Resources, Resources.Theme, ?>) object).apply(this, theme);
-                        if (object instanceof Drawable) {
-                            return (Drawable) object;
-                        }
-                        if (object instanceof ColorStateList) {
-                            return new ColorStateListDrawable((ColorStateList) object);
-                        }
+                Object object = value.object;
+                if (object != null) {
+                    object = ((BiFunction<Resources, Resources.Theme, ?>) object).apply(this, theme);
+                    if (object instanceof Drawable) {
+                        return (Drawable) object;
+                    }
+                    if (object instanceof ColorStateList) {
+                        return new ColorStateListDrawable((ColorStateList) object);
                     }
                 }
             }
@@ -773,6 +767,7 @@ public class Resources {
                     return false;
                 }
                 typeSpecFlags |= e.typeSpecFlags;
+                //TODO for recursive attributes, resolve them in advance in constructor
                 if (e.type == TypedValue.TYPE_ATTRIBUTE) {
                     ResourceMap resources = mAssetManager.getResources(e.cookie);
                     if (resources != null) {
@@ -850,7 +845,6 @@ public class Resources {
                     }
                     value.setTo(styleBag, i);
 
-                    //TODO strip null entries in bag in advance in AssetManager
                     if (value.type == TypedValue.TYPE_NULL) {
                         continue;
                     }
