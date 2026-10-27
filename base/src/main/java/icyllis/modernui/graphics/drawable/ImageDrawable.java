@@ -512,7 +512,7 @@ public class ImageDrawable extends Drawable {
             if (rebuildShader) {
                 paint.getNativePaint().setShader(
                         icyllis.arc3d.sketch.shaders.ImageShader.make(
-                                icyllis.arc3d.core.RefCnt.create(image.getNativeImage()),
+                                image.refNativeImage(),
                                 (tileModeX == null ? Shader.TileMode.CLAMP : tileModeX).nativeInt,
                                 (tileModeY == null ? Shader.TileMode.CLAMP : tileModeY).nativeInt,
                                 paint.getFilterMode() != ImageShader.FILTER_MODE_NEAREST

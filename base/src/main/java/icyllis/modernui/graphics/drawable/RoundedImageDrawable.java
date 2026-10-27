@@ -363,7 +363,7 @@ public class RoundedImageDrawable extends Drawable {
             if (rebuildShader) {
                 paint.getNativePaint().setShader(
                         icyllis.arc3d.sketch.shaders.ImageShader.make(
-                                icyllis.arc3d.core.RefCnt.create(image.getNativeImage()),
+                                image.refNativeImage(),
                                 Shader.TileMode.CLAMP.nativeInt,
                                 Shader.TileMode.CLAMP.nativeInt,
                                 paint.getFilterMode() != ImageShader.FILTER_MODE_NEAREST

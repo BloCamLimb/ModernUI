@@ -18,7 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SamplingOptions;
 import icyllis.modernui.system.Arch;
 import org.intellij.lang.annotations.MagicConstant;
@@ -193,7 +192,7 @@ public class ImageShader extends Shader {
                         @NonNull TileMode tileModeY, @NonNull SamplingOptions sampling,
                         @Nullable Matrix localMatrix) {
         var shader = icyllis.arc3d.sketch.shaders.ImageShader.make(
-                RefCnt.create(image.getNativeImage()),
+                image.refNativeImage(),
                 tileModeX.nativeInt, tileModeY.nativeInt,
                 sampling, localMatrix
         );

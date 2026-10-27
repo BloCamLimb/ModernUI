@@ -22,6 +22,7 @@ import icyllis.arc3d.core.Matrix4;
 import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.Rect2f;
 import icyllis.arc3d.core.Rect2i;
+import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SamplingOptions;
 import icyllis.arc3d.sketch.RRect;
 import icyllis.arc3d.sketch.TextBlob;
@@ -303,11 +304,13 @@ public class ArcCanvas extends Canvas {
         if (image == null) {
             return;
         }
-        mCanvas.drawImage(image.getNativeImage(), left, top,
+        var nativeImage = image.refNativeImage();
+        mCanvas.drawImage(nativeImage, left, top,
                 paint != null && paint.getFilterMode() == ImageShader.FILTER_MODE_NEAREST
                         ? SamplingOptions.NEAREST
                         : SamplingOptions.LINEAR,
                 paint != null ? paint.getNativePaint() : null);
+        RefCnt.move(nativeImage);
     }
 
     @Override
@@ -316,7 +319,8 @@ public class ArcCanvas extends Canvas {
         if (image == null) {
             return;
         }
-        mCanvas.drawImageRect(image.getNativeImage(),
+        var nativeImage = image.refNativeImage();
+        mCanvas.drawImageRect(nativeImage,
                 new Rect2f(srcLeft, srcTop, srcRight, srcBottom),
                 new Rect2f(dstLeft, dstTop, dstRight, dstBottom),
                 paint != null && paint.getFilterMode() == ImageShader.FILTER_MODE_NEAREST
@@ -324,6 +328,7 @@ public class ArcCanvas extends Canvas {
                         : SamplingOptions.LINEAR,
                 paint != null ? paint.getNativePaint() : null,
                 icyllis.arc3d.sketch.Canvas.SRC_RECT_CONSTRAINT_FAST);
+        RefCnt.move(nativeImage);
     }
 
     @Override

@@ -287,7 +287,7 @@ public class InsetDrawable extends DrawableWrapper {
 
         void scaleFromDensity(int sourceDensity, int targetDensity) {
             if (mDimension != 0) {
-                mDimension = Image.scaleFromDensity(mDimension, sourceDensity, targetDensity);
+                mDimension = Drawable.scaleFromDensity(mDimension, sourceDensity, targetDensity);
             }
         }
 

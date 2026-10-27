@@ -21,7 +21,6 @@ package icyllis.modernui.graphics;
 import icyllis.arc3d.core.ColorInfo;
 import icyllis.arc3d.core.ColorSpace;
 import icyllis.arc3d.core.ImageInfo;
-import icyllis.arc3d.core.RawPtr;
 import icyllis.arc3d.core.RefCnt;
 import icyllis.arc3d.core.SharedPtr;
 import icyllis.arc3d.granite.RecordingContext;
@@ -52,6 +51,7 @@ import java.util.function.BiFunction;
  * </ul>
  */
 //TODO add more usages, now image can only create from Bitmap, only used for drawImage()
+// mark this immutable and thread-safe, once `density` field is completely removed
 public class Image implements AutoCloseable {
 
     /**
@@ -394,9 +394,15 @@ public class Image implements AutoCloseable {
      */
     @Override
     public void close() {
-        mImage = null;
-        // cleaner is thread safe, so no double check
-        mCleanup.clean();
+        if (mImage == null) {
+            return;
+        }
+        // lock to ensure refNativeImage() thread-safe
+        synchronized (this) {
+            mImage = null;
+            // cleaner is thread safe, so no double check
+            mCleanup.clean();
+        }
     }
 
     /**
@@ -429,6 +435,8 @@ public class Image implements AutoCloseable {
      * this method is typically unnecessary unless you intend to pass it to another owner;
      * in cases where both you and the new owner will close their respective objects,
      * using this method ensures mutual independence and timely release.
+     * <p>
+     * This method is thread safe.
      *
      * @return a shallow copy of image
      * @throws IllegalStateException this image is already closed
@@ -436,12 +444,7 @@ public class Image implements AutoCloseable {
     @SuppressWarnings("MethodDoesntCallSuperMethod")
     @NonNull
     public final Image clone() {
-        icyllis.arc3d.sketch.Image image;
-        try {
-            image = RefCnt.create(mImage);
-        } finally {
-            Reference.reachabilityFence(this);
-        }
+        icyllis.arc3d.sketch.Image image = refNativeImage();
         if (image == null) {
             throw new IllegalStateException("Cannot clone a closed image!");
         }
@@ -465,8 +468,16 @@ public class Image implements AutoCloseable {
      * @hidden
      */
     @ApiStatus.Internal
-    @RawPtr
-    public icyllis.arc3d.sketch.Image getNativeImage() {
-        return mImage;
+    @SharedPtr
+    public icyllis.arc3d.sketch.@Nullable Image refNativeImage() {
+        try {
+            synchronized (this) {
+                // protect against concurrent manual close()
+                return RefCnt.create(mImage);
+            }
+        } finally {
+            // protect against concurrent auto GC
+            Reference.reachabilityFence(this);
+        }
     }
 }
