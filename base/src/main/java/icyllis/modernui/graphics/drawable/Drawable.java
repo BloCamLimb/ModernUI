@@ -514,6 +514,7 @@ public abstract class Drawable {
      * @see #setTint(int)
      * @see #setTintBlendMode(BlendMode)
      */
+    //TODO rename to setTintColor and accept ComplexColor
     public void setTintList(@Nullable ColorStateList tint) {
     }
 
@@ -552,6 +553,7 @@ public abstract class Drawable {
      * @param colorFilter The color filter to apply, or {@code null} to remove the
      *                    existing color filter
      */
+    //TODO delete this method, and only add a tonemap method for image drawable
     public void setColorFilter(@Nullable ColorFilter colorFilter) {
     }
 

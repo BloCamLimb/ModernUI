@@ -20,13 +20,13 @@ package icyllis.modernui.util;
 
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.annotation.ColorLong;
-import icyllis.modernui.annotation.GuardedBy;
+import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.ComplexColor;
 import icyllis.modernui.graphics.MathUtil;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
 /**
@@ -36,52 +36,69 @@ import java.util.Arrays;
  * states that a view must either be in or not be in and the color specifies the color associated
  * with that spec.
  */
+@Immutable
 //TODO: this class should be moved to graphics package and renamed to StateListColor in 4.0
-public class ColorStateList {
+public class ColorStateList extends ComplexColor {
 
     private static final long DEFAULT_COLOR = Color.RED_SRGB;
     private static final int[][] EMPTY = new int[][]{StateSet.WILD_CARD};
 
-    /**
-     * Thread-safe cache of single-color ColorStateLists.
-     */
-    @GuardedBy("itself")
-    private static final LongSparseArray<WeakReference<ColorStateList>> sCache = new LongSparseArray<>();
-    @GuardedBy("sCache")
-    private static int sCacheNextPruneSize = 128;
+    private static final int IS_OPAQUE = 1 << 31;
+    private static final int DEFAULT_COLOR_INDEX = (1 << 31) - 1;
 
     private final int[][] mStateSpecs;
     private final long[] mColors;
-    private long mDefaultColor;
-    private boolean mIsOpaque;
+    private final int mFlags;
 
     /**
      * Creates a ColorStateList that returns the specified mapping from
      * stateSpecs to colors. The given arrays must NOT be modified after construction.
      */
-    public ColorStateList(int @NonNull[][] stateSpecs, @ColorInt int @NonNull[] colors) {
-        assert colors.length >= stateSpecs.length;
-        mStateSpecs = stateSpecs;
+    public ColorStateList(int @NonNull[] @NonNull[] stateSpecs, @ColorInt int @NonNull[] colors) {
+        this(stateSpecs, convertColors(colors));
+    }
 
+    private static long @NonNull [] convertColors(int @NonNull [] colors) {
         long[] wideColors = new long[colors.length];
         for (int i = 0; i < wideColors.length; i++) {
             wideColors[i] = Color.pack(colors[i]);
         }
-        mColors = wideColors;
-
-        onColorsChanged();
+        return wideColors;
     }
 
     /**
      * Creates a ColorStateList that returns the specified mapping from
      * stateSpecs to colors. The given arrays must NOT be modified after construction.
      */
-    public ColorStateList(int @NonNull[][] stateSpecs, @ColorLong long @NonNull[] colors) {
+    public ColorStateList(int @NonNull[] @NonNull[] stateSpecs, @ColorLong long @NonNull[] colors) {
         assert colors.length >= stateSpecs.length;
         mStateSpecs = stateSpecs;
         mColors = colors;
 
-        onColorsChanged();
+        int defaultColorIndex = -1;
+        boolean isOpaque = true;
+
+        final int N = stateSpecs.length;
+        if (N > 0) {
+            defaultColorIndex = 0;
+
+            for (int i = N - 1; i > 0; i--) {
+                if (stateSpecs[i].length == 0) {
+                    defaultColorIndex = i;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < N; i++) {
+                if (Color.alpha(colors[i]) != 1.0f) {
+                    isOpaque = false;
+                    break;
+                }
+            }
+        }
+
+        // if default color index is negative, both IS_OPAQUE and DEFAULT_COLOR_INDEX are set
+        mFlags = (isOpaque ? IS_OPAQUE : 0) | defaultColorIndex;
     }
 
     /**
@@ -97,31 +114,7 @@ public class ColorStateList {
      */
     @NonNull
     public static ColorStateList valueOf(@ColorLong long color) {
-        //TODO need optimize
-        synchronized (sCache) {
-            final int index = sCache.indexOfKey(color);
-            if (index >= 0) {
-                final ColorStateList cached = sCache.valueAt(index).get();
-                if (cached != null) {
-                    return cached;
-                }
-
-                // Prune missing entry.
-                sCache.removeAt(index);
-            }
-
-            // Prune the cache before adding new items.
-            final int N = sCache.size();
-            for (int i = N - 1; i >= 0; i--) {
-                if (sCache.valueAt(i).get() == null) {
-                    sCache.removeAt(i);
-                }
-            }
-
-            final ColorStateList csl = new ColorStateList(EMPTY, new long[]{color});
-            sCache.put(color, new WeakReference<>(csl));
-            return csl;
-        }
+        return new ColorStateList(EMPTY, new long[]{color});
     }
 
     /**
@@ -181,6 +174,7 @@ public class ColorStateList {
      * otherwise.
      * @see #getColorForState(int[], long)
      */
+    @Override
     public boolean isStateful() {
         return mStateSpecs.length >= 1 && mStateSpecs[0].length > 0;
     }
@@ -200,8 +194,9 @@ public class ColorStateList {
      *
      * @return True if this color state list is opaque.
      */
+    @Override
     public boolean isOpaque() {
-        return mIsOpaque;
+        return (mFlags & IS_OPAQUE) != 0;
     }
 
     /**
@@ -230,9 +225,13 @@ public class ColorStateList {
      *
      * @return the default color in this {@link ColorStateList}.
      */
+    @Override
     @ColorLong
     public long getDefaultColor() {
-        return mDefaultColor;
+        int index = mFlags & DEFAULT_COLOR_INDEX;
+        return index == DEFAULT_COLOR_INDEX
+                ? DEFAULT_COLOR
+                : mColors[index];
     }
 
     /**
@@ -291,38 +290,6 @@ public class ColorStateList {
         return "ColorStateList{" +
                 "mStateSpecs=" + Arrays.deepToString(mStateSpecs) +
                 "mColors=" + Arrays.toString(mColors) +
-                "mDefaultColor=" + mDefaultColor + '}';
-    }
-
-    /**
-     * Updates the default color and opacity.
-     */
-    private void onColorsChanged() {
-        long defaultColor = DEFAULT_COLOR;
-        boolean isOpaque = true;
-
-        final int[][] states = mStateSpecs;
-        final long[] colors = mColors;
-        final int N = states.length;
-        if (N > 0) {
-            defaultColor = colors[0];
-
-            for (int i = N - 1; i > 0; i--) {
-                if (states[i].length == 0) {
-                    defaultColor = colors[i];
-                    break;
-                }
-            }
-
-            for (int i = 0; i < N; i++) {
-                if (Color.alpha(colors[i]) != 1.0f) {
-                    isOpaque = false;
-                    break;
-                }
-            }
-        }
-
-        mDefaultColor = defaultColor;
-        mIsOpaque = isOpaque;
+                "mFlags=0x" + Integer.toHexString(mFlags) + '}';
     }
 }

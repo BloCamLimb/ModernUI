@@ -37,8 +37,8 @@ public final class ImageCache implements AutoCloseable {
         mLock = new ReentrantReadWriteLock();
     }
 
-    public @NonNull Image putAndGet(int key, @NonNull Image newImage,
-                                    @NonNull UnaryOperator<Image> deriveOp) {
+    public @NonNull Image putIfAbsent(int key, @NonNull Image newImage,
+                                      @NonNull UnaryOperator<Image> deriveOp) {
         mLock.writeLock().lock();
         try {
             if (mEntries == null) {
@@ -61,8 +61,8 @@ public final class ImageCache implements AutoCloseable {
         }
     }
 
-    public @Nullable Image getInstance(int key,
-                                       @NonNull UnaryOperator<Image> deriveOp) {
+    public @Nullable Image get(int key,
+                               @NonNull UnaryOperator<Image> deriveOp) {
         mLock.readLock().lock();
         try {
             if (mEntries == null) {

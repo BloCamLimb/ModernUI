@@ -173,8 +173,7 @@ public class TestFragment extends Fragment {
         }
         //base.setRotation(30);
         TypedValue value = new TypedValue();
-        context.getTheme().resolveAttribute(R.attr.colorSurface, value, true);
-        base.setBackground(context.getResources().loadDrawable(value, null, context.getTheme()));
+        base.setBackground(context.getTheme().getDrawable(R.attr.colorSurface, value));
         return base;
     }
 

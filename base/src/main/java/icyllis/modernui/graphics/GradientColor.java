@@ -16,26 +16,25 @@
  * License along with ModernUI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.resources;
+package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.drawable.Drawable;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.ApiStatus;
 
-class DrawableCache extends ThemedResourceCache<Drawable.ConstantState> {
-
-    @Nullable
-    public Drawable getInstance(long key, Resources resources, Resources.Theme theme) {
-        final Drawable.ConstantState entry = get(key, theme);
-        if (entry != null) {
-            return entry.newDrawable(resources);
-        }
-
-        return null;
+//TODO
+@ApiStatus.Internal
+public class GradientColor extends ComplexColor {
+    @Override
+    public boolean isStateful() {
+        return false;
     }
 
     @Override
-    protected boolean shouldInvalidateEntry(Drawable.@NonNull ConstantState entry, int configChanges) {
-        return (configChanges & entry.getChangingConfigurations()) != 0;
+    public boolean isOpaque() {
+        return false;
+    }
+
+    @Override
+    public long getDefaultColor() {
+        return 0;
     }
 }

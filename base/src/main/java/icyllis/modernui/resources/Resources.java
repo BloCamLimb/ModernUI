@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.ThreadSafe;
 import icyllis.modernui.graphics.BitmapFactory;
+import icyllis.modernui.graphics.ComplexColor;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
 import icyllis.modernui.graphics.drawable.ColorStateListDrawable;
@@ -63,7 +64,8 @@ public class Resources {
 
     private final AssetManager mAssetManager;
 
-    private final DrawableCache mDrawableCache = new DrawableCache();
+    private final ResourceCache<ComplexColor> mComplexColorCache = new ResourceCache<>();
+    private final ResourceCache<Drawable.ConstantState> mDrawableCache = new ResourceCache<>();
 
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
 
@@ -115,7 +117,7 @@ public class Resources {
     }
 
     /**
-     * Generate a Theme object for this set of Resources.
+     * Generate a Theme object for the given key and this set of Resources.
      * <p>
      * Since Theme is immutable, calling this method multiple times with equal
      * ThemeKey will result in the same Theme object.
@@ -134,11 +136,10 @@ public class Resources {
                 if (existing != null) {
                     return existing;
                 }
+            } else {
+                mThemes.values().removeIf(r -> r.refersTo(null));
             }
             var theme = new Theme(this, key);
-            // AOSP's nextPowerOf2() is wrongly implemented, just don't use that and always
-            // clean up the whole list
-            mThemes.values().removeIf(r -> r.refersTo(null));
             mThemes.put(key, new WeakReference<>(theme));
             return theme;
         }
@@ -201,20 +202,7 @@ public class Resources {
         return found;
     }
 
-    @Nullable
-    public ColorStateList getColorStateList(@NonNull ResourceId id,
-                                            @Nullable Theme theme) {
-        TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
-        try {
-            TypedValue val = tmp != null ? tmp : new TypedValue();
-            return getColorStateList(id, val, theme);
-        } finally {
-            if (tmp != null) {
-                TMP_VALUE.setRelease(this, tmp);
-            }
-        }
-    }
-
+    @Deprecated
     @Nullable
     public ColorStateList getColorStateList(@NonNull ResourceId id,
                                             @NonNull TypedValue value,
@@ -225,27 +213,111 @@ public class Resources {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
+    @Deprecated
     @Nullable
     public ColorStateList loadColorStateList(@NonNull TypedValue value,
                                              @Nullable ResourceId id,
                                              @Nullable Theme theme) {
+        var complexColor = loadComplexColor(value, id, theme);
+        if (complexColor instanceof ColorStateList) {
+            return (ColorStateList) complexColor;
+        }
+        return null;
+    }
+
+    @Nullable
+    public ComplexColor getComplexColor(@NonNull ResourceId id,
+                                        @Nullable Theme theme) {
+        TypedValue tmp = (TypedValue) TMP_VALUE.getAndSetAcquire(this, null);
+        try {
+            TypedValue val = tmp != null ? tmp : new TypedValue();
+            return getComplexColor(id, val, theme);
+        } finally {
+            if (tmp != null) {
+                TMP_VALUE.setRelease(this, tmp);
+            }
+        }
+    }
+
+    @Nullable
+    public ComplexColor getComplexColor(@NonNull ResourceId id,
+                                        @NonNull TypedValue outValue,
+                                        @Nullable Theme theme) {
+        if (getValue(id, outValue, true)) {
+            return loadComplexColor(outValue, id, theme);
+        }
+        return null;
+    }
+
+    @Nullable
+    public ComplexColor loadComplexColor(@NonNull TypedValue value,
+                                         @Nullable ResourceId id,
+                                         @Nullable Theme theme) {
+        if (theme != null && theme.getResources() != this) {
+            throw new IllegalArgumentException();
+        }
         // Handle inline color definitions.
         if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
                 && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
             return ColorStateList.valueOf(value.data);
         }
 
+        if (value.type == TypedValue.TYPE_STRING ||
+                value.type == TypedValue.TYPE_FACTORY) {
+            long key = (((long) value.cookie) << 32) | value.data;
+            if (value.type == TypedValue.TYPE_FACTORY) {
+                key |= (1L << 31);
+            }
+
+            var cache = theme != null ? theme.mComplexColorCache : mComplexColorCache;
+
+            ComplexColor complexColor = cache.get(key);
+            if (complexColor != null) {
+                return complexColor;
+            }
+
+            complexColor = loadComplexColorForCookie(value, id, theme);
+            if (complexColor == null) {
+                return null;
+            }
+
+            return cache.putIfAbsent(key, complexColor);
+        }
+
+        Log.LOGGER.error(MARKER, "{} from resource ID {} is not a color",
+                value, id, new UnsupportedOperationException());
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    private ComplexColor loadComplexColorForCookie(@NonNull TypedValue value,
+                                                   @Nullable ResourceId id,
+                                                   @Nullable Theme theme) {
         if (value.type == TypedValue.TYPE_FACTORY) {
             Object object = value.object;
             if (object != null) {
                 object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
-                if (object instanceof ColorStateList) {
-                    return (ColorStateList) object;
+                if (object instanceof ComplexColor) {
+                    return (ComplexColor) object;
                 }
             }
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a factory",
+                    value, id, new UnsupportedOperationException());
+            return null;
         }
-        //TODO load plain XML
+        var string = value.getString();
+        if (string == null) {
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
+                    value, id, new UnsupportedOperationException());
+            return null;
+        }
+        var path = string.toString();
+
+        if (path.endsWith(".xml")) {
+            //TODO load plain XML
+            return null;
+        }
 
         Log.LOGGER.error(MARKER, "{} from resource ID {} is not a color",
                 value, id, new UnsupportedOperationException());
@@ -268,56 +340,50 @@ public class Resources {
 
     @Nullable
     public Drawable getDrawable(@NonNull ResourceId id,
-                                @NonNull TypedValue value,
+                                @NonNull TypedValue outValue,
                                 @Nullable Theme theme) {
-        if (getValue(id, value, true)) {
-            return loadDrawable(value, id, theme);
+        if (getValue(id, outValue, true)) {
+            return loadDrawable(outValue, id, theme);
         }
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Nullable
     public Drawable loadDrawable(@NonNull TypedValue value,
                                  @Nullable ResourceId id,
                                  @Nullable Theme theme) {
+        if (theme != null && theme.getResources() != this) {
+            throw new IllegalArgumentException();
+        }
         try {
-            if (value.type == TypedValue.TYPE_FACTORY) {
-                Object object = value.object;
-                if (object != null) {
-                    object = ((BiFunction<Resources, Resources.Theme, ?>) object).apply(this, theme);
-                    if (object instanceof Drawable) {
-                        return (Drawable) object;
-                    }
-                    if (object instanceof ColorStateList) {
-                        return new ColorStateListDrawable((ColorStateList) object);
-                    }
-                }
-            }
-
+            // Handle inline color definitions.
             if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
                     && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
                 return new ColorDrawable(value.data);
             }
 
-            if (value.type == TypedValue.TYPE_STRING) {
+            if (value.type == TypedValue.TYPE_STRING ||
+                    value.type == TypedValue.TYPE_FACTORY) {
                 long key = (((long) value.cookie) << 32) | value.data;
-                long cacheGeneration = mDrawableCache.getGeneration();
-
-                Drawable drawable = mDrawableCache.getInstance(key, this, theme);
-                if (drawable != null) {
-                    return drawable;
+                if (value.type == TypedValue.TYPE_FACTORY) {
+                    key |= (1L << 31);
                 }
 
-                drawable = loadDrawableForCookie(this, value, id);
+                var cache = theme != null ? theme.mDrawableCache : mDrawableCache;
+
+                Drawable.ConstantState cs = cache.get(key);
+                if (cs != null) {
+                    return cs.newDrawable();
+                }
+
+                Drawable drawable = loadDrawableForCookie(value, id, theme);
                 if (drawable == null) {
                     return null;
                 }
 
-                Drawable.ConstantState cs = drawable.getConstantState();
+                cs = drawable.getConstantState();
                 if (cs != null) {
-                    mDrawableCache.put(key, theme, cs, cacheGeneration,
-                            false);
+                    cache.putIfAbsent(key, cs);
                 }
 
                 return drawable;
@@ -332,6 +398,48 @@ public class Resources {
                     value, id, e);
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    private Drawable loadDrawableForCookie(@NonNull TypedValue value,
+                                           @Nullable ResourceId id,
+                                           @Nullable Theme theme) {
+        if (value.type == TypedValue.TYPE_FACTORY) {
+            Object object = value.object;
+            if (object != null) {
+                object = ((BiFunction<Resources, Resources.Theme, ?>) object).apply(this, theme);
+                if (object instanceof Drawable) {
+                    return (Drawable) object;
+                }
+                //TODO should be ComplexColor drawable
+                if (object instanceof ColorStateList) {
+                    return new ColorStateListDrawable((ColorStateList) object);
+                }
+            }
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a factory",
+                    value, id, new UnsupportedOperationException());
+            return null;
+        }
+        var string = value.getString();
+        if (string == null) {
+            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
+                    value, id, new UnsupportedOperationException());
+            return null;
+        }
+        var path = string.toString();
+
+        if (path.endsWith(".xml")) {
+            //TODO load plain XML
+            return null;
+        }
+
+        Image image = loadImage(value, id, UnaryOperator.identity());
+        if (image == null) {
+            return null;
+        }
+
+        return new ImageDrawable(this, image);
     }
 
     @Nullable
@@ -350,10 +458,10 @@ public class Resources {
 
     @Nullable
     public Image getImage(@NonNull ResourceId id,
-                          @NonNull TypedValue value,
+                          @NonNull TypedValue outValue,
                           @NonNull UnaryOperator<Image> deriveOp) {
-        if (getValue(id, value, true)) {
-            return loadImage(value, id, deriveOp);
+        if (getValue(id, outValue, true)) {
+            return loadImage(outValue, id, deriveOp);
         }
         return null;
     }
@@ -368,7 +476,7 @@ public class Resources {
         }
         int key = value.data;
 
-        Image image = pack.getImageCache().getInstance(key, deriveOp);
+        Image image = pack.getImageCache().get(key, deriveOp);
         if (image != null) {
             return image;
         }
@@ -378,12 +486,13 @@ public class Resources {
             return null;
         }
 
-        return pack.getImageCache().putAndGet(key, image,
+        return pack.getImageCache().putIfAbsent(key, image,
                 deriveOp);
     }
 
     @Nullable
-    private Image loadImageForCookie(@NonNull TypedValue value, @Nullable ResourceId id) {
+    private Image loadImageForCookie(@NonNull TypedValue value,
+                                     @Nullable ResourceId id) {
         Asset asset = loadRawResource(value, id);
         if (asset == null) {
             return null;
@@ -419,15 +528,17 @@ public class Resources {
     }
 
     @Nullable
-    public Asset getRawResource(@NonNull ResourceId id, @NonNull TypedValue value) {
-        if (getValue(id, value, true)) {
-            return loadRawResource(value, id);
+    public Asset getRawResource(@NonNull ResourceId id,
+                                @NonNull TypedValue outValue) {
+        if (getValue(id, outValue, true)) {
+            return loadRawResource(outValue, id);
         }
         return null;
     }
 
     @Nullable
-    public Asset loadRawResource(@NonNull TypedValue value, @Nullable ResourceId id) {
+    public Asset loadRawResource(@NonNull TypedValue value,
+                                 @Nullable ResourceId id) {
         var string = value.getString();
         if (string == null) {
             Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
@@ -464,31 +575,6 @@ public class Resources {
     @Nullable
     public Asset getAsset(@NonNull String path) {
         return mAssetManager.getAsset(path);
-    }
-
-    @Nullable
-    private Drawable loadDrawableForCookie(@NonNull Resources wrapper,
-                                           @NonNull TypedValue value,
-                                           @Nullable ResourceId id) {
-        var string = value.getString();
-        if (string == null) {
-            Log.LOGGER.error(MARKER, "{} from resource ID {} is not a path",
-                    value, id, new UnsupportedOperationException());
-            return null;
-        }
-        var path = string.toString();
-
-        if (path.endsWith(".xml")) {
-            //TODO load plain XML
-            return null;
-        }
-
-        Image image = loadImage(value, id, UnaryOperator.identity());
-        if (image == null) {
-            return null;
-        }
-
-        return new ImageDrawable(wrapper, image);
     }
 
 
@@ -529,6 +615,9 @@ public class Resources {
         static boolean isUndefined(int type, int data) {
             return type == TypedValue.TYPE_NULL && data == TypedValue.DATA_NULL_UNDEFINED;
         }
+
+        private final ResourceCache<ComplexColor> mComplexColorCache = new ResourceCache<>();
+        private final ResourceCache<Drawable.ConstantState> mDrawableCache = new ResourceCache<>();
 
         private Theme(@NonNull Resources resources, @NonNull ThemeKey key) {
             mResources = resources;
@@ -754,6 +843,44 @@ public class Resources {
             return mAssetManager.postProcess(outValue);
         }
 
+        @Nullable
+        public ComplexColor getComplexColor(@NonNull ResourceId id,
+                                            @NonNull TypedValue outValue) {
+            if (mResources.getValue(id, outValue, true)) {
+                return mResources.loadComplexColor(outValue, id, this);
+            }
+            return null;
+        }
+
+        @Nullable
+        public ComplexColor getComplexColor(@NonNull String name,
+                                            @NonNull TypedValue outValue) {
+            if (!resolveAttribute(name, outValue, true)) {
+                return null;
+            }
+
+            return mResources.loadComplexColor(outValue, null, this);
+        }
+
+        @Nullable
+        public Drawable getDrawable(@NonNull ResourceId id,
+                                    @NonNull TypedValue outValue) {
+            if (mResources.getValue(id, outValue, true)) {
+                return mResources.loadDrawable(outValue, id, this);
+            }
+            return null;
+        }
+
+        @Nullable
+        public Drawable getDrawable(@NonNull String name,
+                                    @NonNull TypedValue outValue) {
+            if (!resolveAttribute(name, outValue, true)) {
+                return null;
+            }
+
+            return mResources.loadDrawable(outValue, null, this);
+        }
+
         private boolean getAttribute(
                              @NonNull String name,
                              @NonNull TypedValue outValue) {
@@ -892,27 +1019,11 @@ public class Resources {
             return mResources;
         }
 
+        /**
+         * Returns the key that used to create this theme via {@link Resources#newTheme(ThemeKey)}.
+         */
         public ThemeKey getKey() {
             return mKey;
-        }
-
-        @Override
-        public int hashCode() {
-            return getKey().hashCode();
-        }
-
-        @Override
-        public boolean equals(@Nullable Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            final Theme other = (Theme) o;
-            return getKey().equals(other.getKey());
         }
 
         @NonNull
