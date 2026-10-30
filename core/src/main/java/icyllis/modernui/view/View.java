@@ -3739,12 +3739,11 @@ public class View implements Drawable.Callback {
      * @return converted size in pixels
      */
     public final int dp(float value) {
-        float f = value * getResources().getDisplayMetrics().density;
-        final int res = (int) (f >= 0 ? f + 0.5f : f - 0.5f);
-        if (res != 0) return res;
-        if (value == 0) return 0;
-        if (value > 0) return 1;
-        return -1;
+        return TypedValue.applyDimensionPixelSize(
+                TypedValue.COMPLEX_UNIT_DP,
+                value,
+                getResources().getDisplayMetrics()
+        );
     }
 
     /**
@@ -3754,12 +3753,11 @@ public class View implements Drawable.Callback {
      * @return converted size in pixels
      */
     public final int sp(float value) {
-        float f = value * getResources().getDisplayMetrics().scaledDensity;
-        final int res = (int) (f >= 0 ? f + 0.5f : f - 0.5f);
-        if (res != 0) return res;
-        if (value == 0) return 0;
-        if (value > 0) return 1;
-        return -1;
+        return TypedValue.applyDimensionPixelSize(
+                TypedValue.COMPLEX_UNIT_SP,
+                value,
+                getResources().getDisplayMetrics()
+        );
     }
 
     /**

@@ -21,12 +21,11 @@ package icyllis.modernui.resources;
 import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
-import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.ComplexColor;
 import icyllis.modernui.resources.ResourceTypes.ResTable_entry;
 import icyllis.modernui.resources.ResourceTypes.ResTable_map;
 import icyllis.modernui.resources.ResourceTypes.ResTable_type;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
-import icyllis.modernui.util.ColorStateList;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,7 +39,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.function.ToIntFunction;
 
 /**
@@ -78,9 +76,9 @@ public class ResourcesBuilder {
         return index;
     };
 
-    Object2IntOpenHashMap<BiFunction<Resources, Resources.Theme, ?>> mFactoryTable = new Object2IntOpenHashMap<>();
-    ArrayList<BiFunction<Resources, Resources.Theme, ?>> mFactoryArray = new ArrayList<>();
-    ToIntFunction<BiFunction<Resources, Resources.Theme, ?>> mFactoryMapper = k -> {
+    Object2IntOpenHashMap<RuntimeFactory> mFactoryTable = new Object2IntOpenHashMap<>();
+    ArrayList<RuntimeFactory> mFactoryArray = new ArrayList<>();
+    ToIntFunction<RuntimeFactory> mFactoryMapper = k -> {
         int index = mFactoryArray.size();
         mFactoryArray.add(k);
         return index;
@@ -123,7 +121,7 @@ public class ResourcesBuilder {
         return mGlobalStringTable.computeIfAbsent(o, mGlobalStringMapper);
     }
 
-    int storeFactory(BiFunction<Resources, Resources.Theme, ?> factory) {
+    int storeFactory(RuntimeFactory factory) {
         return mFactoryTable.computeIfAbsent(factory, mFactoryMapper);
     }
 
@@ -215,6 +213,18 @@ public class ResourcesBuilder {
                 ((long) Res_value.TYPE_STRING << 32) | storeGlobalString(value));
     }
 
+    public int addPrivateColor(@NonNull RuntimeResourceFactory<ComplexColor> factory) {
+        return storeFactory(factory);
+    }
+
+    public int addPrivateDrawable(@NonNull RuntimeDrawableFactory factory) {
+        return storeFactory(factory);
+    }
+
+    public int addPrivateFactory(@NonNull RuntimeFactory factory) {
+        return storeFactory(factory);
+    }
+
     /**
      * Creates the asset pack. The builder cannot be reused.
      *
@@ -230,7 +240,7 @@ public class ResourcesBuilder {
         mGlobalStringArray = null;
 
         mFactoryTable = null;
-        resources.factoryPool = mFactoryArray.toArray(new BiFunction[0]);
+        resources.factoryPool = mFactoryArray.toArray(new RuntimeFactory[0]);
         mFactoryArray = null;
 
         ResourceMap.TypeSpec styleTypeSpec;
@@ -458,15 +468,25 @@ public class ResourcesBuilder {
         }
 
         public void addColor(@NonNull String attr,
-                             @NonNull BiFunction<Resources, Resources.Theme, ColorStateList> factory) {
+                             @NonNull RuntimeResourceFactory<ComplexColor> factory) {
             mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
                     storeFactory(factory)));
         }
 
+        public void addColorFactory(@NonNull String attr, int data) {
+            assert mFactoryArray.get(data) != null;
+            mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY, data));
+        }
+
         public void addDrawable(@NonNull String attr,
-                                @NonNull BiFunction<Resources, Resources.Theme, Drawable> factory) {
+                                @NonNull RuntimeDrawableFactory factory) {
             mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
                     storeFactory(factory)));
+        }
+
+        public void addDrawableFactory(@NonNull String attr, int data) {
+            assert mFactoryArray.get(data) != null;
+            mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY, data));
         }
 
         ResourcesBuilder getThemeBuilder() {

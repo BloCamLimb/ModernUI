@@ -19,7 +19,6 @@
 package icyllis.modernui.material;
 
 import icyllis.modernui.R;
-import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Gravity;
@@ -39,18 +38,15 @@ import icyllis.modernui.material.drawable.RadioButtonDrawable;
 import icyllis.modernui.material.drawable.SeekbarThumbDrawable;
 import icyllis.modernui.material.drawable.SliderThumbDrawable;
 import icyllis.modernui.material.drawable.SwitchThumbDrawable;
+import icyllis.modernui.resources.AssetPack;
+import icyllis.modernui.resources.EmptyAssetProvider;
 import icyllis.modernui.resources.Resources;
 import icyllis.modernui.resources.ResourcesBuilder;
-import icyllis.modernui.resources.ThemeKey;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.widget.TabLayout;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
-
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static icyllis.modernui.util.ColorStateList.modulateColor;
 
@@ -59,6 +55,8 @@ import static icyllis.modernui.util.ColorStateList.modulateColor;
  */
 @ApiStatus.Internal
 public class MaterialTheme {
+
+    private static final AssetPack sAssetPack;
 
     private static final float material_emphasis_disabled = 0.38f;
     private static final float material_emphasis_disabled_background = 0.12f;
@@ -130,997 +128,1003 @@ public class MaterialTheme {
             textColorAlertDialogListItem;
     public boolean isDark;
 
-    @GuardedBy("self")
-    static final Object2ObjectOpenHashMap<ThemeKey, ThemedCache> gCache = new Object2ObjectOpenHashMap<>();
+    static final int
+            elevated_button_foreground_color_selector,
+            filled_button_foreground_color_selector,
+            tonal_button_foreground_color_selector,
+            outlined_button_foreground_color_selector,
+            text_button_foreground_color_selector,
+            icon_button_foreground_color_selector,
+            elevated_button_background_color_selector,
+            filled_button_background_color_selector,
+            tonal_button_background_color_selector,
+            outlined_button_background_color_selector,
+            text_button_background_color_selector,
+            elevated_button_ripple_color_selector,
+            filled_button_ripple_color_selector,
+            tonal_button_ripple_color_selector,
+            outlined_button_ripple_color_selector,
+            text_button_ripple_color_selector,
+            icon_button_ripple_color_selector,
+            button_outline_color_selector,
+            radio_button_tint,
+            radio_button_ripple_tint,
+            switch_track_tint,
+            switch_track_decoration_tint,
+            switch_thumb_tint,
+            checkbox_button_icon_tint,
+            slider_track_color_active,
+            slider_track_color_inactive,
+            slider_active_tick_color,
+            secondary_progress_tint,
+            textfield_stroke_color,
+            textfield_indicator_text_color,
+            textfield_filled_background_color,
+            textfield_filled_indicator_color,
+            slider_halo_color,
+            tabs_text_color,
+            tabs_ripple_color,
+            tabs_text_color_secondary,
+            tabs_ripple_color_secondary;
+    static final int
+            outlined_box,
+            filled_box;
 
-    static class ThemedCache {
+    static {
+        ResourcesBuilder b = new ResourcesBuilder(R.ns);
 
-        final int
-                colorPrimary,
-                colorOnPrimary,
-                colorPrimaryInverse,
-                colorPrimaryContainer,
-                colorOnPrimaryContainer,
-                colorPrimaryFixed,
-                colorPrimaryFixedDim,
-                colorOnPrimaryFixed,
-                colorOnPrimaryFixedVariant,
-                colorSecondary,
-                colorOnSecondary,
-                colorSecondaryContainer,
-                colorOnSecondaryContainer,
-                colorSecondaryFixed,
-                colorSecondaryFixedDim,
-                colorOnSecondaryFixed,
-                colorOnSecondaryFixedVariant,
-                colorTertiary,
-                colorOnTertiary,
-                colorTertiaryContainer,
-                colorOnTertiaryContainer,
-                colorTertiaryFixed,
-                colorTertiaryFixedDim,
-                colorOnTertiaryFixed,
-                colorOnTertiaryFixedVariant,
-                colorBackground,
-                colorOnBackground,
-                colorSurface,
-                colorOnSurface,
-                colorSurfaceVariant,
-                colorOnSurfaceVariant,
-                colorSurfaceInverse,
-                colorOnSurfaceInverse,
-                colorSurfaceBright,
-                colorSurfaceDim,
-                colorSurfaceContainer,
-                colorSurfaceContainerLow,
-                colorSurfaceContainerHigh,
-                colorSurfaceContainerLowest,
-                colorSurfaceContainerHighest,
-                colorOutline,
-                colorOutlineVariant,
-                colorError,
-                colorOnError,
-                colorErrorContainer,
-                colorOnErrorContainer;
+        elevated_button_foreground_color_selector = b.addPrivateColor(MaterialTheme::elevated_button_foreground_color_selector);
+        filled_button_foreground_color_selector = b.addPrivateColor(MaterialTheme::filled_button_foreground_color_selector);
+        tonal_button_foreground_color_selector = b.addPrivateColor(MaterialTheme::tonal_button_foreground_color_selector);
+        outlined_button_foreground_color_selector = b.addPrivateColor(MaterialTheme::outlined_button_foreground_color_selector);
+        text_button_foreground_color_selector = b.addPrivateColor(MaterialTheme::text_button_foreground_color_selector);
+        icon_button_foreground_color_selector = b.addPrivateColor(MaterialTheme::icon_button_foreground_color_selector);
+        elevated_button_background_color_selector = b.addPrivateColor(MaterialTheme::elevated_button_background_color_selector);
+        filled_button_background_color_selector = b.addPrivateColor(MaterialTheme::filled_button_background_color_selector);
+        tonal_button_background_color_selector = b.addPrivateColor(MaterialTheme::tonal_button_background_color_selector);
+        outlined_button_background_color_selector = b.addPrivateColor(MaterialTheme::outlined_button_background_color_selector);
+        text_button_background_color_selector = b.addPrivateColor(MaterialTheme::text_button_background_color_selector);
+        elevated_button_ripple_color_selector = b.addPrivateColor(MaterialTheme::elevated_button_ripple_color_selector);
+        filled_button_ripple_color_selector = b.addPrivateColor(MaterialTheme::filled_button_ripple_color_selector);
+        tonal_button_ripple_color_selector = b.addPrivateColor(MaterialTheme::tonal_button_ripple_color_selector);
+        outlined_button_ripple_color_selector = b.addPrivateColor(MaterialTheme::outlined_button_ripple_color_selector);
+        text_button_ripple_color_selector = b.addPrivateColor(MaterialTheme::text_button_ripple_color_selector);
+        icon_button_ripple_color_selector = b.addPrivateColor(MaterialTheme::icon_button_ripple_color_selector);
+        button_outline_color_selector = b.addPrivateColor(MaterialTheme::button_outline_color_selector);
+        radio_button_tint = b.addPrivateColor(MaterialTheme::radio_button_tint);
+        radio_button_ripple_tint = b.addPrivateColor(MaterialTheme::radio_button_ripple_tint);
+        switch_track_tint = b.addPrivateColor(MaterialTheme::switch_track_tint);
+        switch_track_decoration_tint = b.addPrivateColor(MaterialTheme::switch_track_decoration_tint);
+        switch_thumb_tint = b.addPrivateColor(MaterialTheme::switch_thumb_tint);
+        checkbox_button_icon_tint = b.addPrivateColor(MaterialTheme::checkbox_button_icon_tint);
+        slider_track_color_active = b.addPrivateColor(MaterialTheme::slider_track_color_active);
+        slider_track_color_inactive = b.addPrivateColor(MaterialTheme::slider_track_color_inactive);
+        slider_active_tick_color = b.addPrivateColor(MaterialTheme::slider_active_tick_color);
+        secondary_progress_tint = b.addPrivateColor(MaterialTheme::secondary_progress_tint);
+        textfield_stroke_color = b.addPrivateColor(MaterialTheme::textfield_stroke_color);
+        textfield_indicator_text_color = b.addPrivateColor(MaterialTheme::textfield_indicator_text_color);
+        textfield_filled_background_color = b.addPrivateColor(MaterialTheme::textfield_filled_background_color);
+        textfield_filled_indicator_color = b.addPrivateColor(MaterialTheme::textfield_filled_indicator_color);
+        slider_halo_color = b.addPrivateColor(MaterialTheme::slider_halo_color);
+        tabs_text_color = b.addPrivateColor(MaterialTheme::tabs_text_color);
+        tabs_ripple_color = b.addPrivateColor(MaterialTheme::tabs_ripple_color);
+        tabs_text_color_secondary = b.addPrivateColor(MaterialTheme::tabs_text_color_secondary);
+        tabs_ripple_color_secondary = b.addPrivateColor(MaterialTheme::tabs_ripple_color_secondary);
 
-        ThemedCache(Resources.Theme theme) {
-            final TypedValue value = new TypedValue();
-            theme.resolveAttribute(R.attr.colorPrimary, value, true);
-            colorPrimary = value.data;
-            theme.resolveAttribute(R.attr.colorOnPrimary, value, true);
-            colorOnPrimary = value.data;
-            theme.resolveAttribute(R.attr.colorPrimaryInverse, value, true);
-            colorPrimaryInverse = value.data;
-            theme.resolveAttribute(R.attr.colorPrimaryContainer, value, true);
-            colorPrimaryContainer = value.data;
-            theme.resolveAttribute(R.attr.colorOnPrimaryContainer, value, true);
-            colorOnPrimaryContainer = value.data;
-            theme.resolveAttribute(R.attr.colorPrimaryFixed, value, true);
-            colorPrimaryFixed = value.data;
-            theme.resolveAttribute(R.attr.colorPrimaryFixedDim, value, true);
-            colorPrimaryFixedDim = value.data;
-            theme.resolveAttribute(R.attr.colorOnPrimaryFixed, value, true);
-            colorOnPrimaryFixed = value.data;
-            theme.resolveAttribute(R.attr.colorOnPrimaryFixedVariant, value, true);
-            colorOnPrimaryFixedVariant = value.data;
-            theme.resolveAttribute(R.attr.colorSecondary, value, true);
-            colorSecondary = value.data;
-            theme.resolveAttribute(R.attr.colorOnSecondary, value, true);
-            colorOnSecondary = value.data;
-            theme.resolveAttribute(R.attr.colorSecondaryContainer, value, true);
-            colorSecondaryContainer = value.data;
-            theme.resolveAttribute(R.attr.colorOnSecondaryContainer, value, true);
-            colorOnSecondaryContainer = value.data;
-            theme.resolveAttribute(R.attr.colorSecondaryFixed, value, true);
-            colorSecondaryFixed = value.data;
-            theme.resolveAttribute(R.attr.colorSecondaryFixedDim, value, true);
-            colorSecondaryFixedDim = value.data;
-            theme.resolveAttribute(R.attr.colorOnSecondaryFixed, value, true);
-            colorOnSecondaryFixed = value.data;
-            theme.resolveAttribute(R.attr.colorOnSecondaryFixedVariant, value, true);
-            colorOnSecondaryFixedVariant = value.data;
-            theme.resolveAttribute(R.attr.colorTertiary, value, true);
-            colorTertiary = value.data;
-            theme.resolveAttribute(R.attr.colorOnTertiary, value, true);
-            colorOnTertiary = value.data;
-            theme.resolveAttribute(R.attr.colorTertiaryContainer, value, true);
-            colorTertiaryContainer = value.data;
-            theme.resolveAttribute(R.attr.colorOnTertiaryContainer, value, true);
-            colorOnTertiaryContainer = value.data;
-            theme.resolveAttribute(R.attr.colorTertiaryFixed, value, true);
-            colorTertiaryFixed = value.data;
-            theme.resolveAttribute(R.attr.colorTertiaryFixedDim, value, true);
-            colorTertiaryFixedDim = value.data;
-            theme.resolveAttribute(R.attr.colorOnTertiaryFixed, value, true);
-            colorOnTertiaryFixed = value.data;
-            theme.resolveAttribute(R.attr.colorOnTertiaryFixedVariant, value, true);
-            colorOnTertiaryFixedVariant = value.data;
-            theme.resolveAttribute(R.attr.colorBackground, value, true);
-            colorBackground = value.data;
-            theme.resolveAttribute(R.attr.colorOnBackground, value, true);
-            colorOnBackground = value.data;
-            theme.resolveAttribute(R.attr.colorSurface, value, true);
-            colorSurface = value.data;
-            theme.resolveAttribute(R.attr.colorOnSurface, value, true);
-            colorOnSurface = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceVariant, value, true);
-            colorSurfaceVariant = value.data;
-            theme.resolveAttribute(R.attr.colorOnSurfaceVariant, value, true);
-            colorOnSurfaceVariant = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceInverse, value, true);
-            colorSurfaceInverse = value.data;
-            theme.resolveAttribute(R.attr.colorOnSurfaceInverse, value, true);
-            colorOnSurfaceInverse = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceBright, value, true);
-            colorSurfaceBright = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceDim, value, true);
-            colorSurfaceDim = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceContainer, value, true);
-            colorSurfaceContainer = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceContainerLow, value, true);
-            colorSurfaceContainerLow = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceContainerHigh, value, true);
-            colorSurfaceContainerHigh = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceContainerLowest, value, true);
-            colorSurfaceContainerLowest = value.data;
-            theme.resolveAttribute(R.attr.colorSurfaceContainerHighest, value, true);
-            colorSurfaceContainerHighest = value.data;
-            theme.resolveAttribute(R.attr.colorOutline, value, true);
-            colorOutline = value.data;
-            theme.resolveAttribute(R.attr.colorOutlineVariant, value, true);
-            colorOutlineVariant = value.data;
-            theme.resolveAttribute(R.attr.colorError, value, true);
-            colorError = value.data;
-            theme.resolveAttribute(R.attr.colorOnError, value, true);
-            colorOnError = value.data;
-            theme.resolveAttribute(R.attr.colorErrorContainer, value, true);
-            colorErrorContainer = value.data;
-            theme.resolveAttribute(R.attr.colorOnErrorContainer, value, true);
-            colorOnErrorContainer = value.data;
-        }
+        outlined_box = b.addPrivateDrawable(MaterialTheme::outlined_box);
+        filled_box = b.addPrivateDrawable(MaterialTheme::filled_box);
 
-        // foreground/background
-        private static final int[][] button_color_selector_spec = new int[][]{
-                new int[]{-StateSet.state_enabled},
-                new int[]{-StateSet.state_checkable},
-                new int[]{StateSet.state_checked},
-                StateSet.WILD_CARD
-        };
+        addToResources(b);
 
-        private ColorStateList elevated_button_foreground_color_selector;
-        private ColorStateList elevated_button_foreground_color_selector() {
-            if (elevated_button_foreground_color_selector == null) {
-                elevated_button_foreground_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled),
-                                colorPrimary,
-                                colorOnPrimary,
-                                colorPrimary
-                        }
-                );
-            }
-            return elevated_button_foreground_color_selector;
-        }
-
-        private ColorStateList filled_button_foreground_color_selector;
-        private ColorStateList filled_button_foreground_color_selector() {
-            if (filled_button_foreground_color_selector == null) {
-                filled_button_foreground_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled),
-                                colorOnPrimary,
-                                colorOnPrimary,
-                                colorOnSurfaceVariant
-                        }
-                );
-            }
-            return filled_button_foreground_color_selector;
-        }
-
-        private ColorStateList tonal_button_foreground_color_selector;
-        private ColorStateList tonal_button_foreground_color_selector() {
-            if (tonal_button_foreground_color_selector == null) {
-                tonal_button_foreground_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled),
-                                colorOnSecondaryContainer,
-                                colorOnSecondary,
-                                colorOnSecondaryContainer
-                        }
-                );
-            }
-            return tonal_button_foreground_color_selector;
-        }
-
-        private ColorStateList outlined_button_foreground_color_selector;
-        private ColorStateList outlined_button_foreground_color_selector() {
-            if (outlined_button_foreground_color_selector == null) {
-                outlined_button_foreground_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled),
-                                colorOnSurfaceVariant,
-                                colorOnSurfaceInverse,
-                                colorOnSurfaceVariant
-                        }
-                );
-            }
-            return outlined_button_foreground_color_selector;
-        }
-
-        private ColorStateList text_button_foreground_color_selector;
-        private ColorStateList text_button_foreground_color_selector() {
-            if (text_button_foreground_color_selector == null) {
-                text_button_foreground_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled),
-                                colorPrimary,
-                                colorPrimary,
-                                colorOnSurfaceVariant
-                        }
-                );
-            }
-            return text_button_foreground_color_selector;
-        }
-
-        private ColorStateList icon_button_foreground_color_selector;
-        private ColorStateList icon_button_foreground_color_selector() {
-            if (icon_button_foreground_color_selector == null) {
-                icon_button_foreground_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled),
-                                colorOnSurfaceVariant,
-                                colorPrimary,
-                                colorOnSurfaceVariant
-                        }
-                );
-            }
-            return icon_button_foreground_color_selector;
-        }
-
-        // bg
-
-        private ColorStateList elevated_button_background_color_selector;
-        private ColorStateList elevated_button_background_color_selector() {
-            if (elevated_button_background_color_selector == null) {
-                elevated_button_background_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled_background),
-                                colorSurfaceContainerLow,
-                                colorPrimary,
-                                colorSurfaceContainerLow
-                        }
-                );
-            }
-            return elevated_button_background_color_selector;
-        }
-
-        private ColorStateList filled_button_background_color_selector;
-        private ColorStateList filled_button_background_color_selector() {
-            if (filled_button_background_color_selector == null) {
-                filled_button_background_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled_background),
-                                colorPrimary,
-                                colorPrimary,
-                                colorSurfaceContainer
-                        }
-                );
-            }
-            return filled_button_background_color_selector;
-        }
-
-        private ColorStateList tonal_button_background_color_selector;
-        private ColorStateList tonal_button_background_color_selector() {
-            if (tonal_button_background_color_selector == null) {
-                tonal_button_background_color_selector = new ColorStateList(
-                        button_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled_background),
-                                colorSecondaryContainer,
-                                colorSecondary,
-                                colorSecondaryContainer
-                        }
-                );
-            }
-            return tonal_button_background_color_selector;
-        }
-
-        // special
-        private ColorStateList outlined_button_background_color_selector;
-        private ColorStateList outlined_button_background_color_selector() {
-            if (outlined_button_background_color_selector == null) {
-                outlined_button_background_color_selector = new ColorStateList(
-                        new int[][]{
-                                new int[]{-StateSet.state_enabled, StateSet.state_checked},
-                                new int[]{-StateSet.state_checkable},
-                                new int[]{StateSet.state_checked},
-                                StateSet.WILD_CARD
-                        },
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled_background),
-                                Color.TRANSPARENT,
-                                colorSurfaceInverse,
-                                Color.TRANSPARENT
-                        }
-                );
-            }
-            return outlined_button_background_color_selector;
-        }
-
-        private ColorStateList text_button_background_color_selector;
-        private ColorStateList text_button_background_color_selector() {
-            if (text_button_background_color_selector == null) {
-                text_button_background_color_selector = new ColorStateList(
-                        new int[][]{
-                                new int[]{-StateSet.state_enabled},
-                                StateSet.WILD_CARD
-                        },
-                        new int[]{
-                                modulateColor(colorOnSurface, material_emphasis_disabled_background),
-                                Color.TRANSPARENT
-                        }
-                );
-            }
-            return text_button_background_color_selector;
-        }
-
-        private static final int[][] button_ripple_color_selector_spec = new int[][]{
-                // Uncheckable
-                new int[]{-StateSet.state_checkable, StateSet.state_pressed},
-                new int[]{-StateSet.state_checkable, StateSet.state_focused},
-                new int[]{-StateSet.state_checkable, StateSet.state_hovered},
-                new int[]{-StateSet.state_checkable},
-                // Checkable, checked
-                new int[]{StateSet.state_checked, StateSet.state_pressed},
-                new int[]{StateSet.state_checked, StateSet.state_focused},
-                new int[]{StateSet.state_checked, StateSet.state_hovered},
-                new int[]{StateSet.state_checked},
-                // Checkable, unchecked
-                new int[]{StateSet.state_pressed},
-                new int[]{StateSet.state_focused},
-                new int[]{StateSet.state_hovered},
-                StateSet.WILD_CARD
-        };
-
-        private ColorStateList elevated_button_ripple_color_selector;
-        private ColorStateList elevated_button_ripple_color_selector() {
-            if (elevated_button_ripple_color_selector == null) {
-                elevated_button_ripple_color_selector = new ColorStateList(
-                        button_ripple_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.08f),
-                                modulateColor(colorPrimary, 0.08f),
-
-                                modulateColor(colorOnPrimary, 0.1f),
-                                modulateColor(colorOnPrimary, 0.1f),
-                                modulateColor(colorOnPrimary, 0.08f),
-                                modulateColor(colorOnPrimary, 0.08f),
-
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.08f),
-                                modulateColor(colorPrimary, 0.08f),
-                        }
-                );
-            }
-            return elevated_button_ripple_color_selector;
-        }
-
-        private ColorStateList filled_button_ripple_color_selector;
-        private ColorStateList filled_button_ripple_color_selector() {
-            if (filled_button_ripple_color_selector == null) {
-                filled_button_ripple_color_selector = new ColorStateList(
-                        button_ripple_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnPrimary, 0.1f),
-                                modulateColor(colorOnPrimary, 0.1f),
-                                modulateColor(colorOnPrimary, 0.08f),
-                                modulateColor(colorOnPrimary, 0.08f),
-
-                                modulateColor(colorOnPrimary, 0.1f),
-                                modulateColor(colorOnPrimary, 0.1f),
-                                modulateColor(colorOnPrimary, 0.08f),
-                                modulateColor(colorOnPrimary, 0.08f),
-
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                        }
-                );
-            }
-            return filled_button_ripple_color_selector;
-        }
-
-        private ColorStateList tonal_button_ripple_color_selector;
-        private ColorStateList tonal_button_ripple_color_selector() {
-            if (tonal_button_ripple_color_selector == null) {
-                tonal_button_ripple_color_selector = new ColorStateList(
-                        button_ripple_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSecondaryContainer, 0.1f),
-                                modulateColor(colorOnSecondaryContainer, 0.1f),
-                                modulateColor(colorOnSecondaryContainer, 0.08f),
-                                modulateColor(colorOnSecondaryContainer, 0.08f),
-
-                                modulateColor(colorOnSecondary, 0.1f),
-                                modulateColor(colorOnSecondary, 0.1f),
-                                modulateColor(colorOnSecondary, 0.08f),
-                                modulateColor(colorOnSecondary, 0.08f),
-
-                                modulateColor(colorOnSecondaryContainer, 0.1f),
-                                modulateColor(colorOnSecondaryContainer, 0.1f),
-                                modulateColor(colorOnSecondaryContainer, 0.08f),
-                                modulateColor(colorOnSecondaryContainer, 0.08f),
-                        }
-                );
-            }
-            return tonal_button_ripple_color_selector;
-        }
-
-        private ColorStateList outlined_button_ripple_color_selector;
-        private ColorStateList outlined_button_ripple_color_selector() {
-            if (outlined_button_ripple_color_selector == null) {
-                outlined_button_ripple_color_selector = new ColorStateList(
-                        button_ripple_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-
-                                modulateColor(colorOnSurfaceInverse, 0.1f),
-                                modulateColor(colorOnSurfaceInverse, 0.1f),
-                                modulateColor(colorOnSurfaceInverse, 0.08f),
-                                modulateColor(colorOnSurfaceInverse, 0.08f),
-
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                        }
-                );
-            }
-            return outlined_button_ripple_color_selector;
-        }
-
-        private ColorStateList text_button_ripple_color_selector;
-        private ColorStateList text_button_ripple_color_selector() {
-            if (text_button_ripple_color_selector == null) {
-                text_button_ripple_color_selector = new ColorStateList(
-                        button_ripple_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.08f),
-                                modulateColor(colorPrimary, 0.08f),
-
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.08f),
-                                modulateColor(colorPrimary, 0.08f),
-
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                        }
-                );
-            }
-            return text_button_ripple_color_selector;
-        }
-
-        private ColorStateList icon_button_ripple_color_selector;
-        private ColorStateList icon_button_ripple_color_selector() {
-            if (icon_button_ripple_color_selector == null) {
-                icon_button_ripple_color_selector = new ColorStateList(
-                        button_ripple_color_selector_spec,
-                        new int[]{
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.1f),
-                                modulateColor(colorPrimary, 0.08f),
-                                modulateColor(colorPrimary, 0.08f),
-
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.1f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                                modulateColor(colorOnSurfaceVariant, 0.08f),
-                        }
-                );
-            }
-            return icon_button_ripple_color_selector;
-        }
-
-        private ColorStateList button_outline_color_selector;
-        private ColorStateList button_outline_color_selector() {
-            if (button_outline_color_selector != null) {
-                return button_outline_color_selector;
-            }
-            button_outline_color_selector = new ColorStateList(
-                    new int[][]{
-                            new int[]{StateSet.state_checked},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            Color.TRANSPARENT,
-                            colorOutlineVariant
-                    }
-            );
-            return button_outline_color_selector;
-        }
-
-        // reused for checkbox
-        private ColorStateList radio_button_tint;
-        private ColorStateList radio_button_tint() {
-            if (radio_button_tint != null) {
-                return radio_button_tint;
-            }
-            radio_button_tint = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled},
-
-                            new int[]{StateSet.state_indeterminate},
-                            new int[]{StateSet.state_checked},
-
-                            new int[]{StateSet.state_pressed},
-                            new int[]{StateSet.state_focused},
-                            new int[]{StateSet.state_hovered},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurface, material_emphasis_disabled), // dup 1
-
-                            colorPrimary,
-                            colorPrimary, // dup 3
-
-                            colorOnSurface,
-                            colorOnSurface,
-                            colorOnSurface,
-                            colorOnSurfaceVariant
-                    }
-            );
-            return radio_button_tint;
-        }
-
-        // reused for checkbox, switch
-        private ColorStateList radio_button_ripple_tint;
-        private ColorStateList radio_button_ripple_tint() {
-            if (radio_button_ripple_tint != null) {
-                return radio_button_ripple_tint;
-            }
-            radio_button_ripple_tint = new ColorStateList(
-                    new int[][]{
-                            new int[]{StateSet.state_checked, StateSet.state_pressed},
-                            new int[]{StateSet.state_checked, StateSet.state_focused},
-                            new int[]{StateSet.state_checked, StateSet.state_hovered},
-                            new int[]{StateSet.state_checked},
-
-                            new int[]{StateSet.state_pressed},
-                            new int[]{StateSet.state_focused},
-                            new int[]{StateSet.state_hovered},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurface, 0.1f),
-                            modulateColor(colorPrimary, 0.1f),
-                            modulateColor(colorPrimary, 0.08f),
-                            modulateColor(colorPrimary, 0.08f),
-
-                            modulateColor(colorPrimary, 0.1f),
-                            modulateColor(colorOnSurface, 0.1f),
-                            modulateColor(colorOnSurface, 0.08f),
-                            modulateColor(colorOnSurface, 0.08f)
-                    }
-            );
-            return radio_button_ripple_tint;
-        }
-
-        private ColorStateList switch_track_tint;
-        private ColorStateList switch_track_tint() {
-            if (switch_track_tint != null) {
-                return switch_track_tint;
-            }
-            switch_track_tint = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled, -StateSet.state_checked},
-                            new int[]{-StateSet.state_enabled, StateSet.state_checked},
-                            new int[]{StateSet.state_checked},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorSurfaceContainerHighest, material_emphasis_disabled_background),
-                            modulateColor(colorOnSurface, material_emphasis_disabled_background),
-                            colorPrimary,
-                            colorSurfaceContainerHighest
-                    }
-            );
-            return switch_track_tint;
-        }
-
-        private ColorStateList switch_track_decoration_tint;
-        private ColorStateList switch_track_decoration_tint() {
-            if (switch_track_decoration_tint != null) {
-                return switch_track_decoration_tint;
-            }
-            switch_track_decoration_tint = new ColorStateList(
-                    new int[][]{
-                            new int[]{StateSet.state_checked},
-                            new int[]{-StateSet.state_enabled},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            Color.TRANSPARENT,
-                            modulateColor(colorOnSurface, material_emphasis_disabled_background),
-                            colorOutline
-                    }
-            );
-            return switch_track_decoration_tint;
-        }
-
-        private ColorStateList switch_thumb_tint;
-        private ColorStateList switch_thumb_tint() {
-            if (switch_thumb_tint != null) {
-                return switch_thumb_tint;
-            }
-            switch_thumb_tint = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled, -StateSet.state_checked},
-                            new int[]{-StateSet.state_enabled, StateSet.state_checked},
-                            new int[]{StateSet.state_checked, StateSet.state_pressed},
-                            new int[]{StateSet.state_checked, StateSet.state_hovered},
-                            new int[]{StateSet.state_checked, StateSet.state_focused},
-                            new int[]{StateSet.state_checked},
-                            new int[]{StateSet.state_pressed},
-                            new int[]{StateSet.state_hovered},
-                            new int[]{StateSet.state_focused},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurface, 0.38f),
-                            modulateColor(colorSurface, 1f),
-                            colorPrimaryContainer,
-                            colorPrimaryContainer,
-                            colorPrimaryContainer,
-                            colorOnPrimary,
-                            colorOnSurfaceVariant,
-                            colorOnSurfaceVariant,
-                            colorOnSurfaceVariant,
-                            colorOutline
-                    }
-            );
-            return switch_thumb_tint;
-        }
-
-        private ColorStateList checkbox_button_icon_tint;
-        private ColorStateList checkbox_button_icon_tint() {
-            if (checkbox_button_icon_tint != null) {
-                return checkbox_button_icon_tint;
-            }
-            checkbox_button_icon_tint = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            colorSurface,
-                            colorOnPrimary
-                    }
-            );
-            return checkbox_button_icon_tint;
-        }
-
-        // reused for progress bar, seek bar
-        private ColorStateList slider_track_color_active;
-        private ColorStateList slider_track_color_active() {
-            if (slider_track_color_active != null) {
-                return slider_track_color_active;
-            }
-            slider_track_color_active = new ColorStateList(
-                    new int[][]{
-                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            colorPrimary,
-                            modulateColor(colorOnSurface, material_emphasis_disabled)
-                    }
-            );
-            return slider_track_color_active;
-        }
-
-        // reused for progress bar, seek bar
-        private ColorStateList slider_track_color_inactive;
-        private ColorStateList slider_track_color_inactive() {
-            if (slider_track_color_inactive != null) {
-                return slider_track_color_inactive;
-            }
-            slider_track_color_inactive = new ColorStateList(
-                    new int[][]{
-                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            colorSecondaryContainer,
-                            modulateColor(colorOnSurface, material_emphasis_disabled_background)
-                    }
-            );
-            return slider_track_color_inactive;
-        }
-
-        private ColorStateList slider_active_tick_color;
-        private ColorStateList slider_active_tick_color() {
-            if (slider_active_tick_color != null) {
-                return slider_active_tick_color;
-            }
-            slider_active_tick_color = new ColorStateList(
-                    new int[][]{
-                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            colorOnPrimary,
-                            colorOnSurfaceInverse
-                    }
-            );
-            return slider_active_tick_color;
-        }
-
-        // added by ModernUI
-        private ColorStateList secondary_progress_tint;
-        private ColorStateList secondary_progress_tint() {
-            if (secondary_progress_tint != null) {
-                return secondary_progress_tint;
-            }
-            secondary_progress_tint = new ColorStateList(
-                    new int[][]{
-                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            colorPrimaryContainer,
-                            Color.TRANSPARENT
-                    }
-            );
-            return secondary_progress_tint;
-        }
-
-        private ColorStateList textfield_stroke_color;
-        private ColorStateList textfield_stroke_color() {
-            if (textfield_stroke_color != null) {
-                return textfield_stroke_color;
-            }
-            textfield_stroke_color = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled},
-                            StateSet.get(StateSet.VIEW_STATE_FOCUSED),
-                            StateSet.get(StateSet.VIEW_STATE_HOVERED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurface, material_emphasis_disabled_background),
-                            colorPrimary,
-                            colorOnSurface,
-                            colorOutline
-                    }
-            );
-            return textfield_stroke_color;
-        }
-
-        private ColorStateList textfield_indicator_text_color;
-        private ColorStateList textfield_indicator_text_color() {
-            if (textfield_indicator_text_color != null) {
-                return textfield_indicator_text_color;
-            }
-            textfield_indicator_text_color = new ColorStateList(
-                    new int[][]{
-                            StateSet.get(StateSet.VIEW_STATE_ACTIVATED),
-                            new int[]{-StateSet.state_enabled},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            colorPrimary,
-                            modulateColor(colorOnSurface, material_emphasis_disabled),
-                            colorOnSurfaceVariant,
-                    }
-            );
-            return textfield_indicator_text_color;
-        }
-
-        private ColorStateList textfield_filled_background_color;
-        private ColorStateList textfield_filled_background_color() {
-            if (textfield_filled_background_color != null) {
-                return textfield_filled_background_color;
-            }
-            textfield_filled_background_color = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled},
-                            StateSet.get(StateSet.VIEW_STATE_HOVERED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurfaceInverse, material_emphasis_disabled),
-                            Color.blend(BlendMode.SRC_OVER,
-                                    (colorOnSurface & 0xFFFFFF) | (int) (0.08f * 255 + 0.5f) << 24,
-                                    colorSurfaceContainerHighest),
-                            colorSurfaceContainerHighest
-                    }
-            );
-            return textfield_filled_background_color;
-        }
-
-        private ColorStateList textfield_filled_indicator_color;
-        private ColorStateList textfield_filled_indicator_color() {
-            if (textfield_filled_indicator_color != null) {
-                return textfield_filled_indicator_color;
-            }
-            textfield_filled_indicator_color = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled},
-                            StateSet.get(StateSet.VIEW_STATE_FOCUSED),
-                            StateSet.get(StateSet.VIEW_STATE_HOVERED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurface, material_emphasis_disabled),
-                            colorPrimary,
-                            colorOnSurface,
-                            colorOnSurfaceVariant
-                    }
-            );
-            return textfield_filled_indicator_color;
-        }
-
-        private ColorStateList slider_halo_color;
-        private ColorStateList slider_halo_color() {
-            if (slider_halo_color != null) {
-                return slider_halo_color;
-            }
-            slider_halo_color = new ColorStateList(
-                    new int[][]{
-                            StateSet.get(StateSet.VIEW_STATE_ENABLED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorPrimary, 0.1f),
-                            Color.TRANSPARENT
-                    }
-            );
-            return slider_halo_color;
-        }
-
-        private ColorStateList tabs_text_color;
-        private ColorStateList tabs_text_color() {
-            if (tabs_text_color != null) {
-                return tabs_text_color;
-            }
-            tabs_text_color = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled},
-                            StateSet.get(StateSet.VIEW_STATE_SELECTED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurface, material_emphasis_disabled),
-                            colorPrimary,
-                            colorOnSurfaceVariant
-                    }
-            );
-            return tabs_text_color;
-        }
-
-        private ColorStateList tabs_ripple_color;
-        private ColorStateList tabs_ripple_color() {
-            if (tabs_ripple_color != null) {
-                return tabs_ripple_color;
-            }
-            tabs_ripple_color = new ColorStateList(
-                    new int[][]{
-                            // Selected
-                            new int[]{StateSet.state_selected, StateSet.state_pressed},
-                            new int[]{StateSet.state_selected, StateSet.state_focused},
-                            new int[]{StateSet.state_selected, StateSet.state_hovered},
-                            new int[]{StateSet.state_selected},
-                            // Not selected
-                            new int[]{StateSet.state_pressed},
-                            new int[]{StateSet.state_focused},
-                            new int[]{StateSet.state_hovered},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorPrimary, 0.1f),
-                            modulateColor(colorPrimary, 0.1f),
-                            modulateColor(colorPrimary, 0.08f),
-                            modulateColor(colorPrimary, 0.08f),
-
-                            modulateColor(colorPrimary, 0.1f),
-                            modulateColor(colorOnSurface, 0.1f),
-                            modulateColor(colorOnSurface, 0.08f),
-                            modulateColor(colorOnSurfaceVariant, 0.08f),
-                    }
-            );
-            return tabs_ripple_color;
-        }
-
-        private ColorStateList tabs_text_color_secondary;
-        private ColorStateList tabs_text_color_secondary() {
-            if (tabs_text_color_secondary != null) {
-                return tabs_text_color_secondary;
-            }
-            tabs_text_color_secondary = new ColorStateList(
-                    new int[][]{
-                            new int[]{-StateSet.state_enabled},
-                            StateSet.get(StateSet.VIEW_STATE_SELECTED),
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurface, material_emphasis_disabled),
-                            colorOnSurface,
-                            colorOnSurfaceVariant
-                    }
-            );
-            return tabs_text_color_secondary;
-        }
-
-        private ColorStateList tabs_ripple_color_secondary;
-        private ColorStateList tabs_ripple_color_secondary() {
-            if (tabs_ripple_color_secondary != null) {
-                return tabs_ripple_color_secondary;
-            }
-            tabs_ripple_color_secondary = new ColorStateList(
-                    new int[][]{
-                            new int[]{StateSet.state_pressed},
-                            new int[]{StateSet.state_focused},
-                            new int[]{StateSet.state_hovered},
-                            StateSet.WILD_CARD
-                    },
-                    new int[]{
-                            modulateColor(colorOnSurface, 0.1f),
-                            modulateColor(colorOnSurface, 0.1f),
-                            modulateColor(colorOnSurface, 0.08f),
-                            modulateColor(colorOnSurfaceVariant, 0.08f),
-                    }
-            );
-            return tabs_ripple_color_secondary;
-        }
+        sAssetPack = b.build(new EmptyAssetProvider());
     }
 
-    static <T> T fromCache(Resources.Theme theme, Function<ThemedCache, T> fn) {
-        synchronized (gCache) {
-            ThemedCache cache = gCache.get(theme.getKey());
-            if (cache == null) {
-                cache = new ThemedCache(theme);
-                gCache.put(theme.getKey(), cache);
-            }
-            return fn.apply(cache);
+    // foreground/background
+    private static final int[][] button_color_selector_spec = new int[][]{
+            new int[]{-StateSet.state_enabled},
+            new int[]{-StateSet.state_checkable},
+            new int[]{StateSet.state_checked},
+            StateSet.WILD_CARD
+    };
+
+    private static ColorStateList elevated_button_foreground_color_selector(Resources resources,
+                                                                            Resources.Theme theme) {
+        if (theme == null) {
+            return null;
         }
+        TypedValue value = new TypedValue();
+        long colorOnPrimary = theme.getColor(R.attr.colorOnPrimary, value);
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorPrimary,
+                        colorOnPrimary,
+                        colorPrimary
+                }
+        );
+    }
+
+    private static ColorStateList filled_button_foreground_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnPrimary = theme.getColor(R.attr.colorOnPrimary, value);
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorOnPrimary,
+                        colorOnPrimary,
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    private static ColorStateList tonal_button_foreground_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSecondary = theme.getColor(R.attr.colorOnSecondary, value);
+        long colorOnSecondaryContainer = theme.getColor(R.attr.colorOnSecondaryContainer, value);
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorOnSecondaryContainer,
+                        colorOnSecondary,
+                        colorOnSecondaryContainer
+                }
+        );
+    }
+
+    private static ColorStateList outlined_button_foreground_color_selector(Resources resources,
+                                                                            Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceInverse = theme.getColor(R.attr.colorOnSurfaceInverse, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorOnSurfaceVariant,
+                        colorOnSurfaceInverse,
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    private static ColorStateList text_button_foreground_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorPrimary,
+                        colorPrimary,
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    private static ColorStateList icon_button_foreground_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorOnSurfaceVariant,
+                        colorPrimary,
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    // bg
+    private static ColorStateList elevated_button_background_color_selector(Resources resources,
+                                                                            Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        long colorSurfaceContainerLow = theme.getColor(R.attr.colorSurfaceContainerLow, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background),
+                        colorSurfaceContainerLow,
+                        colorPrimary,
+                        colorSurfaceContainerLow
+                }
+        );
+    }
+
+    private static ColorStateList filled_button_background_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        long colorSurfaceContainer = theme.getColor(R.attr.colorSurfaceContainer, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background),
+                        colorPrimary,
+                        colorPrimary,
+                        colorSurfaceContainer
+                }
+        );
+    }
+
+    private static ColorStateList tonal_button_background_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorSecondary = theme.getColor(R.attr.colorSecondary, value);
+        long colorSecondaryContainer = theme.getColor(R.attr.colorSecondaryContainer, value);
+        return new ColorStateList(
+                button_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background),
+                        colorSecondaryContainer,
+                        colorSecondary,
+                        colorSecondaryContainer
+                }
+        );
+    }
+
+    // special
+    private static ColorStateList outlined_button_background_color_selector(Resources resources,
+     Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorSurfaceInverse = theme.getColor(R.attr.colorSurfaceInverse, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled, StateSet.state_checked},
+                        new int[]{-StateSet.state_checkable},
+                        new int[]{StateSet.state_checked},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background),
+                        Color.TRANSPARENT,
+                        colorSurfaceInverse,
+                        Color.TRANSPARENT
+                }
+        );
+    }
+
+    private static ColorStateList text_button_background_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background),
+                        Color.TRANSPARENT
+                }
+        );
+    }
+
+    private static final int[][] button_ripple_color_selector_spec = new int[][]{
+            // Uncheckable
+            new int[]{-StateSet.state_checkable, StateSet.state_pressed},
+            new int[]{-StateSet.state_checkable, StateSet.state_focused},
+            new int[]{-StateSet.state_checkable, StateSet.state_hovered},
+            new int[]{-StateSet.state_checkable},
+            // Checkable, checked
+            new int[]{StateSet.state_checked, StateSet.state_pressed},
+            new int[]{StateSet.state_checked, StateSet.state_focused},
+            new int[]{StateSet.state_checked, StateSet.state_hovered},
+            new int[]{StateSet.state_checked},
+            // Checkable, unchecked
+            new int[]{StateSet.state_pressed},
+            new int[]{StateSet.state_focused},
+            new int[]{StateSet.state_hovered},
+            StateSet.WILD_CARD
+    };
+
+    private static ColorStateList elevated_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnPrimary = theme.getColor(R.attr.colorOnPrimary, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                button_ripple_color_selector_spec,
+                new long[]{
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.08f),
+                        modulateColor(colorPrimary, 0.08f),
+
+                        modulateColor(colorOnPrimary, 0.1f),
+                        modulateColor(colorOnPrimary, 0.1f),
+                        modulateColor(colorOnPrimary, 0.08f),
+                        modulateColor(colorOnPrimary, 0.08f),
+
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.08f),
+                        modulateColor(colorPrimary, 0.08f),
+                }
+        );
+    }
+
+    private static ColorStateList filled_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnPrimary = theme.getColor(R.attr.colorOnPrimary, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        return new ColorStateList(
+                button_ripple_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnPrimary, 0.1f),
+                        modulateColor(colorOnPrimary, 0.1f),
+                        modulateColor(colorOnPrimary, 0.08f),
+                        modulateColor(colorOnPrimary, 0.08f),
+
+                        modulateColor(colorOnPrimary, 0.1f),
+                        modulateColor(colorOnPrimary, 0.1f),
+                        modulateColor(colorOnPrimary, 0.08f),
+                        modulateColor(colorOnPrimary, 0.08f),
+
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                }
+        );
+    }
+
+    private static ColorStateList tonal_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSecondary = theme.getColor(R.attr.colorOnSecondary, value);
+        long colorOnSecondaryContainer = theme.getColor(R.attr.colorOnSecondaryContainer, value);
+        return new ColorStateList(
+                button_ripple_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSecondaryContainer, 0.1f),
+                        modulateColor(colorOnSecondaryContainer, 0.1f),
+                        modulateColor(colorOnSecondaryContainer, 0.08f),
+                        modulateColor(colorOnSecondaryContainer, 0.08f),
+
+                        modulateColor(colorOnSecondary, 0.1f),
+                        modulateColor(colorOnSecondary, 0.1f),
+                        modulateColor(colorOnSecondary, 0.08f),
+                        modulateColor(colorOnSecondary, 0.08f),
+
+                        modulateColor(colorOnSecondaryContainer, 0.1f),
+                        modulateColor(colorOnSecondaryContainer, 0.1f),
+                        modulateColor(colorOnSecondaryContainer, 0.08f),
+                        modulateColor(colorOnSecondaryContainer, 0.08f),
+                }
+        );
+    }
+
+    private static ColorStateList outlined_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurfaceInverse = theme.getColor(R.attr.colorOnSurfaceInverse, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        return new ColorStateList(
+                button_ripple_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+
+                        modulateColor(colorOnSurfaceInverse, 0.1f),
+                        modulateColor(colorOnSurfaceInverse, 0.1f),
+                        modulateColor(colorOnSurfaceInverse, 0.08f),
+                        modulateColor(colorOnSurfaceInverse, 0.08f),
+
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                }
+        );
+    }
+
+    private static ColorStateList text_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                button_ripple_color_selector_spec,
+                new long[]{
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.08f),
+                        modulateColor(colorPrimary, 0.08f),
+
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.08f),
+                        modulateColor(colorPrimary, 0.08f),
+
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                }
+        );
+    }
+
+    private static ColorStateList icon_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                button_ripple_color_selector_spec,
+                new long[]{
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.08f),
+                        modulateColor(colorPrimary, 0.08f),
+
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.1f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                }
+        );
+    }
+
+    private static ColorStateList button_outline_color_selector(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOutlineVariant = theme.getColor(R.attr.colorOutlineVariant, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{StateSet.state_checked},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        Color.TRANSPARENT,
+                        colorOutlineVariant
+                }
+        );
+    }
+
+    // reused for checkbox
+    private static ColorStateList radio_button_tint(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled},
+
+                        new int[]{StateSet.state_indeterminate},
+                        new int[]{StateSet.state_checked},
+
+                        new int[]{StateSet.state_pressed},
+                        new int[]{StateSet.state_focused},
+                        new int[]{StateSet.state_hovered},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled), // dup 1
+
+                        colorPrimary,
+                        colorPrimary, // dup 3
+
+                        colorOnSurface,
+                        colorOnSurface,
+                        colorOnSurface,
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    // reused for checkbox, switch
+    private static ColorStateList radio_button_ripple_tint(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{StateSet.state_checked, StateSet.state_pressed},
+                        new int[]{StateSet.state_checked, StateSet.state_focused},
+                        new int[]{StateSet.state_checked, StateSet.state_hovered},
+                        new int[]{StateSet.state_checked},
+
+                        new int[]{StateSet.state_pressed},
+                        new int[]{StateSet.state_focused},
+                        new int[]{StateSet.state_hovered},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, 0.1f),
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.08f),
+                        modulateColor(colorPrimary, 0.08f),
+
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorOnSurface, 0.1f),
+                        modulateColor(colorOnSurface, 0.08f),
+                        modulateColor(colorOnSurface, 0.08f)
+                }
+        );
+    }
+
+    private static ColorStateList switch_track_tint(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        long colorSurfaceContainerHighest = theme.getColor(R.attr.colorSurfaceContainerHighest, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled, -StateSet.state_checked},
+                        new int[]{-StateSet.state_enabled, StateSet.state_checked},
+                        new int[]{StateSet.state_checked},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorSurfaceContainerHighest, material_emphasis_disabled_background),
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background),
+                        colorPrimary,
+                        colorSurfaceContainerHighest
+                }
+        );
+    }
+
+    private static ColorStateList switch_track_decoration_tint(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOutline = theme.getColor(R.attr.colorOutline, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{StateSet.state_checked},
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        Color.TRANSPARENT,
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background),
+                        colorOutline
+                }
+        );
+    }
+
+    private static ColorStateList switch_thumb_tint(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnPrimary = theme.getColor(R.attr.colorOnPrimary, value);
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorOutline = theme.getColor(R.attr.colorOutline, value);
+        long colorPrimaryContainer = theme.getColor(R.attr.colorPrimaryContainer, value);
+        long colorSurface = theme.getColor(R.attr.colorSurface, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled, -StateSet.state_checked},
+                        new int[]{-StateSet.state_enabled, StateSet.state_checked},
+                        new int[]{StateSet.state_checked, StateSet.state_pressed},
+                        new int[]{StateSet.state_checked, StateSet.state_hovered},
+                        new int[]{StateSet.state_checked, StateSet.state_focused},
+                        new int[]{StateSet.state_checked},
+                        new int[]{StateSet.state_pressed},
+                        new int[]{StateSet.state_hovered},
+                        new int[]{StateSet.state_focused},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, 0.38f),
+                        modulateColor(colorSurface, 1f),
+                        colorPrimaryContainer,
+                        colorPrimaryContainer,
+                        colorPrimaryContainer,
+                        colorOnPrimary,
+                        colorOnSurfaceVariant,
+                        colorOnSurfaceVariant,
+                        colorOnSurfaceVariant,
+                        colorOutline
+                }
+        );
+    }
+
+    private static ColorStateList checkbox_button_icon_tint(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnPrimary = theme.getColor(R.attr.colorOnPrimary, value);
+        long colorSurface = theme.getColor(R.attr.colorSurface, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        colorSurface,
+                        colorOnPrimary
+                }
+        );
+    }
+
+    // reused for progress bar, seek bar
+    private static ColorStateList slider_track_color_active(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        colorPrimary,
+                        modulateColor(colorOnSurface, material_emphasis_disabled)
+                }
+        );
+    }
+
+    // reused for progress bar, seek bar
+    private static ColorStateList slider_track_color_inactive(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorSecondaryContainer = theme.getColor(R.attr.colorSecondaryContainer, value);
+        return new ColorStateList(
+                new int[][]{
+                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        colorSecondaryContainer,
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background)
+                }
+        );
+    }
+
+    private static ColorStateList slider_active_tick_color(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnPrimary = theme.getColor(R.attr.colorOnPrimary, value);
+        long colorOnSurfaceInverse = theme.getColor(R.attr.colorOnSurfaceInverse, value);
+        return new ColorStateList(
+                new int[][]{
+                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        colorOnPrimary,
+                        colorOnSurfaceInverse
+                }
+        );
+    }
+
+    // added by ModernUI
+    private static ColorStateList secondary_progress_tint(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorPrimaryContainer = theme.getColor(R.attr.colorPrimaryContainer, value);
+        return new ColorStateList(
+                new int[][]{
+                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        colorPrimaryContainer,
+                        Color.TRANSPARENT
+                }
+        );
+    }
+
+    private static ColorStateList textfield_stroke_color(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOutline = theme.getColor(R.attr.colorOutline, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.get(StateSet.VIEW_STATE_FOCUSED),
+                        StateSet.get(StateSet.VIEW_STATE_HOVERED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled_background),
+                        colorPrimary,
+                        colorOnSurface,
+                        colorOutline
+                }
+        );
+    }
+
+    private static ColorStateList textfield_indicator_text_color(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        StateSet.get(StateSet.VIEW_STATE_ACTIVATED),
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        colorPrimary,
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorOnSurfaceVariant,
+                }
+        );
+    }
+
+    private static ColorStateList textfield_filled_background_color(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceInverse = theme.getColor(R.attr.colorOnSurfaceInverse, value);
+        long colorSurfaceContainerHighest = theme.getColor(R.attr.colorSurfaceContainerHighest, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.get(StateSet.VIEW_STATE_HOVERED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurfaceInverse, material_emphasis_disabled),
+                        Color.blend(BlendMode.SRC_OVER,
+                                Color.withAlpha(colorOnSurface, 0.08f),
+                                colorSurfaceContainerHighest,
+                                true),
+                        colorSurfaceContainerHighest
+                }
+        );
+    }
+
+    private static ColorStateList textfield_filled_indicator_color(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.get(StateSet.VIEW_STATE_FOCUSED),
+                        StateSet.get(StateSet.VIEW_STATE_HOVERED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorPrimary,
+                        colorOnSurface,
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    private static ColorStateList slider_halo_color(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorPrimary, 0.1f),
+                        Color.TRANSPARENT
+                }
+        );
+    }
+
+    private static ColorStateList tabs_text_color(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.get(StateSet.VIEW_STATE_SELECTED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorPrimary,
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    private static ColorStateList tabs_ripple_color(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return new ColorStateList(
+                new int[][]{
+                        // Selected
+                        new int[]{StateSet.state_selected, StateSet.state_pressed},
+                        new int[]{StateSet.state_selected, StateSet.state_focused},
+                        new int[]{StateSet.state_selected, StateSet.state_hovered},
+                        new int[]{StateSet.state_selected},
+                        // Not selected
+                        new int[]{StateSet.state_pressed},
+                        new int[]{StateSet.state_focused},
+                        new int[]{StateSet.state_hovered},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorPrimary, 0.08f),
+                        modulateColor(colorPrimary, 0.08f),
+
+                        modulateColor(colorPrimary, 0.1f),
+                        modulateColor(colorOnSurface, 0.1f),
+                        modulateColor(colorOnSurface, 0.08f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                }
+        );
+    }
+
+    private static ColorStateList tabs_text_color_secondary(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{-StateSet.state_enabled},
+                        StateSet.get(StateSet.VIEW_STATE_SELECTED),
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorOnSurface,
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    private static ColorStateList tabs_ripple_color_secondary(Resources resources, Resources.Theme theme) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        return new ColorStateList(
+                new int[][]{
+                        new int[]{StateSet.state_pressed},
+                        new int[]{StateSet.state_focused},
+                        new int[]{StateSet.state_hovered},
+                        StateSet.WILD_CARD
+                },
+                new long[]{
+                        modulateColor(colorOnSurface, 0.1f),
+                        modulateColor(colorOnSurface, 0.1f),
+                        modulateColor(colorOnSurface, 0.08f),
+                        modulateColor(colorOnSurfaceVariant, 0.08f),
+                }
+        );
     }
 
     static int dp(float value, Resources resources) {
-        final float f = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DP,
-                value, resources.getDisplayMetrics());
-        final int res = (int) (f >= 0 ? f + 0.5f : f - 0.5f);
-        if (res != 0) return res;
-        if (value == 0) return 0;
-        if (value > 0) return 1;
-        return -1;
+        return TypedValue.applyDimensionPixelSize(TypedValue.COMPLEX_UNIT_DP, value, resources.getDisplayMetrics());
     }
 
-    public static void addToResources(ResourcesBuilder b) {
+    static TypedValue cf(int cookie) {
+        var value = new TypedValue();
+        value.type = TypedValue.TYPE_FACTORY;
+        value.cookie = cookie;
+        return value;
+    }
+
+    private static void addToResources(ResourcesBuilder b) {
         addStylesToResources(b);
         {
             MaterialTheme t = createMaterial(true);
@@ -1439,13 +1443,13 @@ public class MaterialTheme {
             style.addDimension(R.attr.paddingTop, 8, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.paddingBottom, 8, TypedValue.COMPLEX_UNIT_DP);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceLabelLarge);
-            style.addColor(R.attr.textColor, (resources, theme) ->
-                    fromCache(theme, ThemedCache::filled_button_foreground_color_selector));
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var backgroundTint = fromCache(theme,
-                        ThemedCache::filled_button_background_color_selector);
-                var rippleColor = fromCache(theme,
-                        ThemedCache::filled_button_ripple_color_selector);
+            style.addColorFactory(R.attr.textColor, filled_button_foreground_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = filled_button_background_color_selector;
+                var backgroundTint = resources.loadColorStateList(value, null, theme);
+                value.data = filled_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
@@ -1456,13 +1460,13 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_TonalButton,
                     R.style.Widget_Material3_Button);
-            style.addColor(R.attr.textColor, (resources, theme) ->
-                    fromCache(theme, ThemedCache::tonal_button_foreground_color_selector));
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var backgroundTint = fromCache(theme,
-                        ThemedCache::tonal_button_background_color_selector);
-                var rippleColor = fromCache(theme,
-                        ThemedCache::tonal_button_ripple_color_selector);
+            style.addColorFactory(R.attr.textColor, tonal_button_foreground_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = tonal_button_background_color_selector;
+                var backgroundTint = resources.loadColorStateList(value, null, theme);
+                value.data = tonal_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
@@ -1474,13 +1478,13 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_Button_ElevatedButton,
                     R.style.Widget_Material3_Button);
             style.addDimension(R.attr.elevation, 1, TypedValue.COMPLEX_UNIT_DP);
-            style.addColor(R.attr.textColor, (resources, theme) ->
-                    fromCache(theme, ThemedCache::elevated_button_foreground_color_selector));
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var backgroundTint = fromCache(theme,
-                        ThemedCache::elevated_button_background_color_selector);
-                var rippleColor = fromCache(theme,
-                        ThemedCache::elevated_button_ripple_color_selector);
+            style.addColorFactory(R.attr.textColor, elevated_button_foreground_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = elevated_button_background_color_selector;
+                var backgroundTint = resources.loadColorStateList(value, null, theme);
+                value.data = elevated_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
@@ -1491,14 +1495,16 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_OutlinedButton,
                     R.style.Widget_Material3_Button);
-            style.addColor(R.attr.textColor, (resources, theme) ->
-                    fromCache(theme, ThemedCache::outlined_button_foreground_color_selector));
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var backgroundTint = fromCache(theme, ThemedCache::outlined_button_background_color_selector);
-                var rippleColor = fromCache(theme,
-                        ThemedCache::outlined_button_ripple_color_selector);
+            style.addColorFactory(R.attr.textColor, outlined_button_foreground_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = outlined_button_background_color_selector;
+                var backgroundTint = resources.loadColorStateList(value, null, theme);
+                value.data = outlined_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
                 var strokeWidth = dp(1, resources);
-                var strokeColor = fromCache(theme, ThemedCache::button_outline_color_selector);
+                value.data = button_outline_color_selector;
+                var strokeColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
@@ -1510,12 +1516,13 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_TextButton,
                     R.style.Widget_Material3_Button);
-            style.addColor(R.attr.textColor, (resources, theme) ->
-                    fromCache(theme, ThemedCache::text_button_foreground_color_selector));
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var backgroundTint = fromCache(theme, ThemedCache::text_button_background_color_selector);
-                var rippleColor = fromCache(theme,
-                        ThemedCache::text_button_ripple_color_selector);
+            style.addColorFactory(R.attr.textColor, text_button_foreground_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = text_button_background_color_selector;
+                var backgroundTint = resources.loadColorStateList(value, null, theme);
+                value.data = text_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
@@ -1534,46 +1541,49 @@ public class MaterialTheme {
             style.addDimension(R.attr.paddingRight, 6, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.paddingTop, 6, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.paddingBottom, 6, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var backgroundTint = fromCache(theme,
-                        ThemedCache::filled_button_background_color_selector);
-                var rippleColor = fromCache(theme,
-                        ThemedCache::filled_button_ripple_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = filled_button_background_color_selector;
+                var backgroundTint = resources.loadColorStateList(value, null, theme);
+                value.data = filled_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
                 background.setColor(backgroundTint);
                 return new RippleDrawable(rippleColor, background, null);
             });
-            style.addColor(R.attr.tint, (resources, theme) ->
-                    fromCache(theme, ThemedCache::filled_button_foreground_color_selector));
+            style.addColorFactory(R.attr.tint, filled_button_foreground_color_selector);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_IconButton_Tonal,
                     R.style.Widget_Material3_Button_IconButton);
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var backgroundTint = fromCache(theme,
-                        ThemedCache::tonal_button_background_color_selector);
-                var rippleColor = fromCache(theme,
-                        ThemedCache::tonal_button_ripple_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = tonal_button_background_color_selector;
+                var backgroundTint = resources.loadColorStateList(value, null, theme);
+                value.data = tonal_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
                 background.setColor(backgroundTint);
                 return new RippleDrawable(rippleColor, background, null);
             });
-            style.addColor(R.attr.tint, (resources, theme) ->
-                    fromCache(theme, ThemedCache::tonal_button_foreground_color_selector));
+            style.addColorFactory(R.attr.tint, tonal_button_foreground_color_selector);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_IconButton_Outlined,
                     R.style.Widget_Material3_Button_IconButton);
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var backgroundTint = fromCache(theme, ThemedCache::outlined_button_background_color_selector);
-                var rippleColor = fromCache(theme,
-                        ThemedCache::outlined_button_ripple_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = outlined_button_background_color_selector;
+                var backgroundTint = resources.loadColorStateList(value, null, theme);
+                value.data = outlined_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
                 var strokeWidth = dp(1, resources);
-                var strokeColor = fromCache(theme, ThemedCache::button_outline_color_selector);
+                value.data = button_outline_color_selector;
+                var strokeColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
@@ -1581,23 +1591,22 @@ public class MaterialTheme {
                 background.setStroke(strokeWidth, strokeColor);
                 return new RippleDrawable(rippleColor, background, null);
             });
-            style.addColor(R.attr.tint, (resources, theme) ->
-                    fromCache(theme, ThemedCache::outlined_button_foreground_color_selector));
+            style.addColorFactory(R.attr.tint, outlined_button_foreground_color_selector);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_IconButton_Standard,
              R.style.Widget_Material3_Button_IconButton);
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var rippleColor = fromCache(theme,
-                        ThemedCache::icon_button_ripple_color_selector);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = icon_button_ripple_color_selector;
+                var rippleColor = resources.loadColorStateList(value, null, theme);
 
                 var background = new ShapeDrawable();
                 background.setCornerRadius(1000);
                 background.setColor(Color.TRANSPARENT_LONG);
                 return new RippleDrawable(rippleColor, null, background);
             });
-            style.addColor(R.attr.tint, (resources, theme) ->
-                    fromCache(theme, ThemedCache::icon_button_foreground_color_selector));
+            style.addColorFactory(R.attr.tint, icon_button_foreground_color_selector);
         }
         // Compound buttons
         {
@@ -1611,14 +1620,18 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_CompoundButton_RadioButton,
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
-            style.addDrawable(R.attr.button, (resources, theme) -> {
-                var buttonTint = fromCache(theme, ThemedCache::radio_button_tint);
+            style.addDrawable(R.attr.button, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = radio_button_tint;
+                var buttonTint = resources.loadColorStateList(value, null, theme);
                 var button = new RadioButtonDrawable(resources, true, true, true);
                 button.setTintList(buttonTint);
                 return button;
             });
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var rippleTint = fromCache(theme, ThemedCache::radio_button_ripple_tint);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = radio_button_ripple_tint;
+                var rippleTint = resources.loadColorStateList(value, null, theme);
                 var ripple = new RippleDrawable(rippleTint, null, null);
                 var radius = dp(18, resources);
                 ripple.setRadius(radius);
@@ -1629,12 +1642,11 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem,
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
-            style.addDrawable(R.attr.button, (resources, theme) -> {
+            style.addDrawable(R.attr.button, (resources, theme, cookie, density) -> {
                 final TypedValue value = new TypedValue();
                 var button = new BuiltinIconDrawable(resources,
                         BuiltinIconDrawable.RADIO_SMALL, 18);
-                if (theme.resolveAttribute(R.attr.textColorSecondary, value, true))
-                    button.setTintList(resources.loadColorStateList(value, null, theme));
+                button.setTintList(theme.getColorStateList(R.attr.textColorSecondary, value));
                 var selector = new StateListDrawable();
                 selector.addState(new int[]{StateSet.state_checked}, button);
                 return selector;
@@ -1646,9 +1658,12 @@ public class MaterialTheme {
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
             style.addDimension(R.attr.switchMinWidth, 52, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.switchPadding, 16, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.track, (resources, theme) -> {
-                var tint = fromCache(theme, ThemedCache::switch_track_tint);
-                var decorationTint = fromCache(theme, ThemedCache::switch_track_decoration_tint);
+            style.addDrawable(R.attr.track, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = switch_track_tint;
+                var tint = resources.loadColorStateList(value, null, theme);
+                value.data = switch_track_decoration_tint;
+                var decorationTint = resources.loadColorStateList(value, null, theme);
                 var track = new ShapeDrawable();
                 track.setShape(ShapeDrawable.RECTANGLE);
                 track.setSize(dp(52, resources), dp(32, resources));
@@ -1657,8 +1672,10 @@ public class MaterialTheme {
                 track.setStroke(dp(2, resources), decorationTint);
                 return track;
             });
-            style.addDrawable(R.attr.thumb, (resources, theme) -> {
-                var tint = fromCache(theme, ThemedCache::switch_thumb_tint);
+            style.addDrawable(R.attr.thumb, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = switch_thumb_tint;
+                var tint = resources.loadColorStateList(value, null, theme);
                 var thumb = new SwitchThumbDrawable(resources, true, true);
                 thumb.setTintList(tint);
                 return thumb;
@@ -1668,16 +1685,21 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_CompoundButton_CheckBox,
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
-            style.addDrawable(R.attr.button, (resources, theme) -> {
-                var buttonTint = fromCache(theme, ThemedCache::radio_button_tint);
-                var buttonIconTint = fromCache(theme, ThemedCache::checkbox_button_icon_tint);
+            style.addDrawable(R.attr.button, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = radio_button_tint;
+                var buttonTint = resources.loadColorStateList(value, null, theme);
+                value.data = checkbox_button_icon_tint;
+                var buttonIconTint = resources.loadColorStateList(value, null, theme);
                 var button = new CheckboxButtonDrawable(resources, false, true);
                 button.setTintList(buttonTint);
                 button.setIconTint(buttonIconTint);
                 return button;
             });
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var rippleTint = fromCache(theme, ThemedCache::radio_button_ripple_tint);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = radio_button_ripple_tint;
+                var rippleTint = resources.loadColorStateList(value, null, theme);
                 var ripple = new RippleDrawable(rippleTint, null, null);
                 var radius = dp(18, resources);
                 ripple.setRadius(radius);
@@ -1688,12 +1710,11 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem,
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
-            style.addDrawable(R.attr.button, (resources, theme) -> {
+            style.addDrawable(R.attr.button, (resources, theme, cookie, density) -> {
                 final TypedValue value = new TypedValue();
                 var button = new BuiltinIconDrawable(resources,
                         BuiltinIconDrawable.CHECK_SMALL, 18);
-                if (theme.resolveAttribute(R.attr.textColorSecondary, value, true))
-                    button.setTintList(resources.loadColorStateList(value, null, theme));
+                button.setTintList(theme.getColorStateList(R.attr.textColorSecondary, value));
                 var selector = new StateListDrawable();
                 selector.addState(new int[]{StateSet.state_checked}, button);
                 return selector;
@@ -1704,84 +1725,93 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar, null);
             style.addDimension(R.attr.minWidth, 48, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 48, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+                final TypedValue value = new TypedValue();
                 var drawable = new CircularIndeterminateDrawable(resources, 40, 4, 4);
                 // there is no disabled color in indeterminate mode
-                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
-                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                drawable.setIndicatorColor(theme.getColor(R.attr.colorPrimary, value));
+                drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources,
-                    theme, 40, 4, 4));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+                    circular_progress_drawable(resources, theme, cookie, 40, 4, 4));
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Small, null);
             style.addDimension(R.attr.minWidth, 36, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 36, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+                final TypedValue value = new TypedValue();
                 var drawable = new CircularIndeterminateDrawable(resources, 28, 4, 3);
                 // there is no disabled color in indeterminate mode
-                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
-                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                drawable.setIndicatorColor(theme.getColor(R.attr.colorPrimary, value));
+                drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources,
-                    theme, 28, 4, 3));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+                    circular_progress_drawable(resources, theme, cookie, 28, 4, 3));
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar_ExtraSmall, null);
             style.addDimension(R.attr.minWidth, 24, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 24, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+                final TypedValue value = new TypedValue();
                 var drawable = new CircularIndeterminateDrawable(resources, 20, 2, 2.5f);
                 // there is no disabled color in indeterminate mode
-                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
-                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                drawable.setIndicatorColor(theme.getColor(R.attr.colorPrimary, value));
+                drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> circular_progress_drawable(resources,
-             theme, 20, 2, 2.5f));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+                    circular_progress_drawable(resources, theme, cookie,20, 2, 2.5f));
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Horizontal, null);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+                final TypedValue value = new TypedValue();
                 var drawable = new LinearIndeterminateDrawable(resources, false);
                 // there is no disabled color in indeterminate mode
-                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
-                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                drawable.setIndicatorColor(theme.getColor(R.attr.colorPrimary, value));
+                drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources,
-             theme, false, true));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+                    linear_progress_drawable(resources, theme, cookie, false, true));
             style.addBoolean(R.attr.mirrorForRtl, true);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Vertical, null);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
                 var drawable = new LinearIndeterminateDrawable(resources, true);
+                TypedValue value = new TypedValue();
                 // there is no disabled color in indeterminate mode
-                drawable.setIndicatorColor(fromCache(theme, cache -> cache.colorPrimary));
-                drawable.setTrackColor(fromCache(theme, cache -> cache.colorSecondaryContainer));
+                drawable.setIndicatorColor(theme.getColor(R.attr.colorPrimary, value));
+                drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources,
-             theme, true, true));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+                    linear_progress_drawable(resources, theme, cookie, true, true));
         }
         // Seek bars
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar, null);
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> linear_progress_drawable(resources,
-                    theme, false, false));
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+                    linear_progress_drawable(resources, theme, cookie, false, false));
             style.addBoolean(R.attr.mirrorForRtl, true);
             style.addBoolean(R.attr.focusable, true);
             style.addBoolean(R.attr.clickable, true);
-            style.addDrawable(R.attr.thumb, (resources, theme) -> {
+            style.addDrawable(R.attr.thumb, (resources, theme, cookie, density) -> {
                 var thumb = new SeekbarThumbDrawable(resources, true);
-                thumb.setTintList(fromCache(theme, ThemedCache::slider_track_color_active));
+                var value = cf(cookie);
+                value.data = slider_track_color_active;
+                thumb.setTintList(resources.loadColorStateList(value, null, theme));
                 return thumb;
             });
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var haloColor = fromCache(theme, ThemedCache::slider_halo_color);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = slider_halo_color;
+                var haloColor = resources.loadColorStateList(value, null, theme);
                 var ripple = new RippleDrawable(haloColor, null, null);
                 ripple.setRadius(dp(18, resources));
                 return ripple;
@@ -1791,29 +1821,34 @@ public class MaterialTheme {
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete, R.style.Widget_Material3_SeekBar);
-            style.addDrawable(R.attr.tickMark, (resources, theme) -> {
+            style.addDrawable(R.attr.tickMark, (resources, theme, cookie, density) -> {
                 var tick = new ShapeDrawable();
                 tick.setShape(ShapeDrawable.CIRCLE);
                 int size = dp(2, resources);
                 tick.setSize(size, size);
-                tick.setColor(fromCache(theme, ThemedCache::slider_active_tick_color));
+                var value = cf(cookie);
+                value.data = slider_active_tick_color;
+                tick.setColor(resources.loadColorStateList(value, null, theme));
                 tick.setUseLevelForShape(false);
                 return tick;
             });
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar_Slider, null);
-            style.addDrawable(R.attr.progressDrawable, (resources, theme) -> {
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) -> {
                 var background = new ShapeDrawable();
                 background.setShape(ShapeDrawable.HLINE);
                 background.setSize(-1, dp(10, resources));
                 background.setCornerRadius(dp(5, resources));
-                background.setColor(fromCache(theme, ThemedCache::slider_track_color_inactive));
+                var value = cf(cookie);
+                value.data = slider_track_color_inactive;
+                background.setColor(resources.loadColorStateList(value, null, theme));
                 var progress = new ShapeDrawable();
                 progress.setShape(ShapeDrawable.HLINE);
                 progress.setSize(-1, dp(10, resources));
                 progress.setCornerRadius(dp(5, resources));
-                progress.setColor(fromCache(theme, ThemedCache::slider_track_color_active));
+                value.data = slider_track_color_active;
+                progress.setColor(resources.loadColorStateList(value, null, theme));
                 var scaledProgress = new ScaleDrawable(progress, Gravity.LEFT, 1.0f, -1.0f);
                 var track = new LayerDrawable(background, scaledProgress);
                 track.setId(0, R.id.background);
@@ -1826,9 +1861,11 @@ public class MaterialTheme {
             style.addBoolean(R.attr.mirrorForRtl, true);
             style.addBoolean(R.attr.focusable, true);
             style.addBoolean(R.attr.clickable, true);
-            style.addDrawable(R.attr.thumb, (resources, theme) -> {
+            style.addDrawable(R.attr.thumb, (resources, theme, cookie, density) -> {
                 var thumb = new SliderThumbDrawable(resources);
-                thumb.setTintList(fromCache(theme, ThemedCache::slider_track_color_active));
+                var value = cf(cookie);
+                value.data = slider_track_color_active;
+                thumb.setTintList(resources.loadColorStateList(value, null, theme));
                 return thumb;
             });
             style.addDimension(R.attr.paddingLeft, 5, TypedValue.COMPLEX_UNIT_DP);
@@ -1837,12 +1874,14 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete_Slider,
              R.style.Widget_Material3_SeekBar_Slider);
-            style.addDrawable(R.attr.tickMark, (resources, theme) -> {
+            style.addDrawable(R.attr.tickMark, (resources, theme, cookie, density) -> {
                 var tick = new ShapeDrawable();
                 tick.setShape(ShapeDrawable.CIRCLE);
                 int size = dp(4, resources);
                 tick.setSize(size, size);
-                tick.setColor(fromCache(theme, ThemedCache::slider_active_tick_color));
+                var value = cf(cookie);
+                value.data = slider_active_tick_color;
+                tick.setColor(resources.loadColorStateList(value, null, theme));
                 tick.setUseLevelForShape(false);
                 return tick;
             });
@@ -1851,11 +1890,11 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_PopupMenu, null);
             style.addDimension(R.attr.popupElevation, 3, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.popupBackground, (resources, theme) -> {
+            style.addDrawable(R.attr.popupBackground, (resources, theme, cookie, density) -> {
                 var popupBackground = new ShapeDrawable();
                 popupBackground.setShape(ShapeDrawable.RECTANGLE);
                 popupBackground.setCornerRadius(dp(4, resources));
-                int color = fromCache(theme, cache -> cache.colorSurfaceContainer);
+                long color = theme.getColor(R.attr.colorSurfaceContainer, new TypedValue());
                 popupBackground.setColor(color);
                 int pad = dp(4, resources);
                 popupBackground.setPadding(pad, pad, pad, pad);
@@ -1875,15 +1914,18 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Spinner,
                     R.style.Widget_Material3_PopupMenu_ListPopupWindow);
-            style.addDrawable(R.attr.background, (resources, theme) -> {
-                var background = outlined_box(resources, theme);
-                TypedValue value = new TypedValue();
-                theme.resolveAttribute(R.attr.colorControlHighlight, value, true);
-                var ripple = new RippleDrawable(ColorStateList.valueOf(value.data), null, null);
+            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+                var value = cf(cookie);
+                value.data = outlined_box;
+                var background = resources.loadDrawable(value, null, theme);
+                value.data = textfield_indicator_text_color;
+                var iconTint = resources.loadColorStateList(value, null, theme);
+                var rippleColor = theme.getColorStateList(R.attr.colorControlHighlight, value);
+                var ripple = new RippleDrawable(rippleColor, null, null);
                 ripple.setRadius(dp(14, resources));
                 var icon = new BuiltinIconDrawable(resources, BuiltinIconDrawable.KEYBOARD_ARROW_DOWN,
                         18);
-                icon.setTintList(fromCache(theme, ThemedCache::textfield_indicator_text_color));
+                icon.setTintList(iconTint);
                 var layers = new LayerDrawable(background, ripple, icon);
                 layers.setPaddingRelative(dp(4, resources), 0, dp(12 + 18 + 8, resources), 0);
                 layers.setPaddingMode(LayerDrawable.PADDING_MODE_STACK);
@@ -1894,10 +1936,10 @@ public class MaterialTheme {
                 return layers;
             });
             style.addBoolean(R.attr.clickable, true);
-            style.addDrawable(R.attr.dropDownSelector, (resources, theme) -> {
+            style.addDrawable(R.attr.dropDownSelector, (resources, theme, cookie, density) -> {
                 TypedValue value = new TypedValue();
-                theme.resolveAttribute(R.attr.colorControlHighlight, value, true);
-                return new RippleDrawable(ColorStateList.valueOf(value.data), null, new ColorDrawable(~0));
+                var rippleColor = theme.getColorStateList(R.attr.colorControlHighlight, value);
+                return new RippleDrawable(rippleColor, null, new ColorDrawable(~0));
             });
             style.addBoolean(R.attr.overlapAnchor, true);
             style.addDimension(R.attr.dropDownVerticalOffset, -2, TypedValue.COMPLEX_UNIT_DP);
@@ -1917,22 +1959,20 @@ public class MaterialTheme {
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_EditText_OutlinedBox, R.style.Widget_Material3_EditText);
-            style.addDrawable(R.attr.background, MaterialTheme::outlined_box);
+            style.addDrawableFactory(R.attr.background, outlined_box);
             style.addReference(R.attr.textAppearance, R.style.TextAppearance_Material3_BodyMedium);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_EditText_FilledBox, R.style.Widget_Material3_EditText);
-            style.addDrawable(R.attr.background, MaterialTheme::filled_box);
+            style.addDrawableFactory(R.attr.background, filled_box);
             style.addReference(R.attr.textAppearance, R.style.TextAppearance_Material3_BodyMedium);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_TabLayout, null);
-            BiFunction<Resources, Resources.Theme, ColorStateList> tint = (resources, theme) ->
-                    fromCache(theme, ThemedCache::tabs_text_color);
-            style.addColor(R.attr.tabIconTint, tint);
+            style.addColorFactory(R.attr.tabIconTint, tabs_text_color);
             style.addAttribute(R.attr.tabTextAppearance, R.attr.textAppearanceTitleSmall);
-            style.addColor(R.attr.tabTextColor, tint);
-            style.addDrawable(R.attr.tabIndicator, (resources, theme) -> {
+            style.addColorFactory(R.attr.tabTextColor, tabs_text_color);
+            style.addDrawable(R.attr.tabIndicator, (resources, theme, cookie, density) -> {
                 // rounded top
                 ShapeDrawable indicator = new ShapeDrawable();
                 int rad = dp(3, resources);
@@ -1943,7 +1983,7 @@ public class MaterialTheme {
             });
             style.addEnum(R.attr.tabIndicatorAnimationMode, TabLayout.INDICATOR_ANIMATION_MODE_ELASTIC);
             style.addAttribute(R.attr.tabIndicatorColor, R.attr.colorPrimary);
-            style.addColor(R.attr.tabRippleColor, (resources, theme) -> fromCache(theme, ThemedCache::tabs_ripple_color));
+            style.addColorFactory(R.attr.tabRippleColor, tabs_ripple_color);
             style.addBoolean(R.attr.tabIndicatorFullWidth, false);
             style.addInteger(R.attr.tabIndicatorAnimationDuration, 500);
             style.addEnum(R.attr.tabGravity, TabLayout.GRAVITY_CENTER);
@@ -1957,22 +1997,22 @@ public class MaterialTheme {
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_TabLayout_Secondary, R.style.Widget_Material3_TabLayout);
-            BiFunction<Resources, Resources.Theme, ColorStateList> tint = (resources, theme) ->
-                    fromCache(theme, ThemedCache::tabs_text_color_secondary);
-            style.addColor(R.attr.tabIconTint, tint);
-            style.addColor(R.attr.tabTextColor, tint);
-            style.addDrawable(R.attr.tabIndicator, (resources, theme) -> {
+            style.addColorFactory(R.attr.tabIconTint, tabs_text_color_secondary);
+            style.addColorFactory(R.attr.tabTextColor, tabs_text_color_secondary);
+            style.addDrawable(R.attr.tabIndicator, (resources, theme, cookie, density) -> {
                 ShapeDrawable indicator = new ShapeDrawable();
                 indicator.setSize(-1, dp(2, resources));
                 return indicator;
             });
-            style.addColor(R.attr.tabRippleColor, (resources, theme) -> fromCache(theme, ThemedCache::tabs_ripple_color_secondary));
+            style.addColorFactory(R.attr.tabRippleColor, tabs_ripple_color_secondary);
             style.addBoolean(R.attr.tabIndicatorFullWidth, true);
         }
     }
 
-    private static Drawable outlined_box(Resources resources, Resources.Theme theme) {
-        var boxStrokeColor = fromCache(theme, ThemedCache::textfield_stroke_color);
+    private static Drawable outlined_box(Resources resources, Resources.Theme theme, int cookie, int density) {
+        var value = cf(cookie);
+        value.data = textfield_stroke_color;
+        var boxStrokeColor = resources.loadColorStateList(value, null, theme);
         var selector = new StateListDrawable();
         var background = new ShapeDrawable();
         background.setShape(ShapeDrawable.RECTANGLE);
@@ -1987,9 +2027,12 @@ public class MaterialTheme {
         return selector;
     }
 
-    private static Drawable filled_box(Resources resources, Resources.Theme theme) {
-        var boxBackgroundColor = fromCache(theme, ThemedCache::textfield_filled_background_color);
-        var boxIndicatorColor = fromCache(theme, ThemedCache::textfield_filled_indicator_color);
+    private static Drawable filled_box(Resources resources, Resources.Theme theme, int cookie, int density) {
+        var value = cf(cookie);
+        value.data = textfield_filled_background_color;
+        var boxBackgroundColor = resources.loadColorStateList(value, null, theme);
+        value.data = textfield_filled_indicator_color;
+        var boxIndicatorColor = resources.loadColorStateList(value, null, theme);
         var layer = new LayerDrawable();
         var background = new ShapeDrawable();
         background.setShape(ShapeDrawable.RECTANGLE);
@@ -2014,12 +2057,15 @@ public class MaterialTheme {
     }
 
     private static Drawable circular_progress_drawable(Resources resources, Resources.Theme theme,
+                                                       int cookie,
                                                        int size, int inset, float thickness) {
         var background = new ShapeDrawable();
         background.setShape(ShapeDrawable.RING);
         background.setInnerRadius(dp((size - inset - inset) * 0.5f, resources));
         background.setThickness(dp(thickness, resources));
-        background.setColor(fromCache(theme, ThemedCache::slider_track_color_inactive));
+        var value = cf(cookie);
+        value.data = slider_track_color_inactive;
+        background.setColor(resources.loadColorStateList(value, null, theme));
         background.setUseLevelForShape(false);
         // there is no secondary progress in circular shape
         var progress = new ShapeDrawable();
@@ -2027,7 +2073,8 @@ public class MaterialTheme {
         progress.setInnerRadius(dp((size - inset - inset) * 0.5f, resources));
         progress.setThickness(dp(thickness, resources));
         progress.setCornerRadius(1);
-        progress.setColor(fromCache(theme, ThemedCache::slider_track_color_active));
+        value.data = slider_track_color_active;
+        progress.setColor(resources.loadColorStateList(value, null, theme));
         var track = new LayerDrawable(background, progress);
         track.setId(0, R.id.background);
         track.setId(1, R.id.progress);
@@ -2037,13 +2084,17 @@ public class MaterialTheme {
     }
 
     private static Drawable linear_progress_drawable(Resources resources, Resources.Theme theme,
+                                                     int cookie,
                                                      boolean vertical, boolean stroke) {
         final LayerDrawable track;
         final int size = dp(4, resources);
-        final ColorStateList
-                colorInactive = fromCache(theme, ThemedCache::slider_track_color_inactive),
-                colorSecondary = fromCache(theme, ThemedCache::secondary_progress_tint),
-                colorActive = fromCache(theme, ThemedCache::slider_track_color_active);
+        var value = cf(cookie);
+        value.data = slider_track_color_inactive;
+        final ColorStateList colorInactive = resources.loadColorStateList(value, null, theme);
+        value.data = secondary_progress_tint;
+        final ColorStateList colorSecondary = resources.loadColorStateList(value, null, theme);
+        value.data = slider_track_color_active;
+        final ColorStateList colorActive = resources.loadColorStateList(value, null, theme);
         final ShapeDrawable
                 background = new ShapeDrawable(),
                 secondaryProgress = new ShapeDrawable(),
@@ -2843,5 +2894,9 @@ public class MaterialTheme {
         t.isDark = isDark;
 
         return t;
+    }
+
+    public static AssetPack getAssetPack() {
+        return sAssetPack;
     }
 }

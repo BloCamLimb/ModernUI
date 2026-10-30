@@ -22,9 +22,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.material.MaterialTheme;
 import icyllis.modernui.resources.AssetManager;
 import icyllis.modernui.resources.AttributeSlots;
-import icyllis.modernui.resources.EmptyAssetProvider;
 import icyllis.modernui.resources.Resources;
-import icyllis.modernui.resources.ResourcesBuilder;
 import icyllis.modernui.resources.ThemeKey;
 import icyllis.modernui.resources.TypedArray;
 import icyllis.modernui.resources.TypedValue;
@@ -38,13 +36,11 @@ public class TestThemeBuilder {
         System.setProperty("org.slf4j.simpleLogger.logFile", "System.out");
 
         Resources resources;{
-            var rb = new ResourcesBuilder(R.ns);
-            MaterialTheme.addToResources(rb);
             var m = new DisplayMetrics();
             m.setToDefaults();
             resources = new Resources(
                     new AssetManager.Builder()
-                            .addAssetPack(rb.build(new EmptyAssetProvider()))
+                            .addAssetPack(MaterialTheme.getAssetPack())
                             .build(),
                     m
             );

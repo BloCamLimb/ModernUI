@@ -23,6 +23,7 @@ import icyllis.modernui.util.ColorStateList;
 
 /**
  * Base class of complex color, such as {@link ColorStateList} and {@link GradientColor}.
+ * Use {@link ColorStateList#valueOf(long)} to convert simple color to complex color,
  */
 public abstract class ComplexColor {
 

@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.BiFunction;
 
 /**
  * @hide
@@ -506,7 +505,7 @@ public final class AssetManager {
     }
 
     @Nullable
-    BiFunction<?, ?, ?> getFactoryForCookie(int cookie, int data) {
+    RuntimeFactory getFactoryForCookie(int cookie, int data) {
         ResourceMap resources = getResources(cookie);
         if (resources == null) {
             return null;
@@ -517,6 +516,10 @@ public final class AssetManager {
     // do post-processing before exposing it to public API users,
     // freeze the 'object' field
     boolean postProcess(@NonNull TypedValue outValue) {
+        if (outValue.cookie == kInvalidCookie) {
+            // inline value, not from resource
+            return true;
+        }
         switch (outValue.type & ResourceTypes.Res_value.DATA_TYPE_MASK) {
             case TypedValue.TYPE_REFERENCE -> {
                 int typeId =
@@ -538,11 +541,6 @@ public final class AssetManager {
             }
             case TypedValue.TYPE_STRING -> {
                 if ((outValue.object = getPooledStringForCookie(outValue.cookie, outValue.data)) == null) {
-                    return false;
-                }
-            }
-            case TypedValue.TYPE_FACTORY -> {
-                if ((outValue.object = getFactoryForCookie(outValue.cookie, outValue.data)) == null) {
                     return false;
                 }
             }

@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.annotation.ThreadSafe;
 import icyllis.modernui.graphics.BitmapFactory;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.ComplexColor;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.ColorDrawable;
@@ -50,7 +51,6 @@ import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
-import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
 @ThreadSafe
@@ -202,18 +202,41 @@ public class Resources {
         return found;
     }
 
-    @Deprecated
+    public long getColor(@NonNull ResourceId id,
+                         @NonNull TypedValue outValue,
+                         @Nullable Theme theme) {
+        if (getValue(id, outValue, true)) {
+            return loadColor(outValue, id, theme);
+        }
+        return Color.TRANSPARENT_LONG;
+    }
+
+    public long loadColor(@NonNull TypedValue value,
+                          @Nullable ResourceId id,
+                          @Nullable Theme theme) {
+        if (value.type >= TypedValue.TYPE_FIRST_COLOR_INT
+                && value.type <= TypedValue.TYPE_LAST_COLOR_INT) {
+            return Color.pack(value.data);
+        }
+
+        var complexColor = loadComplexColor(value, id, theme);
+        if (complexColor != null) {
+            return complexColor.getDefaultColor();
+        }
+        return Color.MAGENTA_SRGB;
+    }
+
     @Nullable
     public ColorStateList getColorStateList(@NonNull ResourceId id,
                                             @NonNull TypedValue value,
                                             @Nullable Theme theme) {
-        if (getValue(id, value, true)) {
-            return loadColorStateList(value, id, theme);
+        var complexColor = getComplexColor(id, value, theme);
+        if (complexColor instanceof ColorStateList) {
+            return (ColorStateList) complexColor;
         }
         return null;
     }
 
-    @Deprecated
     @Nullable
     public ColorStateList loadColorStateList(@NonNull TypedValue value,
                                              @Nullable ResourceId id,
@@ -289,15 +312,17 @@ public class Resources {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Nullable
     private ComplexColor loadComplexColorForCookie(@NonNull TypedValue value,
                                                    @Nullable ResourceId id,
                                                    @Nullable Theme theme) {
         if (value.type == TypedValue.TYPE_FACTORY) {
-            Object object = value.object;
-            if (object != null) {
-                object = ((BiFunction<Resources, Theme, ?>) object).apply(this, theme);
+            RuntimeFactory f = mAssetManager.getFactoryForCookie(value.cookie, value.data);
+            if (f instanceof RuntimeResourceFactory<?> factory) {
+                Object object = factory.create(this, theme);
+                if (object == null) {
+                    return null;
+                }
                 if (object instanceof ComplexColor) {
                     return (ComplexColor) object;
                 }
@@ -400,15 +425,21 @@ public class Resources {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Nullable
     private Drawable loadDrawableForCookie(@NonNull TypedValue value,
                                            @Nullable ResourceId id,
                                            @Nullable Theme theme) {
         if (value.type == TypedValue.TYPE_FACTORY) {
-            Object object = value.object;
-            if (object != null) {
-                object = ((BiFunction<Resources, Resources.Theme, ?>) object).apply(this, theme);
+            RuntimeFactory f = mAssetManager.getFactoryForCookie(value.cookie, value.data);
+            if (f instanceof RuntimeDrawableFactory factory) {
+                return factory.create(this, theme,
+                        value.cookie, mMetrics.densityDpi);
+            }
+            if (f instanceof RuntimeResourceFactory<?> factory) {
+                Object object = factory.create(this, theme);
+                if (object == null) {
+                    return null;
+                }
                 if (object instanceof Drawable) {
                     return (Drawable) object;
                 }
@@ -782,7 +813,7 @@ public class Resources {
                                                  @Nullable String defStyleAttr,
                                                  @Nullable @StyleRes ResourceId defStyleRes,
                                                  @NonNull AttributeSlots slots) {
-            final TypedArray array = TypedArray.obtain(getResources(),
+            final TypedArray array = TypedArray.obtain(mResources,
                     slots.size());
 
             resolveAttributes(set, defStyleAttr, defStyleRes,
@@ -843,11 +874,20 @@ public class Resources {
             return mAssetManager.postProcess(outValue);
         }
 
+        public long getColor(@NonNull String name,
+                             @NonNull TypedValue outValue) {
+            if (resolveAttribute(name, outValue, true)) {
+                return mResources.loadColor(outValue, null, this);
+            }
+            return Color.TRANSPARENT_LONG;
+        }
+
         @Nullable
-        public ComplexColor getComplexColor(@NonNull ResourceId id,
-                                            @NonNull TypedValue outValue) {
-            if (mResources.getValue(id, outValue, true)) {
-                return mResources.loadComplexColor(outValue, id, this);
+        public ColorStateList getColorStateList(@NonNull String name,
+                                                @NonNull TypedValue outValue) {
+            var complexColor = getComplexColor(name, outValue);
+            if (complexColor instanceof ColorStateList) {
+                return (ColorStateList) complexColor;
             }
             return null;
         }
@@ -855,18 +895,8 @@ public class Resources {
         @Nullable
         public ComplexColor getComplexColor(@NonNull String name,
                                             @NonNull TypedValue outValue) {
-            if (!resolveAttribute(name, outValue, true)) {
-                return null;
-            }
-
-            return mResources.loadComplexColor(outValue, null, this);
-        }
-
-        @Nullable
-        public Drawable getDrawable(@NonNull ResourceId id,
-                                    @NonNull TypedValue outValue) {
-            if (mResources.getValue(id, outValue, true)) {
-                return mResources.loadDrawable(outValue, id, this);
+            if (resolveAttribute(name, outValue, true)) {
+                return mResources.loadComplexColor(outValue, null, this);
             }
             return null;
         }
@@ -874,11 +904,10 @@ public class Resources {
         @Nullable
         public Drawable getDrawable(@NonNull String name,
                                     @NonNull TypedValue outValue) {
-            if (!resolveAttribute(name, outValue, true)) {
-                return null;
+            if (resolveAttribute(name, outValue, true)) {
+                return mResources.loadDrawable(outValue, null, this);
             }
-
-            return mResources.loadDrawable(outValue, null, this);
+            return null;
         }
 
         private boolean getAttribute(
@@ -1030,8 +1059,8 @@ public class Resources {
         @Override
         public String toString() {
             return '{' +
-                    "resources=" + getResources() +
-                    ", key=" + getKey() +
+                    "resources=" + mResources +
+                    ", key=" + mKey +
                     '}';
         }
     }

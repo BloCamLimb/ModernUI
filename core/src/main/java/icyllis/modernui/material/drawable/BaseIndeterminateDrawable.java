@@ -19,6 +19,7 @@
 package icyllis.modernui.material.drawable;
 
 import icyllis.modernui.animation.Animator;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.drawable.Animatable;
 import icyllis.modernui.graphics.drawable.Drawable;
 import org.jetbrains.annotations.ApiStatus;
@@ -30,31 +31,31 @@ import org.jspecify.annotations.NonNull;
 @ApiStatus.Internal
 public abstract class BaseIndeterminateDrawable extends Drawable implements Animatable {
 
-    protected int mIndicatorColor = ~0;
-    protected int mTrackColor = ~0;
+    protected long mIndicatorColor = Color.WHITE_LONG;
+    protected long mTrackColor = Color.WHITE_LONG;
     protected float mAlpha = 1f;
 
     protected Animator mAnimator;
 
-    public void setIndicatorColor(int indicatorColor) {
+    public void setIndicatorColor(long indicatorColor) {
         if (mIndicatorColor != indicatorColor) {
             mIndicatorColor = indicatorColor;
             invalidateSelf();
         }
     }
 
-    public void setTrackColor(int trackColor) {
+    public void setTrackColor(long trackColor) {
         if (mTrackColor != trackColor) {
             mTrackColor = trackColor;
             invalidateSelf();
         }
     }
 
-    public int getIndicatorColor() {
+    public long getIndicatorColor() {
         return mIndicatorColor;
     }
 
-    public int getTrackColor() {
+    public long getTrackColor() {
         return mTrackColor;
     }
 

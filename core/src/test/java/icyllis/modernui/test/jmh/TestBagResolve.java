@@ -21,11 +21,6 @@ package icyllis.modernui.test.jmh;
 import icyllis.modernui.R;
 import icyllis.modernui.material.MaterialTheme;
 import icyllis.modernui.resources.AssetManager;
-import icyllis.modernui.resources.AssetPack;
-import icyllis.modernui.resources.EmptyAssetProvider;
-import icyllis.modernui.resources.ResourceId;
-import icyllis.modernui.resources.Resources;
-import icyllis.modernui.resources.ResourcesBuilder;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
@@ -39,19 +34,9 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class TestBagResolve {
 
-    private static final AssetPack sSystemAssetPack;
-
     static {
-        try {
-            ResourcesBuilder resourcesBuilder = new ResourcesBuilder(R.ns);
-            MaterialTheme.addToResources(resourcesBuilder);
-            sSystemAssetPack = resourcesBuilder.build(new EmptyAssetProvider());
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to create system AssetPack", e);
-        }
-
         AssetManager.Builder ab = new AssetManager.Builder();
-        ab.addAssetPack(sSystemAssetPack);
+        ab.addAssetPack(MaterialTheme.getAssetPack());
         mResources = ab.build();
     }
 

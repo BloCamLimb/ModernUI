@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.BiFunction;
 
 /**
  * Represents a loaded resources file.
@@ -45,7 +44,7 @@ public class ResourceMap {
     ResStringPool typeStringPool;
     ResStringPool keyStringPool;
 
-    BiFunction<?, ?, ?>[] factoryPool;
+    RuntimeFactory[] factoryPool;
 
     NamespaceSpec[] namespaceSpecs;
 
@@ -115,7 +114,7 @@ public class ResourceMap {
         return globalStringPool;
     }
 
-    public BiFunction<?,?,?> getFactory(int idx) {
+    public RuntimeFactory getFactory(int idx) {
         if (idx < 0 || idx >= factoryPool.length) {
             return null;
         }

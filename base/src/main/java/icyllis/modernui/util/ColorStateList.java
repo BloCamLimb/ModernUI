@@ -167,6 +167,24 @@ public class ColorStateList extends ComplexColor {
     }
 
     /**
+     * Apply alpha modulation to base color.
+     *
+     * @param baseColor base color
+     * @param alphaMod  alpha multiplier applied to the base color
+     * @return modulated color
+     */
+    public static long modulateColor(long baseColor, float alphaMod) {
+        if (alphaMod == 1.0f) {
+            return baseColor;
+        }
+
+        final float baseAlpha = Color.alpha(baseColor);
+        final float alpha = baseAlpha * alphaMod;
+
+        return Color.withAlpha(baseColor, alpha);
+    }
+
+    /**
      * Indicates whether this color state list contains at least one state spec
      * and the first spec is not empty (e.g. match-all).
      *
@@ -201,9 +219,9 @@ public class ColorStateList extends ComplexColor {
 
     /**
      * Return the color associated with the given set of
-     * {@link icyllis.modernui.view.View} states.
+     * {@code View} states.
      *
-     * @param stateSet     an array of {@link icyllis.modernui.view.View} states
+     * @param stateSet     an array of {@code View} states
      * @param defaultColor the color to return if there's no matching state
      *                     spec in this {@link ColorStateList} that matches the
      *                     stateSet.
