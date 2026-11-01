@@ -20,8 +20,6 @@ package icyllis.modernui.util;
 
 import org.jspecify.annotations.NonNull;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamReader;
 import java.util.Objects;
 
@@ -39,23 +37,8 @@ public final class XMLStreamAttributes implements AttributeSet {
     }
 
     @Override
-    public QName getAttributeName(int index) {
-        return reader.getAttributeName(index);
-    }
-
-    @Override
-    public String getAttributeNamespace(int index) {
-        return reader.getAttributeNamespace(index);
-    }
-
-    @Override
-    public String getAttributeLocalName(int index) {
+    public String getAttributeName(int index) {
         return reader.getAttributeLocalName(index);
-    }
-
-    @Override
-    public String getAttributePrefix(int index) {
-        return reader.getAttributePrefix(index);
     }
 
     @Override
@@ -64,12 +47,7 @@ public final class XMLStreamAttributes implements AttributeSet {
     }
 
     @Override
-    public String getAttributeValue(String namespaceURI, String localName) {
-        return reader.getAttributeValue(namespaceURI, localName);
-    }
-
-    @Override
-    public Location getLocation() {
-        return reader.getLocation();
+    public String getAttributeValue(String name) {
+        return reader.getAttributeValue(null, name);
     }
 }

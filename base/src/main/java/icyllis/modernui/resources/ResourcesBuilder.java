@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.AnyRes;
 import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.graphics.ComplexColor;
+import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.resources.ResourceTypes.ResTable_entry;
 import icyllis.modernui.resources.ResourceTypes.ResTable_map;
 import icyllis.modernui.resources.ResourceTypes.ResTable_type;
@@ -129,9 +130,12 @@ public class ResourcesBuilder {
         return mLibraryTable.computeIfAbsent(namespace, mLibraryMapper);
     }
 
-    int genId(String namespace, String entry) {
-        int packageId = namespace.equals(mNamespace) ? 0 : storeNamespace(namespace) + 1;
-        return (packageId << Res_value.PACKAGE_ID_SHIFT) | storeKeyString(entry);
+    int genId(ResourceId id) {
+        String namespace = id.namespace();
+        int namespaceIndex = namespace.equals(mNamespace) ? 0 : storeNamespace(namespace) + 1;
+        return (namespaceIndex << Res_value.NAMESPACE_INDEX_SHIFT) |
+                (storeTypeString(id.type()) << Res_value.TYPE_INDEX_SHIFT) |
+                storeKeyString(id.entry());
     }
 
     /**
@@ -217,7 +221,7 @@ public class ResourcesBuilder {
         return storeFactory(factory);
     }
 
-    public int addPrivateDrawable(@NonNull RuntimeDrawableFactory factory) {
+    public int addPrivateDrawable(@NonNull RuntimeResourceFactory<Drawable> factory) {
         return storeFactory(factory);
     }
 
@@ -278,7 +282,7 @@ public class ResourcesBuilder {
 
                 int parentId = -1;
                 if (style.mParent != null) {
-                    parentId = genId(style.mParent.namespace(), style.mParent.entry());
+                    parentId = genId(style.mParent);
                 }
 
                 data.putInt(offset + ResTable_entry.parent, parentId);
@@ -411,6 +415,13 @@ public class ResourcesBuilder {
         }
 
         public void addDimension(@NonNull String attr,
+                                 int value, @TypedValue.ComplexDimensionUnit int units) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_DIMENSION,
+                    TypedValue.createComplexDimension(value, units))
+            );
+        }
+
+        public void addDimension(@NonNull String attr,
                                  float value, @TypedValue.ComplexDimensionUnit int units) {
             mEntries.add(new Entry(attr, TypedValue.TYPE_DIMENSION,
                     TypedValue.createComplexDimension(value, units))
@@ -431,18 +442,15 @@ public class ResourcesBuilder {
             addAttribute(attr, target.entry());
         }
 
-        public void addReference(@NonNull String attr, @Nullable @AnyRes ResourceId target) {
-            int typeId = target == null ? 0 : storeTypeString(target.type()) + 1;
-            mEntries.add(new Entry(attr,
-                    TypedValue.TYPE_REFERENCE | (typeId << ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT),
-                    target == null ? -1 : genId(target.namespace(), target.entry())));
+        public void addReference(@NonNull String attr, @NonNull @AnyRes ResourceId target) {
+            mEntries.add(new Entry(attr, TypedValue.TYPE_REFERENCE, genId(target)));
         }
 
         /**
          * @deprecated namespace and type are not used in attribute name anymore, this will be removed in 4.0
          */
         @Deprecated
-        public void addReference(@NonNull @AttrRes ResourceId attr, @Nullable @AnyRes ResourceId target) {
+        public void addReference(@NonNull @AttrRes ResourceId attr, @NonNull @AnyRes ResourceId target) {
             assert attr.type().equals("attr");
             addReference(attr.entry(), target);
         }
@@ -455,7 +463,7 @@ public class ResourcesBuilder {
             mEntries.add(new Entry(attr, TypedValue.TYPE_INT_COLOR_ARGB8, argb));
         }
 
-        public void addInteger(@NonNull String attr, int v) {
+        public void addInt(@NonNull String attr, int v) {
             mEntries.add(new Entry(attr, TypedValue.TYPE_INT_DEC, v));
         }
 
@@ -479,7 +487,7 @@ public class ResourcesBuilder {
         }
 
         public void addDrawable(@NonNull String attr,
-                                @NonNull RuntimeDrawableFactory factory) {
+                                @NonNull RuntimeResourceFactory<Drawable> factory) {
             mEntries.add(new Entry(attr, TypedValue.TYPE_FACTORY,
                     storeFactory(factory)));
         }

@@ -23,7 +23,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Runtime resource factory, suitable for complex color, animation, transition.
+ * Runtime resource factory, suitable for complex color, drawable, animation, transition.
  *
  * @hidden
  */
@@ -34,8 +34,9 @@ public interface RuntimeResourceFactory<T> extends RuntimeFactory {
     /**
      * @param resources resources object
      * @param theme     theme object
+     * @param cookie    asset pack this resource belongs to
      * @return new resource instance
      */
     @Nullable
-    T create(@NonNull Resources resources, Resources.@Nullable Theme theme);
+    T create(@NonNull Resources resources, Resources.Theme theme, int cookie);
 }

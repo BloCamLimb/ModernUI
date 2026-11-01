@@ -51,7 +51,7 @@ import java.util.Objects;
 public final class ThemeKey {
 
     /** Style resources in application order. Never mutated after construction. */
-    private final ResourceId[] resId;
+    private final Object[] items;
 
     /** {@code forces[i]} is the force flag of the application of {@code ids[i]}. Never mutated. */
     private final boolean[] force;
@@ -62,16 +62,16 @@ public final class ThemeKey {
     /**
      * Creates a key that takes ownership of the given arrays.
      *
-     * @param resId style resources in application order; must not be shared or mutated afterwards
+     * @param items style resources in application order; must not be shared or mutated afterwards
      * @param force force flags, same length as {@code resId}; must not be shared or mutated afterwards
      */
-    private ThemeKey(ResourceId[] resId, boolean[] force) {
-        this.resId = resId;
+    private ThemeKey(Object[] items, boolean[] force) {
+        this.items = items;
         this.force = force;
 
         int hash = 0;
-        for (int i = 0; i < resId.length; i++) {
-            hash = 31 * hash + resId[i].hashCode();
+        for (int i = 0; i < items.length; i++) {
+            hash = 31 * hash + items[i].hashCode();
             hash = 31 * hash + (force[i] ? 1 : 0);
         }
         this.hash = hash;
@@ -83,7 +83,7 @@ public final class ThemeKey {
      * @return the number of applications
      */
     public int count() {
-        return resId.length;
+        return items.length;
     }
 
     /**
@@ -93,8 +93,8 @@ public final class ThemeKey {
      * @return the style resource id
      * @throws ArrayIndexOutOfBoundsException if the index is out of range
      */
-    public @NonNull ResourceId resId(int index) {
-        return resId[index];
+    public @NonNull Object item(int index) {
+        return items[index];
     }
 
     /**
@@ -116,7 +116,7 @@ public final class ThemeKey {
         return o instanceof ThemeKey t &&
                 hash == t.hash &&
                 Arrays.equals(force, t.force) &&
-                Arrays.equals(resId, t.resId);
+                Arrays.equals(items, t.items);
     }
 
     @Override
@@ -127,9 +127,9 @@ public final class ThemeKey {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < resId.length; i++) {
+        for (int i = 0; i < items.length; i++) {
             if (i > 0) sb.append(", ");
-            sb.append('(').append(resId[i]).append(", force=").append(force[i]).append(')');
+            sb.append('(').append(items[i]).append(", force=").append(force[i]).append(')');
         }
         return sb.append(']').toString();
     }
@@ -146,12 +146,12 @@ public final class ThemeKey {
     public static final class Builder {
 
         /** Style resources applied so far, in order; only the first {@link #count} entries are valid. */
-        private ResourceId[] resId = new ResourceId[8];
+        private Object[] items = new Object[8];
 
-        /** Force flags matching {@link #resId}; only the first {@link #count} entries are valid. */
+        /** Force flags matching {@link #items}; only the first {@link #count} entries are valid. */
         private boolean[] force = new boolean[8];
 
-        /** Number of valid entries in {@link #resId} and {@link #force}. */
+        /** Number of valid entries in {@link #items} and {@link #force}. */
         private int count;
 
         /**
@@ -159,7 +159,7 @@ public final class ThemeKey {
          * application itself. A non-forced application of one of these can never
          * change the theme, because nothing has been removed since.
          */
-        private final HashSet<ResourceId> sinceForce = new HashSet<>();
+        private final HashSet<Object> sinceForce = new HashSet<>();
 
         /** Creates a builder describing an empty theme. */
         public Builder() {}
@@ -183,23 +183,32 @@ public final class ThemeKey {
          * @throws NullPointerException if {@code resId} is {@code null}
          */
         public Builder append(@NonNull ResourceId resId, boolean force) {
-            Objects.requireNonNull(resId);
+            append((Object) resId, force);
+            return this;
+        }
+
+        public Builder append(@NonNull InlineStyle style, boolean force) {
+            append((Object) style, force);
+            return this;
+        }
+
+        private void append(@NonNull Object item, boolean force) {
+            Objects.requireNonNull(item);
             if (force) {
                 // Applying the same forced style twice in a row is idempotent.
-                if (count > 0 && this.force[count - 1] && this.resId[count - 1].equals(resId))
-                    return this;
+                if (count > 0 && this.force[count - 1] && this.items[count - 1].equals(item))
+                    return;
                 sinceForce.clear();
-                sinceForce.add(resId);
-            } else if (!sinceForce.add(resId)) {
-                return this;
+                sinceForce.add(item);
+            } else if (!sinceForce.add(item)) {
+                return;
             }
-            if (count == this.resId.length) {
-                this.resId = Arrays.copyOf(this.resId, count * 2);
+            if (count == this.items.length) {
+                this.items = Arrays.copyOf(this.items, count * 2);
                 this.force = Arrays.copyOf(this.force, count * 2);
             }
-            this.resId[count] = resId;
+            this.items[count] = item;
             this.force[count++] = force;
-            return this;
         }
 
         /**
@@ -214,8 +223,8 @@ public final class ThemeKey {
         public Builder append(@NonNull ThemeKey other) {
             if (count == 0)
                 return setTo(other);   // replaying into an empty builder yields other itself
-            for (int i = 0; i < other.resId.length; i++)
-                append(other.resId[i], other.force[i]);
+            for (int i = 0; i < other.items.length; i++)
+                append(other.items[i], other.force[i]);
             return this;
         }
 
@@ -226,7 +235,7 @@ public final class ThemeKey {
          * @return this builder
          */
         public Builder clear() {
-            Arrays.fill(resId, 0, count, null);
+            Arrays.fill(items, 0, count, null);
             count = 0;
             sinceForce.clear();
             return this;
@@ -242,12 +251,12 @@ public final class ThemeKey {
          */
         public Builder setTo(@NonNull ThemeKey key) {
             clear();
-            int len = key.resId.length;
-            if (resId.length < len) {
-                resId = new ResourceId[len];
+            int len = key.items.length;
+            if (items.length < len) {
+                items = new Object[len];
                 force = new boolean[len];
             }
-            System.arraycopy(key.resId, 0, resId, 0, len);
+            System.arraycopy(key.items, 0, items, 0, len);
             System.arraycopy(key.force, 0, force, 0, len);
             count = len;
             // Rebuild the redundancy set: everything from the last forced application onwards.
@@ -255,7 +264,7 @@ public final class ThemeKey {
             while (last >= 0 && !force[last])
                 last--;
             for (int i = Math.max(last, 0); i < len; i++)
-                sinceForce.add(resId[i]);
+                sinceForce.add(items[i]);
             return this;
         }
 
@@ -266,7 +275,7 @@ public final class ThemeKey {
          */
         @Contract(" -> new")
         public @NonNull ThemeKey build() {
-            return new ThemeKey(Arrays.copyOf(resId, count), Arrays.copyOf(force, count));
+            return new ThemeKey(Arrays.copyOf(items, count), Arrays.copyOf(force, count));
         }
     }
 }

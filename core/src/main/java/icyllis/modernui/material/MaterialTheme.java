@@ -228,7 +228,8 @@ public class MaterialTheme {
     };
 
     private static ColorStateList elevated_button_foreground_color_selector(Resources resources,
-                                                                            Resources.Theme theme) {
+                                                                            Resources.Theme theme,
+                                                                            int cookie) {
         if (theme == null) {
             return null;
         }
@@ -247,7 +248,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList filled_button_foreground_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList filled_button_foreground_color_selector(Resources resources,
+                                                                          Resources.Theme theme,
+                                                                          int cookie) {
         if (theme == null) {
             return null;
         }
@@ -266,7 +269,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList tonal_button_foreground_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList tonal_button_foreground_color_selector(Resources resources,
+                                                                         Resources.Theme theme,
+                                                                         int cookie) {
         if (theme == null) {
             return null;
         }
@@ -286,7 +291,8 @@ public class MaterialTheme {
     }
 
     private static ColorStateList outlined_button_foreground_color_selector(Resources resources,
-                                                                            Resources.Theme theme) {
+                                                                            Resources.Theme theme,
+                                                                            int cookie) {
         if (theme == null) {
             return null;
         }
@@ -305,7 +311,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList text_button_foreground_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList text_button_foreground_color_selector(Resources resources,
+                                                                        Resources.Theme theme,
+                                                                        int cookie) {
         if (theme == null) {
             return null;
         }
@@ -324,7 +332,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList icon_button_foreground_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList icon_button_foreground_color_selector(Resources resources,
+                                                                        Resources.Theme theme,
+                                                                        int cookie) {
         if (theme == null) {
             return null;
         }
@@ -345,7 +355,8 @@ public class MaterialTheme {
 
     // bg
     private static ColorStateList elevated_button_background_color_selector(Resources resources,
-                                                                            Resources.Theme theme) {
+                                                                            Resources.Theme theme,
+                                                                            int cookie) {
         if (theme == null) {
             return null;
         }
@@ -364,7 +375,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList filled_button_background_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList filled_button_background_color_selector(Resources resources,
+                                                                          Resources.Theme theme,
+                                                                          int cookie) {
         if (theme == null) {
             return null;
         }
@@ -383,7 +396,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList tonal_button_background_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList tonal_button_background_color_selector(Resources resources,
+                                                                         Resources.Theme theme,
+                                                                         int cookie) {
         if (theme == null) {
             return null;
         }
@@ -404,7 +419,8 @@ public class MaterialTheme {
 
     // special
     private static ColorStateList outlined_button_background_color_selector(Resources resources,
-     Resources.Theme theme) {
+                                                                            Resources.Theme theme,
+                                                                            int cookie) {
         if (theme == null) {
             return null;
         }
@@ -427,7 +443,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList text_button_background_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList text_button_background_color_selector(Resources resources,
+                                                                        Resources.Theme theme,
+                                                                        int cookie) {
         if (theme == null) {
             return null;
         }
@@ -463,7 +481,9 @@ public class MaterialTheme {
             StateSet.WILD_CARD
     };
 
-    private static ColorStateList elevated_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList elevated_button_ripple_color_selector(Resources resources,
+                                                                        Resources.Theme theme,
+                                                                        int cookie) {
         if (theme == null) {
             return null;
         }
@@ -491,7 +511,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList filled_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList filled_button_ripple_color_selector(Resources resources,
+                                                                      Resources.Theme theme,
+                                                                      int cookie) {
         if (theme == null) {
             return null;
         }
@@ -519,7 +541,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList tonal_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList tonal_button_ripple_color_selector(Resources resources,
+                                                                     Resources.Theme theme,
+                                                                     int cookie) {
         if (theme == null) {
             return null;
         }
@@ -547,7 +571,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList outlined_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList outlined_button_ripple_color_selector(Resources resources,
+                                                                        Resources.Theme theme,
+                                                                        int cookie) {
         if (theme == null) {
             return null;
         }
@@ -575,7 +601,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList text_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList text_button_ripple_color_selector(Resources resources,
+                                                                    Resources.Theme theme,
+                                                                    int cookie) {
         if (theme == null) {
             return null;
         }
@@ -603,7 +631,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList icon_button_ripple_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList icon_button_ripple_color_selector(Resources resources,
+                                                                    Resources.Theme theme,
+                                                                    int cookie) {
         if (theme == null) {
             return null;
         }
@@ -631,7 +661,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList button_outline_color_selector(Resources resources, Resources.Theme theme) {
+    private static ColorStateList button_outline_color_selector(Resources resources,
+                                                                Resources.Theme theme,
+                                                                int cookie) {
         if (theme == null) {
             return null;
         }
@@ -650,7 +682,9 @@ public class MaterialTheme {
     }
 
     // reused for checkbox
-    private static ColorStateList radio_button_tint(Resources resources, Resources.Theme theme) {
+    private static ColorStateList radio_button_tint(Resources resources,
+                                                    Resources.Theme theme,
+                                                    int cookie) {
         if (theme == null) {
             return null;
         }
@@ -685,7 +719,9 @@ public class MaterialTheme {
     }
 
     // reused for checkbox, switch
-    private static ColorStateList radio_button_ripple_tint(Resources resources, Resources.Theme theme) {
+    private static ColorStateList radio_button_ripple_tint(Resources resources,
+                                                           Resources.Theme theme,
+                                                           int cookie) {
         if (theme == null) {
             return null;
         }
@@ -718,7 +754,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList switch_track_tint(Resources resources, Resources.Theme theme) {
+    private static ColorStateList switch_track_tint(Resources resources,
+                                                    Resources.Theme theme,
+                                                    int cookie) {
         if (theme == null) {
             return null;
         }
@@ -742,7 +780,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList switch_track_decoration_tint(Resources resources, Resources.Theme theme) {
+    private static ColorStateList switch_track_decoration_tint(Resources resources,
+                                                               Resources.Theme theme,
+                                                               int cookie) {
         if (theme == null) {
             return null;
         }
@@ -763,7 +803,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList switch_thumb_tint(Resources resources, Resources.Theme theme) {
+    private static ColorStateList switch_thumb_tint(Resources resources,
+                                                    Resources.Theme theme,
+                                                    int cookie) {
         if (theme == null) {
             return null;
         }
@@ -802,7 +844,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList checkbox_button_icon_tint(Resources resources, Resources.Theme theme) {
+    private static ColorStateList checkbox_button_icon_tint(Resources resources,
+                                                            Resources.Theme theme,
+                                                            int cookie) {
         if (theme == null) {
             return null;
         }
@@ -822,7 +866,9 @@ public class MaterialTheme {
     }
 
     // reused for progress bar, seek bar
-    private static ColorStateList slider_track_color_active(Resources resources, Resources.Theme theme) {
+    private static ColorStateList slider_track_color_active(Resources resources,
+                                                            Resources.Theme theme,
+                                                            int cookie) {
         if (theme == null) {
             return null;
         }
@@ -842,7 +888,9 @@ public class MaterialTheme {
     }
 
     // reused for progress bar, seek bar
-    private static ColorStateList slider_track_color_inactive(Resources resources, Resources.Theme theme) {
+    private static ColorStateList slider_track_color_inactive(Resources resources,
+                                                              Resources.Theme theme,
+                                                              int cookie) {
         if (theme == null) {
             return null;
         }
@@ -861,7 +909,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList slider_active_tick_color(Resources resources, Resources.Theme theme) {
+    private static ColorStateList slider_active_tick_color(Resources resources,
+                                                           Resources.Theme theme,
+                                                           int cookie) {
         if (theme == null) {
             return null;
         }
@@ -881,7 +931,9 @@ public class MaterialTheme {
     }
 
     // added by ModernUI
-    private static ColorStateList secondary_progress_tint(Resources resources, Resources.Theme theme) {
+    private static ColorStateList secondary_progress_tint(Resources resources,
+                                                          Resources.Theme theme,
+                                                          int cookie) {
         if (theme == null) {
             return null;
         }
@@ -899,7 +951,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList textfield_stroke_color(Resources resources, Resources.Theme theme) {
+    private static ColorStateList textfield_stroke_color(Resources resources,
+                                                         Resources.Theme theme,
+                                                         int cookie) {
         if (theme == null) {
             return null;
         }
@@ -923,7 +977,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList textfield_indicator_text_color(Resources resources, Resources.Theme theme) {
+    private static ColorStateList textfield_indicator_text_color(Resources resources,
+                                                                 Resources.Theme theme,
+                                                                 int cookie) {
         if (theme == null) {
             return null;
         }
@@ -945,7 +1001,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList textfield_filled_background_color(Resources resources, Resources.Theme theme) {
+    private static ColorStateList textfield_filled_background_color(Resources resources,
+                                                                    Resources.Theme theme,
+                                                                    int cookie) {
         if (theme == null) {
             return null;
         }
@@ -970,7 +1028,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList textfield_filled_indicator_color(Resources resources, Resources.Theme theme) {
+    private static ColorStateList textfield_filled_indicator_color(Resources resources,
+                                                                   Resources.Theme theme,
+                                                                   int cookie) {
         if (theme == null) {
             return null;
         }
@@ -994,7 +1054,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList slider_halo_color(Resources resources, Resources.Theme theme) {
+    private static ColorStateList slider_halo_color(Resources resources,
+                                                    Resources.Theme theme,
+                                                    int cookie) {
         if (theme == null) {
             return null;
         }
@@ -1012,7 +1074,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList tabs_text_color(Resources resources, Resources.Theme theme) {
+    private static ColorStateList tabs_text_color(Resources resources,
+                                                  Resources.Theme theme,
+                                                  int cookie) {
         if (theme == null) {
             return null;
         }
@@ -1034,7 +1098,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList tabs_ripple_color(Resources resources, Resources.Theme theme) {
+    private static ColorStateList tabs_ripple_color(Resources resources,
+                                                    Resources.Theme theme,
+                                                    int cookie) {
         if (theme == null) {
             return null;
         }
@@ -1069,7 +1135,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList tabs_text_color_secondary(Resources resources, Resources.Theme theme) {
+    private static ColorStateList tabs_text_color_secondary(Resources resources,
+                                                            Resources.Theme theme,
+                                                            int cookie) {
         if (theme == null) {
             return null;
         }
@@ -1090,7 +1158,9 @@ public class MaterialTheme {
         );
     }
 
-    private static ColorStateList tabs_ripple_color_secondary(Resources resources, Resources.Theme theme) {
+    private static ColorStateList tabs_ripple_color_secondary(Resources resources,
+                                                              Resources.Theme theme,
+                                                              int cookie) {
         if (theme == null) {
             return null;
         }
@@ -1301,19 +1371,19 @@ public class MaterialTheme {
         style.addColor(R.attr.colorErrorContainer, t.colorErrorContainer);
         style.addColor(R.attr.colorOnErrorContainer, t.colorOnErrorContainer);
 
-        style.addColor(R.attr.textColorPrimary, (resources, theme) -> t.textColorPrimary);
-        style.addColor(R.attr.textColorPrimaryInverse, (resources, theme) -> t.textColorPrimaryInverse);
-        style.addColor(R.attr.textColorSecondary, (resources, theme) -> t.textColorSecondary);
-        style.addColor(R.attr.textColorSecondaryInverse, (resources, theme) -> t.textColorSecondaryInverse);
-        style.addColor(R.attr.textColorPrimaryDisableOnly, (resources, theme) -> t.textColorPrimaryDisableOnly);
+        style.addColor(R.attr.textColorPrimary, (resources, theme, cookie) -> t.textColorPrimary);
+        style.addColor(R.attr.textColorPrimaryInverse, (resources, theme, cookie) -> t.textColorPrimaryInverse);
+        style.addColor(R.attr.textColorSecondary, (resources, theme, cookie) -> t.textColorSecondary);
+        style.addColor(R.attr.textColorSecondaryInverse, (resources, theme, cookie) -> t.textColorSecondaryInverse);
+        style.addColor(R.attr.textColorPrimaryDisableOnly, (resources, theme, cookie) -> t.textColorPrimaryDisableOnly);
         style.addColor(R.attr.textColorPrimaryInverseDisableOnly,
-         (resources, theme) -> t.textColorPrimaryInverseDisableOnly);
+         (resources, theme, cookie) -> t.textColorPrimaryInverseDisableOnly);
         style.addColor(R.attr.textColorHighlight, t.textColorHighlight);
         style.addColor(R.attr.textColorHighlightInverse, t.textColorHighlightInverse);
-        style.addColor(R.attr.textColorHint, (resources, theme) -> t.textColorHint);
-        style.addColor(R.attr.textColorHintInverse, (resources, theme) -> t.textColorHintInverse);
-        style.addColor(R.attr.textColorLink, (resources, theme) -> t.textColorLink);
-        style.addColor(R.attr.textColorLinkInverse, (resources, theme) -> t.textColorLinkInverse);
+        style.addColor(R.attr.textColorHint, (resources, theme, cookie) -> t.textColorHint);
+        style.addColor(R.attr.textColorHintInverse, (resources, theme, cookie) -> t.textColorHintInverse);
+        style.addColor(R.attr.textColorLink, (resources, theme, cookie) -> t.textColorLink);
+        style.addColor(R.attr.textColorLinkInverse, (resources, theme, cookie) -> t.textColorLinkInverse);
 
         style.addColor(R.attr.colorControlNormal, t.colorOnSurfaceVariant);
         style.addColor(R.attr.colorControlActivated, t.colorPrimaryContainer);
@@ -1385,13 +1455,13 @@ public class MaterialTheme {
                     R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 16, TypedValue.COMPLEX_UNIT_SP);
-            style.addInteger(R.attr.textFontWeight, 500);
+            style.addInt(R.attr.textFontWeight, 500);
         }
         {
             var style = b.newStyle(R.style.TextAppearance_Material3_TitleSmall, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 14, TypedValue.COMPLEX_UNIT_SP);
-            style.addInteger(R.attr.textFontWeight, 500);
+            style.addInt(R.attr.textFontWeight, 500);
         }
         // Body
         {
@@ -1414,20 +1484,20 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.TextAppearance_Material3_LabelLarge, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorPrimary);
             style.addDimension(R.attr.textSize, 14, TypedValue.COMPLEX_UNIT_SP);
-            style.addInteger(R.attr.textFontWeight, 500);
+            style.addInt(R.attr.textFontWeight, 500);
         }
         {
             var style = b.newStyle(R.style.TextAppearance_Material3_LabelMedium,
                     R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 12, TypedValue.COMPLEX_UNIT_SP);
-            style.addInteger(R.attr.textFontWeight, 500);
+            style.addInt(R.attr.textFontWeight, 500);
         }
         {
             var style = b.newStyle(R.style.TextAppearance_Material3_LabelSmall, R.style.TextAppearance);
             style.addAttribute(R.attr.textColor, R.attr.textColorSecondary);
             style.addDimension(R.attr.textSize, 11, TypedValue.COMPLEX_UNIT_SP);
-            style.addInteger(R.attr.textFontWeight, 500);
+            style.addInt(R.attr.textFontWeight, 500);
         }
         // Buttons
         {
@@ -1444,7 +1514,7 @@ public class MaterialTheme {
             style.addDimension(R.attr.paddingBottom, 8, TypedValue.COMPLEX_UNIT_DP);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceLabelLarge);
             style.addColorFactory(R.attr.textColor, filled_button_foreground_color_selector);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = filled_button_background_color_selector;
                 var backgroundTint = resources.loadColorStateList(value, null, theme);
@@ -1461,7 +1531,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_Button_TonalButton,
                     R.style.Widget_Material3_Button);
             style.addColorFactory(R.attr.textColor, tonal_button_foreground_color_selector);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = tonal_button_background_color_selector;
                 var backgroundTint = resources.loadColorStateList(value, null, theme);
@@ -1479,7 +1549,7 @@ public class MaterialTheme {
                     R.style.Widget_Material3_Button);
             style.addDimension(R.attr.elevation, 1, TypedValue.COMPLEX_UNIT_DP);
             style.addColorFactory(R.attr.textColor, elevated_button_foreground_color_selector);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = elevated_button_background_color_selector;
                 var backgroundTint = resources.loadColorStateList(value, null, theme);
@@ -1496,7 +1566,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_Button_OutlinedButton,
                     R.style.Widget_Material3_Button);
             style.addColorFactory(R.attr.textColor, outlined_button_foreground_color_selector);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = outlined_button_background_color_selector;
                 var backgroundTint = resources.loadColorStateList(value, null, theme);
@@ -1517,7 +1587,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_Button_TextButton,
                     R.style.Widget_Material3_Button);
             style.addColorFactory(R.attr.textColor, text_button_foreground_color_selector);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = text_button_background_color_selector;
                 var backgroundTint = resources.loadColorStateList(value, null, theme);
@@ -1541,7 +1611,7 @@ public class MaterialTheme {
             style.addDimension(R.attr.paddingRight, 6, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.paddingTop, 6, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.paddingBottom, 6, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = filled_button_background_color_selector;
                 var backgroundTint = resources.loadColorStateList(value, null, theme);
@@ -1558,7 +1628,7 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_IconButton_Tonal,
                     R.style.Widget_Material3_Button_IconButton);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = tonal_button_background_color_selector;
                 var backgroundTint = resources.loadColorStateList(value, null, theme);
@@ -1575,7 +1645,7 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_IconButton_Outlined,
                     R.style.Widget_Material3_Button_IconButton);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = outlined_button_background_color_selector;
                 var backgroundTint = resources.loadColorStateList(value, null, theme);
@@ -1596,7 +1666,7 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Button_IconButton_Standard,
              R.style.Widget_Material3_Button_IconButton);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = icon_button_ripple_color_selector;
                 var rippleColor = resources.loadColorStateList(value, null, theme);
@@ -1620,7 +1690,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_CompoundButton_RadioButton,
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
-            style.addDrawable(R.attr.button, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.button, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = radio_button_tint;
                 var buttonTint = resources.loadColorStateList(value, null, theme);
@@ -1628,7 +1698,7 @@ public class MaterialTheme {
                 button.setTintList(buttonTint);
                 return button;
             });
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = radio_button_ripple_tint;
                 var rippleTint = resources.loadColorStateList(value, null, theme);
@@ -1642,7 +1712,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem,
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
-            style.addDrawable(R.attr.button, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.button, (resources, theme, cookie) -> {
                 final TypedValue value = new TypedValue();
                 var button = new BuiltinIconDrawable(resources,
                         BuiltinIconDrawable.RADIO_SMALL, 18);
@@ -1658,7 +1728,7 @@ public class MaterialTheme {
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
             style.addDimension(R.attr.switchMinWidth, 52, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.switchPadding, 16, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.track, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.track, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = switch_track_tint;
                 var tint = resources.loadColorStateList(value, null, theme);
@@ -1672,7 +1742,7 @@ public class MaterialTheme {
                 track.setStroke(dp(2, resources), decorationTint);
                 return track;
             });
-            style.addDrawable(R.attr.thumb, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.thumb, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = switch_thumb_tint;
                 var tint = resources.loadColorStateList(value, null, theme);
@@ -1685,7 +1755,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_CompoundButton_CheckBox,
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
-            style.addDrawable(R.attr.button, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.button, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = radio_button_tint;
                 var buttonTint = resources.loadColorStateList(value, null, theme);
@@ -1696,7 +1766,7 @@ public class MaterialTheme {
                 button.setIconTint(buttonIconTint);
                 return button;
             });
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = radio_button_ripple_tint;
                 var rippleTint = resources.loadColorStateList(value, null, theme);
@@ -1710,7 +1780,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem,
                     R.style.Widget_CompoundButton);
             style.addAttribute(R.attr.textAppearance, R.attr.textAppearanceBodyMedium);
-            style.addDrawable(R.attr.button, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.button, (resources, theme, cookie) -> {
                 final TypedValue value = new TypedValue();
                 var button = new BuiltinIconDrawable(resources,
                         BuiltinIconDrawable.CHECK_SMALL, 18);
@@ -1725,7 +1795,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar, null);
             style.addDimension(R.attr.minWidth, 48, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 48, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie) -> {
                 final TypedValue value = new TypedValue();
                 var drawable = new CircularIndeterminateDrawable(resources, 40, 4, 4);
                 // there is no disabled color in indeterminate mode
@@ -1733,14 +1803,14 @@ public class MaterialTheme {
                 drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie) ->
                     circular_progress_drawable(resources, theme, cookie, 40, 4, 4));
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Small, null);
             style.addDimension(R.attr.minWidth, 36, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 36, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie) -> {
                 final TypedValue value = new TypedValue();
                 var drawable = new CircularIndeterminateDrawable(resources, 28, 4, 3);
                 // there is no disabled color in indeterminate mode
@@ -1748,14 +1818,14 @@ public class MaterialTheme {
                 drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie) ->
                     circular_progress_drawable(resources, theme, cookie, 28, 4, 3));
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar_ExtraSmall, null);
             style.addDimension(R.attr.minWidth, 24, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.minHeight, 24, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie) -> {
                 final TypedValue value = new TypedValue();
                 var drawable = new CircularIndeterminateDrawable(resources, 20, 2, 2.5f);
                 // there is no disabled color in indeterminate mode
@@ -1763,12 +1833,12 @@ public class MaterialTheme {
                 drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie) ->
                     circular_progress_drawable(resources, theme, cookie,20, 2, 2.5f));
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Horizontal, null);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie) -> {
                 final TypedValue value = new TypedValue();
                 var drawable = new LinearIndeterminateDrawable(resources, false);
                 // there is no disabled color in indeterminate mode
@@ -1776,13 +1846,13 @@ public class MaterialTheme {
                 drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie) ->
                     linear_progress_drawable(resources, theme, cookie, false, true));
             style.addBoolean(R.attr.mirrorForRtl, true);
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_ProgressBar_Vertical, null);
-            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.indeterminateDrawable, (resources, theme, cookie) -> {
                 var drawable = new LinearIndeterminateDrawable(resources, true);
                 TypedValue value = new TypedValue();
                 // there is no disabled color in indeterminate mode
@@ -1790,25 +1860,25 @@ public class MaterialTheme {
                 drawable.setTrackColor(theme.getColor(R.attr.colorSecondaryContainer, value));
                 return drawable;
             });
-            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie) ->
                     linear_progress_drawable(resources, theme, cookie, true, true));
         }
         // Seek bars
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar, null);
-            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) ->
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie) ->
                     linear_progress_drawable(resources, theme, cookie, false, false));
             style.addBoolean(R.attr.mirrorForRtl, true);
             style.addBoolean(R.attr.focusable, true);
             style.addBoolean(R.attr.clickable, true);
-            style.addDrawable(R.attr.thumb, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.thumb, (resources, theme, cookie) -> {
                 var thumb = new SeekbarThumbDrawable(resources, true);
                 var value = cf(cookie);
                 value.data = slider_track_color_active;
                 thumb.setTintList(resources.loadColorStateList(value, null, theme));
                 return thumb;
             });
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = slider_halo_color;
                 var haloColor = resources.loadColorStateList(value, null, theme);
@@ -1821,7 +1891,7 @@ public class MaterialTheme {
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete, R.style.Widget_Material3_SeekBar);
-            style.addDrawable(R.attr.tickMark, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.tickMark, (resources, theme, cookie) -> {
                 var tick = new ShapeDrawable();
                 tick.setShape(ShapeDrawable.CIRCLE);
                 int size = dp(2, resources);
@@ -1835,7 +1905,7 @@ public class MaterialTheme {
         }
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar_Slider, null);
-            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.progressDrawable, (resources, theme, cookie) -> {
                 var background = new ShapeDrawable();
                 background.setShape(ShapeDrawable.HLINE);
                 background.setSize(-1, dp(10, resources));
@@ -1861,7 +1931,7 @@ public class MaterialTheme {
             style.addBoolean(R.attr.mirrorForRtl, true);
             style.addBoolean(R.attr.focusable, true);
             style.addBoolean(R.attr.clickable, true);
-            style.addDrawable(R.attr.thumb, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.thumb, (resources, theme, cookie) -> {
                 var thumb = new SliderThumbDrawable(resources);
                 var value = cf(cookie);
                 value.data = slider_track_color_active;
@@ -1874,7 +1944,7 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_SeekBar_Discrete_Slider,
              R.style.Widget_Material3_SeekBar_Slider);
-            style.addDrawable(R.attr.tickMark, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.tickMark, (resources, theme, cookie) -> {
                 var tick = new ShapeDrawable();
                 tick.setShape(ShapeDrawable.CIRCLE);
                 int size = dp(4, resources);
@@ -1890,7 +1960,7 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_PopupMenu, null);
             style.addDimension(R.attr.popupElevation, 3, TypedValue.COMPLEX_UNIT_DP);
-            style.addDrawable(R.attr.popupBackground, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.popupBackground, (resources, theme, cookie) -> {
                 var popupBackground = new ShapeDrawable();
                 popupBackground.setShape(ShapeDrawable.RECTANGLE);
                 popupBackground.setCornerRadius(dp(4, resources));
@@ -1914,7 +1984,7 @@ public class MaterialTheme {
         {
             var style = b.newStyle(R.style.Widget_Material3_Spinner,
                     R.style.Widget_Material3_PopupMenu_ListPopupWindow);
-            style.addDrawable(R.attr.background, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.background, (resources, theme, cookie) -> {
                 var value = cf(cookie);
                 value.data = outlined_box;
                 var background = resources.loadDrawable(value, null, theme);
@@ -1936,7 +2006,7 @@ public class MaterialTheme {
                 return layers;
             });
             style.addBoolean(R.attr.clickable, true);
-            style.addDrawable(R.attr.dropDownSelector, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.dropDownSelector, (resources, theme, cookie) -> {
                 TypedValue value = new TypedValue();
                 var rippleColor = theme.getColorStateList(R.attr.colorControlHighlight, value);
                 return new RippleDrawable(rippleColor, null, new ColorDrawable(~0));
@@ -1972,7 +2042,7 @@ public class MaterialTheme {
             style.addColorFactory(R.attr.tabIconTint, tabs_text_color);
             style.addAttribute(R.attr.tabTextAppearance, R.attr.textAppearanceTitleSmall);
             style.addColorFactory(R.attr.tabTextColor, tabs_text_color);
-            style.addDrawable(R.attr.tabIndicator, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.tabIndicator, (resources, theme, cookie) -> {
                 // rounded top
                 ShapeDrawable indicator = new ShapeDrawable();
                 int rad = dp(3, resources);
@@ -1985,7 +2055,7 @@ public class MaterialTheme {
             style.addAttribute(R.attr.tabIndicatorColor, R.attr.colorPrimary);
             style.addColorFactory(R.attr.tabRippleColor, tabs_ripple_color);
             style.addBoolean(R.attr.tabIndicatorFullWidth, false);
-            style.addInteger(R.attr.tabIndicatorAnimationDuration, 500);
+            style.addInt(R.attr.tabIndicatorAnimationDuration, 500);
             style.addEnum(R.attr.tabGravity, TabLayout.GRAVITY_CENTER);
             style.addDimension(R.attr.tabPaddingStart, 12, TypedValue.COMPLEX_UNIT_DP);
             style.addDimension(R.attr.tabPaddingEnd, 12, TypedValue.COMPLEX_UNIT_DP);
@@ -1999,7 +2069,7 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Widget_Material3_TabLayout_Secondary, R.style.Widget_Material3_TabLayout);
             style.addColorFactory(R.attr.tabIconTint, tabs_text_color_secondary);
             style.addColorFactory(R.attr.tabTextColor, tabs_text_color_secondary);
-            style.addDrawable(R.attr.tabIndicator, (resources, theme, cookie, density) -> {
+            style.addDrawable(R.attr.tabIndicator, (resources, theme, cookie) -> {
                 ShapeDrawable indicator = new ShapeDrawable();
                 indicator.setSize(-1, dp(2, resources));
                 return indicator;
@@ -2009,7 +2079,7 @@ public class MaterialTheme {
         }
     }
 
-    private static Drawable outlined_box(Resources resources, Resources.Theme theme, int cookie, int density) {
+    private static Drawable outlined_box(Resources resources, Resources.Theme theme, int cookie) {
         var value = cf(cookie);
         value.data = textfield_stroke_color;
         var boxStrokeColor = resources.loadColorStateList(value, null, theme);
@@ -2027,7 +2097,7 @@ public class MaterialTheme {
         return selector;
     }
 
-    private static Drawable filled_box(Resources resources, Resources.Theme theme, int cookie, int density) {
+    private static Drawable filled_box(Resources resources, Resources.Theme theme, int cookie) {
         var value = cf(cookie);
         value.data = textfield_filled_background_color;
         var boxBackgroundColor = resources.loadColorStateList(value, null, theme);

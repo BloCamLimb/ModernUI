@@ -2807,7 +2807,7 @@ public class View implements Drawable.Callback {
                     }
                     break;
                 case 6:
-                    mID = a.getInteger(attr, NO_ID);
+                    mID = a.getInt(attr, NO_ID);
                     break;
                 case 7:
                     // Clear any layout direction flags (included resolved bits) already set

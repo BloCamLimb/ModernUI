@@ -259,7 +259,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     private InputFilter @NonNull[] mFilters = NO_FILTERS;
 
-    int mHighlightColor = 0x6633B5E5;
+    private static final long DEFAULT_HIGHLIGHT_COLOR = Color.pack(0x6633B5E5);
+
+    long mHighlightColor = DEFAULT_HIGHLIGHT_COLOR;
     private FloatArrayList mHighlightPath;
     private boolean mHighlightPathBogus = true;
 
@@ -1704,6 +1706,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * Sets the color used to display the selection highlight.
      */
     public void setHighlightColor(@ColorInt int color) {
+        setHighlightColor(Color.pack(color));
+    }
+
+    /**
+     * Sets the color used to display the selection highlight.
+     */
+    public void setHighlightColor(@ColorLong long color) {
         if (mHighlightColor != color) {
             mHighlightColor = color;
             invalidate();
@@ -1714,8 +1723,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @return the color used to display the selection highlight
      * @see #setHighlightColor(int)
      */
-    @ColorInt
-    public int getHighlightColor() {
+    @ColorLong
+    public long getHighlightColor() {
         return mHighlightColor;
     }
 

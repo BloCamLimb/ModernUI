@@ -19,17 +19,24 @@
 package icyllis.modernui.resources;
 
 import icyllis.modernui.annotation.AnyRes;
-import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.ComplexColor;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.DisplayMetrics;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.Arrays;
 
+import static icyllis.modernui.util.Log.LOGGER;
+
 public class TypedArray {
+
+    static final Marker MARKER = MarkerFactory.getMarker("TypedArray");
 
     static @NonNull TypedArray obtain(@NonNull Resources res, int len) {
         TypedArray attrs = res.mTypedArrayPool.acquire();
@@ -42,12 +49,11 @@ public class TypedArray {
         return attrs;
     }
 
-    static final int STYLE_NUM_ENTRIES = 5;
+    static final int STYLE_NUM_ENTRIES = 4;
     static final int STYLE_TYPE = 0;
     static final int STYLE_DATA = 1;
     static final int STYLE_COOKIE = 2;
     static final int STYLE_FLAGS = 3;
-    static final int STYLE_DENSITY = 4;
 
     private final Resources mResources;
     private final DisplayMetrics mMetrics;
@@ -65,12 +71,11 @@ public class TypedArray {
     private void reset(int len) {
         mLength = len;
         final int dataLen = len * STYLE_NUM_ENTRIES;
-        final int indicesLen = len + 1;
         if (mData == null || mData.length < dataLen) {
             mData = new int[dataLen];
-            mIndices = new int[indicesLen];
+            mIndices = new int[len + 1];
         } else {
-            Arrays.fill(mData, 0);
+            Arrays.fill(mData, 0, dataLen, 0);
         }
     }
 
@@ -179,7 +184,9 @@ public class TypedArray {
             return data[index + STYLE_DATA] != 0;
         }
 
-        throw new RuntimeException("getBoolean of bad type: 0x" + Integer.toHexString(type));
+        LOGGER.error(MARKER, "getBoolean of bad type: 0x{}",
+                Integer.toHexString(type), new RuntimeException());
+        return defValue;
     }
 
     /**
@@ -264,8 +271,8 @@ public class TypedArray {
      * @throws UnsupportedOperationException if the attribute is defined but is
      *         not an integer color or color state list.
      */
-    @ColorInt
-    public int getColor(int index, @ColorInt int defValue) {
+    @ColorLong
+    public long getColor(int index, @ColorLong long defValue) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
@@ -279,28 +286,29 @@ public class TypedArray {
             return defValue;
         } else if (type >= TypedValue.TYPE_FIRST_INT
                 && type <= TypedValue.TYPE_LAST_INT) {
-            return data[index + STYLE_DATA];
+            return Color.pack(data[index + STYLE_DATA]);
         } else if (type == TypedValue.TYPE_STRING ||
                 type == TypedValue.TYPE_FACTORY) {
             final TypedValue value = mValue;
             if (getValueAt(index, value)) {
-                final ColorStateList csl = mResources.loadColorStateList(
+                final ComplexColor complexColor = mResources.loadComplexColor(
                         value, null, mTheme);
-                if (csl != null) {
-                    return Color.toArgb(csl.getDefaultColor());
+                if (complexColor != null) {
+                    return complexColor.getDefaultColor();
                 }
             }
             return defValue;
         } else if (type == TypedValue.TYPE_ATTRIBUTE) {
             final TypedValue value = mValue;
             getValueAt(index, value);
-            throw new UnsupportedOperationException(
-                    "Failed to resolve attribute at index " + attrIndex + ": " + value
-                            + ", theme=" + mTheme);
+            LOGGER.error(MARKER, "Failed to resolve attribute at index {}: {}, theme={}",
+                    attrIndex, value, mTheme, new UnsupportedOperationException());
+            return defValue;
         }
 
-        throw new UnsupportedOperationException("Can't convert value at index " + attrIndex
-                + " to color: type=0x" + Integer.toHexString(type) + ", theme=" + mTheme);
+        LOGGER.error(MARKER, "Can't convert value at index {} to color: type=0x{}, theme={}",
+                attrIndex, Integer.toHexString(type), mTheme, new UnsupportedOperationException());
+        return defValue;
     }
 
     /**
@@ -330,9 +338,9 @@ public class TypedArray {
         final TypedValue value = mValue;
         if (getValueAt(index * STYLE_NUM_ENTRIES, value)) {
             if (value.type == TypedValue.TYPE_ATTRIBUTE) {
-                throw new UnsupportedOperationException(
-                        "Failed to resolve attribute at index " + index + ": " + value
-                                + ", theme=" + mTheme);
+                LOGGER.error(MARKER, "Failed to resolve attribute at index {}: {}, theme={}",
+                        index, value, mTheme, new UnsupportedOperationException());
+                return null;
             }
             return mResources.loadColorStateList(value, null, mTheme);
         }
@@ -340,45 +348,37 @@ public class TypedArray {
     }
 
     /**
-     * Retrieve the integer value for the attribute at <var>index</var>.
+     * Retrieve the ComplexColor for the attribute at <var>index</var>.
+     * The value may be either a {@link ColorStateList} which can wrap a simple
+     * color value, or a {@link icyllis.modernui.graphics.GradientColor}
      * <p>
-     * Unlike {@link #getInt(int, int)}, this method will throw an exception if
-     * the attribute is defined but is not an integer.
+     * This method will return {@code null} if the attribute is not defined or
+     * is not an integer color, color state list or GradientColor.
      *
      * @param index Index of attribute to retrieve.
-     * @param defValue Value to return if the attribute is not defined or
-     *                 not a resource.
      *
-     * @return Attribute integer value, or defValue if not defined.
-     * @throws RuntimeException if the TypedArray has already been recycled.
+     * @return ComplexColor for the attribute, or {@code null} if not defined.
+     * @throws RuntimeException if the attribute if the TypedArray has already
+     *         been recycled.
      * @throws UnsupportedOperationException if the attribute is defined but is
-     *         not an integer.
+     *         not an integer color, color state list or GradientColor.
      */
-    public int getInteger(int index, int defValue) {
+    @Nullable
+    public ComplexColor getComplexColor(int index) {
         if (mRecycled) {
             throw new RuntimeException("Cannot make calls to a recycled instance!");
         }
 
-        final int attrIndex = index;
-        index *= STYLE_NUM_ENTRIES;
-
-        final int[] data = mData;
-        final int type = data[index + STYLE_TYPE];
-        if (type == TypedValue.TYPE_NULL) {
-            return defValue;
-        } else if (type >= TypedValue.TYPE_FIRST_INT
-                && type <= TypedValue.TYPE_LAST_INT) {
-            return data[index + STYLE_DATA];
-        } else if (type == TypedValue.TYPE_ATTRIBUTE) {
-            final TypedValue value = mValue;
-            getValueAt(index, value);
-            throw new UnsupportedOperationException(
-                    "Failed to resolve attribute at index " + attrIndex + ": " + value
-                            + ", theme=" + mTheme);
+        final TypedValue value = mValue;
+        if (getValueAt(index * STYLE_NUM_ENTRIES, value)) {
+            if (value.type == TypedValue.TYPE_ATTRIBUTE) {
+                LOGGER.error(MARKER, "Failed to resolve attribute at index {}: {}, theme={}",
+                        index, value, mTheme, new UnsupportedOperationException());
+                return null;
+            }
+            return mResources.loadComplexColor(value, null, mTheme);
         }
-
-        throw new UnsupportedOperationException("Can't convert value at index " + attrIndex
-                + " to integer: type=0x" + Integer.toHexString(type) + ", theme=" + mTheme);
+        return null;
     }
 
     /**
@@ -420,13 +420,14 @@ public class TypedArray {
         } else if (type == TypedValue.TYPE_ATTRIBUTE) {
             final TypedValue value = mValue;
             getValueAt(index, value);
-            throw new UnsupportedOperationException(
-                    "Failed to resolve attribute at index " + attrIndex + ": " + value
-                            + ", theme=" + mTheme);
+            LOGGER.error(MARKER, "Failed to resolve attribute at index {}: {}, theme={}",
+                    attrIndex, value, mTheme, new UnsupportedOperationException());
+            return defValue;
         }
 
-        throw new UnsupportedOperationException("Can't convert value at index " + attrIndex
-                + " to dimension: type=0x" + Integer.toHexString(type) + ", theme=" + mTheme);
+        LOGGER.error(MARKER, "Can't convert value at index {} to dimension: type=0x{}, theme={}",
+                attrIndex, Integer.toHexString(type), mTheme, new UnsupportedOperationException());
+        return defValue;
     }
 
     /**
@@ -469,13 +470,14 @@ public class TypedArray {
         } else if (type == TypedValue.TYPE_ATTRIBUTE) {
             final TypedValue value = mValue;
             getValueAt(index, value);
-            throw new UnsupportedOperationException(
-                    "Failed to resolve attribute at index " + attrIndex + ": " + value
-                            + ", theme=" + mTheme);
+            LOGGER.error(MARKER, "Failed to resolve attribute at index {}: {}, theme={}",
+                    attrIndex, value, mTheme, new UnsupportedOperationException());
+            return defValue;
         }
 
-        throw new UnsupportedOperationException("Can't convert value at index " + attrIndex
-                + " to dimension: type=0x" + Integer.toHexString(type) + ", theme=" + mTheme);
+        LOGGER.error(MARKER, "Can't convert value at index {} to dimension: type=0x{}, theme={}",
+                attrIndex, Integer.toHexString(type), mTheme, new UnsupportedOperationException());
+        return defValue;
     }
 
     /**
@@ -519,18 +521,19 @@ public class TypedArray {
         } else if (type == TypedValue.TYPE_ATTRIBUTE) {
             final TypedValue value = mValue;
             getValueAt(index, value);
-            throw new UnsupportedOperationException(
-                    "Failed to resolve attribute at index " + attrIndex + ": " + value
-                            + ", theme=" + mTheme);
+            LOGGER.error(MARKER, "Failed to resolve attribute at index {}: {}, theme={}",
+                    attrIndex, value, mTheme, new UnsupportedOperationException());
+            return defValue;
         }
 
-        throw new UnsupportedOperationException("Can't convert value at index " + attrIndex
-                + " to dimension: type=0x" + Integer.toHexString(type) + ", theme=" + mTheme);
+        LOGGER.error(MARKER, "Can't convert value at index {} to dimension: type=0x{}, theme={}",
+                attrIndex, Integer.toHexString(type), mTheme, new UnsupportedOperationException());
+        return defValue;
     }
 
     /**
      * Special version of {@link #getDimensionPixelSize} for retrieving
-     * {@link icyllis.modernui.view.ViewGroup}'s layout_width and layout_height
+     * {@code ViewGroup}'s layout_width and layout_height
      * attributes.  This is only here for performance reasons; applications
      * should use {@link #getDimensionPixelSize}.
      *
@@ -595,13 +598,14 @@ public class TypedArray {
         } else if (type == TypedValue.TYPE_ATTRIBUTE) {
             final TypedValue value = mValue;
             getValueAt(index, value);
-            throw new UnsupportedOperationException(
-                    "Failed to resolve attribute at index " + attrIndex + ": " + value
-                            + ", theme=" + mTheme);
+            LOGGER.error(MARKER, "Failed to resolve attribute at index {}: {}, theme={}",
+                    attrIndex, value, mTheme, new UnsupportedOperationException());
+            return defValue;
         }
 
-        throw new UnsupportedOperationException("Can't convert value at index " + attrIndex
-                + " to fraction: type=0x" + Integer.toHexString(type) + ", theme=" + mTheme);
+        LOGGER.error(MARKER, "Can't convert value at index {} to fraction: type=0x{}, theme={}",
+                attrIndex, Integer.toHexString(type), mTheme, new UnsupportedOperationException());
+        return defValue;
     }
 
     /**
@@ -624,13 +628,8 @@ public class TypedArray {
         index *= STYLE_NUM_ENTRIES;
         final int[] data = mData;
         final int type = data[index + STYLE_TYPE];
-        if ((type & ResourceTypes.Res_value.DATA_TYPE_MASK) == TypedValue.TYPE_REFERENCE) {
-            int typeId = type >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
-            if (typeId != 0) {
-                return mAssetManager.getReferenceIdForCookie(data[index + STYLE_COOKIE], typeId, data[index + STYLE_DATA]);
-            } else {
-                return null;
-            }
+        if (type == TypedValue.TYPE_REFERENCE) {
+            return mAssetManager.getReferenceIdForCookie(data[index + STYLE_COOKIE], data[index + STYLE_DATA]);
         }
         return null;
     }
@@ -657,9 +656,9 @@ public class TypedArray {
         final TypedValue value = mValue;
         if (getValueAt(index * STYLE_NUM_ENTRIES, value)) {
             if (value.type == TypedValue.TYPE_ATTRIBUTE) {
-                throw new UnsupportedOperationException(
-                        "Failed to resolve attribute at index " + index + ": " + value
-                                + ", theme=" + mTheme);
+                LOGGER.error(MARKER, "Failed to resolve attribute at index {}: {}, theme={}",
+                        index, value, mTheme, new UnsupportedOperationException());
+                return null;
             }
 
             return mResources.loadDrawable(value, null, mTheme);
@@ -800,7 +799,7 @@ public class TypedArray {
         outValue.data = data[offset + STYLE_DATA];
         outValue.cookie = data[offset + STYLE_COOKIE];
         outValue.flags = data[offset + STYLE_FLAGS];
-        outValue.density = data[offset + STYLE_DENSITY];
+        outValue.density = 0;
         outValue.locale = null;
         return mAssetManager.postProcess(outValue);
     }

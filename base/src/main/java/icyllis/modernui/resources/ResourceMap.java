@@ -63,43 +63,29 @@ public class ResourceMap {
      */
     @Nullable
     public String lookupNamespace(int id) {
-        int packageId = id >>> Res_value.PACKAGE_ID_SHIFT;
+        int packageId = id >>> Res_value.NAMESPACE_INDEX_SHIFT;
 
         return namespaces[packageId];
-    }
-
-    @Nullable
-    public ResourceId lookupParentId(ResourceId source, int id) {
-        String namespace = lookupNamespace(id);
-        if (namespace == null) {
-            return null;
-        }
-        String entry = keyStringPool.getStringAt(id & Res_value.KEY_INDEX_MASK);
-        if (entry == null) {
-            return null;
-        }
-        return new ResourceId(namespace, source.type(), entry);
     }
 
     /**
      * Converts packed integer id to string-based resource id.
      * The integer id must come from this table.
      *
-     * @param typeId type id if the res id is a reference, or 0 if they have the same type
      * @param id     the res id to lookup
      * @return the resource id the id represents
      */
     @Nullable
-    public ResourceId lookupReferenceId(int typeId, int id) {
+    public ResourceId lookupResourceId(int id) {
         String namespace = lookupNamespace(id);
         if (namespace == null) {
             return null;
         }
-        String type = typeStringPool.getStringAt(typeId - 1);
+        String type = typeStringPool.getStringAt((id >> Res_value.TYPE_INDEX_SHIFT) & Res_value.TYPE_INDEX_MASK);
         if (type == null) {
             return null;
         }
-        String entry = keyStringPool.getStringAt(id & Res_value.KEY_INDEX_MASK);
+        String entry = keyStringPool.getStringAt(id & Res_value.ENTRY_INDEX_MASK);
         if (entry == null) {
             return null;
         }

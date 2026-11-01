@@ -26,6 +26,7 @@ import icyllis.modernui.resources.ResourceMap.*;
 import icyllis.modernui.system.LocaleList;
 import icyllis.modernui.util.Log;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NonNull;
@@ -56,7 +57,6 @@ public final class AssetManager {
     public static final Marker MARKER = MarkerFactory.getMarker("AssetManager");
 
     public static final int kInvalidCookie = -1;
-    public static final int kMaxIterations = 20;
 
     private static final ResolvedBag SENTINEL_BAG = new ResolvedBag(null, null, 0);
 
@@ -247,12 +247,20 @@ public final class AssetManager {
         return null;
     }
 
-    public boolean getResource(@NonNull ResourceId resId,
-                               int densityDpi,
-                               @NonNull TypedValue outValue) {
-        Object entry = findEntry(resId.namespace(), resId.type(), resId.entry(),
-                densityDpi, outValue);
-        return entry == outValue;
+    public static final int
+            IS_NOTHING = 0,
+            IS_VALUE = 1,
+            IS_BAG = 2;
+
+    @MagicConstant(intValues = {IS_NOTHING, IS_VALUE, IS_BAG})
+    public int getValue(@NonNull ResourceId resId,
+                        int densityDpi,
+                        @NonNull TypedValue outValue) {
+        Object entry = findEntry(resId, densityDpi, outValue);
+        if (entry == null) {
+            return IS_NOTHING;
+        }
+        return entry == outValue ? IS_VALUE : IS_BAG;
     }
 
     @Nullable
@@ -270,15 +278,16 @@ public final class AssetManager {
 
         mBagCacheLock.writeLock().lock();
         try {
-            return resolveBagLocked(resId, null, null);
+            return getBagLocked(resId, null, null);
         } finally {
             mBagCacheLock.writeLock().unlock();
         }
     }
 
     @Nullable
-    private ResolvedBag resolveBagLocked(@NonNull ResourceId resId, List<ResourceId> childResIds,
-                                         TypedValue value) {
+    private ResolvedBag getBagLocked(@NonNull ResourceId resId,
+                                     List<ResourceId> childResIds,
+                                     TypedValue value) {
         ResolvedBag cached = mCachedBags.get(resId);
         if (cached != SENTINEL_BAG) {
             return cached;
@@ -288,8 +297,7 @@ public final class AssetManager {
             value = new TypedValue();
         }
 
-        Object entry = findEntry(resId.namespace(), resId.type(), resId.entry(),
-                0, value);
+        Object entry = findEntry(resId, 0, value);
 
         ByteBuffer map = null;
 
@@ -326,7 +334,7 @@ public final class AssetManager {
 
         ResourceId parentResId = null;
         if (parentId != -1) {
-            parentResId = resources.lookupParentId(resId, parentId);
+            parentResId = resources.lookupResourceId(parentId);
             if (parentResId == null) {
                 // parent id is malformed, no need to cache
                 return null;
@@ -338,7 +346,7 @@ public final class AssetManager {
             // There is no parent or a circular parental dependency exist, meaning there is nothing to
             // inherit and we can do a simple copy of the entries in the map.
         } else {
-            parentBag = resolveBagLocked(parentResId, childResIds, value);
+            parentBag = getBagLocked(parentResId, childResIds, value);
             if (parentBag == null) {
                 Log.LOGGER.error(MARKER, "Failed to find parent '{}' of bag '{}'",
                         parentResId, resId);
@@ -408,38 +416,25 @@ public final class AssetManager {
     }
 
     @Nullable
-    private Object findEntry(String namespace, String typeString, String entryString,
+    private Object findEntry(@NonNull ResourceId id,
                              int desiredDensity, @NonNull TypedValue outValue) {
-        if (namespace == null || namespace.isEmpty() ||
-                typeString == null || typeString.isEmpty() ||
-                entryString == null || entryString.isEmpty()) {
-            return null;
-        }
-
-        var group = mGroups.get(namespace);
+        var group = mGroups.get(id.namespace());
         if (group == null) {
             return null;
         }
 
-        return findEntryInternal(group, typeString, entryString, desiredDensity, outValue);
-    }
-
-    @Nullable
-    private Object findEntryInternal(@NonNull FilteredNamespace @NonNull[] group,
-                                     @NonNull String typeString, @NonNull String entryString,
-                                     int desiredDensity, @NonNull TypedValue outValue) {
         int bestCookie = kInvalidCookie;
         TypeEntry bestType = null;
         int bestOffset = 0;
         int typeFlags = 0;
 
         for (var ns : group) {
-            var type = ns.filteredTypes.get(typeString);
+            var type = ns.filteredTypes.get(id.type());
             if (type == null) {
                 continue;
             }
             TypeSpec typeSpec = type.typeSpec;
-            int entryIndex = typeSpec.getEntryIndexByName(entryString);
+            int entryIndex = typeSpec.getEntryIndexByName(id.entry());
             if (entryIndex == -1) {
                 continue;
             }
@@ -472,6 +467,8 @@ public final class AssetManager {
 
         outValue.cookie = bestCookie;
         outValue.flags = typeFlags;
+        outValue.density = 0;
+        outValue.locale = Locale.ROOT;
 
         return bestEntry;
     }
@@ -486,13 +483,12 @@ public final class AssetManager {
     }
 
     @Nullable
-    ResourceId getReferenceIdForCookie(int cookie, int typeId, int data) {
-        assert typeId > 0;
+    ResourceId getReferenceIdForCookie(int cookie, int data) {
         ResourceMap resources = getResources(cookie);
         if (resources == null) {
             return null;
         }
-        return resources.lookupReferenceId(typeId, data);
+        return resources.lookupResourceId(data);
     }
 
     @Nullable
@@ -520,18 +516,10 @@ public final class AssetManager {
             // inline value, not from resource
             return true;
         }
-        switch (outValue.type & ResourceTypes.Res_value.DATA_TYPE_MASK) {
+        switch (outValue.type) {
             case TypedValue.TYPE_REFERENCE -> {
-                int typeId =
-                        (outValue.type & ResourceTypes.Res_value.DATA_TYPE_ID_MASK) >>> ResourceTypes.Res_value.DATA_TYPE_ID_SHIFT;
-                if (typeId != 0) {
-                    // erase higher 8 bits
-                    outValue.type = TypedValue.TYPE_REFERENCE;
-                    if ((outValue.object = getReferenceIdForCookie(outValue.cookie, typeId, outValue.data)) == null) {
-                        return false;
-                    }
-                } else {
-                    outValue.object = null;
+                if ((outValue.object = getReferenceIdForCookie(outValue.cookie, outValue.data)) == null) {
+                    return false;
                 }
             }
             case TypedValue.TYPE_ATTRIBUTE -> {

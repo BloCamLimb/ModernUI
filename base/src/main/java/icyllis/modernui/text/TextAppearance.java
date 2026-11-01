@@ -40,9 +40,9 @@ import java.util.Locale;
 @ApiStatus.Internal
 public class TextAppearance {
 
-    public int mTextColorHighlight = 0;
-    public int mSearchResultHighlightColor = 0;
-    public int mFocusedSearchResultHighlightColor = 0;
+    public long mTextColorHighlight = 0;
+    public long mSearchResultHighlightColor = 0;
+    public long mFocusedSearchResultHighlightColor = 0;
     @Nullable
     public ColorStateList mTextColor = null;
     @Nullable

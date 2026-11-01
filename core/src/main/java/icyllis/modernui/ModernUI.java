@@ -28,6 +28,7 @@ import icyllis.modernui.core.ActivityWindow;
 import icyllis.modernui.core.Context;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.system.Handler;
+import icyllis.modernui.system.LocaleList;
 import icyllis.modernui.system.Looper;
 import icyllis.modernui.core.Monitor;
 import icyllis.modernui.core.VideoMode;
@@ -295,7 +296,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
             metrics.densityDpi = density;
             metrics.scaledDensity = metrics.density;
             LOGGER.info(MARKER, "Display metrics: {}", metrics);
-            getResources().updateConfiguration(null, metrics);
+            //getResources().updateConfiguration(null, metrics);
         }
 
         glfwSetWindowCloseCallback(mWindow.getHandle(), new GLFWWindowCloseCallback() {
@@ -516,7 +517,7 @@ public class ModernUI extends Activity implements AutoCloseable, LifecycleOwner 
      */
     @NonNull
     public static Typeface getSelectedTypeface() {
-        return sInstance == null ? Typeface.SANS_SERIF : sInstance.onGetSelectedTypeface();
+        return Typeface.getDefault();
     }
 
     /**

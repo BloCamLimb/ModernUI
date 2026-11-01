@@ -18,9 +18,6 @@
 
 package icyllis.modernui.util;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.Location;
-
 /**
  * Reserved for future use.
  */
@@ -28,18 +25,9 @@ public interface AttributeSet {
 
     int getAttributeCount();
 
-    QName getAttributeName(int index);
-
-    String getAttributeNamespace(int index);
-
-    String getAttributeLocalName(int index);
-
-    String getAttributePrefix(int index);
+    String getAttributeName(int index);
 
     String getAttributeValue(int index);
 
-    String getAttributeValue(String namespaceURI,
-                             String localName);
-
-    Location getLocation();
+    String getAttributeValue(String name);
 }

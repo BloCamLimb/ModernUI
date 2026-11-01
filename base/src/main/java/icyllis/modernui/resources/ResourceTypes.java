@@ -77,8 +77,7 @@ public class ResourceTypes {
 
         /*
             uint16_t size;      // Number of bytes in this structure.
-            uint16_t type;      //  0-7 bits: Type of the data value.
-                                // 8-15 bits: Type identifier of the resource referenced by this item.
+            uint16_t type;      // Type of the data value.
             uint32_t data;      // The data for this item, as interpreted according to dataType.
          */
 
@@ -131,19 +130,10 @@ public class ResourceTypes {
         // ...end of integer flavors.
         TYPE_LAST_INT = 0x1f;
 
-        /*
-         * Type: mask to extract single type information.
-         * If masked value type is TYPE_REFERENCE, then the next 8 bits
-         * hold the type id of the resource it refers to. The type string
-         * can be found in type string table indexed by {@link #cookie}.
-         * (type_id - 1) == type index (in type string table).
-         */
-        public static final int DATA_TYPE_MASK = 0xff;
-        public static final int DATA_TYPE_ID_MASK = 0xff00;
-        public static final int DATA_TYPE_ID_SHIFT = 8;
-
-        public static final int KEY_INDEX_MASK = 0x3fffff;
-        public static final int PACKAGE_ID_SHIFT = 22;
+        public static final int ENTRY_INDEX_MASK = 0x3ffff;
+        public static final int TYPE_INDEX_SHIFT = 18;
+        public static final int TYPE_INDEX_MASK = 0x3f;
+        public static final int NAMESPACE_INDEX_SHIFT = 24;
 
         public static final int DATA_NULL_UNDEFINED = 0;
         public static final int DATA_NULL_EMPTY = 1;

@@ -263,9 +263,6 @@ public class TypedValue {
      * The type held by this value, as defined by the constants here.
      * This tells you how to interpret the other fields in the object.
      */
-    // 0..7  bits: one of type constants listed above.
-    // 8..15 bits: type id of the reference resource, if value type is REFERENCE.
-    // The higher 8 bits will be erased before being exposed to the public API.
     public int type;
 
     /**
@@ -295,7 +292,7 @@ public class TypedValue {
     public int density;
 
     /**
-     * The {@link Locale} of the resource. If locale is unknown, this is null;
+     * The {@link Locale} of the resource. If locale is not known, this is null;
      * the base is {@link Locale#ROOT}.
      */
     public Locale locale;

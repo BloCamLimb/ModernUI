@@ -122,10 +122,10 @@ public class EdgeEffect {
     public EdgeEffect(Context context) {
         final TypedArray a = context.getTheme().obtainStyledAttributes(
                 ATTRS);
-        final int themeColor = a.getColor(0, 0xff666666);
+        final long themeColor = a.getColor(0, Color.pack(0.4f, 0.4f, 0.4f, 1.0f));
         a.recycle();
 
-        mPaint.setColor((themeColor & 0xffffff) | 0x33000000);
+        mPaint.setColor(Color.withAlpha(themeColor, 0.2f));
         mPaint.setStyle(Paint.FILL);
         mPaint.setBlendMode(DEFAULT_BLEND_MODE);
     }
@@ -422,7 +422,7 @@ public class EdgeEffect {
         float translateX = mWidth * displacement / 2;
 
         canvas.translate(translateX, 0);
-        mPaint.setAlpha((int) (0xff * mGlowAlpha));
+        mPaint.setAlpha(mGlowAlpha);
         canvas.drawCircle(centerX, centerY, mRadius, mPaint);
         canvas.restore();
 

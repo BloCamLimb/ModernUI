@@ -20,6 +20,7 @@ package icyllis.modernui.resources;
 
 import icyllis.arc3d.fastutil.objects.Object2ObjectOpenHashMap;
 import icyllis.modernui.annotation.AttrRes;
+import icyllis.modernui.annotation.ColorLong;
 import icyllis.modernui.annotation.GuardedBy;
 import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.annotation.StyleRes;
@@ -51,6 +52,9 @@ import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
 import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.UnaryOperator;
 
 @ThreadSafe
@@ -66,6 +70,12 @@ public class Resources {
 
     private final ResourceCache<ComplexColor> mComplexColorCache = new ResourceCache<>();
     private final ResourceCache<Drawable.ConstantState> mDrawableCache = new ResourceCache<>();
+    private final ResourceCache<Object> mAnimationCache = new ResourceCache<>();
+
+    private final ReentrantReadWriteLock mValueCacheLock = new ReentrantReadWriteLock();
+    // Cache set of resolved values.
+    @GuardedBy("mValueCacheLock")
+    private final Object2ObjectOpenHashMap<ResourceId, TypedValue> mCachedValues = new Object2ObjectOpenHashMap<>();
 
     final Pools.SynchronizedPool<TypedArray> mTypedArrayPool = new Pools.SynchronizedPool<>(5);
 
@@ -188,29 +198,141 @@ public class Resources {
         return mAssetManager;
     }
 
+    /**
+     * @hidden
+     */
+    @ApiStatus.Internal
+    @NonNull
+    public ResourceCache<Object> getAnimationCache() {
+        return mAnimationCache;
+    }
+
     @CheckReturnValue
     @ApiStatus.Experimental
-    public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue,
-                            boolean resolveRefs) {
-        boolean found = mAssetManager.getResource(id, mMetrics.densityDpi, outValue);
-        if (resolveRefs) {
-            //TODO
+    public boolean getValue(@NonNull ResourceId id, @NonNull TypedValue outValue) {
+        TypedValue cached;
+        mValueCacheLock.readLock().lock();
+        try {
+            cached = mCachedValues.get(id);
+        } finally {
+            mValueCacheLock.readLock().unlock();
         }
+        if (cached != null) {
+            outValue.setTo(cached);
+            return true;
+        }
+
+        boolean found = mAssetManager.getValue(id, mMetrics.densityDpi, outValue)
+                == AssetManager.IS_VALUE;
+        if (found) {
+            found = mAssetManager.postProcess(outValue);
+        }
+
+        // cache it, if it has density or locale
+        if (found &&
+                (outValue.density != 0 || !outValue.locale.equals(Locale.ROOT))) {
+            TypedValue copied = new TypedValue();
+            copied.setTo(outValue);
+            mValueCacheLock.writeLock().lock();
+            try {
+                mCachedValues.putIfAbsent(id, copied);
+            } finally {
+                mValueCacheLock.writeLock().unlock();
+            }
+        }
+
+        return found;
+    }
+
+    @CheckReturnValue
+    @ApiStatus.Experimental
+    public boolean getValueForDensity(@NonNull ResourceId id, int density,
+                                      @NonNull TypedValue outValue) {
+        if (density < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (density == mMetrics.densityDpi) {
+            return getValue(id, outValue);
+        }
+        boolean found = mAssetManager.getValue(id, density, outValue)
+                == AssetManager.IS_VALUE;
         if (found) {
             found = mAssetManager.postProcess(outValue);
         }
         return found;
     }
 
+    @CheckReturnValue
+    boolean resolveReference(@NonNull TypedValue value) {
+        if (value.type != TypedValue.TYPE_REFERENCE) {
+            // Not a reference. Nothing to do.
+            return true;
+        }
+        ResourceId id = mAssetManager.getReferenceIdForCookie(value.cookie, value.data);
+        if (id == null) {
+            return false;
+        }
+
+        int flags = value.flags;
+        int cookie = value.cookie;
+
+        TypedValue cached;
+        mValueCacheLock.readLock().lock();
+        try {
+            cached = mCachedValues.get(id);
+        } finally {
+            mValueCacheLock.readLock().unlock();
+        }
+        if (cached != null) {
+            value.setTo(cached);
+            value.flags |= flags;
+            return true;
+        }
+
+        switch (mAssetManager.getValue(id, mMetrics.densityDpi, value)) {
+            case AssetManager.IS_VALUE -> {
+                if (!mAssetManager.postProcess(value)) {
+                    return false;
+                }
+                // cache it, if it has density or locale
+                if (value.density != 0 || !value.locale.equals(Locale.ROOT)) {
+                    TypedValue copied = new TypedValue();
+                    copied.setTo(value);
+                    mValueCacheLock.writeLock().lock();
+                    try {
+                        mCachedValues.putIfAbsent(id, copied);
+                    } finally {
+                        mValueCacheLock.writeLock().unlock();
+                    }
+                }
+                value.flags |= flags;
+                return true;
+            }
+            case AssetManager.IS_BAG -> {
+                // this is a complex value we cannot resolve, restore to previous,
+                // the old 'type', 'data', 'cookie' are preserved,
+                // 'flags', 'density', 'locale', 'object' are updated
+                value.flags |= flags;
+                value.cookie = cookie;
+                value.object = id;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @ColorLong
     public long getColor(@NonNull ResourceId id,
                          @NonNull TypedValue outValue,
                          @Nullable Theme theme) {
-        if (getValue(id, outValue, true)) {
+        if (getValue(id, outValue)) {
             return loadColor(outValue, id, theme);
         }
         return Color.TRANSPARENT_LONG;
     }
 
+    @ColorLong
     public long loadColor(@NonNull TypedValue value,
                           @Nullable ResourceId id,
                           @Nullable Theme theme) {
@@ -266,7 +388,7 @@ public class Resources {
     public ComplexColor getComplexColor(@NonNull ResourceId id,
                                         @NonNull TypedValue outValue,
                                         @Nullable Theme theme) {
-        if (getValue(id, outValue, true)) {
+        if (getValue(id, outValue)) {
             return loadComplexColor(outValue, id, theme);
         }
         return null;
@@ -319,7 +441,7 @@ public class Resources {
         if (value.type == TypedValue.TYPE_FACTORY) {
             RuntimeFactory f = mAssetManager.getFactoryForCookie(value.cookie, value.data);
             if (f instanceof RuntimeResourceFactory<?> factory) {
-                Object object = factory.create(this, theme);
+                Object object = factory.create(this, theme, value.cookie);
                 if (object == null) {
                     return null;
                 }
@@ -367,7 +489,7 @@ public class Resources {
     public Drawable getDrawable(@NonNull ResourceId id,
                                 @NonNull TypedValue outValue,
                                 @Nullable Theme theme) {
-        if (getValue(id, outValue, true)) {
+        if (getValue(id, outValue)) {
             return loadDrawable(outValue, id, theme);
         }
         return null;
@@ -431,12 +553,8 @@ public class Resources {
                                            @Nullable Theme theme) {
         if (value.type == TypedValue.TYPE_FACTORY) {
             RuntimeFactory f = mAssetManager.getFactoryForCookie(value.cookie, value.data);
-            if (f instanceof RuntimeDrawableFactory factory) {
-                return factory.create(this, theme,
-                        value.cookie, mMetrics.densityDpi);
-            }
             if (f instanceof RuntimeResourceFactory<?> factory) {
-                Object object = factory.create(this, theme);
+                Object object = factory.create(this, theme, value.cookie);
                 if (object == null) {
                     return null;
                 }
@@ -491,7 +609,7 @@ public class Resources {
     public Image getImage(@NonNull ResourceId id,
                           @NonNull TypedValue outValue,
                           @NonNull UnaryOperator<Image> deriveOp) {
-        if (getValue(id, outValue, true)) {
+        if (getValue(id, outValue)) {
             return loadImage(outValue, id, deriveOp);
         }
         return null;
@@ -561,7 +679,7 @@ public class Resources {
     @Nullable
     public Asset getRawResource(@NonNull ResourceId id,
                                 @NonNull TypedValue outValue) {
-        if (getValue(id, outValue, true)) {
+        if (getValue(id, outValue)) {
             return loadRawResource(outValue, id);
         }
         return null;
@@ -623,6 +741,10 @@ public class Resources {
 
         private final ThemeKey mKey;
 
+        private final ResourceCache<ComplexColor> mComplexColorCache = new ResourceCache<>();
+        private final ResourceCache<Drawable.ConstantState> mDrawableCache = new ResourceCache<>();
+        private final ResourceCache<Object> mAnimationCache = new ResourceCache<>();
+
         // attribute name -> entry
         // we use j.u.HashMap instead of open addressing for best lookup performance,
         // since lookup miss rate is very high
@@ -634,12 +756,44 @@ public class Resources {
             final int cookie;
             final int typeSpecFlags;
 
-            Entry(@NonNull ResolvedBag bag, int index) {
+            @Nullable
+            final TypedValue resolvedReference;
+
+            Entry(@NonNull ResolvedBag bag, int index, Resources resources) {
                 int offset = index * ResolvedBag.VALUE_COLUMNS;
                 type = bag.values[offset + ResolvedBag.COLUMN_TYPE];
                 data = bag.values[offset + ResolvedBag.COLUMN_DATA];
                 cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
                 typeSpecFlags = bag.typeSpecFlags;
+                assert cookie >= 0;
+                TypedValue resolved = null;
+                if (type == TypedValue.TYPE_REFERENCE) {
+                    resolved = new TypedValue();
+                    resolved.type = type;
+                    resolved.data = data;
+                    resolved.cookie = cookie;
+                    resolved.flags = typeSpecFlags;
+                    if (!resources.resolveReference(resolved)) {
+                        resolved = null;
+                    }
+                }
+                resolvedReference = resolved;
+            }
+
+            Entry(@NonNull InlineStyle style, int index) {
+                type = style.type(index);
+                data = style.data(index);
+                cookie = AssetManager.kInvalidCookie;
+                typeSpecFlags = 0;
+                resolvedReference = null;
+            }
+
+            Entry(@NonNull Entry c, int flags) {
+                type = c.type;
+                data = c.data;
+                cookie = c.cookie;
+                typeSpecFlags = c.typeSpecFlags | flags;
+                resolvedReference = c.resolvedReference;
             }
         }
 
@@ -647,8 +801,29 @@ public class Resources {
             return type == TypedValue.TYPE_NULL && data == TypedValue.DATA_NULL_UNDEFINED;
         }
 
-        private final ResourceCache<ComplexColor> mComplexColorCache = new ResourceCache<>();
-        private final ResourceCache<Drawable.ConstantState> mDrawableCache = new ResourceCache<>();
+        private boolean resolve(@NonNull HashMap<String, Entry> m, String name, HashSet<String> path) {
+            Entry e = m.get(name);
+            if (e == null) return false;
+            if (e.type != TypedValue.TYPE_ATTRIBUTE) return true;
+
+            String attr = mAssetManager.getAttributeIdForCookie(e.cookie, e.data);
+            if (attr == null || !path.add(name)) {
+                m.remove(name);
+                return false;
+            }
+
+            boolean ok = resolve(m, attr, path);
+            path.remove(name);
+
+            if (!ok) {
+                m.remove(name);
+                return false;
+            }
+
+            Entry c = m.get(attr);
+            m.put(name, new Entry(c, e.typeSpecFlags));
+            return true;
+        }
 
         private Theme(@NonNull Resources resources, @NonNull ThemeKey key) {
             mResources = resources;
@@ -657,35 +832,161 @@ public class Resources {
             HashMap<String, Entry> entries = new HashMap<>();
             int count = key.count();
             for (int i = 0; i < count; i++) {
-                ResourceId resId = key.resId(i);
-                ResolvedBag bag = mAssetManager.getBag(resId);
-                if (bag == null) {
-                    continue;
-                }
+                var item = key.item(i);
                 boolean force = key.isForce(i);
-
-                int entryCount = bag.getEntryCount();
-                for (int j = 0; j < entryCount; j++) {
-                    boolean isUndefined = isUndefined(bag.type(j), bag.data(j));
-                    if (!force && isUndefined) {
+                if (item instanceof ResourceId) {
+                    ResolvedBag bag = mAssetManager.getBag((ResourceId) item);
+                    if (bag == null) {
                         continue;
                     }
-                    String attr = bag.keys[j];
-                    if (isUndefined) {
-                        entries.remove(attr);
-                    } else {
-                        var entry = new Entry(bag, j);
-                        if (force) {
-                            entries.put(attr, entry);
+
+                    int entryCount = bag.getEntryCount();
+                    for (int j = 0; j < entryCount; j++) {
+                        boolean isUndefined = isUndefined(bag.type(j), bag.data(j));
+                        if (!force && isUndefined) {
+                            continue;
+                        }
+                        String attr = bag.keys[j];
+                        if (isUndefined) {
+                            entries.remove(attr);
                         } else {
-                            entries.putIfAbsent(attr, entry);
+                            var entry = new Entry(bag, j, resources);
+                            if (force) {
+                                entries.put(attr, entry);
+                            } else {
+                                entries.putIfAbsent(attr, entry);
+                            }
+                        }
+                    }
+                } else {
+                    InlineStyle style = (InlineStyle) item;
+
+                    int entryCount = style.getAttributeCount();
+                    for (int j = 0; j < entryCount; j++) {
+                        boolean isUndefined = isUndefined(style.type(j), style.data(j));
+                        if (!force && isUndefined) {
+                            continue;
+                        }
+                        String attr = style.keys[j];
+                        if (isUndefined) {
+                            entries.remove(attr);
+                        } else {
+                            var entry = new Entry(style, j);
+                            if (force) {
+                                entries.put(attr, entry);
+                            } else {
+                                entries.putIfAbsent(attr, entry);
+                            }
                         }
                     }
                 }
             }
 
+            // resolve all attributes in advance
+            HashSet<String> path = new HashSet<>();
+            for (String k : entries.keySet().toArray(new String[0])) {
+                resolve(entries, k, path);
+                assert path.isEmpty();
+            }
+
             mEntries = entries;
             mKey = key;
+        }
+
+        /**
+         * Retrieve the value of an attribute in the Theme.  The contents of
+         * <var>outValue</var> are ultimately filled in by
+         * {@link Resources#getValue}.
+         *
+         * @param name        The name of the desired theme attribute.
+         * @param outValue    Filled in with the ultimate resource value supplied
+         *                    by the attribute.
+         * @param resolveRefs If true, resource references will be walked; if
+         *                    false, <var>outValue</var> may be a
+         *                    TYPE_REFERENCE.  In either case, it will never
+         *                    be a TYPE_ATTRIBUTE.
+         * @return boolean Returns true if the attribute was found and
+         * <var>outValue</var> is valid, else false.
+         */
+        @CheckReturnValue
+        public boolean resolveAttribute(@NonNull String name,
+                                        @NonNull TypedValue outValue, boolean resolveRefs) {
+            Entry e;
+            if ((e = mEntries.get(name)) == null) {
+                return false;
+            }
+            if (resolveRefs && outValue.type == TypedValue.TYPE_REFERENCE) {
+                if (e.resolvedReference != null) {
+                    outValue.setTo(e.resolvedReference);
+                    return true;
+                }
+                return false;
+            }
+            assert e.type != TypedValue.TYPE_ATTRIBUTE;
+            outValue.type = e.type;
+            outValue.data = e.data;
+            outValue.cookie = e.cookie;
+            outValue.flags = e.typeSpecFlags;
+            outValue.density = 0;
+            outValue.locale = null;
+            return mAssetManager.postProcess(outValue);
+        }
+
+        /**
+         * @deprecated namespace and type are not used in attribute name anymore, this will be removed in 4.0
+         */
+        @Deprecated
+        public boolean resolveAttribute(@NonNull @AttrRes ResourceId resId,
+                                        @NonNull TypedValue outValue, boolean resolveRefs) {
+            assert resId.type().equals("attr");
+            return resolveAttribute(resId.entry(), outValue, resolveRefs);
+        }
+
+        /**
+         * @deprecated namespace is not used in attribute name anymore, this will be removed in 4.0
+         */
+        @Deprecated
+        public boolean resolveAttribute(@NonNull String namespace, @NonNull String name,
+                                        @NonNull TypedValue outValue, boolean resolveRefs) {
+            var ignored = namespace;
+            return resolveAttribute(name, outValue, resolveRefs);
+        }
+
+        @ColorLong
+        public long getColor(@NonNull String name,
+                             @NonNull TypedValue outValue) {
+            if (resolveAttribute(name, outValue, true)) {
+                return mResources.loadColor(outValue, null, this);
+            }
+            return Color.TRANSPARENT_LONG;
+        }
+
+        @Nullable
+        public ColorStateList getColorStateList(@NonNull String name,
+                                                @NonNull TypedValue outValue) {
+            var complexColor = getComplexColor(name, outValue);
+            if (complexColor instanceof ColorStateList) {
+                return (ColorStateList) complexColor;
+            }
+            return null;
+        }
+
+        @Nullable
+        public ComplexColor getComplexColor(@NonNull String name,
+                                            @NonNull TypedValue outValue) {
+            if (resolveAttribute(name, outValue, true)) {
+                return mResources.loadComplexColor(outValue, null, this);
+            }
+            return null;
+        }
+
+        @Nullable
+        public Drawable getDrawable(@NonNull String name,
+                                    @NonNull TypedValue outValue) {
+            if (resolveAttribute(name, outValue, true)) {
+                return mResources.loadDrawable(outValue, null, this);
+            }
+            return null;
         }
 
         /**
@@ -703,9 +1004,14 @@ public class Resources {
          * @see #obtainStyledAttributes(AttributeSet, String, ResourceId, AttributeSlots)
          */
         @NonNull
-        public TypedArray obtainStyledAttributes(String @NonNull[] attrs) {
-            //TODO no need run into generic path
-            return obtainStyledAttributes(null, (String) null, null, attrs);
+        public TypedArray obtainStyledAttributes(@NonNull String @NonNull[] attrs) {
+            final TypedArray array = TypedArray.obtain(mResources,
+                    attrs.length);
+
+            resolveAttributes1(attrs, array.mData, array.mIndices);
+
+            array.mTheme = this;
+            return array;
         }
 
         @Deprecated(forRemoval = true)
@@ -734,8 +1040,19 @@ public class Resources {
          */
         @NonNull
         public TypedArray obtainStyledAttributes(@Nullable @StyleRes ResourceId resId,
-                @NonNull AttributeSlots slots) {
-            return obtainStyledAttributes(null, (String) null, resId, slots);
+                                                 @NonNull AttributeSlots slots) {
+            final TypedArray array = TypedArray.obtain(mResources,
+                    slots.size());
+
+            if (resId == null) {
+                resolveAttributes1(slots.getKeys(), array.mData, array.mIndices);
+            } else {
+                resolveAttributes2(null, resId, slots, array.mData, array.mIndices,
+                        array.mValue);
+            }
+
+            array.mTheme = this;
+            return array;
         }
 
         /**
@@ -746,7 +1063,7 @@ public class Resources {
         public TypedArray obtainStyledAttributes(@Nullable AttributeSet set,
                                                  @Nullable @AttrRes ResourceId defStyleAttr,
                                                  @Nullable @StyleRes ResourceId defStyleRes,
-                String @NonNull[] attrs) {
+                                                 String @NonNull[] attrs) {
             assert defStyleAttr == null || defStyleAttr.type().equals("attr");
             return obtainStyledAttributes(set,
                     defStyleAttr != null ? defStyleAttr.entry() : null, defStyleRes,
@@ -816,168 +1133,43 @@ public class Resources {
             final TypedArray array = TypedArray.obtain(mResources,
                     slots.size());
 
-            resolveAttributes(set, defStyleAttr, defStyleRes,
-                    slots, array.mData, array.mIndices,
-                    array.mValue);
+            if (defStyleAttr == null && defStyleRes == null) {
+                resolveAttributes1(slots.getKeys(), array.mData, array.mIndices);
+            } else {
+                resolveAttributes2(defStyleAttr, defStyleRes, slots, array.mData, array.mIndices,
+                        array.mValue);
+            }
+
             array.mTheme = this;
             return array;
         }
 
-        /**
-         * @deprecated namespace and type are not used in attribute name anymore, this will be removed in 4.0
-         */
-        @Deprecated
-        public boolean resolveAttribute(@NonNull @AttrRes ResourceId resId,
-                                        @NonNull TypedValue outValue, boolean resolveRefs) {
-            assert resId.type().equals("attr");
-            return resolveAttribute(resId.entry(), outValue, resolveRefs);
-        }
-
-        /**
-         * @deprecated namespace is not used in attribute name anymore, this will be removed in 4.0
-         */
-        @Deprecated
-        public boolean resolveAttribute(@NonNull String namespace, @NonNull String name,
-                                        @NonNull TypedValue outValue, boolean resolveRefs) {
-            var ignored = namespace;
-            return resolveAttribute(name, outValue, resolveRefs);
-        }
-
-        /**
-         * Retrieve the value of an attribute in the Theme.  The contents of
-         * <var>outValue</var> are ultimately filled in by
-         * {@link Resources#getValue}.
-         *
-         * @param name        The name of the desired theme attribute.
-         * @param outValue    Filled in with the ultimate resource value supplied
-         *                    by the attribute.
-         * @param resolveRefs If true, resource references will be walked; if
-         *                    false, <var>outValue</var> may be a
-         *                    TYPE_REFERENCE.  In either case, it will never
-         *                    be a TYPE_ATTRIBUTE.
-         * @return boolean Returns true if the attribute was found and
-         * <var>outValue</var> is valid, else false.
-         */
-        public boolean resolveAttribute(@NonNull String name,
-                                        @NonNull TypedValue outValue, boolean resolveRefs) {
-            if (!getAttribute(name, outValue)) {
-                return false;
-            }
-
-            int cookie = outValue.cookie;
-            assert cookie >= 0;
-
-            if (resolveRefs) {
-                //TODO
-            }
-
-            return mAssetManager.postProcess(outValue);
-        }
-
-        public long getColor(@NonNull String name,
-                             @NonNull TypedValue outValue) {
-            if (resolveAttribute(name, outValue, true)) {
-                return mResources.loadColor(outValue, null, this);
-            }
-            return Color.TRANSPARENT_LONG;
-        }
-
-        @Nullable
-        public ColorStateList getColorStateList(@NonNull String name,
-                                                @NonNull TypedValue outValue) {
-            var complexColor = getComplexColor(name, outValue);
-            if (complexColor instanceof ColorStateList) {
-                return (ColorStateList) complexColor;
-            }
-            return null;
-        }
-
-        @Nullable
-        public ComplexColor getComplexColor(@NonNull String name,
-                                            @NonNull TypedValue outValue) {
-            if (resolveAttribute(name, outValue, true)) {
-                return mResources.loadComplexColor(outValue, null, this);
-            }
-            return null;
-        }
-
-        @Nullable
-        public Drawable getDrawable(@NonNull String name,
-                                    @NonNull TypedValue outValue) {
-            if (resolveAttribute(name, outValue, true)) {
-                return mResources.loadDrawable(outValue, null, this);
-            }
-            return null;
-        }
-
-        private boolean getAttribute(
-                             @NonNull String name,
-                             @NonNull TypedValue outValue) {
-            int typeSpecFlags = 0;
-            for (int __ = 0; __ < AssetManager.kMaxIterations; __++) {
-                Entry e;
-                if ((e = mEntries.get(name)) == null) {
-                    return false;
-                }
-                if (isUndefined(e.type, e.data)) {
-                    return false;
-                }
-                typeSpecFlags |= e.typeSpecFlags;
-                //TODO for recursive attributes, resolve them in advance in constructor
-                if (e.type == TypedValue.TYPE_ATTRIBUTE) {
-                    ResourceMap resources = mAssetManager.getResources(e.cookie);
-                    if (resources != null) {
-                        name = resources.getKeyStringPool()
-                                .getStringAt(e.data);
-                        if (name != null) {
-                            continue;
-                        }
-                    }
-                    return false;
-                }
-
-                outValue.cookie = e.cookie;
-                outValue.flags = typeSpecFlags;
-                outValue.type = e.type;
-                outValue.data = e.data;
-                return true;
-            }
-            return false;
-        }
-
         private boolean resolveAttributeReference(@NonNull TypedValue value) {
             if (value.type != TypedValue.TYPE_ATTRIBUTE) {
-                //TODO currently we have only style resources, where styles do not need resolve
-                return true;
+                return mResources.resolveReference(value);
             }
 
-            ResourceMap resources = mAssetManager.getResources(value.cookie);
-            if (resources == null) {
-                return false;
-            }
-            String attr = resources.getKeyStringPool()
-                    .getStringAt(value.data);
+            String attr = mAssetManager.getAttributeIdForCookie(value.cookie, value.data);
             if (attr == null) {
                 return false;
             }
 
             int flags = value.flags;
-            if (!getAttribute(attr, value)) {
+            if (!resolveAttribute(attr, value, true)) {
                 return false;
             }
-
             value.flags |= flags;
+
             return true;
         }
 
-        private void resolveAttributes(
-                @Nullable AttributeSet set,
-                @Nullable String defStyleAttr,
-                @Nullable @StyleRes ResourceId defStyleRes,
-                @NonNull AttributeSlots slots,
-                int @NonNull [] outValues, int @NonNull [] outIndices,
-                @NonNull TypedValue value) {
-
+        private void resolveAttributes2(@Nullable String defStyleAttr,
+                                        @Nullable @StyleRes ResourceId defStyleRes,
+                                        @NonNull AttributeSlots slots,
+                                        int @NonNull [] outValues,
+                                        int @NonNull [] outIndices,
+                                        @NonNull TypedValue value) {
+            assert defStyleAttr != null || defStyleRes != null;
             ResolvedBag styleBag = null;
             if (defStyleAttr != null &&
                     resolveAttribute(defStyleAttr, value, true) &&
@@ -990,47 +1182,73 @@ public class Resources {
             if (styleBag == null && defStyleRes != null) {
                 styleBag = mAssetManager.getBag(defStyleRes);
             }
+            if (styleBag == null) {
+                resolveAttributes1(slots.getKeys(), outValues, outIndices);
+                return;
+            }
 
-            if (styleBag != null) {
-                String[] haystack = styleBag.keys;
-                for (int i = 0; i < haystack.length; i++) {
-                    String curAttr = haystack[i];
-                    int ii = slots.indexOf(curAttr);
-                    if (ii < 0) {
-                        continue;
-                    }
-                    value.setTo(styleBag, i);
-
-                    if (value.type == TypedValue.TYPE_NULL) {
-                        continue;
-                    }
-
-                    resolveAttributeReference(value);
-                    int valuesIdx = ii * TypedArray.STYLE_NUM_ENTRIES;
-                    outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
-                    outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
-                    outValues[valuesIdx + TypedArray.STYLE_COOKIE] = value.cookie;
-                    outValues[valuesIdx + TypedArray.STYLE_FLAGS] = value.flags;
+            String[] haystack = styleBag.keys;
+            for (int i = 0; i < haystack.length; i++) {
+                String curAttr = haystack[i];
+                int ii = slots.indexOf(curAttr);
+                if (ii < 0) {
+                    continue;
                 }
+                value.setTo(styleBag, i);
+
+                if (isUndefined(value.type, value.data)) {
+                    continue;
+                }
+
+                var ignored = resolveAttributeReference(value);
+                int valuesIdx = ii * TypedArray.STYLE_NUM_ENTRIES;
+                outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
+                outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
+                outValues[valuesIdx + TypedArray.STYLE_COOKIE] = value.cookie;
+                outValues[valuesIdx + TypedArray.STYLE_FLAGS] = value.flags;
             }
 
             int indicesIdx = 0;
             int valuesIdx = 0;
             String[] keys = slots.getKeys();
             for (int ii = 0; ii < keys.length; ii++) {
-
-                if (outValues[valuesIdx + TypedArray.STYLE_TYPE] == TypedValue.TYPE_NULL &&
-                        outValues[valuesIdx + TypedArray.STYLE_DATA] != TypedValue.DATA_NULL_EMPTY) {
-                    if (getAttribute(keys[ii], value)) {
-                        outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
-                        outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
-                        outValues[valuesIdx + TypedArray.STYLE_COOKIE] = value.cookie;
-                        outValues[valuesIdx + TypedArray.STYLE_FLAGS] = value.flags;
+                boolean isUndefined = isUndefined(
+                        outValues[valuesIdx + TypedArray.STYLE_TYPE],
+                        outValues[valuesIdx + TypedArray.STYLE_DATA]);
+                if (isUndefined) {
+                    Entry e;
+                    if ((e = mEntries.get(keys[ii])) != null) {
+                        assert !isUndefined(e.type, e.data);
+                        outValues[valuesIdx + TypedArray.STYLE_TYPE] = e.type;
+                        outValues[valuesIdx + TypedArray.STYLE_DATA] = e.data;
+                        outValues[valuesIdx + TypedArray.STYLE_COOKIE] = e.cookie;
+                        outValues[valuesIdx + TypedArray.STYLE_FLAGS] = e.typeSpecFlags;
+                        isUndefined = false;
                     }
                 }
 
-                if (outValues[valuesIdx + TypedArray.STYLE_TYPE] != TypedValue.TYPE_NULL ||
-                        outValues[valuesIdx + TypedArray.STYLE_DATA] == TypedValue.DATA_NULL_EMPTY) {
+                if (!isUndefined) {
+                    outIndices[++indicesIdx] = ii;
+                }
+                valuesIdx += TypedArray.STYLE_NUM_ENTRIES;
+            }
+
+            outIndices[0] = indicesIdx;
+        }
+
+        private void resolveAttributes1(@NonNull String @NonNull[] keys,
+                                        int @NonNull [] outValues,
+                                        int @NonNull [] outIndices) {
+            int indicesIdx = 0;
+            int valuesIdx = 0;
+            for (int ii = 0; ii < keys.length; ii++) {
+                Entry e;
+                if ((e = mEntries.get(keys[ii])) != null) {
+                    assert !isUndefined(e.type, e.data);
+                    outValues[valuesIdx + TypedArray.STYLE_TYPE] = e.type;
+                    outValues[valuesIdx + TypedArray.STYLE_DATA] = e.data;
+                    outValues[valuesIdx + TypedArray.STYLE_COOKIE] = e.cookie;
+                    outValues[valuesIdx + TypedArray.STYLE_FLAGS] = e.typeSpecFlags;
                     outIndices[++indicesIdx] = ii;
                 }
                 valuesIdx += TypedArray.STYLE_NUM_ENTRIES;
@@ -1044,6 +1262,7 @@ public class Resources {
          *
          * @return Resources to which this theme belongs.
          */
+        @NonNull
         public Resources getResources() {
             return mResources;
         }
@@ -1051,8 +1270,18 @@ public class Resources {
         /**
          * Returns the key that used to create this theme via {@link Resources#newTheme(ThemeKey)}.
          */
+        @NonNull
         public ThemeKey getKey() {
             return mKey;
+        }
+
+        /**
+         * @hidden
+         */
+        @ApiStatus.Internal
+        @NonNull
+        public ResourceCache<Object> getAnimationCache() {
+            return mAnimationCache;
         }
 
         @NonNull
