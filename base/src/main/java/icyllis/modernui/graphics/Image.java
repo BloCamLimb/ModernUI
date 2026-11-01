@@ -73,7 +73,7 @@ public class Image implements AutoCloseable {
     // keep a strong reference to prevent it from being garbage collected
     private Object mAttachment;
 
-    int mDensity = DisplayMetrics.DENSITY_DEFAULT;
+    int mDensity = DisplayMetrics.DENSITY_NONE;
 
     private Image(@SharedPtr icyllis.arc3d.sketch.Image image) {
         mCleanup = Arch.registerNativeResource(this, image);
@@ -259,17 +259,16 @@ public class Image implements AutoCloseable {
     /**
      * <p>Returns the density for this image.</p>
      *
-     * <p>The default density is {@link DisplayMetrics#DENSITY_DEFAULT}.</p>
+     * <p>The default density is {@link DisplayMetrics#DENSITY_NONE}.</p>
      *
      * @return A scaling factor of the default density or {@link #DENSITY_NONE}
      * if the scaling factor is unknown.
      * @see #setDensity(int)
-     * @see DisplayMetrics#DENSITY_DEFAULT
      * @see DisplayMetrics#densityDpi
      * @see #DENSITY_NONE
      *
      * @deprecated to keep Image immutable and pure, additional information such as density
-     * should be represented externally, such as {@link ImageDrawable#setSourceDensity(int)}
+     * should be represented externally, such as {@link ImageDrawable#setSrcDensity(int)}
      */
     @Deprecated
     public int getDensity() {
@@ -284,13 +283,12 @@ public class Image implements AutoCloseable {
      * @param density The density scaling factor to use with this image or
      *                {@link #DENSITY_NONE} if the density is unknown.
      * @see #getDensity()
-     * @see DisplayMetrics#DENSITY_DEFAULT
      * @see DisplayMetrics#densityDpi
      * @see #DENSITY_NONE
      * @see #clone()
      *
      * @deprecated to keep Image immutable and pure, additional information such as density
-     * should be represented externally, such as {@link ImageDrawable#setSourceDensity(int)}
+     * should be represented externally, such as {@link ImageDrawable#setSrcDensity(int)}
      */
     @Deprecated
     public void setDensity(int density) {

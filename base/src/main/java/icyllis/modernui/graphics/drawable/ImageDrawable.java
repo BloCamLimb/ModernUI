@@ -141,13 +141,16 @@ public class ImageDrawable extends Drawable {
     /**
      * Switch to a new Image object. Calling this method will also reset
      * the subset to the full image, see {@link #setSrcRect(Rect)}.
+     * Calling this method will also reset the density to
+     * {@link DisplayMetrics#DENSITY_NONE}, see {@link #setSrcDensity(int)}.
      */
     public void setImage(@Nullable Image image) {
         if (mImageState.mImage != image) {
             mImageState.mImage = image;
             // Added by ModernUI
+            mImageState.mSrcDensity = DisplayMetrics.DENSITY_NONE;
             if (image != null) {
-                mImageState.mSourceDensity = image.getDensity();
+                mImageState.mSrcDensity = image.getDensity();
                 image.getBounds(mImageState.mSrcRect);
             }
             // Added by ModernUI
@@ -157,53 +160,14 @@ public class ImageDrawable extends Drawable {
     }
 
     /**
-     * Set the density of the source image.
+     * Get the subset of the image to draw, which is set by {@link #setSrcRect(Rect)}.
+     * Do not modify the returned object.
      *
-     * @param density The density for the source image.
+     * @return the subset of the image, in pixels
      */
-    public void setSourceDensity(int density) {
-        if (mImageState.mSourceDensity != density) {
-            mImageState.mSourceDensity = density;
-            // Added by ModernUI
-            mDstRectAndInsetsDirty = true;
-            invalidateSelf();
-        }
-    }
-
-    /**
-     * Set the density at which this drawable will be rendered.
-     *
-     * @param density The density scale for this drawable.
-     */
-    public void setTargetDensity(int density) {
-        if (mTargetDensity != density) {
-            mTargetDensity = density;
-            // Added by ModernUI
-            mDstRectAndInsetsDirty = true;
-            invalidateSelf();
-        }
-    }
-
-    /**
-     * Get the gravity used to position/stretch the image within its bounds.
-     *
-     * @return the gravity applied to the image
-     */
-    public int getGravity() {
-        return mImageState.mGravity;
-    }
-
-    /**
-     * Set the gravity used to position/stretch the image within its bounds.
-     *
-     * @param gravity the gravity
-     */
-    public void setGravity(int gravity) {
-        if (mImageState.mGravity != gravity) {
-            mImageState.mGravity = gravity;
-            mDstRectAndInsetsDirty = true;
-            invalidateSelf();
-        }
+    @NonNull
+    public final Rect getSrcRect() {
+        return mImageState.mSrcRect;
     }
 
     /**
@@ -247,13 +211,87 @@ public class ImageDrawable extends Drawable {
         }
     }
 
+    /**
+     * Get the density of the source image, which is set by {@link #setSrcDensity(int)}.
+     *
+     * @return The density for the source image.
+     */
+    public int getSrcDensity() {
+        return mImageState.mSrcDensity;
+    }
+
+    /**
+     * Set the density of the source image.
+     * <p>
+     * Calling this method when there's no image has no effect. Next call
+     * to {@link #setImage(Image)} will reset the density to {@link DisplayMetrics#DENSITY_NONE}.
+     *
+     * @param density The density for the source image.
+     */
+    public void setSrcDensity(int density) {
+        if (mImageState.mImage == null) {
+            return;
+        }
+        if (mImageState.mSrcDensity != density) {
+            mImageState.mSrcDensity = density;
+            // Added by ModernUI
+            mDstRectAndInsetsDirty = true;
+            invalidateSelf();
+        }
+    }
+
+    /**
+     * Set the density scale at which this drawable will be rendered.
+     *
+     * @param metrics The DisplayMetrics indicating the density scale for this drawable.
+     */
+    public void setTargetDensity(@NonNull DisplayMetrics metrics) {
+        setTargetDensity(metrics.densityDpi);
+    }
+
+    /**
+     * Set the density at which this drawable will be rendered.
+     *
+     * @param density The density scale for this drawable.
+     */
+    public void setTargetDensity(int density) {
+        if (mTargetDensity != density) {
+            mTargetDensity = density;
+            // Added by ModernUI
+            mDstRectAndInsetsDirty = true;
+            invalidateSelf();
+        }
+    }
+
+    /**
+     * Get the gravity used to position/stretch the image within its bounds.
+     *
+     * @return the gravity applied to the image
+     */
+    public int getGravity() {
+        return mImageState.mGravity;
+    }
+
+    /**
+     * Set the gravity used to position/stretch the image within its bounds.
+     *
+     * @param gravity the gravity
+     */
+    public void setGravity(int gravity) {
+        if (mImageState.mGravity != gravity) {
+            mImageState.mGravity = gravity;
+            mDstRectAndInsetsDirty = true;
+            invalidateSelf();
+        }
+    }
+
     private int computeSrcWidth() {
         Image image = mImageState.mImage;
         if (image == null) {
             return -1;
         }
         int width = Math.min(mImageState.mSrcRect.width(), image.getWidth());
-        return scaleFromDensity(width, mImageState.mSourceDensity, mTargetDensity);
+        return scaleFromDensity(width, mImageState.mSrcDensity, mTargetDensity);
     }
 
     private int computeSrcHeight() {
@@ -262,7 +300,7 @@ public class ImageDrawable extends Drawable {
             return -1;
         }
         int height = Math.min(mImageState.mSrcRect.height(), image.getHeight());
-        return scaleFromDensity(height, mImageState.mSourceDensity, mTargetDensity);
+        return scaleFromDensity(height, mImageState.mSrcDensity, mTargetDensity);
     }
 
     /**
@@ -703,10 +741,9 @@ public class ImageDrawable extends Drawable {
         Shader.TileMode mTileModeX = null;
         Shader.TileMode mTileModeY = null;
 
-        int mSourceDensity = DisplayMetrics.DENSITY_NONE;
-        int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
-
         final Rect mSrcRect;
+        int mSrcDensity = DisplayMetrics.DENSITY_NONE;
+        int mTargetDensity = DisplayMetrics.DENSITY_DEFAULT;
 
         boolean mAutoMirrored = false;
 
@@ -730,12 +767,13 @@ public class ImageDrawable extends Drawable {
             mGravity = imageState.mGravity;
             mTileModeX = imageState.mTileModeX;
             mTileModeY = imageState.mTileModeY;
+            mSrcRect = new Rect(imageState.mSrcRect);
+            mSrcDensity = imageState.mSrcDensity;
             mTargetDensity = imageState.mTargetDensity;
             mBaseAlpha = imageState.mBaseAlpha;
             mPaint = new Paint(imageState.mPaint);
             mRebuildShader = imageState.mRebuildShader;
             mAutoMirrored = imageState.mAutoMirrored;
-            mSrcRect = new Rect(imageState.mSrcRect);
         }
 
         @NonNull
