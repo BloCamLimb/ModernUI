@@ -704,8 +704,8 @@ public class TypedArray {
     /**
      * Determines whether there is an attribute at <var>index</var>.
      * <p>
-     * <strong>Note:</strong> If the attribute was set to {@code @empty} or
-     * {@code @undefined}, this method returns {@code false}.
+     * <strong>Note:</strong> If the attribute was not specified, or set to
+     * {@code @empty} or {@code @null}, this method returns {@code false}.
      *
      * @param index Index of attribute to retrieve.
      *
@@ -725,8 +725,8 @@ public class TypedArray {
 
     /**
      * Determines whether there is an attribute at <var>index</var>, returning
-     * {@code true} if the attribute was explicitly set to {@code @empty} and
-     * {@code false} only if the attribute was undefined.
+     * {@code true} if the attribute was explicitly set to {@code @empty}, and
+     * {@code false} if the attribute was not specified or set to {@code @null}.
      *
      * @param index Index of attribute to retrieve.
      *

@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -117,22 +116,21 @@ public final class AssetManager {
 
             HashMap<String, ArrayList<FilteredNamespace>> groups = new HashMap<>();
             int cookie = 0;
-            // first-pass: remove entries that cannot be matched by any input
+            // remove entries that cannot be matched by any input
             ArrayList<TypeEntry> tmpTypeEntries = new ArrayList<>();
             LocaleMatcher localeMatcher = null;
             for (var pack : mAssetPacks) {
                 var resources = pack.getResources();
                 for (var namespaceSpec : resources.getNamespaceSpecs()) {
-                    if (namespaceSpec.typeSpecs.isEmpty()) {
+                    if (namespaceSpec.typeSpecs.length == 0) {
                         continue;
                     }
                     HashMap<String, FilteredType> types = new HashMap<>();
-                    for (var e : namespaceSpec.typeSpecs.entrySet()) {
+                    for (var typeSpec : namespaceSpec.typeSpecs) {
                         tmpTypeEntries.clear();
-                        for (var typeEntry : e.getValue().typeEntries) {
-                            // any density, variant, numberingSystem could match;
-                            // so we only filter LSR using likely subtags
-                            boolean isRoot = typeEntry.config.baseLocale.equals(Locale.ROOT);
+                        for (var typeEntry : typeSpec.typeEntries) {
+                            // any density could match; so we only pre-filter locale
+                            boolean isRoot = typeEntry.locale.equals(Locale.ROOT);
                             if (!matchRootOnly && !isRoot) {
                                 if (localeMatcher == null) {
                                     localeMatcher = LocaleMatcher.builder()
@@ -141,7 +139,7 @@ public final class AssetManager {
                                 for (int locIdx = 0; locIdx < locales.size(); locIdx++) {
                                     var desiredLocale = locales.get(locIdx);
                                     if (localeMatcher.isMatch(
-                                            desiredLocale, typeEntry.config.baseLocale)) {
+                                            desiredLocale, typeEntry.locale)) {
                                         tmpTypeEntries.add(typeEntry);
                                         break;
                                     }
@@ -151,45 +149,16 @@ public final class AssetManager {
                                 tmpTypeEntries.add(typeEntry);
                             }
                         }
-                        types.put(e.getKey(),
-                                new FilteredType(e.getValue(),
+                        types.put(typeSpec.typeName,
+                                new FilteredType(typeSpec,
                                         tmpTypeEntries.toArray(new TypeEntry[0])));
                     }
 
                     groups.computeIfAbsent(
-                                    namespaceSpec.getNamespace(), __ -> new ArrayList<>())
+                                    namespaceSpec.namespace, __ -> new ArrayList<>())
                             .add(new FilteredNamespace(types, cookie));
                 }
                 assetPacks[cookie++] = pack;
-            }
-            // second-pass: cross-pack type entry dedup
-            HashMap<String, HashSet<ResConfig>> globalDedup = new HashMap<>();
-            for (var group : groups.entrySet()) {
-                if (group.getValue().size() <= 1) {
-                    // there's only one namespace spec
-                    continue;
-                }
-                globalDedup.values().forEach(HashSet::clear);
-                for (var ns : group.getValue()) {
-                    for (var te : ns.filteredTypes.entrySet()) {
-                        var dedup = globalDedup.computeIfAbsent(te.getKey(), __ -> new HashSet<>());
-                        tmpTypeEntries.clear();
-                        boolean didDedup = false;
-                        for (var e : te.getValue().filteredTypeEntries) {
-                            if (dedup.add(e.config)) {
-                                tmpTypeEntries.add(e);
-                            } else {
-                                // there's already a type entry with the exact same config, this can't be
-                                // any better than the previous one, so it's removed
-                                didDedup = true;
-                            }
-                        }
-                        if (didDedup) {
-                            te.setValue(new FilteredType(te.getValue().typeSpec,
-                                    tmpTypeEntries.toArray(new TypeEntry[0])));
-                        }
-                    }
-                }
             }
             // finalize
             HashMap<String, FilteredNamespace[]> finalGroups = new HashMap<>(
@@ -252,11 +221,14 @@ public final class AssetManager {
             IS_VALUE = 1,
             IS_BAG = 2;
 
+    // IS_VALUE: 'type', 'data', 'cookie', 'flags', 'density', 'locale' are updated
+    // IS_BAG: 'cookie', 'flags', 'density', 'locale' are updated
+    // 'object' is never updated
     @MagicConstant(intValues = {IS_NOTHING, IS_VALUE, IS_BAG})
     public int getValue(@NonNull ResourceId resId,
-                        int densityDpi,
+                        int density,
                         @NonNull TypedValue outValue) {
-        Object entry = findEntry(resId, densityDpi, outValue);
+        Object entry = findEntry(resId, density, outValue);
         if (entry == null) {
             return IS_NOTHING;
         }
@@ -415,6 +387,7 @@ public final class AssetManager {
         return newBag;
     }
 
+    // we have already done pre-filtering in Builder.build()
     @Nullable
     private Object findEntry(@NonNull ResourceId id,
                              int desiredDensity, @NonNull TypedValue outValue) {
@@ -423,37 +396,158 @@ public final class AssetManager {
             return null;
         }
 
+        Locale desiredLocale = mLocales.isEmpty() ? Locale.ROOT :
+                mLocales.size() == 1 ? mLocales.get(0) : null;
+
         int bestCookie = kInvalidCookie;
         TypeEntry bestType = null;
         int bestOffset = 0;
-        int typeFlags = 0;
+        int typeSpecFlags = 0;
+        boolean fullyMatchedLocale = false;
 
-        for (var ns : group) {
-            var type = ns.filteredTypes.get(id.type());
-            if (type == null) {
+        LocaleMatcher.Builder localeMatcher = null;
+
+        for (FilteredNamespace ns : group) {
+            FilteredType ts = ns.filteredTypes.get(id.type());
+            if (ts == null) {
                 continue;
             }
-            TypeSpec typeSpec = type.typeSpec;
+            TypeSpec typeSpec = ts.typeSpec;
             int entryIndex = typeSpec.getEntryIndexByName(id.entry());
             if (entryIndex == -1) {
                 continue;
             }
-            typeFlags |= typeSpec.getFlagsForEntryIndex(entryIndex);
+            typeSpecFlags |= typeSpec.getFlagsForEntryIndex(entryIndex);
 
-            for (var typeEntry : type.filteredTypeEntries) {
+            if (fullyMatchedLocale && bestType.density == desiredDensity) {
+                // exact match, just accumulate flags above
+                continue;
+            }
 
-                int offset = ResourceMap.getEntryOffset(typeEntry, entryIndex);
+            for (TypeEntry type : ts.filteredTypeEntries) {
+                // do this first to ensure bestType is valid
+                int offset = ResourceMap.getEntryOffset(type, entryIndex);
 
                 if (offset == ResTable_type.NO_ENTRY) {
                     continue;
                 }
 
+                // true: this entry starts a new locale bucket, it replaces the best unconditionally
+                boolean newBucket = false;
+
+                if (!fullyMatchedLocale) {
+                    if (desiredLocale != null &&
+                            desiredLocale.equals(type.locale)) {
+                        // exact match, no need for the matcher anymore
+                        fullyMatchedLocale = true;
+                        localeMatcher = null;
+                        newBucket = true;
+                    } else if (localeMatcher != null) {
+                        // already collecting candidates for the second pass,
+                        // density is irrelevant in this pass
+                        if (!type.locale.equals(Locale.ROOT)) {
+                            localeMatcher.addSupportedLocale(type.locale);
+                        }
+                        continue;
+                    } else if (bestType == null) {
+                        // first candidate (ROOT or not)
+                        newBucket = true;
+                    } else if (bestType.locale.equals(type.locale)) {
+                        // same locale bucket, only density decides below
+                    } else if (bestType.locale.equals(Locale.ROOT)) {
+                        // any non-ROOT is better than ROOT
+                        newBucket = true;
+                    } else if (type.locale.equals(Locale.ROOT)) {
+                        // existing is non-ROOT, ROOT can never be better
+                        continue;
+                    } else {
+                        // two different non-ROOT locales: defer to the matcher in the second pass.
+                        // bestLocale is guaranteed non-null and non-ROOT here.
+                        localeMatcher = LocaleMatcher.builder();
+                        localeMatcher.addSupportedLocale(bestType.locale);
+                        localeMatcher.addSupportedLocale(type.locale);
+                        continue;
+                    }
+                } else {
+                    // only density matters now
+                    if (!bestType.locale.equals(type.locale)) {
+                        continue;
+                    }
+                }
+
+                if (!newBucket) {
+                    if (bestType.density == desiredDensity) {
+                        // density already fully matched in this bucket
+                        continue;
+                    }
+                    if (type.density != desiredDensity &&
+                            !isBetterThan(type.density, bestType.density, desiredDensity)) {
+                        continue;
+                    }
+                }
+
                 bestCookie = ns.cookie;
-                bestType = typeEntry;
+                bestType = type;
                 bestOffset = offset;
 
-                break;
+                if (fullyMatchedLocale && type.density == desiredDensity) {
+                    // exact match
+                    break;
+                }
             }
+        }
+
+        // run the second pass if needed
+        if (localeMatcher != null) {
+            Locale targetLocale = localeMatcher.build()
+                    .getBestLocale(mLocales);
+            bestCookie = kInvalidCookie;
+            bestType = null;
+
+            // we only match density here, because we know the target locale bucket
+            CYCLE:
+            for (FilteredNamespace ns : group) {
+                FilteredType ts = ns.filteredTypes.get(id.type());
+                if (ts == null) {
+                    continue;
+                }
+                TypeSpec typeSpec = ts.typeSpec;
+                int entryIndex = typeSpec.getEntryIndexByName(id.entry());
+                if (entryIndex == -1) {
+                    continue;
+                }
+
+                for (TypeEntry type : ts.filteredTypeEntries) {
+
+                    if (!targetLocale.equals(type.locale)) {
+                        continue;
+                    }
+
+                    if (bestType != null &&
+                            !isBetterThan(type.density, bestType.density, desiredDensity)) {
+                        continue;
+                    }
+
+                    // do this last
+                    int offset = ResourceMap.getEntryOffset(type, entryIndex);
+
+                    if (offset == ResTable_type.NO_ENTRY) {
+                        continue;
+                    }
+
+                    bestCookie = ns.cookie;
+                    bestType = type;
+                    bestOffset = offset;
+
+                    if (type.density == desiredDensity) {
+                        // exact match
+                        break CYCLE;
+                    }
+                }
+            }
+
+            // there must be a match in the second pass
+            assert bestCookie != kInvalidCookie;
         }
 
         if (bestCookie == kInvalidCookie) {
@@ -466,11 +560,39 @@ public final class AssetManager {
         }
 
         outValue.cookie = bestCookie;
-        outValue.flags = typeFlags;
-        outValue.density = 0;
-        outValue.locale = Locale.ROOT;
+        outValue.flags = typeSpecFlags;
+        outValue.density = bestType.density;
+        outValue.locale = bestType.locale;
 
         return bestEntry;
+    }
+
+    // is this density better than other density to match the desired density?
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private static boolean isBetterThan(int thisDensity,
+                                        int otherDensity,
+                                        int desiredDensity) {
+        if (thisDensity != otherDensity) {
+            int h = thisDensity;
+            int l = otherDensity;
+            boolean thisHigher = true;
+            if (l > h) {
+                var __ = l;l = h;h = __;
+                thisHigher = false;
+            }
+
+            if (h == desiredDensity) {
+                return thisHigher;
+            } else if (l >= desiredDensity) {
+                // requested value lower than both l and h, give l
+                return !thisHigher;
+            } else {
+                // otherwise give h
+                return thisHigher;
+            }
+        }
+
+        return false;
     }
 
     @Nullable

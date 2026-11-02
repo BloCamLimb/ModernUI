@@ -19,6 +19,7 @@
 package icyllis.modernui.util;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import javax.xml.stream.XMLStreamReader;
 import java.util.Objects;
@@ -46,8 +47,9 @@ public final class XMLStreamAttributes implements AttributeSet {
         return reader.getAttributeValue(index);
     }
 
+    @Nullable
     @Override
-    public String getAttributeValue(String name) {
+    public String getAttributeValue(@NonNull String name) {
         return reader.getAttributeValue(null, name);
     }
 }

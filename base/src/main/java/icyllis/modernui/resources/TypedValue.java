@@ -246,9 +246,14 @@ public class TypedValue {
      */
     public static final int DATA_NULL_UNDEFINED = Res_value.DATA_NULL_UNDEFINED;
     /**
-     * {@link #TYPE_NULL} data indicating the value was explicitly set to null.
+     * {@link #TYPE_NULL} data indicating the value was explicitly set to null ({@code @empty}).
      */
     public static final int DATA_NULL_EMPTY = Res_value.DATA_NULL_EMPTY;
+    /**
+     * {@link #TYPE_NULL} data indicating the value was explicitly set to undefined ({@code @null}).
+     * This can be used to remove an attribute from a style.
+     */
+    public static final int DATA_NULL_ALT_UNDEFINED = Res_value.DATA_NULL_ALT_UNDEFINED;
 
     /**
      * {@link #flags} bit mask indicating the value is changing with {@link Locale}.
@@ -689,13 +694,17 @@ public class TypedValue {
      * @param type The data type identifier.
      * @param data The data value.
      * @return String The coerced string value.  If the value is
-     * null or the type is not known, null is returned.
+     * not specified or the type is not known, null is returned.
      */
     @Nullable
     public static String coerceToString(int type, int data) {
         switch (type) {
             case TYPE_NULL:
-                return null;
+                return switch (data) {
+                    case DATA_NULL_EMPTY -> "@empty";
+                    case DATA_NULL_ALT_UNDEFINED -> "@null";
+                    default -> null;
+                };
             case TYPE_FLOAT:
                 return Float.toString(Float.intBitsToFloat(data));
             case TYPE_DIMENSION:

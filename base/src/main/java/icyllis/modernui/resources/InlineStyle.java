@@ -22,6 +22,7 @@ import icyllis.arc3d.fastutil.objects.Object2LongOpenHashMap;
 import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.util.AttributeSet;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 
@@ -47,12 +48,15 @@ public final class InlineStyle implements AttributeSet {
     }
 
     @Override
-    public String getAttributeValue(int index) {
-        return TypedValue.coerceToString(type(index), data(index));
+    public @NonNull String getAttributeValue(int index) {
+        var v = TypedValue.coerceToString(type(index), data(index));
+        assert v != null;
+        return v;
     }
 
+    @Nullable
     @Override
-    public String getAttributeValue(String name) {
+    public String getAttributeValue(@NonNull String name) {
         int i = Arrays.binarySearch(keys, name);
         return i >= 0 ? getAttributeValue(i) : null;
     }
@@ -77,6 +81,7 @@ public final class InlineStyle implements AttributeSet {
 
     public static final class Builder {
 
+        // attr -> (dataType << 32) | data
         private final Object2LongOpenHashMap<String> entries = new Object2LongOpenHashMap<>();
 
         public Builder() {
@@ -84,7 +89,7 @@ public final class InlineStyle implements AttributeSet {
 
         public Builder addNull(@NonNull String attr, boolean empty) {
             put(attr, TypedValue.TYPE_NULL,
-                    empty ? TypedValue.DATA_NULL_EMPTY : TypedValue.DATA_NULL_UNDEFINED
+                    empty ? TypedValue.DATA_NULL_EMPTY : TypedValue.DATA_NULL_ALT_UNDEFINED
             );
             return this;
         }

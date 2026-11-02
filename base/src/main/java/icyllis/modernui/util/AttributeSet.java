@@ -18,6 +18,9 @@
 
 package icyllis.modernui.util;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * Reserved for future use.
  */
@@ -29,5 +32,6 @@ public interface AttributeSet {
 
     String getAttributeValue(int index);
 
-    String getAttributeValue(String name);
+    @Nullable
+    String getAttributeValue(@NonNull String name);
 }

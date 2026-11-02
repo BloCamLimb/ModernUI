@@ -788,41 +788,51 @@ public class Resources {
                 resolvedReference = null;
             }
 
-            Entry(@NonNull Entry c, int flags) {
-                type = c.type;
-                data = c.data;
-                cookie = c.cookie;
-                typeSpecFlags = c.typeSpecFlags | flags;
-                resolvedReference = c.resolvedReference;
+            Entry(@NonNull Entry child, int flags) {
+                type = child.type;
+                data = child.data;
+                cookie = child.cookie;
+                typeSpecFlags = child.typeSpecFlags | flags;
+                resolvedReference = child.resolvedReference;
             }
         }
 
         static boolean isUndefined(int type, int data) {
-            return type == TypedValue.TYPE_NULL && data == TypedValue.DATA_NULL_UNDEFINED;
+            return type == TypedValue.TYPE_NULL && data != TypedValue.DATA_NULL_EMPTY;
         }
 
-        private boolean resolve(@NonNull HashMap<String, Entry> m, String name, HashSet<String> path) {
+        @Nullable
+        private Entry resolve(@NonNull HashMap<String, Entry> m, String name, HashSet<String> path) {
             Entry e = m.get(name);
-            if (e == null) return false;
-            if (e.type != TypedValue.TYPE_ATTRIBUTE) return true;
+            if (e == null) {
+                // not exist or was removed
+                return null;
+            }
+            if (e.type != TypedValue.TYPE_ATTRIBUTE) {
+                // leaf node or already resolved
+                return e;
+            }
 
             String attr = mAssetManager.getAttributeIdForCookie(e.cookie, e.data);
             if (attr == null || !path.add(name)) {
+                // failed to get attribute name or there's cycle
                 m.remove(name);
-                return false;
+                return null;
             }
 
-            boolean ok = resolve(m, attr, path);
+            Entry child = resolve(m, attr, path);
             path.remove(name);
 
-            if (!ok) {
+            if (child == null) {
+                // child failed, also fails this
                 m.remove(name);
-                return false;
+                return null;
             }
 
-            Entry c = m.get(attr);
-            m.put(name, new Entry(c, e.typeSpecFlags));
-            return true;
+            assert child.type != TypedValue.TYPE_ATTRIBUTE;
+            var result = new Entry(child, e.typeSpecFlags);
+            m.put(name, result);
+            return result;
         }
 
         private Theme(@NonNull Resources resources, @NonNull ThemeKey key) {
@@ -1196,10 +1206,6 @@ public class Resources {
                 }
                 value.setTo(styleBag, i);
 
-                if (isUndefined(value.type, value.data)) {
-                    continue;
-                }
-
                 var ignored = resolveAttributeReference(value);
                 int valuesIdx = ii * TypedArray.STYLE_NUM_ENTRIES;
                 outValues[valuesIdx + TypedArray.STYLE_TYPE] = value.type;
@@ -1212,9 +1218,10 @@ public class Resources {
             int valuesIdx = 0;
             String[] keys = slots.getKeys();
             for (int ii = 0; ii < keys.length; ii++) {
-                boolean isUndefined = isUndefined(
-                        outValues[valuesIdx + TypedArray.STYLE_TYPE],
-                        outValues[valuesIdx + TypedArray.STYLE_DATA]);
+                // Note that DATA_NULL_ALT_UNDEFINED is considered as defined here
+                boolean isUndefined =
+                        outValues[valuesIdx + TypedArray.STYLE_TYPE] == TypedValue.TYPE_NULL &&
+                        outValues[valuesIdx + TypedArray.STYLE_DATA] == TypedValue.DATA_NULL_UNDEFINED;
                 if (isUndefined) {
                     Entry e;
                     if ((e = mEntries.get(keys[ii])) != null) {

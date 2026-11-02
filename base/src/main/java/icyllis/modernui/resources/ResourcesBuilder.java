@@ -23,10 +23,8 @@ import icyllis.modernui.annotation.AttrRes;
 import icyllis.modernui.annotation.StyleRes;
 import icyllis.modernui.graphics.ComplexColor;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.resources.ResourceTypes.ResTable_entry;
-import icyllis.modernui.resources.ResourceTypes.ResTable_map;
-import icyllis.modernui.resources.ResourceTypes.ResTable_type;
-import icyllis.modernui.resources.ResourceTypes.Res_value;
+import icyllis.modernui.resources.ResourceTypes.*;
+import icyllis.modernui.resources.ResourceMap.*;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -36,7 +34,6 @@ import org.jspecify.annotations.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Objects;
@@ -217,15 +214,15 @@ public class ResourcesBuilder {
                 ((long) Res_value.TYPE_STRING << 32) | storeGlobalString(value));
     }
 
-    public int addPrivateColor(@NonNull RuntimeResourceFactory<ComplexColor> factory) {
+    public int addInternalColor(@NonNull RuntimeResourceFactory<ComplexColor> factory) {
         return storeFactory(factory);
     }
 
-    public int addPrivateDrawable(@NonNull RuntimeResourceFactory<Drawable> factory) {
+    public int addInternalDrawable(@NonNull RuntimeResourceFactory<Drawable> factory) {
         return storeFactory(factory);
     }
 
-    public int addPrivateFactory(@NonNull RuntimeFactory factory) {
+    public int addInternalFactory(@NonNull RuntimeFactory factory) {
         return storeFactory(factory);
     }
 
@@ -247,7 +244,7 @@ public class ResourcesBuilder {
         resources.factoryPool = mFactoryArray.toArray(new RuntimeFactory[0]);
         mFactoryArray = null;
 
-        ResourceMap.TypeSpec styleTypeSpec;
+        TypeSpec styleTypeSpec;
         buildStyles: {
             ArrayList<Style> styles = new ArrayList<>(mStyleTable.values());
             mStyleTable = null;
@@ -302,27 +299,27 @@ public class ResourcesBuilder {
             data.asIntBuffer().put(0, styleOffsets);
             assert offset == offsetsSize + valuesSize;
 
-            ResourceMap.TypeEntry typeEntry = new ResourceMap.TypeEntry();
-            typeEntry.id = (byte) (storeTypeString("style") + 1);
+            var typeEntry = new TypeEntry();
+            typeEntry.typeName = "style";
             typeEntry.entryCount = styles.size();
             typeEntry.entriesStart = ResTable_type.SIZEOF + offsetsSize;
-            typeEntry.config = new ResConfig();
             typeEntry.data = data;
 
-            styleTypeSpec = new ResourceMap.TypeSpec(0, Collections.singletonList(typeEntry));
-            styleTypeSpec.id = typeEntry.id;
+            styleTypeSpec = new TypeSpec();
+            styleTypeSpec.typeName = typeEntry.typeName;
+            styleTypeSpec.typeEntries = new TypeEntry[]{typeEntry};
             styleTypeSpec.entryIndexTable = entryIndexTable;
         }
 
-        HashMap<String, ResourceMap.TypeSpec> typeSpecs = new HashMap<>();
+        ArrayList<TypeSpec> typeSpecs = new ArrayList<>();
 
         if (styleTypeSpec != null) {
-            typeSpecs.put("style", styleTypeSpec);
+            typeSpecs.add(styleTypeSpec);
         }
 
-        for (var typeE : mValueTable.entrySet()) {
-            String typeName = typeE.getKey();
-            Object2LongOpenHashMap<String> typeValues = typeE.getValue();
+        for (var mapEntry : mValueTable.entrySet()) {
+            String typeName = mapEntry.getKey();
+            Object2LongOpenHashMap<String> typeValues = mapEntry.getValue();
 
             if (typeValues.isEmpty()) {
                 continue;
@@ -355,17 +352,17 @@ public class ResourcesBuilder {
             data.asIntBuffer().put(0, valueOffsets);
             assert offset == offsetsSize + valuesSize;
 
-            ResourceMap.TypeEntry typeEntry = new ResourceMap.TypeEntry();
-            typeEntry.id = (byte) (storeTypeString(typeName) + 1);
+            var typeEntry = new TypeEntry();
+            typeEntry.typeName = typeName;
             typeEntry.entryCount = typeValues.size();
             typeEntry.entriesStart = ResTable_type.SIZEOF + offsetsSize;
-            typeEntry.config = new ResConfig();
             typeEntry.data = data;
 
-            var typeSpec = new ResourceMap.TypeSpec(0, Collections.singletonList(typeEntry));
-            typeSpec.id = typeEntry.id;
+            var typeSpec = new TypeSpec();
+            typeSpec.typeName = typeEntry.typeName;
+            typeSpec.typeEntries = new TypeEntry[]{typeEntry};
             typeSpec.entryIndexTable = entryIndexTable;
-            typeSpecs.put(typeName, typeSpec);
+            typeSpecs.add(typeSpec);
         }
 
         resources.typeStringPool = new ResStringPool(mTypeStringArray.toArray(new String[0]));
@@ -378,10 +375,11 @@ public class ResourcesBuilder {
             resources.namespaces[i + 1] = mLibraryArray.get(i);
         }
 
-        ResourceMap.NamespaceSpec namespaceSpec = new ResourceMap.NamespaceSpec(mNamespace);
-        namespaceSpec.typeSpecs = typeSpecs;
+        var namespaceSpec = new NamespaceSpec();
+        namespaceSpec.namespace = mNamespace;
+        namespaceSpec.typeSpecs = typeSpecs.toArray(new TypeSpec[0]);
 
-        resources.namespaceSpecs = new ResourceMap.NamespaceSpec[]{namespaceSpec};
+        resources.namespaceSpecs = new NamespaceSpec[]{namespaceSpec};
 
         return new AssetPack(assetProvider, resources);
     }
@@ -410,7 +408,7 @@ public class ResourcesBuilder {
 
         public void addNull(@NonNull String attr, boolean empty) {
             mEntries.add(new Entry(attr, TypedValue.TYPE_NULL,
-                    empty ? TypedValue.DATA_NULL_EMPTY : TypedValue.DATA_NULL_UNDEFINED)
+                    empty ? TypedValue.DATA_NULL_EMPTY : TypedValue.DATA_NULL_ALT_UNDEFINED)
             );
         }
 

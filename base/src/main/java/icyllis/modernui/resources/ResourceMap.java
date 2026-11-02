@@ -20,6 +20,7 @@ package icyllis.modernui.resources;
 
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.resources.ResourceTypes.Res_value;
+import icyllis.modernui.util.DisplayMetrics;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
@@ -27,8 +28,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Locale;
 
 /**
  * Represents a loaded resources file.
@@ -110,25 +110,12 @@ public class ResourceMap {
     public static class NamespaceSpec {
 
         public String namespace;
-        public HashMap<String, TypeSpec> typeSpecs;
-
-        public NamespaceSpec(String namespace) {
-            this.namespace = namespace;
-        }
-
-        public String getNamespace() {
-            return namespace;
-        }
-
-        public TypeSpec getTypeSpecByTypeName(String typeName) {
-            return typeSpecs.get(typeName);
-        }
+        public TypeSpec[] typeSpecs;
     }
 
     public static class TypeSpec {
 
-        public byte id;
-        public short typeCount;
+        public String typeName;
         public int entryCount;
         public int entriesStart;
 
@@ -137,11 +124,7 @@ public class ResourceMap {
 
         public ByteBuffer flags;
 
-        public final TypeEntry[] typeEntries;
-
-        public TypeSpec(long typeSpec, List<TypeEntry> typeEntries) {
-            this.typeEntries = typeEntries.toArray(new TypeEntry[0]);
-        }
+        public TypeEntry[] typeEntries;
 
         public int getEntryIndexByName(String entryName) {
             return entryIndexTable.getInt(entryName);
@@ -157,11 +140,17 @@ public class ResourceMap {
 
     public static class TypeEntry {
 
-        public byte id;
+        public String typeName;
         public byte flags;
         public int entryCount;
         public int entriesStart;
-        public ResConfig config;
+
+        // this must contain only Language, Script, Region
+        // see LocaleMatcher
+        public @NonNull Locale locale = Locale.ROOT;
+
+        // density dpi, must >= 0
+        public int density = DisplayMetrics.DENSITY_NONE;
 
         // remaining data (without header) of the type chunk
         public ByteBuffer data;

@@ -53,7 +53,14 @@ public class ResourceTypes {
     }
 
     public static class ResTable_config {
-        public static final int SIZEOF = 0;
+        public static final int SIZEOF = 3 + 4 + 3 + 2;
+
+        /*
+            char[3] language;
+            char[4] script;
+            char[3] region;
+            uint16_t density;
+         */
 
         public static final int CONFIG_LOCALE = 0x0004;
         public static final int CONFIG_DENSITY = 0x0100;
@@ -137,6 +144,7 @@ public class ResourceTypes {
 
         public static final int DATA_NULL_UNDEFINED = 0;
         public static final int DATA_NULL_EMPTY = 1;
+        public static final int DATA_NULL_ALT_UNDEFINED = 2;
 
         //// field offsets
 
