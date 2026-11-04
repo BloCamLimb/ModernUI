@@ -783,7 +783,7 @@ public class Resources {
             Entry(@NonNull InlineStyle style, int index) {
                 type = style.type(index);
                 data = style.data(index);
-                cookie = AssetManager.kInvalidCookie;
+                cookie = AssetManager.INVALID_COOKIE;
                 typeSpecFlags = 0;
                 resolvedReference = null;
             }
@@ -1212,6 +1212,7 @@ public class Resources {
                 outValues[valuesIdx + TypedArray.STYLE_DATA] = value.data;
                 outValues[valuesIdx + TypedArray.STYLE_COOKIE] = value.cookie;
                 outValues[valuesIdx + TypedArray.STYLE_FLAGS] = value.flags;
+                outValues[valuesIdx + TypedArray.STYLE_DENSITY] = value.density;
             }
 
             int indicesIdx = 0;

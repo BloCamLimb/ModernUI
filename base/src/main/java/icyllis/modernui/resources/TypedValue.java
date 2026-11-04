@@ -278,7 +278,7 @@ public class TypedValue {
     /**
      * The cookie representing the {@link AssetPack} in which the value resides.
      */
-    public int cookie = AssetManager.kInvalidCookie;
+    public int cookie = AssetManager.INVALID_COOKIE;
 
     /**
      * The bitmask of configuration axis that this resource varies with.
@@ -738,6 +738,7 @@ public class TypedValue {
         data = bag.values[offset + ResolvedBag.COLUMN_DATA];
         cookie = bag.values[offset + ResolvedBag.COLUMN_COOKIE];
         flags = bag.typeSpecFlags;
+        density = DisplayMetrics.DENSITY_NONE;
     }
 
     /**
@@ -761,7 +762,7 @@ public class TypedValue {
         if (type == TYPE_STRING || type == TYPE_REFERENCE || type == TYPE_ATTRIBUTE) {
             sb.append(" \"").append(object != null ? object : "<null>").append("\"");
         }
-        if (cookie != AssetManager.kInvalidCookie) {
+        if (cookie != AssetManager.INVALID_COOKIE) {
             sb.append(" cookie=").append(cookie);
         }
         sb.append(" density=").append(density);

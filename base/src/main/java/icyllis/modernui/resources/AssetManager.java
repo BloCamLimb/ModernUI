@@ -55,7 +55,7 @@ public final class AssetManager {
 
     public static final Marker MARKER = MarkerFactory.getMarker("AssetManager");
 
-    public static final int kInvalidCookie = -1;
+    public static final int INVALID_COOKIE = -1;
 
     private static final ResolvedBag SENTINEL_BAG = new ResolvedBag(null, null, 0);
 
@@ -399,7 +399,7 @@ public final class AssetManager {
         Locale desiredLocale = mLocales.isEmpty() ? Locale.ROOT :
                 mLocales.size() == 1 ? mLocales.get(0) : null;
 
-        int bestCookie = kInvalidCookie;
+        int bestCookie = INVALID_COOKIE;
         TypeEntry bestType = null;
         int bestOffset = 0;
         int typeSpecFlags = 0;
@@ -501,7 +501,7 @@ public final class AssetManager {
         if (localeMatcher != null) {
             Locale targetLocale = localeMatcher.build()
                     .getBestLocale(mLocales);
-            bestCookie = kInvalidCookie;
+            bestCookie = INVALID_COOKIE;
             bestType = null;
 
             // we only match density here, because we know the target locale bucket
@@ -547,10 +547,10 @@ public final class AssetManager {
             }
 
             // there must be a match in the second pass
-            assert bestCookie != kInvalidCookie;
+            assert bestCookie != INVALID_COOKIE;
         }
 
-        if (bestCookie == kInvalidCookie) {
+        if (bestCookie == INVALID_COOKIE) {
             return null;
         }
 
@@ -634,7 +634,7 @@ public final class AssetManager {
     // do post-processing before exposing it to public API users,
     // freeze the 'object' field
     boolean postProcess(@NonNull TypedValue outValue) {
-        if (outValue.cookie == kInvalidCookie) {
+        if (outValue.cookie == INVALID_COOKIE) {
             // inline value, not from resource
             return true;
         }

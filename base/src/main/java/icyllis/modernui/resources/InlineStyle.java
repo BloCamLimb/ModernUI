@@ -21,6 +21,7 @@ package icyllis.modernui.resources;
 import icyllis.arc3d.fastutil.objects.Object2LongOpenHashMap;
 import icyllis.modernui.annotation.Immutable;
 import icyllis.modernui.util.AttributeSet;
+import icyllis.modernui.util.DisplayMetrics;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -64,9 +65,9 @@ public final class InlineStyle implements AttributeSet {
     public void getAttributeValue(int index, @NonNull TypedValue outValue) {
         outValue.type = type(index);
         outValue.data = data(index);
-        outValue.cookie = AssetManager.kInvalidCookie;
+        outValue.cookie = AssetManager.INVALID_COOKIE;
         outValue.flags = 0;
-        outValue.density = 0;
+        outValue.density = DisplayMetrics.DENSITY_NONE;
         outValue.locale = null;
         outValue.object = null;
     }
