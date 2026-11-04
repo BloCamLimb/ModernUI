@@ -129,9 +129,10 @@ public class ResourcesBuilder {
 
     int genId(ResourceId id) {
         String namespace = id.namespace();
-        int namespaceIndex = namespace.equals(mNamespace) ? 0 : storeNamespace(namespace) + 1;
-        return (namespaceIndex << Res_value.NAMESPACE_INDEX_SHIFT) |
-                (storeTypeString(id.type()) << Res_value.TYPE_INDEX_SHIFT) |
+        int namespaceId = namespace.isEmpty() ? 0 : storeNamespace(namespace) + 1;
+        int typeId = storeTypeString(id.type()) + 1;
+        return (namespaceId << Res_value.NAMESPACE_ID_SHIFT) |
+                (typeId << Res_value.TYPE_ID_SHIFT) |
                 storeKeyString(id.entry());
     }
 

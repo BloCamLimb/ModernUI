@@ -48,7 +48,7 @@ public class ResourceMap {
 
     NamespaceSpec[] namespaceSpecs;
 
-    final String[] namespaces = new String[256];//TODO use dynamic size
+    final String[] namespaces = new String[256];
 
     public NamespaceSpec[] getNamespaceSpecs() {
         return namespaceSpecs;
@@ -63,16 +63,18 @@ public class ResourceMap {
      */
     @Nullable
     public String lookupNamespace(int id) {
-        int packageId = id >>> Res_value.NAMESPACE_INDEX_SHIFT;
-
-        return namespaces[packageId];
+        int namespaceId = id >>> Res_value.NAMESPACE_ID_SHIFT;
+        if (namespaceId == 0) {
+            return "";
+        }
+        return namespaces[namespaceId - 1];
     }
 
     /**
      * Converts packed integer id to string-based resource id.
      * The integer id must come from this table.
      *
-     * @param id     the res id to lookup
+     * @param id the res id to lookup
      * @return the resource id the id represents
      */
     @Nullable
@@ -81,7 +83,11 @@ public class ResourceMap {
         if (namespace == null) {
             return null;
         }
-        String type = typeStringPool.getStringAt((id >> Res_value.TYPE_INDEX_SHIFT) & Res_value.TYPE_INDEX_MASK);
+        int typeId = (id >> Res_value.TYPE_ID_SHIFT) & Res_value.TYPE_ID_MASK;
+        if (typeId == 0) {
+            return null;
+        }
+        String type = typeStringPool.getStringAt(typeId - 1);
         if (type == null) {
             return null;
         }

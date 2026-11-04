@@ -138,9 +138,9 @@ public class ResourceTypes {
         TYPE_LAST_INT = 0x1f;
 
         public static final int ENTRY_INDEX_MASK = 0x3ffff;
-        public static final int TYPE_INDEX_SHIFT = 18;
-        public static final int TYPE_INDEX_MASK = 0x3f;
-        public static final int NAMESPACE_INDEX_SHIFT = 24;
+        public static final int TYPE_ID_SHIFT = 18;
+        public static final int TYPE_ID_MASK = 0x3f;
+        public static final int NAMESPACE_ID_SHIFT = 24;
 
         public static final int DATA_NULL_UNDEFINED = 0;
         public static final int DATA_NULL_EMPTY = 1;

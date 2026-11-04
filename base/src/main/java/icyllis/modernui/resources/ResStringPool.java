@@ -30,7 +30,7 @@ public class ResStringPool {
     }
 
     public CharSequence getSequenceAt(int idx) {
-        if (idx < 0 || idx > mCache.length) {
+        if (idx < 0 || idx >= mCache.length) {
             return null;
         }
         return mCache[idx];
