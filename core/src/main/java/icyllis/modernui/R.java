@@ -184,6 +184,7 @@ public final class R {
         public static final String textColorHintInverse = "textColorHintInverse";
         public static final String textColorHighlightInverse = "textColorHighlightInverse";
         public static final String textColorLinkInverse = "textColorLinkInverse";
+        public static final String textColorAlertDialogListItem = "textColorAlertDialogListItem";
 
         public static final String colorControlNormal = "colorControlNormal";
         public static final String colorControlActivated = "colorControlActivated";
@@ -236,6 +237,11 @@ public final class R {
         public static final String colorOnError = "colorOnError";
         public static final String colorErrorContainer = "colorErrorContainer";
         public static final String colorOnErrorContainer = "colorOnErrorContainer";
+        public static final String colorTextPrimaryInverse = "colorTextPrimaryInverse";
+        public static final String colorTextSecondaryAndTertiaryInverse = "colorTextSecondaryAndTertiaryInverse";
+        public static final String colorTextPrimaryInverseDisableOnly = "colorTextPrimaryInverseDisableOnly";
+        public static final String colorTextSecondaryAndTertiaryInverseDisabled = "colorTextSecondaryAndTertiaryInverseDisabled";
+        public static final String colorTextHintInverse = "colorTextHintInverse";
 
         public static final ResourceId absListViewStyle = new ResourceId(ns, type, "absListViewStyle");
         public static final ResourceId autoCompleteTextViewStyle = new ResourceId(ns, type, "autoCompleteTextViewStyle");

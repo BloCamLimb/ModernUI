@@ -58,6 +58,7 @@ public class MaterialTheme {
 
     private static final AssetPack sAssetPack;
 
+    private static final float material_emphasis_medium = 0.6f;
     private static final float material_emphasis_disabled = 0.38f;
     private static final float material_emphasis_disabled_background = 0.12f;
 
@@ -107,28 +108,24 @@ public class MaterialTheme {
             colorError,
             colorOnError,
             colorErrorContainer,
-            colorOnErrorContainer;
-    public ColorStateList
-            textColorPrimary,
-            textColorPrimaryInverse,
-            textColorSecondary,
-            textColorSecondaryInverse,
-            textColorTertiary,
-            textColorTertiaryInverse,
-            textColorPrimaryDisableOnly,
-            textColorPrimaryInverseDisableOnly,
-            textColorHint,
-            textColorHintInverse;
-    public int
-            textColorHighlight,
-            textColorHighlightInverse;
-    public ColorStateList
-            textColorLink,
-            textColorLinkInverse,
-            textColorAlertDialogListItem;
-    public boolean isDark;
+            colorOnErrorContainer,
+            colorTextPrimaryInverse,
+            colorTextSecondaryAndTertiaryInverse,
+            colorTextPrimaryInverseDisableOnly,
+            colorTextSecondaryAndTertiaryInverseDisabled,
+            colorTextHintInverse;
 
     static final int
+            text_color_primary,
+            text_color_primary_inverse,
+            text_color_secondary,
+            text_color_secondary_inverse,
+            text_color_primary_disable_only,
+            text_color_primary_inverse_disable_only,
+            text_color_hint,
+            text_color_hint_inverse,
+            text_color_highlight,
+            text_color_highlight_inverse,
             elevated_button_foreground_color_selector,
             filled_button_foreground_color_selector,
             tonal_button_foreground_color_selector,
@@ -173,6 +170,17 @@ public class MaterialTheme {
     static {
         ResourcesBuilder b = new ResourcesBuilder(R.ns);
 
+        //@formatter:off
+        text_color_primary = b.addInternalColor(MaterialTheme::text_color_primary);
+        text_color_primary_inverse = b.addInternalColor(MaterialTheme::text_color_primary_inverse);
+        text_color_secondary = b.addInternalColor(MaterialTheme::text_color_secondary);
+        text_color_secondary_inverse = b.addInternalColor(MaterialTheme::text_color_secondary_inverse);
+        text_color_primary_disable_only = b.addInternalColor(MaterialTheme::text_color_primary_disable_only);
+        text_color_primary_inverse_disable_only = b.addInternalColor(MaterialTheme::text_color_primary_inverse_disable_only);
+        text_color_hint = b.addInternalColor(MaterialTheme::text_color_hint);
+        text_color_hint_inverse = b.addInternalColor(MaterialTheme::text_color_hint_inverse);
+        text_color_highlight = b.addInternalColor(MaterialTheme::text_color_highlight);
+        text_color_highlight_inverse = b.addInternalColor(MaterialTheme::text_color_highlight_inverse);
         elevated_button_foreground_color_selector = b.addInternalColor(MaterialTheme::elevated_button_foreground_color_selector);
         filled_button_foreground_color_selector = b.addInternalColor(MaterialTheme::filled_button_foreground_color_selector);
         tonal_button_foreground_color_selector = b.addInternalColor(MaterialTheme::tonal_button_foreground_color_selector);
@@ -213,10 +221,186 @@ public class MaterialTheme {
 
         outlined_box = b.addInternalDrawable(MaterialTheme::outlined_box);
         filled_box = b.addInternalDrawable(MaterialTheme::filled_box);
+        //@formatter:on
 
         addToResources(b);
 
         sAssetPack = b.build(new EmptyAssetProvider());
+    }
+
+    private static final int[][] text_state_spec = new int[][]{
+            new int[]{-StateSet.state_enabled},
+            StateSet.WILD_CARD
+    };
+
+    private static final int[][] hint_state_spec = new int[][]{
+            new int[]{StateSet.state_enabled},
+            StateSet.WILD_CARD
+    };
+
+    private static ColorStateList text_color_primary(Resources resources,
+                                                     Resources.Theme theme,
+                                                     int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        return new ColorStateList(
+                text_state_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorOnSurface
+                }
+        );
+    }
+
+    private static ColorStateList text_color_primary_inverse(Resources resources,
+                                                             Resources.Theme theme,
+                                                             int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorTextPrimaryInverse = theme.getColor(R.attr.colorTextPrimaryInverse, value);
+        return new ColorStateList(
+                text_state_spec,
+                new long[]{
+                        modulateColor(colorTextPrimaryInverse, material_emphasis_disabled),
+                        colorTextPrimaryInverse
+                }
+        );
+    }
+
+    private static ColorStateList text_color_secondary(Resources resources,
+                                                       Resources.Theme theme,
+                                                       int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnSurface = theme.getColor(R.attr.colorOnSurface, value);
+        long colorOnSurfaceVariant = theme.getColor(R.attr.colorOnSurfaceVariant, value);
+        return new ColorStateList(
+                text_state_spec,
+                new long[]{
+                        modulateColor(colorOnSurface, material_emphasis_disabled),
+                        colorOnSurfaceVariant
+                }
+        );
+    }
+
+    private static ColorStateList text_color_secondary_inverse(Resources resources,
+                                                               Resources.Theme theme,
+                                                               int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorTextSecondaryAndTertiaryInverseDisabled =
+                theme.getColor(R.attr.colorTextSecondaryAndTertiaryInverseDisabled, value);
+        long colorTextSecondaryAndTertiaryInverse = theme.getColor(R.attr.colorTextSecondaryAndTertiaryInverse, value);
+        return new ColorStateList(
+                text_state_spec,
+                new long[]{
+                        modulateColor(colorTextSecondaryAndTertiaryInverseDisabled, material_emphasis_disabled),
+                        colorTextSecondaryAndTertiaryInverse
+                }
+        );
+    }
+
+    private static ColorStateList text_color_primary_disable_only(Resources resources,
+                                                                  Resources.Theme theme,
+                                                                  int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnBackground = theme.getColor(R.attr.colorOnBackground, value);
+        return new ColorStateList(
+                text_state_spec,
+                new long[]{
+                        modulateColor(colorOnBackground, material_emphasis_medium),
+                        colorOnBackground
+                }
+        );
+    }
+
+    private static ColorStateList text_color_primary_inverse_disable_only(Resources resources,
+                                                                          Resources.Theme theme,
+                                                                          int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorTextPrimaryInverseDisableOnly = theme.getColor(R.attr.colorTextPrimaryInverseDisableOnly, value);
+        return new ColorStateList(
+                text_state_spec,
+                new long[]{
+                        modulateColor(colorTextPrimaryInverseDisableOnly, material_emphasis_medium),
+                        colorTextPrimaryInverseDisableOnly
+                }
+        );
+    }
+
+    private static ColorStateList text_color_hint(Resources resources,
+                                                  Resources.Theme theme,
+                                                  int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorOnBackground = theme.getColor(R.attr.colorOnBackground, value);
+        return new ColorStateList(
+                hint_state_spec,
+                new long[]{
+                        modulateColor(colorOnBackground, material_emphasis_medium),
+                        modulateColor(colorOnBackground, material_emphasis_disabled)
+                }
+        );
+    }
+
+    private static ColorStateList text_color_hint_inverse(Resources resources,
+                                                          Resources.Theme theme,
+                                                          int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorTextHintInverse = theme.getColor(R.attr.colorTextHintInverse, value);
+        return new ColorStateList(
+                hint_state_spec,
+                new long[]{
+                        modulateColor(colorTextHintInverse, material_emphasis_medium),
+                        modulateColor(colorTextHintInverse, material_emphasis_disabled)
+                }
+        );
+    }
+
+    private static ColorStateList text_color_highlight(Resources resources,
+                                                       Resources.Theme theme,
+                                                       int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorPrimary = theme.getColor(R.attr.colorPrimary, value);
+        return ColorStateList.valueOf(
+                modulateColor(colorPrimary, material_emphasis_medium)
+        );
+    }
+
+    private static ColorStateList text_color_highlight_inverse(Resources resources,
+                                                               Resources.Theme theme,
+                                                               int cookie) {
+        if (theme == null) {
+            return null;
+        }
+        TypedValue value = new TypedValue();
+        long colorPrimaryInverse = theme.getColor(R.attr.colorPrimaryInverse, value);
+        return ColorStateList.valueOf(
+                modulateColor(colorPrimaryInverse, material_emphasis_medium)
+        );
     }
 
     // foreground/background
@@ -1201,114 +1385,20 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.Theme_Material3_Dark, null);
             style.addBoolean(R.attr.isLightTheme, false);
 
+            addCommonToTheme(style);
+
             addColorsToTheme(t, style);
-
-            style.addReference(R.attr.textAppearanceDisplayLarge, R.style.TextAppearance_Material3_DisplayLarge);
-            style.addReference(R.attr.textAppearanceDisplayMedium, R.style.TextAppearance_Material3_DisplayMedium);
-            style.addReference(R.attr.textAppearanceDisplaySmall, R.style.TextAppearance_Material3_DisplaySmall);
-            style.addReference(R.attr.textAppearanceHeadlineLarge, R.style.TextAppearance_Material3_HeadlineLarge);
-            style.addReference(R.attr.textAppearanceHeadlineMedium, R.style.TextAppearance_Material3_HeadlineMedium);
-            style.addReference(R.attr.textAppearanceHeadlineSmall, R.style.TextAppearance_Material3_HeadlineSmall);
-            style.addReference(R.attr.textAppearanceTitleLarge, R.style.TextAppearance_Material3_TitleLarge);
-            style.addReference(R.attr.textAppearanceTitleMedium, R.style.TextAppearance_Material3_TitleMedium);
-            style.addReference(R.attr.textAppearanceTitleSmall, R.style.TextAppearance_Material3_TitleSmall);
-            style.addReference(R.attr.textAppearanceBodyLarge, R.style.TextAppearance_Material3_BodyLarge);
-            style.addReference(R.attr.textAppearanceBodyMedium, R.style.TextAppearance_Material3_BodyMedium);
-            style.addReference(R.attr.textAppearanceBodySmall, R.style.TextAppearance_Material3_BodySmall);
-            style.addReference(R.attr.textAppearanceLabelLarge, R.style.TextAppearance_Material3_LabelLarge);
-            style.addReference(R.attr.textAppearanceLabelMedium, R.style.TextAppearance_Material3_LabelMedium);
-            style.addReference(R.attr.textAppearanceLabelSmall, R.style.TextAppearance_Material3_LabelSmall);
-
-            style.addAttribute(R.attr.colorEdgeEffect, R.attr.colorPrimary);
-
-            style.addReference(R.attr.textAppearance, R.style.TextAppearance);
-            style.addReference(R.attr.textAppearanceInverse, R.style.TextAppearance_Inverse);
-            style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
-            style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
-            style.addReference(R.attr.radioButtonStyleMenuItem,
-                    R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
-            style.addReference(R.attr.switchStyle, R.style.Widget_Material3_CompoundButton_Switch);
-            style.addReference(R.attr.progressBarStyle, R.style.Widget_Material3_ProgressBar);
-            style.addReference(R.attr.progressBarStyleSmall, R.style.Widget_Material3_ProgressBar_Small);
-            style.addReference(R.attr.progressBarStyleHorizontal, R.style.Widget_Material3_ProgressBar_Horizontal);
-            style.addReference(R.attr.progressBarStyleVertical, R.style.Widget_Material3_ProgressBar_Vertical);
-            style.addReference(R.attr.seekBarStyle, R.style.Widget_Material3_SeekBar);
-            style.addReference(R.attr.popupMenuStyle, R.style.Widget_Material3_PopupMenu);
-            style.addReference(R.attr.contextPopupMenuStyle, R.style.Widget_Material3_PopupMenu_ContextMenu);
-            style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
-            style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
-            style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
-            style.addReference(R.attr.checkboxStyle, R.style.Widget_Material3_CompoundButton_CheckBox);
-            style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
-            style.addReference(R.attr.tabStyle, R.style.Widget_Material3_TabLayout);
-            style.addReference(R.attr.tabSecondaryStyle, R.style.Widget_Material3_TabLayout_Secondary);
-            style.addReference(R.attr.borderlessButtonStyle, R.style.Widget_Material3_Button_TextButton);
-            style.addReference(R.attr.buttonTonalStyle, R.style.Widget_Material3_Button_TonalButton);
-            style.addReference(R.attr.buttonOutlinedStyle, R.style.Widget_Material3_Button_OutlinedButton);
-            style.addReference(R.attr.buttonElevatedStyle, R.style.Widget_Material3_Button_ElevatedButton);
-            style.addReference(R.attr.iconButtonStyle, R.style.Widget_Material3_Button_IconButton_Standard);
-            style.addReference(R.attr.iconButtonFilledStyle, R.style.Widget_Material3_Button_IconButton);
-            style.addReference(R.attr.iconButtonTonalStyle, R.style.Widget_Material3_Button_IconButton_Tonal);
-            style.addReference(R.attr.iconButtonOutlinedStyle, R.style.Widget_Material3_Button_IconButton_Outlined);
-            style.addReference(R.attr.editTextOutlinedStyle, R.style.Widget_Material3_EditText_OutlinedBox);
-            style.addReference(R.attr.editTextFilledStyle, R.style.Widget_Material3_EditText_FilledBox);
+            style.addColor(R.attr.colorControlHighlight, 0x33ffffff);
         }
         {
             MaterialTheme t = createMaterial(false);
             var style = b.newStyle(R.style.Theme_Material3_Light, null);
             style.addBoolean(R.attr.isLightTheme, true);
 
+            addCommonToTheme(style);
+
             addColorsToTheme(t, style);
-
-            style.addReference(R.attr.textAppearanceDisplayLarge, R.style.TextAppearance_Material3_DisplayLarge);
-            style.addReference(R.attr.textAppearanceDisplayMedium, R.style.TextAppearance_Material3_DisplayMedium);
-            style.addReference(R.attr.textAppearanceDisplaySmall, R.style.TextAppearance_Material3_DisplaySmall);
-            style.addReference(R.attr.textAppearanceHeadlineLarge, R.style.TextAppearance_Material3_HeadlineLarge);
-            style.addReference(R.attr.textAppearanceHeadlineMedium, R.style.TextAppearance_Material3_HeadlineMedium);
-            style.addReference(R.attr.textAppearanceHeadlineSmall, R.style.TextAppearance_Material3_HeadlineSmall);
-            style.addReference(R.attr.textAppearanceTitleLarge, R.style.TextAppearance_Material3_TitleLarge);
-            style.addReference(R.attr.textAppearanceTitleMedium, R.style.TextAppearance_Material3_TitleMedium);
-            style.addReference(R.attr.textAppearanceTitleSmall, R.style.TextAppearance_Material3_TitleSmall);
-            style.addReference(R.attr.textAppearanceBodyLarge, R.style.TextAppearance_Material3_BodyLarge);
-            style.addReference(R.attr.textAppearanceBodyMedium, R.style.TextAppearance_Material3_BodyMedium);
-            style.addReference(R.attr.textAppearanceBodySmall, R.style.TextAppearance_Material3_BodySmall);
-            style.addReference(R.attr.textAppearanceLabelLarge, R.style.TextAppearance_Material3_LabelLarge);
-            style.addReference(R.attr.textAppearanceLabelMedium, R.style.TextAppearance_Material3_LabelMedium);
-            style.addReference(R.attr.textAppearanceLabelSmall, R.style.TextAppearance_Material3_LabelSmall);
-
-            style.addAttribute(R.attr.colorEdgeEffect, R.attr.colorPrimary);
-
-            style.addReference(R.attr.textAppearance, R.style.TextAppearance);
-            style.addReference(R.attr.textAppearanceInverse, R.style.TextAppearance_Inverse);
-            style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
-            style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
-            style.addReference(R.attr.radioButtonStyleMenuItem,
-                    R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
-            style.addReference(R.attr.switchStyle, R.style.Widget_Material3_CompoundButton_Switch);
-            style.addReference(R.attr.progressBarStyle, R.style.Widget_Material3_ProgressBar);
-            style.addReference(R.attr.progressBarStyleSmall, R.style.Widget_Material3_ProgressBar_Small);
-            style.addReference(R.attr.progressBarStyleHorizontal, R.style.Widget_Material3_ProgressBar_Horizontal);
-            style.addReference(R.attr.progressBarStyleVertical, R.style.Widget_Material3_ProgressBar_Vertical);
-            style.addReference(R.attr.seekBarStyle, R.style.Widget_Material3_SeekBar);
-            style.addReference(R.attr.popupMenuStyle, R.style.Widget_Material3_PopupMenu);
-            style.addReference(R.attr.contextPopupMenuStyle, R.style.Widget_Material3_PopupMenu_ContextMenu);
-            style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
-            style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
-            style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
-            style.addReference(R.attr.checkboxStyle, R.style.Widget_Material3_CompoundButton_CheckBox);
-            style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
-            style.addReference(R.attr.tabStyle, R.style.Widget_Material3_TabLayout);
-            style.addReference(R.attr.tabSecondaryStyle, R.style.Widget_Material3_TabLayout_Secondary);
-            style.addReference(R.attr.borderlessButtonStyle, R.style.Widget_Material3_Button_TextButton);
-            style.addReference(R.attr.buttonTonalStyle, R.style.Widget_Material3_Button_TonalButton);
-            style.addReference(R.attr.buttonOutlinedStyle, R.style.Widget_Material3_Button_OutlinedButton);
-            style.addReference(R.attr.buttonElevatedStyle, R.style.Widget_Material3_Button_ElevatedButton);
-            style.addReference(R.attr.iconButtonStyle, R.style.Widget_Material3_Button_IconButton_Standard);
-            style.addReference(R.attr.iconButtonFilledStyle, R.style.Widget_Material3_Button_IconButton);
-            style.addReference(R.attr.iconButtonTonalStyle, R.style.Widget_Material3_Button_IconButton_Tonal);
-            style.addReference(R.attr.iconButtonOutlinedStyle, R.style.Widget_Material3_Button_IconButton_Outlined);
-            style.addReference(R.attr.editTextOutlinedStyle, R.style.Widget_Material3_EditText_OutlinedBox);
-            style.addReference(R.attr.editTextFilledStyle, R.style.Widget_Material3_EditText_FilledBox);
+            style.addColor(R.attr.colorControlHighlight, 0x1f000000);
         }
         {
             MaterialTheme t = createDefault(true, 2);
@@ -1320,6 +1410,74 @@ public class MaterialTheme {
             var style = b.newStyle(R.style.ThemeOverlay_Material3_Light_Rust, null);
             addColorsToTheme(t, style);
         }
+    }
+
+    private static void addCommonToTheme(ResourcesBuilder.Style style) {
+        style.addReference(R.attr.textAppearanceDisplayLarge, R.style.TextAppearance_Material3_DisplayLarge);
+        style.addReference(R.attr.textAppearanceDisplayMedium, R.style.TextAppearance_Material3_DisplayMedium);
+        style.addReference(R.attr.textAppearanceDisplaySmall, R.style.TextAppearance_Material3_DisplaySmall);
+        style.addReference(R.attr.textAppearanceHeadlineLarge, R.style.TextAppearance_Material3_HeadlineLarge);
+        style.addReference(R.attr.textAppearanceHeadlineMedium, R.style.TextAppearance_Material3_HeadlineMedium);
+        style.addReference(R.attr.textAppearanceHeadlineSmall, R.style.TextAppearance_Material3_HeadlineSmall);
+        style.addReference(R.attr.textAppearanceTitleLarge, R.style.TextAppearance_Material3_TitleLarge);
+        style.addReference(R.attr.textAppearanceTitleMedium, R.style.TextAppearance_Material3_TitleMedium);
+        style.addReference(R.attr.textAppearanceTitleSmall, R.style.TextAppearance_Material3_TitleSmall);
+        style.addReference(R.attr.textAppearanceBodyLarge, R.style.TextAppearance_Material3_BodyLarge);
+        style.addReference(R.attr.textAppearanceBodyMedium, R.style.TextAppearance_Material3_BodyMedium);
+        style.addReference(R.attr.textAppearanceBodySmall, R.style.TextAppearance_Material3_BodySmall);
+        style.addReference(R.attr.textAppearanceLabelLarge, R.style.TextAppearance_Material3_LabelLarge);
+        style.addReference(R.attr.textAppearanceLabelMedium, R.style.TextAppearance_Material3_LabelMedium);
+        style.addReference(R.attr.textAppearanceLabelSmall, R.style.TextAppearance_Material3_LabelSmall);
+
+        style.addAttribute(R.attr.colorEdgeEffect, R.attr.colorPrimary);
+
+        style.addReference(R.attr.textAppearance, R.style.TextAppearance);
+        style.addReference(R.attr.textAppearanceInverse, R.style.TextAppearance_Inverse);
+        style.addReference(R.attr.buttonStyle, R.style.Widget_Material3_Button);
+        style.addReference(R.attr.radioButtonStyle, R.style.Widget_Material3_CompoundButton_RadioButton);
+        style.addReference(R.attr.radioButtonStyleMenuItem, R.style.Widget_Material3_CompoundButton_RadioButton_MenuItem);
+        style.addReference(R.attr.switchStyle, R.style.Widget_Material3_CompoundButton_Switch);
+        style.addReference(R.attr.progressBarStyle, R.style.Widget_Material3_ProgressBar);
+        style.addReference(R.attr.progressBarStyleSmall, R.style.Widget_Material3_ProgressBar_Small);
+        style.addReference(R.attr.progressBarStyleHorizontal, R.style.Widget_Material3_ProgressBar_Horizontal);
+        style.addReference(R.attr.progressBarStyleVertical, R.style.Widget_Material3_ProgressBar_Vertical);
+        style.addReference(R.attr.seekBarStyle, R.style.Widget_Material3_SeekBar);
+        style.addReference(R.attr.popupMenuStyle, R.style.Widget_Material3_PopupMenu);
+        style.addReference(R.attr.contextPopupMenuStyle, R.style.Widget_Material3_PopupMenu_ContextMenu);
+        style.addReference(R.attr.listPopupWindowStyle, R.style.Widget_Material3_PopupMenu_ListPopupWindow);
+        style.addReference(R.attr.spinnerStyle, R.style.Widget_Material3_Spinner);
+        style.addReference(R.attr.editTextStyle, R.style.Widget_Material3_EditText);
+        style.addReference(R.attr.checkboxStyle, R.style.Widget_Material3_CompoundButton_CheckBox);
+        style.addReference(R.attr.checkboxStyleMenuItem, R.style.Widget_Material3_CompoundButton_CheckBox_MenuItem);
+        style.addReference(R.attr.tabStyle, R.style.Widget_Material3_TabLayout);
+        style.addReference(R.attr.tabSecondaryStyle, R.style.Widget_Material3_TabLayout_Secondary);
+        style.addReference(R.attr.borderlessButtonStyle, R.style.Widget_Material3_Button_TextButton);
+        style.addReference(R.attr.buttonTonalStyle, R.style.Widget_Material3_Button_TonalButton);
+        style.addReference(R.attr.buttonOutlinedStyle, R.style.Widget_Material3_Button_OutlinedButton);
+        style.addReference(R.attr.buttonElevatedStyle, R.style.Widget_Material3_Button_ElevatedButton);
+        style.addReference(R.attr.iconButtonStyle, R.style.Widget_Material3_Button_IconButton_Standard);
+        style.addReference(R.attr.iconButtonFilledStyle, R.style.Widget_Material3_Button_IconButton);
+        style.addReference(R.attr.iconButtonTonalStyle, R.style.Widget_Material3_Button_IconButton_Tonal);
+        style.addReference(R.attr.iconButtonOutlinedStyle, R.style.Widget_Material3_Button_IconButton_Outlined);
+        style.addReference(R.attr.editTextOutlinedStyle, R.style.Widget_Material3_EditText_OutlinedBox);
+        style.addReference(R.attr.editTextFilledStyle, R.style.Widget_Material3_EditText_FilledBox);
+
+        style.addColorFactory(R.attr.textColorPrimary, text_color_primary);
+        style.addColorFactory(R.attr.textColorPrimaryInverse, text_color_primary_inverse);
+        style.addColorFactory(R.attr.textColorSecondary, text_color_secondary);
+        style.addColorFactory(R.attr.textColorSecondaryInverse, text_color_secondary_inverse);
+        style.addColorFactory(R.attr.textColorPrimaryDisableOnly, text_color_primary_disable_only);
+        style.addColorFactory(R.attr.textColorPrimaryInverseDisableOnly, text_color_primary_inverse_disable_only);
+        style.addColorFactory(R.attr.textColorHighlight, text_color_highlight);
+        style.addColorFactory(R.attr.textColorHighlightInverse, text_color_highlight_inverse);
+        style.addColorFactory(R.attr.textColorHint, text_color_hint);
+        style.addColorFactory(R.attr.textColorHintInverse, text_color_hint_inverse);
+        style.addAttribute(R.attr.textColorLink, R.attr.colorPrimary);
+        style.addAttribute(R.attr.textColorLinkInverse, R.attr.colorPrimaryInverse);
+        style.addAttribute(R.attr.textColorAlertDialogListItem, R.attr.textColorPrimary);
+
+        style.addAttribute(R.attr.colorControlNormal, R.attr.colorOnSurfaceVariant);
+        style.addAttribute(R.attr.colorControlActivated, R.attr.colorPrimaryContainer);
     }
 
     private static void addColorsToTheme(MaterialTheme t, ResourcesBuilder.Style style) {
@@ -1370,24 +1528,6 @@ public class MaterialTheme {
         style.addColor(R.attr.colorOnError, t.colorOnError);
         style.addColor(R.attr.colorErrorContainer, t.colorErrorContainer);
         style.addColor(R.attr.colorOnErrorContainer, t.colorOnErrorContainer);
-
-        style.addColor(R.attr.textColorPrimary, (resources, theme, cookie) -> t.textColorPrimary);
-        style.addColor(R.attr.textColorPrimaryInverse, (resources, theme, cookie) -> t.textColorPrimaryInverse);
-        style.addColor(R.attr.textColorSecondary, (resources, theme, cookie) -> t.textColorSecondary);
-        style.addColor(R.attr.textColorSecondaryInverse, (resources, theme, cookie) -> t.textColorSecondaryInverse);
-        style.addColor(R.attr.textColorPrimaryDisableOnly, (resources, theme, cookie) -> t.textColorPrimaryDisableOnly);
-        style.addColor(R.attr.textColorPrimaryInverseDisableOnly,
-         (resources, theme, cookie) -> t.textColorPrimaryInverseDisableOnly);
-        style.addColor(R.attr.textColorHighlight, t.textColorHighlight);
-        style.addColor(R.attr.textColorHighlightInverse, t.textColorHighlightInverse);
-        style.addColor(R.attr.textColorHint, (resources, theme, cookie) -> t.textColorHint);
-        style.addColor(R.attr.textColorHintInverse, (resources, theme, cookie) -> t.textColorHintInverse);
-        style.addColor(R.attr.textColorLink, (resources, theme, cookie) -> t.textColorLink);
-        style.addColor(R.attr.textColorLinkInverse, (resources, theme, cookie) -> t.textColorLinkInverse);
-
-        style.addColor(R.attr.colorControlNormal, t.colorOnSurfaceVariant);
-        style.addColor(R.attr.colorControlActivated, t.colorPrimaryContainer);
-        style.addColor(R.attr.colorControlHighlight, t.isDark ? 0x33ffffff : 0x1f000000);
     }
 
     private static void addStylesToResources(ResourcesBuilder b) {
@@ -2225,11 +2365,6 @@ public class MaterialTheme {
 
     public static MaterialTheme createDefault(boolean isDark, int subclass) {
         MaterialTheme t = new MaterialTheme();
-        int colorTextPrimaryInverse;
-        int colorTextSecondaryAndTertiaryInverse;
-        int colorTextSecondaryAndTertiaryInverseDisabled;
-        int colorTextPrimaryInverseDisableOnly;
-        int colorTextHintInverse;
         if (subclass == 0) {
             if (isDark) {
                 t.colorSurface = 0xFF1A110F;
@@ -2264,11 +2399,11 @@ public class MaterialTheme {
                 t.colorOnError = 0xFF690005;
                 t.colorErrorContainer = 0xFF93000A;
                 t.colorOnErrorContainer = 0xFFFFDAD6;
-                colorTextPrimaryInverse = 0xFF231917;
-                colorTextSecondaryAndTertiaryInverse = 0xFF53433F;
-                colorTextSecondaryAndTertiaryInverseDisabled = 0xFF231917;
-                colorTextPrimaryInverseDisableOnly = 0xFF231917;
-                colorTextHintInverse = 0xFF231917;
+                t.colorTextPrimaryInverse = 0xFF231917;
+                t.colorTextSecondaryAndTertiaryInverse = 0xFF53433F;
+                t.colorTextSecondaryAndTertiaryInverseDisabled = 0xFF231917;
+                t.colorTextPrimaryInverseDisableOnly = 0xFF231917;
+                t.colorTextHintInverse = 0xFF231917;
             } else {
                 t.colorSurface = 0xFFFFF8F6;
                 t.colorSurfaceDim = 0xFFE8D6D2;
@@ -2302,11 +2437,11 @@ public class MaterialTheme {
                 t.colorOnError = 0xFFFFFFFF;
                 t.colorErrorContainer = 0xFFFFDAD6;
                 t.colorOnErrorContainer = 0xFF93000A;
-                colorTextPrimaryInverse = 0xFFF1DFDA;
-                colorTextSecondaryAndTertiaryInverse = 0xFFD8C2BC;
-                colorTextSecondaryAndTertiaryInverseDisabled = 0xFFF1DFDA;
-                colorTextPrimaryInverseDisableOnly = 0xFFF1DFDA;
-                colorTextHintInverse = 0xFFF1DFDA;
+                t.colorTextPrimaryInverse = 0xFFF1DFDA;
+                t.colorTextSecondaryAndTertiaryInverse = 0xFFD8C2BC;
+                t.colorTextSecondaryAndTertiaryInverseDisabled = 0xFFF1DFDA;
+                t.colorTextPrimaryInverseDisableOnly = 0xFFF1DFDA;
+                t.colorTextHintInverse = 0xFFF1DFDA;
             }
             t.colorPrimaryFixed = 0xFFFFDBD1;
             t.colorPrimaryFixedDim = 0xFFFFB5A1;
@@ -2354,11 +2489,11 @@ public class MaterialTheme {
                 t.colorOnError = 0xFF690005;
                 t.colorErrorContainer = 0xFF93000A;
                 t.colorOnErrorContainer = 0xFFFFDAD6;
-                colorTextPrimaryInverse = 0xFF1E1B1A;
-                colorTextSecondaryAndTertiaryInverse = 0xFF504441;
-                colorTextPrimaryInverseDisableOnly = 0xFF1E1B1A;
-                colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1E1B1A;
-                colorTextHintInverse = 0xFF1E1B1A;
+                t.colorTextPrimaryInverse = 0xFF1E1B1A;
+                t.colorTextSecondaryAndTertiaryInverse = 0xFF504441;
+                t.colorTextPrimaryInverseDisableOnly = 0xFF1E1B1A;
+                t.colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1E1B1A;
+                t.colorTextHintInverse = 0xFF1E1B1A;
             } else {
                 t.colorSurface = 0xFFFFF8F6;
                 t.colorSurfaceDim = 0xFFE0D8D6;
@@ -2392,11 +2527,11 @@ public class MaterialTheme {
                 t.colorOnError = 0xFFFFFFFF;
                 t.colorErrorContainer = 0xFFFFDAD6;
                 t.colorOnErrorContainer = 0xFF93000A;
-                colorTextPrimaryInverse = 0xFFE9E1DF;
-                colorTextSecondaryAndTertiaryInverse = 0xFFD4C3BE;
-                colorTextPrimaryInverseDisableOnly = 0xFFE9E1DF;
-                colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE9E1DF;
-                colorTextHintInverse = 0xFFE9E1DF;
+                t.colorTextPrimaryInverse = 0xFFE9E1DF;
+                t.colorTextSecondaryAndTertiaryInverse = 0xFFD4C3BE;
+                t.colorTextPrimaryInverseDisableOnly = 0xFFE9E1DF;
+                t.colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE9E1DF;
+                t.colorTextHintInverse = 0xFFE9E1DF;
             }
             t.colorPrimaryFixed = 0xFFFFDBD1;
             t.colorPrimaryFixedDim = 0xFFE9BDB1;
@@ -2444,11 +2579,11 @@ public class MaterialTheme {
                 t.colorOnError = 0xFF690005;
                 t.colorErrorContainer = 0xFF93000A;
                 t.colorOnErrorContainer = 0xFFFFDAD6;
-                colorTextPrimaryInverse = 0xFF1E1B1A;
-                colorTextSecondaryAndTertiaryInverse = 0xFF4A4645;
-                colorTextPrimaryInverseDisableOnly = 0xFF1E1B1A;
-                colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1E1B1A;
-                colorTextHintInverse = 0xFF1E1B1A;
+                t.colorTextPrimaryInverse = 0xFF1E1B1A;
+                t.colorTextSecondaryAndTertiaryInverse = 0xFF4A4645;
+                t.colorTextPrimaryInverseDisableOnly = 0xFF1E1B1A;
+                t.colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1E1B1A;
+                t.colorTextHintInverse = 0xFF1E1B1A;
             } else {
                 t.colorSurface = 0xFFFFF8F6;
                 t.colorSurfaceDim = 0xFFE0D8D6;
@@ -2482,11 +2617,11 @@ public class MaterialTheme {
                 t.colorOnError = 0xFFFFFFFF;
                 t.colorErrorContainer = 0xFFFFDAD6;
                 t.colorOnErrorContainer = 0xFF93000A;
-                colorTextPrimaryInverse = 0xFFE9E1DF;
-                colorTextSecondaryAndTertiaryInverse = 0xFFCCC5C3;
-                colorTextPrimaryInverseDisableOnly = 0xFFE9E1DF;
-                colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE9E1DF;
-                colorTextHintInverse = 0xFFE9E1DF;
+                t.colorTextPrimaryInverse = 0xFFE9E1DF;
+                t.colorTextSecondaryAndTertiaryInverse = 0xFFCCC5C3;
+                t.colorTextPrimaryInverseDisableOnly = 0xFFE9E1DF;
+                t.colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE9E1DF;
+                t.colorTextHintInverse = 0xFFE9E1DF;
             }
             t.colorPrimaryFixed = 0xFFFDDBD3;
             t.colorPrimaryFixedDim = 0xFFE0BFB7;
@@ -2534,11 +2669,11 @@ public class MaterialTheme {
                 t.colorOnError = 0xFF690005;
                 t.colorErrorContainer = 0xFF93000A;
                 t.colorOnErrorContainer = 0xFFFFDAD6;
-                colorTextPrimaryInverse = 0xFF1B1B1B;
-                colorTextSecondaryAndTertiaryInverse = 0xFF474747;
-                colorTextPrimaryInverseDisableOnly = 0xFF1B1B1B;
-                colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1B1B1B;
-                colorTextHintInverse = 0xFF1B1B1B;
+                t.colorTextPrimaryInverse = 0xFF1B1B1B;
+                t.colorTextSecondaryAndTertiaryInverse = 0xFF474747;
+                t.colorTextPrimaryInverseDisableOnly = 0xFF1B1B1B;
+                t.colorTextSecondaryAndTertiaryInverseDisabled = 0xFF1B1B1B;
+                t.colorTextHintInverse = 0xFF1B1B1B;
             } else {
                 t.colorSurface = 0xFFF9F9F9;
                 t.colorSurfaceDim = 0xFFDADADA;
@@ -2572,11 +2707,11 @@ public class MaterialTheme {
                 t.colorOnError = 0xFFFFFFFF;
                 t.colorErrorContainer = 0xFFFFDAD6;
                 t.colorOnErrorContainer = 0xFF410002;
-                colorTextPrimaryInverse = 0xFFE2E2E2;
-                colorTextSecondaryAndTertiaryInverse = 0xFFC6C6C6;
-                colorTextPrimaryInverseDisableOnly = 0xFFE2E2E2;
-                colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE2E2E2;
-                colorTextHintInverse = 0xFFE2E2E2;
+                t.colorTextPrimaryInverse = 0xFFE2E2E2;
+                t.colorTextSecondaryAndTertiaryInverse = 0xFFC6C6C6;
+                t.colorTextPrimaryInverseDisableOnly = 0xFFE2E2E2;
+                t.colorTextSecondaryAndTertiaryInverseDisabled = 0xFFE2E2E2;
+                t.colorTextHintInverse = 0xFFE2E2E2;
             }
             t.colorPrimaryFixed = 0xFF5E5E5E;
             t.colorPrimaryFixedDim = 0xFF474747;
@@ -2594,83 +2729,6 @@ public class MaterialTheme {
 
         t.colorBackground = t.colorSurface;
         t.colorOnBackground = t.colorOnSurface;
-
-        var textStateSpec = new int[][]{
-                new int[]{-StateSet.state_enabled},
-                StateSet.WILD_CARD
-        };
-        t.textColorPrimary = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(t.colorOnSurface, material_emphasis_disabled),
-                        t.colorOnSurface
-                }
-        );
-        t.textColorPrimaryInverse = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(colorTextPrimaryInverse, material_emphasis_disabled),
-                        colorTextPrimaryInverse
-                }
-        );
-        t.textColorSecondary = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(t.colorOnSurface, material_emphasis_disabled),
-                        t.colorOnSurfaceVariant
-                }
-        );
-        t.textColorSecondaryInverse = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(colorTextSecondaryAndTertiaryInverseDisabled, material_emphasis_disabled),
-                        colorTextSecondaryAndTertiaryInverse
-                }
-        );
-        t.textColorPrimaryDisableOnly = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(t.colorOnBackground, 0.6f),
-                        t.colorOnBackground
-                }
-        );
-        t.textColorPrimaryInverseDisableOnly = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(colorTextPrimaryInverseDisableOnly, 0.6f),
-                        colorTextPrimaryInverseDisableOnly
-                }
-        );
-        var hintStateSpec = new int[][]{
-                new int[]{StateSet.state_enabled, StateSet.state_pressed},
-                StateSet.WILD_CARD
-        };
-        t.textColorHint = new ColorStateList(
-                hintStateSpec,
-                new int[]{
-                        modulateColor(t.colorOnBackground, 0.6f),
-                        modulateColor(t.colorOnBackground, 0.38f)
-                }
-        );
-        t.textColorHintInverse = new ColorStateList(
-                hintStateSpec,
-                new int[]{
-                        modulateColor(colorTextHintInverse, 0.87f),
-                        modulateColor(colorTextHintInverse, 0.6f)
-                }
-        );
-        t.textColorTertiary = t.textColorSecondary;
-        t.textColorTertiaryInverse = t.textColorSecondaryInverse;
-
-        t.textColorHighlight = modulateColor(t.colorPrimary, 0.6f);
-        t.textColorHighlightInverse = modulateColor(t.colorPrimaryInverse, 0.6f);
-
-        t.textColorLink = ColorStateList.valueOf(t.colorPrimary);
-        t.textColorLinkInverse = ColorStateList.valueOf(t.colorPrimaryInverse);
-
-        t.textColorAlertDialogListItem = t.textColorPrimary;
-
-        t.isDark = isDark;
 
         return t;
     }
@@ -2864,104 +2922,9 @@ public class MaterialTheme {
             t.colorErrorContainer = palette_error90;
             t.colorOnErrorContainer = palette_error10;
         }
+
         t.colorBackground = t.colorSurface;
         t.colorOnBackground = t.colorOnSurface;
-
-        var textStateSpec = new int[][]{
-                new int[]{-StateSet.state_enabled},
-                StateSet.WILD_CARD
-        };
-        var colorPrimaryText = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(palette_neutral10, material_emphasis_disabled),
-                        palette_neutral10
-                }
-        );
-        var darkColorPrimaryText = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(palette_neutral90, material_emphasis_disabled),
-                        palette_neutral90
-                }
-        );
-        var colorSecondaryText = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(palette_neutral10, material_emphasis_disabled),
-                        palette_neutral_variant30
-                }
-        );
-        var darkColorSecondaryText = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(palette_neutral90, material_emphasis_disabled),
-                        palette_neutral_variant80
-                }
-        );
-        var textDisableOnly = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(palette_neutral10, 0.6f),
-                        palette_neutral10
-                }
-        );
-        var darkTextDisableOnly = new ColorStateList(
-                textStateSpec,
-                new int[]{
-                        modulateColor(palette_neutral90, 0.6f),
-                        palette_neutral90
-                }
-        );
-        var hintStateSpec = new int[][]{
-                new int[]{StateSet.state_enabled, StateSet.state_pressed},
-                StateSet.WILD_CARD
-        };
-        var hintForeground = new ColorStateList(
-                hintStateSpec,
-                new int[]{
-                        modulateColor(palette_neutral10, 0.6f),
-                        modulateColor(palette_neutral10, 0.38f)
-                }
-        );
-        var darkHintForeground = new ColorStateList(
-                hintStateSpec,
-                new int[]{
-                        modulateColor(palette_neutral90, 0.87f),
-                        modulateColor(palette_neutral90, 0.6f)
-                }
-        );
-        if (isDark) {
-            t.textColorPrimary = darkColorPrimaryText;
-            t.textColorPrimaryInverse = colorPrimaryText;
-            t.textColorSecondary = darkColorSecondaryText;
-            t.textColorSecondaryInverse = colorSecondaryText;
-            t.textColorPrimaryDisableOnly = darkTextDisableOnly;
-            t.textColorPrimaryInverseDisableOnly = textDisableOnly;
-            t.textColorHint = darkHintForeground;
-            t.textColorHintInverse = hintForeground;
-        } else {
-            t.textColorPrimary = colorPrimaryText;
-            t.textColorPrimaryInverse = darkColorPrimaryText;
-            t.textColorSecondary = colorSecondaryText;
-            t.textColorSecondaryInverse = darkColorSecondaryText;
-            t.textColorPrimaryDisableOnly = textDisableOnly;
-            t.textColorPrimaryInverseDisableOnly = darkTextDisableOnly;
-            t.textColorHint = hintForeground;
-            t.textColorHintInverse = darkHintForeground;
-        }
-        t.textColorTertiary = t.textColorSecondary;
-        t.textColorTertiaryInverse = t.textColorSecondaryInverse;
-
-        t.textColorHighlight = modulateColor(t.colorPrimary, 0.6f);
-        t.textColorHighlightInverse = modulateColor(t.colorPrimaryInverse, 0.6f);
-
-        t.textColorLink = ColorStateList.valueOf(t.colorPrimary);
-        t.textColorLinkInverse = ColorStateList.valueOf(t.colorPrimaryInverse);
-
-        t.textColorAlertDialogListItem = t.textColorPrimary;
-
-        t.isDark = isDark;
 
         return t;
     }
