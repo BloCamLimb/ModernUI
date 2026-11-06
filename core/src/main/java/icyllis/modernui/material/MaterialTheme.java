@@ -1528,6 +1528,11 @@ public class MaterialTheme {
         style.addColor(R.attr.colorOnError, t.colorOnError);
         style.addColor(R.attr.colorErrorContainer, t.colorErrorContainer);
         style.addColor(R.attr.colorOnErrorContainer, t.colorOnErrorContainer);
+        style.addColor(R.attr.colorTextPrimaryInverse, t.colorTextPrimaryInverse);
+        style.addColor(R.attr.colorTextSecondaryAndTertiaryInverse, t.colorTextSecondaryAndTertiaryInverse);
+        style.addColor(R.attr.colorTextPrimaryInverseDisableOnly, t.colorTextPrimaryInverseDisableOnly);
+        style.addColor(R.attr.colorTextSecondaryAndTertiaryInverseDisabled, t.colorTextSecondaryAndTertiaryInverseDisabled);
+        style.addColor(R.attr.colorTextHintInverse, t.colorTextHintInverse);
     }
 
     private static void addStylesToResources(ResourcesBuilder b) {
