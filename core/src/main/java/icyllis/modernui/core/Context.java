@@ -91,4 +91,6 @@ public abstract class Context {
      */
     @ApiStatus.Internal
     public static final String TOAST_SERVICE = "toast";
+
+    public static final String TEXT_INPUT_SERVICE = "textinput";
 }

@@ -16,6 +16,7 @@ module icyllis.modernui.core {
     // Compile only
     requires static org.jetbrains.annotations;
     requires static org.jspecify;
+    requires org.lwjgl.sdl;
 
     exports icyllis.modernui;
     exports icyllis.modernui.app;
@@ -30,5 +31,6 @@ module icyllis.modernui.core {
     exports icyllis.modernui.transition;
     exports icyllis.modernui.view;
     exports icyllis.modernui.view.menu;
+    exports icyllis.modernui.view.textinput;
     exports icyllis.modernui.widget;
 }

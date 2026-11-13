@@ -77,6 +77,8 @@ import icyllis.modernui.view.PointerIcon;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewTreeObserver;
+import icyllis.modernui.view.textinput.EditorInfo;
+import icyllis.modernui.view.textinput.InputConnection;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.NonNull;
@@ -4979,6 +4981,22 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
         }
         return super.onKeyShortcut(keyCode, event);
+    }
+
+    @Override
+    public boolean onCheckIsTextEditor() {
+        //TODO not enough
+        return mEditor != null;
+    }
+
+    @Override
+    public @Nullable InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
+        if (onCheckIsTextEditor() && isEnabled()) {
+            if (mText instanceof Editable) {
+                return new EditableInputConnection(this);
+            }
+        }
+        return null;
     }
 
     /**

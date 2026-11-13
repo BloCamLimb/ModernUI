@@ -78,7 +78,10 @@ import icyllis.modernui.util.LongSparseLongArray;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import icyllis.modernui.view.textinput.EditorInfo;
+import icyllis.modernui.view.textinput.InputConnection;
 import icyllis.modernui.view.menu.MenuBuilder;
+import icyllis.modernui.view.textinput.TextInputManager;
 import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -5459,7 +5462,12 @@ public class View implements Drawable.Callback {
             if (isPressed()) {
                 setPressed(false);
             }
+            if (hasWindowFocus()) {
+                notifyFocusChangeToImeFocusController(false /* hasFocus */);
+            }
             resetPressedState();
+        } else if (hasWindowFocus()) {
+            notifyFocusChangeToImeFocusController(true /* hasFocus */);
         }
 
         invalidate();
@@ -5471,6 +5479,18 @@ public class View implements Drawable.Callback {
         if (mAttachInfo != null) {
             mAttachInfo.mKeyDispatchState.reset(this);
         }
+    }
+
+    /**
+     * Notify ImeFocusController about the focus change of the {@link View}.
+     *
+     * @param hasFocus {@code true} when the {@link View} is being focused.
+     */
+    private void notifyFocusChangeToImeFocusController(boolean hasFocus) {
+        if (mAttachInfo == null) {
+            return;
+        }
+        mAttachInfo.mViewRoot.mTextInputManager.onViewFocusChanged(this, hasFocus);
     }
 
     private void resetPressedState() {
@@ -8668,6 +8688,10 @@ public class View implements Drawable.Callback {
             hideTooltip();
         }
 
+        if (info != null) {
+            info.mViewRoot.mTextInputManager.onViewDetachedFromWindow(this, info.mViewRoot);
+        }
+
         ListenerInfo li = mListenerInfo;
         final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
                 li != null ? li.mOnAttachStateChangeListeners : null;
@@ -8702,6 +8726,10 @@ public class View implements Drawable.Callback {
 
         // rebuild, since Outline not maintained while View is detached
         rebuildOutline();
+
+        if (isFocused()) {
+            notifyFocusChangeToImeFocusController(true /* hasFocus */);
+        }
     }
 
     /**
@@ -11385,9 +11413,14 @@ public class View implements Drawable.Callback {
                 setPressed(false);
             }
             mPrivateFlags3 &= ~PFLAG3_FINGER_DOWN;
+            if ((mPrivateFlags & PFLAG_FOCUSED) != 0) {
+                notifyFocusChangeToImeFocusController(false /* hasFocus */);
+            }
             removeLongPressCallback();
             removeTapCallback();
             resetPressedState();
+        } else if ((mPrivateFlags & PFLAG_FOCUSED) != 0) {
+            notifyFocusChangeToImeFocusController(true /* hasFocus */);
         }
 
         refreshDrawableState();
@@ -12764,6 +12797,9 @@ public class View implements Drawable.Callback {
     public void dispatchFinishTemporaryDetach() {
         mPrivateFlags3 &= ~PFLAG3_TEMPORARY_DETACH;
         onFinishTemporaryDetach();
+        if (hasWindowFocus() && hasFocus()) {
+            notifyFocusChangeToImeFocusController(true /* hasFocus */);
+        }
     }
 
     /**
@@ -12905,6 +12941,65 @@ public class View implements Drawable.Callback {
      * event to be handled by the next receiver, return false.
      */
     public boolean onKeyShortcut(int keyCode, @NonNull KeyEvent event) {
+        return false;
+    }
+
+    /**
+     * Check whether the called view is a text editor, in which case it
+     * would make sense to automatically display a soft input window for
+     * it.  Subclasses should override this if they implement
+     * {@link #onCreateInputConnection(EditorInfo)} to return true if
+     * a call on that method would return a non-null InputConnection, and
+     * they are really a first-class editor that the user would normally
+     * start typing on when the go into a window containing your view.
+     *
+     * <p>The default implementation always returns false.  This does
+     * <em>not</em> mean that its {@link #onCreateInputConnection(EditorInfo)}
+     * will not be called or the user can not otherwise perform edits on your
+     * view; it is just a hint to the system that this is not the primary
+     * purpose of this view.
+     *
+     * @return Returns true if this view is a text editor, else false.
+     */
+    public boolean onCheckIsTextEditor() {
+        return false;
+    }
+
+    /**
+     * Create a new InputConnection for TextInputManager to interact
+     * with the view.  The default implementation returns null, since it doesn't
+     * support input methods.  You can override this to implement such support.
+     * This is only needed for views that take focus and text input.
+     *
+     * <p>When implementing this, you probably also want to implement
+     * {@link #onCheckIsTextEditor()} to indicate you will return a
+     * non-null InputConnection.</p>
+     *
+     * <p>Also, take good care to fill in the {@link EditorInfo}
+     * object correctly and in its entirety, so that the connected IME can rely
+     * on its values. For example, {@link EditorInfo#initialSelStart}
+     * and  {@link EditorInfo#initialSelEnd} members
+     * must be filled in with the correct cursor position for IMEs to work correctly
+     * with your application.</p>
+     *
+     * @param outAttrs Fill in with attribute information about the connection.
+     */
+    @Nullable
+    public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
+        return null;
+    }
+
+    /**
+     * Called by the {@link TextInputManager}
+     * when a view who is not the current
+     * input connection target is trying to make a call on the manager.  The
+     * default implementation returns false; you can override this to return
+     * true for certain views if you are performing InputConnection proxying
+     * to them.
+     * @param view The View that is making the TextInputManager call.
+     * @return Return true to allow the call, false to reject.
+     */
+    public boolean checkInputConnectionProxy(View view) {
         return false;
     }
 

@@ -40,6 +40,7 @@ import icyllis.modernui.system.Looper;
 import icyllis.modernui.system.Message;
 import icyllis.modernui.util.DisplayMetrics;
 import icyllis.modernui.view.View.FocusDirection;
+import icyllis.modernui.view.textinput.TextInputManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -66,6 +67,7 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     private static final int MSG_INVALIDATE = 1;
     private static final int MSG_DIE = 3;
+    private static final int MSG_CHECK_FOCUS = 13;
     protected static final int MSG_PROCESS_INPUT_EVENTS = 19;
     private static final int MSG_INVALIDATE_WORLD = 22;
 
@@ -141,6 +143,9 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     public Surface mSurface;
     public boolean mNeedsRendererSetup;
 
+    private boolean mHasImeFocus = false;
+    final TextInputManager mTextInputManager;
+
     public ViewRoot(Context context, Stage stage) {
         mStage = stage;
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
@@ -149,12 +154,15 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         mDirty = new Rect();
         mChoreographer = Choreographer.getInstance();
         mAttachInfo = new AttachInfo(this, mHandler, this);
+        mTextInputManager = (TextInputManager) context.getSystemService(
+                Context.TEXT_INPUT_SERVICE);
     }
 
     protected boolean handleMessage(@NonNull Message msg) {
         switch (msg.what) {
             case MSG_INVALIDATE -> ((View) msg.obj).invalidate();
             case MSG_DIE -> doDie();
+            case MSG_CHECK_FOCUS -> mTextInputManager.onScheduledCheckFocus(this);
             case MSG_PROCESS_INPUT_EVENTS -> {
                 mProcessInputEventsScheduled = false;
                 doProcessInputEvents();
@@ -199,6 +207,10 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     public View getView() {
         return mView;
+    }
+
+    public boolean hasImeFocus() {
+        return mHasImeFocus;
     }
 
     public void setLayoutParams(WindowManager.LayoutParams attrs) {
@@ -612,6 +624,15 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         mFirst = false;
         mWillDrawSoon = false;
         mViewVisibility = viewVisibility;
+
+        final boolean hasWindowFocus = mAttachInfo.mHasWindowFocus && isViewVisible;
+        if (hasWindowFocus && !mHasImeFocus) {
+            mHasImeFocus = true;
+            mTextInputManager.onPreWindowGainedFocus(this);
+            final View focusedView = mView.findFocus();
+            View viewForWindowFocus = focusedView != null ? focusedView : mView;
+            mTextInputManager.onPostWindowGainedFocus(viewForWindowFocus, mWindowAttributes);
+        }
 
         boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw();
 
@@ -1051,6 +1072,13 @@ public class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 }
             }
         });
+    }
+
+    public void dispatchCheckFocus() {
+        if (!mHandler.hasMessages(MSG_CHECK_FOCUS)) {
+            // This will result in a call to checkFocus() below.
+            mHandler.sendEmptyMessage(MSG_CHECK_FOCUS);
+        }
     }
 
     /*boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {

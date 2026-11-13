@@ -189,7 +189,7 @@ public final class WindowStage implements Stage {
             KeyEvent ev = KeyEvent.obtain(
                     event.timestamp(),
                     event.down() ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP,
-                    event.scancode(),
+                    KeyEvent.SDL2FW[event.scancode()],
                     event.mod() & 0xFFFF,
                     event.which(),
                     event.raw() & 0xFFFF,

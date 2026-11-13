@@ -63,4 +63,6 @@ public interface Stage extends WindowManager {
     Surface createSurface(ImageInfo info);
 
     void doRemoveView(ViewRoot root);
+
+    long getWindow();
 }
